@@ -1,3 +1,3 @@
 # x
 
-go implementation for layer 2
+go implementation for layer2
