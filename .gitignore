@@ -1,0 +1,32 @@
+#MacOS file info
+.DS_Store
+*/.DS_Store
+
+#Goland IDE data
+.idea/
+*/.idea/
+
+#output of Golang package
+/pkg/
+
+#other ignore files
+*.xml
+src/core/wenqin_test_util.go
+
+src/core/database
+src/core/logs
+src/github.com
+src/golang.org
+src/gopkg.in
+
+*/block/
+*/groupldb/
+*/height/
+*/logs/
+*/state/
+*/tx/
+*/database/
+
+main
+
+venv/
