@@ -6,10 +6,10 @@ import (
 	"encoding/hex"
 	"io"
 
-	"x/src/common/secp256k1"
-	"x/src/common/ecies"
+	"common/secp256k1"
+	"common/ecies"
 
-	"golang.org/x/crypto/sha3"
+	"crypto/sha256"
 )
 
 //用户公钥
@@ -29,7 +29,7 @@ func (pk PublicKey) GetAddress() Address {
 	y := pk.PubKey.Y.Bytes()
 	x = append(x, y...)
 
-	addr_buf := sha3.Sum256(x)
+	addr_buf := sha256.Sum256(x)
 	if len(addr_buf) != AddressLength {
 		panic("地址长度错误")
 	}
