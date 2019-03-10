@@ -110,7 +110,7 @@ func TestSignBytes(test *testing.T) {
 
 	pri_k := GenerateKey("")
 
-	sha3_hash := sha3.Sum256(buf)
+	sha3_hash := sha256.Sum256(buf)
 	sign := pri_k.Sign(sha3_hash[:]) //私钥签名
 
 	//测试签名十六进制转换
@@ -134,7 +134,7 @@ func TestRecoverPubkey(test *testing.T) {
 	fmt.Printf("\nbegin TestRecoverPubkey...\n")
 	plain_txt := "Sign Recover Pubkey tesing."
 	buf := []byte(plain_txt)
-	sha3_hash := sha3.Sum256(buf)
+	sha3_hash := sha256.Sum256(buf)
 
 	sk := GenerateKey("")
 	sign := sk.Sign(sha3_hash[:])
@@ -158,7 +158,7 @@ func TestHash(test *testing.T) {
 func BenchmarkSign(b *testing.B) {
 	msg := []byte("This is TASchain achates' testing message")
 	sk := GenerateKey("")
-	sha3_hash := sha3.Sum256(msg)
+	sha3_hash := sha256.Sum256(msg)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		sk.Sign(sha3_hash[:]) //私钥签名
@@ -169,7 +169,7 @@ func BenchmarkVerify(b *testing.B) {
 	msg := []byte("This is TASchain achates' testing message")
 	sk := GenerateKey("")
 	pk := sk.GetPubKey()
-	sha3_hash := sha3.Sum256(msg)
+	sha3_hash := sha256.Sum256(msg)
 	sign := sk.Sign(sha3_hash[:])
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -180,7 +180,7 @@ func BenchmarkVerify(b *testing.B) {
 func BenchmarkRecover(b *testing.B) {
 	msg := []byte("This is TASchain achates' testing message")
 	sk := GenerateKey("")
-	sha3_hash := sha3.Sum256(msg)
+	sha3_hash := sha256.Sum256(msg)
 	sign := sk.Sign(sha3_hash[:])
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

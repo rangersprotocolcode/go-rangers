@@ -8,10 +8,10 @@ import (
 	"math/big"
 	"math/rand"
 	"reflect"
-	"utility"
 
 	"x/src/common/secp256k1"
 	"x/src/log"
+	"x/src/utility"
 )
 
 const PREFIX = "0x"
