@@ -52,9 +52,9 @@ var (
 // directly by an attacker. It is usually preferable to use a cryptographic
 // hash function on any input before handing it to this function.
 func Sign(msg []byte, seckey []byte) ([]byte, error) {
-	if len(msg) != 32 {
-		return nil, ErrInvalidMsgLen
-	}
+	//if len(msg) != 32 {
+	//	return nil, ErrInvalidMsgLen
+	//}
 	if len(seckey) != 32 {
 		return nil, ErrInvalidKey
 	}
@@ -108,10 +108,10 @@ func RecoverPubkey(msg []byte, sig []byte) ([]byte, error) {
 // VerifySignature checks that the given pubkey created signature over message.
 // The signature should be in [R || S] format.
 func VerifySignature(pubkey, msg, signature []byte) bool {
-	if len(msg) != 32 || len(signature) != 64 || len(pubkey) == 0 {
-		panic("Bad input parameters in VerifySignature!")
-		return false
-	}
+	//if len(msg) != 32 || len(signature) != 64 || len(pubkey) == 0 {
+	//	panic("Bad input parameters in VerifySignature!")
+	//	return false
+	//}
 	sigdata := (*C.uchar)(unsafe.Pointer(&signature[0]))
 	msgdata := (*C.uchar)(unsafe.Pointer(&msg[0]))
 	keydata := (*C.uchar)(unsafe.Pointer(&pubkey[0]))

@@ -65,7 +65,7 @@ func GetLoggerByName(name string) Logger {
 			return GetLogger(config)
 		} else {
 			fileName := name + ".log"
-			config = strings.Replace(DefaultConfig, "default.log", fileName, 1)
+			config = strings.Replace(DefaultConfig, "defaultLOG_INDEX.log", fileName, 1)
 			l := newLoggerByConfig(config)
 			register(getKey(name), l)
 			return l
