@@ -31,32 +31,32 @@ const (
 
 	baseSection = "network"
 
-	defaultSeedId = "Qmdeh5r5kT2je77JNYKTsQi6ncckpLa9aFnr6xYQaGAxaw"
+	defaultSeedId = "QmU51xws4zKRHdirwkLCeQPviVv3m74TQ9o76bcyzDGo23"
 
 	defaultSeedAddr = "/ip4/10.0.0.66/tcp/1122"
 )
 
 var logger log.Logger
 
-func InitNetwork(privateKey common.PrivateKey, publicKey common.PublicKey, isSuper bool)  {
+func InitNetwork(privateKey common.PrivateKey, isSuper bool) {
 	logger = log.GetLoggerByName("p2p" + common.GlobalConf.GetString("client", "index", ""))
 
+	publicKey := privateKey.GetPubKey()
 	id := getId(publicKey)
 	ip := getLocalIp()
-	port := getAvailablePort(ip, basePort)
-	logger.Debugf("Local ip:%s,listen port:%d\n ID:%s",ip,port,idToString(id))
+	port := getAvailablePort(isSuper, basePort)
+	logger.Debugf("Local ip:%s,listen port:%d\nID:%s", ip, port, idToString(id))
 
 	ctx := context.Background()
 	swarm := makeSwarm(ctx, id, ip, port, privateKey, publicKey)
 	host := makeHost(swarm)
-	dht := makeDHT(ctx,host)
+	dht := makeDHT(ctx, host)
 	if !isSuper {
 		connectToSeed(ctx, host)
 	}
-	initServer(host,dht)
+	initServer(host, dht)
 	tryFindSeed(ctx)
 }
-
 
 func makeSwarm(ctx context.Context, id peer.ID, ip string, port int, privateKey common.PrivateKey, publicKey common.PublicKey) lnet.Network {
 	addr, e1 := ma.NewMultiaddr(genMulAddrStr(ip, port))
@@ -88,11 +88,11 @@ func makeHost(n lnet.Network) (host.Host) {
 	return host
 }
 
-func connectToSeed(ctx context.Context, host host.Host){
+func connectToSeed(ctx context.Context, host host.Host) {
 	seedId, seedAddrStr := getSeedInfo()
 	seedMultiAddr, e := ma.NewMultiaddr(seedAddrStr)
 	if e != nil {
-		panic("New multi addr error:"+e.Error())
+		panic("New multi addr error:" + e.Error())
 	}
 	seedPeerInfo := pstore.PeerInfo{ID: seedId, Addrs: []ma.Multiaddr{seedMultiAddr}}
 	host.Peerstore().AddAddrs(seedPeerInfo.ID, seedPeerInfo.Addrs, pstore.PermanentAddrTTL)
@@ -127,12 +127,12 @@ func makeDHT(ctx context.Context, host host.Host) (*dht.IpfsDHT) {
 	return kadDht
 }
 
-func tryFindSeed(ctx context.Context){
+func tryFindSeed(ctx context.Context) {
 	seedId, _ := getSeedInfo()
 	if seedId != Server.host.ID() {
 		for {
 			info, e := Server.dht.FindPeer(ctx, seedId)
-			if e!= nil {
+			if e != nil {
 				logger.Infof("Find seed id %s error:%s", idToString(seedId), e.Error())
 				time.Sleep(5 * time.Second)
 			} else if idToString(info.ID) == "" {
@@ -178,15 +178,10 @@ func getLocalIp() string {
 	return ""
 }
 
-func getAvailablePort(ip string, port int) int {
-	if port < 1024 {
-		port = basePort
+func getAvailablePort(isSuper bool, port int) int {
+	if isSuper {
+		return basePort
 	}
-	if port > 65535 {
-		logger.Error("No available port!")
-		return -1
-	}
-
 	rand.Seed(time.Now().UnixNano())
 	port += rand.Intn(1000)
 	return port

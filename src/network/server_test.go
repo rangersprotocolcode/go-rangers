@@ -1,277 +1,132 @@
 package network
-//
-//import (
-//	"taslog"
-//	"github.com/libp2p/go-libp2p-crypto"
-//	"common"
-//	"fmt"
-//	"testing"
-//	"context"
-//	gpeer "github.com/libp2p/go-libp2p-peer"
-//	ma "github.com/multiformats/go-multiaddr"
-//	"github.com/libp2p/go-libp2p-kad-dht"
-//	"time"
-//	"github.com/libp2p/go-libp2p-swarm"
-//	"github.com/libp2p/go-libp2p-host"
-//	pstore "github.com/libp2p/go-libp2p-peerstore"
-//	ds "github.com/ipfs/go-datastore"
-//	dssync "github.com/ipfs/go-datastore/sync"
-//	inet "github.com/libp2p/go-libp2p-net"
-//
-//	"utility"
-//	"github.com/libp2p/go-libp2p/p2p/host/basic"
-//)
-//
-//func TestSendMessage(t *testing.T) {
-//	defer taslog.Close()
-//
-//	crypto.KeyTypes = append(crypto.KeyTypes, 3)
-//	crypto.PubKeyUnmarshallers[3] = UnmarshalEcdsaPublicKey
-//
-//	config := common.NewConfINIManager("server_test.ini")
-//	ctx := context.Background()
-//
-//	seedPrivateKey := "0x0423c75e7593a7e6b5ce489f7d3578f8f737b6dd0fc1d2b10dc12a3e88a0572c62b801e14a8864ebe2d7b8c32e31113ccb511a6ad597c008ea90d850439133819f0b682fe8ff4a9023712e74256fb628c8e97658d99f2a8880a3066f120c2e899b"
-//	seedDht, seedHost, seedNet := mockDHT(seedPrivateKey, &config, ctx)
-//	fmt.Printf("Mock seed node success!\nseed :%s\n", seedNet.String())
-//
-//	node1Dht, node1Host, node1Net := mockDHT("", &config, ctx)
-//	fmt.Printf("Mock  node1 success!\nnode1 :%s\n", node1Net.String())
-//
-//	node2Dht, node2Host, node2Net := mockDHT("", &config, ctx)
-//	fmt.Printf("Mock  node2 success!\node2 :%s\n", node2Net.String())
-//
-//	if node1Dht != nil && seedDht != nil {
-//		connectToSeed(ctx, node1Host, &config, *node1Net)
-//		connectToSeed(ctx, node2Host, &config, *node2Net)
-//
-//		dhts := []*dht.IpfsDHT{node1Dht, seedDht,node2Dht}
-//		bootDhts(dhts)
-//		time.Sleep(30 * time.Second)
-//
-//		//peerInfo1, err1 := node1.FindPeer(ctx1, ConvertToPeerID(seedId))
-//		//if err1 != nil {
-//		//	fmt.Printf("node find seed error:%s\n", err1.Error())
-//		//}
-//		//fmt.Printf("node find seed result is:%s\n", ConvertToID(peerInfo1.ID))
-//		//
-//		//
-//		//peerInfo, err := seedDht.FindPeer(ctx1, ConvertToPeerID(node1Id))
-//		//if err != nil {
-//		//	fmt.Printf("seed find node1 error:%s\n", err.Error())
-//		//}
-//		//fmt.Printf("seed find node1 result is:%s\n", ConvertToID(peerInfo.ID))
-//	}
-//	node2Server := server{node2Net, node2Host, node2Dht}
-//
-//	seedServer := server{seedNet, seedHost, seedDht}
-//
-//	node1Host.Network().SetStreamHandler(testSteamHandler)
-//	node1Server := server{node1Net, node1Host, node1Dht}
-//
-//	messsage := mockMessage()
-//	seedServer.SendMessage(messsage, node1Net.Id)
-//
-//	time.Sleep(1 * time.Second)
-//	conns := seedServer.GetConnInfo()
-//	for _, conn := range conns {
-//		fmt.Printf("seed server's conn:%s,%s,%s\n", conn.Id, conn.Ip, conn.TcpPort)
-//	}
-//
-//	conn1 := node1Server.GetConnInfo()
-//	for _, conn := range conn1 {
-//		fmt.Printf("node1 server's conn:%s,%s,%s\n", conn.Id, conn.Ip, conn.TcpPort)
-//	}
-//
-//	conn2 := node2Server.GetConnInfo()
-//	for _, conn := range conn2 {
-//		fmt.Printf("node2 server's conn:%s,%s,%s\n", conn.Id, conn.Ip, conn.TcpPort)
-//	}
-//}
-//
-//func testSteamHandler(stream inet.Stream) {
-//	defer stream.Close()
-//	headerBytes := make([]byte, 3)
-//	h, e1 := stream.Read(headerBytes)
-//	if e1 != nil {
-//		logger.Errorf("Stream  read error:%s\n", e1.Error())
-//		return
-//	}
-//	if h != 3 {
-//		return
-//	}
-//	//校验 header
-//	if !(headerBytes[0] == byte(84) && headerBytes[1] == byte(65) && headerBytes[2] == byte(83)) {
-//		return
-//	}
-//
-//	pkgLengthBytes := make([]byte, 4)
-//	n, err := stream.Read(pkgLengthBytes)
-//	if n != 4 || err != nil {
-//		fmt.Printf("Stream  read %d byte error:%s,received %d bytes\n", 4, err.Error(), n)
-//		return
-//	}
-//	//fmt.Printf("pkgLengthBytes length:%d\n",len(pkgLengthBytes))
-//	//for i:=0;i<len(pkgLengthBytes);i++{
-//	//	fmt.Printf("b:%d",int(pkgLengthBytes[i]))
-//	//}
-//	//fmt.Printf("\n")
-//
-//	pkgLength := int(utility.ByteToUInt32(pkgLengthBytes))
-//	pkgBodyBytes := make([]byte, pkgLength)
-//	if pkgLength < PACKAGE_MAX_SIZE {
-//		n1, err1 := stream.Read(pkgBodyBytes)
-//		if n1 != pkgLength || err1 != nil {
-//			fmt.Printf("Stream  read %d byte error:%s,received %d bytes\n", pkgLength, err.Error(), n)
-//			return
-//		}
-//	} else {
-//		c := pkgLength / PACKAGE_MAX_SIZE
-//		left, right := 0, PACKAGE_MAX_SIZE
-//		for i := 0; i <= c; i++ {
-//			a := make([]byte, PACKAGE_MAX_SIZE)
-//			n1, err1 := stream.Read(a)
-//			if n1 != PACKAGE_MAX_SIZE || err1 != nil {
-//				Logger.Errorf("Stream  read %d byte error:%s,received %d bytes\n", PACKAGE_MAX_SIZE, err1.Error(), n1)
-//				return
-//			}
-//			copy(pkgBodyBytes[left:right], a)
-//			left += PACKAGE_MAX_SIZE
-//			right += PACKAGE_MAX_SIZE
-//			if right > pkgLength {
-//				right = pkgLength
-//			}
-//		}
-//	}
-//	//fmt.Printf("Before unmarshla message!,pkgLength：%d,length:%d\n",pkgLength,len(pkgBodyBytes))
-//
-//	//for i:=0;i<len(pkgBodyBytes);i++{
-//	//	fmt.Printf("b:%d",int(pkgBodyBytes[i]))
-//	//}
-//	//fmt.Printf("\n")
-//
-//	message, e := UnMarshalMessage(pkgBodyBytes)
-//	if e != nil {
-//		fmt.Printf("Unmarshal message error!" + e.Error())
-//		return
-//	}
-//	m := mockMessage()
-//	fmt.Printf("Reviced message compare result is:%t\n", messageEquals(*message, m))
-//}
-//
-//func messageEquals(m1 Message, m2 Message) bool {
-//
-//	if m1.Code != m2.Code ||  len(m1.Body) != len(m2.Body) {
-//		return false
-//	}
-//
-//	for i := 0; i < len(m1.Body); i++ {
-//		b1 := m1.Body[i]
-//		b2 := m2.Body[i]
-//		if b1 != b2 {
-//			return false
-//		}
-//	}
-//	return true
-//}
-//
-//
-//func bootDhts(dhts []*dht.IpfsDHT) {
-//	for i := 0; i < len(dhts); i++ {
-//		d := dhts[i]
-//		cfg := dht.DefaultBootstrapConfig
-//		cfg.Queries = 3
-//		cfg.Period = time.Duration(20 * time.Second)
-//
-//		process, e8 := d.BootstrapWithConfig(cfg)
-//		if e8 != nil {
-//			process.Close()
-//			fmt.Print("KadDht bootstrap error! " + e8.Error())
-//			return
-//		}
-//	}
-//}
-//func mockDHT(privateKey string, config *common.ConfManager, ctx context.Context) (*dht.IpfsDHT, host.Host, *Node) {
-//	self := NewSelfNetInfo(privateKey)
-//
-//	localId := self.Id
-//	ID := ConvertToPeerID(localId)
-//	multiaddr, e2 := ma.NewMultiaddr(self.GenMulAddrStr())
-//	if e2 != nil {
-//		fmt.Printf("new mlltiaddr error!" + e2.Error())
-//		return nil, nil, self
-//	}
-//	listenAddrs := []ma.Multiaddr{multiaddr}
-//	peerStore := pstore.NewPeerstore()
-//	p1 := &Pubkey{PublicKey: self.PublicKey}
-//	p2 := &Privkey{PrivateKey: self.PrivateKey}
-//
-//	peerStore.AddPubKey(ID, p1)
-//	peerStore.AddPrivKey(ID, p2)
-//	peerStore.AddAddrs(ID, listenAddrs, pstore.PermanentAddrTTL)
-//	//bwc  is a bandwidth metrics collector, This is used to track incoming and outgoing bandwidth on connections managed by this swarm.
-//	// It is optional, and passing nil will simply result in no metrics for connections being available.
-//	sw, e3 := swarm.NewNetwork(ctx, listenAddrs, ID, peerStore, nil)
-//	if e3 != nil {
-//		fmt.Printf("New swarm error!\n" + e3.Error())
-//		return nil, nil, self
-//	}
-//
-//	//hostOpts := &basichost.HostOpts{}
-//	host := basichost.New(sw)
-//	//host := blankhost.NewBlankHost(sw)
-//	//if e4 != nil {
-//	//	fmt.Printf("New host error! " + e4.Error())
-//	//	return nil, self.Id
-//	//}
-//
-//	dss := dssync.MutexWrap(ds.NewMapDatastore())
-//	kadDht := dht.NewDHT(ctx, host, dss)
-//	return kadDht, host, self
-//}
-//
-//func connectToSeed(ctx context.Context, host host.Host, config *common.ConfManager, node Node) error {
-//	seedId, seedAddrStr, e1 := getSeedInfo(config)
-//	if e1 != nil {
-//		return e1
-//	}
-//	if node.GenMulAddrStr() == seedAddrStr {
-//		return nil
-//	}
-//	seedMultiaddr, e2 := ma.NewMultiaddr(seedAddrStr)
-//	if e2 != nil {
-//		logger.Error("SeedIdStr to seedMultiaddr error!\n" + e2.Error())
-//		return e2
-//	}
-//	seedPeerInfo := pstore.PeerInfo{ID: seedId, Addrs: []ma.Multiaddr{seedMultiaddr}}
-//	e3 := host.Connect(ctx, seedPeerInfo)
-//	if e3 != nil {
-//		logger.Error("Host connect to seed error!\n" + e3.Error())
-//		return e3
-//	}
-//	return nil
-//}
-//
-//func getSeedInfo(config *common.ConfManager) (gpeer.ID, string, error) {
-//	seedIdStr := (*config).GetString(BASE_SECTION, SEED_ID_KEY, "QmPf7ArTTxDqd1znC9LF5r73YR85sbEU1t1SzTvt2fRry2")
-//	seedAddrStr := (*config).GetString(BASE_SECTION, SEED_ADDRESS_KEY, "/ip4/10.0.0.66/tcp/1122")
-//	return ConvertToPeerID(seedIdStr), seedAddrStr, nil
-//}
 
+import (
+	"fmt"
+	"testing"
+	"context"
+	"time"
+	"math/rand"
+	"sync"
+	"bufio"
 
-//only for test
-//used to mock a new client
-//func NewSelfNetInfo(privateKeyStr string) *Node {
-//	var privateKey common.PrivateKey
-//
-//	if privateKeyStr == "" {
-//		privateKey = common.GenerateKey("")
-//	} else {
-//		privateKey = *common.HexStringToSecKey(privateKeyStr)
-//	}
-//	publicKey := privateKey.GetPubKey()
-//	id := GetIdFromPublicKey(publicKey)
-//	ip := getLocalIp()
-//	port := getAvailableTCPPort(ip, BASE_PORT)
-//	return &Node{PrivateKey: privateKey, PublicKey: publicKey, Id: id, Ip: ip, TcpPort: port}
-//}
+	"x/src/common"
+	"x/src/log"
+	"x/src/utility"
+
+	"github.com/libp2p/go-libp2p-crypto"
+	inet "github.com/libp2p/go-libp2p-net"
+)
+
+func TestSendMessage(t *testing.T) {
+	defer log.Close()
+
+	crypto.KeyTypes = append(crypto.KeyTypes, 3)
+	crypto.PubKeyUnmarshallers[3] = UnmarshalEcdsaPublicKey
+
+	common.InitConf("test.ini")
+	logger = log.GetLoggerByName("p2p" + common.GlobalConf.GetString("client", "index", ""))
+	ctx := context.Background()
+
+	seedPrivateKey := "0x04d46485dfa6bb887daec6c35c707c4eaa58e2ea0cafbc8b40201b7759f611e3f27c7d3d3e5835d55e622b90a5d2f24172c80947f97544acd5cf8ed3f4d94f4243f3092f031b85e4675634bf60434a590e954c8051d42c53ced1744eaf32e47395"
+	seedDht, seedHost, seedId := mockDHT(seedPrivateKey, true)
+	fmt.Printf("Mock seed dht success! seedId is:%s\n\n", idToString(seedId))
+
+	node1Dht, node1Host, node1Id := mockDHT("", false)
+	fmt.Printf("Mock dht node1 success! node1 id is:%s\n\n", idToString(node1Id))
+
+	node2Dht, node2Host, node2Id := mockDHT("", false)
+	fmt.Printf("Mock dht node2 success! node2 id is:%s\n\n", idToString(node2Id))
+
+	if node1Dht != nil && node2Dht != nil && seedDht != nil {
+		connectToSeed(ctx, node1Host)
+		connectToSeed(ctx, node2Host)
+	}
+	node2Server := server{host: node2Host, dht: node2Dht, streams: make(map[string]inet.Stream), streamMapLock: sync.RWMutex{}}
+
+	seedServer := server{host: seedHost, dht: seedDht, streams: make(map[string]inet.Stream), streamMapLock: sync.RWMutex{}}
+
+	node1Server := server{host: node1Host, dht: node1Dht, streams: make(map[string]inet.Stream), streamMapLock: sync.RWMutex{}}
+	node1Server.host.SetStreamHandler(protocolID, testSteamHandler)
+
+	message := mockMessage()
+	seedServer.SendMessage(message, idToString(node1Id))
+	fmt.Printf("Send message code %d,msg len:%d\n", message.Code, len(message.Body))
+
+	time.Sleep(50 * time.Millisecond)
+	dumpConn(seedServer, node1Server, node2Server)
+}
+
+func testSteamHandler(stream inet.Stream) {
+	defer stream.Close()
+	id := idToString(stream.Conn().RemotePeer())
+	reader := bufio.NewReader(stream)
+
+	headerBytes := make([]byte, 3)
+	h, e1 := reader.Read(headerBytes)
+	if e1 != nil {
+		fmt.Printf("steam read 3 from %s error:%s!", id, e1.Error())
+		return
+	}
+	if h != 3 {
+		fmt.Printf("Stream  should read %d byte, but received %d bytes", 3, h)
+		return
+	}
+	//校验 header
+	if !(headerBytes[0] == header[0] && headerBytes[1] == header[1] && headerBytes[2] == header[2]) {
+		logger.Errorf("validate header error from %s! ", id)
+		return
+	}
+
+	pkgLengthBytes := make([]byte, packageLengthSize)
+	n, err := reader.Read(pkgLengthBytes)
+	if err != nil {
+		fmt.Printf("Stream  read4 error:%s", err.Error())
+		return
+	}
+	if n != 4 {
+		fmt.Printf("Stream  should read %d byte, but received %d bytes", 4, n)
+		return
+	}
+	pkgLength := int(utility.ByteToUInt32(pkgLengthBytes))
+	b := make([]byte, pkgLength)
+	e := readMessageBody(reader, b, 0)
+	if e != nil {
+		fmt.Printf("Stream  readMessageBody error:%s", e.Error())
+	}
+
+	message, e := UnMarshalMessage(b)
+	if e != nil {
+		fmt.Printf("Unmarshal message error!" + e.Error())
+		return
+	}
+	fmt.Printf("Reviced message code %d,msg len:%d\n", message.Code, len(message.Body))
+}
+
+func mockMessage() Message {
+	var code = rand.Uint32()
+
+	r := rand.Intn(1000000)
+	body := make([]byte, r)
+	for i := 0; i < r; i++ {
+		body[i] = 8
+	}
+	m := Message{Code: code, Body: body}
+	return m
+}
+
+func dumpConn(seedServer server, node1Server server, node2Server server) {
+	conns := seedServer.GetConnInfo()
+	for _, conn := range conns {
+		fmt.Printf("seed server's conn:%s,%s,%s\n", conn.Id, conn.Ip, conn.TcpPort)
+	}
+
+	conn1 := node1Server.GetConnInfo()
+	for _, conn := range conn1 {
+		fmt.Printf("node1 server's conn:%s,%s,%s\n", conn.Id, conn.Ip, conn.TcpPort)
+	}
+
+	conn2 := node2Server.GetConnInfo()
+	for _, conn := range conn2 {
+		fmt.Printf("node2 server's conn:%s,%s,%s\n", conn.Id, conn.Ip, conn.TcpPort)
+	}
+}

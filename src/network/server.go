@@ -15,12 +15,15 @@ import (
 	"github.com/libp2p/go-libp2p-protocol"
 	"github.com/libp2p/go-libp2p-peer"
 	inet "github.com/libp2p/go-libp2p-net"
+	"fmt"
 )
 
 const (
 	packageLengthSize             = 4
 	protocolID        protocol.ID = "/x/1.0.0"
 )
+
+var header = []byte{84, 85, 78}
 
 var Server server
 
@@ -36,7 +39,7 @@ type server struct {
 
 func initServer(host host.Host, dht *dht.IpfsDHT) {
 	host.SetStreamHandler(protocolID, swarmStreamHandler)
-	Server = server{host: host, dht: dht, streams: make(map[string]inet.Stream)}
+	Server = server{host: host, dht: dht, streams: make(map[string]inet.Stream), streamMapLock: sync.RWMutex{}}
 }
 
 func (s *server) SendMessage(m Message, id string) {
@@ -50,10 +53,7 @@ func (s *server) SendMessage(m Message, id string) {
 		length := len(bytes)
 		b2 := utility.UInt32ToByte(uint32(length))
 
-		//"TAS"的byte
-		header := []byte{84, 65, 83}
-
-		b := make([]byte, len(bytes)+len(b2)+3)
+		b := make([]byte, len(bytes)+len(b2)+3, len(bytes)+len(b2)+3)
 		copy(b[:3], header[:])
 		copy(b[3:7], b2)
 		copy(b[7:], bytes)
@@ -77,6 +77,7 @@ func (s *server) send(b []byte, id string) {
 		stream, e = s.host.NewStream(c, strToId(id), protocolID)
 		if e != nil {
 			logger.Errorf("New stream for %s error:%s", id, e.Error())
+			fmt.Printf("New stream for %s error:%s", id, e.Error())
 			s.streamMapLock.Unlock()
 			s.send(b, id)
 			return
@@ -133,7 +134,7 @@ func handleStream(stream inet.Stream) error {
 		return nil
 	}
 	//校验 header
-	if !(headerBytes[0] == byte(84) && headerBytes[1] == byte(65) && headerBytes[2] == byte(83)) {
+	if !(headerBytes[0] == header[0] && headerBytes[1] == header[1] && headerBytes[2] == header[2]) {
 		logger.Errorf("validate header error from %s! ", id)
 		return nil
 	}
@@ -207,6 +208,8 @@ func (s *server) handleMessage(b []byte, from string, lengthByte []byte) {
 	//	}
 	//	consensusHandler.HandlerMessage(*code, message.Body, from)
 	//}
+
+	fmt.Printf("Reviced message from %s,code %d,msg len:%d\n", from, message.Code, len(message.Body))
 }
 
 type ConnInfo struct {

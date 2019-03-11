@@ -6,96 +6,75 @@ import (
 	"net"
 )
 
-
 import (
-
+	"time"
 	"context"
 
 	"x/src/common"
-	"github.com/libp2p/go-libp2p-crypto"
-)
-//
-//func TestDHT(t *testing.T) {
-//	defer log.Close()
-//
-//	crypto.KeyTypes = append(crypto.KeyTypes, 3)
-//	crypto.PubKeyUnmarshallers[3] = UnmarshalEcdsaPublicKey
-//
-//	config := common.NewConfINIManager("dht_test.ini")
-//	ctx := context.Background()
-//
-//	seedPrivateKey := "0x0423c75e7593a7e6b5ce489f7d3578f8f737b6dd0fc1d2b10dc12a3e88a0572c62b801e14a8864ebe2d7b8c32e31113ccb511a6ad597c008ea90d850439133819f0b682fe8ff4a9023712e74256fb628c8e97658d99f2a8880a3066f120c2e899b"
-//	seedDht, _, seedNode := mockDHT(seedPrivateKey, &config, ctx)
-//	fmt.Printf("Mock seed node success! seedId is:%s\n", seedNode.Id)
-//
-//	node1Dht, node1Host, node1Node := mockDHT("", &config, ctx)
-//	fmt.Printf("Mock  node1 success! node1 is:%s\n", node1Node.Id)
-//
-//	if node1Dht != nil && seedDht != nil {
-//
-//		e2 := connectToSeed(ctx, &node1Host, &config, *node1Node)
-//		if e2 != nil {
-//			fmt.Errorf("connectToSeed error!%s\n", e2.Error())
-//			panic("connectToSeed error!")
-//		}
-//		dhts := []*dht.IpfsDHT{node1Dht, seedDht}
-//		bootDhts(dhts)
-//		time.Sleep(30 * time.Second)
-//
-//		node11ID := p2p.ConvertToPeerID(node1Node.Id)
-//		r1 := seedDht.FindLocal(node11ID)
-//		fmt.Printf("Seed local find node1. node1 id is:%s\n", p2p.ConvertToID(r1.ID))
-//
-//		seed11ID := p2p.ConvertToPeerID(seedNode.Id)
-//		r2 := node1Dht.FindLocal(seed11ID)
-//		fmt.Printf("Node1 local find seed. seed id is:%s\n", p2p.ConvertToID(r2.ID))
-//
-//		r3, err := seedDht.FindPeer(ctx, node11ID)
-//		if err != nil {
-//			fmt.Printf("Seed find node1 error:%s\n", err.Error())
-//		}
-//		fmt.Printf("Seed find node1 result is:%s\n", p2p.ConvertToID(r3.ID))
-//
-//		r4, err1 := node1Dht.FindPeer(ctx, seed11ID)
-//		if err1 != nil {
-//			fmt.Printf("Node1 find seed error:%s\n", err1.Error())
-//		}
-//		fmt.Printf("Node1 find seed result is:%s\n", p2p.ConvertToID(r4.ID))
-//	}
-//}
-//
-//func bootDhts(dhts []*dht.IpfsDHT) {
-//	for i := 0; i < len(dhts); i++ {
-//		d := dhts[i]
-//		cfg := dht.DefaultBootstrapConfig
-//		cfg.Queries = 3
-//		cfg.Period = time.Duration(20 * time.Second)
-//
-//		process, e8 := d.BootstrapWithConfig(cfg)
-//		if e8 != nil {
-//			process.Close()
-//			fmt.Print("KadDht bootstrap error! " + e8.Error())
-//			return
-//		}
-//	}
-//}
-//
-//
-//
-//func mockDHT(privateKey string, config *common.ConfManager, ctx context.Context) (*dht.IpfsDHT, host.Host, *p2p.Node) {
-//	self := mockNode(privateKey, config)
-//	//fmt.Print(self.String())
-//	network, e1 := makeSwarm(ctx, *self)
-//	if e1 != nil {
-//		fmt.Errorf("make swarm error!%s\n", e1.Error())
-//		panic("make swarm error!")
-//	}
-//	host := makeHost(network)
-//	dss := dssync.MutexWrap(ds.NewMapDatastore())
-//	kadDht := dht.NewDHT(ctx, host, dss)
-//	return kadDht, host, self
-//}
 
+	"github.com/libp2p/go-libp2p-crypto"
+	"github.com/libp2p/go-libp2p-kad-dht"
+	"github.com/libp2p/go-libp2p-peer"
+	"github.com/libp2p/go-libp2p-host"
+)
+
+func TestDHT(t *testing.T) {
+	common.InitConf("test.ini")
+	crypto.KeyTypes = append(crypto.KeyTypes, 3)
+	crypto.PubKeyUnmarshallers[3] = UnmarshalEcdsaPublicKey
+	ctx := context.Background()
+
+	seedPrivateKey := "0x04d46485dfa6bb887daec6c35c707c4eaa58e2ea0cafbc8b40201b7759f611e3f27c7d3d3e5835d55e622b90a5d2f24172c80947f97544acd5cf8ed3f4d94f4243f3092f031b85e4675634bf60434a590e954c8051d42c53ced1744eaf32e47395"
+	seedDht, _, seedId := mockDHT(seedPrivateKey, true)
+	fmt.Printf("Mock seed dht success! seedId is:%s\n\n", idToString(seedId))
+
+	node1Dht, node1Host, node1Id := mockDHT("", false)
+	fmt.Printf("Mock dht node1 success! node1 id is:%s\n\n", idToString(node1Id))
+
+	if node1Dht != nil && seedDht != nil {
+		connectToSeed(ctx, node1Host)
+
+		time.Sleep(time.Second * 1)
+		r1 := seedDht.FindLocal(node1Id)
+		fmt.Printf("Seed local find node1. node1 id is:%s\n", idToString(r1.ID))
+
+		r3, err := seedDht.FindPeer(ctx, node1Id)
+		if err != nil {
+			fmt.Printf("Seed find node1 error:%s\n", err.Error())
+		}
+		fmt.Printf("Seed find node1 result is:%s\n", idToString(r3.ID))
+
+		r2 := node1Dht.FindLocal(seedId)
+		fmt.Printf("Node1 local find seed. seed id is:%s\n", idToString(r2.ID))
+
+		r4, err1 := node1Dht.FindPeer(ctx, seedId)
+		if err1 != nil {
+			fmt.Printf("Node1 find seed error:%s\n", err1.Error())
+		}
+		fmt.Printf("Node1 find seed result is:%s\n", idToString(r4.ID))
+	}
+}
+
+func mockDHT(privateKeyStr string, isSuper bool) (*dht.IpfsDHT, host.Host, peer.ID) {
+	var privateKey common.PrivateKey
+	if privateKeyStr == "" {
+		privateKey = common.GenerateKey("")
+	} else {
+		privateKey = *common.HexStringToSecKey(privateKeyStr)
+	}
+	//fmt.Printf("privatekey:%s",privateKey.GetHexString())
+	publicKey := privateKey.GetPubKey()
+	id := getId(publicKey)
+	ip := getLocalIp()
+	port := getAvailablePort(isSuper, basePort)
+	fmt.Printf("Local ip:%s,listen port:%d\nID:%s\n", ip, port, idToString(id))
+
+	ctx := context.Background()
+	swarm := makeSwarm(ctx, id, ip, port, privateKey, publicKey)
+	host := makeHost(swarm)
+	dht := makeDHT(ctx, host)
+	return dht, host, id
+}
 
 func TestID(t *testing.T) {
 	privateKey := common.GenerateKey("")
@@ -103,7 +82,6 @@ func TestID(t *testing.T) {
 	id := getId(publicKey)
 	fmt.Println(idToString(id))
 }
-
 
 func TestUnmarshalEcdsaPublicKey(t *testing.T) {
 	crypto.KeyTypes = append(crypto.KeyTypes, 3)
@@ -133,19 +111,17 @@ func TestUnmarshalEcdsaPublicKey(t *testing.T) {
 	fmt.Printf("Origin public key length is :%d,marshal and unmaishal pub key length is:%d\n", len(b1), len(b2))
 }
 
-
-func TestContext(t *testing.T){
+func TestContext(t *testing.T) {
 	ctx := context.Background()
 	deadline, ok := ctx.Deadline()
-	fmt.Print(deadline,ok)
+	fmt.Print(deadline, ok)
 }
 
-
-func TestIp(t *testing.T){
+func TestIp(t *testing.T) {
 	addrs, err := net.InterfaceAddrs()
 
 	if err != nil {
-		fmt.Printf("TestIp error:%s",err.Error())
+		fmt.Printf("TestIp error:%s", err.Error())
 	}
 
 	for _, address := range addrs {
