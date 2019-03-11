@@ -1,5 +1,13 @@
 package network
 
+type Conn struct {
+	Id   string
+	Ip   string
+	Port string
+}
+
+type MsgDigest []byte
+
 type Network interface {
 	//Send message to the node which id represents.If self doesn't connect to the node,
 	// resolve the kad net to find the node and then send the message
@@ -19,7 +27,7 @@ type Network interface {
 	SpreadToRandomGroupMember(groupId string, groupMembers []string, msg Message) error
 
 	//Broadcast the message to the group which self do not belong to
-	//SpreadToGroup(groupId string, groupMembers []string, msg Message, digest MsgDigest) error
+	SpreadToGroup(groupId string, groupMembers []string, msg Message, digest MsgDigest) error
 
 	//Send message to neighbor nodes
 	TransmitToNeighbor(msg Message) error
@@ -31,9 +39,13 @@ type Network interface {
 	Broadcast(msg Message) error
 
 	//Return all connections self has
-	//ConnInfo() []Conn
+	ConnInfo() []Conn
 
 	BuildGroupNet(groupId string, members []string)
 
 	DissolveGroupNet(groupId string)
+}
+
+func GetNetInstance() Network {
+	return nil
 }
