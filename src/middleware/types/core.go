@@ -6,7 +6,7 @@ import (
 	"math/big"
 	"bytes"
 
-	"common"
+	"x/src/common"
 )
 
 type AddBlockOnChainSituation string

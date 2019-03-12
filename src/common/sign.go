@@ -4,7 +4,7 @@ import (
 	"encoding/hex"
 	"math/big"
 
-	"common/secp256k1"
+	"x/src/common/secp256k1"
 )
 
 type Sign struct {

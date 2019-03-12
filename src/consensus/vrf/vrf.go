@@ -2,7 +2,9 @@ package vrf
 
 import (
 	"math/big"
+
 	"x/src/common/ed25519"
+	"x/src/common"
 )
 
 const (

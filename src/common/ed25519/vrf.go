@@ -7,7 +7,7 @@ import (
 	"errors"
 	"math/big"
 
-	"common/ed25519/edwards25519"
+	"x/src/common/ed25519/edwards25519"
 )
 
 const (

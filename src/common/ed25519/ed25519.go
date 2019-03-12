@@ -17,7 +17,7 @@ import (
 	"crypto/sha512"
 	cryptorand "crypto/rand"
 
-	"common/ed25519/edwards25519"
+	"x/src/common/ed25519/edwards25519"
 )
 
 const (
