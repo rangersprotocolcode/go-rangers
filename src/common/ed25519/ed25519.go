@@ -15,7 +15,7 @@ import (
 	"io"
 	"strconv"
 
-	"common/ed25519/edwards25519"
+	"x/src/common/ed25519/edwards25519"
 
 	cryptorand "crypto/rand"
 	"crypto/sha512"

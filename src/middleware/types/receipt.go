@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"unsafe"
 
-	"common"
+	"x/src/common"
 )
 
 //go:generate gencodec -type Receipt -field-override receiptMarshaling -out gen_receipt_json.go

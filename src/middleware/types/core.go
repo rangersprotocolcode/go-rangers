@@ -1,7 +1,7 @@
 package types
 
 import (
-	"common"
+	"x/src/common"
 	"encoding/json"
 	"time"
 	"math/big"
