@@ -3,7 +3,7 @@ package types
 import (
 	"math/big"
 	
-	"common"
+	"x/src/common"
 )
 
 type GenesisInfo struct {

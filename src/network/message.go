@@ -1,7 +1,7 @@
 package network
 
 import (
-	"middleware/pb"
+	"x/src/middleware/pb"
 
 	"github.com/golang/protobuf/proto"
 )

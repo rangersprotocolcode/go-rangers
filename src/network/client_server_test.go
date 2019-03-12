@@ -6,8 +6,8 @@ import (
 	"context"
 	"sync"
 
-	"common"
-	"middleware/log"
+	"x/src/common"
+	"x/src/middleware/log"
 
 	inet "github.com/libp2p/go-libp2p-net"
 )
