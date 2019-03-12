@@ -9,9 +9,9 @@ import (
 	"math/rand"
 	"reflect"
 
-	"x/src/common/secp256k1"
-	"x/src/log"
-	"x/src/utility"
+	"common/secp256k1"
+	"middleware/log"
+	"utility"
 )
 
 const PREFIX = "0x"

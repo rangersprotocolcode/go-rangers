@@ -3,7 +3,7 @@ package network
 import (
 	"log"
 
-	"x/src/middleware/pb"
+	"middleware/pb"
 
 	"github.com/gogo/protobuf/proto"
 )

@@ -6,8 +6,8 @@ import (
 	"sync"
 	"bufio"
 
-	"x/src/utility"
-	"x/src/middleware/pb"
+	"utility"
+	"middleware/pb"
 
 	"github.com/libp2p/go-libp2p-host"
 	"github.com/libp2p/go-libp2p-kad-dht"

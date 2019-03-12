@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"hash"
 
-	"x/src/common/secp256k1"
+	"common/secp256k1"
 
 	"crypto"
 	"crypto/aes"

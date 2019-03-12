@@ -27,7 +27,7 @@ type Receipt struct {
 	Status            uint   `json:"status"`
 	CumulativeGasUsed uint64 `json:"cumulativeGasUsed"`
 	Bloom             Bloom  `json:"-"`
-	Logs              []*Log `json:"logs"`
+	//Logs              []*Log `json:"logs"`
 
 	TxHash          common.Hash    `json:"transactionHash" gencodec:"required"`
 	ContractAddress common.Address `json:"contractAddress"`
@@ -60,18 +60,18 @@ func (r *Receipt) setStatus(postStateOrStatus []byte) error {
 func (r *Receipt) Size() common.StorageSize {
 	size := common.StorageSize(unsafe.Sizeof(*r)) + common.StorageSize(len(r.PostState))
 
-	size += common.StorageSize(len(r.Logs)) * common.StorageSize(unsafe.Sizeof(Log{}))
-	for _, log := range r.Logs {
-		size += common.StorageSize(len(log.Topics)*common.HashLength + len(log.Data))
-	}
+	//size += common.StorageSize(len(r.Logs)) * common.StorageSize(unsafe.Sizeof(Log{}))
+	//for _, log := range r.Logs {
+	//	size += common.StorageSize(len(log.Topics)*common.HashLength + len(log.Data))
+	//}
 	return size
 }
 
 func (r *Receipt) String() string {
 	if len(r.PostState) == 0 {
-		return fmt.Sprintf("receipt{status=%d cgas=%v bloom=%x logs=%v}", r.Status, r.CumulativeGasUsed, r.Bloom, r.Logs)
+		return fmt.Sprintf("receipt{status=%d cgas=%v bloom=%x}", r.Status, r.CumulativeGasUsed, r.Bloom)
 	}
-	return fmt.Sprintf("receipt{med=%x cgas=%v bloom=%x logs=%v}", r.PostState, r.CumulativeGasUsed, r.Bloom, r.Logs)
+	return fmt.Sprintf("receipt{med=%x cgas=%v bloom=%x}", r.PostState, r.CumulativeGasUsed, r.Bloom)
 }
 
 type Receipts []*Receipt
