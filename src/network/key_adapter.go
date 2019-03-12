@@ -7,7 +7,7 @@ import (
 	"x/src/common"
 
 	"github.com/libp2p/go-libp2p-crypto"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"github.com/libp2p/go-libp2p-peer"
 	pb "github.com/libp2p/go-libp2p-crypto/pb"
 )
