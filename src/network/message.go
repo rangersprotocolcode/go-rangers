@@ -1,9 +1,10 @@
 package network
 
 import (
-	"middleware/pb"
-	
-	"github.com/gogo/protobuf/proto"
+	"log"
+
+	"github.com/golang/protobuf/proto"
+	"x/src/middleware/pb"
 )
 
 type Message struct {
@@ -21,7 +22,7 @@ func UnMarshalMessage(b []byte) (*Message, error) {
 	message := new(middleware_pb.Message)
 	e := proto.Unmarshal(b, message)
 	if e != nil {
-		logger.Errorf("Unmarshal message error:%s", e.Error())
+		log.Printf("Unmarshal message error:%s", e.Error())
 		return nil, e
 	}
 	m := Message{Code: *message.Code, Body: message.Body}
