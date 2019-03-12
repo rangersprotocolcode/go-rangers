@@ -10,7 +10,7 @@ import (
 	"bufio"
 
 	"x/src/common"
-	"x/src/log"
+	"x/src/middleware/log"
 	"x/src/utility"
 
 	"github.com/libp2p/go-libp2p-crypto"

@@ -3,9 +3,8 @@ package network
 import (
 	"log"
 
-	"x/src/middleware/pb"
-
 	"github.com/gogo/protobuf/proto"
+	"x/src/middleware/pb"
 )
 
 type Message struct {

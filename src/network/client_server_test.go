@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"x/src/common"
-	"x/src/log"
+	"x/src/middleware/log"
 
 	inet "github.com/libp2p/go-libp2p-net"
 )

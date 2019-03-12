@@ -7,8 +7,8 @@ import (
 	"context"
 	"time"
 
-	"x/src/log"
 	"x/src/common"
+	"x/src/middleware/log"
 
 	"github.com/libp2p/go-libp2p-swarm"
 	"github.com/libp2p/go-libp2p-kad-dht"

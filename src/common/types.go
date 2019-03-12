@@ -10,7 +10,7 @@ import (
 	"reflect"
 
 	"x/src/common/secp256k1"
-	"x/src/log"
+	"x/src/middleware/log"
 	"x/src/utility"
 )
 
