@@ -1,8 +1,9 @@
 package types
 
 import (
-	"x/src/common"
 	"math/big"
+	
+	"common"
 )
 
 type GenesisInfo struct {

@@ -7,7 +7,7 @@ import (
 	"io"
 	"fmt"
 
-	"x/src/common/ed25519/edwards25519"
+	"common/ed25519/edwards25519"
 )
 
 const message = "This is a' testing message"

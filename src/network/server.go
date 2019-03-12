@@ -1,13 +1,14 @@
 package network
 
 import (
+	"fmt"
 	"context"
 	"strings"
 	"sync"
 	"bufio"
 
-	"x/src/utility"
-	"x/src/middleware/pb"
+	"utility"
+	"middleware/pb"
 
 	"github.com/libp2p/go-libp2p-host"
 	"github.com/libp2p/go-libp2p-kad-dht"
@@ -15,7 +16,6 @@ import (
 	"github.com/libp2p/go-libp2p-protocol"
 	"github.com/libp2p/go-libp2p-peer"
 	inet "github.com/libp2p/go-libp2p-net"
-	"fmt"
 )
 
 const (

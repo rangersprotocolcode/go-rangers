@@ -1,12 +1,12 @@
 package log
 
 import (
-	"github.com/cihub/seelog"
 	"fmt"
 	"strings"
 	"sync"
-
 	"crypto/sha256"
+
+	"github.com/cihub/seelog"
 )
 
 var logManager = map[string]Logger{}
@@ -31,7 +31,7 @@ func GetLogger(config string) Logger {
 }
 
 func GetLoggerByIndex(config string, index string) Logger {
-	if index == "0"{
+	if index == "0" {
 		index = ""
 	}
 	key := getKey(config)

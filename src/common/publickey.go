@@ -7,8 +7,8 @@ import (
 	"io"
 	"crypto/sha256"
 
-	"x/src/common/secp256k1"
-	"x/src/common/ecies"
+	"common/secp256k1"
+	"common/ecies"
 )
 
 //用户公钥

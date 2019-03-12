@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"x/src/common/ed25519/edwards25519"
+	"common/ed25519/edwards25519"
 )
 
 type zeroReader struct{}

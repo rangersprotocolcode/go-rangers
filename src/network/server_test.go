@@ -9,9 +9,9 @@ import (
 	"sync"
 	"bufio"
 
-	"x/src/common"
-	"x/src/middleware/log"
-	"x/src/utility"
+	"common"
+	"middleware/log"
+	"utility"
 
 	"github.com/libp2p/go-libp2p-crypto"
 	inet "github.com/libp2p/go-libp2p-net"

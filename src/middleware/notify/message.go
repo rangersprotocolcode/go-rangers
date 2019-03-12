@@ -1,7 +1,7 @@
 package notify
 
 import (
-	"x/src/middleware/types"
+	"middleware/types"
 )
 
 type NewBlockMessage struct {

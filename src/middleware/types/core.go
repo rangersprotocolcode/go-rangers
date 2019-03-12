@@ -1,11 +1,12 @@
 package types
 
 import (
-	"x/src/common"
 	"encoding/json"
 	"time"
 	"math/big"
 	"bytes"
+
+	"common"
 )
 
 type AddBlockOnChainSituation string

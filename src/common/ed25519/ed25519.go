@@ -14,11 +14,10 @@ import (
 	"errors"
 	"io"
 	"strconv"
-
-	"x/src/common/ed25519/edwards25519"
-
-	cryptorand "crypto/rand"
 	"crypto/sha512"
+	cryptorand "crypto/rand"
+
+	"common/ed25519/edwards25519"
 )
 
 const (
