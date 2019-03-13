@@ -2,7 +2,7 @@ package types
 
 import (
 	"math/big"
-	
+
 	"x/src/common"
 )
 
@@ -16,7 +16,6 @@ type GenesisInfo struct {
 	共识接口合集
 */
 type ConsensusHelper interface {
-
 	//generate genesis group and member pk info
 	GenerateGenesisInfo() *GenesisInfo
 
