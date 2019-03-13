@@ -70,7 +70,7 @@ const (
 	//BlockBodyReqMsg uint32 = 32
 	//
 	//BlockBodyMsg               uint32 = 33
-	fullNodeVirtualGroupId = "full_node_virtual_group_id"
+	FullNodeVirtualGroupId = "full_node_virtual_group_id"
 
 	//===================请求组内成员签名公钥======
 	AskSignPkMsg    uint32 = 34

@@ -143,7 +143,7 @@ func (s *server) ConnInfo() []Conn {
 }
 
 func (s *server) getMembers(groupId string) []string {
-	if groupId == fullNodeVirtualGroupId {
+	if groupId == FullNodeVirtualGroupId {
 		return proposerList
 	}
 	for _, g := range verifyGroupList {
