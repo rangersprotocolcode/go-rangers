@@ -33,7 +33,7 @@ const (
 
 	defaultSeedId = "QmU51xws4zKRHdirwkLCeQPviVv3m74TQ9o76bcyzDGo23"
 
-	defaultSeedAddr = "/ip4/10.0.0.66/tcp/1122"
+	defaultSeedAddr = "/ip4/192.168.3.115/tcp/1122"
 )
 
 var logger log.Logger
