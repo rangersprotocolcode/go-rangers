@@ -735,6 +735,18 @@
 			"revisionTime": "2018-03-31T01:49:30Z"
 		},
 		{
+			"checksumSHA1": "IstGv71tWE/MBCMtzMqCPIxb0mA=",
+			"path": "github.com/vmihailenco/msgpack",
+			"revision": "b962d79429a3c5135cca9ed528943f1551ec04df",
+			"revisionTime": "2019-01-23T11:22:06Z"
+		},
+		{
+			"checksumSHA1": "MVWKvLSnWudQLxdP/bPhgjRL2yE=",
+			"path": "github.com/vmihailenco/msgpack/codes",
+			"revision": "b962d79429a3c5135cca9ed528943f1551ec04df",
+			"revisionTime": "2019-01-23T11:22:06Z"
+		},
+		{
 			"checksumSHA1": "nZX82PBDyewMYUOQYI+b/ywdKJk=",
 			"path": "github.com/whyrusleeping/base32",
 			"revision": "c30ac30633ccdabefe87eb12465113f06f1bab75",
