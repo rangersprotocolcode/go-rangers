@@ -1,6 +1,7 @@
 package common
 
 import (
+	"x/src/common/secp256k1"
 	"crypto/elliptic"
 	"encoding/hex"
 	"errors"
@@ -8,10 +9,8 @@ import (
 	"math/big"
 	"math/rand"
 	"reflect"
-
-	"x/src/utility"
-	"x/src/common/secp256k1"
 	"x/src/middleware/log"
+	"x/src/utility"
 )
 
 const PREFIX = "0x"
@@ -137,6 +136,29 @@ func HexStringToAddress(s string) (a Address) {
 	return
 }
 
+/*
+// Format implements fmt.Formatter, forcing the byte slice to be formatted as is,
+// without going through the stringer interface used for logging.
+func (a Address) Format(s fmt.State, c rune) {
+	fmt.Fprintf(s, "%"+string(c), a[:])
+}
+
+// UnprefixedHash allows marshaling an Address without 0x prefix.
+type UnprefixedAddress Address //无前缀地址
+
+// UnmarshalText decodes the address from hex. The 0x prefix is optional.
+//把十六进制字节数组解码成无前缀地址
+func (a *UnprefixedAddress) UnmarshalText(input []byte) error {
+	return utility.UnmarshalFixedUnprefixedText("UnprefixedAddress", input, a[:])
+}
+
+// MarshalText encodes the address as hex.
+//把无前缀地址编码成十六进制字节数组
+func (a UnprefixedAddress) MarshalText() ([]byte, error) {
+	return []byte(hex.EncodeToString(a[:])), nil
+}
+*/
+///////////////////////////////////////////////////////////////////////////////
 //256位哈希
 type Hash [HashLength]byte
 
@@ -171,10 +193,10 @@ func (h Hash) String() string {
 	return h.Hex()
 }
 
-//func (h Hash) ShortS() string {
-//	str := h.Hex()
-//	return ShortHex12(str)
-//}
+func (h Hash) ShortS() string {
+	str := h.Hex()
+	return ShortHex12(str)
+}
 
 // Format implements fmt.Formatter, forcing the byte slice to be formatted as is,
 // without going through the stringer interface used for logging.
