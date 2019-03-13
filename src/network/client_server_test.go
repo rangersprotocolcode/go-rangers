@@ -21,7 +21,7 @@ func TestServerNet(t *testing.T) {
 		clientServer := mockClientServer()
 		for i := 0; i < 100; i++ {
 			m := mockMessage()
-			clientServer.SendMessage(m, seedId)
+			clientServer.Send(seedId, m)
 			time.Sleep(100 * time.Millisecond)
 		}
 	}()
@@ -29,7 +29,7 @@ func TestServerNet(t *testing.T) {
 	time.Sleep(time.Second * 1)
 	for i := 0; i < 100; i++ {
 		m := mockMessage()
-		Server.SendMessage(m, clientId)
+		Server.Send(clientId, m)
 		time.Sleep(100 * time.Millisecond)
 	}
 	log.Close()
