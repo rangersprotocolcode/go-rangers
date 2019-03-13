@@ -5,9 +5,10 @@ package middleware
 import (
 	"sync"
 	"fmt"
-	"x/src/middleware/log"
 	"time"
+
 	"x/src/common"
+	"x/src/middleware/log"
 )
 
 type Loglock struct {
@@ -26,7 +27,7 @@ func NewLoglock(title string) Loglock {
 		lock: sync.RWMutex{},
 	}
 	loglock.addr = fmt.Sprintf("%p", &loglock)
-	if lockLogger ==nil{
+	if lockLogger == nil {
 		lockLogger = log.GetLoggerByIndex(log.LockLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	}
 	return loglock

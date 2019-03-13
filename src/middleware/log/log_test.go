@@ -15,7 +15,6 @@ var config = `<seelog minlevel="debug">
 		</formats>
 	</seelog>`
 
-
 var testConfig = `<seelog minlevel="debug">
 		<outputs formatid="testConfig">
 			<rollingfile type="size" filename="./logs/test.log" maxsize="100000" maxrolls="3"/>
@@ -39,8 +38,6 @@ func TestGetLogger(t *testing.T) {
 	Close()
 }
 
-
-
 func TestMultiLogger(t *testing.T) {
 	logger1 := GetLogger(config)
 	logger2 := GetLogger(testConfig)
@@ -63,7 +60,7 @@ func TestMultiLogger(t *testing.T) {
 		logger1.Warn("TestMultiLogger test main warn output")
 		logger1.Error("TestMultiLogger test main error output")
 	}
-	time.Sleep(1*time.Second)
+	time.Sleep(1 * time.Second)
 	Close()
 }
 
@@ -87,7 +84,6 @@ func TestGetLoggerDefault(t *testing.T) {
 	Close()
 }
 
-
 func TestGetLoggerByName(t *testing.T) {
 	name := "littleBear"
 	logger := GetLoggerByName(name)
@@ -100,6 +96,3 @@ func TestGetLoggerByName(t *testing.T) {
 	//l.Debug("TestGetLoggerByName logFunc debug output")
 	Close()
 }
-
-
-

@@ -39,7 +39,7 @@ const (
 var logger log.Logger
 
 func InitNetwork(privateKey common.PrivateKey, isSuper bool) {
-	logger = log.GetLoggerByName("p2p" + common.GlobalConf.GetString("client", "index", ""))
+	logger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("client", "index", ""))
 
 	publicKey := privateKey.GetPubKey()
 	id := getId(publicKey)

@@ -16,7 +16,6 @@ type Batch interface {
 	Reset()
 }
 
-
 type Database interface {
 	Putter
 	Get(key []byte) ([]byte, error)

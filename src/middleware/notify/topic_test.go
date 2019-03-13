@@ -60,11 +60,9 @@ func TestTopic_UnSubscribe2(t *testing.T) {
 	topic.Handle(&DummyMessage{})
 }
 
-
 func handler1(message Message) {
 	fmt.Println("hello world")
 }
-
 
 func handler2(message Message) {
 	fmt.Println("hello world2")
