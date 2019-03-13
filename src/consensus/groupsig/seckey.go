@@ -1,10 +1,11 @@
 package groupsig
 
 import (
-	"x/src/common"
 	"fmt"
 	"log"
 	"math/big"
+
+	"x/src/common"
 	"x/src/consensus/groupsig/bn_curve"
 	"x/src/consensus/base"
 )
@@ -83,7 +84,7 @@ func (sec *Seckey) UnmarshalJSON(data []byte) error {
 	if len(str) < 2 {
 		return fmt.Errorf("data size less than min.")
 	}
-	str = str[1:len(str)-1]
+	str = str[1 : len(str)-1]
 	return sec.SetHexString(str)
 }
 
@@ -159,7 +160,7 @@ func AggregateSeckeys(secs []Seckey) *Seckey {
 		log.Printf("AggregateSeckeys no secs")
 		return nil
 	}
-	sec := new(Seckey)               //创建一个新的私钥
+	sec := new(Seckey) //创建一个新的私钥
 	sec.value.SetBigInt(secs[0].value.GetBigInt())
 	//sec.value = secs[0].value        //以第一个私钥作为基
 	for i := 1; i < len(secs); i++ {
@@ -184,7 +185,7 @@ func ShareSeckey(msec []Seckey, id ID) *Seckey {
 	x := id.GetBigInt()             //取得id的big.Int值
 	new_b := &big.Int{}
 
-	for j := k - 1; j >= 0; j-- {   //从master key切片的尾部-1往前遍历
+	for j := k - 1; j >= 0; j-- { //从master key切片的尾部-1往前遍历
 		new_b.Set(secret)
 		secret.Mul(new_b, x) //乘上id的big.Int值，每一遍都需要乘，所以是指数？
 
@@ -192,7 +193,7 @@ func ShareSeckey(msec []Seckey, id ID) *Seckey {
 		secret.Add(new_b, msec[j].GetBigInt()) //加法
 
 		new_b.Set(secret)
-		secret.Mod(new_b, curveOrder)          //曲线域求模
+		secret.Mod(new_b, curveOrder) //曲线域求模
 	}
 
 	return NewSeckeyFromBigInt(secret) //生成签名私钥
@@ -313,4 +314,3 @@ func (sec *Seckey) Recover(secVec []Seckey, idVec []ID) error {
 
 	return nil
 }
-

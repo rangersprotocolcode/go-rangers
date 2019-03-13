@@ -10,7 +10,6 @@ import (
 	"math"
 )
 
-
 func TestRandSeed(t *testing.T) {
 	b := big.NewInt(100000)
 
@@ -27,7 +26,6 @@ func TestRandSeed(t *testing.T) {
 func TestMathRand(t *testing.T) {
 	s := rand.NewSource(1000000)
 	r := rand.New(s)
-
 
 	t.Log(r.Uint64())
 	t.Log(r.Uint64())
@@ -53,7 +51,7 @@ func TestRandSeq(t *testing.T) {
 }
 
 func TestAtomic(t *testing.T) {
-	var b  = false
+	var b = false
 	pointer := unsafe.Pointer(&b)
 	v := atomic.LoadPointer(&pointer)
 	v1 := (*bool)(v)
@@ -77,17 +75,16 @@ type aa interface {
 	Func()
 }
 type parent struct {
-
 }
 
 func (p parent) Func() {
 	log.Println("parent")
 }
 
-func (p parent) Test()  {
-    var a aa
-    a = &p
-    a.Func()
+func (p parent) Test() {
+	var a aa
+	a = &p
+	a.Func()
 }
 
 type son1 struct {

@@ -6,12 +6,12 @@ const (
 	Curve382_2   = 2 //384位曲线2
 	DefaultCurve = 1 //默认使用的曲线
 	//默认曲线相关参数开始：如默认曲线的位数调整，则这些参数也需要修改
-	IDLENGTH     = 32 //ID字节长度(256位，同私钥长度)
+	IDLENGTH     = 32  //ID字节长度(256位，同私钥长度)
 	PUBKEYLENGTH = 128 //公钥字节长度（1024位）
-	SECKEYLENGTH = 32 //私钥字节长度（256位）
-	SIGNLENGTH   = 33 //签名字节长度（256位+1字节奇偶位）
+	SECKEYLENGTH = 32  //私钥字节长度（256位）
+	SIGNLENGTH   = 33  //签名字节长度（256位+1字节奇偶位）
 	//默认曲线相关参数结束。
-	HASHLENGTH   = 32 //哈希字节长度(golang.SHA3, 256位。和common包相同)
+	HASHLENGTH = 32 //哈希字节长度(golang.SHA3, 256位。和common包相同)
 )
 
 //// Init --

@@ -3,7 +3,6 @@ package groupsig
 import (
 	"fmt"
 	"math/big"
-	//"math/rand"
 	"testing"
 	"time"
 	"unsafe"
@@ -21,7 +20,7 @@ type Expect struct {
 func testIDconvert(t *testing.T) {
 	id := ID{}
 	id.SetHexString("0x0000123abcdef")
-	fmt.Printf("id result =%v",id.GetHexString())
+	fmt.Printf("id result =%v", id.GetHexString())
 }
 
 //测试用衍生随机数生成私钥，从私钥萃取公钥，以及公钥的序列化
@@ -42,14 +41,14 @@ func testPubkey(t *testing.T) {
 	{
 		var pub2 Pubkey
 		err := pub2.SetHexString(pub.GetHexString()) //测试公钥的字符串导出
-		if err != nil || !pub.IsEqual(pub2) {        //检查字符串导入生成的公钥是否跟之前的公钥相同
+		if err != nil || !pub.IsEqual(pub2) { //检查字符串导入生成的公钥是否跟之前的公钥相同
 			t.Log("pub != pub2")
 		}
 	}
 	{
 		var pub2 Pubkey
 		err := pub2.Deserialize(pub.Serialize()) //测试公钥的序列化
-		if err != nil || !pub.IsEqual(pub2) {    //检查反序列化生成的公钥是否跟之前的公钥相同
+		if err != nil || !pub.IsEqual(pub2) { //检查反序列化生成的公钥是否跟之前的公钥相同
 			t.Log("pub != pub2")
 		}
 	}
@@ -83,21 +82,21 @@ func testComparison(t *testing.T) {
 	// Sig
 	sig := Sign(*sec, []byte("hi")) //以原始私钥对明文签名，生成原始签名
 	fmt.Printf("size of sign = %v\n.", len(sig.Serialize()))
-	asig := AggregateSigs([]Signature{sig, sig})                       //同一个原始签名相加，生成聚合签名
+	asig := AggregateSigs([]Signature{sig, sig}) //同一个原始签名相加，生成聚合签名
 	if !VerifyAggregateSig([]Pubkey{*pub, *pub}, []byte("hi"), asig) { //对同一个原始公钥进行聚合后（生成聚合公钥），去验证聚合签名
 		t.Error("Aggregated signature does not verify")
 	}
 	{
 		var sig2 Signature
 		err := sig2.SetHexString(sig.GetHexString()) //测试原始签名的字符串导出
-		if err != nil || !sig.IsEqual(sig2) {        //检查字符串导入生成的签名是否和之前的签名相同
+		if err != nil || !sig.IsEqual(sig2) { //检查字符串导入生成的签名是否和之前的签名相同
 			t.Error("sig2.SetHexString")
 		}
 	}
 	{
 		var sig2 Signature
 		err := sig2.Deserialize(sig.Serialize()) //测试原始签名的序列化
-		if err != nil || !sig.IsEqual(sig2) {    //检查反序列化生成的签名是否跟之前的签名相同
+		if err != nil || !sig.IsEqual(sig2) { //检查反序列化生成的签名是否跟之前的签名相同
 			t.Error("sig2.Deserialize")
 		}
 	}
@@ -117,7 +116,7 @@ func testSeckey(t *testing.T) {
 	fmt.Printf("sec key export, len=%v, data=%v.\n", len(str), str)
 	{
 		var sec2 Seckey
-		err := sec2.SetHexString(str)         //测试私钥的十六进制字符串导出
+		err := sec2.SetHexString(str) //测试私钥的十六进制字符串导出
 		if err != nil || !sec.IsEqual(sec2) { //检查字符串导入生成的私钥是否和之前的私钥相同
 			t.Error("bad SetHexString")
 		}
@@ -127,7 +126,7 @@ func testSeckey(t *testing.T) {
 	{
 		var sec2 Seckey
 		err := sec2.Deserialize(sec.Serialize()) //测试私钥的序列化
-		if err != nil || !sec.IsEqual(sec2) {    //检查反序列化生成的私钥是否和之前的私钥相同
+		if err != nil || !sec.IsEqual(sec2) { //检查反序列化生成的私钥是否和之前的私钥相同
 			t.Error("bad Serialize")
 		}
 	}
@@ -141,7 +140,7 @@ func testAggregation(t *testing.T) {
 	//    m := 5
 	n := 3
 	//    groupPubkeys := make([]Pubkey, m)
-	r := base.NewRand()                    //生成随机数基
+	r := base.NewRand()                      //生成随机数基
 	seckeyContributions := make([]Seckey, n) //私钥切片
 	for i := 0; i < n; i++ {
 		seckeyContributions[i] = *NewSeckeyFromRand(r.Deri(i)) //以r为基，i为递增量生成n个相关性私钥
@@ -237,7 +236,7 @@ func testRecoverSeckey(t *testing.T) {
 	}
 	s1 := RecoverSeckey(secs, ids)         //调用私钥恢复函数（门限值取100%）
 	s2 := RecoverSeckeyByBigInt(secs, ids) //调用big.Int加法求模的私钥恢复函数
-	if !s1.value.IsEqual(&s2.value) {      //检查两种方法恢复的私钥是否相同
+	if !s1.value.IsEqual(&s2.value) { //检查两种方法恢复的私钥是否相同
 		t.Errorf("Mismatch in recovered secret key:\n  %s\n  %s.", s1.GetHexString(), s2.GetHexString())
 	}
 	fmt.Printf("end testRecoverSeckey.\n")
@@ -252,7 +251,7 @@ func ShareSeckeyByBigInt(msec []Seckey, id ID) *Seckey {
 	// evaluate polynomial f(x) with coefficients c0, ..., ck
 	secret.Set(msec[k].GetBigInt()) //最后一个master key的big.Int值放到secret
 	x := id.GetBigInt()             //取得id的big.Int值
-	for j := k - 1; j >= 0; j-- {   //从master key切片的尾部-1往前遍历
+	for j := k - 1; j >= 0; j-- { //从master key切片的尾部-1往前遍历
 		secret.Mul(secret, x) //乘上id的big.Int值，每一遍都需要乘，所以是指数？
 		//sec.secret.Mod(&sec.secret, curveOrder)
 		secret.Add(secret, msec[j].GetBigInt()) //加法
@@ -274,7 +273,7 @@ func testShareSeckey(t *testing.T) {
 	id := *NewIDFromInt64(123)          //随机生成一个ID
 	s1 := ShareSeckeyByBigInt(msec, id) //简单加法分享函数
 	s2 := ShareSeckey(msec, id)         //分享函数
-	if !s1.value.IsEqual(&s2.value) {   //比较2者是否相同
+	if !s1.value.IsEqual(&s2.value) { //比较2者是否相同
 		t.Errorf("bad sec\n%s\n%s", s1.GetHexString(), s2.GetHexString())
 	} else {
 		buf := s2.Serialize()
@@ -291,7 +290,7 @@ func testID(t *testing.T) {
 	b.SetString("001234567890abcdef", 16)
 	c := new(big.Int)
 	c.SetString("1234567890abcdef", 16)
-	idc:= NewIDFromBigInt(c)
+	idc := NewIDFromBigInt(c)
 	id1 := NewIDFromBigInt(b) //从big.Int生成ID
 	if id1.IsEqual(*idc) {
 		fmt.Println("id1 is equal to idc")
@@ -314,7 +313,7 @@ func testID(t *testing.T) {
 	{
 		var id2 ID
 		err := id2.Deserialize(id1.Serialize()) //测试ID的序列化和反序列化
-		fmt.Printf("id2:%v",id2.GetHexString())
+		fmt.Printf("id2:%v", id2.GetHexString())
 		if err != nil || !id1.IsEqual(id2) {
 			t.Errorf("not same\n%s\n%s", id1.GetHexString(), id2.GetHexString())
 		}
@@ -347,13 +346,12 @@ func test(t *testing.T) {
 	testShareSeckey(t)
 }
 
-
-func Test_GroupsigIDStringConvert(t *testing.T){
+func Test_GroupsigIDStringConvert(t *testing.T) {
 	str := "QmWJZdSV23by4xzYSz8SEmcfdo38N27WgxSefoy179pnoK"
 	id := NewIDFromString(str)
-	s:= id.String()
-	fmt.Printf("id str:%s\n",s)
-	fmt.Printf("id str compare result:%t\n",str==s)
+	s := id.String()
+	fmt.Printf("id str:%s\n", s)
+	fmt.Printf("id str compare result:%t\n", str == s)
 }
 
 func Test_Groupsig_Main1(t *testing.T) {
@@ -429,7 +427,7 @@ func testRecover(n int, k int, b *testing.B) {
 
 	//成员签名: H[i] = si·H(m)
 	sig := make([]Signature, n)
-	for i:=0; i<n; i++ {
+	for i := 0; i < n; i++ {
 		sig[i] = Sign(secs[i], []byte("hi")) //以原始私钥对明文签名，生成原始签名
 	}
 
@@ -446,17 +444,15 @@ func testRecover(n int, k int, b *testing.B) {
 
 func benchmark_GroupsigRecover(n int, k int, b *testing.B) {
 	b.ResetTimer()
-	for i:=0; i<b.N; i++ {
+	for i := 0; i < b.N; i++ {
 		testRecover(n, k, b)
 	}
 }
 
-
-
 func Benchmark_GroupsigRecover100(b *testing.B)  { benchmark_GroupsigRecover(100, 100, b) }
 func Benchmark_GroupsigRecover200(b *testing.B)  { benchmark_GroupsigRecover(200, 200, b) }
 func Benchmark_GroupsigRecover500(b *testing.B)  { benchmark_GroupsigRecover(500, 500, b) }
-func Benchmark_GroupsigRecover1000(b *testing.B) { benchmark_GroupsigRecover(1000, 1000,  b) }
+func Benchmark_GroupsigRecover1000(b *testing.B) { benchmark_GroupsigRecover(1000, 1000, b) }
 
 func BenchmarkPubkeyFromSeckey(b *testing.B) {
 	b.StopTimer()
@@ -549,8 +545,6 @@ func benchmarkDeriveSeckeyShare(k int, b *testing.B) {
 }
 
 func BenchmarkDeriveSeckeyShare500(b *testing.B) { benchmarkDeriveSeckeyShare(500, b) }
-
-
 
 func benchmarkRecoverSeckey(k int, b *testing.B) {
 	b.StopTimer()

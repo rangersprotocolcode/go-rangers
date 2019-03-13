@@ -1,10 +1,12 @@
 package groupsig
 
 import (
-	"x/src/common"
 	"fmt"
 	"log"
 	"math/big"
+
+	"x/src/common"
+
 	"golang.org/x/crypto/sha3"
 )
 
@@ -85,7 +87,7 @@ func (id ID) Serialize() []byte {
 		panic("ID Serialize error: ID bytes is more than IDLENGTH")
 	}
 	buff := make([]byte, IDLENGTH)
-	copy(buff[IDLENGTH-len(idBytes):IDLENGTH],idBytes)
+	copy(buff[IDLENGTH-len(idBytes):IDLENGTH], idBytes)
 	return buff
 }
 
@@ -99,11 +101,11 @@ func (id *ID) UnmarshalJSON(data []byte) error {
 	if len(str) < 2 {
 		return fmt.Errorf("data size less than min.")
 	}
-	str = str[1:len(str)-1]
+	str = str[1 : len(str)-1]
 	return id.SetHexString(str)
 }
 
-func (id ID) ShortS() string  {
+func (id ID) ShortS() string {
 	str := id.GetHexString()
 	return common.ShortHex12(str)
 }
@@ -137,7 +139,7 @@ func NewIDFromAddress(addr common.Address) *ID {
 
 //由公钥构建ID，公钥->（缩小到160位）地址->（放大到256/384位）ID
 func NewIDFromPubkey(pk Pubkey) *ID {
-	h := sha3.Sum256(pk.Serialize())  //取得公钥的SHA3 256位哈希
+	h := sha3.Sum256(pk.Serialize()) //取得公钥的SHA3 256位哈希
 	bi := new(big.Int).SetBytes(h[:])
 	return NewIDFromBigInt(bi)
 }
@@ -163,5 +165,5 @@ func (id ID) String() string {
 }
 
 func (id ID) ToAddress() common.Address {
-    return common.BytesToAddress(id.Serialize())
+	return common.BytesToAddress(id.Serialize())
 }

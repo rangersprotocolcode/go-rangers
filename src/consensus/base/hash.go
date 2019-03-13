@@ -1,8 +1,9 @@
 package base
 
 import (
-	"x/src/common"
 	"hash"
+
+	"x/src/common"
 
 	"golang.org/x/crypto/sha3"
 )

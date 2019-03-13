@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
-	"x/src/common"
 
+	"x/src/common"
 )
 
 type something struct {
@@ -60,7 +60,7 @@ func TestRegex(t *testing.T) {
 
 func TestTimeAdd(t *testing.T) {
 	now := time.Now()
-	b := now.Add(-time.Second*time.Duration(10))
+	b := now.Add(-time.Second * time.Duration(10))
 	t.Log(b)
 }
 

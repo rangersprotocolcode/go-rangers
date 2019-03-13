@@ -1,19 +1,20 @@
 package groupsig
 
 import (
-	"x/src/common"
 	"fmt"
 	"log"
-	"golang.org/x/crypto/sha3"
 	"bytes"
+
+	"x/src/common"
 	"x/src/consensus/groupsig/bn_curve"
+
+	"golang.org/x/crypto/sha3"
 )
 
 //用户公钥
 type Pubkey struct {
 	value bn_curve.G2
 }
-
 
 type PubkeyMap map[string]Pubkey
 
@@ -23,7 +24,7 @@ func (pub Pubkey) IsEmpty() bool {
 
 //判断两个公钥是否相同   
 func (pub Pubkey) IsEqual(rhs Pubkey) bool {
-	return  bytes.Equal(pub.value.Marshal(), rhs.value.Marshal())
+	return bytes.Equal(pub.value.Marshal(), rhs.value.Marshal())
 }
 
 //由字节切片初始化私钥  ToDoCheck
@@ -47,7 +48,7 @@ func (pub *Pubkey) UnmarshalJSON(data []byte) error {
 	if len(str) < 2 {
 		return fmt.Errorf("data size less than min.")
 	}
-	str = str[1:len(str)-1]
+	str = str[1 : len(str)-1]
 	return pub.SetHexString(str)
 }
 
@@ -81,6 +82,7 @@ func (pub *Pubkey) ShortS() string {
 	str := pub.GetHexString()
 	return common.ShortHex12(str)
 }
+
 //由十六进制字符串初始化公钥  ToDoCheck
 func (pub *Pubkey) SetHexString(s string) error {
 	if len(s) < len(PREFIX) || s[:len(PREFIX)] != PREFIX {
@@ -128,8 +130,8 @@ func AggregatePubkeys(pubs []Pubkey) *Pubkey {
 
 	//pub.value = pubs[0].value
 	//for i := 0; i < len(pubs); i++ {
-		//log.Println("", i)
-		//log.Println("pub:", pubs[i].Serialize())
+	//log.Println("", i)
+	//log.Println("pub:", pubs[i].Serialize())
 	//}
 
 	//log.Println("len:", len(pubs))
@@ -153,8 +155,8 @@ func SharePubkey(mpub []Pubkey, id ID) *Pubkey {
 	// evaluate polynomial f(x) with coefficients c0, ..., ck
 	pub.Deserialize(mpub[k].Serialize())
 
-	x := id.GetBigInt()             //取得id的big.Int值
-	for j := k - 1; j >= 0; j-- {   //从master key切片的尾部-1往前遍历
+	x := id.GetBigInt() //取得id的big.Int值
+	for j := k - 1; j >= 0; j-- { //从master key切片的尾部-1往前遍历
 		pub.value.ScalarMult(&pub.value, x)
 		pub.value.Add(&pub.value, &mpub[j].value)
 	}
