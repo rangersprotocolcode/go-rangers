@@ -3,13 +3,13 @@ package network
 const (
 	//-----------组初始化---------------------------------
 
-	//GroupInitMsg uint32 = 1
-	//
-	//KeyPieceMsg uint32 = 2
-	//
-	//SignPubkeyMsg uint32 = 3
-	//
-	//GroupInitDoneMsg uint32 = 4
+	GroupInitMsg uint32 = 1
+
+	KeyPieceMsg uint32 = 2
+
+	SignPubkeyMsg uint32 = 3
+
+	GroupInitDoneMsg uint32 = 4
 
 	//-----------组铸币---------------------------------
 	CurrentGroupCastMsg uint32 = 5
@@ -48,17 +48,17 @@ const (
 
 	ChainPieceBlock uint32 = 22
 	//---------------------组创建确认-----------------------
-	//CreateGroupaRaw uint32 = 23
-	//
-	//CreateGroupSign uint32 = 24
+	CreateGroupaRaw uint32 = 23
+
+	CreateGroupSign uint32 = 24
 	//---------------------轻节点状态同步-----------------------
 	//ReqStateInfoMsg uint32 = 25
 	//
 	//StateInfoMsg uint32 = 26
 
 	//==================铸块分红=========
-	//CastRewardSignReq uint32 = 27
-	//CastRewardSignGot uint32 = 28
+	CastRewardSignReq uint32 = 27
+	CastRewardSignGot uint32 = 28
 
 	//==================Trace=========
 	//RequestTraceMsg  uint32 = 29
@@ -79,8 +79,9 @@ const (
 	VerifiedCastMsg2 uint32 = 77
 
 	//建组时ping pong
-	//GroupPing uint32 = 100
-	//GroupPong uint32 = 101
+	GroupPing uint32 = 100
+	GroupPong uint32 = 101
+
 	//
 	ReqSharePiece      uint32 = 102
 	ResponseSharePiece uint32 = 103

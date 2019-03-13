@@ -3,6 +3,7 @@ package logical
 import (
 	"x/src/middleware/log"
 	"x/src/common"
+	"x/src/consensus/model"
 )
 
 const NORMAL_FAILED int = -1
@@ -43,15 +44,15 @@ var groupLogger log.Logger
 var consensusConfManager common.SectionConfManager
 var slowLogger log.Logger
 
-//func InitConsensus() {
-//	cc := common.GlobalConf.GetSectionManager(ConsensusConfSection)
-//	consensusLogger = log.GetLoggerByIndex(log.ConsensusLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-//	stdLogger = log.GetLoggerByIndex(log.StdConsensusLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-//	groupLogger = log.GetLoggerByIndex(log.GroupLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-//	slowLogger = log.GetLoggerByIndex(log.SlowLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-//
-//	consensusConfManager = cc
-//	//model.SlowLog = slowLogger
-//	model.InitParam(cc)
-//	return
-//}
+func InitConsensus() {
+	cc := common.GlobalConf.GetSectionManager(ConsensusConfSection)
+	consensusLogger = log.GetLoggerByIndex(log.ConsensusLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	stdLogger = log.GetLoggerByIndex(log.StdConsensusLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	groupLogger = log.GetLoggerByIndex(log.GroupLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	slowLogger = log.GetLoggerByIndex(log.SlowLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+
+	consensusConfManager = cc
+	//model.SlowLog = slowLogger
+	model.InitParam(cc)
+	return
+}

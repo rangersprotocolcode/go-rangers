@@ -36,16 +36,16 @@ const (
 	defaultSeedAddr = "/ip4/192.168.3.115/tcp/1122"
 )
 
-var logger log.Logger
+var Logger log.Logger
 
 func InitNetwork(privateKey common.PrivateKey, isSuper bool) {
-	logger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("client", "index", ""))
+	Logger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("client", "index", ""))
 
 	publicKey := privateKey.GetPubKey()
 	id := getId(publicKey)
 	ip := getLocalIp()
 	port := getAvailablePort(isSuper, basePort)
-	logger.Debugf("Local ip:%s,listen port:%d\nID:%s", ip, port, idToString(id))
+	Logger.Debugf("Local ip:%s,listen port:%d\nID:%s", ip, port, idToString(id))
 
 	ctx := context.Background()
 	swarm := makeSwarm(ctx, id, ip, port, privateKey, publicKey)
@@ -99,10 +99,10 @@ func connectToSeed(ctx context.Context, host host.Host) {
 
 	e = host.Connect(ctx, seedPeerInfo)
 	if e != nil {
-		logger.Errorf("Connect to seed error:", e.Error())
+		Logger.Errorf("Connect to seed error:", e.Error())
 		for i := 1; i <= 3; i++ {
 			time.Sleep(time.Second * 5)
-			logger.Infof("Try to connect to seed:no %d\n", i)
+			Logger.Infof("Try to connect to seed:no %d\n", i)
 			e := host.Connect(ctx, seedPeerInfo)
 			if e == nil {
 				break
@@ -133,13 +133,13 @@ func tryFindSeed(ctx context.Context) {
 		for {
 			info, e := Server.dht.FindPeer(ctx, seedId)
 			if e != nil {
-				logger.Infof("Find seed id %s error:%s", idToString(seedId), e.Error())
+				Logger.Infof("Find seed id %s error:%s", idToString(seedId), e.Error())
 				time.Sleep(5 * time.Second)
 			} else if idToString(info.ID) == "" {
-				logger.Infof("Can not find seed node,finding....")
+				Logger.Infof("Can not find seed node,finding....")
 				time.Sleep(5 * time.Second)
 			} else {
-				logger.Infof("Welcome to join X Network!")
+				Logger.Infof("Welcome to join X Network!")
 				break
 			}
 		}

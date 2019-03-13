@@ -48,6 +48,10 @@ type ConsensusParam struct {
 	GroupWaitPongGap    uint64
 	//EffectGapAfterApply uint64	//矿工申请后，到生效的高度间隔
 	PotentialProposal int //潜在提案者
+
+	ProposalBonus 		uint64	//提案奖励
+	PackBonus 			uint64	//打包一个分红交易奖励
+
 	MaxSlotSize       int
 }
 
