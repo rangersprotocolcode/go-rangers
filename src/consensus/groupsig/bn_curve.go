@@ -2,9 +2,10 @@ package groupsig
 
 import (
 	"fmt"
-	"x/src/consensus/groupsig/bn_curve"
 	"math/big"
+
 	"x/src/consensus/base"
+	"x/src/consensus/groupsig/bn_curve"
 )
 
 const PREFIX = "0x"
@@ -168,4 +169,3 @@ func GetMasterPublicKey(msk []Seckey) (mpk []Pubkey) {
 	}
 	return mpk
 }
-

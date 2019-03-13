@@ -1,14 +1,15 @@
 package groupsig
 
 import (
-	"x/src/common"
+	"sort"
 	"log"
 	"bytes"
 	"fmt"
 	"math/big"
+
+	"x/src/common"
 	"x/src/consensus/groupsig/bn_curve"
 	"x/src/consensus/base"
-	"sort"
 )
 
 // types
@@ -26,7 +27,7 @@ type Signature struct {
 //	return []byte(sig.GetHexString()), nil
 //}
 
-func (sig *Signature) IsNil () bool {
+func (sig *Signature) IsNil() bool {
 	return sig.value.IsNil()
 }
 
@@ -71,7 +72,7 @@ func (sig Signature) GetRand() base.Rand {
 	return base.RandFromBytes(sig.Serialize())
 }
 
-func DeserializeSign(b []byte)  * Signature {
+func DeserializeSign(b []byte) *Signature {
 	sig := &Signature{}
 	sig.Deserialize(b)
 	return sig
@@ -112,6 +113,7 @@ func (sig Signature) ShortS() string {
 	str := sig.GetHexString()
 	return common.ShortHex12(str)
 }
+
 //由十六进制字符串初始化签名 ToDoCheck
 func (sig *Signature) SetHexString(s string) error {
 	if len(s) < len(PREFIX) || s[:len(PREFIX)] != PREFIX {
@@ -119,8 +121,8 @@ func (sig *Signature) SetHexString(s string) error {
 	}
 	buf := s[len(PREFIX):]
 
-        if sig.value.IsNil() {
-            sig.value = bn_curve.G1{}
+	if sig.value.IsNil() {
+		sig.value = bn_curve.G1{}
 	}
 
 	sig.value.Unmarshal(common.Hex2Bytes(buf))
@@ -191,7 +193,7 @@ func AggregateSigs(sigs []Signature) (sig Signature) {
 //RecoverXXX族函数的切片数量都固定是k（门限值）
 func RecoverSignature(sigs []Signature, ids []ID) *Signature {
 	//secret := big.NewInt(0) //组私钥
-	k := len(sigs)          //取得输出切片的大小，即门限值k
+	k := len(sigs) //取得输出切片的大小，即门限值k
 	xs := make([]*big.Int, len(ids))
 	for i := 0; i < len(xs); i++ {
 		xs[i] = ids[i].GetBigInt() //把所有的id转化为big.Int，放到xs切片
@@ -205,11 +207,11 @@ func RecoverSignature(sigs []Signature, ids []ID) *Signature {
 		var delta, num, den, diff *big.Int = big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(0)
 		for j := 0; j < k; j++ { //ID遍历
 			if j != i { //不是自己
-				num.Mul(num, xs[j])    //num值先乘上当前ID
-				num.Mod(num, curveOrder)    //然后对曲线域求模
-				diff.Sub(xs[j], xs[i]) //diff=当前节点（内循环）-基节点（外循环）
-				den.Mul(den, diff)     //den=den*diff
-				den.Mod(den, curveOrder)    //den对曲线域求模
+				num.Mul(num, xs[j])      //num值先乘上当前ID
+				num.Mod(num, curveOrder) //然后对曲线域求模
+				diff.Sub(xs[j], xs[i])   //diff=当前节点（内循环）-基节点（外循环）
+				den.Mul(den, diff)       //den=den*diff
+				den.Mod(den, curveOrder) //den对曲线域求模
 			}
 		}
 		// delta = num / den

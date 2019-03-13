@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"math/big"
+	"strconv"
 )
 
 //随机数长度=32*8=256位，跟使用的哈希函数有相关性
@@ -26,7 +27,7 @@ func NewRand() (r Rand) {
 
 //把多维字符串转换成多维字节数组后，进行SHA3哈希生成随机数
 func RandFromHex(s ...string) (r Rand) {
-	return RandFromBytes(MapHexToBytes(s)...)
+	return RandFromBytes(mapHexToBytes(s)...)
 }
 
 //对字符串进行哈希后生成伪随机数
@@ -58,12 +59,12 @@ func (r Rand) DerivedRand(x ...[]byte) Rand {
 
 //以多维字符串进行哈希叠加
 func (r Rand) Ders(s ...string) Rand {
-	return r.DerivedRand(MapStringToBytes(s)...)
+	return r.DerivedRand(mapStringToBytes(s)...)
 }
 
 //以多维整数进行哈希叠加
 func (r Rand) Deri(vi ...int) Rand {
-	return r.Ders(MapItoa(vi)...)
+	return r.Ders(mapItoa(vi)...)
 }
 
 //随机数求模操作，返回0到n-1之间的一个值
@@ -76,7 +77,7 @@ func (r Rand) Modulo(n int) int {
 
 func (r Rand) ModuloUint64(n uint64) uint64 {
 	b := big.NewInt(0)
-	b.SetBytes(r.Bytes())          //随机数转换成big.Int
+	b.SetBytes(r.Bytes())                //随机数转换成big.Int
 	b.Mod(b, big.NewInt(0).SetUint64(n)) //对n求模
 	return b.Uint64()
 }
@@ -121,4 +122,32 @@ func NewFromSeed(seed []byte) *big.Int {
 		return nil
 	}
 	return n
+}
+
+//把unicode字符集转化为字符串
+//如输入xi := `\u5bb6\u65cf`
+func mapHexToBytes(x []string) [][]byte {
+	y := make([][]byte, len(x))
+	for k, xi := range x {
+		// TODO handle errors
+		y[k], _ = hex.DecodeString(xi)
+	}
+	return y
+}
+
+func mapStringToBytes(x []string) [][]byte {
+	y := make([][]byte, len(x))
+	for k, xi := range x {
+		y[k] = []byte(xi)
+	}
+	return y
+}
+
+//整数数组转化为字符串数组
+func mapItoa(x []int) []string {
+	y := make([]string, len(x))
+	for k, xi := range x {
+		y[k] = strconv.Itoa(xi)
+	}
+	return y
 }
