@@ -21,7 +21,7 @@ const (
 )
 
 var max256 *big.Rat
-var rat1 	*big.Rat
+var rat1 *big.Rat
 
 func init() {
 	t := new(big.Int)
@@ -35,7 +35,7 @@ type vrfWorker struct {
 	baseBH     *types.BlockHeader
 	castHeight uint64
 	expire     time.Time
-	status int32
+	status     int32
 }
 
 func NewVRFWorker(miner *model.SelfMinerDO, bh *types.BlockHeader, castHeight uint64, expire time.Time) *vrfWorker {
@@ -66,12 +66,12 @@ func vrfM(random []byte, h uint64) []byte {
 	return data
 }
 
-func (vrf *vrfWorker) Prove(totalStake uint64) (vrf.VRFProve, uint64, error) {
-	pi, err := vrf.VRFGenProve(vrf.miner.VrfPK, vrf.miner.VrfSK, vrf.m())
+func (vrfWorker *vrfWorker) Prove(totalStake uint64) (vrf.VRFProve, uint64, error) {
+	pi, err := vrf.VRFGenProve(vrfWorker.miner.VrfPK, vrfWorker.miner.VrfSK, vrfWorker.m())
 	if err != nil {
 		return nil, 0, err
 	}
-	if ok, qn := vrfSatisfy(pi, vrf.miner.Stake, totalStake); ok {
+	if ok, qn := vrfSatisfy(pi, vrfWorker.miner.Stake, totalStake); ok {
 		return pi, qn, nil
 	}
 	return nil, 0, errors.New("proof fail")
@@ -125,7 +125,7 @@ func vrfVerifyBlock(bh *types.BlockHeader, preBH *types.BlockHeader, miner *mode
 		return ok, err
 	}
 	if ok, qn := vrfSatisfy(pi, miner.Stake, totalStake); ok {
-		if bh.TotalQN != qn + preBH.TotalQN {
+		if bh.TotalQN != qn+preBH.TotalQN {
 			return false, errors.New(fmt.Sprintf("qn error.bh hash=%v, height=%v, qn=%v,totalQN=%v, preBH totalQN=%v", bh.Hash.ShortStr(), bh.Height, qn, bh.TotalQN, preBH.TotalQN))
 		}
 		return true, nil
@@ -164,4 +164,3 @@ func (vrf *vrfWorker) workingOn(bh *types.BlockHeader, castHeight uint64) bool {
 func (vrf *vrfWorker) timeout() bool {
 	return time.Now().After(vrf.expire)
 }
-

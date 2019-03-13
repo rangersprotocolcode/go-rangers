@@ -20,7 +20,7 @@ func TestBigIntDiv(t *testing.T) {
 	a2 := new(big.Rat).SetInt64(30)
 	v2 := a1.Quo(a1, a2)
 	t.Log(v2.Float64())
-	t.Log( v2.FloatString(5))
+	t.Log(v2.FloatString(5))
 }
 
 func TestCMP(t *testing.T) {
