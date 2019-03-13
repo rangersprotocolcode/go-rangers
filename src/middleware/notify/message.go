@@ -1,7 +1,7 @@
 package notify
 
 import (
-	"middleware/types"
+	"x/src/middleware/types"
 )
 
 type NewBlockMessage struct {
@@ -205,7 +205,7 @@ func (m *GroupInfoMessage) GetData() interface{} {
 //---------------------------------------------------------------------------------------------------------------------
 type TransactionBroadcastMessage struct {
 	TransactionsByte []byte
-	Peer                  string
+	Peer             string
 }
 
 func (m *TransactionBroadcastMessage) GetRaw() []byte {

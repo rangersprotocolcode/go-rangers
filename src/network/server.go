@@ -8,20 +8,25 @@ import (
 	"bufio"
 
 	"x/src/utility"
-	"x/src/middleware/pb"
-
 	"github.com/libp2p/go-libp2p-host"
 	"github.com/libp2p/go-libp2p-kad-dht"
-	"github.com/golang/protobuf/proto"
 	"github.com/libp2p/go-libp2p-protocol"
 	"github.com/libp2p/go-libp2p-peer"
 	inet "github.com/libp2p/go-libp2p-net"
+	"time"
+	"math/rand"
+	"x/src/middleware/notify"
 )
 
 const (
 	packageLengthSize             = 4
 	protocolID        protocol.ID = "/x/1.0.0"
 )
+
+var proposerList = []string{"111", "2222", "333"}
+
+var verifyGroupList = []string{"group1"}
+var verifyGroupsInfo = map[string][]string{"group1": {"memberA", "memberB"}}
 
 var header = []byte{84, 85, 78}
 
@@ -42,9 +47,9 @@ func initServer(host host.Host, dht *dht.IpfsDHT) {
 	Server = server{host: host, dht: dht, streams: make(map[string]inet.Stream), streamMapLock: sync.RWMutex{}}
 }
 
-func (s *server) SendMessage(m Message, id string) {
+func (s *server) Send(id string, msg Message) {
 	go func() {
-		bytes, e := MarshalMessage(m)
+		bytes, e := marshalMessage(msg)
 		if e != nil {
 			logger.Errorf("Marshal message error:%s", e.Error())
 			return
@@ -61,6 +66,92 @@ func (s *server) SendMessage(m Message, id string) {
 		s.send(b, id)
 	}()
 
+}
+
+func (s *server) SpreadAmongGroup(groupId string, msg Message) {
+	members := s.getMembers(groupId)
+	if members == nil || len(members) == 0 {
+		logger.Errorf("Unknown group:%s,discard sending message", groupId)
+		return
+	}
+
+	for _, member := range members {
+		s.Send(member, msg)
+	}
+}
+
+func (s *server) SpreadToRandomGroupMember(groupId string, groupMembers []string, msg Message) {
+	members := s.getMembers(groupId)
+	if members == nil || len(members) == 0 {
+		logger.Errorf("Unknown group:%s,discard sending message", groupId)
+		return
+	}
+
+	rand := rand.New(rand.NewSource(time.Now().Unix()))
+	index := rand.Intn(len(members))
+	randMembers := groupMembers[index:]
+
+	for _, member := range randMembers {
+		s.Send(member, msg)
+	}
+}
+
+func (s *server) TransmitToNeighbor(msg Message) {
+	conns := s.host.Network().Conns()
+	for _, conn := range conns {
+		id := conn.RemotePeer()
+		if id == "" {
+			continue
+		}
+		logger.Debugf("transmit to neighbor:%s", idToString(id))
+		s.Send(idToString(id), msg)
+	}
+}
+
+func (s *server) Broadcast(msg Message) {
+	for _, proposer := range proposerList {
+		s.Send(proposer, msg)
+	}
+
+	for _, verifyMembers := range verifyGroupsInfo {
+		for _, verifier := range verifyMembers {
+			s.Send(verifier, msg)
+		}
+	}
+}
+
+func (s *server) ConnInfo() []Conn {
+	conns := s.host.Network().Conns()
+	result := make([]Conn, 0, 0)
+	for _, conn := range conns {
+		id := conn.RemotePeer()
+		if id == "" {
+			continue
+		}
+		addr := conn.RemoteMultiaddr().String()
+		//addr /ip4/127.0.0.1/udp/1234"
+		split := strings.Split(addr, "/")
+		if len(split) != 5 {
+			continue
+		}
+		ip := split[2]
+		port := split[4]
+		c := Conn{Id: idToString(id), Ip: ip, Port: port}
+		result = append(result, c)
+	}
+	return result
+}
+
+func (s *server) getMembers(groupId string) []string {
+	if groupId == fullNodeVirtualGroupId {
+		return proposerList
+	}
+	for _, g := range verifyGroupList {
+		if g == groupId {
+			return verifyGroupsInfo[groupId]
+		}
+	}
+	return nil
 }
 
 func (s *server) send(b []byte, id string) {
@@ -185,59 +276,63 @@ func readMessageBody(reader *bufio.Reader, body []byte, index int) error {
 
 }
 func (s *server) handleMessage(b []byte, from string, lengthByte []byte) {
-	message := new(middleware_pb.Message)
-	error := proto.Unmarshal(b, message)
+	message, error := unMarshalMessage(b)
 	if error != nil {
-		logger.Errorf("[Network]Proto unmarshal error:%s", error.Error())
+		logger.Errorf("Proto unmarshal error:%s", error.Error())
+		return
 	}
+	logger.Debugf("Receive message from %s,code:%d,msg size:%d,hash:%s", from, message.Code, len(b), message.Hash())
 
-	//code := message.Code
-	//switch *code {
-	//case GROUP_MEMBER_MSG, GROUP_INIT_MSG, KEY_PIECE_MSG, SIGN_PUBKEY_MSG, GROUP_INIT_DONE_MSG, CURRENT_GROUP_CAST_MSG, CAST_VERIFY_MSG,
-	//	VARIFIED_CAST_MSG:
-	//	consensusHandler.HandlerMessage(*code, message.Body, from)
-	//case REQ_TRANSACTION_MSG, REQ_BLOCK_CHAIN_TOTAL_QN_MSG, BLOCK_CHAIN_TOTAL_QN_MSG, REQ_BLOCK_INFO, BLOCK_INFO,
-	//	REQ_GROUP_CHAIN_HEIGHT_MSG, GROUP_CHAIN_HEIGHT_MSG, REQ_GROUP_MSG, GROUP_MSG, BLOCK_HASHES_REQ, BLOCK_HASHES:
-	//	chainHandler.HandlerMessage(*code, message.Body, from)
-	//case NEW_BLOCK_MSG:
-	//	consensusHandler.HandlerMessage(*code, message.Body, from)
-	//case TRANSACTION_MSG, TRANSACTION_GOT_MSG:
-	//	_, e := chainHandler.HandlerMessage(*code, message.Body, from)
-	//	if e != nil {
-	//		return
-	//	}
-	//	consensusHandler.HandlerMessage(*code, message.Body, from)
-	//}
-
-	fmt.Printf("Reviced message from %s,code %d,msg len:%d\n", from, message.Code, len(message.Body))
-}
-
-type ConnInfo struct {
-	Id      string `json:"id"`
-	Ip      string `json:"ip"`
-	TcpPort string `json:"tcp_port"`
-}
-
-func (s *server) GetConnInfo() []ConnInfo {
-	conns := s.host.Network().Conns()
-	result := []ConnInfo{}
-	for _, conn := range conns {
-		id := idToString(conn.RemotePeer())
-		if id == "" {
-			continue
-		}
-		addr := conn.RemoteMultiaddr().String()
-		//addr /ip4/127.0.0.1/udp/1234"
-		split := strings.Split(addr, "/")
-		if len(split) != 5 {
-			continue
-		}
-		ip := split[2]
-		port := split[4]
-		c := ConnInfo{Id: id, Ip: ip, TcpPort: port}
-		result = append(result, c)
+	code := message.Code
+	switch code {
+	case CurrentGroupCastMsg, CastVerifyMsg, VerifiedCastMsg2, AskSignPkMsg, AnswerSignPkMsg, ReqSharePiece, ResponseSharePiece:
+		//todo 这里应该用BUS重新写
+		//n.consensusHandler.Handle(from, *message)
+	case ReqTransactionMsg:
+		msg := notify.TransactionReqMessage{TransactionReqByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.TransactionReq, &msg)
+	case GroupChainCountMsg:
+		msg := notify.GroupHeightMessage{HeightByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.GroupHeight, &msg)
+	case ReqGroupMsg:
+		msg := notify.GroupReqMessage{GroupIdByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.GroupReq, &msg)
+	case GroupMsg:
+		msg := notify.GroupInfoMessage{GroupInfoByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.Group, &msg)
+	case TransactionGotMsg:
+		msg := notify.TransactionGotMessage{TransactionGotByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.TransactionGot, &msg)
+	case TransactionBroadcastMsg:
+		msg := notify.TransactionBroadcastMessage{TransactionsByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.TransactionBroadcast, &msg)
+	case BlockInfoNotifyMsg:
+		msg := notify.BlockInfoNotifyMessage{BlockInfo: message.Body, Peer: from}
+		notify.BUS.Publish(notify.BlockInfoNotify, &msg)
+	case ReqBlock:
+		msg := notify.BlockReqMessage{HeightByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.BlockReq, &msg)
+	case BlockResponseMsg:
+		msg := notify.BlockResponseMessage{BlockResponseByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.BlockResponse, &msg)
+	case NewBlockMsg:
+		msg := notify.NewBlockMessage{BlockByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.NewBlock, &msg)
+	case ChainPieceInfoReq:
+		logger.Debugf("Rcv ChainPieceInfoReq from %s", from)
+		msg := notify.ChainPieceInfoReqMessage{HeightByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.ChainPieceInfoReq, &msg)
+	case ChainPieceInfo:
+		logger.Debugf("Rcv ChainPieceInfo from %s", from)
+		msg := notify.ChainPieceInfoMessage{ChainPieceInfoByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.ChainPieceInfo, &msg)
+	case ReqChainPieceBlock:
+		msg := notify.ChainPieceBlockReqMessage{ReqHeightByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.ChainPieceBlockReq, &msg)
+	case ChainPieceBlock:
+		msg := notify.ChainPieceBlockMessage{ChainPieceBlockMsgByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.ChainPieceBlock, &msg)
 	}
-	return result
 }
 
 func idToString(p peer.ID) string {

@@ -49,7 +49,7 @@ func TestSendMessage(t *testing.T) {
 	node1Server.host.SetStreamHandler(protocolID, testSteamHandler)
 
 	message := mockMessage()
-	seedServer.SendMessage(message, idToString(node1Id))
+	seedServer.Send(idToString(node1Id), message)
 	fmt.Printf("Send message code %d,msg len:%d\n", message.Code, len(message.Body))
 
 	time.Sleep(50 * time.Millisecond)
@@ -94,7 +94,7 @@ func testSteamHandler(stream inet.Stream) {
 		fmt.Printf("Stream  readMessageBody error:%s", e.Error())
 	}
 
-	message, e := UnMarshalMessage(b)
+	message, e := unMarshalMessage(b)
 	if e != nil {
 		fmt.Printf("Unmarshal message error!" + e.Error())
 		return
@@ -115,18 +115,18 @@ func mockMessage() Message {
 }
 
 func dumpConn(seedServer server, node1Server server, node2Server server) {
-	conns := seedServer.GetConnInfo()
+	conns := seedServer.ConnInfo()
 	for _, conn := range conns {
-		fmt.Printf("seed server's conn:%s,%s,%s\n", conn.Id, conn.Ip, conn.TcpPort)
+		fmt.Printf("seed server's conn:%s,%s,%s\n", conn.Id, conn.Ip, conn.Port)
 	}
 
-	conn1 := node1Server.GetConnInfo()
+	conn1 := node1Server.ConnInfo()
 	for _, conn := range conn1 {
-		fmt.Printf("node1 server's conn:%s,%s,%s\n", conn.Id, conn.Ip, conn.TcpPort)
+		fmt.Printf("node1 server's conn:%s,%s,%s\n", conn.Id, conn.Ip, conn.Port)
 	}
 
-	conn2 := node2Server.GetConnInfo()
+	conn2 := node2Server.ConnInfo()
 	for _, conn := range conn2 {
-		fmt.Printf("node2 server's conn:%s,%s,%s\n", conn.Id, conn.Ip, conn.TcpPort)
+		fmt.Printf("node2 server's conn:%s,%s,%s\n", conn.Id, conn.Ip, conn.Port)
 	}
 }
