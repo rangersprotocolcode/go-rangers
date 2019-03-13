@@ -2,16 +2,12 @@ package middleware
 
 import (
 	"x/src/middleware/notify"
-	"x/src/middleware/log"
-	"x/src/common"
+	"x/src/middleware/types"
 )
 
-// middleware模块统一logger
-var Logger log.Logger
-
 func InitMiddleware() error {
-	Logger = log.GetLoggerByIndex(log.MiddlewareLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
+	types.InitSerialzation()
 	notify.BUS = notify.NewBus()
 
 	return nil

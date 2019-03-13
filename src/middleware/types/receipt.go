@@ -27,7 +27,7 @@ type Receipt struct {
 	Status            uint   `json:"status"`
 	CumulativeGasUsed uint64 `json:"cumulativeGasUsed"`
 	Bloom             Bloom  `json:"-"`
-	//Logs              []*Log `json:"logs"`
+	Logs              []*Log `json:"logs"`
 
 	TxHash          common.Hash    `json:"transactionHash" gencodec:"required"`
 	ContractAddress common.Address `json:"contractAddress"`

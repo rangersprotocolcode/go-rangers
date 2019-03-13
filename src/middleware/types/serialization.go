@@ -8,15 +8,21 @@ import (
 	"x/src/common"
 	"math/big"
 	"time"
-	"x/src/middleware"
+
+	"x/src/middleware/log"
 )
+
+var logger log.Logger
+func InitSerialzation() {
+	logger = log.GetLoggerByIndex(log.MiddlewareLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+}
 
 // 从[]byte反序列化为*Transaction
 func UnMarshalTransaction(b []byte) (Transaction, error) {
 	t := new(middleware_pb.Transaction)
 	error := proto.Unmarshal(b, t)
 	if error != nil {
-		middleware.Logger.Errorf("[handler]Unmarshal transaction error:%s", error.Error())
+		logger.Errorf("[handler]Unmarshal transaction error:%s", error.Error())
 		return Transaction{}, error
 	}
 	transaction := pbToTransaction(t)
@@ -28,7 +34,7 @@ func UnMarshalTransactions(b []byte) ([]*Transaction, error) {
 	ts := new(middleware_pb.TransactionSlice)
 	error := proto.Unmarshal(b, ts)
 	if error != nil {
-		middleware.Logger.Errorf("[handler]Unmarshal transactions error:%s", error.Error())
+		logger.Errorf("[handler]Unmarshal transactions error:%s", error.Error())
 		return nil, error
 	}
 
@@ -41,7 +47,7 @@ func UnMarshalBlock(bytes []byte) (*Block, error) {
 	b := new(middleware_pb.Block)
 	error := proto.Unmarshal(bytes, b)
 	if error != nil {
-		middleware.Logger.Errorf("[handler]Unmarshal Block error:%s", error.Error())
+		logger.Errorf("[handler]Unmarshal Block error:%s", error.Error())
 		return nil, error
 	}
 	block := PbToBlock(b)
@@ -53,7 +59,7 @@ func UnMarshalBlockHeader(bytes []byte) (*BlockHeader, error) {
 	b := new(middleware_pb.BlockHeader)
 	error := proto.Unmarshal(bytes, b)
 	if error != nil {
-		middleware.Logger.Errorf("[handler]Unmarshal Block error:%s", error.Error())
+		logger.Errorf("[handler]Unmarshal Block error:%s", error.Error())
 		return nil, error
 	}
 	header := PbToBlockHeader(b)
@@ -65,7 +71,7 @@ func UnMarshalMember(b []byte) (*Member, error) {
 	member := new(middleware_pb.Member)
 	e := proto.Unmarshal(b, member)
 	if e != nil {
-		middleware.Logger.Errorf("UnMarshalMember error:%s\n", e.Error())
+		logger.Errorf("UnMarshalMember error:%s\n", e.Error())
 		return nil, e
 	}
 	m := pbToMember(member)
@@ -77,7 +83,7 @@ func UnMarshalGroup(b []byte) (*Group, error) {
 	group := new(middleware_pb.Group)
 	e := proto.Unmarshal(b, group)
 	if e != nil {
-		middleware.Logger.Errorf("UnMarshalGroup error:%s\n", e.Error())
+		logger.Errorf("UnMarshalGroup error:%s\n", e.Error())
 		return nil, e
 	}
 	g := PbToGroup(group)
@@ -200,7 +206,7 @@ func PbToBlockHeader(h *middleware_pb.BlockHeader) *BlockHeader {
 	var preTime time.Time
 	e1 := preTime.UnmarshalBinary(h.PreTime)
 	if e1 != nil {
-		middleware.Logger.Errorf("[handler]pbToBlockHeader preTime UnmarshalBinary error:%s", e1.Error())
+		logger.Errorf("[handler]pbToBlockHeader preTime UnmarshalBinary error:%s", e1.Error())
 		return nil
 	}
 
@@ -208,7 +214,7 @@ func PbToBlockHeader(h *middleware_pb.BlockHeader) *BlockHeader {
 	curTime.UnmarshalBinary(h.CurTime)
 	e2 := curTime.UnmarshalBinary(h.CurTime)
 	if e2 != nil {
-		middleware.Logger.Errorf("[handler]pbToBlockHeader curTime UnmarshalBinary error:%s", e2.Error())
+		logger.Errorf("[handler]pbToBlockHeader curTime UnmarshalBinary error:%s", e2.Error())
 		return nil
 	}
 
@@ -309,7 +315,7 @@ func transactionToPb(t *Transaction) *middleware_pb.Transaction {
 	if t.Sign != nil {
 		sign = t.Sign.Bytes()
 		if len(sign) != 65 {
-			middleware.Logger.Errorf("Bad sign len:%d", len(sign))
+			logger.Errorf("Bad sign len:%d", len(sign))
 		}
 	}
 	//achates add for testing<<
@@ -356,13 +362,13 @@ func BlockHeaderToPb(h *BlockHeader) *middleware_pb.BlockHeader {
 	evictedTxs := middleware_pb.Hashes{Hashes: hashBytes2}
 	preTime, e1 := h.PreTime.MarshalBinary()
 	if e1 != nil {
-		middleware.Logger.Errorf("BlockHeaderToPb marshal pre time error:%s\n", e1.Error())
+		logger.Errorf("BlockHeaderToPb marshal pre time error:%s\n", e1.Error())
 		return nil
 	}
 
 	curTime, e2 := h.CurTime.MarshalBinary()
 	if e2 != nil {
-		middleware.Logger.Errorf("BlockHeaderToPb marshal cur time error:%s", e2.Error())
+		logger.Errorf("BlockHeaderToPb marshal cur time error:%s", e2.Error())
 		return nil
 	}
 
