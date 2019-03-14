@@ -17,6 +17,8 @@ type MinerDO struct {
 	ID    groupsig.ID
 	Stake uint64
 	NType byte
+	ApplyHeight uint64
+	AbortHeight uint64
 }
 
 //在该高度是否可以铸块

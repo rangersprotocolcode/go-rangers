@@ -1,17 +1,11 @@
 package logical
 
 import (
-	"consensus/model"
+	"x/src/consensus/model"
 	"sync"
-	"common"
+	"x/src/common"
 	"time"
 )
-
-/*
-**  Creator: pxf
-**  Date: 2019/2/1 上午10:58
-**  Description: 
-*/
 
 
 type verifyMsgCache struct {

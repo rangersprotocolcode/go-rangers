@@ -2,26 +2,20 @@ package logical
 
 import (
 	"bytes"
-	"common"
-	"consensus/base"
-	"consensus/groupsig"
-	"consensus/model"
-	"consensus/net"
-	"middleware/statistics"
-	"middleware/types"
+	"x/src/common"
+	"x/src/consensus/base"
+	"x/src/consensus/groupsig"
+	"x/src/consensus/model"
+	"x/src/consensus/net"
+
+	"x/src/middleware/types"
 	"strings"
 	"sync"
 	"time"
 	"runtime/debug"
-	"monitor"
+
 	"fmt"
 )
-
-/*
-**  Creator: pxf
-**  Date: 2018/6/27 上午10:39
-**  Description:
- */
 
 type CastBlockContexts struct {
 	blockCtxs    sync.Map //string -> *BlockContext
