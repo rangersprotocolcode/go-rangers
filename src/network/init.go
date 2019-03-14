@@ -38,7 +38,7 @@ const (
 
 var Logger log.Logger
 
-func InitNetwork(privateKey common.PrivateKey, isSuper bool) {
+func InitNetwork(privateKey common.PrivateKey, isSuper bool,consensusHandler MsgHandler) {
 	Logger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("client", "index", ""))
 
 	publicKey := privateKey.GetPubKey()
@@ -54,7 +54,7 @@ func InitNetwork(privateKey common.PrivateKey, isSuper bool) {
 	if !isSuper {
 		connectToSeed(ctx, host)
 	}
-	initServer(host, dht)
+	initServer(host, dht,consensusHandler)
 	tryFindSeed(ctx)
 }
 

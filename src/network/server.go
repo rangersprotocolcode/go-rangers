@@ -39,19 +39,21 @@ type server struct {
 
 	streams map[string]inet.Stream
 
+	consensusHandler MsgHandler
+
 	streamMapLock sync.RWMutex
 }
 
-func initServer(host host.Host, dht *dht.IpfsDHT) {
+func initServer(host host.Host, dht *dht.IpfsDHT, consensusHandler MsgHandler) {
 	host.SetStreamHandler(protocolID, swarmStreamHandler)
-	Server = server{host: host, dht: dht, streams: make(map[string]inet.Stream), streamMapLock: sync.RWMutex{}}
+	Server = server{host: host, dht: dht, streams: make(map[string]inet.Stream), streamMapLock: sync.RWMutex{}, consensusHandler: consensusHandler}
 }
 
 func (s *server) Send(id string, msg Message) {
 	go func() {
 		bytes, e := marshalMessage(msg)
 		if e != nil {
-			logger.Errorf("Marshal message error:%s", e.Error())
+			Logger.Errorf("Marshal message error:%s", e.Error())
 			return
 		}
 
@@ -71,7 +73,7 @@ func (s *server) Send(id string, msg Message) {
 func (s *server) SpreadAmongGroup(groupId string, msg Message) {
 	members := s.getMembers(groupId)
 	if members == nil || len(members) == 0 {
-		logger.Errorf("Unknown group:%s,discard sending message", groupId)
+		Logger.Errorf("Unknown group:%s,discard sending message", groupId)
 		return
 	}
 
@@ -83,7 +85,7 @@ func (s *server) SpreadAmongGroup(groupId string, msg Message) {
 func (s *server) SpreadToRandomGroupMember(groupId string, groupMembers []string, msg Message) {
 	members := s.getMembers(groupId)
 	if members == nil || len(members) == 0 {
-		logger.Errorf("Unknown group:%s,discard sending message", groupId)
+		Logger.Errorf("Unknown group:%s,discard sending message", groupId)
 		return
 	}
 
@@ -103,7 +105,7 @@ func (s *server) TransmitToNeighbor(msg Message) {
 		if id == "" {
 			continue
 		}
-		logger.Debugf("transmit to neighbor:%s", idToString(id))
+		Logger.Debugf("transmit to neighbor:%s", idToString(id))
 		s.Send(idToString(id), msg)
 	}
 }
@@ -167,7 +169,7 @@ func (s *server) send(b []byte, id string) {
 		var e error
 		stream, e = s.host.NewStream(c, strToId(id), protocolID)
 		if e != nil {
-			logger.Errorf("New stream for %s error:%s", id, e.Error())
+			Logger.Errorf("New stream for %s error:%s", id, e.Error())
 			fmt.Printf("New stream for %s error:%s", id, e.Error())
 			s.streamMapLock.Unlock()
 			s.send(b, id)
@@ -179,7 +181,7 @@ func (s *server) send(b []byte, id string) {
 	l := len(b)
 	r, err := stream.Write(b)
 	if err != nil {
-		logger.Errorf("Write stream for %s error:%s", id, err.Error())
+		Logger.Errorf("Write stream for %s error:%s", id, err.Error())
 		stream.Close()
 		s.streams[id] = nil
 		s.streamMapLock.Unlock()
@@ -188,7 +190,7 @@ func (s *server) send(b []byte, id string) {
 	}
 	s.streamMapLock.Unlock()
 	if r != l {
-		logger.Errorf("Stream  should write %d byte ,bu write %d bytes", l, r)
+		Logger.Errorf("Stream  should write %d byte ,bu write %d bytes", l, r)
 		return
 	}
 }
@@ -217,34 +219,34 @@ func handleStream(stream inet.Stream) error {
 	headerBytes := make([]byte, 3)
 	h, e1 := reader.Read(headerBytes)
 	if e1 != nil {
-		logger.Errorf("steam read 3 from %s error:%s!", id, e1.Error())
+		Logger.Errorf("steam read 3 from %s error:%s!", id, e1.Error())
 		return e1
 	}
 	if h != 3 {
-		logger.Errorf("Stream  should read %d byte, but received %d bytes", 3, h)
+		Logger.Errorf("Stream  should read %d byte, but received %d bytes", 3, h)
 		return nil
 	}
 	//校验 header
 	if !(headerBytes[0] == header[0] && headerBytes[1] == header[1] && headerBytes[2] == header[2]) {
-		logger.Errorf("validate header error from %s! ", id)
+		Logger.Errorf("validate header error from %s! ", id)
 		return nil
 	}
 
 	pkgLengthBytes := make([]byte, packageLengthSize)
 	n, err := reader.Read(pkgLengthBytes)
 	if err != nil {
-		logger.Errorf("Stream  read4 error:%s", err.Error())
+		Logger.Errorf("Stream  read4 error:%s", err.Error())
 		return nil
 	}
 	if n != 4 {
-		logger.Errorf("Stream  should read %d byte, but received %d bytes", 4, n)
+		Logger.Errorf("Stream  should read %d byte, but received %d bytes", 4, n)
 		return nil
 	}
 	pkgLength := int(utility.ByteToUInt32(pkgLengthBytes))
 	b := make([]byte, pkgLength)
 	e := readMessageBody(reader, b, 0)
 	if e != nil {
-		logger.Errorf("Stream  readMessageBody error:%s", e.Error())
+		Logger.Errorf("Stream  readMessageBody error:%s", e.Error())
 		return e
 	}
 	go Server.handleMessage(b, id, pkgLengthBytes)
@@ -278,16 +280,15 @@ func readMessageBody(reader *bufio.Reader, body []byte, index int) error {
 func (s *server) handleMessage(b []byte, from string, lengthByte []byte) {
 	message, error := unMarshalMessage(b)
 	if error != nil {
-		logger.Errorf("Proto unmarshal error:%s", error.Error())
+		Logger.Errorf("Proto unmarshal error:%s", error.Error())
 		return
 	}
-	logger.Debugf("Receive message from %s,code:%d,msg size:%d,hash:%s", from, message.Code, len(b), message.Hash())
+	Logger.Debugf("Receive message from %s,code:%d,msg size:%d,hash:%s", from, message.Code, len(b), message.Hash())
 
 	code := message.Code
 	switch code {
 	case CurrentGroupCastMsg, CastVerifyMsg, VerifiedCastMsg2, AskSignPkMsg, AnswerSignPkMsg, ReqSharePiece, ResponseSharePiece:
-		//todo 这里应该用BUS重新写
-		//n.consensusHandler.Handle(from, *message)
+		s.consensusHandler.Handle(from, *message)
 	case ReqTransactionMsg:
 		msg := notify.TransactionReqMessage{TransactionReqByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.TransactionReq, &msg)
@@ -319,11 +320,11 @@ func (s *server) handleMessage(b []byte, from string, lengthByte []byte) {
 		msg := notify.NewBlockMessage{BlockByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.NewBlock, &msg)
 	case ChainPieceInfoReq:
-		logger.Debugf("Rcv ChainPieceInfoReq from %s", from)
+		Logger.Debugf("Rcv ChainPieceInfoReq from %s", from)
 		msg := notify.ChainPieceInfoReqMessage{HeightByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.ChainPieceInfoReq, &msg)
 	case ChainPieceInfo:
-		logger.Debugf("Rcv ChainPieceInfo from %s", from)
+		Logger.Debugf("Rcv ChainPieceInfo from %s", from)
 		msg := notify.ChainPieceInfoMessage{ChainPieceInfoByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.ChainPieceInfo, &msg)
 	case ReqChainPieceBlock:

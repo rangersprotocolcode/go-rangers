@@ -137,3 +137,7 @@ type Network interface {
 func GetNetInstance() Network {
 	return &Server
 }
+
+type MsgHandler interface {
+	Handle(sourceId string, msg Message) error
+}
