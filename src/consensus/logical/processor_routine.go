@@ -2,18 +2,11 @@ package logical
 
 import (
 	"time"
-	"consensus/model"
-	"common"
-	"consensus/groupsig"
-	"monitor"
+	"x/src/consensus/model"
+	"x/src/common"
+	"x/src/consensus/groupsig"
 	"fmt"
 )
-
-/*
-**  Creator: pxf
-**  Date: 2018/11/28 下午2:03
-**  Description: 
-*/
 
 func (p *Processor) getCastCheckRoutineName() string {
 	return "self_cast_check_" + p.getPrefix()

@@ -1,23 +1,16 @@
 package logical
 
 import (
-	"common"
-	"consensus/groupsig"
-	"consensus/model"
-	"middleware/types"
-	"consensus/base"
+	"x/src/common"
+	"x/src/consensus/groupsig"
+	"x/src/consensus/model"
+	"x/src/middleware/types"
+	"x/src/consensus/base"
 	"github.com/vmihailenco/msgpack"
 	"fmt"
 	"time"
 	"encoding/json"
 )
-
-/*
-**  Creator: pxf
-**  Date: 2018/6/12 下午6:12
-**  Description:
- */
-
 
 
 //后续如有全局定时器，从这个函数启动

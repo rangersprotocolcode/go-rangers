@@ -1,11 +1,11 @@
 package logical
 
 import (
-	"common"
-	"consensus/groupsig"
-	"consensus/model"
-	"middleware/notify"
-	"middleware/types"
+	"x/src/common"
+	"x/src/consensus/groupsig"
+	"x/src/consensus/model"
+	"x/src/middleware/notify"
+	"x/src/middleware/types"
 )
 
 func (p *Processor) triggerFutureVerifyMsg(hash common.Hash) {

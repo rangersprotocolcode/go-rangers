@@ -1,6 +1,7 @@
 package common
 
 import (
+	"x/src/common/secp256k1"
 	"crypto/elliptic"
 	"encoding/hex"
 	"errors"
@@ -8,10 +9,8 @@ import (
 	"math/big"
 	"math/rand"
 	"reflect"
-
-	"x/src/utility"
-	"x/src/common/secp256k1"
 	"x/src/middleware/log"
+	"x/src/utility"
 )
 
 const PREFIX = "0x"
@@ -194,7 +193,7 @@ func (h Hash) String() string {
 	return h.Hex()
 }
 
-func (h Hash) ShortStr() string {
+func (h Hash) ShortS() string {
 	str := h.Hex()
 	return ShortHex12(str)
 }

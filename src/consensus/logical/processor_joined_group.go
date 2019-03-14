@@ -2,23 +2,17 @@ package logical
 
 import (
 	"sync"
-	"consensus/groupsig"
+	"x/src/consensus/groupsig"
 	"encoding/json"
-	"consensus/model"
-	"common"
-	"storage/tasdb"
+	"x/src/consensus/model"
+	"x/src/common"
+	"x/src/middleware/db"
 	"crypto/rand"
 	"github.com/hashicorp/golang-lru"
 	"strings"
 	"io/ioutil"
 	"os"
 )
-
-/*
-**  Creator: pxf
-**  Date: 2018/6/27 上午9:53
-**  Description: 
-*/
 
 const (
 	suffixSignKey = "_signKey"
@@ -102,7 +96,7 @@ type BelongGroups struct {
 	//storeFile string
 	priKey 		common.PrivateKey
 	dirty     int32
-	store 		*tasdb.LDBDatabase
+	store 		*db.LDBDatabase
 	storeDir 	string
 	initMu 		sync.Mutex
 }
@@ -124,7 +118,7 @@ func (bg *BelongGroups) initStore()  {
 	if bg.ready() {
 		return
 	}
-	db, err := tasdb.NewLDBDatabase(bg.storeDir, 1,1)
+	db, err := db.NewLDBDatabase(bg.storeDir, 1,1)
 	if err != nil {
 		stdLogger.Errorf("newLDBDatabase fail, file=%v, err=%v\n", bg.storeDir, err.Error())
 		return
