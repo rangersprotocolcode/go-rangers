@@ -77,7 +77,7 @@ func (p *Processor) checkSelfCastRoutine() bool {
 		return false
 	} else {
 		blog.log("topHeight=%v, topHash=%v, topCurTime=%v, castHeight=%v, expireTime=%v", top.Height, top.Hash.ShortS(), top.CurTime, castHeight, expireTime)
-		worker = NewVRFWorker(p.GetSelfMinerDO(), top, castHeight, expireTime)
+		worker = newVRFWorker(p.GetSelfMinerDO(), top, castHeight, expireTime)
 		p.setVrfWorker(worker)
 		p.blockProposal()
 	}
