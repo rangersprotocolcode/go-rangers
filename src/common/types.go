@@ -32,6 +32,7 @@ const (
 )
 
 var DefaultLogger log.Logger
+var InstanceIndex int
 
 var (
 	hashT               = reflect.TypeOf(Hash{})

@@ -61,8 +61,7 @@ func NewSelfMinerDO(address common.Address) SelfMinerDO {
 	mi.SK = *groupsig.NewSeckeyFromRand(mi.SecretSeed)
 	mi.PK = *groupsig.NewPubkeyFromSeckey(mi.SK)
 	mi.Stake = minerStake
-	//todo
-	// mi.ID = groupsig.DeserializeId(address.Bytes())
+	mi.ID = groupsig.DeserializeId(address.Bytes())
 
 	var err error
 	mi.VrfPK, mi.VrfSK, err = vrf.VRFGenerateKey(&mi)

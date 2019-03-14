@@ -38,7 +38,7 @@ const (
 
 var Logger log.Logger
 
-func InitNetwork(privateKey common.PrivateKey, isSuper bool,consensusHandler MsgHandler) {
+func InitNetwork(privateKey common.PrivateKey, isSuper bool, consensusHandler MsgHandler) string {
 	Logger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("client", "index", ""))
 
 	publicKey := privateKey.GetPubKey()
@@ -54,8 +54,9 @@ func InitNetwork(privateKey common.PrivateKey, isSuper bool,consensusHandler Msg
 	if !isSuper {
 		connectToSeed(ctx, host)
 	}
-	initServer(host, dht,consensusHandler)
+	initServer(host, dht, consensusHandler)
 	tryFindSeed(ctx)
+	return idToString(id)
 }
 
 func makeSwarm(ctx context.Context, id peer.ID, ip string, port int, privateKey common.PrivateKey, publicKey common.PublicKey) lnet.Network {
