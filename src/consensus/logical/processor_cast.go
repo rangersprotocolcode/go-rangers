@@ -14,6 +14,7 @@ import (
 	"time"
 	"runtime/debug"
 
+	"x/src/consensus/vrf"
 )
 
 type CastBlockContexts struct {
@@ -308,7 +309,7 @@ func (p *Processor) blockProposal() {
 
 	totalStake := p.minerReader.getTotalStake(worker.baseBH.Height, false)
 	blog.log("totalStake height=%v, stake=%v", height, totalStake)
-	pi, qn, err := worker.Prove(totalStake)
+	pi, qn, err := worker.genProve(totalStake)
 	if err != nil {
 		blog.log("vrf prove not ok! %v", err)
 		return
@@ -350,7 +351,7 @@ func (p *Processor) blockProposal() {
 			blog.log("sign fail, id=%v, sk=%v", p.GetMinerID().ShortS(), skey.ShortS())
 			return
 		}
-		blog.log("hash=%v, proveRoot=%v, pi=%v, piHash=%v", bh.Hash.ShortS(), root.ShortS(), pi.ShortS(), common.Bytes2Hex(base.VRF_proof2hash(pi)))
+		blog.log("hash=%v, proveRoot=%v, pi=%v, piHash=%v", bh.Hash.ShortS(), root.ShortS(), pi.ShortS(), common.Bytes2Hex(vrf.VRFProof2Hash(pi)))
 		//ccm.GenRandomSign(skey, worker.baseBH.Random)//castor不能对随机数签名
 		tlog.log("铸块成功, SendVerifiedCast, 时间间隔 %v, castor=%v, hash=%v, genHash=%v", bh.CurTime.Sub(bh.PreTime).Seconds(), ccm.SI.GetID().ShortS(), bh.Hash.ShortS(), ccm.SI.DataHash.ShortS())
 		p.NetServer.SendCastVerify(&ccm, gb, block.Transactions)
