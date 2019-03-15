@@ -23,7 +23,7 @@ func unMarshalMessage(b []byte) (*Message, error) {
 	message := new(middleware_pb.Message)
 	e := proto.Unmarshal(b, message)
 	if e != nil {
-		logger.Errorf("Unmarshal message error:%s", e.Error())
+		Logger.Errorf("Unmarshal message error:%s", e.Error())
 		return nil, e
 	}
 	m := Message{Code: *message.Code, Body: message.Body}
