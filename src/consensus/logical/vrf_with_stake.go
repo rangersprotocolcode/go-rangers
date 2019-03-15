@@ -30,7 +30,7 @@ func verifyBlockVRF(bh *types.BlockHeader, preBH *types.BlockHeader, castor *mod
 	}
 	if ok, qn := validateProve(prove, castor.Stake, totalStake); ok {
 		if bh.TotalQN != qn+preBH.TotalQN {
-			return false, errors.New(fmt.Sprintf("qn error.bh hash=%v, height=%v, qn=%v,totalQN=%v, preBH totalQN=%v", bh.Hash.ShortStr(), bh.Height, qn, bh.TotalQN, preBH.TotalQN))
+			return false, errors.New(fmt.Sprintf("qn error.bh hash=%v, height=%v, qn=%v,totalQN=%v, preBH totalQN=%v", bh.Hash.ShortS(), bh.Height, qn, bh.TotalQN, preBH.TotalQN))
 		}
 		return true, nil
 	}
