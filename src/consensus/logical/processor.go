@@ -166,7 +166,7 @@ func (p *Processor) isCastLegal(bh *types.BlockHeader, preHeader *types.BlockHea
 	}
 	totalStake := p.minerReader.getTotalStake(preHeader.Height, false)
 	blog.log("totalStake %v", totalStake)
-	if ok2, err2 := vrfVerifyBlock(bh, preHeader, minerDO, totalStake); !ok2 {
+	if ok2, err2 := verifyBlockVRF(bh, preHeader, minerDO, totalStake); !ok2 {
 		err = fmt.Errorf("vrf verify block fail, err=%v", err2)
 		return
 	}
