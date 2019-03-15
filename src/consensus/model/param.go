@@ -51,6 +51,7 @@ type ConsensusParam struct {
 
 	ProposalBonus 		uint64	//提案奖励
 	PackBonus 			uint64	//打包一个分红交易奖励
+	VerifyBonus 		uint64	//验证者总奖励
 
 	MaxSlotSize       int
 }

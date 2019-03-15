@@ -14,7 +14,6 @@ import (
 	"time"
 	"runtime/debug"
 
-	"fmt"
 )
 
 type CastBlockContexts struct {
@@ -240,15 +239,15 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 	tlog.log("broadcasted height=%v, 耗时%v秒", bh.Height, time.Since(bh.CurTime).Seconds())
 
 	//发送日志
-	le := &monitor.LogEntry{
-		LogType:  monitor.LogTypeBlockBroadcast,
-		Height:   bh.Height,
-		Hash:     bh.Hash.Hex(),
-		PreHash:  bh.PreHash.Hex(),
-		Proposer: slot.castor.GetHexString(),
-		Verifier: gb.Gid.GetHexString(),
-	}
-	monitor.Instance.AddLog(le)
+	//le := &monitor.LogEntry{
+	//	LogType:  monitor.LogTypeBlockBroadcast,
+	//	Height:   bh.Height,
+	//	Hash:     bh.Hash.Hex(),
+	//	PreHash:  bh.PreHash.Hex(),
+	//	Proposer: slot.castor.GetHexString(),
+	//	Verifier: gb.Gid.GetHexString(),
+	//}
+	//monitor.Instance.AddLog(le)
 
 	vctx.broadcastSlot = slot
 	vctx.markBroadcast()
@@ -357,21 +356,21 @@ func (p *Processor) blockProposal() {
 		p.NetServer.SendCastVerify(&ccm, gb, block.Transactions)
 
 		//发送日志
-		le := &monitor.LogEntry{
-			LogType:  monitor.LogTypeProposal,
-			Height:   bh.Height,
-			Hash:     bh.Hash.Hex(),
-			PreHash:  bh.PreHash.Hex(),
-			Proposer: p.GetMinerID().GetHexString(),
-			Verifier: gb.Gid.GetHexString(),
-			Ext:      fmt.Sprintf("qn:%v,totalQN:%v", qn, bh.TotalQN),
-		}
-		monitor.Instance.AddLog(le)
+		//le := &monitor.LogEntry{
+		//	LogType:  monitor.LogTypeProposal,
+		//	Height:   bh.Height,
+		//	Hash:     bh.Hash.Hex(),
+		//	PreHash:  bh.PreHash.Hex(),
+		//	Proposer: p.GetMinerID().GetHexString(),
+		//	Verifier: gb.Gid.GetHexString(),
+		//	Ext:      fmt.Sprintf("qn:%v,totalQN:%v", qn, bh.TotalQN),
+		//}
+		//monitor.Instance.AddLog(le)
 
 		worker.markProposed()
 
-		statistics.AddBlockLog(common.BootId, statistics.SendCast, ccm.BH.Height, ccm.BH.ProveValue.Uint64(), -1, -1,
-			time.Now().UnixNano(), p.GetMinerID().ShortS(), gid.ShortS(), common.InstanceIndex, ccm.BH.CurTime.UnixNano())
+		//statistics.AddBlockLog(common.BootId, statistics.SendCast, ccm.BH.Height, ccm.BH.ProveValue.Uint64(), -1, -1,
+		//	time.Now().UnixNano(), p.GetMinerID().ShortS(), gid.ShortS(), common.InstanceIndex, ccm.BH.CurTime.UnixNano())
 	} else {
 		blog.log("bh/prehash Error or sign Error, bh=%v, real height=%v. bc.prehash=%v, bh.prehash=%v", height, bh.Height, worker.baseBH.Hash, bh.PreHash)
 	}

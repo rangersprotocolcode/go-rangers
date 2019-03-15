@@ -5,11 +5,12 @@ import (
 	"x/src/consensus/groupsig"
 	"x/src/consensus/model"
 	"x/src/middleware/types"
-	"x/src/consensus/base"
+	"x/src/consensus/vrf"
 	"github.com/vmihailenco/msgpack"
 	"fmt"
 	"time"
 	"encoding/json"
+	"x/src/consensus/base"
 )
 
 
@@ -139,7 +140,7 @@ func (p *Processor) GetJoinedWorkGroupNums() (work, avail int) {
 }
 
 func (p *Processor) CalcBlockHeaderQN(bh *types.BlockHeader) uint64 {
-	pi := base.VRFProve(bh.ProveValue.Bytes())
+	pi := vrf.VRFProve(bh.ProveValue.Bytes())
 	castor := groupsig.DeserializeId(bh.Castor)
 	miner := p.minerReader.getProposeMiner(castor)
 	if miner == nil {
@@ -151,7 +152,7 @@ func (p *Processor) CalcBlockHeaderQN(bh *types.BlockHeader) uint64 {
 		return 0
 	}
 	totalStake := p.minerReader.getTotalStake(pre.Height, false)
-	_, qn := vrfSatisfy(pi, miner.Stake, totalStake)
+	_, qn := validateProve(pi, miner.Stake, totalStake)
 	return qn
 }
 
@@ -191,7 +192,7 @@ func (p *Processor) GetVrfThreshold(stake uint64) float64 {
 	if totalStake == 0 {
 		return 0
 	}
-	vs := vrfThreshold(stake, totalStake)
+	vs := stakeRatio(stake, totalStake)
 	f, _ := vs.Float64()
 	return f
 }

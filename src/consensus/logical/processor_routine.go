@@ -5,7 +5,6 @@ import (
 	"x/src/consensus/model"
 	"x/src/common"
 	"x/src/consensus/groupsig"
-	"fmt"
 )
 
 func (p *Processor) getCastCheckRoutineName() string {
@@ -127,13 +126,6 @@ func (p *Processor) releaseRoutine() bool {
 		if gis.ReadyTimeout(topHeight) {
 			blog.debug("DissolveGroupNet dummyGroup from joiningGroups gHash %v", gHash.ShortS())
 			p.NetServer.ReleaseGroupNet(gHash.Hex())
-
-			initedGroup := p.globalGroups.GetInitedGroup(gHash)
-			omgied := "nil"
-			if initedGroup != nil {
-				omgied = fmt.Sprintf("OMGIED:%v(%v)", initedGroup.receiveSize(), initedGroup.threshold)
-			}
-
 			waitPieceIds := make([]string, 0)
 			waitIds := make([]groupsig.ID, 0)
 			for _, mem := range gc.gInfo.Mems {
@@ -143,17 +135,22 @@ func (p *Processor) releaseRoutine() bool {
 				}
 			}
 			//发送日志
-			le := &monitor.LogEntry{
-				LogType:  monitor.LogTypeInitGroupRevPieceTimeout,
-				Height:   p.GroupChain.Count(),
-				Hash:     gHash.Hex(),
-				Proposer: "00",
-				Ext:      fmt.Sprintf("MemCnt:%v,Pieces:%v,wait:%v,%v", gc.gInfo.MemberSize(),gc.node.groupInitPool.GetSize(),waitPieceIds,omgied),
-			}
-			if !gc.sendLog && monitor.Instance.IsFirstNInternalNodesInGroup(gc.gInfo.Mems, 50) {
-				monitor.Instance.AddLog(le)
-				gc.sendLog = true
-			}
+			//initedGroup := p.globalGroups.GetInitedGroup(gHash)
+			//omgied := "nil"
+			//if initedGroup != nil {
+			//	omgied = fmt.Sprintf("OMGIED:%v(%v)", initedGroup.receiveSize(), initedGroup.threshold)
+			//}
+			//le := &monitor.LogEntry{
+			//	LogType:  monitor.LogTypeInitGroupRevPieceTimeout,
+			//	Height:   p.GroupChain.Count(),
+			//	Hash:     gHash.Hex(),
+			//	Proposer: "00",
+			//	Ext:      fmt.Sprintf("MemCnt:%v,Pieces:%v,wait:%v,%v", gc.gInfo.MemberSize(),gc.node.groupInitPool.GetSize(),waitPieceIds,omgied),
+			//}
+			//if !gc.sendLog && monitor.Instance.IsFirstNInternalNodesInGroup(gc.gInfo.Mems, 50) {
+			//	monitor.Instance.AddLog(le)
+			//	gc.sendLog = true
+			//}
 
 			msg := &model.ReqSharePieceMessage{
 				GHash: gc.gInfo.GroupHash(),
@@ -176,23 +173,23 @@ func (p *Processor) releaseRoutine() bool {
 	if gctx != nil && gctx.readyTimeout(topHeight) {
 		groupLogger.Infof("releaseRoutine:info=%v, elapsed %v. ready timeout.", gctx.logString(), time.Since(gctx.createTime))
 
-		if gctx.isKing() {
-			gHash := "0000"
-			if gctx != nil && gctx.gInfo != nil {
-				gHash = gctx.gInfo.GroupHash().Hex()
-			}
-			//发送日志
-			le := &monitor.LogEntry{
-				LogType:  monitor.LogTypeCreateGroupSignTimeout,
-				Height:   p.GroupChain.Count(),
-				Hash:     gHash,
-				Proposer: p.GetMinerID().GetHexString(),
-				Ext:      fmt.Sprintf("%v", gctx.gSignGenerator.Brief()),
-			}
-			if monitor.Instance.IsFirstNInternalNodesInGroup(gctx.kings, 50) {
-				monitor.Instance.AddLog(le)
-			}
-		}
+		//if gctx.isKing() {
+		//	gHash := "0000"
+		//	if gctx != nil && gctx.gInfo != nil {
+		//		gHash = gctx.gInfo.GroupHash().Hex()
+		//	}
+		//	//发送日志
+		//	le := &monitor.LogEntry{
+		//		LogType:  monitor.LogTypeCreateGroupSignTimeout,
+		//		Height:   p.GroupChain.Count(),
+		//		Hash:     gHash,
+		//		Proposer: p.GetMinerID().GetHexString(),
+		//		Ext:      fmt.Sprintf("%v", gctx.gSignGenerator.Brief()),
+		//	}
+		//	if monitor.Instance.IsFirstNInternalNodesInGroup(gctx.kings, 50) {
+		//		monitor.Instance.AddLog(le)
+		//	}
+		//}
 		p.groupManager.removeContext()
 	}
 	//p.groupManager.creatingGroups.forEach(func(cg *CreatingGroupContext) bool {
@@ -279,27 +276,27 @@ func (p *Processor) getUpdateMonitorNodeInfoRoutine() string {
 }
 
 func (p *Processor) updateMonitorInfo() bool {
-	if !monitor.Instance.MonitorEnable() {
-		return false
-	}
-	top := p.MainChain.Height()
-
-	ni := &monitor.NodeInfo{
-		BlockHeight: top,
-		GroupHeight: p.GroupChain.Count(),
-		TxPoolCount: len(p.MainChain.GetTransactionPool().GetReceived()),
-	}
-	proposer := p.minerReader.getProposeMiner(p.GetMinerID())
-	if proposer != nil {
-		ni.Type |= monitor.NtypeProposal
-		ni.PStake = proposer.Stake
-		ni.VrfThreshold = p.GetVrfThreshold(ni.PStake)
-	}
-	verifier := p.minerReader.getLightMiner(p.GetMinerID())
-	if verifier != nil {
-		ni.Type |= monitor.NtypeVerifier
-	}
-
-	monitor.Instance.UpdateNodeInfo(ni)
+	//if !monitor.Instance.MonitorEnable() {
+	//	return false
+	//}
+	//top := p.MainChain.Height()
+	//
+	//ni := &monitor.NodeInfo{
+	//	BlockHeight: top,
+	//	GroupHeight: p.GroupChain.Count(),
+	//	TxPoolCount: len(p.MainChain.GetTransactionPool().GetReceived()),
+	//}
+	//proposer := p.minerReader.getProposeMiner(p.GetMinerID())
+	//if proposer != nil {
+	//	ni.Type |= monitor.NtypeProposal
+	//	ni.PStake = proposer.Stake
+	//	ni.VrfThreshold = p.GetVrfThreshold(ni.PStake)
+	//}
+	//verifier := p.minerReader.getLightMiner(p.GetMinerID())
+	//if verifier != nil {
+	//	ni.Type |= monitor.NtypeVerifier
+	//}
+	//
+	//monitor.Instance.UpdateNodeInfo(ni)
 	return true
 }
