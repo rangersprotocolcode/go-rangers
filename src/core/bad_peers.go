@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	badPeersCleanInterval = time.Minute * 3
-	evilMaxCount          = 3
+	badPeersCleanInterval = time.Second * 10
+	evilMaxCount          = 300
 )
 
 var PeerManager *peerManager
@@ -43,14 +43,14 @@ func (bpm *peerManager) markEvil(id string) {
 		return
 	} else {
 		evilCount ++
-		if evilCount > evilMaxCount {
-			delete(bpm.badPeerMeter, id)
-			bpm.badPeers[id] = time.Now()
-			logger.Debugf("[PeerManager]Add bad peer:%s", id)
-		} else {
-			bpm.badPeerMeter[id] = evilCount
-			logger.Debugf("[PeerManager]EvilCount:%s,%d", id, evilCount)
-		}
+		//if evilCount > evilMaxCount {
+		//	delete(bpm.badPeerMeter, id)
+		//	bpm.badPeers[id] = time.Now()
+		//	logger.Debugf("[PeerManager]Add bad peer:%s", id)
+		//} else {
+		//	bpm.badPeerMeter[id] = evilCount
+		//	logger.Debugf("[PeerManager]EvilCount:%s,%d", id, evilCount)
+		//}
 	}
 }
 

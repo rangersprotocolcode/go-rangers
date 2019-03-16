@@ -19,7 +19,6 @@ func (p *Processor) getReleaseRoutineName() string {
 	return "release_routine_" + p.getPrefix()
 }
 
-
 //检查是否当前组铸块
 func (p *Processor) checkSelfCastRoutine() bool {
 	if !p.Ready() {
@@ -59,13 +58,14 @@ func (p *Processor) checkSelfCastRoutine() bool {
 	expireTime = GetCastExpireTime(top.CurTime, deltaHeight, castHeight)
 
 	if !p.canProposalAt(castHeight) {
+		blog.log("can not proposal at%d", castHeight)
 		return false
 	}
 
 	worker := p.GetVrfWorker()
 
 	if worker != nil && worker.workingOn(top, castHeight) {
-		//blog.log("already working on that block height=%v, status=%v", castHeight, worker.getStatus())
+		blog.log("already working on that block height=%v, status=%v", castHeight, worker.getStatus())
 		return false
 	} else {
 		blog.log("topHeight=%v, topHash=%v, topCurTime=%v, castHeight=%v, expireTime=%v", top.Height, top.Hash.ShortS(), top.CurTime, castHeight, expireTime)
@@ -114,7 +114,6 @@ func (p *Processor) releaseRoutine() bool {
 			p.joiningGroups.RemoveGroup(g.GInfo.GroupHash())
 		}
 	}
-
 
 	//释放超时未建成组的组网络和相应的dummy组
 	p.joiningGroups.forEach(func(gc *GroupContext) bool {
@@ -228,7 +227,7 @@ func (p *Processor) releaseRoutine() bool {
 	p.futureRewardReqs.forEach(func(key common.Hash, arr []interface{}) bool {
 		for _, msg := range arr {
 			b := msg.(*model.CastRewardTransSignReqMessage)
-			if time.Now().After(b.ReceiveTime.Add(400*time.Second)) {//400s不能处理的，都删除
+			if time.Now().After(b.ReceiveTime.Add(400 * time.Second)) { //400s不能处理的，都删除
 				p.futureRewardReqs.remove(key)
 				blog.debug("remove future reward msg, hash=%v", key.String())
 				break
@@ -253,11 +252,11 @@ func (p *Processor) releaseRoutine() bool {
 }
 
 func (p *Processor) getUpdateGlobalGroupsRoutineName() string {
-    return "update_global_groups_routine_" + p.getPrefix()
+	return "update_global_groups_routine_" + p.getPrefix()
 }
 
 func (p *Processor) updateGlobalGroups() bool {
-    top := p.MainChain.Height()
+	top := p.MainChain.Height()
 	iter := p.GroupChain.NewIterator()
 	for g := iter.Current(); g != nil && !IsGroupDissmisedAt(g.Header, top); g = iter.MovePre() {
 		gid := groupsig.DeserializeId(g.Id)

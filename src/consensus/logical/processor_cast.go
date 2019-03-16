@@ -267,7 +267,7 @@ func (p *Processor) sampleBlockHeight(heightLimit uint64, rand []byte, id groups
 	//随机抽取10块前的块，确保不抽取到分叉上的块
 	//
 	if heightLimit > 2*model.Param.Epoch {
-		heightLimit -= 2*model.Param.Epoch
+		heightLimit -= 2 * model.Param.Epoch
 	}
 	return base.RandFromBytes(rand).DerivedRand(id.Serialize()).ModuloUint64(heightLimit)
 }
@@ -301,11 +301,13 @@ func (p *Processor) blockProposal() {
 		blog.log("vrf baseBH differ from top!")
 		return
 	}
+
 	if worker.isProposed() || worker.isSuccess() {
 		blog.log("vrf worker proposed/success, status %v", worker.getStatus())
 		return
 	}
 	height := worker.castHeight
+	blog.log("worker.isProposed() || worker.isSuccess()")
 
 	totalStake := p.minerReader.getTotalStake(worker.baseBH.Height, false)
 	blog.log("totalStake height=%v, stake=%v", height, totalStake)
@@ -418,7 +420,6 @@ func (p *Processor) reqRewardTransSign(vctx *VerifyContext, bh *types.BlockHeade
 			i++
 		}
 	}
-
 
 	bonus, tx := p.MainChain.GetBonusManager().GenerateBonus(targetIdIndexs, bh.Hash, bh.GroupId, model.Param.VerifyBonus)
 	blog.debug("generate bonus txHash=%v, targetIds=%v, height=%v", bonus.TxHash.ShortS(), bonus.TargetIds, bh.Height)

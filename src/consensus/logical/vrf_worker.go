@@ -27,6 +27,7 @@ type vrfWorker struct {
 func newVRFWorker(miner *model.SelfMinerDO, bh *types.BlockHeader, castHeight uint64, expire time.Time) *vrfWorker {
 	return &vrfWorker{
 		miner:      miner,
+		baseBH:     bh,
 		castHeight: castHeight,
 		expire:     expire,
 		status:     prove,

@@ -13,7 +13,6 @@ import (
 	"x/src/consensus/base"
 )
 
-
 //后续如有全局定时器，从这个函数启动
 func (p *Processor) Start() bool {
 	p.Ticker.RegisterRoutine(p.getCastCheckRoutineName(), p.checkSelfCastRoutine, 1)
@@ -46,7 +45,7 @@ func (p *Processor) prepareMiner() {
 	stdLogger.Infof("prepareMiner get groups from groupchain")
 	iterator := p.GroupChain.NewIterator()
 	groups := make([]*StaticGroupInfo, 0)
-	for coreGroup := iterator.Current(); coreGroup != nil; coreGroup = iterator.MovePre(){
+	for coreGroup := iterator.Current(); coreGroup != nil; coreGroup = iterator.MovePre() {
 		stdLogger.Infof("get group from core, id=%+v", coreGroup.Header)
 		if coreGroup.Id == nil || len(coreGroup.Id) == 0 {
 			continue
@@ -75,7 +74,7 @@ func (p *Processor) prepareMiner() {
 			break
 		}
 	}
-	for i := len(groups)-1; i >=0; i-- {
+	for i := len(groups) - 1; i >= 0; i-- {
 		p.acceptGroup(groups[i])
 	}
 	stdLogger.Infof("prepare finished")
@@ -94,8 +93,6 @@ func (p *Processor) Finalize() {
 		p.belongGroups.close()
 	}
 }
-
-
 
 func (p *Processor) GetVrfWorker() *vrfWorker {
 	if v := p.vrf.Load(); v != nil {
@@ -119,9 +116,10 @@ func (p *Processor) GetSelfMinerDO() *model.SelfMinerDO {
 func (p *Processor) canProposalAt(h uint64) bool {
 	miner := p.minerReader.getProposeMiner(p.GetMinerID())
 	if miner == nil {
+		stdLogger.Errorf("get nil proposeMiner:%s", p.GetMinerID().String())
 		return false
 	}
-   	return miner.CanCastAt(h)
+	return miner.CanCastAt(h)
 }
 
 func (p *Processor) GetJoinedWorkGroupNums() (work, avail int) {
@@ -200,35 +198,35 @@ func (p *Processor) GetVrfThreshold(stake uint64) float64 {
 func (p *Processor) BlockContextSummary() string {
 
 	type slotSummary struct {
-		Hash string `json:"hash"`
-		GSigSize int `json:"g_sig_size"`
-		RSigSize int `json:"r_sig_size"`
-		TxSigSize int `json:"tx_sig_size"`
-		LostTxSize int `json:"lost_tx_size"`
-		Status int32 `json:"status"`
+		Hash       string `json:"hash"`
+		GSigSize   int    `json:"g_sig_size"`
+		RSigSize   int    `json:"r_sig_size"`
+		TxSigSize  int    `json:"tx_sig_size"`
+		LostTxSize int    `json:"lost_tx_size"`
+		Status     int32  `json:"status"`
 	}
 	type vctxSummary struct {
-		CastHeight uint64 `json:"cast_height"`
-		Status int32 `json:"status"`
-		Slots  []*slotSummary `json:"slots"`
-		NumSlots int `json:"num_slots"`
-		Expire time.Time `json:"expire"`
-		ShouldRemove bool `json:"should_remove"`
+		CastHeight   uint64         `json:"cast_height"`
+		Status       int32          `json:"status"`
+		Slots        []*slotSummary `json:"slots"`
+		NumSlots     int            `json:"num_slots"`
+		Expire       time.Time      `json:"expire"`
+		ShouldRemove bool           `json:"should_remove"`
 	}
 	type bctxSummary struct {
-    	Gid string `json:"gid"`
-    	NumRvh int `json:"num_rvh"`
-    	NumVctx int `json:"num_vctx"`
-    	Vctxs []*vctxSummary `json:"vctxs"`
+		Gid     string         `json:"gid"`
+		NumRvh  int            `json:"num_rvh"`
+		NumVctx int            `json:"num_vctx"`
+		Vctxs   []*vctxSummary `json:"vctxs"`
 	}
 	type contextSummary struct {
-		NumBctxs int `json:"num_bctxs"`
-		Bctxs []*bctxSummary `json:"bctxs"`
-		NumReserVctx int `json:"num_reser_vctx"`
-		ReservVctxs []*vctxSummary `json:"reserv_vctxs"`
-		NumFutureVerifyMsg int `json:"num_future_verify_msg"`
-		NumFutureRewardMsg int `json:"num_future_reward_msg"`
-		NumVerifyCache int `json:"num_verify_cache"`
+		NumBctxs           int            `json:"num_bctxs"`
+		Bctxs              []*bctxSummary `json:"bctxs"`
+		NumReserVctx       int            `json:"num_reser_vctx"`
+		ReservVctxs        []*vctxSummary `json:"reserv_vctxs"`
+		NumFutureVerifyMsg int            `json:"num_future_verify_msg"`
+		NumFutureRewardMsg int            `json:"num_future_reward_msg"`
+		NumVerifyCache     int            `json:"num_verify_cache"`
 	}
 	bctxs := make([]*bctxSummary, 0)
 	p.blockContexts.forEachBlockContext(func(bc *BlockContext) bool {
@@ -237,11 +235,11 @@ func (p *Processor) BlockContextSummary() string {
 			ss := make([]*slotSummary, 0)
 			for _, slot := range vctx.GetSlots() {
 				s := &slotSummary{
-					Hash: slot.BH.Hash.String(),
-					GSigSize: slot.gSignGenerator.WitnessSize(),
-					RSigSize: slot.rSignGenerator.WitnessSize(),
+					Hash:       slot.BH.Hash.String(),
+					GSigSize:   slot.gSignGenerator.WitnessSize(),
+					RSigSize:   slot.rSignGenerator.WitnessSize(),
 					LostTxSize: slot.lostTxHash.Size(),
-					Status: slot.GetSlotStatus(),
+					Status:     slot.GetSlotStatus(),
 				}
 				if slot.rewardGSignGen != nil {
 					s.TxSigSize = slot.rewardGSignGen.WitnessSize()
@@ -249,20 +247,20 @@ func (p *Processor) BlockContextSummary() string {
 				ss = append(ss, s)
 			}
 			v := &vctxSummary{
-				CastHeight: vctx.castHeight,
-				Status: vctx.consensusStatus,
-				NumSlots: len(vctx.slots),
-				Expire: vctx.expireTime,
+				CastHeight:   vctx.castHeight,
+				Status:       vctx.consensusStatus,
+				NumSlots:     len(vctx.slots),
+				Expire:       vctx.expireTime,
 				ShouldRemove: vctx.castRewardSignExpire() || (vctx.broadcastSlot != nil && vctx.broadcastSlot.IsRewardSent()),
-				Slots:ss,
+				Slots:        ss,
 			}
 			vs = append(vs, v)
 		}
 		b := &bctxSummary{
-			Gid: bc.MinerID.Gid.GetHexString(),
-			NumRvh: len(bc.recentCasted),
+			Gid:     bc.MinerID.Gid.GetHexString(),
+			NumRvh:  len(bc.recentCasted),
 			NumVctx: len(vs),
-			Vctxs: vs,
+			Vctxs:   vs,
 		}
 		bctxs = append(bctxs, b)
 		return true
@@ -270,23 +268,23 @@ func (p *Processor) BlockContextSummary() string {
 	reservVctxs := make([]*vctxSummary, 0)
 	p.blockContexts.forEachReservedVctx(func(vctx *VerifyContext) bool {
 		v := &vctxSummary{
-			CastHeight: vctx.castHeight,
-			Status: vctx.consensusStatus,
-			NumSlots: len(vctx.slots),
-			Expire: vctx.expireTime,
+			CastHeight:   vctx.castHeight,
+			Status:       vctx.consensusStatus,
+			NumSlots:     len(vctx.slots),
+			Expire:       vctx.expireTime,
 			ShouldRemove: vctx.castRewardSignExpire() || (vctx.broadcastSlot != nil && vctx.broadcastSlot.IsRewardSent()),
 		}
 		reservVctxs = append(reservVctxs, v)
 		return true
 	})
 	cs := &contextSummary{
-		Bctxs: bctxs,
-		ReservVctxs: reservVctxs,
-		NumBctxs:len(bctxs),
-		NumReserVctx: len(reservVctxs),
+		Bctxs:              bctxs,
+		ReservVctxs:        reservVctxs,
+		NumBctxs:           len(bctxs),
+		NumReserVctx:       len(reservVctxs),
 		NumFutureVerifyMsg: p.futureVerifyMsgs.size(),
 		NumFutureRewardMsg: p.futureRewardReqs.size(),
-		NumVerifyCache: p.verifyMsgCaches.Len(),
+		NumVerifyCache:     p.verifyMsgCaches.Len(),
 	}
 	b, _ := json.MarshalIndent(cs, "", "\t")
 	fmt.Printf("%v\n", string(b))
@@ -297,15 +295,15 @@ func (p *Processor) BlockContextSummary() string {
 func (p *Processor) GetJoinGroupInfo(gid string) *JoinedGroup {
 	var id groupsig.ID
 	id.SetHexString(gid)
-    jg := p.belongGroups.getJoinedGroup(id)
-    return jg
+	jg := p.belongGroups.getJoinedGroup(id)
+	return jg
 }
 
 func (p *Processor) GetAllMinerDOs() ([]*model.MinerDO) {
 	h := p.MainChain.Height()
 	dos := make([]*model.MinerDO, 0)
-    miners := p.minerReader.getAllMinerDOByType(types.MinerTypeHeavy, h)
-    dos = append(dos, miners...)
+	miners := p.minerReader.getAllMinerDOByType(types.MinerTypeHeavy, h)
+	dos = append(dos, miners...)
 
 	miners = p.minerReader.getAllMinerDOByType(types.MinerTypeLight, h)
 	dos = append(dos, miners...)
