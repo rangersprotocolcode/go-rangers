@@ -40,6 +40,7 @@ var Logger log.Logger
 
 func InitNetwork(privateKey common.PrivateKey, isSuper bool, consensusHandler MsgHandler) string {
 	Logger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	initIdMap()
 
 	publicKey := privateKey.GetPubKey()
 	id := getId(publicKey)

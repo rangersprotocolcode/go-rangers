@@ -23,11 +23,6 @@ const (
 	protocolID        protocol.ID = "/x/1.0.0"
 )
 
-var proposerList = []string{"111", "2222", "333"}
-
-var verifyGroupList = []string{"group1"}
-var verifyGroupsInfo = map[string][]string{"group1": {"memberA", "memberB"}}
-
 var header = []byte{84, 85, 78}
 
 var Server server
@@ -50,24 +45,8 @@ func initServer(host host.Host, dht *dht.IpfsDHT, consensusHandler MsgHandler) {
 }
 
 func (s *server) Send(id string, msg Message) {
-	go func() {
-		bytes, e := marshalMessage(msg)
-		if e != nil {
-			Logger.Errorf("Marshal message error:%s", e.Error())
-			return
-		}
-
-		length := len(bytes)
-		b2 := utility.UInt32ToByte(uint32(length))
-
-		b := make([]byte, len(bytes)+len(b2)+3, len(bytes)+len(b2)+3)
-		copy(b[:3], header[:])
-		copy(b[3:7], b2)
-		copy(b[7:], bytes)
-
-		s.send(b, id)
-	}()
-
+	netId := getNetId(id)
+	s.sendByNetId(netId, msg)
 }
 
 func (s *server) SpreadAmongGroup(groupId string, msg Message) {
@@ -106,7 +85,7 @@ func (s *server) TransmitToNeighbor(msg Message) {
 			continue
 		}
 		Logger.Debugf("transmit to neighbor:%s", idToString(id))
-		s.Send(idToString(id), msg)
+		s.sendByNetId(idToString(id), msg)
 	}
 }
 
@@ -154,6 +133,27 @@ func (s *server) getMembers(groupId string) []string {
 		}
 	}
 	return nil
+}
+
+func (s *server) sendByNetId(netId string, msg Message) {
+	if netId == "" {
+		return
+	}
+	bytes, e := marshalMessage(msg)
+	if e != nil {
+		Logger.Errorf("Marshal message error:%s", e.Error())
+		return
+	}
+
+	length := len(bytes)
+	b2 := utility.UInt32ToByte(uint32(length))
+
+	b := make([]byte, len(bytes)+len(b2)+3, len(bytes)+len(b2)+3)
+	copy(b[:3], header[:])
+	copy(b[3:7], b2)
+	copy(b[7:], bytes)
+
+	s.send(b, netId)
 }
 
 func (s *server) send(b []byte, id string) {
@@ -213,13 +213,17 @@ func swarmStreamHandler(stream inet.Stream) {
 	}()
 }
 func handleStream(stream inet.Stream) error {
-	id := idToString(stream.Conn().RemotePeer())
+	netId := idToString(stream.Conn().RemotePeer())
+	minerId := getMinerId(netId)
+	if minerId == "" {
+		return nil
+	}
+
 	reader := bufio.NewReader(stream)
-	//defer stream.Close()
 	headerBytes := make([]byte, 3)
 	h, e1 := reader.Read(headerBytes)
 	if e1 != nil {
-		Logger.Errorf("steam read 3 from %s error:%s!", id, e1.Error())
+		Logger.Errorf("steam read 3 from %s error:%s!", minerId, e1.Error())
 		return e1
 	}
 	if h != 3 {
@@ -228,7 +232,7 @@ func handleStream(stream inet.Stream) error {
 	}
 	//校验 header
 	if !(headerBytes[0] == header[0] && headerBytes[1] == header[1] && headerBytes[2] == header[2]) {
-		Logger.Errorf("validate header error from %s! ", id)
+		Logger.Errorf("validate header error from %s! ", minerId)
 		return nil
 	}
 
@@ -249,7 +253,7 @@ func handleStream(stream inet.Stream) error {
 		Logger.Errorf("Stream  readMessageBody error:%s", e.Error())
 		return e
 	}
-	go Server.handleMessage(b, id, pkgLengthBytes)
+	go Server.handleMessage(b, minerId, pkgLengthBytes)
 	return nil
 }
 
