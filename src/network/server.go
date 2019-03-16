@@ -117,7 +117,7 @@ func (s *server) ConnInfo() []Conn {
 		}
 		ip := split[2]
 		port := split[4]
-		c := Conn{Id: idToString(id), Ip: ip, Port: port}
+		c := Conn{Id: getMinerId(idToString(id)), Ip: ip, Port: port}
 		result = append(result, c)
 	}
 	return result
