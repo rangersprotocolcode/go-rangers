@@ -11,7 +11,7 @@ func TestRPC(t *testing.T) {
 	gx := NewGX()
 	common.InitConf("tas.ini")
 	walletManager = newWallets()
-	gx.initMiner(0, true, "", "", "heavy", "")
+	gx.initMiner(0, true, "", "", "heavy", "keystore")
 
 	host := "127.0.0.1"
 	var port uint = 8080

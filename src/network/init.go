@@ -31,7 +31,7 @@ const (
 
 	baseSection = "network"
 
-	defaultSeedId = "QmU51xws4zKRHdirwkLCeQPviVv3m74TQ9o76bcyzDGo23"
+	defaultSeedId = "QmTn5a8UhdgmNZx1Vy82kNwJ6RmHKcqocSjTg8VbPaXu69"
 
 	defaultSeedAddr = "/ip4/192.168.3.115/tcp/1122"
 )
@@ -39,7 +39,7 @@ const (
 var Logger log.Logger
 
 func InitNetwork(privateKey common.PrivateKey, isSuper bool, consensusHandler MsgHandler) string {
-	Logger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("client", "index", ""))
+	Logger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
 	publicKey := privateKey.GetPubKey()
 	id := getId(publicKey)

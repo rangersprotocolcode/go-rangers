@@ -786,7 +786,7 @@ func loop(acm accountOp, chainOp chainOp) {
 		case cmdExportAbi.name:
 			cmd := genExportAbiCmd()
 			if cmd.parse(inputArr[1:]) {
-				cmd.export()
+				//cmd.export()
 			}
 
 		case cmdMinerApply.name:

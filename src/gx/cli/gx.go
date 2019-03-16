@@ -54,7 +54,7 @@ func (gx *GX) Run() {
 	quitChan := make(chan bool)
 	go gx.handleExit(ctrlC, quitChan)
 
-	gx.initSysParam()
+
 
 	app := kingpin.New("gx", "A blockchain layer 2 application.")
 	app.HelpFlag.Short('h')
@@ -82,7 +82,6 @@ func (gx *GX) Run() {
 	instanceIndex := mineCmd.Flag("instance", "instance index").Short('i').Default("0").Int()
 	apply := mineCmd.Flag("apply", "apply heavy or light miner").String()
 	seedIp := mineCmd.Flag("seed", "seed ip").String()
-	seedId := mineCmd.Flag("seedid", "seed id").Default("").String()
 
 	command, err := app.Parse(os.Args[1:])
 	if err != nil {
@@ -91,6 +90,8 @@ func (gx *GX) Run() {
 
 	common.InitConf(*configFile)
 	walletManager = newWallets()
+	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString("instance", "index", ""))
+	gx.initSysParam()
 
 	if *apply == "heavy" {
 		fmt.Println("Welcom to be a tas propose miner!")
@@ -112,7 +113,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(*instanceIndex, *super, *seedIp, *seedId, *apply, *keystore)
+		gx.initMiner(*instanceIndex, *super, *seedIp, *apply, *keystore)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc)
 			if err != nil {
@@ -124,12 +125,11 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, super bool, seedIp string, seedId string, apply string, keystore string) {
+func (gx *GX) initMiner(instanceIndex int, super bool, seedIp string, apply string, keystore string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	databaseValue := "d" + strconv.Itoa(instanceIndex)
 	common.GlobalConf.SetString(chainSection, databaseKey, databaseValue)
-	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString("instance", "index", ""))
 
 	middleware.InitMiddleware()
 
@@ -152,6 +152,7 @@ func (gx *GX) initMiner(instanceIndex int, super bool, seedIp string, seedId str
 		panic("Init miner core init error:" + err.Error())
 	}
 
+	common.GlobalConf.SetString("network", "seed_address", "/ip4/"+seedIp+"/tcp/1122")
 	netId := network.InitNetwork(*common.HexStringToSecKey(gx.account.Sk), super, cnet.MessageHandler)
 
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
