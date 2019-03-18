@@ -29,5 +29,6 @@ func InitCore(helper types.ConsensusHelper) error {
 			return err
 		}
 	}
+	initChainHandler()
 	return nil
 }
