@@ -1,4 +1,3 @@
-
 package core
 
 import (
@@ -20,16 +19,16 @@ func newBonusManager() *BonusManager {
 }
 
 func (bm *BonusManager) GetBonusTransactionByBlockHash(blockHash []byte) *types.Transaction {
-	transactionHash := BlockChainImpl.LatestStateDB().GetData(common.BonusStorageAddress, string(blockHash))
+	transactionHash := blockChainImpl.LatestStateDB().GetData(common.BonusStorageAddress, string(blockHash))
 	if transactionHash == nil {
 		return nil
 	}
-	transaction, _ := BlockChainImpl.(*FullBlockChain).transactionPool.GetTransaction(common.BytesToHash(transactionHash))
+	transaction, _ := blockChainImpl.transactionPool.GetTransaction(common.BytesToHash(transactionHash))
 	return transaction
 }
 
 func (bm *BonusManager) GenerateBonus(targetIds []int32, blockHash common.Hash, groupId []byte, totalValue uint64) (*types.Bonus, *types.Transaction) {
-	group := GroupChainImpl.getGroupById(groupId)
+	group := groupChainImpl.GetGroupById(groupId)
 	buffer := &bytes.Buffer{}
 	buffer.Write(groupId)
 	//Logger.Debugf("GenerateBonus Group:%s",common.BytesToAddress(groupId).GetHexString())

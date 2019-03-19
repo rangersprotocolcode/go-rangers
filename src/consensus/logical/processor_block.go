@@ -4,7 +4,6 @@ import (
 	"x/src/common"
 	"x/src/consensus/groupsig"
 	"x/src/consensus/model"
-	"x/src/core"
 	"fmt"
 	"x/src/middleware/types"
 	"sync"
@@ -124,8 +123,11 @@ func (p *Processor) getBlockHeaderByHash(hash common.Hash) *types.BlockHeader {
 			slowLogger.Warnf("slowQueryBlockHeaderByHash: cost %v, hash=%v", time.Since(begin).String(), hash.ShortS())
 		}
 	}()
-	b := p.MainChain.QueryBlockHeaderByHash(hash)
-	return b
+	b := p.MainChain.QueryBlockByHash(hash)
+	if b != nil {
+		return b.Header
+	}
+	return nil
 }
 
 func (p *Processor) addFutureVerifyMsg(msg *model.ConsensusCastMessage) {
@@ -171,16 +173,16 @@ func (p *Processor) prepareForCast(sgi *StaticGroupInfo) {
 }
 
 func (p *Processor) verifyBlock(bh *types.BlockHeader) ([]common.Hash, int8) {
-	lostTransHash, ret := core.BlockChainImpl.VerifyBlock(*bh)
+	lostTransHash, ret := p.MainChain.VerifyBlock(*bh)
 	stdLogger.Infof("BlockChainImpl.VerifyCastingBlock result=%v.", ret)
 	return lostTransHash, ret
 }
 
 func (p *Processor) getNearestBlockByHeight(h uint64) *types.Block {
 	for {
-		bh := p.MainChain.QueryBlockByHeight(h)
-		if bh != nil {
-			b := p.MainChain.QueryBlockByHash(bh.Hash)
+		b := p.MainChain.QueryBlock(h)
+		if b != nil {
+			b := p.MainChain.QueryBlockByHash(b.Header.Hash)
 			if b != nil {
 				return b
 			} else {
@@ -206,7 +208,7 @@ func (p *Processor) getNearestVerifyHashByHeight(h uint64) (realHeight uint64, v
 		slog.log("height %v", h)
 	}()
 	for {
-		hash, err := p.MainChain.GetCheckValue(h)
+		hash, err := p.MainChain.GetVerifyHash(h)
 
 		if err == nil {
 			return h, hash
@@ -288,7 +290,7 @@ func (p *Processor) VerifyGroup(g *types.Group) (ok bool, err error) {
 	gInfo := &model.ConsensusGroupInitInfo{
 		GI: model.ConsensusGroupInitSummary{
 			Signature: *groupsig.DeserializeSign(g.Signature),
-			GHeader: 	g.Header,
+			GHeader:   g.Header,
 		},
 		Mems: mems,
 	}

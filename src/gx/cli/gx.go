@@ -54,8 +54,6 @@ func (gx *GX) Run() {
 	quitChan := make(chan bool)
 	go gx.handleExit(ctrlC, quitChan)
 
-
-
 	app := kingpin.New("gx", "A blockchain layer 2 application.")
 	app.HelpFlag.Short('h')
 
@@ -215,7 +213,7 @@ func syncChainInfo() {
 				if core.BlockSyncer != nil {
 					_, _, candicateHeight, _ = core.BlockSyncer.GetCandidateForSync()
 				}
-				localBlockHeight := core.BlockChainImpl.Height()
+				localBlockHeight := core.GetBlockChain().Height()
 				fmt.Printf("Sync candidate block height:%d,local block height:%d\n", candicateHeight, localBlockHeight)
 				timer.Reset(time.Second * 5)
 			}
@@ -242,11 +240,11 @@ func (gx *GX) initSysParam() {
 
 func (gx *GX) handleExit(ctrlC <-chan bool, quit chan<- bool) {
 	<-ctrlC
-	if core.BlockChainImpl == nil {
+	if core.GetBlockChain() == nil {
 		return
 	}
 	fmt.Println("exiting...")
-	core.BlockChainImpl.Close()
+	core.GetBlockChain().Close()
 	log.Close()
 	consensus.StopMiner()
 	if gx.init {

@@ -56,7 +56,7 @@ func initMinerManager() {
 
 func (mm *MinerManager) GetMinerById(id []byte, ttype byte, accountdb *account.AccountDB) *types.Miner {
 	if accountdb == nil {
-		accountdb = BlockChainImpl.LatestStateDB()
+		accountdb = blockChainImpl.LatestStateDB()
 	}
 	db := mm.getMinerDatabase(ttype)
 	data := accountdb.GetData(db, string(id))
@@ -69,7 +69,7 @@ func (mm *MinerManager) GetMinerById(id []byte, ttype byte, accountdb *account.A
 }
 
 func (mm *MinerManager) GetTotalStake(height uint64) uint64 {
-	accountDB, err := BlockChainImpl.GetAccountDBByHeight(height)
+	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
 	if err != nil {
 		logger.Errorf("Get account db by height %d error:%s", height, err.Error())
 		return 0
@@ -100,7 +100,7 @@ func (mm *MinerManager) GetHeavyMiners() []string {
 }
 
 func (mm *MinerManager) MinerIterator(minerType byte, height uint64) *MinerIterator {
-	accountDB, err := BlockChainImpl.GetAccountDBByHeight(height)
+	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
 	if err != nil {
 		logger.Error("Get account db by height %d error:%s", height, err.Error())
 		return nil
@@ -109,7 +109,7 @@ func (mm *MinerManager) MinerIterator(minerType byte, height uint64) *MinerItera
 }
 
 func (mm *MinerManager) HeavyMinerCount(height uint64) uint64 {
-	accountDB, err := BlockChainImpl.GetAccountDBByHeight(height)
+	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
 	if err != nil {
 		logger.Error("Get account db by height %d error:%s", height, err.Error())
 		return 0
@@ -120,7 +120,7 @@ func (mm *MinerManager) HeavyMinerCount(height uint64) uint64 {
 }
 
 func (mm *MinerManager) LightMinerCount(height uint64) uint64 {
-	accountDB, err := BlockChainImpl.GetAccountDBByHeight(height)
+	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
 	if err != nil {
 		logger.Error("Get account db by height %d error:%s", height, err.Error())
 		return 0
@@ -225,7 +225,7 @@ func (mm *MinerManager) abortMiner(id []byte, ttype byte, height uint64, account
 func (mm *MinerManager) minerIterator(minerType byte, accountdb *account.AccountDB) *MinerIterator {
 	db := mm.getMinerDatabase(minerType)
 	if accountdb == nil {
-		accountdb = BlockChainImpl.LatestStateDB()
+		accountdb = blockChainImpl.LatestStateDB()
 	}
 	iterator := &MinerIterator{iterator: accountdb.DataIterator(db, "")}
 	return iterator

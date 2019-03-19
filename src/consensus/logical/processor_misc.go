@@ -40,10 +40,10 @@ func (p *Processor) Stop() {
 
 func (p *Processor) prepareMiner() {
 
-	topHeight := p.MainChain.QueryTopBlock().Height
+	topHeight := p.MainChain.TopBlock().Height
 
 	stdLogger.Infof("prepareMiner get groups from groupchain")
-	iterator := p.GroupChain.NewIterator()
+	iterator := p.GroupChain.Iterator()
 	groups := make([]*StaticGroupInfo, 0)
 	for coreGroup := iterator.Current(); coreGroup != nil; coreGroup = iterator.MovePre() {
 		stdLogger.Infof("get group from core, id=%+v", coreGroup.Header)
@@ -123,7 +123,7 @@ func (p *Processor) canProposalAt(h uint64) bool {
 }
 
 func (p *Processor) GetJoinedWorkGroupNums() (work, avail int) {
-	h := p.MainChain.QueryTopBlock().Height
+	h := p.MainChain.TopBlock().Height
 	groups := p.globalGroups.GetAvailableGroups(h)
 	for _, g := range groups {
 		if !g.MemExist(p.GetMinerID()) {
@@ -145,11 +145,11 @@ func (p *Processor) CalcBlockHeaderQN(bh *types.BlockHeader) uint64 {
 		stdLogger.Infof("CalcBHQN getMiner nil id=%v, bh=%v", castor.ShortS(), bh.Hash.ShortS())
 		return 0
 	}
-	pre := p.MainChain.QueryBlockHeaderByHash(bh.PreHash)
+	pre := p.MainChain.QueryBlockByHash(bh.PreHash)
 	if pre == nil {
 		return 0
 	}
-	totalStake := p.minerReader.getTotalStake(pre.Height, false)
+	totalStake := p.minerReader.getTotalStake(pre.Header.Height, false)
 	_, qn := validateProve(pi, miner.Stake, totalStake)
 	return qn
 }

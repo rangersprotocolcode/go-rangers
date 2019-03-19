@@ -128,7 +128,7 @@ func (api *GtasAPI) DebugContextSummary() (*Result, error) {
 }
 
 func getAllGroup() map[string]*types.Group {
-	iterator := consensus.Proc.GroupChain.NewIterator()
+	iterator := consensus.Proc.GroupChain.Iterator()
 	gs := make(map[string]*types.Group)
 	for coreGroup := iterator.Current(); coreGroup != nil; coreGroup = iterator.MovePre() {
 		id := groupsig.DeserializeId(coreGroup.Id)
@@ -164,8 +164,8 @@ func (api *GtasAPI) DebugVerifySummary(from, to uint64) (*Result, error) {
 	if from == 0 {
 		from = 1
 	}
-	chain := core.BlockChainImpl
-	top := chain.QueryTopBlock()
+	chain := core.GetBlockChain()
+	top := chain.TopBlock()
 	topHeight := top.Height
 	if to > topHeight {
 		to = topHeight
@@ -180,7 +180,7 @@ func (api *GtasAPI) DebugVerifySummary(from, to uint64) (*Result, error) {
 		allGroup:    allGroup,
 	}
 	nextGroupId, _ := selectNextVerifyGroup(allGroup, top, 1)
-	preBH := chain.QueryBlockByHeight(from - 1)
+	preBH := chain.QueryBlock(from - 1).Header
 
 	t := float64(0)
 	b := 0
@@ -188,15 +188,16 @@ func (api *GtasAPI) DebugVerifySummary(from, to uint64) (*Result, error) {
 	maxHeight := uint64(0)
 	jump := 0
 	for h := uint64(from); h <= to; h++ {
-		bh := chain.QueryBlockByHeight(h)
-		if bh == nil {
+		block := chain.QueryBlock(h)
+		if block == nil {
 			expectGid, _ := selectNextVerifyGroup(allGroup, preBH, h-preBH.Height)
 			gvs := summary.getGroupSummary(expectGid, topHeight, expectGid.IsEqual(nextGroupId))
 			gvs.addJumpHeight(h)
 			jump++
 		} else {
+			bh := block.Header
 			if preBH == nil {
-				preBH = chain.QueryBlockHeaderByHash(bh.PreHash)
+				preBH = chain.QueryBlockByHash(bh.PreHash).Header
 			}
 			if bh.PreHash != preBH.Hash {
 				e := fmt.Sprintf("not chain! pre %+v, curr %+v\n", preBH, bh)
@@ -245,9 +246,9 @@ func (api *GtasAPI) DebugJoinGroupInfo(gid string) (*Result, error) {
 }
 
 func (api *GtasAPI) DebugRemoveBlock(h uint64) (*Result, error) {
-	bh := core.BlockChainImpl.QueryBlockByHeight(h)
-	if bh != nil {
-		b := core.BlockChainImpl.QueryBlockByHash(bh.Hash)
+	block := core.GetBlockChain().QueryBlock(h)
+	if block != nil {
+		b := core.GetBlockChain().QueryBlockByHash(block.Header.Hash)
 		if b != nil {
 			ret := consensus.Proc.MainChain.Remove(b)
 			return successResult(ret)

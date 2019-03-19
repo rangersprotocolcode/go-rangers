@@ -100,7 +100,6 @@ type Network interface {
 	// resolve the kad net to find the node and then send the message
 	Send(id string, msg Message)
 
-
 	//Broadcast the message among the group which self belongs to
 	SpreadAmongGroup(groupId string, msg Message)
 
@@ -108,10 +107,8 @@ type Network interface {
 	//groupMembers is nil here
 	SpreadToRandomGroupMember(groupId string, groupMembers []string, msg Message)
 
-
 	//Send message to neighbor nodes
 	TransmitToNeighbor(msg Message)
-
 
 	//Send the message to all nodes it connects to and the node which receive the message also broadcast the message to their neighbor once
 	Broadcast(msg Message)

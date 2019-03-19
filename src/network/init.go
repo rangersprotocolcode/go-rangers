@@ -30,12 +30,11 @@ const (
 	basePort = 1122
 
 	baseSection = "network"
-
-	defaultSeedId = "QmTn5a8UhdgmNZx1Vy82kNwJ6RmHKcqocSjTg8VbPaXu69"
-
-	defaultSeedAddr = "/ip4/192.168.3.115/tcp/1122"
 )
 
+var defaultSeedId = "QmTn5a8UhdgmNZx1Vy82kNwJ6RmHKcqocSjTg8VbPaXu69"
+
+var defaultSeedAddr = "/ip4/192.168.3.210/tcp/1122"
 var Logger log.Logger
 
 func InitNetwork(privateKey common.PrivateKey, isSuper bool, consensusHandler MsgHandler) string {

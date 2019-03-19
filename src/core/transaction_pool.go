@@ -52,7 +52,7 @@ type TxPool struct {
 	broadcastTxLock sync.Mutex
 	broadcastTimer  *time.Timer
 
-	txBroadcastTime       *lru.Cache
+	txBroadcastTime *lru.Cache
 	oldTxBroadTimer *time.Timer
 
 	txCount uint64
@@ -269,7 +269,7 @@ func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
 	}
 
 	if tx.Type == types.TransactionTypeBonus {
-		if ok, err := BlockChainImpl.GetConsensusHelper().VerifyBonusTransaction(tx); !ok {
+		if ok, err := consensusHelper.VerifyBonusTransaction(tx); !ok {
 			return err
 		}
 	} else {
@@ -424,7 +424,7 @@ func (pool *TxPool) broadcastOldTx() {
 	}
 
 	for _, tx := range pool.GetReceived() {
-		if  ! pool.isTxBroadcasted(tx.Hash)  {
+		if ! pool.isTxBroadcasted(tx.Hash) {
 			pool.txBroadcastTime.Add(tx.Hash, time.Now())
 
 			pool.broadcastList = append(pool.broadcastList, tx)
@@ -445,13 +445,11 @@ func (pool *TxPool) isTxBroadcasted(txHash common.Hash) bool {
 	if v, ok := pool.txBroadcastTime.Get(txHash); ok {
 		rcvTime := v.(time.Time)
 		if now.Sub(rcvTime) < oldTxInterval {
-			return  true
+			return true
 		}
 	}
 	return false
 }
-
-
 
 func (pool *TxPool) clearTxBroadcastedCache() {
 	txHashes := pool.txBroadcastTime.Keys()
@@ -465,8 +463,6 @@ func (pool *TxPool) clearTxBroadcastedCache() {
 		}
 	}
 }
-
-
 
 func (pool *TxPool) loop() {
 	for {

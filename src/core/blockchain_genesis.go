@@ -1,13 +1,10 @@
 package core
 
 import (
-	"bytes"
 	"x/src/common"
-	"github.com/vmihailenco/msgpack"
 	"math/big"
 	"x/src/middleware/types"
 	"time"
-	"x/src/middleware/serialize"
 	"x/src/storage/trie"
 	"x/src/storage/account"
 )
@@ -16,41 +13,28 @@ const ChainDataVersion = 2
 
 var emptyHash = common.Hash{}
 
-func calcTxTree(tx []*types.Transaction) common.Hash {
-	if nil == tx || 0 == len(tx) {
-		return emptyHash
-	}
+func (chain *blockChain) insertGenesisBlock() {
+	state, err := account.NewAccountDB(common.Hash{}, chain.stateDB)
+	if nil == err {
+		genesisBlock := genGenesisBlock(state, chain.stateDB.TrieDB(), consensusHelper.GenerateGenesisInfo())
+		logger.Debugf("GenesisBlock Hash:%s,StateTree:%s", genesisBlock.Header.Hash.String(), genesisBlock.Header.StateTree.Hex())
+		blockByte, _ := types.MarshalBlock(genesisBlock)
+		chain.saveBlockByHash(genesisBlock.Header.Hash, blockByte)
 
-	buf := new(bytes.Buffer)
-	for i := 0; i < len(tx); i++ {
-		encode, _ := msgpack.Marshal(tx[i])
-		serialize.Encode(buf, encode)
-	}
-	return common.BytesToHash(common.Sha256(buf.Bytes()))
-}
-
-func calcReceiptsTree(receipts types.Receipts) common.Hash {
-	if nil == receipts || 0 == len(receipts) {
-		return emptyHash
-	}
-
-	keybuf := new(bytes.Buffer)
-	trie := new(trie.Trie)
-	for i := 0; i < len(receipts); i++ {
-		if receipts[i] != nil {
-			keybuf.Reset()
-			serialize.Encode(keybuf, uint(i))
-			encode, _ := serialize.EncodeToBytes(receipts[i])
-			trie.Update(keybuf.Bytes(), encode)
+		headerByte, err := types.MarshalBlockHeader(genesisBlock.Header)
+		if err != nil {
+			logger.Errorf("Marshal block header error:%s", err.Error())
 		}
-	}
-	hash := trie.Hash()
+		chain.saveBlockByHeight(genesisBlock.Header.Height, headerByte)
 
-	return common.BytesToHash(hash.Bytes())
+		chain.updateLastBlock(state, genesisBlock.Header, headerByte)
+		chain.updateVerifyHash(genesisBlock)
+	} else {
+		panic("Init block chain error:" + err.Error())
+	}
 }
 
-// 创始块
-func GenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, genesisInfo *types.GenesisInfo) *types.Block {
+func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, genesisInfo *types.GenesisInfo) *types.Block {
 	block := new(types.Block)
 	pv := big.NewInt(0)
 	block.Header = &types.BlockHeader{

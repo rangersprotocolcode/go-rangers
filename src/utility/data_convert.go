@@ -32,9 +32,9 @@ func ByteToInt(b []byte) int {
 }
 
 func UInt64ToByte(i uint64) []byte {
-buf := bytes.NewBuffer([]byte{})
-binary.Write(buf, binary.BigEndian, i)
-return buf.Bytes()
+	buf := bytes.NewBuffer([]byte{})
+	binary.Write(buf, binary.BigEndian, i)
+	return buf.Bytes()
 }
 
 func ByteToUInt64(b []byte) uint64 {
@@ -43,4 +43,3 @@ func ByteToUInt64(b []byte) uint64 {
 	binary.Read(buf, binary.BigEndian, &x)
 	return x
 }
-

@@ -103,7 +103,7 @@ func sendTransaction(trans *types.Transaction) error {
 	trans.Source = &source
 	//common.DefaultLogger.Debugf(trans.Sign.GetHexString(), pk.GetHexString(), source.GetHexString(), trans.Hash.String())
 
-	if ok, err := core.BlockChainImpl.GetTransactionPool().AddTransaction(trans); err != nil || !ok {
+	if ok, err := core.GetBlockChain().GetTransactionPool().AddTransaction(trans); err != nil || !ok {
 		common.DefaultLogger.Errorf("AddTransaction not ok or error:%s", err.Error())
 		return err
 	}

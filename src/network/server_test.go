@@ -24,10 +24,10 @@ func TestSendMessage(t *testing.T) {
 	crypto.PubKeyUnmarshallers[3] = UnmarshalEcdsaPublicKey
 
 	common.InitConf("test.ini")
-	logger = log.GetLoggerByName("p2p" + common.GlobalConf.GetString("client", "index", ""))
+	Logger = log.GetLoggerByName("p2p" + common.GlobalConf.GetString("client", "index", ""))
 	ctx := context.Background()
 
-	seedPrivateKey := "0x04d46485dfa6bb887daec6c35c707c4eaa58e2ea0cafbc8b40201b7759f611e3f27c7d3d3e5835d55e622b90a5d2f24172c80947f97544acd5cf8ed3f4d94f4243f3092f031b85e4675634bf60434a590e954c8051d42c53ced1744eaf32e47395"
+	seedPrivateKey := "0x041629de511d8f53d5a0ccf1676021708a15c6d85fad6765e33bae95eb15f6f9b10e0360813c63fc2cccfdd2e7a8ddbfe7eb84fe50555383d0323475622c5216f3e01cfb4e1c156a795fa6d525fb481727dabcbf066b3a153daf835f5570599a79"
 	seedDht, seedHost, seedId := mockDHT(seedPrivateKey, true)
 	fmt.Printf("Mock seed dht success! seedId is:%s\n\n", idToString(seedId))
 
@@ -49,7 +49,7 @@ func TestSendMessage(t *testing.T) {
 	node1Server.host.SetStreamHandler(protocolID, testSteamHandler)
 
 	message := mockMessage()
-	seedServer.Send(idToString(node1Id), message)
+	seedServer.sendByNetId(idToString(node1Id), message)
 	fmt.Printf("Send message code %d,msg len:%d\n", message.Code, len(message.Body))
 
 	time.Sleep(50 * time.Millisecond)
@@ -73,7 +73,7 @@ func testSteamHandler(stream inet.Stream) {
 	}
 	//校验 header
 	if !(headerBytes[0] == header[0] && headerBytes[1] == header[1] && headerBytes[2] == header[2]) {
-		logger.Errorf("validate header error from %s! ", id)
+		Logger.Errorf("validate header error from %s! ", id)
 		return
 	}
 

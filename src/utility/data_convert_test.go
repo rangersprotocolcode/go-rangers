@@ -5,16 +5,16 @@ import (
 	"testing"
 )
 
-func TestByteToInt(t *testing.T){
+func TestByteToInt(t *testing.T) {
 
 	var a uint32
-	a=16
-	bytes:= UInt32ToByte(a)
-	i:= ByteToInt(bytes)
+	a = 16
+	bytes := UInt32ToByte(a)
+	i := ByteToInt(bytes)
 
-	if i ==16{
+	if i == 16 {
 		fmt.Printf("OK")
-	}else {
+	} else {
 		fmt.Errorf("Failed")
 	}
 }

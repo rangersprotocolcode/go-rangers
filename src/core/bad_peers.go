@@ -6,8 +6,8 @@ import (
 )
 
 const (
-	badPeersCleanInterval = time.Second * 10
-	evilMaxCount          = 300
+	badPeersCleanInterval = time.Minute * 3
+	evilMaxCount          = 3
 )
 
 var PeerManager *peerManager
