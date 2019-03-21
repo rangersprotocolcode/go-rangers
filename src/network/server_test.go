@@ -24,7 +24,7 @@ func TestSendMessage(t *testing.T) {
 	crypto.PubKeyUnmarshallers[3] = UnmarshalEcdsaPublicKey
 
 	common.InitConf("test.ini")
-	logger = log.GetLoggerByName("p2p" + common.GlobalConf.GetString("client", "index", ""))
+
 	ctx := context.Background()
 
 	seedPrivateKey := "0x04d46485dfa6bb887daec6c35c707c4eaa58e2ea0cafbc8b40201b7759f611e3f27c7d3d3e5835d55e622b90a5d2f24172c80947f97544acd5cf8ed3f4d94f4243f3092f031b85e4675634bf60434a590e954c8051d42c53ced1744eaf32e47395"
