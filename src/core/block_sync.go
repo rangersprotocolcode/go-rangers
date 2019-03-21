@@ -63,7 +63,7 @@ func (bs *blockSyncer) IsInit() bool {
 }
 
 func (bs *blockSyncer) GetCandidateForSync() (string, uint64, uint64, bool) {
-	topBlock := BlockChainImpl.QueryTopBlock()
+	topBlock := blockChainImpl.TopBlock()
 	localTotalQN, localTopHash, localHeight := topBlock.TotalQN, topBlock.Hash, topBlock.Height
 	bs.logger.Debugf("Local totalQn:%d,height:%d,topHash:%s", localTotalQN, localHeight, localTopHash.String())
 	bs.candidatePoolDump()
@@ -134,11 +134,9 @@ func (bs *blockSyncer) loop() {
 	for {
 		select {
 		case <-bs.blockInfoNotifyTimer.C:
-			if !BlockChainImpl.IsLightMiner() {
-				topBlock := BlockChainImpl.QueryTopBlock()
-				topBlockInfo := TopBlockInfo{Hash: topBlock.Hash, TotalQn: topBlock.TotalQN, Height: topBlock.Height, PreHash: topBlock.PreHash}
-				go bs.sendTopBlockInfoToNeighbor(topBlockInfo)
-			}
+			topBlock := blockChainImpl.TopBlock()
+			topBlockInfo := TopBlockInfo{Hash: topBlock.Hash, TotalQn: topBlock.TotalQN, Height: topBlock.Height, PreHash: topBlock.PreHash}
+			go bs.sendTopBlockInfoToNeighbor(topBlockInfo)
 		case <-bs.syncTimer.C:
 			bs.logger.Debugf("Block sync time up! Try sync")
 			go bs.trySync()
@@ -184,7 +182,7 @@ func (bs *blockSyncer) topBlockInfoNotifyHandler(msg notify.Message) {
 	}
 
 	source := bnm.Peer
-	topBlock := BlockChainImpl.QueryTopBlock()
+	topBlock := blockChainImpl.TopBlock()
 	localTotalQn, localTopHash := topBlock.TotalQN, topBlock.Hash
 	if !bs.isUsefulCandidate(localTotalQn, localTopHash, blockInfo.TotalQn, blockInfo.Hash) {
 		return
@@ -227,7 +225,7 @@ func (bs *blockSyncer) blockResponseMsgHandler(msg notify.Message) {
 		bs.logger.Debugf("Rcv block response nil from:%s", source)
 	} else {
 		bs.logger.Debugf("Rcv block response from:%s,hash:%v,height:%d,totalQn:%d,tx len:%d,isLastBlock:%t", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions), isLastBlock)
-		result := BlockChainImpl.AddBlockOnChain(source, block, types.Sync)
+		result := blockChainImpl.AddBlockOnChain(source, block, types.Sync)
 		if result == types.AddBlockSucc {
 			sync = true
 		}

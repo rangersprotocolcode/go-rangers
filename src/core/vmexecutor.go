@@ -7,7 +7,7 @@ import (
 	"x/src/common"
 	"x/src/middleware/types"
 	"x/src/storage/account"
-	
+
 	"github.com/vmihailenco/msgpack"
 	"bytes"
 )
@@ -55,10 +55,10 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		switch transaction.Type {
 		case types.TransactionTypeTransfer:
 			success, err, cumulativeGasUsed = executor.executeTransferTx(accountdb, transaction, castor)
-		//case types.TransactionTypeContractCreate:
-		//	success, err, cumulativeGasUsed, contractAddress = executor.executeContractCreateTx(accountdb, transaction, castor, block)
-		//case types.TransactionTypeContractCall:
-		//	success, err, cumulativeGasUsed, logs = executor.executeContractCallTx(accountdb, transaction, castor, block)
+			//case types.TransactionTypeContractCreate:
+			//	success, err, cumulativeGasUsed, contractAddress = executor.executeContractCreateTx(accountdb, transaction, castor, block)
+			//case types.TransactionTypeContractCall:
+			//	success, err, cumulativeGasUsed, logs = executor.executeContractCallTx(accountdb, transaction, castor, block)
 		case types.TransactionTypeBonus:
 			success = executor.executeBonusTx(accountdb, transaction, castor)
 		case types.TransactionTypeMinerApply:
@@ -85,7 +85,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			}
 		}
 	}
-	accountdb.AddBalance(common.BytesToAddress(block.Header.Castor), executor.bc.GetConsensusHelper().ProposalBonus())
+	accountdb.AddBalance(common.BytesToAddress(block.Header.Castor), consensusHelper.ProposalBonus())
 
 	state := accountdb.IntermediateRoot(true)
 	logger.Debugf("VMExecutor End Execute State %s", state.Hex())
@@ -235,7 +235,7 @@ func (executor *VMExecutor) executeBonusTx(accountdb *account.AccountDB, transac
 			accountdb.AddBalance(address, value)
 		}
 		executor.bc.GetBonusManager().put(transaction.Data, transaction.Hash[:], accountdb)
-		accountdb.AddBalance(castor, executor.bc.GetConsensusHelper().PackBonus())
+		accountdb.AddBalance(castor, consensusHelper.PackBonus())
 		success = true
 	}
 	//logger.Debugf("VMExecutor Execute Bonus Transaction:%s Group:%s,Success:%t", common.BytesToHash(transaction.Data).Hex(), common.BytesToHash(groupId).ShortS(),success)
@@ -317,7 +317,7 @@ func (executor *VMExecutor) executeMinerRefundTx(accountdb *account.AccountDB, t
 				logger.Debugf("VMExecutor Execute MinerRefund Heavy Fail(Refund height less than abortHeight+10) Hash%s,Type:%s", transaction.Source.GetHexString(), mark)
 			}
 		} else {
-			if !GroupChainImpl.WhetherMemberInActiveGroup(transaction.Source[:], height, mexist.ApplyHeight, mexist.AbortHeight) {
+			if !isActive(transaction.Source[:], height) {
 				MinerManagerImpl.removeMiner(transaction.Source[:], mexist.Type, accountdb)
 				amount := big.NewInt(int64(mexist.Stake))
 				accountdb.AddBalance(*transaction.Source, amount)
@@ -353,4 +353,26 @@ func canTransfer(db *account.AccountDB, addr common.Address, amount *big.Int, ga
 func transfer(db *account.AccountDB, sender, recipient common.Address, amount *big.Int) {
 	db.SubBalance(sender, amount)
 	db.AddBalance(recipient, amount)
+}
+
+func isActive(minerId []byte, currentBlockHeight uint64) bool {
+	iterator := groupChainImpl.Iterator()
+	for g := iterator.Current(); g != nil; g = iterator.MovePre() {
+		if g.Header.DismissHeight <= currentBlockHeight {
+			genesisGroup := groupChainImpl.GetGroupByHeight(0)
+			for _, member := range genesisGroup.Members {
+				if bytes.Equal(member, minerId) {
+					return true
+				}
+			}
+			break
+		} else {
+			for _, member := range g.Members {
+				if bytes.Equal(member, minerId) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }

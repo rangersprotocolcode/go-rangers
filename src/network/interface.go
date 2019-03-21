@@ -100,15 +100,6 @@ type Network interface {
 	// resolve the kad net to find the node and then send the message
 	Send(id string, msg Message)
 
-	//Deprecated  use Send  to replace if need
-	//Send message to the node which id represents. If self doesn't connect to the node,
-	// send message to the guys which belongs to the same group with the node and they will rely the message to the node
-	//SendWithGroupRelay(id string, groupId string, msg Message) error
-
-	//Deprecated  use SpreadAmongGroup  to replace if need
-	//Random broadcast the message to parts nodes in the group which self belongs to
-	//RandomSpreadInGroup(groupId string, msg Message)
-
 	//Broadcast the message among the group which self belongs to
 	SpreadAmongGroup(groupId string, msg Message)
 
@@ -116,16 +107,8 @@ type Network interface {
 	//groupMembers is nil here
 	SpreadToRandomGroupMember(groupId string, groupMembers []string, msg Message)
 
-	//Deprecated  use SpreadAmongGroup  to replace if need
-	//Broadcast the message to the group which self do not belong to
-	//SpreadToGroup(groupId string, groupMembers []string, msg Message, digest MsgDigest)
-
 	//Send message to neighbor nodes
 	TransmitToNeighbor(msg Message)
-
-	//Deprecated
-	//Send the message to part nodes it connects to and they will also broadcast the message to part of their neighbor util relayCount
-	//Relay(msg Message, relayCount int32) error
 
 	//Send the message to all nodes it connects to and the node which receive the message also broadcast the message to their neighbor once
 	Broadcast(msg Message)

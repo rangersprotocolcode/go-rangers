@@ -91,13 +91,13 @@ func (api *GtasAPI) DeleteWallet(key string) (*Result, error) {
 
 // BlockHeight 块高查询
 func (api *GtasAPI) BlockHeight() (*Result, error) {
-	height := core.BlockChainImpl.QueryTopBlock().Height
+	height := core.GetBlockChain().TopBlock().Height
 	return successResult(height)
 }
 
 // GroupHeight 组块高查询
 func (api *GtasAPI) GroupHeight() (*Result, error) {
-	height := core.GroupChainImpl.Count()
+	height := core.GetGroupChain().Count()
 	return successResult(height)
 }
 
@@ -114,7 +114,7 @@ func (api *GtasAPI) ConnectedNodes() (*Result, error) {
 
 // TransPool 查询缓冲区的交易信息。
 func (api *GtasAPI) TransPool() (*Result, error) {
-	transactions := core.BlockChainImpl.GetTransactionPool().GetReceived()
+	transactions := core.GetBlockChain().GetTransactionPool().GetReceived()
 	transList := make([]Transactions, 0, len(transactions))
 	for _, v := range transactions {
 		transList = append(transList, Transactions{
@@ -129,7 +129,7 @@ func (api *GtasAPI) TransPool() (*Result, error) {
 }
 
 func (api *GtasAPI) GetTransaction(hash string) (*Result, error) {
-	transaction, err := core.BlockChainImpl.GetTransactionByHash(common.HexToHash(hash))
+	transaction, err := core.GetBlockChain().GetTransaction(common.HexToHash(hash))
 	if err != nil {
 		return failResult(err.Error())
 	}
@@ -173,26 +173,28 @@ func (api *GtasAPI) GetTransaction(hash string) (*Result, error) {
 //}
 
 func (api *GtasAPI) GetBlockByHeight(height uint64) (*Result, error) {
-	bh := core.BlockChainImpl.QueryBlockByHeight(height)
-	if bh == nil {
+	b := core.GetBlockChain().QueryBlock(height)
+	if b == nil {
 		return failResult("height not exists")
 	}
-	preBH := core.BlockChainImpl.QueryBlockHeaderByHash(bh.PreHash)
-	block := convertBlockHeader(bh)
-	if preBH != nil {
-		block.Qn = bh.TotalQN - preBH.TotalQN
+	preBlock := core.GetBlockChain().QueryBlockByHash(b.Header.PreHash)
+	block := convertBlockHeader(b.Header)
+	if preBlock != nil {
+		block.Qn = b.Header.TotalQN - preBlock.Header.TotalQN
 	} else {
-		block.Qn = bh.TotalQN
+		block.Qn = b.Header.TotalQN
 	}
 	return successResult(block)
 }
 
 func (api *GtasAPI) GetBlockByHash(hash string) (*Result, error) {
-	bh := core.BlockChainImpl.QueryBlockHeaderByHash(common.HexToHash(hash))
-	if bh == nil {
+	b := core.GetBlockChain().QueryBlockByHash(common.HexToHash(hash))
+	if b == nil {
 		return failResult("height not exists")
 	}
-	preBH := core.BlockChainImpl.QueryBlockHeaderByHash(bh.PreHash)
+	bh := b.Header
+	preBlock := core.GetBlockChain().QueryBlockByHash(bh.PreHash)
+	preBH := preBlock.Header
 	block := convertBlockHeader(bh)
 	if preBH != nil {
 		block.Qn = bh.TotalQN - preBH.TotalQN
@@ -206,14 +208,14 @@ func (api *GtasAPI) GetBlocks(from uint64, to uint64) (*Result, error) {
 	blocks := make([]*Block, 0)
 	var preBH *types.BlockHeader
 	for h := from; h <= to; h++ {
-		bh := core.BlockChainImpl.QueryBlockByHeight(h)
-		if bh != nil {
-			block := convertBlockHeader(bh)
+		b := core.GetBlockChain().QueryBlock(h)
+		if b != nil {
+			block := convertBlockHeader(b.Header)
 			if preBH == nil {
-				preBH = core.BlockChainImpl.QueryBlockHeaderByHash(bh.PreHash)
+				preBH = core.GetBlockChain().QueryBlockByHash(b.Header.PreHash).Header
 			}
-			block.Qn = bh.TotalQN - preBH.TotalQN
-			preBH = bh
+			block.Qn = b.Header.TotalQN - preBH.TotalQN
+			preBH = b.Header
 			blocks = append(blocks, block)
 		}
 	}
@@ -221,7 +223,7 @@ func (api *GtasAPI) GetBlocks(from uint64, to uint64) (*Result, error) {
 }
 
 func (api *GtasAPI) GetTopBlock() (*Result, error) {
-	bh := core.BlockChainImpl.QueryTopBlock()
+	bh := core.GetBlockChain().TopBlock()
 	blockDetail := make(map[string]interface{})
 	blockDetail["hash"] = bh.Hash.Hex()
 	blockDetail["height"] = bh.Height
@@ -235,8 +237,8 @@ func (api *GtasAPI) GetTopBlock() (*Result, error) {
 	blockDetail["txs"] = len(bh.Transactions)
 	blockDetail["tps"] = math.Round(float64(len(bh.Transactions)) / bh.CurTime.Sub(bh.PreTime).Seconds())
 
-	blockDetail["tx_pool_count"] = len(core.BlockChainImpl.GetTransactionPool().GetReceived())
-	blockDetail["tx_pool_total"] = core.BlockChainImpl.GetTransactionPool().TxNum()
+	blockDetail["tx_pool_count"] = len(core.GetBlockChain().GetTransactionPool().GetReceived())
+	blockDetail["tx_pool_total"] = core.GetBlockChain().GetTransactionPool().TxNum()
 	blockDetail["miner_id"] = consensus.Proc.GetPubkeyInfo().ID.ShortS()
 	return successResult(blockDetail)
 }
@@ -270,10 +272,19 @@ func convertGroup(g *types.Group) map[string]interface{} {
 }
 
 func (api *GtasAPI) GetGroupsAfter(height uint64) (*Result, error) {
-	groups, err := core.GroupChainImpl.GetGroupsByHeight(height)
-	if err != nil {
-		return failResult(err.Error())
+	count := core.GetGroupChain().Count()
+	if count <= height {
+		return failResult("exceed local height")
 	}
+	groups := make([]*types.Group, count-height)
+	for i := height; i < count; i++ {
+		group := core.GetGroupChain().GetGroupByHeight(i)
+		if nil != group {
+			groups[i-height] = group
+		}
+
+	}
+
 	ret := make([]map[string]interface{}, 0)
 	h := height
 	for _, g := range groups {
@@ -286,7 +297,7 @@ func (api *GtasAPI) GetGroupsAfter(height uint64) (*Result, error) {
 }
 
 func (api *GtasAPI) GetCurrentWorkGroup() (*Result, error) {
-	height := core.BlockChainImpl.Height()
+	height := core.GetBlockChain().Height()
 	return api.GetWorkGroup(height)
 }
 
@@ -337,7 +348,7 @@ func (api *GtasAPI) MinerApply(sign string, bpk string, vrfpk string, stake uint
 		GasPrice: common.MaxUint64,
 	}
 	tx.Hash = tx.GenHash()
-	ok, err := core.BlockChainImpl.GetTransactionPool().AddTransaction(tx)
+	ok, err := core.GetBlockChain().GetTransactionPool().AddTransaction(tx)
 	if !ok {
 		return failResult(err.Error())
 	}
@@ -369,7 +380,7 @@ func (api *GtasAPI) MinerAbort(sign string, mtype int32) (*Result, error) {
 		GasPrice: common.MaxUint64,
 	}
 	tx.Hash = tx.GenHash()
-	ok, err := core.BlockChainImpl.GetTransactionPool().AddTransaction(tx)
+	ok, err := core.GetBlockChain().GetTransactionPool().AddTransaction(tx)
 	if !ok {
 		return failResult(err.Error())
 	}
@@ -390,7 +401,7 @@ func (api *GtasAPI) MinerRefund(sign string, mtype int32) (*Result, error) {
 		GasPrice: common.MaxUint64,
 	}
 	tx.Hash = tx.GenHash()
-	ok, err := core.BlockChainImpl.GetTransactionPool().AddTransaction(tx)
+	ok, err := core.GetBlockChain().GetTransactionPool().AddTransaction(tx)
 	if !ok {
 		return &Result{Message: err.Error(), Data: nil}, nil
 	}
@@ -402,23 +413,23 @@ func (api *GtasAPI) CastStat(begin uint64, end uint64) (*Result, error) {
 	proposerStat := make(map[string]int32)
 	groupStat := make(map[string]int32)
 
-	chain := core.BlockChainImpl
+	chain := core.GetBlockChain()
 	if end == 0 {
-		end = chain.QueryTopBlock().Height
+		end = chain.TopBlock().Height
 	}
 
 	for h := begin; h < end; h++ {
-		bh := chain.QueryBlockByHeight(h)
-		if bh == nil {
+		b := chain.QueryBlock(h)
+		if b == nil {
 			continue
 		}
-		p := string(bh.Castor)
+		p := string(b.Header.Castor)
 		if v, ok := proposerStat[p]; ok {
 			proposerStat[p] = v + 1
 		} else {
 			proposerStat[p] = 1
 		}
-		g := string(bh.GroupId)
+		g := string(b.Header.GroupId)
 		if v, ok := groupStat[g]; ok {
 			groupStat[g] = v + 1
 		} else {
@@ -492,7 +503,7 @@ func (api *GtasAPI) NodeInfo() (*Result, error) {
 		ni.WGroupNum = wg
 		ni.AGroupNum = ag
 
-		if txs := core.BlockChainImpl.GetTransactionPool().GetReceived(); txs != nil {
+		if txs := core.GetBlockChain().GetTransactionPool().GetReceived(); txs != nil {
 			ni.TxPoolNum = len(txs)
 		}
 	}
@@ -501,7 +512,7 @@ func (api *GtasAPI) NodeInfo() (*Result, error) {
 }
 
 func (api *GtasAPI) PageGetBlocks(page, limit int) (*Result, error) {
-	chain := core.BlockChainImpl
+	chain := core.GetBlockChain()
 	total := chain.Height() + 1
 	pageObject := PageObjects{
 		Total: total,
@@ -518,20 +529,20 @@ func (api *GtasAPI) PageGetBlocks(page, limit int) (*Result, error) {
 	b := int64(total - num)
 
 	for i < limit && b >= 0 {
-		bh := chain.QueryBlockByHeight(uint64(b))
+		block := chain.QueryBlock(uint64(b))
 		b--
-		if bh == nil {
+		if block == nil {
 			continue
 		}
-		block := convertBlockHeader(bh)
-		pageObject.Data = append(pageObject.Data, block)
+		h := convertBlockHeader(block.Header)
+		pageObject.Data = append(pageObject.Data, h)
 		i++
 	}
 	return successResult(pageObject)
 }
 
 func (api *GtasAPI) PageGetGroups(page, limit int) (*Result, error) {
-	chain := core.GroupChainImpl
+	chain := core.GetGroupChain()
 	total := chain.Count()
 	pageObject := PageObjects{
 		Total: total,
@@ -577,7 +588,7 @@ func (api *GtasAPI) PageGetGroups(page, limit int) (*Result, error) {
 }
 
 func (api *GtasAPI) BlockDetail(h string) (*Result, error) {
-	chain := core.BlockChainImpl
+	chain := core.GetBlockChain()
 	b := chain.QueryBlockByHash(common.HexToHash(h))
 	if b == nil {
 		return successResult(nil)
@@ -585,7 +596,7 @@ func (api *GtasAPI) BlockDetail(h string) (*Result, error) {
 	bh := b.Header
 	block := convertBlockHeader(bh)
 
-	preBH := chain.QueryBlockHeaderByHash(bh.PreHash)
+	preBH := chain.QueryBlockByHash(bh.PreHash).Header
 	block.Qn = bh.TotalQN - preBH.TotalQN
 
 	castor := block.Castor.GetHexString()
@@ -686,11 +697,12 @@ func (api *GtasAPI) BlockDetail(h string) (*Result, error) {
 }
 
 func (api *GtasAPI) BlockReceipts(h string) (*Result, error) {
-	chain := core.BlockChainImpl
-	bh := chain.QueryBlockHeaderByHash(common.HexToHash(h))
-	if bh == nil {
+	chain := core.GetBlockChain()
+	b := chain.QueryBlockByHash(common.HexToHash(h))
+	if b == nil {
 		return failResult("block not found")
 	}
+	bh := b.Header
 
 	evictedReceipts := make([]*types.Receipt, 0)
 	for _, tx := range bh.EvictedTxs {
@@ -711,7 +723,7 @@ func (api *GtasAPI) BlockReceipts(h string) (*Result, error) {
 }
 
 func (api *GtasAPI) TransDetail(h string) (*Result, error) {
-	tx, err := core.BlockChainImpl.GetTransactionByHash(common.HexToHash(h))
+	tx, err := core.GetBlockChain().GetTransaction(common.HexToHash(h))
 	if err != nil {
 		return failResult(err.Error())
 	}
@@ -723,8 +735,8 @@ func (api *GtasAPI) TransDetail(h string) (*Result, error) {
 }
 
 func (api *GtasAPI) Dashboard() (*Result, error) {
-	blockHeight := core.BlockChainImpl.Height()
-	groupHeight := core.GroupChainImpl.Count()
+	blockHeight := core.GetBlockChain().Height()
+	groupHeight := core.GetGroupChain().Count()
 	workNum := len(consensus.Proc.GetCastQualifiedGroups(blockHeight))
 	nodeResult, _ := api.NodeInfo()
 	consResult, _ := api.ConnectedNodes()
@@ -773,11 +785,11 @@ func (api *GtasAPI) Dashboard() (*Result, error) {
 
 func (api *GtasAPI) Nonce(addr string) (*Result, error) {
 	address := common.HexToAddress(addr)
-	nonce := core.BlockChainImpl.GetNonce(address)
+	nonce := core.GetBlockChain().GetNonce(address)
 	return successResult(nonce)
 }
 
 func (api *GtasAPI) TxReceipt(h string) (*Result, error) {
-	w := core.BlockChainImpl.GetTransactionPool().GetExecuted(common.HexToHash(h))
+	w := core.GetBlockChain().GetTransactionPool().GetExecuted(common.HexToHash(h))
 	return successResult(w)
 }

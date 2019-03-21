@@ -15,14 +15,14 @@ import (
 
 const (
 	SS_INITING     int32 = iota
-	SS_WAITING           //等待签名片段达到阈值
-	SS_SIGNED            //自己是否签名过
-	SS_RECOVERD          //恢复出组签名
-	SS_VERIFIED          //组签名用组公钥验证通过
-	SS_SUCCESS           //已上链广播
-	SS_FAILED            //铸块过程中失败，不可逆
-	SS_REWARD_REQ        //分红交易签名请求已发
-	SS_REWARD_SEND       //分红交易已广播
+	SS_WAITING      //等待签名片段达到阈值
+	SS_SIGNED       //自己是否签名过
+	SS_RECOVERD     //恢复出组签名
+	SS_VERIFIED     //组签名用组公钥验证通过
+	SS_SUCCESS      //已上链广播
+	SS_FAILED       //铸块过程中失败，不可逆
+	SS_REWARD_REQ   //分红交易签名请求已发
+	SS_REWARD_SEND  //分红交易已广播
 )
 
 //铸块槽结构，和某个KING的共识数据一一对应
@@ -44,7 +44,7 @@ type SlotContext struct {
 	rewardTrans    *types.Transaction
 	rewardGSignGen *model.GroupSignGenerator //奖励交易签名产生器
 
-	signedRewardTxHashs set.Interface	//已签名的交易hash
+	signedRewardTxHashs set.Interface //已签名的交易hash
 }
 
 func createSlotContext(bh *types.BlockHeader, threshold int) *SlotContext {
@@ -56,7 +56,7 @@ func createSlotContext(bh *types.BlockHeader, threshold int) *SlotContext {
 		gSignGenerator: model.NewGroupSignGenerator(threshold),
 		rSignGenerator: model.NewGroupSignGenerator(threshold),
 		//rewardGSignGen: model.NewGroupSignGenerator(threshold),
-		lostTxHash:     set.New(set.ThreadSafe),
+		lostTxHash: set.New(set.ThreadSafe),
 	}
 }
 
@@ -69,7 +69,7 @@ func (sc *SlotContext) initIfNeeded() bool {
 	if sc.slotStatus == SS_INITING {
 		slog := newSlowLog("InitSlot", 0.1)
 		slog.addStage("VerifyBlock")
-		lostTxs, ccr := core.BlockChainImpl.VerifyBlock(*bh)
+		lostTxs, ccr := core.GetBlockChain().VerifyBlock(*bh)
 		slog.endStage()
 		slog.log("height=%v, hash=%v, lost trans size %v , ret %v", bh.Height, bh.Hash.ShortS(), len(lostTxs), ccr)
 
@@ -182,7 +182,7 @@ func (sc *SlotContext) AcceptVerifyPiece(bh *types.BlockHeader, si *model.SignDa
 	}
 
 	var (
-		add bool
+		add      bool
 		generate bool
 	)
 	slog := newSlowLog("AcceptPiece", 0.1)
@@ -266,7 +266,7 @@ func (sc *SlotContext) AcceptRewardPiece(sd *model.SignData) (accept, recover bo
 	return
 }
 
-func (sc *SlotContext) addSignedTxHash(hash common.Hash)  {
+func (sc *SlotContext) addSignedTxHash(hash common.Hash) {
 	if sc.signedRewardTxHashs == nil {
 		sc.signedRewardTxHashs = set.New(set.ThreadSafe)
 	}
@@ -277,8 +277,9 @@ func (sc *SlotContext) hasSignedTxHash(hash common.Hash) bool {
 	if sc.signedRewardTxHashs == nil {
 		return false
 	}
-    return sc.signedRewardTxHashs.Has(hash)
+	return sc.signedRewardTxHashs.Has(hash)
 }
+
 //是否签过分红交易
 func (sc *SlotContext) hasSignedRewardTx() bool {
 	if sc.signedRewardTxHashs == nil {

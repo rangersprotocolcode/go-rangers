@@ -86,7 +86,7 @@ func (gs *groupSyncer) trySync() {
 	gs.candidate = id
 	gs.reqTimeoutTimer.Reset(blockSyncReqTimeout)
 
-	go gs.requestGroupByGroupId(id, GroupChainImpl.LastGroup().Id)
+	go gs.requestGroupByGroupId(id, groupChainImpl.LastGroup().Id)
 }
 
 func (gs *groupSyncer) groupHeightHandler(msg notify.Message) {
@@ -99,7 +99,7 @@ func (gs *groupSyncer) groupHeightHandler(msg notify.Message) {
 	source := groupHeightMsg.Peer
 	height := utility.ByteToUInt64(groupHeightMsg.HeightByte)
 
-	localGroupHeight := GroupChainImpl.Count()
+	localGroupHeight := groupChainImpl.Count()
 	if !gs.isUsefulCandidate(localGroupHeight, height) {
 		return
 	}
@@ -116,7 +116,9 @@ func (gs *groupSyncer) groupReqHandler(msg notify.Message) {
 	sourceId := groupReqMsg.Peer
 	groupId := groupReqMsg.GroupIdByte
 	gs.logger.Debugf("Rcv group req from:%s,id:%v\n", sourceId, groupId)
-	groups := GroupChainImpl.GetSyncGroupsById(groupId)
+	group := groupChainImpl.GetGroupById(groupId)
+
+	groups := []*types.Group{group}
 	l := len(groups)
 	if l == 0 {
 		gs.logger.Errorf("Get nil group by id:%v", groupId)
@@ -124,7 +126,7 @@ func (gs *groupSyncer) groupReqHandler(msg notify.Message) {
 		return
 	} else {
 		var isTop bool
-		if bytes.Equal(groups[l-1].Id, GroupChainImpl.LastGroup().Id) {
+		if bytes.Equal(groups[l-1].Id, groupChainImpl.LastGroup().Id) {
 			isTop = true
 		}
 		gs.sendGroups(sourceId, groups, isTop)
@@ -150,8 +152,8 @@ func (gs *groupSyncer) groupHandler(msg notify.Message) {
 	gs.logger.Debugf("Rcv groups ,from:%s,groups len %d", sourceId, len(groups))
 	for _, group := range groupInfo.Groups {
 		gs.logger.Debugf("AddGroup Id:%s,pre id:%s", common.BytesToAddress(group.Id).GetHexString(), common.BytesToAddress(group.Header.Parent).GetHexString())
-		gs.logger.Debugf("Local height:%d,local top group id:%s", GroupChainImpl.Count(), common.BytesToAddress(GroupChainImpl.LastGroup().Id).GetHexString(), )
-		e := GroupChainImpl.AddGroup(group)
+		gs.logger.Debugf("Local height:%d,local top group id:%s", groupChainImpl.Count(), common.BytesToAddress(groupChainImpl.LastGroup().Id).GetHexString(), )
+		e := groupChainImpl.AddGroup(group)
 		if e != nil {
 			gs.logger.Errorf("[GroupSyncer]add group on chain error:%s", e.Error())
 			break
@@ -169,7 +171,7 @@ func (gs *groupSyncer) groupHandler(msg notify.Message) {
 }
 
 func (gs *groupSyncer) getCandidateForSync() (string, uint64) {
-	localGroupHeight := GroupChainImpl.Count()
+	localGroupHeight := groupChainImpl.Count()
 	gs.logger.Debugf("Local group height:%d", localGroupHeight)
 	gs.candidatePoolDump()
 
@@ -249,7 +251,7 @@ func (gs *groupSyncer) loop() {
 	for {
 		select {
 		case <-gs.groupInfoNotifyTimer.C:
-			go gs.sendGroupHeightToNeighbor(GroupChainImpl.Count())
+			go gs.sendGroupHeightToNeighbor(groupChainImpl.Count())
 		case <-gs.syncTimer.C:
 			gs.logger.Debugf("Group sync time up! Try sync")
 			go gs.trySync()

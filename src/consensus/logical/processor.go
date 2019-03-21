@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"x/src/middleware/notify"
 	"x/src/middleware/types"
-	"x/src/middleware/db"
 	"sync/atomic"
 	"strings"
 	"github.com/hashicorp/golang-lru"
@@ -19,39 +18,28 @@ import (
 
 //见证人处理器
 type Processor struct {
-	joiningGroups *JoiningGroups //已加入未完成初始化的组(组初始化完成上链后，不再需要)。组内成员数据过程数据。
+	ready bool //是否已初始化完成
+	conf  common.ConfManager
+	mi    *model.SelfMinerDO //////和组无关的矿工信息
 
-	blockContexts *CastBlockContexts //组ID->组铸块上下文
-
-	globalGroups *GlobalGroups //全网组静态信息（包括待完成组初始化的组，即还没有组ID只有DUMMY ID的组）
-
-	groupManager *GroupManager
-
-	//////和组无关的矿工信息
-	mi *model.SelfMinerDO
-	//////加入(成功)的组信息(矿工节点数据)
-	belongGroups *BelongGroups //当前ID参与了哪些(已上链，可铸块的)组, 组id_str->组内私密数据（组外不可见或加速缓存）
-	//////测试数据，代替屮逸的网络消息
-	GroupProcs map[string]*Processor
-	Ticker     *ticker.GlobalTicker //全局定时器, 组初始化完成后启动
-
-	//futureBlockMsgs  *FutureMessageHolder //存储缺少父块的块
+	blockContexts    *CastBlockContexts   //组ID->组铸块上下文
 	futureVerifyMsgs *FutureMessageHolder //存储缺失前一块的验证消息
 	futureRewardReqs *FutureMessageHolder //块仍未上链的分红交易签名请求
 	verifyMsgCaches  *lru.Cache           //缓存验证消息
 
-	storage db.Database
-	ready   bool //是否已初始化完成
+	joiningGroups *JoiningGroups //已加入未完成初始化的组(组初始化完成上链后，不再需要)。组内成员数据过程数据。
+	belongGroups  *BelongGroups  //当前ID参与了哪些(已上链，可铸块的)组, 组id_str->组内私密数据（组外不可见或加速缓存）
+	globalGroups  *GlobalGroups  //全网组静态信息（包括待完成组初始化的组，即还没有组ID只有DUMMY ID的组）
 
-	//////链接口
+	minerReader  *MinerPoolReader
+	groupManager *GroupManager
+
+	Ticker *ticker.GlobalTicker //全局定时器, 组初始化完成后启动
+	vrf    atomic.Value         //vrfWorker
+
 	MainChain  core.BlockChain
-	GroupChain *core.GroupChain
-
-	minerReader *MinerPoolReader
-	vrf         atomic.Value //vrfWorker
-
-	NetServer net.NetworkServer
-	conf      common.ConfManager
+	GroupChain core.GroupChain
+	NetServer  net.NetworkServer
 }
 
 func (p Processor) getPrefix() string {
@@ -67,10 +55,6 @@ func (p Processor) GetPubkeyInfo() model.PubKeyInfo {
 	return model.NewPubKeyInfo(p.mi.GetMinerID(), p.mi.GetDefaultPubKey())
 }
 
-func (p *Processor) setProcs(gps map[string]*Processor) {
-	p.GroupProcs = gps
-}
-
 //初始化矿工数据（和组无关）
 func (p *Processor) Init(mi model.SelfMinerDO, conf common.ConfManager) bool {
 	p.ready = false
@@ -78,8 +62,8 @@ func (p *Processor) Init(mi model.SelfMinerDO, conf common.ConfManager) bool {
 	//p.futureBlockMsgs = NewFutureMessageHolder()
 	p.futureVerifyMsgs = NewFutureMessageHolder()
 	p.futureRewardReqs = NewFutureMessageHolder()
-	p.MainChain = core.BlockChainImpl
-	p.GroupChain = core.GroupChainImpl
+	p.MainChain = core.GetBlockChain()
+	p.GroupChain = core.GetGroupChain()
 	p.mi = &mi
 	p.globalGroups = NewGlobalGroups(p.GroupChain)
 	p.joiningGroups = NewJoiningGroups()
@@ -113,6 +97,7 @@ func (p *Processor) Init(mi model.SelfMinerDO, conf common.ConfManager) bool {
 	if strings.TrimSpace(jgFile) == "" {
 		jgFile = "joined_group.config." + common.GlobalConf.GetString("instance", "index", "")
 	}
+	stdLogger.Errorf("jgFile:%s", jgFile)
 	p.belongGroups.joinedGroup2DBIfConfigExists(jgFile)
 
 	return true

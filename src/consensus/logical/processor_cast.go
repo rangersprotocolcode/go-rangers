@@ -295,7 +295,7 @@ func (p *Processor) GenProveHashs(heightLimit uint64, rand []byte, ids []groupsi
 
 func (p *Processor) blockProposal() {
 	blog := newBizLog("blockProposal")
-	top := p.MainChain.QueryTopBlock()
+	top := p.MainChain.TopBlock()
 	worker := p.GetVrfWorker()
 	if worker.getBaseBH().Hash != top.Hash {
 		blog.log("vrf baseBH differ from top!")

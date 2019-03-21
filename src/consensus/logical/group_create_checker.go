@@ -14,24 +14,24 @@ type GroupCreateChecker struct {
 	processor      *Processor
 	access         *MinerPoolReader
 	createdHeights [50]uint64 // 标识该建组高度是否已经创建过组了
-	curr 			int
-	lock           sync.RWMutex    // CreateHeightGroups的互斥锁，防止重复写入
+	curr           int
+	lock           sync.RWMutex // CreateHeightGroups的互斥锁，防止重复写入
 }
 
 func newGroupCreateChecker(proc *Processor) *GroupCreateChecker {
 	return &GroupCreateChecker{
-		processor:      proc,
-		access:         proc.minerReader,
-		curr: 0,
+		processor: proc,
+		access:    proc.minerReader,
+		curr:      0,
 	}
 }
 func checkCreate(h uint64) bool {
-    return h > 0 && h % model.Param.CreateGroupInterval == 0
+	return h > 0 && h%model.Param.CreateGroupInterval == 0
 }
 
 func (gchecker *GroupCreateChecker) heightCreated(h uint64) bool {
-    gchecker.lock.RLock()
-    defer gchecker.lock.RUnlock()
+	gchecker.lock.RLock()
+	defer gchecker.lock.RUnlock()
 	for _, height := range gchecker.createdHeights {
 		if h == height {
 			return true
@@ -40,16 +40,16 @@ func (gchecker *GroupCreateChecker) heightCreated(h uint64) bool {
 	return false
 }
 
-func (gchecker *GroupCreateChecker) addHeightCreated(h uint64)  {
+func (gchecker *GroupCreateChecker) addHeightCreated(h uint64) {
 	gchecker.lock.RLock()
 	defer gchecker.lock.RUnlock()
 	gchecker.createdHeights[gchecker.curr] = h
-	gchecker.curr = (gchecker.curr+1)%len(gchecker.createdHeights)
+	gchecker.curr = (gchecker.curr + 1) % len(gchecker.createdHeights)
 }
 
 //只要选择一半人就行了。每个人的权重按顺序递减
 func (gchecker *GroupCreateChecker) selectKing(theBH *types.BlockHeader, group *StaticGroupInfo) (kings []groupsig.ID, isKing bool) {
-	num := int(math.Ceil(float64(group.GetMemberCount()/2)))
+	num := int(math.Ceil(float64(group.GetMemberCount() / 2)))
 	if num < 1 {
 		num = 1
 	}
@@ -72,9 +72,9 @@ func (gchecker *GroupCreateChecker) selectKing(theBH *types.BlockHeader, group *
 }
 
 func (gchecker *GroupCreateChecker) availableGroupsAt(h uint64) []*types.Group {
-    iter := gchecker.processor.GroupChain.NewIterator()
-    gs := make([]*types.Group, 0)
-    for g := iter.Current(); g != nil; g = iter.MovePre() {
+	iter := gchecker.processor.GroupChain.Iterator()
+	gs := make([]*types.Group, 0)
+	for g := iter.Current(); g != nil; g = iter.MovePre() {
 		if g.Header.DismissHeight > h {
 			gs = append(gs, g)
 		} else {
@@ -85,7 +85,6 @@ func (gchecker *GroupCreateChecker) availableGroupsAt(h uint64) []*types.Group {
 	}
 	return gs
 }
-
 
 func (gchecker *GroupCreateChecker) selectCandidates(theBH *types.BlockHeader) (enough bool, cands []groupsig.ID) {
 	min := model.Param.CreateGroupMinCandidates()

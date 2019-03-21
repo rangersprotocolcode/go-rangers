@@ -59,7 +59,7 @@ func (ws *wallets) getBalance(account string) (uint64, error) {
 	if account == "" && len(walletManager) > 0 {
 		account = walletManager[0].Address
 	}
-	balance := core.BlockChainImpl.GetBalance(common.HexToAddress(account))
+	balance := core.GetBlockChain().GetBalance(common.HexToAddress(account))
 
 	return balance.Uint64(), nil
 }

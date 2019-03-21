@@ -14,41 +14,40 @@ import (
 func (gm *GroupManager) selectParentGroup(baseBH *types.BlockHeader, preGroupId []byte) (*StaticGroupInfo, error) {
 	rand := baseBH.Random
 	rand = append(rand, preGroupId...)
-    gid, err := gm.processor.globalGroups.SelectNextGroupFromChain(base.Data2CommonHash(rand), baseBH.Height)
+	gid, err := gm.processor.globalGroups.SelectNextGroupFromChain(base.Data2CommonHash(rand), baseBH.Height)
 	if err != nil {
 		return nil, err
 	}
 	return gm.processor.GetGroup(gid), nil
 }
 
-
 func (gm *GroupManager) generateCreateGroupContext(baseHeight uint64) (*createGroupBaseContext, error) {
 	lastGroup := gm.groupChain.LastGroup()
-	baseBH := gm.mainChain.QueryBlockByHeight(baseHeight)
+	baseBlock := gm.mainChain.QueryBlock(baseHeight)
 	if !checkCreate(baseHeight) {
 		return nil, fmt.Errorf("cannot create group at the height")
 	}
-	if baseBH == nil {
+	if baseBlock == nil {
 		return nil, fmt.Errorf("base block is nil, height=%v", baseHeight)
 	}
-	sgi, err := gm.selectParentGroup(baseBH, lastGroup.Id)
+	sgi, err := gm.selectParentGroup(baseBlock.Header, lastGroup.Id)
 	if err != nil {
 		return nil, fmt.Errorf("select parent group err %v", err)
 	}
-	enough, candidates := gm.checker.selectCandidates(baseBH)
+	enough, candidates := gm.checker.selectCandidates(baseBlock.Header)
 	if !enough {
 		return nil, fmt.Errorf("not enough candidates")
 	}
-	return newCreateGroupBaseContext(sgi, baseBH, lastGroup, candidates), nil
+	return newCreateGroupBaseContext(sgi, baseBlock.Header, lastGroup, candidates), nil
 }
 
-func (gm *GroupManager) checkCreateGroupRoutine(baseHeight uint64)  {
-    blog := newBizLog("checkCreateGroupRoutine")
-    create := false
-    var err error
+func (gm *GroupManager) checkCreateGroupRoutine(baseHeight uint64) {
+	blog := newBizLog("checkCreateGroupRoutine")
+	create := false
+	var err error
 
-    defer func() {
-    	ret := ""
+	defer func() {
+		ret := ""
 		if err != nil {
 			ret = err.Error()
 		}
@@ -82,16 +81,15 @@ func (gm *GroupManager) checkCreateGroupRoutine(baseHeight uint64)  {
 
 }
 
-
-func (gm *GroupManager) pingNodes()  {
+func (gm *GroupManager) pingNodes() {
 	ctx := gm.creatingGroupCtx
 	if ctx == nil || !ctx.isKing() {
 		return
 	}
 	msg := &model.CreateGroupPingMessage{
 		FromGroupID: ctx.parentInfo.GroupID,
-		PingID: ctx.pingID,
-		BaseHeight: ctx.baseBH.Height,
+		PingID:      ctx.pingID,
+		BaseHeight:  ctx.baseBH.Height,
 	}
 	blog := newBizLog("pingNodes")
 	if msg.GenSign(gm.processor.getDefaultSeckeyInfo(), msg) {
@@ -101,7 +99,6 @@ func (gm *GroupManager) pingNodes()  {
 		}
 	}
 }
-
 
 func (gm *GroupManager) checkReqCreateGroupSign(topHeight uint64) bool {
 	blog := newBizLog("checkReqCreateGroupSign")
@@ -117,7 +114,6 @@ func (gm *GroupManager) checkReqCreateGroupSign(topHeight uint64) bool {
 		}
 	}()
 
-
 	if ctx.readyTimeout(topHeight) {
 		//blog.log("ctx readytimeout, baseHeight=%v", ctx.baseBH.Height)
 		//desc = "ready timeout."
@@ -127,7 +123,7 @@ func (gm *GroupManager) checkReqCreateGroupSign(topHeight uint64) bool {
 
 	pongsize := ctx.pongSize()
 
-	if ctx.getStatus() != waitingPong  {
+	if ctx.getStatus() != waitingPong {
 		return false
 	}
 
@@ -194,10 +190,11 @@ func (gm *GroupManager) checkGroupInfo(gInfo *model.ConsensusGroupInitInfo) ([]g
 	if !checkCreate(gh.CreateHeight) {
 		return nil, false, fmt.Errorf("cannot create at the height %v", gh.CreateHeight)
 	}
-	baseBH := gm.mainChain.QueryBlockByHeight(gh.CreateHeight)
-	if baseBH == nil {
+	baseBlock := gm.mainChain.QueryBlock(gh.CreateHeight)
+	if baseBlock == nil {
 		return nil, false, common.ErrCreateBlockNil
 	}
+	baseBH := baseBlock.Header
 	//前一组，父亲组是否存在
 	preGroup := gm.groupChain.GetGroupById(gh.PreGroup)
 	if preGroup == nil {
@@ -244,7 +241,7 @@ func (gm *GroupManager) checkGroupInfo(gInfo *model.ConsensusGroupInitInfo) ([]g
 }
 
 func (gm *GroupManager) recoverGroupInitInfo(baseHeight uint64, mask []byte) (*model.ConsensusGroupInitInfo, error) {
-    ctx, err := gm.generateCreateGroupContext(baseHeight)
+	ctx, err := gm.generateCreateGroupContext(baseHeight)
 	if err != nil {
 		return nil, err
 	}

@@ -30,17 +30,22 @@ const (
 	basePort = 1122
 
 	baseSection = "network"
-
-	defaultSeedId = "QmTn5a8UhdgmNZx1Vy82kNwJ6RmHKcqocSjTg8VbPaXu69"
-
-	defaultSeedAddr = "/ip4/192.168.3.115/tcp/1122"
 )
+
+var defaultSeedId = "Qmcf3W4uSAaAttmYCG7ZnCXoP6eytmka9Q1po6ArgBr5XF"
+var defaultSeedAddr = "/ip4/192.168.3.210/tcp/1122"
 
 var Logger log.Logger
 
-func InitNetwork(privateKey common.PrivateKey, isSuper bool, consensusHandler MsgHandler) string {
+func InitNetwork(privateKey common.PrivateKey, isSuper bool, consensusHandler MsgHandler, seedId string, seedIp string) string {
 	Logger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	initIdMap()
+	if seedId != "" {
+		defaultSeedId = seedId
+	}
+	if seedIp != "" {
+		defaultSeedAddr = "/ip4/" + seedIp + "/tcp/1122"
+	}
+	initNetMembers("")
 
 	publicKey := privateKey.GetPubKey()
 	id := getId(publicKey)

@@ -1,13 +1,10 @@
 package core
 
 import (
-	"bytes"
 	"x/src/common"
-	"github.com/vmihailenco/msgpack"
 	"math/big"
 	"x/src/middleware/types"
 	"time"
-	"x/src/middleware/serialize"
 	"x/src/storage/trie"
 	"x/src/storage/account"
 )
@@ -16,41 +13,28 @@ const ChainDataVersion = 2
 
 var emptyHash = common.Hash{}
 
-func calcTxTree(tx []*types.Transaction) common.Hash {
-	if nil == tx || 0 == len(tx) {
-		return emptyHash
-	}
+func (chain *blockChain) insertGenesisBlock() {
+	state, err := account.NewAccountDB(common.Hash{}, chain.stateDB)
+	if nil == err {
+		genesisBlock := genGenesisBlock(state, chain.stateDB.TrieDB(), consensusHelper.GenerateGenesisInfo())
+		logger.Debugf("GenesisBlock Hash:%s,StateTree:%s", genesisBlock.Header.Hash.String(), genesisBlock.Header.StateTree.Hex())
+		blockByte, _ := types.MarshalBlock(genesisBlock)
+		chain.saveBlockByHash(genesisBlock.Header.Hash, blockByte)
 
-	buf := new(bytes.Buffer)
-	for i := 0; i < len(tx); i++ {
-		encode, _ := msgpack.Marshal(tx[i])
-		serialize.Encode(buf, encode)
-	}
-	return common.BytesToHash(common.Sha256(buf.Bytes()))
-}
-
-func calcReceiptsTree(receipts types.Receipts) common.Hash {
-	if nil == receipts || 0 == len(receipts) {
-		return emptyHash
-	}
-
-	keybuf := new(bytes.Buffer)
-	trie := new(trie.Trie)
-	for i := 0; i < len(receipts); i++ {
-		if receipts[i] != nil {
-			keybuf.Reset()
-			serialize.Encode(keybuf, uint(i))
-			encode, _ := serialize.EncodeToBytes(receipts[i])
-			trie.Update(keybuf.Bytes(), encode)
+		headerByte, err := types.MarshalBlockHeader(genesisBlock.Header)
+		if err != nil {
+			logger.Errorf("Marshal block header error:%s", err.Error())
 		}
-	}
-	hash := trie.Hash()
+		chain.saveBlockByHeight(genesisBlock.Header.Height, headerByte)
 
-	return common.BytesToHash(hash.Bytes())
+		chain.updateLastBlock(state, genesisBlock.Header, headerByte)
+		chain.updateVerifyHash(genesisBlock)
+	} else {
+		panic("Init block chain error:" + err.Error())
+	}
 }
 
-// 创始块
-func GenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, genesisInfo *types.GenesisInfo) *types.Block {
+func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, genesisInfo []*types.GenesisInfo) *types.Block {
 	block := new(types.Block)
 	pv := big.NewInt(0)
 	block.Header = &types.BlockHeader{
@@ -74,9 +58,11 @@ func GenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, genesis
 	stateDB.SetBalance(common.HexStringToAddress("0xb055a3ffdc9eeb0c5cf0c1f14507a40bdcbff98c03286b47b673c02d2efe727e"), big.NewInt(0).SetUint64(1000000000*(5000000)))
 
 	//创世账户
-	for _, mem := range genesisInfo.Group.Members {
-		addr := common.BytesToAddress(mem)
-		stateDB.SetBalance(addr, tenThousandTasBi)
+	for _, genesis := range genesisInfo {
+		for _, mem := range genesis.Group.Members {
+			addr := common.BytesToAddress(mem)
+			stateDB.SetBalance(addr, tenThousandTasBi)
+		}
 	}
 
 	stateDB.SetBalance(common.HexStringToAddress("0xe75051bf0048decaffa55e3a9fa33e87ed802aaba5038b0fd7f49401f5d8b019"), tenThousandTasBi)
@@ -89,10 +75,14 @@ func GenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, genesis
 	stage := stateDB.IntermediateRoot(false)
 	logger.Debugf("GenesisBlock Stage1 Root:%s", stage.Hex())
 	miners := make([]*types.Miner, 0)
-	for i, member := range genesisInfo.Group.Members {
-		miner := &types.Miner{Id: member, PublicKey: genesisInfo.Pks[i], VrfPublicKey: genesisInfo.VrfPKs[i], Stake: 1000000000 * (100)}
-		miners = append(miners, miner)
+
+	for _, genesis := range genesisInfo {
+		for i, member := range genesis.Group.Members {
+			miner := &types.Miner{Id: member, PublicKey: genesis.Pks[i], VrfPublicKey: genesis.VrfPKs[i], Stake: 1000000000 * (100)}
+			miners = append(miners, miner)
+		}
 	}
+
 	MinerManagerImpl.addGenesesMiner(miners, stateDB)
 	stage = stateDB.IntermediateRoot(false)
 	logger.Debugf("GenesisBlock Stage2 Root:%s", stage.Hex())

@@ -13,11 +13,12 @@ import (
 )
 
 func TestServerNet(t *testing.T) {
-	clientId := "QmT8HAeTX7oZzUzNdL3iAqfiYsUEh5ZDyhKksMHxz7LWjU"
+	defaultSeedAddr = "/ip4/192.168.3.210/tcp/1122"
+	clientId := "0xd3d410ec7c917f084e0f4b604c7008f01a923676d0352940f68a97264d49fb76"
 	mockSeedServer()
 
 	go func() {
-		seedId := "QmU51xws4zKRHdirwkLCeQPviVv3m74TQ9o76bcyzDGo23"
+		seedId := "0xe75051bf0048decaffa55e3a9fa33e87ed802aaba5038b0fd7f49401f5d8b019"
 		clientServer := mockClientServer()
 		for i := 0; i < 100; i++ {
 			m := mockMessage()
@@ -37,23 +38,23 @@ func TestServerNet(t *testing.T) {
 
 func mockSeedServer() {
 	common.InitConf("test.ini")
-	seedPrivateKeyStr := "0x04d46485dfa6bb887daec6c35c707c4eaa58e2ea0cafbc8b40201b7759f611e3f27c7d3d3e5835d55e622b90a5d2f24172c80947f97544acd5cf8ed3f4d94f4243f3092f031b85e4675634bf60434a590e954c8051d42c53ced1744eaf32e47395"
+	seedPrivateKeyStr := "0x041629de511d8f53d5a0ccf1676021708a15c6d85fad6765e33bae95eb15f6f9b10e0360813c63fc2cccfdd2e7a8ddbfe7eb84fe50555383d0323475622c5216f3e01cfb4e1c156a795fa6d525fb481727dabcbf066b3a153daf835f5570599a79"
 	privateKey := *common.HexStringToSecKey(seedPrivateKeyStr)
-	InitNetwork(privateKey, true)
+	InitNetwork(privateKey, true, nil)
 }
 
 func mockClientServer() server {
 	common.InitConf("test.ini")
 	//privateKey := common.GenerateKey("")
 	//common.GlobalConf.SetString("network", "privateKey", privateKey.GetHexString())
-	clientPrivateKeyStr := "0x040d5429d3ca995d8cee9696ae5351a3148295c3aec1d5377279b3ffa2d3ff3d47cc9ba665a59097e83e1d2da496635691cffc28f26fd92a1ff42579c8c3a654ba5928fff9b3fbeeff74ba4c242e3ee9d7323ed87e0a92e081f40490469372d02a"
+	clientPrivateKeyStr := "0x04b9d93a1997592e2b165cd1ba5a06baee709f33bd7504179b8c229e9c695aaab741150a66fe03eaeb97b2b6d07b981df6b5d9f703bb2a055fa5919343f5ad414264de573e668cd3a4fdda46f785b473672714ecdb00b81f1e75f7cd697309f53d"
 	privateKey := *common.HexStringToSecKey(clientPrivateKeyStr)
 
 	publicKey := privateKey.GetPubKey()
 	id := getId(publicKey)
 	ip := getLocalIp()
 	port := getAvailablePort(false, basePort)
-	logger.Debugf("Local ip:%s,listen port:%d\nID:%s", ip, port, idToString(id))
+	Logger.Debugf("Local ip:%s,listen port:%d\nID:%s", ip, port, idToString(id))
 
 	ctx := context.Background()
 	swarm := makeSwarm(ctx, id, ip, port, privateKey, publicKey)

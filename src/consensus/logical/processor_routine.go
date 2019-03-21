@@ -27,13 +27,7 @@ func (p *Processor) checkSelfCastRoutine() bool {
 
 	blog := newBizLog("checkSelfCastRoutine")
 
-	if p.MainChain.IsAdujsting() {
-		blog.log("isAdjusting, return...")
-		p.triggerCastCheck()
-		return false
-	}
-
-	top := p.MainChain.QueryTopBlock()
+	top := p.MainChain.TopBlock()
 	//if time.Since(top.CurTime).Seconds() < 1.0 {
 	//	blog.log("too quick, slow down. preTime %v, now %v", top.CurTime.String(), time.Now().String())
 	//	return false
@@ -85,7 +79,7 @@ func (p *Processor) broadcastRoutine() bool {
 }
 
 func (p *Processor) releaseRoutine() bool {
-	topHeight := p.MainChain.QueryTopBlock().Height
+	topHeight := p.MainChain.TopBlock().Height
 	if topHeight <= model.Param.CreateGroupInterval {
 		return true
 	}
@@ -257,7 +251,7 @@ func (p *Processor) getUpdateGlobalGroupsRoutineName() string {
 
 func (p *Processor) updateGlobalGroups() bool {
 	top := p.MainChain.Height()
-	iter := p.GroupChain.NewIterator()
+	iter := p.GroupChain.Iterator()
 	for g := iter.Current(); g != nil && !IsGroupDissmisedAt(g.Header, top); g = iter.MovePre() {
 		gid := groupsig.DeserializeId(g.Id)
 		if g, _ := p.globalGroups.getGroupFromCache(gid); g != nil {

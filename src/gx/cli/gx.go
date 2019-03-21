@@ -54,8 +54,6 @@ func (gx *GX) Run() {
 	quitChan := make(chan bool)
 	go gx.handleExit(ctrlC, quitChan)
 
-
-
 	app := kingpin.New("gx", "A blockchain layer 2 application.")
 	app.HelpFlag.Short('h')
 
@@ -82,6 +80,7 @@ func (gx *GX) Run() {
 	instanceIndex := mineCmd.Flag("instance", "instance index").Short('i').Default("0").Int()
 	apply := mineCmd.Flag("apply", "apply heavy or light miner").String()
 	seedIp := mineCmd.Flag("seed", "seed ip").String()
+	seedId := mineCmd.Flag("seedId", "seed ip").String()
 
 	command, err := app.Parse(os.Args[1:])
 	if err != nil {
@@ -113,7 +112,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(*instanceIndex, *super, *seedIp, *apply, *keystore)
+		gx.initMiner(*instanceIndex, *super, *seedIp, *seedId, *apply, *keystore)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc)
 			if err != nil {
@@ -125,7 +124,7 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, super bool, seedIp string, apply string, keystore string) {
+func (gx *GX) initMiner(instanceIndex int, super bool, seedIp string, seedId string, apply string, keystore string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	databaseValue := "d" + strconv.Itoa(instanceIndex)
@@ -152,8 +151,7 @@ func (gx *GX) initMiner(instanceIndex int, super bool, seedIp string, apply stri
 		panic("Init miner core init error:" + err.Error())
 	}
 
-	common.GlobalConf.SetString("network", "seed_address", "/ip4/"+seedIp+"/tcp/1122")
-	netId := network.InitNetwork(*common.HexStringToSecKey(gx.account.Sk), super, cnet.MessageHandler)
+	netId := network.InitNetwork(*common.HexStringToSecKey(gx.account.Sk), super, cnet.MessageHandler, seedId, seedIp)
 
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
 	if !ok {
@@ -215,7 +213,7 @@ func syncChainInfo() {
 				if core.BlockSyncer != nil {
 					_, _, candicateHeight, _ = core.BlockSyncer.GetCandidateForSync()
 				}
-				localBlockHeight := core.BlockChainImpl.Height()
+				localBlockHeight := core.GetBlockChain().Height()
 				fmt.Printf("Sync candidate block height:%d,local block height:%d\n", candicateHeight, localBlockHeight)
 				timer.Reset(time.Second * 5)
 			}
@@ -242,11 +240,11 @@ func (gx *GX) initSysParam() {
 
 func (gx *GX) handleExit(ctrlC <-chan bool, quit chan<- bool) {
 	<-ctrlC
-	if core.BlockChainImpl == nil {
+	if core.GetBlockChain() == nil {
 		return
 	}
 	fmt.Println("exiting...")
-	core.BlockChainImpl.Close()
+	core.GetBlockChain().Close()
 	log.Close()
 	consensus.StopMiner()
 	if gx.init {

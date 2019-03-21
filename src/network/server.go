@@ -1,7 +1,6 @@
 package network
 
 import (
-	"fmt"
 	"context"
 	"strings"
 	"sync"
@@ -57,7 +56,7 @@ func (s *server) SpreadAmongGroup(groupId string, msg Message) {
 	}
 
 	for _, member := range members {
-		s.Send(member, msg)
+		s.Send(member.MinerId, msg)
 	}
 }
 
@@ -70,10 +69,10 @@ func (s *server) SpreadToRandomGroupMember(groupId string, groupMembers []string
 
 	rand := rand.New(rand.NewSource(time.Now().Unix()))
 	index := rand.Intn(len(members))
-	randMembers := groupMembers[index:]
+	randMembers := members[index:]
 
 	for _, member := range randMembers {
-		s.Send(member, msg)
+		s.Send(member.MinerId, msg)
 	}
 }
 
@@ -90,13 +89,13 @@ func (s *server) TransmitToNeighbor(msg Message) {
 }
 
 func (s *server) Broadcast(msg Message) {
-	for _, proposer := range proposerList {
-		s.Send(proposer, msg)
+	for _, proposer := range netMemberInfo.ProposerList {
+		s.Send(proposer.MinerId, msg)
 	}
 
-	for _, verifyMembers := range verifyGroupsInfo {
-		for _, verifier := range verifyMembers {
-			s.Send(verifier, msg)
+	for _, group := range netMemberInfo.VerifyGroupList {
+		for _, verifier := range group.Members {
+			s.Send(verifier.MinerId, msg)
 		}
 	}
 }
@@ -123,13 +122,13 @@ func (s *server) ConnInfo() []Conn {
 	return result
 }
 
-func (s *server) getMembers(groupId string) []string {
+func (s *server) getMembers(groupId string) []Id {
 	if groupId == FullNodeVirtualGroupId {
-		return proposerList
+		return netMemberInfo.ProposerList
 	}
-	for _, g := range verifyGroupList {
-		if g == groupId {
-			return verifyGroupsInfo[groupId]
+	for _, g := range netMemberInfo.VerifyGroupList {
+		if g.GroupId == groupId {
+			return g.Members
 		}
 	}
 	return nil
@@ -169,8 +168,7 @@ func (s *server) send(b []byte, id string) {
 		var e error
 		stream, e = s.host.NewStream(c, strToId(id), protocolID)
 		if e != nil {
-			Logger.Errorf("New stream for %s error:%s", id, e.Error())
-			fmt.Printf("New stream for %s error:%s", id, e.Error())
+			//Logger.Errorf("New stream for %s error:%s", id, e.Error())
 			s.streamMapLock.Unlock()
 			s.send(b, id)
 			return

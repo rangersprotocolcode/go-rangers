@@ -1,4 +1,3 @@
-
 package core
 
 import (
@@ -79,8 +78,8 @@ func (fh *forkProcessor) chainPieceInfoReqHandler(msg notify.Message) {
 	id := chainPieceReqMessage.Peer
 
 	fh.logger.Debugf("Rcv chain piece info req from:%s,req height:%d", id, reqHeight)
-	chainPiece := BlockChainImpl.GetChainPieceInfo(reqHeight)
-	fh.sendChainPieceInfo(id, chainPieceInfo{ChainPiece: chainPiece, TopHeader: BlockChainImpl.QueryTopBlock()})
+	chainPiece := blockChainImpl.getChainPieceInfo(reqHeight)
+	fh.sendChainPieceInfo(id, chainPieceInfo{ChainPiece: chainPiece, TopHeader: blockChainImpl.TopBlock()})
 }
 
 func (fh *forkProcessor) sendChainPieceInfo(targetNode string, chainPieceInfo chainPieceInfo) {
@@ -119,7 +118,7 @@ func (fh *forkProcessor) chainPieceInfoHandler(msg notify.Message) {
 		PeerManager.markEvil(source)
 		return
 	}
-	status, reqHeight := BlockChainImpl.ProcessChainPieceInfo(chainPieceInfo.ChainPiece, chainPieceInfo.TopHeader)
+	status, reqHeight := blockChainImpl.processChainPieceInfo(chainPieceInfo.ChainPiece, chainPieceInfo.TopHeader)
 	if status == 0 {
 		fh.reset()
 		return
@@ -152,8 +151,8 @@ func (fh *forkProcessor) chainPieceBlockReqHandler(msg notify.Message) {
 	reqHeight := utility.ByteToUInt64(m.ReqHeightByte)
 	fh.logger.Debugf("Rcv chain piece block req from:%s,req height:%d", source, reqHeight)
 
-	blocks := BlockChainImpl.GetChainPieceBlocks(reqHeight)
-	topHeader := BlockChainImpl.QueryTopBlock()
+	blocks := blockChainImpl.getChainPieceBlocks(reqHeight)
+	topHeader := blockChainImpl.TopBlock()
 	fh.sendChainPieceBlock(source, blocks, topHeader)
 }
 
@@ -199,7 +198,7 @@ func (fh *forkProcessor) chainPieceBlockHandler(msg notify.Message) {
 		PeerManager.markEvil(source)
 		return
 	}
-	BlockChainImpl.MergeFork(blocks, topHeader)
+	blockChainImpl.mergeFork(blocks, topHeader)
 	fh.reset()
 
 }

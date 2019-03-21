@@ -8,9 +8,9 @@ import (
 )
 
 type GroupManager struct {
-	groupChain     *core.GroupChain
-	mainChain      core.BlockChain
-	processor      *Processor
+	groupChain core.GroupChain
+	mainChain  core.BlockChain
+	processor  *Processor
 	//creatingGroups *CreatingGroups
 	creatingGroupCtx *CreatingGroupContext
 	checker          *GroupCreateChecker
@@ -18,22 +18,22 @@ type GroupManager struct {
 
 func NewGroupManager(processor *Processor) *GroupManager {
 	gm := &GroupManager{
-		processor:      processor,
-		mainChain:      processor.MainChain,
-		groupChain:     processor.GroupChain,
+		processor:  processor,
+		mainChain:  processor.MainChain,
+		groupChain: processor.GroupChain,
 		//creatingGroups: &CreatingGroups{},
-		checker:        newGroupCreateChecker(processor),
+		checker: newGroupCreateChecker(processor),
 	}
 	return gm
 }
 
-func (gm *GroupManager) setCreatingGroupContext(baseCtx *createGroupBaseContext, kings []groupsig.ID, isKing bool)  {
+func (gm *GroupManager) setCreatingGroupContext(baseCtx *createGroupBaseContext, kings []groupsig.ID, isKing bool) {
 	ctx := newCreateGroupContext(baseCtx, kings, isKing, gm.mainChain.Height())
 	gm.creatingGroupCtx = ctx
 }
 
 func (gm *GroupManager) getContext() *CreatingGroupContext {
-    return gm.creatingGroupCtx
+	return gm.creatingGroupCtx
 }
 
 func (gm *GroupManager) removeContext() {
@@ -41,17 +41,17 @@ func (gm *GroupManager) removeContext() {
 }
 
 func (gm *GroupManager) CreateNextGroupRoutine() {
-	top := gm.mainChain.QueryTopBlock()
+	top := gm.mainChain.TopBlock()
 	topHeight := top.Height
 
 	gap := model.Param.GroupCreateGap
 	if topHeight > gap {
 		gm.checkReqCreateGroupSign(topHeight)
 
-		pre := gm.mainChain.QueryBlockHeaderByHash(top.PreHash)
+		pre := gm.mainChain.QueryBlockByHash(top.PreHash)
 		if pre != nil {
-			for h := top.Height; h > pre.Height && h > gap; h-- {
-				baseHeight := h-gap
+			for h := top.Height; h > pre.Header.Height && h > gap; h-- {
+				baseHeight := h - gap
 				if checkCreate(baseHeight) {
 					gm.checkCreateGroupRoutine(baseHeight)
 					break
@@ -61,7 +61,6 @@ func (gm *GroupManager) CreateNextGroupRoutine() {
 	}
 
 }
-
 
 func (gm *GroupManager) OnMessageCreateGroupRaw(msg *model.ConsensusCreateGroupRawMessage) (bool, error) {
 	blog := newBizLog("OMCGR")
@@ -102,7 +101,7 @@ func (gm *GroupManager) OnMessageCreateGroupSign(msg *model.ConsensusCreateGroup
 		return false, fmt.Errorf("context is nil")
 	}
 
-	height := gm.processor.MainChain.QueryTopBlock().Height
+	height := gm.processor.MainChain.TopBlock().Height
 	if ctx.readyTimeout(height) {
 		return false, fmt.Errorf("ready timeout")
 	}
@@ -156,10 +155,9 @@ func (gm *GroupManager) AddGroupOnChain(sgi *StaticGroupInfo) {
 		}
 	}
 
-
 }
 
-func (gm *GroupManager) onGroupAddSuccess(g *StaticGroupInfo)  {
+func (gm *GroupManager) onGroupAddSuccess(g *StaticGroupInfo) {
 	ctx := gm.getContext()
 	if ctx != nil && ctx.gInfo != nil && ctx.gInfo.GroupHash() == g.GInfo.GroupHash() {
 		top := gm.mainChain.Height()
