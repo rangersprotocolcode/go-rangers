@@ -28,7 +28,7 @@ func (helper *ConsensusHelperImpl) PackBonus() *big.Int {
 	return new(big.Int).SetUint64(model.Param.PackBonus)
 }
 
-func (helper *ConsensusHelperImpl) GenerateGenesisInfo() *types.GenesisInfo {
+func (helper *ConsensusHelperImpl) GenerateGenesisInfo() []*types.GenesisInfo {
 	return logical.GenerateGenesis()
 }
 

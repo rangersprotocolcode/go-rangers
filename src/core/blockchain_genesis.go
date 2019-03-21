@@ -34,7 +34,7 @@ func (chain *blockChain) insertGenesisBlock() {
 	}
 }
 
-func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, genesisInfo *types.GenesisInfo) *types.Block {
+func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, genesisInfo []*types.GenesisInfo) *types.Block {
 	block := new(types.Block)
 	pv := big.NewInt(0)
 	block.Header = &types.BlockHeader{
@@ -58,9 +58,11 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	stateDB.SetBalance(common.HexStringToAddress("0xb055a3ffdc9eeb0c5cf0c1f14507a40bdcbff98c03286b47b673c02d2efe727e"), big.NewInt(0).SetUint64(1000000000*(5000000)))
 
 	//创世账户
-	for _, mem := range genesisInfo.Group.Members {
-		addr := common.BytesToAddress(mem)
-		stateDB.SetBalance(addr, tenThousandTasBi)
+	for _, genesis := range genesisInfo {
+		for _, mem := range genesis.Group.Members {
+			addr := common.BytesToAddress(mem)
+			stateDB.SetBalance(addr, tenThousandTasBi)
+		}
 	}
 
 	stateDB.SetBalance(common.HexStringToAddress("0xe75051bf0048decaffa55e3a9fa33e87ed802aaba5038b0fd7f49401f5d8b019"), tenThousandTasBi)
@@ -73,10 +75,14 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	stage := stateDB.IntermediateRoot(false)
 	logger.Debugf("GenesisBlock Stage1 Root:%s", stage.Hex())
 	miners := make([]*types.Miner, 0)
-	for i, member := range genesisInfo.Group.Members {
-		miner := &types.Miner{Id: member, PublicKey: genesisInfo.Pks[i], VrfPublicKey: genesisInfo.VrfPKs[i], Stake: 1000000000 * (100)}
-		miners = append(miners, miner)
+
+	for _, genesis := range genesisInfo {
+		for i, member := range genesis.Group.Members {
+			miner := &types.Miner{Id: member, PublicKey: genesis.Pks[i], VrfPublicKey: genesis.VrfPKs[i], Stake: 1000000000 * (100)}
+			miners = append(miners, miner)
+		}
 	}
+
 	MinerManagerImpl.addGenesesMiner(miners, stateDB)
 	stage = stateDB.IntermediateRoot(false)
 	logger.Debugf("GenesisBlock Stage2 Root:%s", stage.Hex())

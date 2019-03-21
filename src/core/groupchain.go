@@ -11,7 +11,6 @@ import (
 	"x/src/utility"
 	"bytes"
 	"errors"
-	"x/src/common"
 )
 
 const (
@@ -52,11 +51,14 @@ func initGroupChain() {
 		}
 		chain.count = utility.ByteToUInt64(count)
 	} else {
-		lastGroup = &consensusHelper.GenerateGenesisInfo().Group
-		e := chain.save(lastGroup)
-		if e != nil {
-			panic("Add genesis group on chain failed:" + e.Error())
+		genesisGroups := consensusHelper.GenerateGenesisInfo()
+		for _, genesis := range genesisGroups {
+			e := chain.save(&genesis.Group)
+			if e != nil {
+				panic("Add genesis group on chain failed:" + e.Error())
+			}
 		}
+		lastGroup = &genesisGroups[len(genesisGroups)-1].Group
 	}
 	chain.lastGroup = lastGroup
 	groupChainImpl = chain
@@ -75,13 +77,13 @@ func (chain *groupChain) AddGroup(group *types.Group) error {
 		return errors.New("group already exist")
 	}
 
-	ok, err := consensusHelper.CheckGroup(group)
-	if !ok {
-		if err == common.ErrCreateBlockNil {
-			logger.Infof("Add group failed:depend on block!")
-		}
-		return err
-	}
+	//ok, err := consensusHelper.CheckGroup(group)
+	//if !ok {
+	//	if err == common.ErrCreateBlockNil {
+	//		logger.Infof("Add group failed:depend on block!")
+	//	}
+	//	return err
+	//}
 
 	chain.lock.Lock()
 	defer chain.lock.Unlock()

@@ -17,7 +17,7 @@ type GenesisInfo struct {
 */
 type ConsensusHelper interface {
 	//generate genesis group and member pk info
-	GenerateGenesisInfo() *GenesisInfo
+	GenerateGenesisInfo() []*GenesisInfo
 
 	//vrf prove to value
 	VRFProve2Value(prove *big.Int) *big.Int

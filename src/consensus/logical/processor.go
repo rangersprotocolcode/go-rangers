@@ -97,6 +97,7 @@ func (p *Processor) Init(mi model.SelfMinerDO, conf common.ConfManager) bool {
 	if strings.TrimSpace(jgFile) == "" {
 		jgFile = "joined_group.config." + common.GlobalConf.GetString("instance", "index", "")
 	}
+	stdLogger.Errorf("jgFile:%s", jgFile)
 	p.belongGroups.joinedGroup2DBIfConfigExists(jgFile)
 
 	return true
