@@ -67,6 +67,13 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			success = executor.executeMinerAbortTx(accountdb, transaction, height, castor, situation)
 		case types.TransactionTypeMinerRefund:
 			success = executor.executeMinerRefundTx(accountdb, transaction, height, castor, situation)
+
+		case types.TransactionTypeOperatorEvent:
+			success = executor.executeMinerRefundTx(accountdb, transaction, height, castor, situation)
+		case types.TransactionTypeBlockEvent:
+			success = executor.executeMinerRefundTx(accountdb, transaction, height, castor, situation)
+		case types.TransactionTypeUserEvent:
+			success = executor.executeMinerRefundTx(accountdb, transaction, height, castor, situation)
 		}
 
 		if !success {
@@ -204,7 +211,7 @@ func (executor *VMExecutor) executeTransferTx(accountdb *account.AccountDB, tran
 //}
 
 func (executor *VMExecutor) executeBonusTx(accountdb *account.AccountDB, transaction *types.Transaction, castor common.Address) (success bool) {
-		//logger.Debugf("VMExecutor Execute Bonus Transaction:%s Group:%s,Success:%t", common.BytesToHash(transaction.Data).Hex(), common.BytesToHash(groupId).ShortS(),success)
+	//logger.Debugf("VMExecutor Execute Bonus Transaction:%s Group:%s,Success:%t", common.BytesToHash(transaction.Data).Hex(), common.BytesToHash(groupId).ShortS(),success)
 	return true
 }
 
