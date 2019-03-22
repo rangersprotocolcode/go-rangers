@@ -9,12 +9,11 @@ import (
 	"x/src/common"
 
 	"x/src/middleware/types"
-	"x/src/consensus/groupsig"
-
 	"github.com/hashicorp/golang-lru"
 	"github.com/vmihailenco/msgpack"
 	"x/src/storage/trie"
 	"x/src/storage/account"
+	"x/src/consensus/groupsig"
 )
 
 const (
@@ -176,9 +175,22 @@ func (mm *MinerManager) addMiner(id []byte, miner *types.Miner, accountdb *accou
 	}
 }
 
-func (mm *MinerManager) addGenesesMiner(miners []*types.Miner, accountdb *account.AccountDB) {
-	dbh := mm.getMinerDatabase(types.MinerTypeHeavy)
+func (mm *MinerManager) addGenesesVerifier(miners []*types.Miner, accountdb *account.AccountDB) {
 	dbl := mm.getMinerDatabase(types.MinerTypeLight)
+
+	for _, miner := range miners {
+		if accountdb.GetData(dbl, string(miner.Id)) == nil {
+			miner.Type = types.MinerTypeLight
+			data, _ := msgpack.Marshal(miner)
+			accountdb.SetData(dbl, string(miner.Id), data)
+			mm.updateMinerCount(types.MinerTypeLight, minerCountIncrease, accountdb)
+		}
+	}
+	mm.hasNewHeavyMiner = true
+}
+
+func (mm *MinerManager) addGenesesProposer(miners []*types.Miner, accountdb *account.AccountDB) {
+	dbh := mm.getMinerDatabase(types.MinerTypeHeavy)
 
 	for _, miner := range miners {
 		if accountdb.GetData(dbh, string(miner.Id)) == nil {
@@ -187,12 +199,6 @@ func (mm *MinerManager) addGenesesMiner(miners []*types.Miner, accountdb *accoun
 			accountdb.SetData(dbh, string(miner.Id), data)
 			mm.heavyMiners = append(mm.heavyMiners, groupsig.DeserializeId(miner.Id).String())
 			mm.updateMinerCount(types.MinerTypeHeavy, minerCountIncrease, accountdb)
-		}
-		if accountdb.GetData(dbl, string(miner.Id)) == nil {
-			miner.Type = types.MinerTypeLight
-			data, _ := msgpack.Marshal(miner)
-			accountdb.SetData(dbl, string(miner.Id), data)
-			mm.updateMinerCount(types.MinerTypeLight, minerCountIncrease, accountdb)
 		}
 	}
 	mm.hasNewHeavyMiner = true
