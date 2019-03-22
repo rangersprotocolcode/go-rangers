@@ -13,7 +13,6 @@ import (
 	"x/src/middleware/types"
 	"time"
 	"x/src/network"
-	"strconv"
 	"encoding/hex"
 	"math"
 	"x/src/consensus"
@@ -120,8 +119,7 @@ func (api *GtasAPI) TransPool() (*Result, error) {
 		transList = append(transList, Transactions{
 			Hash:   v.Hash.String(),
 			Source: v.Source.GetHexString(),
-			Target: v.Target.GetHexString(),
-			Value:  strconv.FormatInt(int64(v.Value), 10),
+			Target: v.Target,
 		})
 	}
 
@@ -136,10 +134,9 @@ func (api *GtasAPI) GetTransaction(hash string) (*Result, error) {
 	detail := make(map[string]interface{})
 	detail["hash"] = hash
 	detail["source"] = transaction.Source.Hash().Hex()
-	if transaction.Target != nil {
-		detail["target"] = transaction.Target.Hash().Hex()
-	}
-	detail["value"] = transaction.Value
+
+	detail["target"] = transaction.Target
+
 	return successResult(detail)
 }
 
@@ -343,9 +340,9 @@ func (api *GtasAPI) MinerApply(sign string, bpk string, vrfpk string, stake uint
 		Nonce:    uint64(nonce),
 		Data:     data,
 		Source:   &address,
-		Value:    stake,
+		//Value:    stake,
 		Type:     types.TransactionTypeMinerApply,
-		GasPrice: common.MaxUint64,
+
 	}
 	tx.Hash = tx.GenHash()
 	ok, err := core.GetBlockChain().GetTransactionPool().AddTransaction(tx)
@@ -377,7 +374,7 @@ func (api *GtasAPI) MinerAbort(sign string, mtype int32) (*Result, error) {
 		Data:     []byte{byte(mtype)},
 		Source:   &address,
 		Type:     types.TransactionTypeMinerAbort,
-		GasPrice: common.MaxUint64,
+
 	}
 	tx.Hash = tx.GenHash()
 	ok, err := core.GetBlockChain().GetTransactionPool().AddTransaction(tx)
@@ -398,7 +395,7 @@ func (api *GtasAPI) MinerRefund(sign string, mtype int32) (*Result, error) {
 		Data:     []byte{byte(mtype)},
 		Source:   &address,
 		Type:     types.TransactionTypeMinerRefund,
-		GasPrice: common.MaxUint64,
+
 	}
 	tx.Hash = tx.GenHash()
 	ok, err := core.GetBlockChain().GetTransactionPool().AddTransaction(tx)
