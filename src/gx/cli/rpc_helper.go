@@ -15,13 +15,11 @@ func convertTransaction(tx *types.Transaction) *Transaction {
 		Source:        tx.Source,
 		Target:        tx.Target,
 		Type:          tx.Type,
-		GasLimit:      tx.GasLimit,
-		GasPrice:      tx.GasPrice,
 		Data:          tx.Data,
 		ExtraData:     tx.ExtraData,
 		ExtraDataType: tx.ExtraDataType,
 		Nonce:         tx.Nonce,
-		Value:         float64(tx.Value) / float64(1000000000),
+
 	}
 	return trans
 }
@@ -87,9 +85,7 @@ func genMinerBalance(id groupsig.ID, bh *types.BlockHeader) *MinerBonusBalance {
 	return mb
 }
 
-func IdFromSign(sign string) []byte {
-	return []byte{}
-}
+
 
 func sendTransaction(trans *types.Transaction) error {
 	if trans.Sign == nil {

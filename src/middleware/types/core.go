@@ -80,6 +80,9 @@ const (
 	TransactionTypeMinerApply     = 4
 	TransactionTypeMinerAbort     = 5
 	TransactionTypeMinerRefund    = 6
+	TransactionTypeBlockEvent     = 7
+	TransactionTypeOperatorEvent     = 8
+	TransactionTypeUserEvent     = 9
 
 	TransactionTypeToBeRemoved = -1
 )
@@ -96,7 +99,7 @@ type Transaction struct {
 	Source *common.Address
 	Target string
 	Type   int32
-	Hash common.Hash
+	Hash   common.Hash
 
 	ExtraData     []byte
 	ExtraDataType int32
