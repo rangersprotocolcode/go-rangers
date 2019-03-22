@@ -106,7 +106,7 @@ func connectToSeed(ctx context.Context, host host.Host) {
 
 	e = host.Connect(ctx, seedPeerInfo)
 	if e != nil {
-		Logger.Errorf("Connect to seed error:", e.Error())
+		Logger.Errorf("Connect to seed error:%s,seedId:%s", e.Error(), idToString(seedId))
 		for i := 1; i <= 3; i++ {
 			time.Sleep(time.Second * 5)
 			Logger.Infof("Try to connect to seed:no %d\n", i)

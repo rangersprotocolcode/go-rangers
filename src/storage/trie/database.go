@@ -11,8 +11,6 @@ import (
 	"x/src/storage/rlp"
 )
 
-
-
 // secureKeyPrefix is the database key prefix used to store trie node preimages.
 var secureKeyPrefix = []byte("secure-key-")
 
@@ -572,7 +570,7 @@ func (db *NodeDatabase) Commit(node common.Hash, report bool) error {
 	// by only uncaching existing data when the database write finalizes.
 	db.lock.RLock()
 
-	start := time.Now()
+	//start := time.Now()
 	batch := db.diskdb.NewBatch()
 
 	// Move all of the accumulated preimages into a write batch
@@ -590,7 +588,7 @@ func (db *NodeDatabase) Commit(node common.Hash, report bool) error {
 		}
 	}
 	// Move the trie itself into the batch, flushing if enough data is accumulated
-	nodes, storage := len(db.nodes), db.nodesSize
+	//nodes, storage := len(db.nodes), db.nodesSize
 	if err := db.commit(node, batch); err != nil {
 		common.DefaultLogger.Error("Failed to commit trie from trie database", "err", err)
 		db.lock.RUnlock()
@@ -617,8 +615,8 @@ func (db *NodeDatabase) Commit(node common.Hash, report bool) error {
 	//memcacheCommitSizeMeter.Mark(int64(storage - db.nodesSize))
 	//memcacheCommitNodesMeter.Mark(int64(nodes - len(db.nodes)))
 
-	common.DefaultLogger.Debugf("Persisted trie from memory database", "nodes", nodes-len(db.nodes)+int(db.flushnodes), "size", storage-db.nodesSize+db.flushsize, "time", time.Since(start)+db.flushtime,
-		"gcnodes", db.gcnodes, "gcsize", db.gcsize, "gctime", db.gctime, "livenodes", len(db.nodes), "livesize", db.nodesSize)
+	//common.DefaultLogger.Debugf("Persisted trie from memory database", "nodes", nodes-len(db.nodes)+int(db.flushnodes), "size", storage-db.nodesSize+db.flushsize, "time", time.Since(start)+db.flushtime,
+	//	"gcnodes", db.gcnodes, "gcsize", db.gcsize, "gctime", db.gctime, "livenodes", len(db.nodes), "livesize", db.nodesSize)
 
 	// Reset the garbage collection statistics
 	db.gcnodes, db.gcsize, db.gctime = 0, 0, 0
