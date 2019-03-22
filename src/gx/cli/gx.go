@@ -237,7 +237,7 @@ func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerDO, netId string) {
 func (gx *GX) initSysParam() {
 	debug.SetGCPercent(100)
 	debug.SetMaxStack(2 * 1000000000)
-	common.DefaultLogger.Infof("setting gc 100%, max memory 2g")
+	common.DefaultLogger.Debug("Setting gc 100%, max memory 2g")
 }
 
 func (gx *GX) handleExit(ctrlC <-chan bool, quit chan<- bool) {

@@ -25,7 +25,7 @@ var genesisGroupInfo []*genesisGroup
 func GetGenesisGroupInfo() []*genesisGroup {
 	if genesisGroupInfo == nil {
 		f := common.GlobalConf.GetSectionManager("consensus").GetString("genesis_sgi_conf", "genesis_sgi.config")
-		common.DefaultLogger.Debugf("generate genesis info %v", f)
+		common.DefaultLogger.Debugf("generate genesis info %s", f)
 		genesisGroupInfo = genGenesisStaticGroupInfo(f)
 	}
 	return genesisGroupInfo
@@ -104,7 +104,7 @@ func genGenesisStaticGroupInfo(f string) []*genesisGroup {
 		}
 		genesisGroupStr = string(data)
 	}
-	common.DefaultLogger.Errorf("genesisGroupStr:%s", genesisGroupStr)
+	//common.DefaultLogger.Errorf("genesisGroupStr:%s", genesisGroupStr)
 	splited := strings.Split(genesisGroupStr, "&&")
 	var groups = make([]*genesisGroup, 0)
 	for _, split := range splited {

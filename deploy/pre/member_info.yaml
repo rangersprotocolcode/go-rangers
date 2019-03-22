@@ -1,0 +1,29 @@
+proposerList:
+   - minerId: "0xbca5ab7508d9fec968828bc20f3b89a527337b6c39a91c1b14d87260d6c5508f"
+     netId: "QmXN723T4kifGUzgDv2TKnP9CyTqbbp4pVSSHFsNriJska"
+   - minerId: "0x62c8623e37ac66b2158ed7f7102412be7541c7dd41582c651a82a1ccd239ff1d"
+     netId: "QmcYPU6N5dkbwhBrstTea3vaFQYcpyzCg2Jpj6Dn78rSU4"
+   - minerId: "0x80c6ccdd1530bc702cbe944ceedb04ce74255d37f07dda3fc5c1bdad393e7d09"
+     netId: "QmUMW3zafBf3hryqiEct8SXH5Y44r8UWWaRKHQSpheJdQx"
+   - minerId: "0x0357999d117170949760e16a16d170deff4d4cf3caefe94700ca36c451356690"
+     netId: "QmULVnsfFitd5jTMdahS4idsyQZcYaHTnDvPnRnv2Ahm7d"
+
+verifyGroupList:
+   - groupId: "0x3f36baa255bb4df4f07144f8ac366629ec990888677db80a03612212a0a9a3f7"
+     members:
+         - minerId: "0x0d838821f305cd5197c7cbf1820c3467d82e8b16187ed0b413cd3497a7174bde"
+           netId: "QmVLjniYokq3dhQNGpTo7Z6rF3dEDHUr1okg1GKd6r8eu5"
+         - minerId: "0x92436edf203889628883493e423a08c9cd45bc2b5dd6e2ef53aca4f041092eb6"
+           netId: "Qmcf3W4uSAaAttmYCG7ZnCXoP6eytmka9Q1po6ArgBr5XF"
+         - minerId: "0xc77c68c6f5a3ae774b24027dc143e114c6d761866cf76750dff911d31f8588e8"
+           netId: "QmZZXTgrz3UtuyKBhu3ZTZuNNhM3djMt2iL4M9T7kz5PWr"
+
+   - groupId: "0x4c330b5b0dacf07222cd6e3afac44e8e78283a9160f295f6e4d5f13d122f5e1b"
+     members:
+         - minerId: "0x16f0edd4d0294b9b0a164ba00cf845f67b51bbda23b5fe1bbd2d65f5d3c78edc"
+           netId: "QmQPdMuBG9i9f27ijNsP5HA7sjuAz5mtNKmBa5M1Li43Lx"
+         - minerId: "0x717f9324426e655a70b26d423c5b59cabc77bdb10bfa8132aeefb2f62dfb4836"
+           netId: "Qmassiwwr3cfoV5cJJx2n7WBkrvvjxY6sJy12jGS94Nx8w"
+         - minerId: "0xeeffb8e03d26d13d50d88dcede9662e5f455e8f925fa2d482e65484580fcee4b"
+           netId: "QmbTMjENoLp6sGvoU9tvfZ6oPCSKm7qSqFkDtCCQqdT6nS"
+

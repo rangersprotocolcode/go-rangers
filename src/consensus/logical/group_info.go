@@ -170,7 +170,7 @@ type GlobalGroups struct {
 
 func NewGlobalGroups(chain core.GroupChain) *GlobalGroups {
 	return &GlobalGroups{
-		groups:    make([]*StaticGroupInfo, 1),
+		groups:    make([]*StaticGroupInfo, 0),
 		gIndex:    make(map[string]int),
 		generator: CreateNewGroupGenerator(),
 		chain:     chain,
@@ -235,8 +235,8 @@ func (gg *GlobalGroups) AddStaticGroup(g *StaticGroupInfo) bool {
 
 	if _, ok := gg.gIndex[g.GroupID.GetHexString()]; !ok {
 		if g.getGroupHeader().WorkHeight == 0 { //创世组
-			gg.groups[0] = g
-			gg.gIndex[g.GroupID.GetHexString()] = 0
+			gg.groups = append(gg.groups, g)
+			gg.gIndex[g.GroupID.GetHexString()] = len(gg.groups) - 1
 			result = "success"
 			return true
 		}
