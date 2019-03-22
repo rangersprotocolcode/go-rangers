@@ -14,8 +14,6 @@ type txRawData struct {
 	//from string
 	Target    string `json:"target"`
 	Value     uint64 `json:"value"`
-	Gas       uint64 `json:"gas"`
-	Gasprice  uint64 `json:"gasprice"`
 	TxType    int    `json:"tx_type"`
 	Nonce     uint64 `json:"nonce"`
 	Data      string `json:"data"`

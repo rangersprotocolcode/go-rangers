@@ -7,11 +7,9 @@ import (
 	"x/src/core"
 	"encoding/json"
 	"fmt"
-	"github.com/vmihailenco/msgpack"
 	"log"
 	"math/big"
 	"x/src/middleware/types"
-	"time"
 	"x/src/network"
 	"encoding/hex"
 	"math"
@@ -39,21 +37,19 @@ type GtasAPI struct {
 
 // T 用户交易接口
 func (api *GtasAPI) Tx(txRawjson string) (*Result, error) {
-	//var txRaw = new(txRawData)
-	//if err := json.Unmarshal([]byte(txRawjson), txRaw); err != nil {
-	//	return failResult(err.Error())
-	//}
-	//
-	//trans := txRawToTransaction(txRaw)
-	//
-	//trans.Hash = trans.GenHash()
-	//
-	//if err := sendTransaction(trans); err != nil {
-	//	return failResult(err.Error())
-	//}
-	//
-	//return successResult(trans.Hash.String())
-	return nil, nil
+	var txRaw = new(types.Transaction)
+	if err := json.Unmarshal([]byte(txRawjson), txRaw); err != nil {
+		return failResult(err.Error())
+	}
+
+	txRaw.Hash = txRaw.GenHash()
+
+	if err := sendTransaction(txRaw); err != nil {
+		return failResult(err.Error())
+	}
+
+	return successResult(txRaw.Hash.String())
+
 }
 
 // Balance 查询余额接口
@@ -311,47 +307,6 @@ func (api *GtasAPI) GetWorkGroup(height uint64) (*Result, error) {
 	return successResult(ret)
 }
 
-//deprecated
-func (api *GtasAPI) MinerApply(sign string, bpk string, vrfpk string, stake uint64, mtype int32) (*Result, error) {
-	id := IdFromSign(sign)
-	address := common.BytesToAddress(id)
-
-	info := core.MinerManagerImpl.GetMinerById(id, byte(mtype), nil)
-	if info != nil {
-		return failResult("已经申请过该类型矿工")
-	}
-
-	//address := common.BytesToAddress(minerInfo.ID.Serialize())
-	nonce := time.Now().UnixNano()
-	pbkBytes := common.FromHex(bpk)
-
-	miner := &types.Miner{
-		Id:           id,
-		PublicKey:    groupsig.DeserializePubkeyBytes(pbkBytes).Serialize(),
-		VrfPublicKey: common.FromHex(vrfpk),
-		Stake:        stake,
-		Type:         byte(mtype),
-	}
-	data, err := msgpack.Marshal(miner)
-	if err != nil {
-		return &Result{Message: err.Error(), Data: nil}, nil
-	}
-	tx := &types.Transaction{
-		Nonce:    uint64(nonce),
-		Data:     data,
-		Source:   &address,
-		//Value:    stake,
-		Type:     types.TransactionTypeMinerApply,
-
-	}
-	tx.Hash = tx.GenHash()
-	ok, err := core.GetBlockChain().GetTransactionPool().AddTransaction(tx)
-	if !ok {
-		return failResult(err.Error())
-	}
-	return successResult(nil)
-}
-
 func (api *GtasAPI) MinerQuery(mtype int32) (*Result, error) {
 	minerInfo := consensus.Proc.GetMinerInfo()
 	address := common.BytesToAddress(minerInfo.ID.Serialize())
@@ -361,48 +316,6 @@ func (api *GtasAPI) MinerQuery(mtype int32) (*Result, error) {
 		return &Result{Message: err.Error(), Data: nil}, err
 	}
 	return &Result{Message: address.GetHexString(), Data: string(js)}, nil
-}
-
-//deprecated
-func (api *GtasAPI) MinerAbort(sign string, mtype int32) (*Result, error) {
-	id := IdFromSign(sign)
-	address := common.BytesToAddress(id)
-
-	nonce := time.Now().UnixNano()
-	tx := &types.Transaction{
-		Nonce:    uint64(nonce),
-		Data:     []byte{byte(mtype)},
-		Source:   &address,
-		Type:     types.TransactionTypeMinerAbort,
-
-	}
-	tx.Hash = tx.GenHash()
-	ok, err := core.GetBlockChain().GetTransactionPool().AddTransaction(tx)
-	if !ok {
-		return failResult(err.Error())
-	}
-	return successResult(nil)
-}
-
-//deprecated
-func (api *GtasAPI) MinerRefund(sign string, mtype int32) (*Result, error) {
-	id := IdFromSign(sign)
-	address := common.BytesToAddress(id)
-
-	nonce := time.Now().UnixNano()
-	tx := &types.Transaction{
-		Nonce:    uint64(nonce),
-		Data:     []byte{byte(mtype)},
-		Source:   &address,
-		Type:     types.TransactionTypeMinerRefund,
-
-	}
-	tx.Hash = tx.GenHash()
-	ok, err := core.GetBlockChain().GetTransactionPool().AddTransaction(tx)
-	if !ok {
-		return &Result{Message: err.Error(), Data: nil}, nil
-	}
-	return &Result{Message: "success"}, nil
 }
 
 //铸块统计
