@@ -105,18 +105,6 @@ func (executor *VMExecutor) validateNonce(accountdb *account.AccountDB, transact
 }
 
 func (executor *VMExecutor) executeTransferTx(accountdb *account.AccountDB, transaction *types.Transaction, castor common.Address) (success bool, err *types.TransactionError, cumulativeGasUsed uint64) {
-	success = true
-	amount := big.NewInt(int64(transaction.Value))
-	gas := big.NewInt(int64(transaction.GasPrice * TransactionGasCost))
-	if canTransfer(accountdb, *transaction.Source, amount, gas) {
-		transfer(accountdb, *transaction.Source, *transaction.Target, amount)
-		accountdb.SubBalance(*transaction.Source, gas)
-		accountdb.AddBalance(castor, gas)
-		cumulativeGasUsed = gas.Uint64()
-	} else {
-		success = false
-		err = types.TxErrorBalanceNotEnough
-	}
 	//logger.Debugf("VMExecutor Execute Transfer Source:%s Target:%s Value:%d Height:%d Type:%s,Gas:%d,Success:%t", transaction.Source.GetHexString(), transaction.Target.GetHexString(), transaction.Value, height, mark,cumulativeGasUsed,success)
 	return success, err, cumulativeGasUsed
 }
@@ -216,30 +204,8 @@ func (executor *VMExecutor) executeTransferTx(accountdb *account.AccountDB, tran
 //}
 
 func (executor *VMExecutor) executeBonusTx(accountdb *account.AccountDB, transaction *types.Transaction, castor common.Address) (success bool) {
-	success = false
-	if executor.bc.GetBonusManager().contain(transaction.Data, accountdb) == false {
-		reader := bytes.NewReader(transaction.ExtraData)
-		groupId := make([]byte, common.GroupIdLength)
-		addr := make([]byte, common.AddressLength)
-		value := big.NewInt(int64(transaction.Value))
-		if n, _ := reader.Read(groupId); n != common.GroupIdLength {
-			logger.Errorf("VMExecutor Read GroupId Fail")
-			return success
-		}
-		for n, _ := reader.Read(addr); n > 0; n, _ = reader.Read(addr) {
-			if n != common.AddressLength {
-				logger.Errorf("VMExecutor Bonus Addr Size:%d Invalid", n)
-				break
-			}
-			address := common.BytesToAddress(addr)
-			accountdb.AddBalance(address, value)
-		}
-		executor.bc.GetBonusManager().put(transaction.Data, transaction.Hash[:], accountdb)
-		accountdb.AddBalance(castor, consensusHelper.PackBonus())
-		success = true
-	}
-	//logger.Debugf("VMExecutor Execute Bonus Transaction:%s Group:%s,Success:%t", common.BytesToHash(transaction.Data).Hex(), common.BytesToHash(groupId).ShortS(),success)
-	return success
+		//logger.Debugf("VMExecutor Execute Bonus Transaction:%s Group:%s,Success:%t", common.BytesToHash(transaction.Data).Hex(), common.BytesToHash(groupId).ShortS(),success)
+	return true
 }
 
 func (executor *VMExecutor) executeMinerApplyTx(accountdb *account.AccountDB, transaction *types.Transaction, height uint64, mark string, castor common.Address) (success bool) {
@@ -260,7 +226,7 @@ func (executor *VMExecutor) executeMinerApplyTx(accountdb *account.AccountDB, tr
 	}
 
 	amount := big.NewInt(int64(miner.Stake))
-	txExecuteFee := big.NewInt(int64(transaction.GasPrice * TransactionGasCost))
+	txExecuteFee := big.NewInt(int64(1 * TransactionGasCost))
 	if canTransfer(accountdb, *transaction.Source, amount, txExecuteFee) {
 		accountdb.SubBalance(*transaction.Source, txExecuteFee)
 		accountdb.AddBalance(castor, txExecuteFee)
@@ -279,7 +245,7 @@ func (executor *VMExecutor) executeMinerApplyTx(accountdb *account.AccountDB, tr
 
 func (executor *VMExecutor) executeMinerAbortTx(accountdb *account.AccountDB, transaction *types.Transaction, height uint64, castor common.Address, mark string) (success bool) {
 	success = false
-	txExecuteFee := big.NewInt(int64(transaction.GasPrice * TransactionGasCost))
+	txExecuteFee := big.NewInt(int64(1 * TransactionGasCost))
 	if canTransfer(accountdb, *transaction.Source, new(big.Int).SetUint64(0), txExecuteFee) {
 		accountdb.SubBalance(*transaction.Source, txExecuteFee)
 		accountdb.AddBalance(castor, txExecuteFee)
@@ -295,7 +261,7 @@ func (executor *VMExecutor) executeMinerAbortTx(accountdb *account.AccountDB, tr
 
 func (executor *VMExecutor) executeMinerRefundTx(accountdb *account.AccountDB, transaction *types.Transaction, height uint64, castor common.Address, mark string) (success bool) {
 	success = false
-	txExecuteFee := big.NewInt(int64(transaction.GasPrice * TransactionGasCost))
+	txExecuteFee := big.NewInt(int64(1 * TransactionGasCost))
 	if canTransfer(accountdb, *transaction.Source, new(big.Int).SetUint64(0), txExecuteFee) {
 		accountdb.SubBalance(*transaction.Source, txExecuteFee)
 		accountdb.AddBalance(castor, txExecuteFee)

@@ -13,6 +13,7 @@ import (
 )
 
 var logger log.Logger
+
 func InitSerialzation() {
 	logger = log.GetLoggerByIndex(log.MiddlewareLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 }
@@ -143,15 +144,16 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 		return Transaction{}
 	}
 
-	var source, target *common.Address
+	var source *common.Address
+	var target string
 	var sign *common.Sign
 	if t.Source != nil {
 		s := common.BytesToAddress(t.Source)
 		source = &s
 	}
 	if t.Target != nil {
-		t := common.BytesToAddress(t.Target)
-		target = &t
+
+		target = *t.Target
 	}
 
 	if t.Sign != nil && len(t.Sign) != 0 {
@@ -161,8 +163,8 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 		sign = common.BytesToSign(t.Sign)
 	}
 
-	transaction := Transaction{Data: t.Data, Value: *t.Value, Nonce: *t.Nonce, Source: source,
-		Target: target, GasLimit: *t.GasLimit, GasPrice: *t.GasPrice, Hash: common.BytesToHash(t.Hash),
+	transaction := Transaction{Data: t.Data, Nonce: *t.Nonce, Source: source,
+		Target: target, Hash: common.BytesToHash(t.Hash),
 		ExtraData: t.ExtraData, ExtraDataType: *t.ExtraDataType, Type: *t.Type, Sign: sign}
 	return transaction
 }
@@ -301,12 +303,12 @@ func transactionToPb(t *Transaction) *middleware_pb.Transaction {
 		return nil
 	}
 	var (
-		target []byte
+		target *string
 		source []byte
 		sign   []byte
 	)
-	if t.Target != nil {
-		target = t.Target.Bytes()
+	if len(t.Target) != 0 {
+		target = &t.Target
 	}
 	if t.Source != nil {
 		source = t.Source.Bytes()
@@ -323,8 +325,8 @@ func transactionToPb(t *Transaction) *middleware_pb.Transaction {
 		fmt.Println("Bad sign in transactionToPb sign=", sign)
 	}
 	//>>achates add for testing
-	transaction := middleware_pb.Transaction{Data: t.Data, Value: &t.Value, Nonce: &t.Nonce, Source: source,
-		Target: target, GasLimit: &t.GasLimit, GasPrice: &t.GasPrice, Hash: t.Hash.Bytes(),
+	transaction := middleware_pb.Transaction{Data: t.Data, Nonce: &t.Nonce, Source: source,
+		Target: target,  Hash: t.Hash.Bytes(),
 		ExtraData: t.ExtraData, ExtraDataType: &t.ExtraDataType, Type: &t.Type, Sign: sign}
 	return &transaction
 }

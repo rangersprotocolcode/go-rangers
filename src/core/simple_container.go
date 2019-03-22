@@ -1,7 +1,6 @@
 package core
 
 import (
-	"sort"
 	"sync"
 	"time"
 
@@ -11,7 +10,7 @@ import (
 
 type simpleContainer struct {
 	limit  int
-	txs    types.PriorityTransactions
+	txs    types.Transactions
 	txsMap map[common.Hash]*types.Transaction
 
 	sortTicker *time.Ticker
@@ -23,10 +22,10 @@ func newSimpleContainer(l int) *simpleContainer {
 		lock:       sync.RWMutex{},
 		limit:      l,
 		txsMap:     map[common.Hash]*types.Transaction{},
-		txs:        types.PriorityTransactions{},
+		txs:        types.Transactions{},
 		sortTicker: time.NewTicker(time.Millisecond * 500),
 	}
-	go c.loop()
+
 	return c
 }
 
@@ -35,20 +34,6 @@ func (c *simpleContainer) Len() int {
 	defer c.lock.RUnlock()
 
 	return len(c.txs)
-}
-
-func (c *simpleContainer) loop() {
-	for {
-		<-c.sortTicker.C
-		c.sort()
-	}
-}
-
-func (c *simpleContainer) sort() {
-	c.lock.Lock()
-	defer c.lock.Unlock()
-
-	sort.Sort(c.txs)
 }
 
 func (c *simpleContainer) contains(key common.Hash) bool {
@@ -82,14 +67,6 @@ func (c *simpleContainer) push(tx *types.Transaction) {
 		return
 	}
 
-	for i, oldTx := range c.txs {
-		if tx.GasPrice >= oldTx.GasPrice {
-			delete(c.txsMap, oldTx.Hash)
-			c.txs[i] = tx
-			c.txsMap[tx.Hash] = tx
-			break
-		}
-	}
 }
 
 func (c *simpleContainer) remove(key common.Hash) {

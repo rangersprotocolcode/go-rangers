@@ -46,9 +46,9 @@ func (bm *BonusManager) GenerateBonus(targetIds []int32, blockHash common.Hash, 
 	if len(buffer.Bytes())%common.AddressLength != 0 {
 		panic("GenerateBonus ExtraData Size Invalid")
 	}
-	transaction.Value = totalValue / uint64(len(targetIds))
+	//transaction.Value = totalValue / uint64(len(targetIds))
 	transaction.Type = types.TransactionTypeBonus
-	transaction.GasPrice = common.MaxUint64
+	//transaction.GasPrice = common.MaxUint64
 	transaction.Hash = transaction.GenHash()
 	return &types.Bonus{TxHash: transaction.Hash, TargetIds: targetIds, BlockHash: blockHash, GroupId: groupId, TotalValue: totalValue}, transaction
 }
@@ -71,7 +71,7 @@ func (bm *BonusManager) ParseBonusTransaction(transaction *types.Transaction) ([
 		addr = make([]byte, common.AddressLength)
 	}
 	blockHash := common.BytesToHash(transaction.Data)
-	return groupId, ids, blockHash, transaction.Value
+	return groupId, ids, blockHash, 0
 }
 
 func (bm *BonusManager) contain(blockHash []byte, accountdb *account.AccountDB) bool {

@@ -92,19 +92,15 @@ var testTxAccount = []string{"0xc2f067dba80c53cfdd956f86a61dd3aaf5abbba560957263
 
 type Transaction struct {
 	Data   []byte
-	Value  uint64
 	Nonce  uint64
 	Source *common.Address
-	Target *common.Address
+	Target string
 	Type   int32
-
-	GasLimit uint64
-	GasPrice uint64
-	Hash     common.Hash
+	Hash common.Hash
 
 	ExtraData     []byte
 	ExtraDataType int32
-	//PubKey *common.PublicKey
+
 	Sign *common.Sign
 }
 
@@ -117,14 +113,17 @@ func (tx *Transaction) GenHash() common.Hash {
 	if tx.Data != nil {
 		buffer.Write(tx.Data)
 	}
-	buffer.Write(common.Uint64ToByte(tx.Value))
+
 	buffer.Write(common.Uint64ToByte(tx.Nonce))
-	if tx.Target != nil {
-		buffer.Write(tx.Target.Bytes())
+
+	buffer.Write(tx.Source.Bytes())
+
+	if tx.Target != "" {
+		buffer.Write([]byte(tx.Target))
 	}
+
 	buffer.Write(common.UInt32ToByte(tx.Type))
-	buffer.Write(common.Uint64ToByte(tx.GasLimit))
-	buffer.Write(common.Uint64ToByte(tx.GasPrice))
+
 	if tx.ExtraData != nil {
 		buffer.Write(tx.ExtraData)
 	}
@@ -143,51 +142,6 @@ func (c Transactions) Swap(i, j int) {
 }
 func (c Transactions) Less(i, j int) bool {
 	return c[i].Nonce < c[j].Nonce
-}
-
-type GasPriceTransactions []*Transaction
-
-func (c GasPriceTransactions) Len() int {
-	return len(c)
-}
-func (c GasPriceTransactions) Swap(i, j int) {
-	c[i], c[j] = c[j], c[i]
-}
-func (c GasPriceTransactions) Less(i, j int) bool {
-	return c[i].GasPrice > c[j].GasPrice
-}
-
-// 根据gasprice决定优先级的transaction数组
-// gasprice 低的，放在前
-type PriorityTransactions []*Transaction
-
-func (pt PriorityTransactions) Len() int {
-	return len(pt)
-}
-func (pt PriorityTransactions) Swap(i, j int) {
-	pt[i], pt[j] = pt[j], pt[i]
-}
-func (pt PriorityTransactions) Less(i, j int) bool {
-	if pt[i].Type == TransactionTypeToBeRemoved && pt[j].Type != TransactionTypeToBeRemoved {
-		return true
-	} else if pt[i].Type != TransactionTypeToBeRemoved && pt[j].Type == TransactionTypeToBeRemoved {
-		return false
-	} else {
-		return pt[i].GasPrice < pt[j].GasPrice
-	}
-}
-func (pt *PriorityTransactions) Push(x interface{}) {
-	item := x.(*Transaction)
-	*pt = append(*pt, item)
-}
-
-func (pt *PriorityTransactions) Pop() interface{} {
-	old := *pt
-	n := len(old)
-	item := old[n-1]
-
-	*pt = old[0 : n-1]
-	return item
 }
 
 type Bonus struct {
