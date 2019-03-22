@@ -278,8 +278,7 @@ func (c *sendTxCmd) toTxRaw() *txRawData {
 		Value:    uint64((c.value) * float64(1000000000)),
 		TxType:   c.txType,
 		Data:     c.data,
-		Gas:      c.gaslimit,
-		Gasprice: c.gasPrice,
+
 	}
 }
 

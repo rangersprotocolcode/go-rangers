@@ -190,8 +190,7 @@ func (ca *RemoteChainOpImpl) ApplyMiner(mtype int, stake uint64, gas, gasprice u
 	}
 
 	tx := &txRawData{
-		Gas:      gas,
-		Gasprice: gasprice,
+
 		TxType:   types.TransactionTypeMinerApply,
 		Data:     common.ToHex(data),
 	}
@@ -209,8 +208,6 @@ func (ca *RemoteChainOpImpl) AbortMiner(mtype int, gas, gasprice uint64) *Result
 		return opError(fmt.Errorf("the current account is not a miner account"))
 	}
 	tx := &txRawData{
-		Gas:       gas,
-		Gasprice:  gasprice,
 		TxType:    types.TransactionTypeMinerAbort,
 		Data:      string([]byte{byte(mtype)}),
 		ExtraData: aci.Address,
@@ -229,8 +226,6 @@ func (ca *RemoteChainOpImpl) RefundMiner(mtype int, gas, gasprice uint64) *Resul
 		return opError(fmt.Errorf("the current account is not a miner account"))
 	}
 	tx := &txRawData{
-		Gas:       gas,
-		Gasprice:  gasprice,
 		TxType:    types.TransactionTypeMinerRefund,
 		Data:      string([]byte{byte(mtype)}),
 		ExtraData: aci.Address,
