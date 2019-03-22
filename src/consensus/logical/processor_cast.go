@@ -307,7 +307,6 @@ func (p *Processor) blockProposal() {
 		return
 	}
 	height := worker.castHeight
-	blog.log("worker.isProposed() || worker.isSuccess()")
 
 	totalStake := p.minerReader.getTotalStake(worker.baseBH.Height, false)
 	blog.log("totalStake height=%v, stake=%v", height, totalStake)

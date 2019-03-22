@@ -7,11 +7,22 @@ import (
 	"time"
 	"x/src/storage/trie"
 	"x/src/storage/account"
+	"io/ioutil"
+	"gopkg.in/yaml.v2"
+	"x/src/consensus/groupsig"
+	"x/src/consensus/vrf"
 )
 
 const ChainDataVersion = 2
+const defaultGenesisProposerPath = "genesis_proposer.yaml"
 
 var emptyHash = common.Hash{}
+
+type GenesisProposer struct {
+	MinerId     string `yaml:"minerId"`
+	MinerPubKey string `yaml:"minerPubkey"`
+	VRFPubkey   string `yaml:"vrfPubkey"`
+}
 
 func (chain *blockChain) insertGenesisBlock() {
 	state, err := account.NewAccountDB(common.Hash{}, chain.stateDB)
@@ -83,7 +94,10 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 		}
 	}
 
-	MinerManagerImpl.addGenesesMiner(miners, stateDB)
+	MinerManagerImpl.addGenesesVerifier(miners, stateDB)
+	genesisProposers := getGenesisProposer("")
+	MinerManagerImpl.addGenesesProposer(genesisProposers, stateDB)
+
 	stage = stateDB.IntermediateRoot(false)
 	logger.Debugf("GenesisBlock Stage2 Root:%s", stage.Hex())
 	stateDB.SetNonce(common.BonusStorageAddress, 1)
@@ -98,4 +112,41 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 
 	logger.Debugf("GenesisBlock %+v", block.Header)
 	return block
+}
+
+func getGenesisProposer(path string) []*types.Miner {
+	if path == "" {
+		path = defaultGenesisProposerPath
+	}
+	bytes, err := ioutil.ReadFile(path)
+	if err != nil {
+		panic("Init genesis proposer error:" + err.Error())
+	}
+
+	var genesisProposers []GenesisProposer
+	err = yaml.UnmarshalStrict(bytes, &genesisProposers)
+	if err != nil {
+		panic("Unmarshal member info error:" + err.Error())
+	}
+	miners := make([]*types.Miner, 0)
+	for _, gp := range genesisProposers {
+		var minerId groupsig.ID
+		minerId.SetHexString(gp.MinerId)
+
+		var minerPubkey groupsig.Pubkey
+		minerPubkey.SetHexString(gp.MinerPubKey)
+
+		vrfPubkey := vrf.Hex2VRFPublicKey(gp.VRFPubkey)
+		miner := types.Miner{
+			Id:           minerId.Serialize(),
+			PublicKey:    minerPubkey.Serialize(),
+			VrfPublicKey: vrfPubkey,
+			ApplyHeight:  0,
+			Stake:        1000000000 * (100),
+			Type:         types.MinerTypeHeavy,
+			Status:       types.MinerStatusNormal,
+		}
+		miners = append(miners, &miner)
+	}
+	return miners
 }
