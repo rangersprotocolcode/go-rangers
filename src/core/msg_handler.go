@@ -10,7 +10,7 @@ import (
 	"x/src/middleware/notify"
 
 	"github.com/gogo/protobuf/proto"
-	"taschain/src/middleware/pb"
+	"x/src/middleware/pb"
 )
 
 const blockResponseSize = 1
@@ -141,7 +141,7 @@ func (ch ChainHandler) newBlockHandler(msg notify.Message) {
 }
 
 func unMarshalTransactionRequestMessage(b []byte) (*transactionRequestMessage, error) {
-	m := new(tas_middleware_pb.TransactionRequestMessage)
+	m := new(middleware_pb.TransactionRequestMessage)
 	e := proto.Unmarshal(b, m)
 	if e != nil {
 		network.Logger.Errorf("UnMarshal transaction request message error:%s", e.Error())

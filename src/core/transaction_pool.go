@@ -29,7 +29,7 @@ const (
 	oldTxInterval               = time.Second * 60
 
 	txCountPerBlock = 3000
-	gasLimitMax     = 500000
+	//gasLimitMax     = 500000
 )
 
 var (
@@ -248,35 +248,10 @@ func (pool *TxPool) PackForCast() []*types.Transaction {
 }
 
 func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
-	if !tx.Hash.IsValid() {
-		return ErrHash
+	if tx.Target == "" || tx.Type == 0 || len(tx.Data) == 0 {
+		return ErrNil
 	}
 
-	if tx.Hash != tx.GenHash() {
-		return fmt.Errorf("tx hash error")
-	}
-
-	if tx.Sign == nil {
-		return fmt.Errorf("tx sign nil")
-	}
-
-	if tx.Type != types.TransactionTypeBonus && tx.GasPrice == 0 {
-		return fmt.Errorf("illegal tx gasPrice")
-	}
-
-	if tx.Type != types.TransactionTypeBonus && tx.GasLimit > gasLimitMax {
-		return fmt.Errorf("gasLimit too  big! max gas limit is 500000 Ra")
-	}
-
-	if tx.Type == types.TransactionTypeBonus {
-		if ok, err := consensusHelper.VerifyBonusTransaction(tx); !ok {
-			return err
-		}
-	} else {
-		if err := pool.verifySign(tx); err != nil {
-			return err
-		}
-	}
 	return nil
 }
 
