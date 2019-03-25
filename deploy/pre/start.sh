@@ -8,7 +8,7 @@ instance_index=$1
 instance_count=$2
 instance_end=$instance_index+$instance_count
 
-seed='192.168.3.43'
+seed='47.110.143.114'
 seedId='Qmcf3W4uSAaAttmYCG7ZnCXoP6eytmka9Q1po6ArgBr5XF'
 
 for((;instance_index<instance_end;instance_index++))
@@ -24,7 +24,7 @@ do
 
 	rpc_port=$[8100+$instance_index]
 	pprof_port=$[9000+$instance_index]
-	config_file='tas'$instance_index'.ini'
+	config_file='x'$instance_index'.ini'
 	stdout_log='logs/nohup_out_'$instance_index'.log'
 	pid_file='pid/pid_gx'$instance_index'.txt'
 
