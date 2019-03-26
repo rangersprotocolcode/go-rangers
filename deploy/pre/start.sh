@@ -8,7 +8,7 @@ instance_index=$1
 instance_count=$2
 instance_end=$instance_index+$instance_count
 
-seed='47.110.143.114'
+seed='172.16.55.229'
 seedId='Qmcf3W4uSAaAttmYCG7ZnCXoP6eytmka9Q1po6ArgBr5XF'
 
 for((;instance_index<instance_end;instance_index++))
