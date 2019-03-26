@@ -95,9 +95,9 @@ func (bs *blockSyncer) GetCandidateForSync() (string, uint64, uint64, bool) {
 		}
 	}
 
-	if candidateHeight == localHeight && candidateMaxTotalQn == localTotalQN {
-		candidateId = ""
-	}
+	//if candidateHeight == localHeight && candidateMaxTotalQn == localTotalQN {
+	//	candidateId = ""
+	//}
 	if localHeight >= candidateHeight {
 		return candidateId, candidateHeight, candidateHeight, hasCandidate
 	}
