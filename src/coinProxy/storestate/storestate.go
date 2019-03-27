@@ -258,6 +258,20 @@ func (self *StoreState)UpdateFinished(finishblock big.Int,blockcount int) error{
 		//fmt.Println("RowsAffected:", RowsAffected)
 		return err
 	}
+
+	stmt1, _ := self.db.Prepare(`UPDATE incoming SET status=?,finishblock=?,finishedtime=now() WHERE blocknumber+?<=? AND status = ?`)
+	defer stmt1.Close()
+
+	ret1, err := stmt1.Exec("finished",finishblock.Int64(),blockcount,finishblock.Int64(),"init")
+	if err != nil {
+		fmt.Printf("UpdateFinished1 error: %v\n", err)
+		return err
+	}
+	if _, err := ret1.RowsAffected(); nil != err {
+		//fmt.Println("RowsAffected:", RowsAffected)
+		return err
+	}
+
 	return nil
 }
 

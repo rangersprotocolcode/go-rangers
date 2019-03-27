@@ -110,7 +110,7 @@ func (self *EthModule)call(contractaddr string,input []byte) error{
 	toAddr := common.HexToAddress(contractaddr)
 
 	// 数量
-	tmp:=big.NewInt(100)
+	tmp:=big.NewInt(0)
 	amount := big.NewInt(1000000000000000000)
 	amount.Mul(amount,tmp)
 	//amount := big.Int{100000000000000000000}
