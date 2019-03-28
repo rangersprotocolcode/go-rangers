@@ -10,6 +10,8 @@ import (
 
 	"github.com/vmihailenco/msgpack"
 	"bytes"
+	"x/src/statemachine"
+	"strconv"
 )
 
 const TransactionGasCost = 1000
@@ -69,11 +71,20 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			success = executor.executeMinerRefundTx(accountdb, transaction, height, castor, situation)
 
 		case types.TransactionTypeOperatorEvent:
-			success = executor.executeMinerRefundTx(accountdb, transaction, height, castor, situation)
-		case types.TransactionTypeBlockEvent:
-			success = executor.executeMinerRefundTx(accountdb, transaction, height, castor, situation)
-		case types.TransactionTypeUserEvent:
-			success = executor.executeMinerRefundTx(accountdb, transaction, height, castor, situation)
+
+			// 已经执行过了，则直接返回true
+			if nil == GetBlockChain().GetTransactionPool().GetExecuted(transaction.Hash) {
+				nonce := statemachine.Docker.Nonce(transaction.Target)
+				payload := string(transaction.Data)
+				statemachine.Docker.Process(transaction.Target, "operator", strconv.Itoa(nonce+1), payload)
+
+			}
+
+			success = true
+			//case types.TransactionTypeBlockEvent:
+			//	success = executor.executeMinerRefundTx(accountdb, transaction, height, castor, situation)
+			//case types.TransactionTypeUserEvent:
+			//	success = executor.executeMinerRefundTx(accountdb, transaction, height, castor, situation)
 		}
 
 		if !success {

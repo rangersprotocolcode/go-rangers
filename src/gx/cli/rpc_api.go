@@ -14,6 +14,8 @@ import (
 	"encoding/hex"
 	"math"
 	"x/src/consensus"
+	"x/src/statemachine"
+	"strconv"
 )
 
 func successResult(data interface{}) (*Result, error) {
@@ -43,6 +45,16 @@ func (api *GtasAPI) Tx(txRawjson string) (*Result, error) {
 	}
 
 	txRaw.Hash = txRaw.GenHash()
+
+	// execute state machine transaction
+	if txRaw.Type == types.TransactionTypeOperatorEvent {
+		nonce := statemachine.Docker.Nonce(txRaw.Target)
+		payload := string(txRaw.Data)
+		statemachine.Docker.Process(txRaw.Target, "operator", strconv.Itoa(nonce+1), payload)
+
+		core.GetBlockChain().GetTransactionPool().AddExecuted(txRaw)
+
+	}
 
 	if err := sendTransaction(txRaw); err != nil {
 		return failResult(err.Error())

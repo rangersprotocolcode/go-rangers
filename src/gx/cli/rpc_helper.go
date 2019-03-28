@@ -103,5 +103,6 @@ func sendTransaction(trans *types.Transaction) error {
 		common.DefaultLogger.Errorf("AddTransaction not ok or error:%s", err.Error())
 		return err
 	}
+
 	return nil
 }

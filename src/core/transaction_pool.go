@@ -121,6 +121,23 @@ func (pool *TxPool) AddMissTransactions(txs []*types.Transaction) {
 	return
 }
 
+func (pool *TxPool) AddExecuted(tx *types.Transaction) error {
+	if nil == tx {
+		return nil
+	}
+
+	executedTx := &ExecutedTransaction{
+		Transaction: tx,
+	}
+	executedTxBytes, err := msgpack.Marshal(executedTx)
+	if nil != err {
+		return err
+	}
+
+	return pool.executed.Put(tx.Hash.Bytes(), executedTxBytes)
+
+}
+
 func (pool *TxPool) MarkExecuted(receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash) {
 	if nil == receipts || 0 == len(receipts) {
 		return

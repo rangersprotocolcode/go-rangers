@@ -9,10 +9,19 @@ import (
 	"x/src/middleware/types"
 )
 
+var Docker *DockerManager
+
 type DockerManager struct {
 	Mapping  map[string]PortInt
 	Config   YAMLConfig
 	Filename string
+}
+
+func DockerInit() {
+	Docker = &DockerManager{
+		Filename: "",
+	}
+	Docker.Init()
 }
 
 func (d *DockerManager) Init() {
