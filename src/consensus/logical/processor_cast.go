@@ -254,8 +254,8 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 	vctx.markBroadcast()
 	slot.setSlotStatus(SS_SUCCESS)
 
-	//如果是联盟链，则不打分红交易
-	if !consensusConfManager.GetBool("league", false) {
+	//不打分红交易
+	if !consensusConfManager.GetBool("league", true) {
 		p.reqRewardTransSign(vctx, bh)
 	}
 	blog.log("After BroadcastNewBlock hash=%v:%v", bh.Hash.ShortS(), time.Now().Format(TIMESTAMP_LAYOUT))

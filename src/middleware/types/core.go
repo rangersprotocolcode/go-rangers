@@ -81,8 +81,8 @@ const (
 	TransactionTypeMinerAbort     = 5
 	TransactionTypeMinerRefund    = 6
 	TransactionTypeBlockEvent     = 7
-	TransactionTypeOperatorEvent     = 8
-	TransactionTypeUserEvent     = 9
+	TransactionTypeOperatorEvent  = 8
+	TransactionTypeUserEvent      = 9
 
 	TransactionTypeToBeRemoved = -1
 )
@@ -119,7 +119,9 @@ func (tx *Transaction) GenHash() common.Hash {
 
 	buffer.Write(common.Uint64ToByte(tx.Nonce))
 
-	buffer.Write(tx.Source.Bytes())
+	if tx.Source != nil {
+		buffer.Write(tx.Source.Bytes())
+	}
 
 	if tx.Target != "" {
 		buffer.Write([]byte(tx.Target))
