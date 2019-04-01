@@ -109,7 +109,7 @@ type TransactionPool interface {
 
 	UnMarkExecuted(txs []*types.Transaction)
 
-	AddExecuted(tx *types.Transaction)
+	AddExecuted(tx *types.Transaction) error
 
 	Clear()
 }
