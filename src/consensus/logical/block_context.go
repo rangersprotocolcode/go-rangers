@@ -24,7 +24,6 @@ type BlockContext struct {
 
 	//变化
 	vctxs map[uint64]*VerifyContext //height -> *VerifyContext
-	//currentVCtx    atomic.Value 	//当前铸块的verifycontext
 
 	recentCasted [40]*castedBlock
 	curr          int

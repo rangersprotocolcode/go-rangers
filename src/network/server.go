@@ -31,16 +31,14 @@ type server struct {
 
 	dht *dht.IpfsDHT
 
-	streams map[string]inet.Stream
+	streams sync.Map
 
 	consensusHandler MsgHandler
-
-	streamMapLock sync.RWMutex
 }
 
 func initServer(host host.Host, dht *dht.IpfsDHT, consensusHandler MsgHandler) {
 	host.SetStreamHandler(protocolID, swarmStreamHandler)
-	Server = server{host: host, dht: dht, streams: make(map[string]inet.Stream), streamMapLock: sync.RWMutex{}, consensusHandler: consensusHandler}
+	Server = server{host: host, dht: dht, streams: sync.Map{},  consensusHandler: consensusHandler}
 }
 
 func (s *server) Send(id string, msg Message) {
@@ -162,35 +160,32 @@ func (s *server) send(b []byte, id string) {
 	}
 	c := context.Background()
 
-	s.streamMapLock.Lock()
-	stream := s.streams[id]
-	if stream == nil {
+	stream,exist := s.streams.Load(id)
+	if !exist {
 		var e error
 		stream, e = s.host.NewStream(c, strToId(id), protocolID)
 		if e != nil {
 			//Logger.Errorf("New stream for %s error:%s", id, e.Error())
-			s.streamMapLock.Unlock()
 			s.send(b, id)
 			return
 		}
-		s.streams[id] = stream
 	}
 
+
 	l := len(b)
-	r, err := stream.Write(b)
+	r, err := stream.(inet.Stream).Write(b)
 	if err != nil {
 		Logger.Errorf("Write stream for %s error:%s", id, err.Error())
-		stream.Close()
-		s.streams[id] = nil
-		s.streamMapLock.Unlock()
+		stream.(inet.Stream).Close()
 		s.send(b, id)
 		return
 	}
-	s.streamMapLock.Unlock()
+
 	if r != l {
 		Logger.Errorf("Stream  should write %d byte ,bu write %d bytes", l, r)
 		return
 	}
+	s.streams.Store(id,stream)
 }
 
 func (s *server) sendSelf(b []byte, id string) {

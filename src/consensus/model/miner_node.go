@@ -9,7 +9,6 @@ import (
 )
 
 const minerStake = 1
-const MinerTotalStake = 3
 
 type MinerDO struct {
 	PK    groupsig.Pubkey

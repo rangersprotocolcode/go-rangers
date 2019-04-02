@@ -8,52 +8,139 @@ import (
 	"x/src/common"
 )
 
-type RoutineFunc func() bool
-
 const (
 	STOPPED = int32(0)
 	RUNNING = int32(1)
 )
 
+var ticker = newGlobalTicker("global")
+
+type RoutineFunc func() bool
+
 type TickerRoutine struct {
 	id              string
-	handler         RoutineFunc   //执行函数
-	interval        uint32        //触发的心跳间隔
-	lastTicker      uint64        //最后一次执行的心跳
-	triggerCh       chan int32 		//触发信号
-	status          int32         //当前状态 STOPPED, RUNNING
-	triggerNextTick int32         //下次心跳触发
+	handler         RoutineFunc //执行函数
+	interval        uint32      //触发的心跳间隔
+	lastTicker      uint64      //最后一次执行的心跳
+	triggerCh       chan int32  //触发信号
+	status          int32       //当前状态 STOPPED, RUNNING
+	triggerNextTick int32       //下次心跳触发
 }
 
 type GlobalTicker struct {
 	beginTime time.Time
-	timer 	*time.Ticker
-	ticker  uint64
-	id 		string
-	routines sync.Map	//string -> *TickerRoutine
-	//routines map[string]*TickerRoutine
+	timer     *time.Ticker
+	ticker    uint64
+	id        string
+	routines  sync.Map //string -> *TickerRoutine
 }
-
-var ticker = NewGlobalTicker("global")
 
 func GetTickerInstance() *GlobalTicker {
 	return ticker
 }
 
-func NewGlobalTicker(id string) *GlobalTicker {
-	ticker := &GlobalTicker{
-		id: id,
-		beginTime: time.Now(),
-		//routines: make(map[string]*TickerRoutine),
+func (gt *GlobalTicker) RegisterRoutine(name string, routine RoutineFunc, interval uint32) {
+	//log.Printf("RegisterRoutine, id=%v, interval=%v\n", name, interval)
+	if rt := gt.getRoutine(name); rt != nil {
+		//log.Printf("RegisterRoutine, id=%v already exist!\n", name)
+		return
+	}
+	r := &TickerRoutine{
+		interval:        interval,
+		handler:         routine,
+		lastTicker:      0,
+		id:              name,
+		triggerCh:       make(chan int32, 5),
+		status:          STOPPED,
+		triggerNextTick: 0,
+	}
+	go func() {
+	STOP:
+		for {
+			select {
+			case val := <-r.triggerCh:
+				if val == -1 {
+					//log.Println("ticker routine stopped!, name=", r.id)
+					break STOP
+				} else {
+					gt.trigger(r, val)
+				}
+			}
+		}
+	}()
+
+	gt.addRoutine(name, r)
+	gt.routines.Range(func(key, value interface{}) bool {
+		//log.Println("ticker name ", key)
+		return true
+	})
+}
+
+func (gt *GlobalTicker) RemoveRoutine(name string) {
+	routine := gt.getRoutine(name)
+	if routine == nil {
+		return
+	}
+	routine.triggerCh <- -1
+	//log.Println("routine removed!, name=", routine.id)
+	gt.routines.Delete(name)
+}
+
+func (gt *GlobalTicker) StartTickerRoutine(name string, triggerNextTicker bool) {
+	routine := gt.getRoutine(name)
+	if routine == nil {
+		return
+	}
+	if triggerNextTicker && atomic.CompareAndSwapInt32(&routine.triggerNextTick, 0, 1) {
+		//log.Printf("routine will trigger next routine! id=%v\n", routine.id)
+	}
+	if atomic.CompareAndSwapInt32(&routine.status, STOPPED, RUNNING) {
+		//log.Printf("routine started! id=%v\n", routine.id)
+	} else {
+		//log.Printf("routine routine start failed, already in running! id=%v\n", routine.id)
+	}
+}
+
+func (gt *GlobalTicker) StartAndTriggerRoutine(name string) {
+	routine := gt.getRoutine(name)
+	if routine == nil {
+		return
 	}
 
-	go ticker.routine()
+	if atomic.CompareAndSwapInt32(&routine.status, STOPPED, RUNNING) {
+		//log.Printf("StartAndTriggerRoutine: routine started! id=%v\n", routine.id)
+	} else {
+		//log.Printf("StartAndTriggerRoutine:routine routine start failed, already in running! id=%v\n", routine.id)
+	}
+	go func() {
+		routine.triggerCh <- 2
+	}()
+}
 
+func (gt *GlobalTicker) StopTickerRoutine(name string) {
+	routine := gt.getRoutine(name)
+	if routine == nil {
+		return
+	}
+
+	if atomic.CompareAndSwapInt32(&routine.status, RUNNING, STOPPED) {
+		//log.Printf("routine stopped! id=%v\n", routine.id)
+	} else {
+		//log.Printf("routine routine stop failed, not in running! id=%v\n", routine.id)
+	}
+}
+
+func newGlobalTicker(id string) *GlobalTicker {
+	ticker := &GlobalTicker{
+		id:        id,
+		beginTime: time.Now(),
+	}
+	go ticker.routine()
 	return ticker
 }
 
-func (gt *GlobalTicker) addRoutine(name string, tr *TickerRoutine)  {
-    gt.routines.Store(name, tr)
+func (gt *GlobalTicker) addRoutine(name string, tr *TickerRoutine) {
+	gt.routines.Store(name, tr)
 }
 
 func (gt *GlobalTicker) getRoutine(name string) *TickerRoutine {
@@ -106,104 +193,12 @@ func (gt *GlobalTicker) routine() {
 		gt.ticker++
 		gt.routines.Range(func(key, value interface{}) bool {
 			rt := value.(*TickerRoutine)
-			if (atomic.LoadInt32(&rt.status) == RUNNING && gt.ticker - rt.lastTicker >= uint64(rt.interval)) || atomic.LoadInt32(&rt.triggerNextTick) == 1 {
+			if (atomic.LoadInt32(&rt.status) == RUNNING && gt.ticker-rt.lastTicker >= uint64(rt.interval)) || atomic.LoadInt32(&rt.triggerNextTick) == 1 {
 				//rt.lastTicker = gt.ticker
 				atomic.CompareAndSwapInt32(&rt.triggerNextTick, 1, 0)
 				rt.triggerCh <- 1
 			}
 			return true
 		})
-	}
-}
-
-func (gt *GlobalTicker) RegisterRoutine(name string, routine RoutineFunc, interval uint32)  {
-	//log.Printf("RegisterRoutine, id=%v, interval=%v\n", name, interval)
-	if rt := gt.getRoutine(name); rt != nil {
-		//log.Printf("RegisterRoutine, id=%v already exist!\n", name)
-		return
-	}
-	r := &TickerRoutine{
-		interval:        interval,
-		handler:         routine,
-		lastTicker:      0,
-		id:              name,
-		triggerCh:       make(chan int32, 5),
-		status:          STOPPED,
-		triggerNextTick: 0,
-	}
-	go func() {
-		STOP:
-		for {
-			select {
-			case val := <-r.triggerCh:
-				if val == -1 {
-					//log.Println("ticker routine stopped!, name=", r.id)
-					break STOP
-				} else {
-					gt.trigger(r, val)
-				}
-			}
-		}
-	}()
-
-	gt.addRoutine(name, r)
-	gt.routines.Range(func(key, value interface{}) bool {
-		//log.Println("ticker name ", key)
-		return true
-	})
-}
-
-func (gt *GlobalTicker) RemoveRoutine(name string)  {
-	routine := gt.getRoutine(name)
-	if routine == nil {
-		return
-	}
-	routine.triggerCh <- -1
-	//log.Println("routine removed!, name=", routine.id)
-	gt.routines.Delete(name)
-}
-
-func (gt *GlobalTicker) StartTickerRoutine(name string, triggerNextTicker bool)  {
-	routine := gt.getRoutine(name)
-	if routine == nil {
-		return
-	}
-	if triggerNextTicker && atomic.CompareAndSwapInt32(&routine.triggerNextTick, 0, 1) {
-		//log.Printf("routine will trigger next routine! id=%v\n", routine.id)
-	}
-	if atomic.CompareAndSwapInt32(&routine.status, STOPPED, RUNNING) {
-		//log.Printf("routine started! id=%v\n", routine.id)
-	} else {
-		//log.Printf("routine routine start failed, already in running! id=%v\n", routine.id)
-	}
-}
-
-func (gt *GlobalTicker) StartAndTriggerRoutine(name string)  {
-	routine := gt.getRoutine(name)
-	if routine == nil {
-		return
-	}
-
-	if atomic.CompareAndSwapInt32(&routine.status, STOPPED, RUNNING) {
-		//log.Printf("StartAndTriggerRoutine: routine started! id=%v\n", routine.id)
-	} else {
-		//log.Printf("StartAndTriggerRoutine:routine routine start failed, already in running! id=%v\n", routine.id)
-	}
-	go func() {
-		routine.triggerCh <- 2
-	}()
-
-}
-
-func (gt *GlobalTicker) StopTickerRoutine(name string)  {
-	routine := gt.getRoutine(name)
-	if routine == nil {
-		return
-	}
-
-	if atomic.CompareAndSwapInt32(&routine.status, RUNNING, STOPPED) {
-		//log.Printf("routine stopped! id=%v\n", routine.id)
-	} else {
-		//log.Printf("routine routine stop failed, not in running! id=%v\n", routine.id)
 	}
 }
