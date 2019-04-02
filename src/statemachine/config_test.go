@@ -30,7 +30,7 @@ func TestDocker(t *testing.T) {
 
 	data, _ := json.Marshal(output)
 	fmt.Println(string(data))
-	assertEqual(t, len(tom.Config.Services), 1)
+	assertEqual(t, len(tom.Config.Services), 2)
 
 }
 

@@ -9,3 +9,13 @@ services:
         target: 80
     detached: true
     cmd: "npm start"
+
+  - priority: 1
+    game: "jj"
+    name: "j6"
+    image: "tcsm_state_machine:68"
+    ports:
+      - host: 8886
+        target: 80
+    detached: true
+    cmd: "npm start"
