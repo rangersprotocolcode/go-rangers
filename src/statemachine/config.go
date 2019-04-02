@@ -38,6 +38,7 @@ func (n *NetworkConfig) String() string {
 }
 
 //    Priority      设定启动顺序
+//    Game          游戏id
 //    Name 			设定容器名
 //    Image			string,设定镜像名
 //    Detached 		bool,设定是否后台运行(不输出初始化日志记录),
@@ -54,6 +55,7 @@ func (n *NetworkConfig) String() string {
 //                  false 表示不删除
 type ContainerConfig struct {
 	Priority   uint   `yaml:"priority"`
+	Game       string `yaml:"game"`
 	Name       string `yaml:"name"`
 	Image      string `yaml:"image"`
 	Detached   bool   `yaml:"detached"`
@@ -90,7 +92,7 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 	}
 
 	if "running" == container.State {
-		return c.Name, c.makePorts(container.Ports[0].PublicPort)
+		return c.Game, c.makePorts(container.Ports[0].PublicPort)
 	}
 
 	if "exited" == container.State {
@@ -109,7 +111,7 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 			panic(err)
 		}
 
-		return c.Name, c.makePorts(container.Ports[0].PublicPort)
+		return c.Game, c.makePorts(container.Ports[0].PublicPort)
 	}
 
 	return "", nil
@@ -204,7 +206,7 @@ func (c *ContainerConfig) runContainer(cli *client.Client, ctx context.Context) 
 	} else {
 		log.Printf("Container %s is created and started.\n", resp.ID)
 		// 创建成功 记录端口号与name的关联关系
-		return c.Name, c.Ports
+		return c.Game, c.Ports
 	}
 }
 
