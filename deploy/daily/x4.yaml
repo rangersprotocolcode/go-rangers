@@ -1,0 +1,11 @@
+title: x4
+services:
+  - priority: 0
+    game: "j"
+    name: "j4"
+    image: "tcsm_state_machine:68"
+    ports:
+      - host: 8884
+        target: 80
+    detached: true
+    cmd: "npm start"
