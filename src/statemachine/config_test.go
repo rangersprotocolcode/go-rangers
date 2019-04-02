@@ -19,18 +19,18 @@ func TestConfig(t *testing.T) {
 func TestDocker(t *testing.T) {
 	var tom = new(DockerManager)
 	tom.Filename = "test.yaml"
-	tom.Init()
+	tom.init()
 
-	nonce := tom.Nonce("j1")
+	nonce := tom.Nonce("j")
 	fmt.Println(nonce)
 
 	//fmt.Println(tom.Validate("j1", "0x1fc2119a6255817f8fe01f9200d0afbc3490fece0d1788901806cd6c7bf3e03b", "111"))
-	output := tom.Process("j1", "operator", strconv.Itoa(nonce+1),
+	output := tom.Process("j", "operator", strconv.Itoa(nonce+1),
 		"{\"timestamp\": 1537056003, \"msg_name\": \"arena_init\", \"msg_data\": {\"match_level\": 1, \"match_type\": 3, \"spec_type\": 0}}")
 
 	data, _ := json.Marshal(output)
 	fmt.Println(string(data))
-	assertEqual(t, len(tom.Config.Services), 2)
+	assertEqual(t, len(tom.Config.Services), 1)
 
 }
 

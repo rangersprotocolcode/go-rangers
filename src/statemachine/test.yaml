@@ -1,6 +1,7 @@
 title: test
 services:
   - priority: 0
+    game: "j"
     name: "j1"
     image: "tcsm_state_machine:68"
     ports:
@@ -8,6 +9,3 @@ services:
         target: 80
     detached: true
     cmd: "npm start"
-
-  - priority: 1
-    name: "j2"
