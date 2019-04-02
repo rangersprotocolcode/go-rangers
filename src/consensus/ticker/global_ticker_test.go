@@ -15,7 +15,7 @@ func handler(str string) RoutineFunc {
 
 func TestGlobalTicker_RegisterRoutine(t *testing.T) {
 
-	ticker := NewGlobalTicker("test")
+	ticker := newGlobalTicker("test")
 
 	time.Sleep(time.Second * 5)
 

@@ -31,6 +31,3 @@ func Data2CommonHash(data []byte) common.Hash {
 	return h
 }
 
-func String2CommonHash(s string) common.Hash {
-	return Data2CommonHash([]byte(s))
-}

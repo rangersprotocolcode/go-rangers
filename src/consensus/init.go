@@ -14,15 +14,6 @@ import (
 
 var Proc logical.Processor
 
-//创建一个矿工
-//id:矿工id，需要全网唯一性。
-//secret：种子字符串，为空则采用系统默认强随机数作为种子。种子字符串越复杂，则矿工私钥的安全系数越高。
-//返回：成功返回矿工结构，该结构包含挖矿私钥信息，请妥善保管。
-//func NewMiner(id string, secret string) (mi model.SelfMinerDO, ok bool) {
-//	mi = model.NewSelfMinerDO(id, secret)
-//	ok = true
-//	return
-//}
 
 //共识初始化
 //mid: 矿工ID

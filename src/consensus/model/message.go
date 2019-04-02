@@ -65,17 +65,14 @@ func (msg *ConsensusGroupRawMessage) MemberExist(id groupsig.ID) bool {
 //向所有组内成员发送秘密片段消息（不同成员不同）
 type ConsensusSharePieceMessage struct {
 	GHash common.Hash //组初始化共识（ConsensusGroupInitSummary）的哈希
-	//GHash   common.Hash //父亲组指定的新组hash，GroupHeader的hash
 	Dest    groupsig.ID //接收者（矿工）的ID
 	Share   SharePiece  //消息明文（由传输层用接收者公钥对消息进行加密和解密）
-	//SI      SignData    //矿工个人签名
 	MemCnt 	int32
 	BaseSignedMessage
 }
 
 func (msg *ConsensusSharePieceMessage) GenHash() common.Hash {
 	buf := msg.GHash.Bytes()
-	//buf = append(buf, msg.GHash.Bytes()...)
 	buf = append(buf, msg.Dest.Serialize()...)
 	buf = append(buf, msg.Share.Pub.Serialize()...)
 	buf = append(buf, msg.Share.Share.Serialize()...)
@@ -86,8 +83,6 @@ type ConsensusSignPubKeyMessage struct {
 	GHash 	common.Hash
 	GroupID  groupsig.ID      //组id
 	SignPK groupsig.Pubkey    //组成员签名公钥
-	//GSign  groupsig.Signature //用组成员签名私钥对GIS进行的签名（用于验证组成员签名公钥的正确性）
-	//SI      SignData           //矿工个人签名
 	MemCnt 	int32
 	BaseSignedMessage
 }
@@ -164,7 +159,6 @@ func (msg *ConsensusCurrentMessage) GenHash() common.Hash {
 
 type ConsensusCastMessage struct {
 	BH types.BlockHeader
-	//GroupID groupsig.ID
 	ProveHash []common.Hash
 	BaseSignedMessage
 }
