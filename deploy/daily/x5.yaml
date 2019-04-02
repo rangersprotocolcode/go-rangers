@@ -1,0 +1,11 @@
+title: x5
+services:
+  - priority: 0
+    game: "j"
+    name: "j5"
+    image: "tcsm_state_machine:68"
+    ports:
+      - host: 8885
+        target: 80
+    detached: true
+    cmd: "npm start"
