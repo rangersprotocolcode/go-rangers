@@ -8,17 +8,16 @@ import (
 	"x/src/consensus/vrf"
 )
 
-
 type MinerPoolReader struct {
-	minerPool *core.MinerManager
-	blog  *bizLog
+	minerPool       *core.MinerManager
+	blog            *bizLog
 	totalStakeCache uint64
 }
 
 func newMinerPoolReader(mp *core.MinerManager) *MinerPoolReader {
-    return &MinerPoolReader{
-    	minerPool: mp,
-    	blog: newBizLog("MinerPoolReader"),
+	return &MinerPoolReader{
+		minerPool: mp,
+		blog:      newBizLog("MinerPoolReader"),
 	}
 }
 
@@ -27,11 +26,11 @@ func convert2MinerDO(miner *types.Miner) *model.MinerDO {
 		return nil
 	}
 	md := &model.MinerDO{
-		ID: groupsig.DeserializeId(miner.Id),
-		PK: groupsig.DeserializePubkeyBytes(miner.PublicKey),
-		VrfPK: vrf.VRFPublicKey(miner.VrfPublicKey),
-		Stake: miner.Stake,
-		NType: miner.Type,
+		ID:          groupsig.DeserializeId(miner.Id),
+		PK:          groupsig.DeserializePubkeyBytes(miner.PublicKey),
+		VrfPK:       vrf.VRFPublicKey(miner.VrfPublicKey),
+		Stake:       miner.Stake,
+		NType:       miner.Type,
 		ApplyHeight: miner.ApplyHeight,
 		AbortHeight: miner.AbortHeight,
 	}
@@ -43,7 +42,11 @@ func convert2MinerDO(miner *types.Miner) *model.MinerDO {
 }
 
 func (access *MinerPoolReader) getLightMiner(id groupsig.ID) *model.MinerDO {
-	miner := access.minerPool.GetMinerById(id.Serialize(), types.MinerTypeLight, nil)
+	minerPool := access.minerPool
+	if minerPool == nil {
+		return nil
+	}
+	miner := minerPool.GetMinerById(id.Serialize(), types.MinerTypeLight, nil)
 	if miner == nil {
 		//access.blog.log("getMinerById error id %v", id.ShortS())
 		return nil
@@ -52,7 +55,11 @@ func (access *MinerPoolReader) getLightMiner(id groupsig.ID) *model.MinerDO {
 }
 
 func (access *MinerPoolReader) getProposeMiner(id groupsig.ID) *model.MinerDO {
-	miner := access.minerPool.GetMinerById(id.Serialize(), types.MinerTypeHeavy, nil)
+	minerPool := access.minerPool
+	if minerPool == nil {
+		return nil
+	}
+	miner := minerPool.GetMinerById(id.Serialize(), types.MinerTypeHeavy, nil)
 	if miner == nil {
 		//access.blog.log("getMinerById error id %v", id.ShortS())
 		return nil
@@ -61,7 +68,7 @@ func (access *MinerPoolReader) getProposeMiner(id groupsig.ID) *model.MinerDO {
 }
 
 func (access *MinerPoolReader) getAllMinerDOByType(ntype byte, h uint64) []*model.MinerDO {
-	iter := access.minerPool.MinerIterator(ntype,h)
+	iter := access.minerPool.MinerIterator(ntype, h)
 	mds := make([]*model.MinerDO, 0)
 	for iter.Next() {
 		if curr, err := iter.Current(); err != nil {
@@ -72,12 +79,12 @@ func (access *MinerPoolReader) getAllMinerDOByType(ntype byte, h uint64) []*mode
 			mds = append(mds, md)
 		}
 	}
-    return mds
+	return mds
 }
 
 func (access *MinerPoolReader) getCanJoinGroupMinersAt(h uint64) []model.MinerDO {
-    miners := access.getAllMinerDOByType(types.MinerTypeLight, h)
-    rets := make([]model.MinerDO, 0)
+	miners := access.getAllMinerDOByType(types.MinerTypeLight, h)
+	rets := make([]model.MinerDO, 0)
 	access.blog.log("all light nodes size %v", len(miners))
 	for _, md := range miners {
 		//access.blog.log("%v %v %v %v", md.ID.ShortS(), md.ApplyHeight, md.NType, md.CanJoinGroupAt(h))
@@ -97,7 +104,6 @@ func (access *MinerPoolReader) getTotalStake(h uint64, cache bool) uint64 {
 	return st
 	//return 30
 }
-
 
 //func (access *MinerPoolReader) genesisMiner(miners []*types.Miner)  {
 //    access.minerPool.AddGenesesMiner(miners)
