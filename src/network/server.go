@@ -165,8 +165,8 @@ func (s *server) send(b []byte, id string) {
 		var e error
 		stream, e = s.host.NewStream(c, strToId(id), protocolID)
 		if e != nil {
-			//Logger.Errorf("New stream for %s error:%s", id, e.Error())
-			s.send(b, id)
+			Logger.Errorf("New stream for %s error:%s", id, e.Error())
+			//s.send(b, id)
 			return
 		}
 	}
@@ -185,7 +185,7 @@ func (s *server) send(b []byte, id string) {
 		Logger.Errorf("Stream  should write %d byte ,bu write %d bytes", l, r)
 		return
 	}
-	s.streams.Store(id,stream)
+	//s.streams.Store(id,stream)
 }
 
 func (s *server) sendSelf(b []byte, id string) {
