@@ -161,6 +161,7 @@ func (s *server) send(b []byte, id string) {
 	c := context.Background()
 
 	stream,exist := s.streams.Load(id)
+	defer stream.(inet.Stream).Close()
 	if !exist {
 		var e error
 		stream, e = s.host.NewStream(c, strToId(id), protocolID)
@@ -176,8 +177,8 @@ func (s *server) send(b []byte, id string) {
 	r, err := stream.(inet.Stream).Write(b)
 	if err != nil {
 		Logger.Errorf("Write stream for %s error:%s", id, err.Error())
-		stream.(inet.Stream).Close()
-		s.send(b, id)
+		//stream.(inet.Stream).Close()
+		//s.send(b, id)
 		return
 	}
 
