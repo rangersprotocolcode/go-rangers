@@ -46,11 +46,23 @@ func (api *GtasAPI) Tx(txRawjson string) (*Result, error) {
 
 	txRaw.Hash = txRaw.GenHash()
 
+	result, _ := json.Marshal(txRaw)
+	messagetxt := string(result)
+
 	// execute state machine transaction
 	if txRaw.Type == types.TransactionTypeOperatorEvent {
 		nonce := statemachine.Docker.Nonce(txRaw.Target)
-		payload := string(txRaw.Data)
-		statemachine.Docker.Process(txRaw.Target, "operator", strconv.Itoa(nonce+1), payload)
+		if nonce < 0 {
+			messagetxt = fmt.Sprintf("%s, %d", messagetxt, nonce)
+		} else {
+			payload := string(txRaw.Data)
+			message := statemachine.Docker.Process(txRaw.Target, "operator", strconv.Itoa(nonce+1), payload)
+
+			if nil != message {
+				result, _ := json.Marshal(message)
+				messagetxt = fmt.Sprintf("%s, %s", messagetxt, string(result))
+			}
+		}
 
 		core.GetBlockChain().GetTransactionPool().AddExecuted(txRaw)
 
@@ -60,7 +72,7 @@ func (api *GtasAPI) Tx(txRawjson string) (*Result, error) {
 		return failResult(err.Error())
 	}
 
-	return successResult(txRaw.Hash.String())
+	return successResult(messagetxt)
 
 }
 

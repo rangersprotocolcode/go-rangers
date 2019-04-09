@@ -5,7 +5,6 @@ import (
 	"x/src/consensus/groupsig"
 	"x/src/common"
 	"x/src/core"
-	"fmt"
 	"x/src/consensus"
 )
 
@@ -88,15 +87,15 @@ func genMinerBalance(id groupsig.ID, bh *types.BlockHeader) *MinerBonusBalance {
 
 
 func sendTransaction(trans *types.Transaction) error {
-	if trans.Sign == nil {
-		return fmt.Errorf("transaction sign is empty")
-	}
-	pk, err := trans.Sign.RecoverPubkey(trans.Hash.Bytes())
-	if err != nil {
-		return err
-	}
-	source := pk.GetAddress()
-	trans.Source = &source
+	//if trans.Sign == nil {
+	//	return fmt.Errorf("transaction sign is empty")
+	//}
+	//pk, err := trans.Sign.RecoverPubkey(trans.Hash.Bytes())
+	//if err != nil {
+	//	return err
+	//}
+	//source := pk.GetAddress()
+	//trans.Source = &source
 	//common.DefaultLogger.Debugf(trans.Sign.GetHexString(), pk.GetHexString(), source.GetHexString(), trans.Hash.String())
 
 	if ok, err := core.GetBlockChain().GetTransactionPool().AddTransaction(trans); err != nil || !ok {
