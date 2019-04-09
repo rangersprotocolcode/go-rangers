@@ -111,14 +111,14 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 }
 
 func (executor *VMExecutor) validateNonce(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	if transaction.Type == types.TransactionTypeBonus || types.IsTestTransaction(transaction) {
-		return true
-	}
-	nonce := accountdb.GetNonce(*transaction.Source)
-	if transaction.Nonce != nonce+1 {
-		logger.Infof("Tx nonce error! Hash:%s,Source:%s,expect nonce:%d,real nonce:%d ", transaction.Hash.String(), transaction.Source.GetHexString(), nonce+1, transaction.Nonce)
-		return false
-	}
+	//if transaction.Type == types.TransactionTypeBonus || types.IsTestTransaction(transaction) {
+	//	return true
+	//}
+	//nonce := accountdb.GetNonce(*transaction.Source)
+	//if transaction.Nonce != nonce+1 {
+	//	logger.Infof("Tx nonce error! Hash:%s,Source:%s,expect nonce:%d,real nonce:%d ", transaction.Hash.String(), transaction.Source.GetHexString(), nonce+1, transaction.Nonce)
+	//	return false
+	//}
 	return true
 }
 
