@@ -41,7 +41,7 @@ func (bm *BonusManager) GenerateBonus(targetIds []int32, blockHash common.Hash, 
 		//Logger.Debugf("GenerateBonus Index:%d Member:%s",index,common.BytesToAddress(group.Members[index].Id).GetHexString())
 	}
 	transaction := &types.Transaction{}
-	transaction.Data = blockHash.Bytes()
+	transaction.Data = blockHash.String()
 	transaction.ExtraData = buffer.Bytes()
 	if len(buffer.Bytes())%common.AddressLength != 0 {
 		panic("GenerateBonus ExtraData Size Invalid")
@@ -70,7 +70,7 @@ func (bm *BonusManager) ParseBonusTransaction(transaction *types.Transaction) ([
 		ids = append(ids, addr)
 		addr = make([]byte, common.AddressLength)
 	}
-	blockHash := common.BytesToHash(transaction.Data)
+	blockHash := common.StringToHash(transaction.Data)
 	return groupId, ids, blockHash, 0
 }
 

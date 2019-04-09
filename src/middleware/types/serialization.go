@@ -145,7 +145,7 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 	}
 
 	var source *common.Address
-	var target string
+	var target, data string
 	var sign *common.Sign
 	if t.Source != nil {
 		s := common.BytesToAddress(t.Source)
@@ -155,6 +155,10 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 
 		target = *t.Target
 	}
+	if t.Data != nil {
+
+		data = *t.Data
+	}
 
 	if t.Sign != nil && len(t.Sign) != 0 {
 		if len(t.Sign) != 65 {
@@ -163,7 +167,7 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 		sign = common.BytesToSign(t.Sign)
 	}
 
-	transaction := Transaction{Data: t.Data, Nonce: *t.Nonce, Source: source,
+	transaction := Transaction{Data: data, Nonce: *t.Nonce, Source: source,
 		Target: target, Hash: common.BytesToHash(t.Hash),
 		ExtraData: t.ExtraData, ExtraDataType: *t.ExtraDataType, Type: *t.Type, Sign: sign}
 	return transaction
@@ -304,11 +308,15 @@ func transactionToPb(t *Transaction) *middleware_pb.Transaction {
 	}
 	var (
 		target *string
+		data   *string
 		source []byte
 		sign   []byte
 	)
 	if len(t.Target) != 0 {
 		target = &t.Target
+	}
+	if len(t.Data) != 0 {
+		data = &t.Data
 	}
 	if t.Source != nil {
 		source = t.Source.Bytes()
@@ -325,8 +333,8 @@ func transactionToPb(t *Transaction) *middleware_pb.Transaction {
 		fmt.Println("Bad sign in transactionToPb sign=", sign)
 	}
 	//>>achates add for testing
-	transaction := middleware_pb.Transaction{Data: t.Data, Nonce: &t.Nonce, Source: source,
-		Target: target,  Hash: t.Hash.Bytes(),
+	transaction := middleware_pb.Transaction{Data: data, Nonce: &t.Nonce, Source: source,
+		Target: target, Hash: t.Hash.Bytes(),
 		ExtraData: t.ExtraData, ExtraDataType: &t.ExtraDataType, Type: &t.Type, Sign: sign}
 	return &transaction
 }

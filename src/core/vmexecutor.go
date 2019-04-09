@@ -229,7 +229,7 @@ func (executor *VMExecutor) executeBonusTx(accountdb *account.AccountDB, transac
 func (executor *VMExecutor) executeMinerApplyTx(accountdb *account.AccountDB, transaction *types.Transaction, height uint64, mark string, castor common.Address) (success bool) {
 	logger.Debugf("Execute miner apply tx:%s,source: %v\n", transaction.Hash.String(), transaction.Source.GetHexString())
 	success = false
-	if transaction.Data == nil {
+	if len(transaction.Data) == 0 {
 		logger.Debugf("VMExecutor Execute MinerApply Fail(Tx data is nil) Source:%s Height:%d Type:%s", transaction.Source.GetHexString(), height, mark)
 		return success
 	}
@@ -267,7 +267,7 @@ func (executor *VMExecutor) executeMinerAbortTx(accountdb *account.AccountDB, tr
 	if canTransfer(accountdb, *transaction.Source, new(big.Int).SetUint64(0), txExecuteFee) {
 		accountdb.SubBalance(*transaction.Source, txExecuteFee)
 		accountdb.AddBalance(castor, txExecuteFee)
-		if transaction.Data != nil {
+		if len(transaction.Data) != 0 {
 			success = MinerManagerImpl.abortMiner(transaction.Source[:], transaction.Data[0], height, accountdb)
 		}
 	} else {
@@ -324,7 +324,7 @@ func createContract(accountdb *account.AccountDB, transaction *types.Transaction
 		return common.Address{}, types.NewTransactionError(types.TxErrorCode_ContractAddressConflict, "contract address conflict")
 	}
 	accountdb.CreateAccount(contractAddr)
-	accountdb.SetCode(contractAddr, transaction.Data)
+	accountdb.SetCode(contractAddr, []byte(transaction.Data))
 	accountdb.SetNonce(contractAddr, 1)
 	return contractAddr, nil
 }

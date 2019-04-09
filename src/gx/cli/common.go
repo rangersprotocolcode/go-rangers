@@ -10,7 +10,6 @@ import (
 	"math/rand"
 	"net/http"
 	"time"
-	"x/src/middleware/types"
 )
 
 // 获取rpc接口的message,如果发生错误，error返回result中的错误提示
@@ -62,27 +61,6 @@ func genHash(hash string) []byte {
 	return common.Sha256(bytes3)
 }
 
-func genTx(price uint64, source string, target string, nonce uint64, value uint64, data []byte, extraData []byte,
-	extraDataType int32, cmd int32) *types.Transaction {
-	var sourceAddr *common.Address
-
-	sourcebyte := common.HexToAddress(source)
-	sourceAddr = &sourcebyte
-
-
-	return &types.Transaction{
-		Data:          data,
-
-		Source:        sourceAddr,
-		Target:        target,
-		Nonce:         nonce,
-
-		ExtraData:     extraData,
-		ExtraDataType: extraDataType,
-
-		Type:          cmd,
-	}
-}
 
 func getRandomString(l int) string {
 	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
