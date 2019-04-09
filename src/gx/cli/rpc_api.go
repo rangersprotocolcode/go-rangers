@@ -44,27 +44,28 @@ func (api *GtasAPI) Tx(txRawjson string) (*Result, error) {
 		return failResult(err.Error())
 	}
 
-	txRaw.Hash = txRaw.GenHash()
-
-	result, _ := json.Marshal(txRaw)
-	messagetxt := string(result)
+	messagetxt := ""
 
 	// execute state machine transaction
 	if txRaw.Type == types.TransactionTypeOperatorEvent {
 		nonce := statemachine.Docker.Nonce(txRaw.Target)
 		if nonce < 0 {
-			messagetxt = fmt.Sprintf("%s, %d", messagetxt, nonce)
+			messagetxt = fmt.Sprintf("nonce: %d", nonce)
 		} else {
+			txRaw.Nonce = uint64(nonce)
 			payload := string(txRaw.Data)
 			message := statemachine.Docker.Process(txRaw.Target, "operator", strconv.Itoa(nonce+1), payload)
 
 			if nil != message {
 				result, _ := json.Marshal(message)
-				messagetxt = fmt.Sprintf("%s, %s", messagetxt, string(result))
+				messagetxt = fmt.Sprintf("result: %s", string(result))
 			}
 		}
-
 	}
+
+	txRaw.Hash = txRaw.GenHash()
+	result, _ := json.Marshal(txRaw)
+	messagetxt = fmt.Sprintf("%s, %s", messagetxt, string(result))
 
 	if err := sendTransaction(txRaw); err != nil {
 		return failResult(err.Error())
