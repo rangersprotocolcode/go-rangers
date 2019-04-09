@@ -64,12 +64,14 @@ func (api *GtasAPI) Tx(txRawjson string) (*Result, error) {
 			}
 		}
 
-		core.GetBlockChain().GetTransactionPool().AddExecuted(txRaw)
-
 	}
 
 	if err := sendTransaction(txRaw); err != nil {
 		return failResult(err.Error())
+	}
+
+	if txRaw.Type == types.TransactionTypeOperatorEvent {
+		core.GetBlockChain().GetTransactionPool().AddExecuted(txRaw)
 	}
 
 	return successResult(messagetxt)
