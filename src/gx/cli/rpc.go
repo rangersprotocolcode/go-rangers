@@ -49,7 +49,7 @@ func StartRPC(host string, port uint) error {
 	var err error
 	GtasAPIImpl = &GtasAPI{}
 	apis := []rpc.API{
-		{Namespace: "GTAS", Version: "1", Service: GtasAPIImpl, Public: true},
+		{Namespace: "GX", Version: "1", Service: GtasAPIImpl, Public: true},
 	}
 	for plus := 0; plus < 40; plus++ {
 		err = startHTTP(fmt.Sprintf("%s:%d", host, port+uint(plus)), apis, []string{}, []string{}, []string{})
