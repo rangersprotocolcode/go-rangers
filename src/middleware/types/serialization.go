@@ -469,7 +469,8 @@ func UnMarshalSubAccount(b []byte) (*SubAccount, error) {
 		logger.Errorf("Unmarshal sub account error:%s", err.Error())
 		return nil, err
 	}
-	balance := new(*big.Int).SetBytes(account.Balance)
+	balance := &big.Int{}
+	balance.SetBytes(account.Balance)
 
 	assets := make([]Asset, 0)
 	for _, a := range account.Assets {
