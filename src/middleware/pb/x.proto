@@ -438,5 +438,10 @@ message ResponseSharePieceMessage {
 
 message SubAccount  {
 	optional bytes Balance = 1;
-	optional   string Asset = 2;
+	repeated  Asset Assets = 2;
+}
+
+message Asset{
+    optional string Id = 1;
+    optional   bytes Value = 2;
 }
