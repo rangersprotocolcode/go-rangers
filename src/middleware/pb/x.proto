@@ -435,3 +435,8 @@ message ResponseSharePieceMessage {
     required SharePiece  SharePiece = 2;
     required SignData Sign = 3;
 }
+
+message SubAccount  {
+	optional bytes Balance = 1;
+	optional   string Asset = 2;
+}

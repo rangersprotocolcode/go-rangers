@@ -445,3 +445,26 @@ func memberToPb(m *Member) *middleware_pb.Member {
 	member := middleware_pb.Member{Id: m.Id, PubKey: m.PubKey}
 	return &member
 }
+
+func MarshalSubAccount(subAccount SubAccount) ([]byte, error) {
+	account := middleware_pb.SubAccount{Balance: subAccount.Balance.Bytes(), Asset: &subAccount.Asset}
+	byte, err := proto.Marshal(&account)
+	if err != nil {
+		logger.Errorf("Marshal sub account error:%s", err.Error())
+		return nil, err
+	}
+	return byte, err
+}
+
+func UnMarshalSubAccount(b []byte) (*SubAccount, error) {
+	account := new(middleware_pb.SubAccount)
+	err := proto.Unmarshal(b, account)
+	if err != nil {
+		logger.Errorf("Unmarshal sub account error:%s", err.Error())
+		return nil, err
+	}
+	balance := new(*big.Int).SetBytes(account.Balance)
+
+	subAccount := SubAccount{Balance: balance, Asset: *account.Asset}
+	return &subAccount, nil
+}

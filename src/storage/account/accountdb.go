@@ -11,6 +11,7 @@ import (
 	"golang.org/x/crypto/sha3"
 	"x/src/common"
 	"unsafe"
+	"x/src/middleware/types"
 )
 
 type revision struct {
@@ -352,9 +353,9 @@ func (self *AccountDB) DataIterator(addr common.Address, prefix string) *trie.It
 	}
 }
 
-func (self *AccountDB) DataNext(iterator uintptr) string  {
+func (self *AccountDB) DataNext(iterator uintptr) string {
 	iter := (*trie.Iterator)(unsafe.Pointer(iterator))
-	if iter == nil{
+	if iter == nil {
 		return `{"key":"","value":"","hasValue":0}`
 	}
 	hasValue := 1
@@ -364,23 +365,23 @@ func (self *AccountDB) DataNext(iterator uintptr) string  {
 		key = string(iter.Key)
 		value = string(iter.Value)
 	}
-	if !iter.Next(){//no data
+	if !iter.Next() { //no data
 		hasValue = 0
 	}
 	if key == "" {
 		return fmt.Sprintf(`{"key":"","value":"","hasValue":%d}`, hasValue)
 	}
-	if len(value) > 0{
+	if len(value) > 0 {
 		valueType := value[0:1]
-		if valueType == "0"{//this is map node
+		if valueType == "0" { //this is map node
 			hasValue = 2
-		}else{
-			value= value[1:]
+		} else {
+			value = value[1:]
 		}
-	}else{
+	} else {
 		return `{"key":"","value":"","hasValue":0}`
 	}
-	return fmt.Sprintf(`{"key":"%s","value":%s,"hasValue":%d}`,key,value,hasValue)
+	return fmt.Sprintf(`{"key":"%s","value":%s,"hasValue":%d}`, key, value, hasValue)
 }
 
 func (self *AccountDB) Copy() *AccountDB {
@@ -528,4 +529,21 @@ func (s *AccountDB) Commit(deleteEmptyObjects bool) (root common.Hash, err error
 	})
 	//s.db.PushTrie(root, s.trie)
 	return root, err
+}
+
+func (accountDB *AccountDB) GetSubAccount(address common.Address, gameId string) *types.SubAccount {
+	subAccountByte := accountDB.GetData(address, gameId)
+	subAccount, err := types.UnMarshalSubAccount(subAccountByte)
+	if err != nil {
+		return nil
+	}
+	return subAccount
+}
+
+func (accountDB *AccountDB) UpdateSubAccount(address common.Address, gameId string, subAccount types.SubAccount) {
+	byte, err := types.MarshalSubAccount(subAccount)
+	if err != nil {
+		return
+	}
+	accountDB.SetData(address, gameId, byte)
 }
