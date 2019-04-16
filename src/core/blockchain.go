@@ -364,6 +364,14 @@ func (chain *blockChain) GetBalance(address common.Address) *big.Int {
 	return chain.latestStateDB.GetBalance(common.BytesToAddress(address.Bytes()))
 }
 
+func (chain *blockChain) GetAccountDB() *account.AccountDB {
+	if nil == chain.latestStateDB {
+		return nil
+	}
+
+	return chain.latestStateDB
+}
+
 func (chain *blockChain) GetNonce(address common.Address) uint64 {
 	if nil == chain.latestStateDB {
 		return 0
