@@ -5,6 +5,8 @@ import (
 	"log"
 	"testing"
 	"x/src/common"
+	"strconv"
+	"fmt"
 )
 
 func TestRPC(t *testing.T) {
@@ -40,4 +42,14 @@ func TestRPC(t *testing.T) {
 		data, _ := json.Marshal(res.Result.Data)
 		log.Printf("%s response data: %s", test.method, data)
 	}
+}
+
+
+func TestStrToFloat(t *testing.T){
+	var a   = "11.23456"
+	b ,_ := strconv.ParseFloat(a,64)
+	fmt.Printf("float :%v\n",b)
+
+	c := strconv.FormatFloat(b,'E',-1,64)
+	fmt.Printf("string :%v\n",c)
 }
