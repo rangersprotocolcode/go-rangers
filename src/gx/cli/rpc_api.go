@@ -16,6 +16,7 @@ import (
 	"x/src/consensus"
 	"x/src/statemachine"
 	"strconv"
+	"time"
 )
 
 func successResult(data interface{}) (*Result, error) {
@@ -102,9 +103,18 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string) (*Result, error)
 		Data:   rawjson,
 		Type:   types.TransactionUpdateOperatorEvent,
 		Target: gameId,
+		Nonce:  uint64(time.Now().Unix()),
 	}
 	tx.Hash = tx.GenHash()
-	core.GetBlockChain().GetTransactionPool().AddTransaction(tx)
+	_, err := core.GetBlockChain().GetTransactionPool().AddTransaction(tx)
+	if nil != err {
+		common.DefaultLogger.Errorf("fail to add pool: %s", err.Error())
+	}
+
+	txjson, _ := json.Marshal(tx)
+	if nil != common.DefaultLogger {
+		common.DefaultLogger.Errorf("put tx in pool: %s", txjson)
+	}
 
 	return &Result{
 		Message: gameId,
