@@ -97,7 +97,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 			tx, _ := json.Marshal(transaction)
 			if nil != common.DefaultLogger {
-				common.DefaultLogger.Errorf("executed tx: %s", tx)
+				common.DefaultLogger.Errorf("executed tx: %s,situation:%s,success:%t", tx,situation,success)
 			}
 		}
 
