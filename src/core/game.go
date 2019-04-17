@@ -53,14 +53,14 @@ func setAsset(address string, gameId string, assets map[string]string) {
 
 	// append everything if there is no asset right now
 	if nil == sub.Assets || 0 == len(sub.Assets) {
-		sub.Assets = []types.Asset{}
+		sub.Assets = []*types.Asset{}
 		for id, value := range assets {
 			asset := &types.Asset{
 				Id:    id,
 				Value: []byte(value),
 			}
 
-			sub.Assets = append(sub.Assets, *asset)
+			sub.Assets = append(sub.Assets, asset)
 		}
 
 		GetBlockChain().GetAccountDB().UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
@@ -86,7 +86,7 @@ func setAsset(address string, gameId string, assets map[string]string) {
 				Value: []byte(assetValue),
 			}
 
-			sub.Assets = append(sub.Assets, *asset)
+			sub.Assets = append(sub.Assets, asset)
 		}
 	}
 

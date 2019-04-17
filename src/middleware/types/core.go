@@ -338,7 +338,7 @@ func IsTestTransaction(tx *Transaction) bool {
 
 type SubAccount struct {
 	Balance *big.Int
-	Assets  []Asset
+	Assets  []*Asset
 }
 
 type Asset struct {

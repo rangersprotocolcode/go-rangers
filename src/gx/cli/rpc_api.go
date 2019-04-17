@@ -57,7 +57,7 @@ func (api *GtasAPI) GetAsset(address string, gameId string, assetId string) (*Re
 
 	assetsResult, _ := api.GetAllAssets(address, gameId)
 
-	assets := assetsResult.Data.([]types.Asset)
+	assets := assetsResult.Data.([]*types.Asset)
 	if nil == assets || 0 == len(assets) {
 		return successResult([]byte{})
 	}

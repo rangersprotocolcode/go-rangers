@@ -472,9 +472,9 @@ func UnMarshalSubAccount(b []byte) (*SubAccount, error) {
 	balance := &big.Int{}
 	balance.SetBytes(account.Balance)
 
-	assets := make([]Asset, 0)
+	assets := make([]*Asset, 0)
 	for _, a := range account.Assets {
-		asset := Asset{Id: string(a.Id), Value: a.Value}
+		asset := &Asset{Id: string(a.Id), Value: a.Value}
 		assets = append(assets, asset)
 	}
 	subAccount := SubAccount{Balance: balance, Assets: assets}
