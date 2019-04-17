@@ -22,17 +22,16 @@ func TestRPC(t *testing.T) {
 		method string
 		params []interface{}
 	}{
-		{"GTAS_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"1.25\",\"assetId\":[\"1\"],\"assetValue\":[\"dj\"]}]"}},
-		{"GTAS_getBalance", []interface{}{"a","0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
-		{"GTAS_getAsset", []interface{}{"a","0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb","1"}},
-		{"GTAS_getAllAssets", []interface{}{"a","0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
-		{"GTAS_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"0.25\",\"assetId\":[\"a1\",\"3\"],\"assetValue\":[\"dj11\",\"yy\"]}]"}},
-		{"GTAS_getAsset", []interface{}{"a","0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb","1"}},
-		{"GTAS_getAllAssets", []interface{}{"a","0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
-		{"GTAS_getBalance", []interface{}{"a","0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
+		//{"GTAS_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"1.25\",\"assets\":{\"1\":\"dj\"}}]"}},
+		//{"GTAS_getBalance", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
+		//{"GTAS_getAsset", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "1"}},
+		//{"GTAS_getAllAssets", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
+		{"GTAS_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"0.25\",\"assets\":{\"a1\":\"dj11\", \"3\":\"yy\"}}]"}},
+		{"GTAS_getAsset", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "1"}},
+		{"GTAS_getAllAssets", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
+		{"GTAS_getBalance", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
 		//{"GTAS_blockHeight", nil},
 		//{"GTAS_getWallets", nil},
-
 	}
 	for _, test := range tests {
 		res, err := rpcPost(host, port, test.method, test.params...)

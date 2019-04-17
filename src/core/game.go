@@ -17,8 +17,8 @@ func UpdateAsset(user types.UserData, gameId string) {
 		changeBalance(user.Address, gameId, user.Balance)
 	}
 
-	if 0 != len(user.AssetId) && len(user.AssetId) == len(user.AssetValue) {
-		setAsset(user.Address, gameId, user.AssetId, user.AssetValue)
+	if 0 != len(user.Assets) {
+		setAsset(user.Address, gameId, user.Assets)
 	}
 
 }
@@ -41,8 +41,8 @@ func changeBalance(address string, gameId string, bstring string) {
 	GetBlockChain().GetAccountDB().UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
 }
 
-func setAsset(address string, gameId string, assetIds, assetValues []string) {
-	if nil == assetIds || 0 == len(assetIds) {
+func setAsset(address string, gameId string, assets map[string]string) {
+	if nil == assets || 0 == len(assets) {
 		return
 	}
 
@@ -54,10 +54,10 @@ func setAsset(address string, gameId string, assetIds, assetValues []string) {
 	// append everything if there is no asset right now
 	if nil == sub.Assets || 0 == len(sub.Assets) {
 		sub.Assets = []types.Asset{}
-		for i, _ := range assetIds {
+		for id, value := range assets {
 			asset := &types.Asset{
-				Id:    assetIds[i],
-				Value: []byte(assetValues[i]),
+				Id:    id,
+				Value: []byte(value),
 			}
 
 			sub.Assets = append(sub.Assets, *asset)
@@ -68,12 +68,12 @@ func setAsset(address string, gameId string, assetIds, assetValues []string) {
 	}
 
 	// update and append
-	for i, assetId := range assetIds {
+	for assetId, assetValue := range assets {
 		update := false
 		for _, assetInner := range sub.Assets {
 			// update
 			if assetInner.Id == assetId {
-				assetInner.Value = []byte(assetValues[i])
+				assetInner.Value = []byte(assetValue)
 				update = true
 				break
 			}
@@ -83,7 +83,7 @@ func setAsset(address string, gameId string, assetIds, assetValues []string) {
 		if !update {
 			asset := &types.Asset{
 				Id:    assetId,
-				Value: []byte(assetValues[i]),
+				Value: []byte(assetValue),
 			}
 
 			sub.Assets = append(sub.Assets, *asset)

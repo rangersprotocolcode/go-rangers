@@ -73,17 +73,17 @@ func NewTransactionError(code int, msg string) *TransactionError {
 }
 
 const (
-	TransactionTypeTransfer       = 0
-	TransactionTypeContractCreate = 1
-	TransactionTypeContractCall   = 2
-	TransactionTypeBonus          = 3
-	TransactionTypeMinerApply     = 4
-	TransactionTypeMinerAbort     = 5
-	TransactionTypeMinerRefund    = 6
-	TransactionTypeBlockEvent     = 7
-	TransactionTypeOperatorEvent  = 8
-	TransactionTypeUserEvent      = 9
-	TransactionUpdateOperatorEvent  = 10
+	TransactionTypeTransfer        = 0
+	TransactionTypeContractCreate  = 1
+	TransactionTypeContractCall    = 2
+	TransactionTypeBonus           = 3
+	TransactionTypeMinerApply      = 4
+	TransactionTypeMinerAbort      = 5
+	TransactionTypeMinerRefund     = 6
+	TransactionTypeBlockEvent      = 7
+	TransactionTypeOperatorEvent   = 8
+	TransactionTypeUserEvent       = 9
+	TransactionUpdateOperatorEvent = 10
 
 	TransactionTypeToBeRemoved = -1
 )
@@ -348,8 +348,7 @@ type Asset struct {
 }
 
 type UserData struct {
-	Address    string
-	Balance    string
-	AssetId    []string
-	AssetValue []string
+	Address string
+	Balance string
+	Assets  map[string]string
 }
