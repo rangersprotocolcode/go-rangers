@@ -39,7 +39,7 @@ type GtasAPI struct {
 }
 
 func (api *GtasAPI) GetBalance(address string, gameId string) (*Result, error) {
-	sub := core.GetSubAccount(address, gameId)
+	sub := core.GetSubAccount(address, gameId, core.GetBlockChain().GetAccountDB())
 
 	if nil == sub {
 		return successResult("-1")
@@ -50,7 +50,7 @@ func (api *GtasAPI) GetBalance(address string, gameId string) (*Result, error) {
 }
 
 func (api *GtasAPI) GetAsset(address string, gameId string, assetId string) (*Result, error) {
-	sub := core.GetSubAccount(address, gameId)
+	sub := core.GetSubAccount(address, gameId, core.GetBlockChain().GetAccountDB())
 
 	if nil == sub {
 		return successResult([]byte{})
@@ -72,7 +72,7 @@ func (api *GtasAPI) GetAsset(address string, gameId string, assetId string) (*Re
 }
 
 func (api *GtasAPI) GetAllAssets(address string, gameId string) (*Result, error) {
-	sub := core.GetSubAccount(address, gameId)
+	sub := core.GetSubAccount(address, gameId, core.GetBlockChain().GetAccountDB())
 
 	if nil == sub {
 		return successResult([]types.Asset{})
