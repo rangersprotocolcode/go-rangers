@@ -33,7 +33,7 @@ const (
 )
 
 var defaultSeedId = "Qmcf3W4uSAaAttmYCG7ZnCXoP6eytmka9Q1po6ArgBr5XF"
-var defaultSeedAddr = "/ip4/192.168.3.210/tcp/1122"
+var defaultSeedAddr = "/ip4/192.168.3.46/tcp/1122"
 
 var Logger log.Logger
 
@@ -61,7 +61,7 @@ func InitNetwork(privateKey common.PrivateKey, isSuper bool, consensusHandler Ms
 		connectToSeed(ctx, host)
 	}
 	initServer(host, dht, consensusHandler)
-	tryFindSeed(ctx)
+	go tryFindSeed(ctx)
 	return idToString(id)
 }
 

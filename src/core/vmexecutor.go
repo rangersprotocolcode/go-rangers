@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"x/src/statemachine"
 	"strconv"
+	"encoding/json"
 )
 
 const TransactionGasCost = 1000
@@ -81,10 +82,19 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			}
 
 			success = true
-			//case types.TransactionTypeBlockEvent:
-			//	success = executor.executeMinerRefundTx(accountdb, transaction, height, castor, situation)
-			//case types.TransactionTypeUserEvent:
-			//	success = executor.executeMinerRefundTx(accountdb, transaction, height, castor, situation)
+		case types.TransactionUpdateOperatorEvent:
+			data := make([]types.UserData, 0)
+			if err := json.Unmarshal([]byte(transaction.Data), &data); err != nil {
+				success = false
+			} else {
+				if nil != data && 0 != len(data) {
+					for _, user := range data {
+						UpdateAsset(user, transaction.Target)
+					}
+				}
+				success = true
+			}
+
 		}
 
 		if !success {

@@ -83,6 +83,7 @@ const (
 	TransactionTypeBlockEvent     = 7
 	TransactionTypeOperatorEvent  = 8
 	TransactionTypeUserEvent      = 9
+	TransactionUpdateOperatorEvent  = 10
 
 	TransactionTypeToBeRemoved = -1
 )
@@ -344,4 +345,11 @@ type Asset struct {
 	Id string
 
 	Value []byte
+}
+
+type UserData struct {
+	Address    string
+	Balance    string
+	AssetId    []string
+	AssetValue []string
 }
