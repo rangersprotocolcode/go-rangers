@@ -442,6 +442,6 @@ message SubAccount  {
 }
 
 message Asset{
-    optional string Id = 1;
+    optional bytes Id = 1;
     optional   bytes Value = 2;
 }
