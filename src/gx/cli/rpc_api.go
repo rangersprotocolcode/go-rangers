@@ -65,7 +65,7 @@ func (api *GtasAPI) GetAsset(address string, gameId string, assetId string) (*Re
 
 	for _, asset := range assets {
 		if asset.Id == assetId {
-			return successResult(asset.Value)
+			return successResult(string(asset.Value))
 		}
 	}
 	return successResult([]byte{})

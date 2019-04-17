@@ -8,9 +8,8 @@ import (
 	"x/src/storage/account"
 )
 
-func GetSubAccount(address string, gameId string) *types.SubAccount {
-	accountdb := GetBlockChain().GetAccountDB()
-	return accountdb.GetSubAccount(common.HexToAddress(address), gameId)
+func GetSubAccount(address string, gameId string, account *account.AccountDB) *types.SubAccount {
+	return account.GetSubAccount(common.HexToAddress(address), gameId)
 }
 
 func UpdateAsset(user types.UserData, gameId string, account *account.AccountDB) {
@@ -31,7 +30,7 @@ func convert(s string) *big.Int {
 
 func changeBalance(address string, gameId string, bstring string, accountdb *account.AccountDB) {
 	balance := convert(bstring)
-	sub := GetSubAccount(address, gameId)
+	sub := GetSubAccount(address, gameId, accountdb)
 	if sub != nil {
 		sub.Balance = sub.Balance.Add(balance, sub.Balance)
 	} else {
@@ -47,7 +46,7 @@ func setAsset(address string, gameId string, assets map[string]string, accountdb
 		return
 	}
 
-	sub := GetSubAccount(address, gameId)
+	sub := GetSubAccount(address, gameId, accountdb)
 	if sub == nil {
 		sub = &types.SubAccount{}
 	}
