@@ -41,7 +41,7 @@ func (api *GtasAPI) GetBalance(address string, gameId string) (*Result, error) {
 	sub := core.GetSubAccount(address, gameId)
 
 	if nil == sub {
-		return successResult("0")
+		return successResult("-1")
 	}
 
 	floatdata := float64(sub.Balance.Int64()) / 1000000000
