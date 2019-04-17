@@ -157,6 +157,7 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 	chain.updateTxPool(remoteBlock, receipts)
 	chain.topBlocks.Add(remoteBlock.Header.Height, remoteBlock.Header)
 
+	dumpTxs(remoteBlock.Transactions)
 	chain.eraseAddBlockMark()
 	chain.successOnChainCallBack(remoteBlock, headerByte)
 	return types.AddBlockSucc, headerByte
@@ -306,4 +307,14 @@ func (chain *blockChain) compareValue(commonAncestor *types.BlockHeader, remoteH
 		return true
 	}
 	return false
+}
+
+func dumpTxs(txs []*types.Transaction) {
+	if txs == nil || len(txs) == 0 {
+		return
+	}
+
+	for _, tx := range txs {
+		common.DefaultLogger.Debugf("Tx on chain dump:%v", tx)
+	}
 }
