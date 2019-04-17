@@ -5,6 +5,7 @@ import (
 	"x/src/common"
 	"math/big"
 	"strconv"
+	"x/src/storage/account"
 )
 
 func GetSubAccount(address string, gameId string) *types.SubAccount {
@@ -12,13 +13,13 @@ func GetSubAccount(address string, gameId string) *types.SubAccount {
 	return accountdb.GetSubAccount(common.HexToAddress(address), gameId)
 }
 
-func UpdateAsset(user types.UserData, gameId string) {
+func UpdateAsset(user types.UserData, gameId string, account *account.AccountDB) {
 	if 0 != len(user.Balance) {
-		changeBalance(user.Address, gameId, user.Balance)
+		changeBalance(user.Address, gameId, user.Balance, account)
 	}
 
 	if 0 != len(user.Assets) {
-		setAsset(user.Address, gameId, user.Assets)
+		setAsset(user.Address, gameId, user.Assets, account)
 	}
 
 }
@@ -28,7 +29,7 @@ func convert(s string) *big.Int {
 	return big.NewInt(int64(f * 1000000000))
 }
 
-func changeBalance(address string, gameId string, bstring string) {
+func changeBalance(address string, gameId string, bstring string, accountdb *account.AccountDB) {
 	balance := convert(bstring)
 	sub := GetSubAccount(address, gameId)
 	if sub != nil {
@@ -38,10 +39,10 @@ func changeBalance(address string, gameId string, bstring string) {
 		sub.Balance = balance
 	}
 
-	GetBlockChain().GetAccountDB().UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
+	accountdb.UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
 }
 
-func setAsset(address string, gameId string, assets map[string]string) {
+func setAsset(address string, gameId string, assets map[string]string, accountdb *account.AccountDB) {
 	if nil == assets || 0 == len(assets) {
 		return
 	}
@@ -63,7 +64,7 @@ func setAsset(address string, gameId string, assets map[string]string) {
 			sub.Assets = append(sub.Assets, asset)
 		}
 
-		GetBlockChain().GetAccountDB().UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
+		accountdb.UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
 		return
 	}
 
@@ -90,5 +91,5 @@ func setAsset(address string, gameId string, assets map[string]string) {
 		}
 	}
 
-	GetBlockChain().GetAccountDB().UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
+	accountdb.UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
 }

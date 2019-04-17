@@ -89,7 +89,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			} else {
 				if nil != data && 0 != len(data) {
 					for _, user := range data {
-						UpdateAsset(user, transaction.Target)
+						UpdateAsset(user, transaction.Target, accountdb)
 					}
 				}
 				success = true

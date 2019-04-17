@@ -96,7 +96,7 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string) (*Result, error)
 	}
 
 	for _, user := range data {
-		core.UpdateAsset(user, gameId)
+		core.UpdateAsset(user, gameId, core.GetBlockChain().GetAccountDB())
 	}
 
 	tx := &types.Transaction{
