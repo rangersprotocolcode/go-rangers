@@ -82,11 +82,17 @@ func setAsset(address string, gameId string, assets map[string]string, accountdb
 	// update and append
 	for assetId, assetValue := range assets {
 		update := false
-		for _, assetInner := range sub.Assets {
+		for i, assetInner := range sub.Assets {
 			// update
 			if assetInner.Id == assetId {
-				assetInner.Value = assetValue
 				update = true
+
+				//assetValue空字符串，则是移除
+				if 0 != len(assetValue) {
+					assetInner.Value = assetValue
+				}else{
+					sub.Assets = append(sub.Assets[:i], sub.Assets[i+1:]...)
+				}
 				break
 			}
 		}

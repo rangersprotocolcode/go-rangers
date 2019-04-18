@@ -30,7 +30,7 @@ func TestRPC(t *testing.T) {
 		{"GTAS_getAsset", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "1"}},
 		{"GTAS_getAllAssets", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
 		{"GTAS_getBalance", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
-		{"GTAS_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"2.25\",\"assets\":{\"1\":\"dj11\",\"2\":\"yyyy\"}}]"}},
+		{"GTAS_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"2.25\",\"assets\":{\"1\":\"\",\"2\":\"yyyy\"}}]"}},
 		{"GTAS_getAsset", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "1"}},
 		{"GTAS_getAllAssets", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
 		{"GTAS_getBalance", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
@@ -74,4 +74,12 @@ func TestJSONString(t *testing.T) {
 
 	log.Printf("mm response data: %s", mm)
 
+}
+
+func TestSlice(t *testing.T){
+	a := []int{0, 1, 2, 3, 4}
+	//删除第i个元素
+	i := 4
+	a = append(a[:i], a[i+1:]...)
+	fmt.Println(a)
 }
