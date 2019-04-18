@@ -17,6 +17,7 @@ import (
 	"x/src/statemachine"
 	"strconv"
 	"time"
+	"sync"
 )
 
 func successResult(data interface{}) (*Result, error) {
@@ -38,7 +39,12 @@ func failResult(err string) (*Result, error) {
 type GtasAPI struct {
 }
 
+var gxLock *sync.RWMutex
+
 func (api *GtasAPI) GetBalance(address string, gameId string) (*Result, error) {
+	gxLock.RLock()
+	defer gxLock.RUnlock()
+
 	sub := core.GetSubAccount(address, gameId, core.GetBlockChain().GetAccountDB())
 
 	if nil == sub {
@@ -50,6 +56,9 @@ func (api *GtasAPI) GetBalance(address string, gameId string) (*Result, error) {
 }
 
 func (api *GtasAPI) GetAsset(address string, gameId string, assetId string) (*Result, error) {
+	gxLock.RLock()
+	defer gxLock.RUnlock()
+
 	sub := core.GetSubAccount(address, gameId, core.GetBlockChain().GetAccountDB())
 
 	if nil == sub {
@@ -72,6 +81,9 @@ func (api *GtasAPI) GetAsset(address string, gameId string, assetId string) (*Re
 }
 
 func (api *GtasAPI) GetAllAssets(address string, gameId string) (*Result, error) {
+	gxLock.RLock()
+	defer gxLock.RUnlock()
+
 	sub := core.GetSubAccount(address, gameId, core.GetBlockChain().GetAccountDB())
 
 	if nil == sub {
@@ -82,6 +94,10 @@ func (api *GtasAPI) GetAllAssets(address string, gameId string) (*Result, error)
 }
 
 func (api *GtasAPI) UpdateAssets(gameId string, rawjson string) (*Result, error) {
+	//todo 并发问题 临时加锁控制
+	gxLock.Lock()
+	defer gxLock.Unlock()
+
 	data := make([]types.UserData, 0)
 	if err := json.Unmarshal([]byte(rawjson), &data); err != nil {
 		return failResult(err.Error())
@@ -93,7 +109,6 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string) (*Result, error)
 
 	// 立即执行
 	accountdb := core.GetBlockChain().GetAccountDB()
-	//todo 并发问题
 
 	snapshot := accountdb.Snapshot()
 	for _, user := range data {
