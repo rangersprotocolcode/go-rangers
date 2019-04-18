@@ -53,22 +53,22 @@ func (api *GtasAPI) GetAsset(address string, gameId string, assetId string) (*Re
 	sub := core.GetSubAccount(address, gameId, core.GetBlockChain().GetAccountDB())
 
 	if nil == sub {
-		return successResult([]byte{})
+		return successResult("")
 	}
 
 	assetsResult, _ := api.GetAllAssets(address, gameId)
 
 	assets := assetsResult.Data.([]*types.Asset)
 	if nil == assets || 0 == len(assets) {
-		return successResult([]byte{})
+		return successResult("")
 	}
 
 	for _, asset := range assets {
 		if asset.Id == assetId {
-			return successResult(string(asset.Value))
+			return successResult(asset.Value)
 		}
 	}
-	return successResult([]byte{})
+	return successResult("")
 }
 
 func (api *GtasAPI) GetAllAssets(address string, gameId string) (*Result, error) {
@@ -91,6 +91,19 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string) (*Result, error)
 		return failResult("nil data")
 	}
 
+	// 立即执行
+	accountdb := core.GetBlockChain().GetAccountDB()
+	//todo 并发问题
+
+	snapshot := accountdb.Snapshot()
+	for _, user := range data {
+		flag := core.UpdateAsset(user, gameId, accountdb)
+		if !flag {
+			accountdb.RevertToSnapshot(snapshot)
+			return failResult("not enough balance")
+		}
+	}
+
 	tx := &types.Transaction{
 		Data:   rawjson,
 		Type:   types.TransactionUpdateOperatorEvent,
@@ -103,11 +116,7 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string) (*Result, error)
 		common.DefaultLogger.Errorf("fail to add pool: %s", err.Error())
 	}
 
-	// 立即执行
-	for _, user := range data {
-		core.UpdateAsset(user, gameId, core.GetBlockChain().GetAccountDB())
-	}
-	return successResult(nil)
+	return successResult(data)
 }
 
 // T 用户交易接口

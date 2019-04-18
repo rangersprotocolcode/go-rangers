@@ -83,22 +83,24 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 			success = true
 		case types.TransactionUpdateOperatorEvent:
+			success = true
 			data := make([]types.UserData, 0)
 			if err := json.Unmarshal([]byte(transaction.Data), &data); err != nil {
 				success = false
 			} else {
 				if nil != data && 0 != len(data) {
+					snapshot := accountdb.Snapshot()
 					for _, user := range data {
-						UpdateAsset(user, transaction.Target, accountdb)
+						if !UpdateAsset(user, transaction.Target, accountdb) {
+							accountdb.RevertToSnapshot(snapshot)
+							success = false
+							break
+						}
 					}
 				}
-				success = true
+
 			}
 
-			tx, _ := json.Marshal(transaction)
-			if nil != common.DefaultLogger {
-				common.DefaultLogger.Errorf("executed tx: %s,situation:%s,success:%t", tx,situation,success)
-			}
 		}
 
 		if !success {

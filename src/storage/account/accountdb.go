@@ -532,9 +532,6 @@ func (s *AccountDB) Commit(deleteEmptyObjects bool) (root common.Hash, err error
 }
 
 func (accountDB *AccountDB) GetSubAccount(address common.Address, gameId string) *types.SubAccount {
-	accountDB.lock.Lock()
-	defer accountDB.lock.Unlock()
-
 	subAccountByte := accountDB.GetData(address, gameId)
 	subAccount, err := types.UnMarshalSubAccount(subAccountByte)
 	if err != nil {
@@ -548,9 +545,6 @@ func (accountDB *AccountDB) UpdateSubAccount(address common.Address, gameId stri
 	if err != nil {
 		return
 	}
-
-	accountDB.lock.Lock()
-	defer accountDB.lock.Unlock()
 
 	accountDB.SetData(address, gameId, byte)
 }

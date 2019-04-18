@@ -12,15 +12,19 @@ func GetSubAccount(address string, gameId string, account *account.AccountDB) *t
 	return account.GetSubAccount(common.HexToAddress(address), gameId)
 }
 
-func UpdateAsset(user types.UserData, gameId string, account *account.AccountDB) {
+func UpdateAsset(user types.UserData, gameId string, account *account.AccountDB) bool {
 	if 0 != len(user.Balance) {
-		changeBalance(user.Address, gameId, user.Balance, account)
+		// 转账失败
+		if !changeBalance(user.Address, gameId, user.Balance, account) {
+			return false
+		}
 	}
 
 	if 0 != len(user.Assets) {
 		setAsset(user.Address, gameId, user.Assets, account)
 	}
 
+	return true
 }
 
 func convert(s string) *big.Int {
@@ -28,7 +32,7 @@ func convert(s string) *big.Int {
 	return big.NewInt(int64(f * 1000000000))
 }
 
-func changeBalance(address string, gameId string, bstring string, accountdb *account.AccountDB) {
+func changeBalance(address string, gameId string, bstring string, accountdb *account.AccountDB) bool {
 	balance := convert(bstring)
 	sub := GetSubAccount(address, gameId, accountdb)
 	if sub != nil {
@@ -38,7 +42,11 @@ func changeBalance(address string, gameId string, bstring string, accountdb *acc
 		sub.Balance = balance
 	}
 
+	if sub.Balance.Sign() == -1 {
+		return false
+	}
 	accountdb.UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
+	return true
 }
 
 func setAsset(address string, gameId string, assets map[string]string, accountdb *account.AccountDB) {
