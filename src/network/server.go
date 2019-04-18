@@ -3,19 +3,8 @@ package network
 import (
 	"x/src/middleware/notify"
 	"github.com/gorilla/websocket"
-	"x/src/utility"
-	"strconv"
-	"encoding/hex"
-	"bytes"
 	"hash/fnv"
-	"sync"
 )
-
-var methodCodeSend, _ = hex.DecodeString("80000001")
-var methodCodeBroadcast, _ = hex.DecodeString("80000002")
-var methodCodeSendToGroup, _ = hex.DecodeString("80000003")
-var methodCodeJoinGroup, _ = hex.DecodeString("80000004")
-var methodCodeQuitGroup, _ = hex.DecodeString("80000005")
 
 var Server server
 
@@ -23,7 +12,8 @@ type server struct {
 	conn             *websocket.Conn
 	consensusHandler MsgHandler
 
-	lock sync.RWMutex
+	sendChan chan []byte
+	rcvChan  chan []byte
 }
 
 func (s *server) Send(id string, msg Message) {
@@ -38,71 +28,11 @@ func (s *server) Broadcast(msg Message) {
 	s.send(methodCodeBroadcast, "0", msg)
 }
 
-func (s *server) send(method []byte, targetId string, msg Message) {
-	m, err := marshalMessage(msg)
-	if err != nil {
-		Logger.Errorf("marshal message error:%s", err.Error())
-		return
-	}
-
-	header := make([]byte, protocolHeaderSize)
-	copy(header[0:4], method)
-
-	var target uint64
-	if bytes.Equal(method, methodCodeSendToGroup) {
-		hash64 := fnv.New64()
-		hash64.Write([]byte(targetId))
-		target = hash64.Sum64()
-		Logger.Debugf("Send group to:%d,%v", target, utility.UInt64ToByte(target))
-	} else {
-		target, err = strconv.ParseUint(targetId, 10, 64)
-		Logger.Debugf("Send  to:%d", target)
-		if err != nil {
-			Logger.Errorf("Parse target id %s error:%s", targetId, err.Error())
-			return
-		}
-	}
-	copy(header[12:20], utility.UInt64ToByte(target))
-
-	message := make([]byte, protocolHeaderSize+len(m))
-	copy(message[:protocolHeaderSize-1], header[:])
-	copy(message[protocolHeaderSize:], m)
-
-	Logger.Debugf("Send msg:%v", message)
-	s.lock.Lock()
-	err = s.conn.WriteMessage(websocket.BinaryMessage, message)
-	s.lock.Unlock()
-	if err != nil {
-		Logger.Errorf("Send msg error:%s", err.Error())
-	}
+func (s *server) SendToClient(id string, msg Message) {
+	s.send(methodCodeClientSend, id, msg)
 }
 
-func (s *server) parseWebSocketMsg(m []byte) (from string, data []byte) {
-	if len(m) < protocolHeaderSize {
-		return "", nil
-	}
-
-	header := m[0 : protocolHeaderSize-1]
-	data = m[protocolHeaderSize:]
-	srcByte := header[12:20]
-	from = strconv.FormatUint(utility.ByteToUInt64(srcByte), 10)
-	return
-}
-
-func (s *server) receiveMessage() {
-	for {
-		_, message, err := s.conn.ReadMessage()
-		if err != nil {
-			Logger.Errorf("Rcv msg error:%s", err.Error())
-			continue
-		}
-		Logger.Debugf("Rcv msg:%v", message)
-		from, data := s.parseWebSocketMsg(message)
-		go s.handleMessage(data, from)
-	}
-}
-
-func (s *server) handleMessage(data []byte, from string) {
+func (s *server) handleMinerMessage(data []byte, from string) {
 	message, error := unMarshalMessage(data)
 	if error != nil {
 		Logger.Errorf("Proto unmarshal error:%s", error.Error())
@@ -162,17 +92,18 @@ func (s *server) handleMessage(data []byte, from string) {
 }
 
 func (s *server) joinGroup(groupID string) {
-	header := make([]byte, protocolHeaderSize)
-	copy(header[0:4], methodCodeJoinGroup)
+	header := header{}
+	header.method = methodCodeJoinGroup
 
 	hash64 := fnv.New64()
 	hash64.Write([]byte(groupID))
 	target := hash64.Sum64()
 	Logger.Debugf("Join group:%d", target)
-	copy(header[12:20], utility.UInt64ToByte(target))
+	header.targetId = target
 
-	err := s.conn.WriteMessage(websocket.BinaryMessage, header)
-	if err != nil {
-		Logger.Errorf("Send msg error:%s", err.Error())
-	}
+	s.sendChan <- header.toBytes()
+}
+
+func (s *server) handleClientMessage(data []byte, from string) {
+	//todo 处理游戏客户端消息 by鸠兹
 }

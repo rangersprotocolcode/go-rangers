@@ -5,12 +5,12 @@ import (
 	"x/src/middleware/log"
 	"net/url"
 	"github.com/gorilla/websocket"
-	"sync"
 )
 
 const (
 	gateAddr           = "192.168.3.64"
 	protocolHeaderSize = 28
+	channelSize        = 100
 )
 
 var Logger log.Logger
@@ -25,8 +25,9 @@ func InitNetwork(selfMinerId string, consensusHandler MsgHandler) {
 	if err != nil {
 		panic("Dial to" + url.String() + " err:" + err.Error())
 	}
-	Server = server{conn: conn, consensusHandler: consensusHandler, lock: sync.RWMutex{}}
+	Server = server{conn: conn, consensusHandler: consensusHandler, sendChan: make(chan []byte, channelSize), rcvChan: make(chan []byte, channelSize)}
 	go Server.receiveMessage()
+	go Server.loop()
 
 	getNetMemberInfo("")
 	joinGroup(selfMinerId)

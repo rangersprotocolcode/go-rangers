@@ -95,15 +95,13 @@ type Conn struct {
 type MsgDigest []byte
 
 type Network interface {
-	//Send message to the node which id represents.If self doesn't connect to the node,
-	// resolve the kad net to find the node and then send the message
 	Send(id string, msg Message)
 
-	//Broadcast the message among the group
 	SpreadToGroup(groupId string, msg Message)
 
-	//Send the message to all nodes
 	Broadcast(msg Message)
+
+	SendToClient(id string, msg Message)
 }
 
 func GetNetInstance() Network {
