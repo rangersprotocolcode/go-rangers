@@ -88,15 +88,7 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string) (*Result, error)
 	}
 
 	if nil == data || 0 == len(data) {
-		return &Result{
-			Message: "nil balances",
-			Data:    nil,
-			Status:  0,
-		}, nil
-	}
-
-	for _, user := range data {
-		core.UpdateAsset(user, gameId, core.GetBlockChain().GetAccountDB())
+		return failResult("nil data")
 	}
 
 	tx := &types.Transaction{
@@ -111,16 +103,11 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string) (*Result, error)
 		common.DefaultLogger.Errorf("fail to add pool: %s", err.Error())
 	}
 
-	txjson, _ := json.Marshal(tx)
-	if nil != common.DefaultLogger {
-		common.DefaultLogger.Errorf("put tx in pool: %s", txjson)
+	// 立即执行
+	for _, user := range data {
+		core.UpdateAsset(user, gameId, core.GetBlockChain().GetAccountDB())
 	}
-
-	return &Result{
-		Message: gameId,
-		Data:    data,
-		Status:  0,
-	}, nil
+	return successResult(nil)
 }
 
 // T 用户交易接口

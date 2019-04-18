@@ -55,9 +55,13 @@ func setAsset(address string, gameId string, assets map[string]string, accountdb
 	if nil == sub.Assets || 0 == len(sub.Assets) {
 		sub.Assets = []*types.Asset{}
 		for id, value := range assets {
+			if 0 == len(value) {
+				continue
+			}
+
 			asset := &types.Asset{
 				Id:    id,
-				Value: []byte(value),
+				Value: value,
 			}
 
 			sub.Assets = append(sub.Assets, asset)
@@ -73,7 +77,7 @@ func setAsset(address string, gameId string, assets map[string]string, accountdb
 		for _, assetInner := range sub.Assets {
 			// update
 			if assetInner.Id == assetId {
-				assetInner.Value = []byte(assetValue)
+				assetInner.Value = assetValue
 				update = true
 				break
 			}
@@ -83,7 +87,7 @@ func setAsset(address string, gameId string, assets map[string]string, accountdb
 		if !update {
 			asset := &types.Asset{
 				Id:    assetId,
-				Value: []byte(assetValue),
+				Value: assetValue,
 			}
 
 			sub.Assets = append(sub.Assets, asset)

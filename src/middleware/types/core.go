@@ -344,7 +344,7 @@ type SubAccount struct {
 type Asset struct {
 	Id string
 
-	Value []byte
+	Value string
 }
 
 type UserData struct {

@@ -449,7 +449,7 @@ func memberToPb(m *Member) *middleware_pb.Member {
 func MarshalSubAccount(subAccount SubAccount) ([]byte, error) {
 	assets := make([]*middleware_pb.Asset, 0)
 	for _, a := range subAccount.Assets {
-		asset := &middleware_pb.Asset{Id: []byte(a.Id), Value: a.Value}
+		asset := &middleware_pb.Asset{Id: []byte(a.Id), Value: []byte(a.Value)}
 		assets = append(assets, asset)
 	}
 
@@ -474,7 +474,7 @@ func UnMarshalSubAccount(b []byte) (*SubAccount, error) {
 
 	assets := make([]*Asset, 0)
 	for _, a := range account.Assets {
-		asset := &Asset{Id: string(a.Id), Value: a.Value}
+		asset := &Asset{Id: string(a.Id), Value: string(a.Value)}
 		assets = append(assets, asset)
 	}
 	subAccount := SubAccount{Balance: balance, Assets: assets}
