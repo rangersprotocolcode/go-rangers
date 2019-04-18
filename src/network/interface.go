@@ -70,7 +70,6 @@ const (
 	//BlockBodyReqMsg uint32 = 32
 	//
 	//BlockBodyMsg               uint32 = 33
-	FullNodeVirtualGroupId = "full_node_virtual_group_id"
 
 	//===================请求组内成员签名公钥======
 	AskSignPkMsg    uint32 = 34
@@ -100,21 +99,11 @@ type Network interface {
 	// resolve the kad net to find the node and then send the message
 	Send(id string, msg Message)
 
-	//Broadcast the message among the group which self belongs to
-	SpreadAmongGroup(groupId string, msg Message)
+	//Broadcast the message among the group
+	SpreadToGroup(groupId string, msg Message)
 
-	//send message to random memebers which in special group
-	//groupMembers is nil here
-	SpreadToRandomGroupMember(groupId string, groupMembers []string, msg Message)
-
-	//Send message to neighbor nodes
-	TransmitToNeighbor(msg Message)
-
-	//Send the message to all nodes it connects to and the node which receive the message also broadcast the message to their neighbor once
+	//Send the message to all nodes
 	Broadcast(msg Message)
-
-	//Return all connections self has
-	ConnInfo() []Conn
 }
 
 func GetNetInstance() Network {

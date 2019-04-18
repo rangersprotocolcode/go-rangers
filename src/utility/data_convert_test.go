@@ -3,6 +3,7 @@ package utility
 import (
 	"fmt"
 	"testing"
+	"encoding/hex"
 )
 
 func TestByteToInt(t *testing.T) {
@@ -17,4 +18,9 @@ func TestByteToInt(t *testing.T) {
 	} else {
 		fmt.Errorf("Failed")
 	}
+}
+
+func TestHex(t *testing.T) {
+	b, _ := hex.DecodeString("80000001")
+	fmt.Printf("%v\n", b)
 }

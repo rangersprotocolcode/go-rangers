@@ -77,11 +77,8 @@ func (gx *GX) Run() {
 	rpc := mineCmd.Flag("rpc", "start rpc server").Bool()
 	addrRpc := mineCmd.Flag("rpcaddr", "rpc host").Short('r').Default("0.0.0.0").IP()
 	portRpc := mineCmd.Flag("rpcport", "rpc port").Short('p').Default("8088").Uint()
-	super := mineCmd.Flag("super", "start super node").Bool()
 	instanceIndex := mineCmd.Flag("instance", "instance index").Short('i').Default("0").Int()
 	apply := mineCmd.Flag("apply", "apply heavy or light miner").String()
-	seedIp := mineCmd.Flag("seed", "seed ip").String()
-	seedId := mineCmd.Flag("seedId", "seed ip").String()
 
 	command, err := app.Parse(os.Args[1:])
 	if err != nil {
@@ -113,7 +110,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(*instanceIndex, *super, *seedIp, *seedId, *apply, *keystore)
+		gx.initMiner(*instanceIndex, *apply, *keystore)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc)
 			if err != nil {
@@ -125,7 +122,7 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, super bool, seedIp string, seedId string, apply string, keystore string) {
+func (gx *GX) initMiner(instanceIndex int, apply string, keystore string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	databaseValue := "d" + strconv.Itoa(instanceIndex)
@@ -153,7 +150,7 @@ func (gx *GX) initMiner(instanceIndex int, super bool, seedIp string, seedId str
 		panic("Init miner core init error:" + err.Error())
 	}
 
-	netId := network.InitNetwork(*common.HexStringToSecKey(gx.account.Sk), super, cnet.MessageHandler, seedId, seedIp)
+	network.InitNetwork(gx.account.Address, cnet.MessageHandler)
 
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
 	if !ok {
@@ -166,7 +163,7 @@ func (gx *GX) initMiner(instanceIndex int, super bool, seedIp string, seedId str
 	if !ok {
 		panic("Init miner start miner error!")
 	}
-	gx.dumpAccountInfo(minerInfo, netId)
+	gx.dumpAccountInfo(minerInfo)
 	syncChainInfo()
 	gx.init = true
 }
@@ -225,7 +222,7 @@ func syncChainInfo() {
 	}()
 }
 
-func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerDO, netId string) {
+func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerDO) {
 	common.DefaultLogger.Infof("SecKey: %s", gx.account.Sk)
 	common.DefaultLogger.Infof("PubKey: %s", gx.account.Pk)
 	common.DefaultLogger.Infof("Miner SecKey: %s", minerDO.SK.GetHexString())
@@ -233,7 +230,6 @@ func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerDO, netId string) {
 	common.DefaultLogger.Infof("VRF PrivateKey: %s", minerDO.VrfSK.GetHexString())
 	common.DefaultLogger.Infof("VRF PubKey: %s", minerDO.VrfPK.GetHexString())
 	common.DefaultLogger.Infof("Miner ID: %s", minerDO.ID.GetHexString())
-	common.DefaultLogger.Infof("Net ID: %s", netId)
 }
 
 func (gx *GX) initSysParam() {

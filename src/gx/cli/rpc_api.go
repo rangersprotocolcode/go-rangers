@@ -10,7 +10,6 @@ import (
 	"log"
 	"math/big"
 	"x/src/middleware/types"
-	"x/src/network"
 	"encoding/hex"
 	"math"
 	"x/src/consensus"
@@ -246,12 +245,13 @@ func (api *GtasAPI) GroupHeight() (*Result, error) {
 // ConnectedNodes 查询已链接的node的信息
 func (api *GtasAPI) ConnectedNodes() (*Result, error) {
 
-	nodes := network.GetNetInstance().ConnInfo()
-	conns := make([]ConnInfo, 0)
-	for _, n := range nodes {
-		conns = append(conns, ConnInfo{Id: n.Id, Ip: n.Ip, TcpPort: n.Port})
-	}
-	return successResult(conns)
+	//nodes := network.GetNetInstance().ConnInfo()
+	//conns := make([]ConnInfo, 0)
+	//for _, n := range nodes {
+	//	conns = append(conns, ConnInfo{Id: n.Id, Ip: n.Ip, TcpPort: n.Port})
+	//}
+	//return successResult(conns)
+	return nil, nil
 }
 
 // TransPool 查询缓冲区的交易信息。
@@ -796,13 +796,13 @@ func (api *GtasAPI) Dashboard() (*Result, error) {
 	groupHeight := core.GetGroupChain().Count()
 	workNum := len(consensus.Proc.GetCastQualifiedGroups(blockHeight))
 	nodeResult, _ := api.NodeInfo()
-	consResult, _ := api.ConnectedNodes()
+	//consResult, _ := api.ConnectedNodes()
 	dash := &Dashboard{
 		BlockHeight: blockHeight,
 		GroupHeight: groupHeight,
 		WorkGNum:    workNum,
 		NodeInfo:    nodeResult.Data.(*NodeInfo),
-		Conns:       consResult.Data.([]ConnInfo),
+		//Conns:       consResult.Data.([]ConnInfo),
 	}
 	return successResult(dash)
 }

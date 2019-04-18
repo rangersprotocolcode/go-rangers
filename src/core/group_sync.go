@@ -274,7 +274,7 @@ func (gs *groupSyncer) sendGroupHeightToNeighbor(localCount uint64) {
 	gs.logger.Debugf("Send local group height %d to neighbor!", localCount)
 	body := utility.UInt64ToByte(localCount)
 	message := network.Message{Code: network.GroupChainCountMsg, Body: body}
-	network.GetNetInstance().TransmitToNeighbor(message)
+	network.GetNetInstance().Broadcast(message)
 }
 
 func (gs *groupSyncer) requestGroupByGroupId(id string, groupId []byte) {

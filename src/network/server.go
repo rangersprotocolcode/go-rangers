@@ -1,288 +1,114 @@
 package network
 
 import (
-	"context"
-	"strings"
-	"sync"
-	"bufio"
-
-	"x/src/utility"
-	"github.com/libp2p/go-libp2p-host"
-	"github.com/libp2p/go-libp2p-kad-dht"
-	"github.com/libp2p/go-libp2p-protocol"
-	"github.com/libp2p/go-libp2p-peer"
-	inet "github.com/libp2p/go-libp2p-net"
-	"time"
-	"math/rand"
 	"x/src/middleware/notify"
+	"github.com/gorilla/websocket"
+	"x/src/utility"
+	"strconv"
+	"encoding/hex"
+	"bytes"
+	"hash/fnv"
+	"sync"
 )
 
-const (
-	packageLengthSize             = 4
-	protocolID        protocol.ID = "/x/1.0.0"
-)
-
-var header = []byte{84, 85, 78}
+var methodCodeSend, _ = hex.DecodeString("80000001")
+var methodCodeBroadcast, _ = hex.DecodeString("80000002")
+var methodCodeSendToGroup, _ = hex.DecodeString("80000003")
+var methodCodeJoinGroup, _ = hex.DecodeString("80000004")
+var methodCodeQuitGroup, _ = hex.DecodeString("80000005")
 
 var Server server
 
 type server struct {
-	host host.Host
-
-	dht *dht.IpfsDHT
-
-	streams sync.Map
-
+	conn             *websocket.Conn
 	consensusHandler MsgHandler
-}
 
-func initServer(host host.Host, dht *dht.IpfsDHT, consensusHandler MsgHandler) {
-	host.SetStreamHandler(protocolID, swarmStreamHandler)
-	Server = server{host: host, dht: dht, streams: sync.Map{},  consensusHandler: consensusHandler}
+	lock sync.RWMutex
 }
 
 func (s *server) Send(id string, msg Message) {
-	netId := getNetId(id)
-	s.sendByNetId(netId, msg)
+	s.send(methodCodeSend, id, msg)
 }
 
-func (s *server) SpreadAmongGroup(groupId string, msg Message) {
-	members := s.getMembers(groupId)
-	if members == nil || len(members) == 0 {
-		Logger.Errorf("Unknown group:%s,discard sending message", groupId)
-		return
-	}
-
-	for _, member := range members {
-		s.Send(member.MinerId, msg)
-	}
-}
-
-func (s *server) SpreadToRandomGroupMember(groupId string, groupMembers []string, msg Message) {
-	members := s.getMembers(groupId)
-	if members == nil || len(members) == 0 {
-		Logger.Errorf("Unknown group:%s,discard sending message", groupId)
-		return
-	}
-
-	rand := rand.New(rand.NewSource(time.Now().Unix()))
-	index := rand.Intn(len(members))
-	randMembers := members[index:]
-
-	for _, member := range randMembers {
-		s.Send(member.MinerId, msg)
-	}
-}
-
-func (s *server) TransmitToNeighbor(msg Message) {
-	conns := s.host.Network().Conns()
-	for _, conn := range conns {
-		id := conn.RemotePeer()
-		if id == "" {
-			continue
-		}
-		Logger.Debugf("transmit to neighbor:%s", idToString(id))
-		s.sendByNetId(idToString(id), msg)
-	}
+func (s *server) SpreadToGroup(groupId string, msg Message) {
+	s.send(methodCodeSendToGroup, groupId, msg)
 }
 
 func (s *server) Broadcast(msg Message) {
-	for _, proposer := range netMemberInfo.ProposerList {
-		s.Send(proposer.MinerId, msg)
-	}
-
-	for _, group := range netMemberInfo.VerifyGroupList {
-		for _, verifier := range group.Members {
-			s.Send(verifier.MinerId, msg)
-		}
-	}
+	s.send(methodCodeBroadcast, "0", msg)
 }
 
-func (s *server) ConnInfo() []Conn {
-	conns := s.host.Network().Conns()
-	result := make([]Conn, 0, 0)
-	for _, conn := range conns {
-		id := conn.RemotePeer()
-		if id == "" {
-			continue
-		}
-		addr := conn.RemoteMultiaddr().String()
-		//addr /ip4/127.0.0.1/udp/1234"
-		split := strings.Split(addr, "/")
-		if len(split) != 5 {
-			continue
-		}
-		ip := split[2]
-		port := split[4]
-		c := Conn{Id: getMinerId(idToString(id)), Ip: ip, Port: port}
-		result = append(result, c)
-	}
-	return result
-}
-
-func (s *server) getMembers(groupId string) []Id {
-	if groupId == FullNodeVirtualGroupId {
-		return netMemberInfo.ProposerList
-	}
-	for _, g := range netMemberInfo.VerifyGroupList {
-		if g.GroupId == groupId {
-			return g.Members
-		}
-	}
-	return nil
-}
-
-func (s *server) sendByNetId(netId string, msg Message) {
-	if netId == "" {
-		return
-	}
-	bytes, e := marshalMessage(msg)
-	if e != nil {
-		Logger.Errorf("Marshal message error:%s", e.Error())
+func (s *server) send(method []byte, targetId string, msg Message) {
+	m, err := marshalMessage(msg)
+	if err != nil {
+		Logger.Errorf("marshal message error:%s", err.Error())
 		return
 	}
 
-	length := len(bytes)
-	b2 := utility.UInt32ToByte(uint32(length))
+	header := make([]byte, protocolHeaderSize)
+	copy(header[0:4], method)
 
-	b := make([]byte, len(bytes)+len(b2)+3, len(bytes)+len(b2)+3)
-	copy(b[:3], header[:])
-	copy(b[3:7], b2)
-	copy(b[7:], bytes)
-
-	s.send(b, netId)
-}
-
-func (s *server) send(b []byte, id string) {
-	if id == idToString(s.host.ID()) {
-		s.sendSelf(b, id)
-		return
-	}
-	c := context.Background()
-
-	stream,exist := s.streams.Load(id)
-	if !exist {
-		var e error
-		stream, e = s.host.NewStream(c, strToId(id), protocolID)
-		if e != nil {
-			Logger.Errorf("New stream for %s error:%s", id, e.Error())
-			//s.send(b, id)
+	var target uint64
+	if bytes.Equal(method, methodCodeSendToGroup) {
+		hash64 := fnv.New64()
+		hash64.Write([]byte(targetId))
+		target = hash64.Sum64()
+		Logger.Debugf("Send group to:%d,%v", target, utility.UInt64ToByte(target))
+	} else {
+		target, err = strconv.ParseUint(targetId, 10, 64)
+		Logger.Debugf("Send  to:%d", target)
+		if err != nil {
+			Logger.Errorf("Parse target id %s error:%s", targetId, err.Error())
 			return
 		}
 	}
+	copy(header[12:20], utility.UInt64ToByte(target))
 
+	message := make([]byte, protocolHeaderSize+len(m))
+	copy(message[:protocolHeaderSize-1], header[:])
+	copy(message[protocolHeaderSize:], m)
 
-	l := len(b)
-	r, err := stream.(inet.Stream).Write(b)
+	Logger.Debugf("Send msg:%v", message)
+	s.lock.Lock()
+	err = s.conn.WriteMessage(websocket.BinaryMessage, message)
+	s.lock.Unlock()
 	if err != nil {
-		Logger.Errorf("Write stream for %s error:%s", id, err.Error())
-		stream.(inet.Stream).Close()
-		//s.send(b, id)
-		return
+		Logger.Errorf("Send msg error:%s", err.Error())
 	}
-
-	if r != l {
-		Logger.Errorf("Stream  should write %d byte ,bu write %d bytes", l, r)
-		stream.(inet.Stream).Close()
-		return
-	}
-	stream.(inet.Stream).Close()
-	//s.streams.Store(id,stream)
 }
 
-func (s *server) sendSelf(b []byte, id string) {
-	pkgBodyBytes := b[7:]
-	s.handleMessage(pkgBodyBytes, id, b[3:7])
+func (s *server) parseWebSocketMsg(m []byte) (from string, data []byte) {
+	if len(m) < protocolHeaderSize {
+		return "", nil
+	}
+
+	header := m[0 : protocolHeaderSize-1]
+	data = m[protocolHeaderSize:]
+	srcByte := header[12:20]
+	from = strconv.FormatUint(utility.ByteToUInt64(srcByte), 10)
+	return
 }
 
-//TODO 考虑读写超时
-func swarmStreamHandler(stream inet.Stream) {
-	go func() {
-		for {
-			e := handleStream(stream)
-			if e != nil {
-				stream.Close()
-				break
-			}
+func (s *server) receiveMessage() {
+	for {
+		_, message, err := s.conn.ReadMessage()
+		if err != nil {
+			Logger.Errorf("Rcv msg error:%s", err.Error())
+			continue
 		}
-	}()
-}
-func handleStream(stream inet.Stream) error {
-	netId := idToString(stream.Conn().RemotePeer())
-	minerId := getMinerId(netId)
-	if minerId == "" {
-		return nil
+		Logger.Debugf("Rcv msg:%v", message)
+		from, data := s.parseWebSocketMsg(message)
+		go s.handleMessage(data, from)
 	}
-
-	reader := bufio.NewReader(stream)
-	headerBytes := make([]byte, 3)
-	h, e1 := reader.Read(headerBytes)
-	if e1 != nil {
-		Logger.Errorf("steam read 3 from %s error:%s!", minerId, e1.Error())
-		return e1
-	}
-	if h != 3 {
-		Logger.Errorf("Stream  should read %d byte, but received %d bytes", 3, h)
-		return nil
-	}
-	//校验 header
-	if !(headerBytes[0] == header[0] && headerBytes[1] == header[1] && headerBytes[2] == header[2]) {
-		Logger.Errorf("validate header error from %s! ", minerId)
-		return nil
-	}
-
-	pkgLengthBytes := make([]byte, packageLengthSize)
-	n, err := reader.Read(pkgLengthBytes)
-	if err != nil {
-		Logger.Errorf("Stream  read4 error:%s", err.Error())
-		return nil
-	}
-	if n != 4 {
-		Logger.Errorf("Stream  should read %d byte, but received %d bytes", 4, n)
-		return nil
-	}
-	pkgLength := int(utility.ByteToUInt32(pkgLengthBytes))
-	b := make([]byte, pkgLength)
-	e := readMessageBody(reader, b, 0)
-	if e != nil {
-		Logger.Errorf("Stream  readMessageBody error:%s", e.Error())
-		return e
-	}
-	go Server.handleMessage(b, minerId, pkgLengthBytes)
-	return nil
 }
 
-func readMessageBody(reader *bufio.Reader, body []byte, index int) error {
-	if index == 0 {
-		n, err1 := reader.Read(body)
-		if err1 != nil {
-			return err1
-		}
-		if n != len(body) {
-			return readMessageBody(reader, body, n)
-		}
-		return nil
-	} else {
-		b := make([]byte, len(body)-index)
-		n, err2 := reader.Read(b)
-		if err2 != nil {
-			return err2
-		}
-		copy(body[index:], b[:])
-		if n != len(b) {
-			return readMessageBody(reader, body, index+n)
-		}
-		return nil
-	}
-
-}
-func (s *server) handleMessage(b []byte, from string, lengthByte []byte) {
-	message, error := unMarshalMessage(b)
+func (s *server) handleMessage(data []byte, from string) {
+	message, error := unMarshalMessage(data)
 	if error != nil {
 		Logger.Errorf("Proto unmarshal error:%s", error.Error())
 		return
 	}
-	Logger.Debugf("Receive message from %s,code:%d,msg size:%d,hash:%s", from, message.Code, len(b), message.Hash())
+	Logger.Debugf("Receive message from %s,code:%d,msg size:%d,hash:%s", from, message.Code, len(data), message.Hash())
 
 	code := message.Code
 	switch code {
@@ -335,6 +161,18 @@ func (s *server) handleMessage(b []byte, from string, lengthByte []byte) {
 	}
 }
 
-func idToString(p peer.ID) string {
-	return p.Pretty()
+func (s *server) joinGroup(groupID string) {
+	header := make([]byte, protocolHeaderSize)
+	copy(header[0:4], methodCodeJoinGroup)
+
+	hash64 := fnv.New64()
+	hash64.Write([]byte(groupID))
+	target := hash64.Sum64()
+	Logger.Debugf("Join group:%d", target)
+	copy(header[12:20], utility.UInt64ToByte(target))
+
+	err := s.conn.WriteMessage(websocket.BinaryMessage, header)
+	if err != nil {
+		Logger.Errorf("Send msg error:%s", err.Error())
+	}
 }
