@@ -476,7 +476,7 @@ const HTMLTEM = `<!DOCTYPE html>
             $("#balance_message").text("");
             $("#balance_error").text("");
             let params = {
-                "method": "GTAS_balance",
+                "method": "Rocket_balance",
                 "params": [$("#query_input_"+count).val()],
                 "jsonrpc": "2.0",
                 "id": "1"
@@ -503,7 +503,7 @@ const HTMLTEM = `<!DOCTYPE html>
         // 钱包初始化
         function init_wallets() {
             let params = {
-                "method": "GTAS_getWallets",
+                "method": "Rocket_getWallets",
                 "params": [],
                 "jsonrpc": "2.0",
                 "id": "1"
@@ -535,7 +535,7 @@ const HTMLTEM = `<!DOCTYPE html>
 
         function del_wallet(key) {
             let params = {
-                "method": "GTAS_deleteWallet",
+                "method": "Rocket_deleteWallet",
                 "params": [key],
                 "jsonrpc": "2.0",
                 "id": "1"
@@ -559,7 +559,7 @@ const HTMLTEM = `<!DOCTYPE html>
         // 创建钱包
         $("#create_btn").click(function () {
             let params = {
-                "method": "GTAS_newWallet",
+                "method": "Rocket_newWallet",
                 "params": [],
                 "jsonrpc": "2.0",
                 "id": "1"
@@ -606,7 +606,7 @@ const HTMLTEM = `<!DOCTYPE html>
             vote_param.effect_block = parseInt(data.field.effect_block);
             vote_param.deposit_gap = parseInt(data.field.deposit_gap);
             let params = {
-                "method": "GTAS_vote",
+                "method": "Rocket_vote",
                 "params": [from, vote_param],
                 "jsonrpc": "2.0",
                 "id": "1"
@@ -648,7 +648,7 @@ const HTMLTEM = `<!DOCTYPE html>
             //     return false
             // }
             let params = {
-                "method": "GTAS_tx",
+                "method": "Rocket_tx",
                 "params": [from, to, parseFloat(amount), code],
                 "jsonrpc": "2.0",
                 "id": "1"
@@ -676,7 +676,7 @@ const HTMLTEM = `<!DOCTYPE html>
         // 同步已链接节点
         function syncNodes() {
             let params = {
-                "method": "GTAS_connectedNodes",
+                "method": "Rocket_connectedNodes",
                 "params": [],
                 "jsonrpc": "2.0",
                 "id": "1"
@@ -715,7 +715,7 @@ const HTMLTEM = `<!DOCTYPE html>
         // 同步缓冲区交易
         function syncTrans() {
             let params = {
-                "method": "GTAS_transPool",
+                "method": "Rocket_transPool",
                 "params": [],
                 "jsonrpc": "2.0",
                 "id": "1"
@@ -757,7 +757,7 @@ const HTMLTEM = `<!DOCTYPE html>
         // 同步块高
         function syncBlockHeight() {
             let params = {
-                "method": "GTAS_blockHeight",
+                "method": "Rocket_blockHeight",
                 "params": [],
                 "jsonrpc": "2.0",
                 "id": "1"
@@ -812,7 +812,7 @@ const HTMLTEM = `<!DOCTYPE html>
         // 同步组高
         function syncGroupHeight() {
             let params = {
-                "method": "GTAS_groupHeight",
+                "method": "Rocket_groupHeight",
                 "params": [],
                 "jsonrpc": "2.0",
                 "id": "1"
@@ -844,7 +844,7 @@ const HTMLTEM = `<!DOCTYPE html>
         // 同步组高
         function syncWorkGroupNum(height) {
             let params = {
-                "method": "GTAS_workGroupNum",
+                "method": "Rocket_workGroupNum",
                 "params": [height],
                 "jsonrpc": "2.0",
                 "id": "1"
@@ -871,7 +871,7 @@ const HTMLTEM = `<!DOCTYPE html>
         // 同步块信息
         function syncBlock(height) {
             let params = {
-                "method": "GTAS_getBlock",
+                "method": "Rocket_getBlock",
                 "params": [height],
                 "jsonrpc": "2.0",
                 "id": "1"
@@ -901,7 +901,7 @@ const HTMLTEM = `<!DOCTYPE html>
         // 同步组信息
         function syncGroup(height) {
             let params = {
-                "method": "GTAS_getGroupsAfter",
+                "method": "Rocket_getGroupsAfter",
                 "params": [height],
                 "jsonrpc": "2.0",
                 "id": "1"
@@ -948,7 +948,7 @@ const HTMLTEM = `<!DOCTYPE html>
         //查询工作组
         function queryWorkGroup(height) {
             let params = {
-                "method": "GTAS_getWorkGroup",
+                "method": "Rocket_getWorkGroup",
                 "params": [height],
                 "jsonrpc": "2.0",
                 "id": "1"
@@ -989,7 +989,7 @@ const HTMLTEM = `<!DOCTYPE html>
 
         function doConsensusStat(height){
             let params = {
-                "method": "GTAS_consensusStat",
+                "method": "Rocket_consensusStat",
                 "params": [height],
                 "jsonrpc": "2.0",
                 "id": "1"
