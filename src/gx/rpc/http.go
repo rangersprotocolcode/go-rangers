@@ -16,7 +16,7 @@ import (
 
 	"github.com/rs/cors"
 	"strings"
-	"x/src/assert"
+	"x/src/asset"
 )
 
 const (
@@ -163,7 +163,7 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodGet {
 		assetFile := ""
 		if r.URL.Path == "/" {
-			assetFile = "gtas/fronted/c.html"
+			assetFile = "gx/fronted/c.html"
 		} else {
 			if r.URL.Path[0] == '/' {
 				assetFile = r.URL.Path[1:]
@@ -171,7 +171,7 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				assetFile = r.URL.Path
 			}
 		}
-		bs, err := assert.Asset(assetFile)
+		bs, err := asset.Asset(assetFile)
 		if err != nil {
 			w.Write([]byte(err.Error()))
 			return
