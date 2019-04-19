@@ -104,6 +104,6 @@ func (s *server) joinGroup(groupID string) {
 	s.sendChan <- header.toBytes()
 }
 
-func (s *server) handleClientMessage(data []byte, from string) {
+func (s *server) handleClientMessage(data []byte, from string,nonce uint64) {
 	//todo 处理游戏客户端消息 by鸠兹
 }

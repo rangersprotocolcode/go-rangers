@@ -53,7 +53,7 @@ func (h *header) toBytes() []byte {
 func byteToHeader(b []byte) header {
 	header := header{}
 	header.method = b[0:4]
-	header.sourceId = utility.ByteToUInt64(b[12:20])
+	header.sourceId = utility.ByteToUInt64(b[4:12])
 	header.nonce = utility.ByteToUInt64(b[20:])
 	return header
 }
@@ -106,7 +106,7 @@ func (s *server) loop() {
 		case message := <-s.rcvChan:
 			header, data := unloadWebSocketMsg(message)
 			if bytes.Equal(header.method, methodCodeClientSend) {
-				go s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10))
+				go s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce)
 			} else {
 				go s.handleMinerMessage(data, strconv.FormatUint(header.sourceId, 10))
 			}
