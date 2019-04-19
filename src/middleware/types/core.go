@@ -342,9 +342,9 @@ type SubAccount struct {
 }
 
 type Asset struct {
-	Id string
+	Id string `json:"id"`
 
-	Value string
+	Value string `json:"value"`
 }
 
 type UserData struct {
