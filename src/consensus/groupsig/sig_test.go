@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"x/src/common"
+	"fmt"
 )
 
 func TestVerifySig(t *testing.T) {
@@ -14,4 +15,12 @@ func TestVerifySig(t *testing.T) {
 	var hash = common.HexToHash("0x05830417649117d587035cdd5f9f874c98ceba8423640277bf7ed8657ea2b211verifySign")
 
 	t.Log(VerifySig(gpk, hash.Bytes(), sign))
+}
+
+func TestGenerateKey(t *testing.T) {
+	privateKey := common.GenerateKey("")
+	publicKey := privateKey.GetPubKey()
+	address := publicKey.GetAddress()
+	fmt.Printf("Private key:%s\n",privateKey.GetHexString())
+	fmt.Printf("Address:%s\n",address.String())
 }
