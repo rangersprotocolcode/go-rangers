@@ -98,7 +98,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 							break
 						}
 
-						if nil != common.DefaultLogger {
+						if nil != common.DefaultLogger && "casting" != situation {
 							balance := accountdb.GetBalance(common.HexToAddress(user.Address))
 							sub := accountdb.GetSubAccount(common.HexToAddress(user.Address), transaction.Target)
 							subData, _ := json.Marshal(sub)

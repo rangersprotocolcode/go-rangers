@@ -226,10 +226,6 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 
 	}
 
-	if nil != common.DefaultLogger {
-		common.DefaultLogger.Errorf("check balance, balance: %s", state.GetBalance(common.HexToAddress("aaa")))
-	}
-
 	trieDB := chain.stateDB.TrieDB()
 	err = trieDB.Commit(root, false)
 	if err != nil {
