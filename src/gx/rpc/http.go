@@ -16,7 +16,7 @@ import (
 
 	"github.com/rs/cors"
 	"strings"
-	"x/src/assert"
+	"x/src/asset"
 )
 
 const (
@@ -171,7 +171,7 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				assetFile = r.URL.Path
 			}
 		}
-		bs, err := assert.Asset(assetFile)
+		bs, err := asset.Asset(assetFile)
 		if err != nil {
 			w.Write([]byte(err.Error()))
 			return
