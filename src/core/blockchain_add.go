@@ -193,11 +193,18 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 	var state *account.AccountDB
 	var receipts types.Receipts
 	if value, exit := chain.verifiedBlocks.Get(b.Header.Hash); exit {
-		b := value.(*castingBlock)
-		state = b.state
-		receipts = b.receipts
+		bb := value.(*castingBlock)
+		state = bb.state
+		receipts = bb.receipts
+		if nil != common.DefaultLogger{
+			common.DefaultLogger.Errorf("entering verifiedBlocks,h: %d", b.Header.Height)
+		}
 	} else {
 		var executeTxResult bool
+		if nil != common.DefaultLogger{
+			common.DefaultLogger.Errorf("entering executeTransaction,h: %d", b.Header.Height)
+		}
+
 		executeTxResult, state, receipts = chain.executeTransaction(b)
 		if !executeTxResult {
 			logger.Errorf("Fail to execute txs!")
