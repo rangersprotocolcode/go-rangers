@@ -196,12 +196,12 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 		bb := value.(*castingBlock)
 		state = bb.state
 		receipts = bb.receipts
-		if nil != common.DefaultLogger{
+		if nil != common.DefaultLogger {
 			common.DefaultLogger.Errorf("entering verifiedBlocks,h: %d", b.Header.Height)
 		}
 	} else {
 		var executeTxResult bool
-		if nil != common.DefaultLogger{
+		if nil != common.DefaultLogger {
 			common.DefaultLogger.Errorf("entering executeTransaction,h: %d", b.Header.Height)
 		}
 
@@ -212,11 +212,9 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 		}
 	}
 
-	if nil != common.DefaultLogger {
+	if nil != common.DefaultLogger && 0 != len(b.Transactions) {
 		bb := state.GetSubAccount(common.HexToAddress("aaa"), "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb")
-		if bb.Balance.Sign() != 0 {
-			common.DefaultLogger.Errorf("check balance before commit, balance: %s, height: %d", bb.Balance.String(), b.Header.Height)
-		}
+		common.DefaultLogger.Errorf("check balance before commit, balance: %s, height: %d", bb.Balance.String(), b.Header.Height)
 
 	}
 
