@@ -97,7 +97,9 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 							success = false
 							break
 						}
+						address:= common.HexToAddress(user.Address)
 
+						accountdb.SetNonce(address, accountdb.GetNonce(address)+1)
 						if nil != common.DefaultLogger && "casting" != situation {
 							sub := accountdb.GetSubAccount(common.HexToAddress(user.Address), transaction.Target)
 							subData, _ := json.Marshal(sub)
