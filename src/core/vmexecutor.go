@@ -87,6 +87,9 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			data := make([]types.UserData, 0)
 			if err := json.Unmarshal([]byte(transaction.Data), &data); err != nil {
 				success = false
+				if nil != common.DefaultLogger {
+					common.DefaultLogger.Errorf("fail to execute tx, json error, %s", transaction.Data)
+				}
 			} else {
 				if nil != data && 0 != len(data) {
 					snapshot := accountdb.Snapshot()
