@@ -144,6 +144,13 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 	}
 
 	saveStateResult, accountDB, receipts := chain.saveBlockState(remoteBlock)
+	if nil != common.DefaultLogger {
+		b := accountDB.GetBalance(common.HexToAddress("aaa"))
+		if b.Sign() != 0 {
+			common.DefaultLogger.Errorf("check balance, balance: %s, height: %d", b.String(), remoteBlock.Header.Height)
+		}
+
+	}
 	if !saveStateResult {
 		return types.AddBlockFailed, nil
 	}
@@ -196,10 +203,27 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 			return false, state, receipts
 		}
 	}
+
+	if nil != common.DefaultLogger {
+		bb := state.GetBalance(common.HexToAddress("aaa"))
+		if bb.Sign() != 0 {
+			common.DefaultLogger.Errorf("check balance before commit, balance: %s, height: %d", bb.String(), b.Header.Height)
+		}
+
+	}
+
 	root, err := state.Commit(true)
 	if err != nil {
 		logger.Errorf("State commit error:%s", err.Error())
 		return false, state, receipts
+	}
+
+	if nil != common.DefaultLogger {
+		bb := state.GetBalance(common.HexToAddress("aaa"))
+		if bb.Sign() != 0 {
+			common.DefaultLogger.Errorf("check balance after commit, balance: %s, height: %d", bb.String(), b.Header.Height)
+		}
+
 	}
 
 	if nil != common.DefaultLogger {
