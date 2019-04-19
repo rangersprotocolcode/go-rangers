@@ -99,10 +99,9 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						}
 
 						if nil != common.DefaultLogger && "casting" != situation {
-							balance := accountdb.GetBalance(common.HexToAddress(user.Address))
 							sub := accountdb.GetSubAccount(common.HexToAddress(user.Address), transaction.Target)
 							subData, _ := json.Marshal(sub)
-							common.DefaultLogger.Errorf("%s. success to execute tx, data: %s, balance: %s, subAsset: %s", situation, transaction.Data, balance, subData)
+							common.DefaultLogger.Errorf("%s. success to execute tx, data: %s, subAsset: %s", situation, transaction.Data, subData)
 						}
 					}
 

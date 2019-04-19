@@ -145,9 +145,10 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 
 	saveStateResult, accountDB, receipts := chain.saveBlockState(remoteBlock)
 	if nil != common.DefaultLogger {
-		b := accountDB.GetBalance(common.HexToAddress("aaa"))
-		if b.Sign() != 0 {
-			common.DefaultLogger.Errorf("check balance, balance: %s, height: %d", b.String(), remoteBlock.Header.Height)
+		b := accountDB.GetSubAccount(common.HexToAddress("aaa"), "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb")
+
+		if b.Balance.Sign() != 0 {
+			common.DefaultLogger.Errorf("check balance, balance: %s, height: %d", b.Balance.String(), remoteBlock.Header.Height)
 		}
 
 	}
@@ -205,9 +206,9 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 	}
 
 	if nil != common.DefaultLogger {
-		bb := state.GetBalance(common.HexToAddress("aaa"))
-		if bb.Sign() != 0 {
-			common.DefaultLogger.Errorf("check balance before commit, balance: %s, height: %d", bb.String(), b.Header.Height)
+		bb := state.GetSubAccount(common.HexToAddress("aaa"), "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb")
+		if bb.Balance.Sign() != 0 {
+			common.DefaultLogger.Errorf("check balance before commit, balance: %s, height: %d", bb.Balance.String(), b.Header.Height)
 		}
 
 	}
@@ -219,9 +220,9 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 	}
 
 	if nil != common.DefaultLogger {
-		bb := state.GetBalance(common.HexToAddress("aaa"))
-		if bb.Sign() != 0 {
-			common.DefaultLogger.Errorf("check balance after commit, balance: %s, height: %d", bb.String(), b.Header.Height)
+		bb := state.GetSubAccount(common.HexToAddress("aaa"), "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb")
+		if bb.Balance.Sign() != 0 {
+			common.DefaultLogger.Errorf("check balance after commit, balance: %s, height: %d", bb.Balance.String(), b.Header.Height)
 		}
 
 	}
@@ -246,9 +247,9 @@ func (chain *blockChain) updateLastBlock(state *account.AccountDB, header *types
 	logger.Debugf("Update latestStateDB:%s height:%d", header.StateTree.Hex(), header.Height)
 
 	if nil != common.DefaultLogger {
-		b := state.GetBalance(common.HexToAddress("aaa"))
-		if b.Sign() != 0 {
-			common.DefaultLogger.Errorf("check balance, balance: %s, height: %d", b.String(), header.Height)
+		b := state.GetSubAccount(common.HexToAddress("aaa"), "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb")
+		if b.Balance.Sign() != 0 {
+			common.DefaultLogger.Errorf("check balance, balance: %s, height: %d", b.Balance.String(), header.Height)
 		}
 
 	}
