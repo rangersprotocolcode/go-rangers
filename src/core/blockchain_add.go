@@ -148,7 +148,7 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 		return types.AddBlockFailed, nil
 	}
 
-	if !chain.updateLastBlock(accountDB, remoteBlock.Header, headerByte) {
+	if !chain.updateLastBlock(accountDB, remoteBlock.Header, headerByte, 0 == len(remoteBlock.Transactions)) {
 		return types.AddBlockFailed, headerByte
 	}
 
@@ -215,7 +215,7 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 	return true, state, receipts
 }
 
-func (chain *blockChain) updateLastBlock(state *account.AccountDB, header *types.BlockHeader, headerJson []byte) bool {
+func (chain *blockChain) updateLastBlock(state *account.AccountDB, header *types.BlockHeader, headerJson []byte, nilblock bool) bool {
 	err := chain.heightDB.Put([]byte(latestBlockKey), headerJson)
 	if err != nil {
 		logger.Errorf("Fail to put %s, error:%s", latestBlockKey, err.Error())
@@ -225,7 +225,7 @@ func (chain *blockChain) updateLastBlock(state *account.AccountDB, header *types
 	chain.latestBlock = header
 	logger.Debugf("Update latestStateDB:%s height:%d", header.StateTree.Hex(), header.Height)
 
-	if nil != common.DefaultLogger {
+	if nil != common.DefaultLogger && !nilblock {
 		common.DefaultLogger.Errorf("check balance, balance: %s", state.GetBalance(common.HexToAddress("aaa")))
 	}
 	return true

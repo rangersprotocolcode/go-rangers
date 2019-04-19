@@ -104,7 +104,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 							balance := accountdb.GetBalance(common.HexToAddress(user.Address))
 							sub := accountdb.GetSubAccount(common.HexToAddress(user.Address), transaction.Target)
 							subData, _ := json.Marshal(sub)
-							common.DefaultLogger.Errorf("success to execute tx, data: %s, balance: %s, subAsset: %s", transaction.Data, balance, subData)
+							common.DefaultLogger.Errorf("%s. success to execute tx, data: %s, balance: %s, subAsset: %s", situation, transaction.Data, balance, subData)
 						}
 					}
 
