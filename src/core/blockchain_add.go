@@ -144,14 +144,7 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 	}
 
 	saveStateResult, accountDB, receipts := chain.saveBlockState(remoteBlock)
-	if nil != common.DefaultLogger {
-		b := accountDB.GetSubAccount(common.HexToAddress("aaa"), "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb")
 
-		if b.Balance.Sign() != 0 {
-			common.DefaultLogger.Errorf("check balance, balance: %s, height: %d", b.Balance.String(), remoteBlock.Header.Height)
-		}
-
-	}
 	if !saveStateResult {
 		return types.AddBlockFailed, nil
 	}
@@ -196,14 +189,9 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 		bb := value.(*castingBlock)
 		state = bb.state
 		receipts = bb.receipts
-		if nil != common.DefaultLogger {
-			common.DefaultLogger.Errorf("entering verifiedBlocks,h: %d", b.Header.Height)
-		}
+
 	} else {
 		var executeTxResult bool
-		if nil != common.DefaultLogger {
-			common.DefaultLogger.Errorf("entering executeTransaction,h: %d", b.Header.Height)
-		}
 
 		executeTxResult, state, receipts = chain.executeTransaction(b)
 		if !executeTxResult {
@@ -212,24 +200,10 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 		}
 	}
 
-	if nil != common.DefaultLogger && 0 != len(b.Transactions) {
-		bb := state.GetSubAccount(common.HexToAddress("aaa"), "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb")
-		common.DefaultLogger.Errorf("check balance before commit, balance: %s, height: %d", bb.Balance.String(), b.Header.Height)
-
-	}
-
 	root, err := state.Commit(true)
 	if err != nil {
 		logger.Errorf("State commit error:%s", err.Error())
 		return false, state, receipts
-	}
-
-	if nil != common.DefaultLogger {
-		bb := state.GetSubAccount(common.HexToAddress("aaa"), "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb")
-		if bb.Balance.Sign() != 0 {
-			common.DefaultLogger.Errorf("check balance after commit, balance: %s, height: %d", bb.Balance.String(), b.Header.Height)
-		}
-
 	}
 
 	trieDB := chain.stateDB.TrieDB()
@@ -251,13 +225,6 @@ func (chain *blockChain) updateLastBlock(state *account.AccountDB, header *types
 	chain.latestBlock = header
 	logger.Debugf("Update latestStateDB:%s height:%d", header.StateTree.Hex(), header.Height)
 
-	if nil != common.DefaultLogger {
-		b := state.GetSubAccount(common.HexToAddress("aaa"), "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb")
-		if b.Balance.Sign() != 0 {
-			common.DefaultLogger.Errorf("check balance, balance: %s, height: %d", b.Balance.String(), header.Height)
-		}
-
-	}
 	return true
 }
 

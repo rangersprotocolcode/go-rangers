@@ -35,7 +35,6 @@ func convert(s string) *big.Int {
 func changeBalance(address string, gameId string, bstring string, accountdb *account.AccountDB) bool {
 	balance := convert(bstring)
 	sub := GetSubAccount(address, gameId, accountdb)
-	pBalance := sub.Balance.String()
 
 	if sub != nil {
 		sub.Balance = sub.Balance.Add(balance, sub.Balance)
@@ -45,11 +44,9 @@ func changeBalance(address string, gameId string, bstring string, accountdb *acc
 	}
 
 	if sub.Balance.Sign() == -1 {
-		if nil != common.DefaultLogger {
-			common.DefaultLogger.Errorf("fail to execute tx, balance: %s, pre balance: %s, address: %s", bstring, pBalance, address)
-		}
 		return false
 	}
+
 	accountdb.UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
 	return true
 }
