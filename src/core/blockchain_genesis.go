@@ -38,7 +38,7 @@ func (chain *blockChain) insertGenesisBlock() {
 		}
 		chain.saveBlockByHeight(genesisBlock.Header.Height, headerByte)
 
-		chain.updateLastBlock(state, genesisBlock.Header, headerByte, true)
+		chain.updateLastBlock(state, genesisBlock.Header, headerByte)
 		chain.updateVerifyHash(genesisBlock)
 	} else {
 		panic("Init block chain error:" + err.Error())
