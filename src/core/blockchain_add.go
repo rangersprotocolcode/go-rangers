@@ -202,6 +202,10 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 		return false, state, receipts
 	}
 
+	if nil != common.DefaultLogger {
+		common.DefaultLogger.Errorf("check balance, balance: %s", state.GetBalance(common.HexToAddress("aaa")))
+	}
+
 	trieDB := chain.stateDB.TrieDB()
 	err = trieDB.Commit(root, false)
 	if err != nil {
@@ -220,6 +224,10 @@ func (chain *blockChain) updateLastBlock(state *account.AccountDB, header *types
 	chain.latestStateDB = state
 	chain.latestBlock = header
 	logger.Debugf("Update latestStateDB:%s height:%d", header.StateTree.Hex(), header.Height)
+
+	if nil != common.DefaultLogger {
+		common.DefaultLogger.Errorf("check balance, balance: %s", state.GetBalance(common.HexToAddress("aaa")))
+	}
 	return true
 }
 
