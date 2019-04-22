@@ -37,7 +37,7 @@ func unloadWebSocketMsg(m []byte) (header header, body []byte) {
 		return header, nil
 	}
 
-	header = byteToHeader(m[:protocolHeaderSize-1])
+	header = byteToHeader(m[:protocolHeaderSize])
 	body = m[protocolHeaderSize:]
 	Logger.Debugf("Rcv msg header:%v,body:%v", header, body)
 	return
@@ -106,7 +106,7 @@ func (s *server) loop() {
 		case message := <-s.rcvChan:
 			header, data := unloadWebSocketMsg(message)
 			if bytes.Equal(header.method, methodCodeClientSend) {
-				go s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce)
+				s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce)
 			} else {
 				go s.handleMinerMessage(data, strconv.FormatUint(header.sourceId, 10))
 			}

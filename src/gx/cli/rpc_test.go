@@ -7,6 +7,7 @@ import (
 	"x/src/common"
 	"strconv"
 	"fmt"
+	"time"
 )
 
 func TestRPC(t *testing.T) {
@@ -50,6 +51,8 @@ func TestRPC(t *testing.T) {
 		data, _ := json.Marshal(res.Result.Data)
 		log.Printf("%s response data: %s", test.method, data)
 	}
+
+	time.Sleep(1000*time.Second)
 }
 
 func TestStrToFloat(t *testing.T) {

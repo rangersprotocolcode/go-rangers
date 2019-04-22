@@ -48,9 +48,8 @@ func (executor *GameExecutor) Tx(msg notify.Message) {
 
 	if txRaw.Type == types.TransactionTypeOperatorEvent {
 		executor.chain.GetTransactionPool().AddExecuted(&txRaw)
+		network.GetNetInstance().SendToClient(message.UserId, network.Message{Body: result})
 	}
-
-	network.GetNetInstance().SendToClient(message.UserId, network.Message{Body: result})
 
 	return
 
@@ -58,7 +57,9 @@ func (executor *GameExecutor) Tx(msg notify.Message) {
 
 func (executor *GameExecutor) sendTransaction(trans *types.Transaction) error {
 	if ok, err := executor.chain.GetTransactionPool().AddTransaction(trans); err != nil || !ok {
-		common.DefaultLogger.Errorf("AddTransaction not ok or error:%s", err.Error())
+		if nil != common.DefaultLogger {
+			common.DefaultLogger.Errorf("AddTransaction not ok or error:%s", err.Error())
+		}
 		return err
 	}
 
