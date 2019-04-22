@@ -13,7 +13,7 @@ func TestRPC(t *testing.T) {
 	gx := NewGX()
 	common.InitConf("tas.ini")
 	walletManager = newWallets()
-	gx.initMiner(0, true, "", "", "heavy", "keystore")
+	gx.initMiner(0, "heavy", "keystore")
 
 	host := "127.0.0.1"
 	var port uint = 8080
@@ -22,7 +22,7 @@ func TestRPC(t *testing.T) {
 		method string
 		params []interface{}
 	}{
-		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"50000000000000\",\"assets\":{\"1\":\"dj\"}}]"}},
+		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"50\",\"assets\":{\"1\":\"dj\"}}]"}},
 		{"Rocket_getBalance", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
 		{"Rocket_getAsset", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "1"}},
 		{"Rocket_getAllAssets", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
@@ -76,7 +76,7 @@ func TestJSONString(t *testing.T) {
 
 }
 
-func TestSlice(t *testing.T){
+func TestSlice(t *testing.T) {
 	a := []int{0, 1, 2, 3, 4}
 	//删除第i个元素
 	i := 4
