@@ -5,12 +5,14 @@ import (
 	"x/src/middleware/log"
 	"net/url"
 	"github.com/gorilla/websocket"
+	"math"
 )
 
 const (
-	gateAddr           = "47.110.143.114"
+	gateAddr           = "192.168.3.106"
 	protocolHeaderSize = 28
 	channelSize        = 100
+	bufferSize         = math.MaxInt32
 )
 
 var Logger log.Logger
@@ -21,7 +23,7 @@ func InitNetwork(selfMinerId string, consensusHandler MsgHandler) {
 	url := url.URL{Scheme: "ws", Host: gateAddr, Path: "/service"}
 	Logger.Debugf("connecting to %s", url.String())
 
-	conn, _, err := websocket.DefaultDialer.Dial(url.String(), nil)
+	conn, _, err := newDialer().Dial(url.String(), nil)
 	if err != nil {
 		panic("Dial to" + url.String() + " err:" + err.Error())
 	}
@@ -33,6 +35,10 @@ func InitNetwork(selfMinerId string, consensusHandler MsgHandler) {
 	joinGroup(selfMinerId)
 }
 
+func newDialer() *websocket.Dialer {
+	d := websocket.Dialer{ReadBufferSize: bufferSize, WriteBufferSize: bufferSize,}
+	return &d
+}
 func joinGroup(selfMinerId string) {
 	var groupId = ""
 	for _, group := range netMemberInfo.VerifyGroupList {
