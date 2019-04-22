@@ -14,6 +14,8 @@ import (
 	"math"
 	"x/src/consensus"
 	"strconv"
+	"time"
+	"sync"
 )
 
 func successResult(data interface{}) (*Result, error) {
@@ -35,136 +37,99 @@ func failResult(err string) (*Result, error) {
 type GtasAPI struct {
 }
 
-func (api *GtasAPI) get(address string, gameId string) *types.SubAccount {
-	accountdb := core.GetBlockChain().GetAccountDB()
-	return accountdb.GetSubAccount(common.HexToAddress(address), gameId)
-}
+var gxLock *sync.RWMutex
 
-func (api *GtasAPI) GetBalance(address string, gameId string) string {
-	sub := api.get(address, gameId)
+func (api *GtasAPI) GetBalance(address string, gameId string) (*Result, error) {
+	gxLock.RLock()
+	defer gxLock.RUnlock()
 
-	if nil == sub {
-		return "0"
-	}
-
-	return strconv.FormatFloat(float64(sub.Balance.Int64()/1000000000), 'f', -1, 64)
-}
-
-func (api *GtasAPI) GetAsset(address string, gameId string, assetId string) []byte {
-	sub := api.get(address, gameId)
+	sub := core.GetSubAccount(address, gameId, core.GetBlockChain().GetAccountDB())
 
 	if nil == sub {
-		return []byte{}
+		return successResult("-1")
 	}
 
-	assets := api.GetAllAssets(address, gameId)
+	floatdata := float64(sub.Balance.Int64()) / 1000000000
+	return successResult(strconv.FormatFloat(floatdata, 'f', -1, 64))
+}
+
+func (api *GtasAPI) GetAsset(address string, gameId string, assetId string) (*Result, error) {
+	gxLock.RLock()
+	defer gxLock.RUnlock()
+
+	sub := core.GetSubAccount(address, gameId, core.GetBlockChain().GetAccountDB())
+
+	if nil == sub {
+		return successResult("")
+	}
+
+	assetsResult, _ := api.GetAllAssets(address, gameId)
+
+	assets := assetsResult.Data.([]*types.Asset)
 	if nil == assets || 0 == len(assets) {
-		return []byte{}
+		return successResult("")
 	}
+
 	for _, asset := range assets {
 		if asset.Id == assetId {
-			return asset.Value
+			return successResult(asset.Value)
 		}
 	}
-	return []byte{}
+	return successResult("")
 }
 
-func (api *GtasAPI) GetAllAssets(address string, gameId string) []types.Asset {
-	sub := api.get(address, gameId)
+func (api *GtasAPI) GetAllAssets(address string, gameId string) (*Result, error) {
+	gxLock.RLock()
+	defer gxLock.RUnlock()
+
+	sub := core.GetSubAccount(address, gameId, core.GetBlockChain().GetAccountDB())
 
 	if nil == sub {
-		return []types.Asset{}
+		return successResult([]types.Asset{})
 	}
 
-	return sub.Assets
+	return successResult(sub.Assets)
 }
 
-func (api *GtasAPI) ChangeBalance(gameId string, balances map[string]string) (*Result, error) {
-	if nil == balances || 0 == len(balances) {
-		return &Result{
-			Message: "nil balances",
-			Data:    nil,
-			Status:  0,
-		}, nil
+func (api *GtasAPI) UpdateAssets(gameId string, rawjson string) (*Result, error) {
+	//todo 并发问题 临时加锁控制
+	gxLock.Lock()
+	defer gxLock.Unlock()
+
+	data := make([]types.UserData, 0)
+	if err := json.Unmarshal([]byte(rawjson), &data); err != nil {
+		return failResult(err.Error())
 	}
 
-	for address, balance := range balances {
-		api.changeBalance(address, gameId, api.convert(balance))
+	if nil == data || 0 == len(data) {
+		return failResult("nil data")
 	}
 
-	return &Result{
-		Message: gameId,
-		Data:    balances,
-		Status:  0,
-	}, nil
-}
+	// 立即执行
+	accountdb := core.GetBlockChain().GetAccountDB()
 
-func (api *GtasAPI) convert(s string) *big.Int {
-	f, _ := strconv.ParseFloat(s, 64)
-	return big.NewInt(int64(f * 1000000000))
-}
-
-func (api *GtasAPI) changeBalance(address string, gameId string, balance *big.Int) {
-	sub := api.get(address, gameId)
-	if sub != nil {
-		sub.Balance = sub.Balance.Add(balance, sub.Balance)
-	} else {
-		sub = &types.SubAccount{}
-		sub.Balance = balance
-	}
-
-	core.GetBlockChain().GetAccountDB().UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
-}
-
-func (api *GtasAPI) setAsset(address string, gameId string, asset map[string]string) {
-	if nil == asset || 0 == len(asset) {
-		return
-	}
-
-	sub := api.get(address, gameId)
-	if sub == nil {
-		sub = &types.SubAccount{}
-	}
-
-	// append everything if there is no asset right now
-	if nil == sub.Assets || 0 == len(sub.Assets) {
-		sub.Assets = []types.Asset{}
-		for assetId, value := range asset {
-			asset := &types.Asset{
-				Id:    assetId,
-				Value: []byte(value),
-			}
-
-			sub.Assets = append(sub.Assets, *asset)
-		}
-
-		return
-	}
-
-	// update and append
-	for assetId, value := range asset {
-		update := false
-		for _, assetInner := range sub.Assets {
-			// update
-			if assetInner.Id == assetId {
-				assetInner.Value = []byte(value)
-				update = true
-				break
-			}
-		}
-
-		//append if not exists
-		if !update {
-			asset := &types.Asset{
-				Id:    assetId,
-				Value: []byte(value),
-			}
-
-			sub.Assets = append(sub.Assets, *asset)
+	snapshot := accountdb.Snapshot()
+	for _, user := range data {
+		flag := core.UpdateAsset(user, gameId, accountdb)
+		if !flag {
+			accountdb.RevertToSnapshot(snapshot)
+			return failResult("not enough balance")
 		}
 	}
 
-	core.GetBlockChain().GetAccountDB().UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
+	tx := &types.Transaction{
+		Data:   rawjson,
+		Type:   types.TransactionUpdateOperatorEvent,
+		Target: gameId,
+		Nonce:  uint64(time.Now().Unix()),
+	}
+	tx.Hash = tx.GenHash()
+	_, err := core.GetBlockChain().GetTransactionPool().AddTransaction(tx)
+	if nil != err {
+		common.DefaultLogger.Errorf("fail to add pool: %s", err.Error())
+	}
+
+	return successResult(data)
 }
 
 // NewWallet 新建账户接口

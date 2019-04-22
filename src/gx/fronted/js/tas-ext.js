@@ -39,7 +39,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     function queryBlockDetail(h) {
         $("#query_block_hash").val(h)
         let params = {
-            "method": "GTAS_blockDetail",
+            "method": "Rocket_blockDetail",
             "params": [h],
             "jsonrpc": "2.0",
             "id": "1"

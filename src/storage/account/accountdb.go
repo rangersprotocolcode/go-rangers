@@ -545,5 +545,6 @@ func (accountDB *AccountDB) UpdateSubAccount(address common.Address, gameId stri
 	if err != nil {
 		return
 	}
+
 	accountDB.SetData(address, gameId, byte)
 }

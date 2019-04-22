@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	gateAddr           = "192.168.3.64"
+	gateAddr           = "47.110.143.114"
 	protocolHeaderSize = 28
 	channelSize        = 100
 )

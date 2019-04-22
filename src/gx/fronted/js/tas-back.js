@@ -25,7 +25,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
         }
         ,url: '/page'
         ,where:{
-            "method": "GTAS_pageGetBlocks",
+            "method": "Rocket_pageGetBlocks",
             "params": [],
             "jsonrpc": "2.0",
             "id": "1"
@@ -52,7 +52,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
         var layEvent = obj.event; //获得 lay-event 对应的值（也可以是表头的 event 参数对应的值）
         if (layEvent == 'detail') {
             let params = {
-                "method": "GTAS_blockDetail",
+                "method": "Rocket_blockDetail",
                 "params": [data.hash],
                 "jsonrpc": "2.0",
                 "id": "1"
@@ -80,7 +80,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
         }
         ,url: '/page'
         ,where:{
-            "method": "GTAS_pageGetGroups",
+            "method": "Rocket_pageGetGroups",
             "params": [],
             "jsonrpc": "2.0",
             "id": "1"
@@ -138,7 +138,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
         $("#balance_message").text("");
         $("#balance_error").text("");
         let params = {
-            "method": "GTAS_balance",
+            "method": "Rocket_balance",
             "params": [$("#query_input_"+count).val()],
             "jsonrpc": "2.0",
             "id": "1"
@@ -165,7 +165,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     // 钱包初始化
     function init_wallets() {
         let params = {
-            "method": "GTAS_getWallets",
+            "method": "Rocket_getWallets",
             "params": [],
             "jsonrpc": "2.0",
             "id": "1"
@@ -197,7 +197,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
 
     function del_wallet(key) {
         let params = {
-            "method": "GTAS_deleteWallet",
+            "method": "Rocket_deleteWallet",
             "params": [key],
             "jsonrpc": "2.0",
             "id": "1"
@@ -221,7 +221,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     // 创建钱包
     $("#create_btn").click(function () {
         let params = {
-            "method": "GTAS_newWallet",
+            "method": "Rocket_newWallet",
             "params": [],
             "jsonrpc": "2.0",
             "id": "1"
@@ -268,7 +268,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
         vote_param.effect_block = parseInt(data.field.effect_block);
         vote_param.deposit_gap = parseInt(data.field.deposit_gap);
         let params = {
-            "method": "GTAS_vote",
+            "method": "Rocket_vote",
             "params": [from, vote_param],
             "jsonrpc": "2.0",
             "id": "1"
@@ -316,7 +316,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
         //func (api *GtasAPI) TxUnSafe(privateKey, target string, value, gas, gasprice, nonce uint64, txType int, data string) (*Result, error) {
 
         let params = {
-            "method": "GTAS_txUnSafe",
+            "method": "Rocket_txUnSafe",
             "params": [private_key, to, parseFloat(value), parseInt(gas),parseInt(gas_price), parseInt(nonce), parseInt(t),txdata],
             "jsonrpc": "2.0",
             "id": "1"
@@ -344,7 +344,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     // 同步已链接节点
     function syncNodes() {
         let params = {
-            "method": "GTAS_connectedNodes",
+            "method": "Rocket_connectedNodes",
             "params": [],
             "jsonrpc": "2.0",
             "id": "1"
@@ -383,7 +383,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     // 同步缓冲区交易
     function syncTrans() {
         let params = {
-            "method": "GTAS_transPool",
+            "method": "Rocket_transPool",
             "params": [],
             "jsonrpc": "2.0",
             "id": "1"
@@ -425,7 +425,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     // 同步块高
     function syncBlockHeight() {
         let params = {
-            "method": "GTAS_blockHeight",
+            "method": "Rocket_blockHeight",
             "params": [],
             "jsonrpc": "2.0",
             "id": "1"
@@ -480,7 +480,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     // 同步组高
     function syncGroupHeight() {
         let params = {
-            "method": "GTAS_groupHeight",
+            "method": "Rocket_groupHeight",
             "params": [],
             "jsonrpc": "2.0",
             "id": "1"
@@ -512,7 +512,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     // 同步组高
     function syncWorkGroupNum(height) {
         let params = {
-            "method": "GTAS_workGroupNum",
+            "method": "Rocket_workGroupNum",
             "params": [height],
             "jsonrpc": "2.0",
             "id": "1"
@@ -539,7 +539,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     // 同步块信息
     function syncBlock(height) {
         // let params = {
-        //     "method": "GTAS_getBlock",
+        //     "method": "Rocket_getBlock",
         //     "params": [height],
         //     "jsonrpc": "2.0",
         //     "id": "1"
@@ -569,7 +569,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     // 同步组信息
     function syncGroup(height) {
         // let params = {
-        //     "method": "GTAS_getGroupsAfter",
+        //     "method": "Rocket_getGroupsAfter",
         //     "params": [height],
         //     "jsonrpc": "2.0",
         //     "id": "1"
@@ -616,7 +616,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     //查询工作组
     function queryWorkGroup(height) {
         let params = {
-            "method": "GTAS_getWorkGroup",
+            "method": "Rocket_getWorkGroup",
             "params": [height],
             "jsonrpc": "2.0",
             "id": "1"
@@ -678,7 +678,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     //查询工作组
     function queryNodeInfo() {
         let params = {
-            "method": "GTAS_nodeInfo",
+            "method": "Rocket_nodeInfo",
             "params": [],
             "jsonrpc": "2.0",
             "id": "1"
@@ -712,9 +712,9 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
                             mtype = 1
                         }
                         if (v.abort_height > 0) {
-                            tr += "<td><a href=\"javascript:void(0);\" name='miner_oper_a' method='GTAS_minerRefund' mtype=" + mtype + ">退款</a></td>"
+                            tr += "<td><a href=\"javascript:void(0);\" name='miner_oper_a' method='Rocket_minerRefund' mtype=" + mtype + ">退款</a></td>"
                         } else {
-                            tr += "<td><a href=\"javascript:void(0);\" name='miner_oper_a' method='GTAS_minerAbort' mtype=" + mtype + ">取消</a></td>"
+                            tr += "<td><a href=\"javascript:void(0);\" name='miner_oper_a' method='Rocket_minerAbort' mtype=" + mtype + ">取消</a></td>"
                         }
                         tr += "</tr>"
                         $("#tb_stake_body").append(tr)
@@ -746,7 +746,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
         t = parseInt($("input[name='app_type_rd']:checked").val())
         $("#submit_result").text("")
         let params = {
-            "method": "GTAS_minerApply",
+            "method": "Rocket_minerApply",
             "params": [stake, t],
             "jsonrpc": "2.0",
             "id": "1"
@@ -778,7 +778,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
 
     function doConsensusStat(height) {
         let params = {
-            "method": "GTAS_consensusStat",
+            "method": "Rocket_consensusStat",
             "params": [height],
             "jsonrpc": "2.0",
             "id": "1"
