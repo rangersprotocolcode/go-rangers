@@ -4,6 +4,8 @@ import (
 	"x/src/middleware/notify"
 	"github.com/gorilla/websocket"
 	"hash/fnv"
+	"encoding/json"
+	"x/src/middleware/types"
 )
 
 var Server server
@@ -104,6 +106,18 @@ func (s *server) joinGroup(groupID string) {
 	s.sendChan <- header.toBytes()
 }
 
-func (s *server) handleClientMessage(data []byte, from string,nonce uint64) {
-	//todo 处理游戏客户端消息 by鸠兹
+func (s *server) handleClientMessage(data []byte, userId string, nonce uint64) {
+	var tx types.Transaction
+	err := json.Unmarshal(data, &tx)
+	if nil != err {
+		Logger.Errorf("handleClientMessage json error:%s", err.Error())
+		return
+	}
+
+	tx.Hash = tx.GenHash()
+
+	// 记录返回地址
+	msg := notify.ClientTransactionMessage{Tx: tx, UserId: userId, Nonce: nonce}
+	notify.BUS.Publish(notify.ClientTransaction, &msg)
+
 }

@@ -276,3 +276,17 @@ func (m *TransactionGotAddSuccMessage) GetData() interface{} {
 //func (m *StateInfoMessage) GetData() interface{} {
 //	return m
 //}
+
+type ClientTransactionMessage struct {
+	Tx     types.Transaction
+	UserId string
+	Nonce  uint64
+}
+
+func (m *ClientTransactionMessage) GetRaw() []byte {
+	// never use it
+	return nil
+}
+func (m *ClientTransactionMessage) GetData() interface{} {
+	return m
+}

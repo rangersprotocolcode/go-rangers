@@ -13,7 +13,6 @@ import (
 	"encoding/hex"
 	"math"
 	"x/src/consensus"
-	"x/src/statemachine"
 	"strconv"
 )
 
@@ -166,48 +165,6 @@ func (api *GtasAPI) setAsset(address string, gameId string, asset map[string]str
 	}
 
 	core.GetBlockChain().GetAccountDB().UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
-}
-
-// T 用户交易接口
-func (api *GtasAPI) Tx(txRawjson string) (*Result, error) {
-	var txRaw = new(types.Transaction)
-	if err := json.Unmarshal([]byte(txRawjson), txRaw); err != nil {
-		return failResult(err.Error())
-	}
-
-	messagetxt := ""
-
-	// execute state machine transaction
-	if txRaw.Type == types.TransactionTypeOperatorEvent {
-		nonce := statemachine.Docker.Nonce(txRaw.Target)
-		if nonce < 0 {
-			messagetxt = fmt.Sprintf("nonce: %d", nonce)
-		} else {
-			txRaw.Nonce = uint64(nonce)
-			payload := string(txRaw.Data)
-			message := statemachine.Docker.Process(txRaw.Target, "operator", strconv.Itoa(nonce+1), payload)
-
-			if nil != message {
-				result, _ := json.Marshal(message)
-				messagetxt = fmt.Sprintf("result: %s", string(result))
-			}
-		}
-	}
-
-	txRaw.Hash = txRaw.GenHash()
-	result, _ := json.Marshal(txRaw)
-	messagetxt = fmt.Sprintf("%s, %s", messagetxt, string(result))
-
-	if err := sendTransaction(txRaw); err != nil {
-		return failResult(err.Error())
-	}
-
-	if txRaw.Type == types.TransactionTypeOperatorEvent {
-		core.GetBlockChain().GetTransactionPool().AddExecuted(txRaw)
-	}
-
-	return successResult(messagetxt)
-
 }
 
 // NewWallet 新建账户接口

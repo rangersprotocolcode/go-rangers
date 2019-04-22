@@ -44,4 +44,6 @@ const (
 	TransactionGot = "transaction_got"
 
 	TransactionGotAddSucc = "transaction_got_add_succ"
+
+	ClientTransaction = "client_transaction"
 )
