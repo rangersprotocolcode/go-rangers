@@ -84,6 +84,9 @@ const (
 	TransactionTypeOperatorEvent   = 8
 	TransactionTypeUserEvent       = 9
 	TransactionUpdateOperatorEvent = 10
+	GetBalance                     = 11
+	GetAsset                       = 12
+	GetAllAssets                   = 13
 
 	TransactionTypeToBeRemoved = -1
 )
@@ -102,7 +105,7 @@ type Transaction struct {
 	Type   int32
 	Hash   common.Hash
 
-	ExtraData     []byte
+	ExtraData     string
 	ExtraDataType int32
 
 	Sign *common.Sign
@@ -129,8 +132,8 @@ func (tx *Transaction) GenHash() common.Hash {
 
 	buffer.Write(common.UInt32ToByte(tx.Type))
 
-	if tx.ExtraData != nil {
-		buffer.Write(tx.ExtraData)
+	if 0 != len(tx.ExtraData) {
+		buffer.Write([]byte(tx.ExtraData))
 	}
 	buffer.Write(common.UInt32ToByte(tx.ExtraDataType))
 

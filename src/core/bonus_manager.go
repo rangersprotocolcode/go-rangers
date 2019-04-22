@@ -42,7 +42,7 @@ func (bm *BonusManager) GenerateBonus(targetIds []int32, blockHash common.Hash, 
 	}
 	transaction := &types.Transaction{}
 	transaction.Data = blockHash.String()
-	transaction.ExtraData = buffer.Bytes()
+	transaction.ExtraData = string(buffer.Bytes())
 	if len(buffer.Bytes())%common.AddressLength != 0 {
 		panic("GenerateBonus ExtraData Size Invalid")
 	}
@@ -54,7 +54,7 @@ func (bm *BonusManager) GenerateBonus(targetIds []int32, blockHash common.Hash, 
 }
 
 func (bm *BonusManager) ParseBonusTransaction(transaction *types.Transaction) ([]byte, [][]byte, common.Hash, uint64) {
-	reader := bytes.NewReader(transaction.ExtraData)
+	reader := bytes.NewReader([]byte(transaction.ExtraData))
 	groupId := make([]byte, common.GroupIdLength)
 	addr := make([]byte, common.AddressLength)
 	if n, _ := reader.Read(groupId); n != common.GroupIdLength {

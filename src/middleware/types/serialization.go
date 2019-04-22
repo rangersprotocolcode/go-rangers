@@ -169,7 +169,7 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 
 	transaction := Transaction{Data: data, Nonce: *t.Nonce, Source: source,
 		Target: target, Hash: common.BytesToHash(t.Hash),
-		ExtraData: t.ExtraData, ExtraDataType: *t.ExtraDataType, Type: *t.Type, Sign: sign}
+		ExtraData: string(t.ExtraData), ExtraDataType: *t.ExtraDataType, Type: *t.Type, Sign: sign}
 	return transaction
 }
 
@@ -335,7 +335,7 @@ func transactionToPb(t *Transaction) *middleware_pb.Transaction {
 	//>>achates add for testing
 	transaction := middleware_pb.Transaction{Data: data, Nonce: &t.Nonce, Source: source,
 		Target: target, Hash: t.Hash.Bytes(),
-		ExtraData: t.ExtraData, ExtraDataType: &t.ExtraDataType, Type: &t.Type, Sign: sign}
+		ExtraData: []byte(t.ExtraData), ExtraDataType: &t.ExtraDataType, Type: &t.Type, Sign: sign}
 	return &transaction
 }
 
