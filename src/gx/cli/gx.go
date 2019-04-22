@@ -223,13 +223,16 @@ func syncChainInfo() {
 }
 
 func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerDO) {
-	common.DefaultLogger.Infof("SecKey: %s", gx.account.Sk)
-	common.DefaultLogger.Infof("PubKey: %s", gx.account.Pk)
-	common.DefaultLogger.Infof("Miner SecKey: %s", minerDO.SK.GetHexString())
-	common.DefaultLogger.Infof("Miner PubKey: %s", minerDO.PK.GetHexString())
-	common.DefaultLogger.Infof("VRF PrivateKey: %s", minerDO.VrfSK.GetHexString())
-	common.DefaultLogger.Infof("VRF PubKey: %s", minerDO.VrfPK.GetHexString())
-	common.DefaultLogger.Infof("Miner ID: %s", minerDO.ID.GetHexString())
+	if nil != common.DefaultLogger {
+		common.DefaultLogger.Infof("SecKey: %s", gx.account.Sk)
+		common.DefaultLogger.Infof("PubKey: %s", gx.account.Pk)
+		common.DefaultLogger.Infof("Miner SecKey: %s", minerDO.SK.GetHexString())
+		common.DefaultLogger.Infof("Miner PubKey: %s", minerDO.PK.GetHexString())
+		common.DefaultLogger.Infof("VRF PrivateKey: %s", minerDO.VrfSK.GetHexString())
+		common.DefaultLogger.Infof("VRF PubKey: %s", minerDO.VrfPK.GetHexString())
+		common.DefaultLogger.Infof("Miner ID: %s", minerDO.ID.GetHexString())
+	}
+
 }
 
 func (gx *GX) initSysParam() {
