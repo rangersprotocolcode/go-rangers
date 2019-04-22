@@ -7,6 +7,7 @@ import (
 	"x/src/common"
 	"fmt"
 	"strings"
+	"sync"
 )
 
 // startHTTP initializes and starts the HTTP RPC endpoint.
@@ -48,17 +49,22 @@ var GtasAPIImpl *GtasAPI
 func StartRPC(host string, port uint) error {
 	var err error
 	GtasAPIImpl = &GtasAPI{}
+	gxLock = &sync.RWMutex{}
 	apis := []rpc.API{
-		{Namespace: "GTAS", Version: "1", Service: GtasAPIImpl, Public: true},
+		{Namespace: "Rocket", Version: "1", Service: GtasAPIImpl, Public: true},
 	}
 	for plus := 0; plus < 40; plus++ {
 		err = startHTTP(fmt.Sprintf("%s:%d", host, port+uint(plus)), apis, []string{}, []string{}, []string{})
 		if err == nil {
-			common.DefaultLogger.Infof("RPC serving on http://%s:%d\n", host, port+uint(plus))
+			if nil != common.DefaultLogger {
+				common.DefaultLogger.Infof("RPC serving on http://%s:%d\n", host, port+uint(plus))
+			}
 			return nil
 		}
 		if strings.Contains(err.Error(), "address already in use") {
-			common.DefaultLogger.Infof("address: %s:%d already in use\n", host, port+uint(plus))
+			if nil != common.DefaultLogger {
+				common.DefaultLogger.Infof("address: %s:%d already in use\n", host, port+uint(plus))
+			}
 			continue
 		}
 		return err

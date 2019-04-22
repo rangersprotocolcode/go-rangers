@@ -144,6 +144,7 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 	}
 
 	saveStateResult, accountDB, receipts := chain.saveBlockState(remoteBlock)
+
 	if !saveStateResult {
 		return types.AddBlockFailed, nil
 	}
@@ -157,6 +158,7 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 	chain.updateTxPool(remoteBlock, receipts)
 	chain.topBlocks.Add(remoteBlock.Header.Height, remoteBlock.Header)
 
+	dumpTxs(remoteBlock.Transactions, remoteBlock.Header.Height)
 	chain.eraseAddBlockMark()
 	chain.successOnChainCallBack(remoteBlock, headerByte)
 	return types.AddBlockSucc, headerByte
@@ -184,17 +186,20 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 	var state *account.AccountDB
 	var receipts types.Receipts
 	if value, exit := chain.verifiedBlocks.Get(b.Header.Hash); exit {
-		b := value.(*castingBlock)
-		state = b.state
-		receipts = b.receipts
+		bb := value.(*castingBlock)
+		state = bb.state
+		receipts = bb.receipts
+
 	} else {
 		var executeTxResult bool
+
 		executeTxResult, state, receipts = chain.executeTransaction(b)
 		if !executeTxResult {
 			logger.Errorf("Fail to execute txs!")
 			return false, state, receipts
 		}
 	}
+
 	root, err := state.Commit(true)
 	if err != nil {
 		logger.Errorf("State commit error:%s", err.Error())
@@ -219,6 +224,7 @@ func (chain *blockChain) updateLastBlock(state *account.AccountDB, header *types
 	chain.latestStateDB = state
 	chain.latestBlock = header
 	logger.Debugf("Update latestStateDB:%s height:%d", header.StateTree.Hex(), header.Height)
+
 	return true
 }
 
@@ -306,4 +312,14 @@ func (chain *blockChain) compareValue(commonAncestor *types.BlockHeader, remoteH
 		return true
 	}
 	return false
+}
+
+func dumpTxs(txs []*types.Transaction, blockHeight uint64) {
+	if txs == nil || len(txs) == 0 {
+		return
+	}
+
+	for _, tx := range txs {
+		common.DefaultLogger.Debugf("Tx on chain dump:%v,block height:%d", tx, blockHeight)
+	}
 }

@@ -99,7 +99,9 @@ func (s *Server) serveRequest(codec ServerCodec, singleShot bool, options CodecO
 			const size = 64 << 10
 			buf := make([]byte, size)
 			buf = buf[:runtime.Stack(buf, false)]
-			common.DefaultLogger.Error(string(buf))
+			if nil != common.DefaultLogger {
+				common.DefaultLogger.Error(string(buf))
+			}
 		}
 		s.codecsMu.Lock()
 		s.codecs.Remove(codec)
