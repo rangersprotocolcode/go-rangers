@@ -11,11 +11,28 @@ import (
 )
 
 type GameExecutor struct {
+	chain *blockChain
 }
 
-func (executor *GameExecutor) Tx(message notify.ClientTransactionMessage) error {
+//var gameExecutor *GameExecutor
+
+func initGameExecutor(blockChainImpl *blockChain) {
+	gameExecutor := GameExecutor{chain: blockChainImpl}
+
+	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.Tx)
+}
+
+func (executor *GameExecutor) Tx(msg notify.Message) {
+
+	message, ok := msg.(*notify.ClientTransactionMessage)
+	if !ok {
+		logger.Debugf("blockReqHandler:Message assert not ok!")
+		return
+	}
+
 	var result []byte
 	txRaw := message.Tx
+
 	// execute state machine transaction
 	if txRaw.Type == types.TransactionTypeOperatorEvent {
 		payload := string(txRaw.Data)
@@ -26,21 +43,21 @@ func (executor *GameExecutor) Tx(message notify.ClientTransactionMessage) error 
 	}
 
 	if err := executor.sendTransaction(&txRaw); err != nil {
-		return err
+		return
 	}
 
 	if txRaw.Type == types.TransactionTypeOperatorEvent {
-		GetBlockChain().GetTransactionPool().AddExecuted(&txRaw)
+		executor.chain.GetTransactionPool().AddExecuted(&txRaw)
 	}
 
 	network.GetNetInstance().SendToClient(message.UserId, network.Message{Body: result})
 
-	return nil
+	return
 
 }
 
 func (executor *GameExecutor) sendTransaction(trans *types.Transaction) error {
-	if ok, err := GetBlockChain().GetTransactionPool().AddTransaction(trans); err != nil || !ok {
+	if ok, err := executor.chain.GetTransactionPool().AddTransaction(trans); err != nil || !ok {
 		common.DefaultLogger.Errorf("AddTransaction not ok or error:%s", err.Error())
 		return err
 	}

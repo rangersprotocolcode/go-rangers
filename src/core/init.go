@@ -29,5 +29,7 @@ func InitCore(helper types.ConsensusHelper) error {
 		initGroupChain()
 	}
 	initChainHandler()
+
+	initGameExecutor(blockChainImpl)
 	return nil
 }
