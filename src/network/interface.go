@@ -101,7 +101,7 @@ type Network interface {
 
 	Broadcast(msg Message)
 
-	SendToClient(id string, msg Message)
+	SendToClient(id string, msg Message, nonce uint64)
 }
 
 func GetNetInstance() Network {

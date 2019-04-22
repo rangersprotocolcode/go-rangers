@@ -47,6 +47,7 @@ func (h *header) toBytes() []byte {
 	byte := make([]byte, protocolHeaderSize)
 	copy(byte[0:4], h.method)
 	copy(byte[12:20], utility.UInt64ToByte(h.targetId))
+	copy(byte[20:28], utility.UInt64ToByte(h.nonce))
 	return byte
 }
 
@@ -58,14 +59,14 @@ func byteToHeader(b []byte) header {
 	return header
 }
 
-func (s *server) send(method []byte, targetId string, msg Message) {
+func (s *server) send(method []byte, targetId string, msg Message, nonce uint64) {
 	m, err := marshalMessage(msg)
 	if err != nil {
 		Logger.Errorf("marshal message error:%s", err.Error())
 		return
 	}
 
-	header := header{method: method}
+	header := header{method: method, nonce:nonce}
 
 	var target uint64
 	if bytes.Equal(method, methodCodeSendToGroup) {

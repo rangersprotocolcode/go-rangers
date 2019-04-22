@@ -19,19 +19,19 @@ type server struct {
 }
 
 func (s *server) Send(id string, msg Message) {
-	s.send(methodCodeSend, id, msg)
+	s.send(methodCodeSend, id, msg, 0)
 }
 
 func (s *server) SpreadToGroup(groupId string, msg Message) {
-	s.send(methodCodeSendToGroup, groupId, msg)
+	s.send(methodCodeSendToGroup, groupId, msg, 0)
 }
 
 func (s *server) Broadcast(msg Message) {
-	s.send(methodCodeBroadcast, "0", msg)
+	s.send(methodCodeBroadcast, "0", msg, 0)
 }
 
-func (s *server) SendToClient(id string, msg Message) {
-	s.send(methodCodeClientSend, id, msg)
+func (s *server) SendToClient(id string, msg Message, nonce uint64) {
+	s.send(methodCodeClientSend, id, msg, nonce)
 }
 
 func (s *server) handleMinerMessage(data []byte, from string) {

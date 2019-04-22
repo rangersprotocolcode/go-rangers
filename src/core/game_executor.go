@@ -48,7 +48,7 @@ func (executor *GameExecutor) Tx(msg notify.Message) {
 
 	if txRaw.Type == types.TransactionTypeOperatorEvent {
 		executor.chain.GetTransactionPool().AddExecuted(&txRaw)
-		network.GetNetInstance().SendToClient(message.UserId, network.Message{Body: result})
+		network.GetNetInstance().SendToClient(message.UserId, network.Message{Body: result}, message.Nonce)
 	}
 
 	return
