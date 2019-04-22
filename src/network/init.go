@@ -12,7 +12,7 @@ const (
 	gateAddr           = "192.168.3.106"
 	protocolHeaderSize = 28
 	channelSize        = 100
-	bufferSize         = math.MaxInt32
+	bufferSize         = 1024 * 1024 * 32
 )
 
 var Logger log.Logger
