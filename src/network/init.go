@@ -5,14 +5,13 @@ import (
 	"x/src/middleware/log"
 	"net/url"
 	"github.com/gorilla/websocket"
-	"math"
 )
 
 const (
-	gateAddr           = "192.168.3.106"
+	gateAddr           = "47.110.143.114"
 	protocolHeaderSize = 28
 	channelSize        = 100
-	bufferSize         = math.MaxInt32
+	bufferSize         = 4000000000
 )
 
 var Logger log.Logger

@@ -85,6 +85,13 @@ const (
 	TransactionTypeUserEvent       = 9
 	TransactionUpdateOperatorEvent = 10
 
+	TrsansactionTypeDepositExecute = 101
+	TrsansactionTypeDepositAck = 102
+	TrsansactionTypeWithDrawExecute = 103
+	TrsansactionTypeWithDrawAck = 104
+	TrsansactionTypeWithAssetOnChainExecute = 105
+	TrsansactionTypeWithDrawAssetOnChainAck = 106
+
 	TransactionTypeToBeRemoved = -1
 )
 

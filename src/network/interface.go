@@ -84,6 +84,10 @@ const (
 	//
 	ReqSharePiece      uint32 = 102
 	ResponseSharePiece uint32 = 103
+
+	CoinProxyNotify uint32 = 1000
+	WithDraw        uint32 = 1001
+	AssetOnChain           = 1002
 )
 
 type Conn struct {
