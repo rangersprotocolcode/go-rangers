@@ -3,7 +3,7 @@ package middleware.pb;
 
 message Message{
 
-    required uint32 Code  = 1;
+    optional uint32 Code  = 1;
 
     optional bytes Body  = 2;
 
