@@ -5,11 +5,10 @@ import (
 	"x/src/middleware/log"
 	"net/url"
 	"github.com/gorilla/websocket"
-	"math"
 )
 
 const (
-	gateAddr           = "192.168.3.106"
+	gateAddr           = "47.98.212.107"
 	protocolHeaderSize = 28
 	channelSize        = 100
 	bufferSize         = 1024 * 1024 * 32
