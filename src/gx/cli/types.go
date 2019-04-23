@@ -191,7 +191,7 @@ type Transaction struct {
 
 	Hash common.Hash `json:"hash"`
 
-	ExtraData     []byte `json:"extra_data"`
+	ExtraData     string `json:"extra_data"`
 	ExtraDataType int32  `json:"extra_data_type"`
 }
 

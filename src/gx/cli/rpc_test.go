@@ -52,7 +52,7 @@ func TestRPC(t *testing.T) {
 		log.Printf("%s response data: %s", test.method, data)
 	}
 
-	time.Sleep(1000*time.Second)
+	time.Sleep(10000*time.Second)
 }
 
 func TestStrToFloat(t *testing.T) {
