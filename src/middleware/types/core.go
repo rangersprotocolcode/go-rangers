@@ -106,11 +106,11 @@ const (
 
 
 type Transaction struct {
-	Data   string
+	Data   string // 入参
 	Nonce  uint64
-	Source *common.Address
-	Target string
-	Type   int32
+	Source string // 用户id
+	Target string // 游戏id
+	Type   int32  // 场景id
 	Hash   common.Hash
 
 	ExtraData     string
@@ -130,8 +130,8 @@ func (tx *Transaction) GenHash() common.Hash {
 
 	buffer.Write(common.Uint64ToByte(tx.Nonce))
 
-	if tx.Source != nil {
-		buffer.Write(tx.Source.Bytes())
+	if tx.Source != "" {
+		buffer.Write([]byte(tx.Source))
 	}
 
 	if tx.Target != "" {

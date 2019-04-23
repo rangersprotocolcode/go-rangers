@@ -36,7 +36,7 @@ func (executor *GameExecutor) Tx(msg notify.Message) {
 
 	// execute state machine transaction
 	case types.TransactionTypeOperatorEvent:
-		outputMessage := statemachine.Docker.Process(txRaw.Data, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.ExtraData)
+		outputMessage := statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
 		result, _ = json.Marshal(outputMessage)
 
 		if err := executor.sendTransaction(&txRaw); err != nil {
@@ -47,7 +47,7 @@ func (executor *GameExecutor) Tx(msg notify.Message) {
 
 		// query balance
 	case types.GetBalance:
-		sub := GetSubAccount(txRaw.Target, txRaw.Data, GetBlockChain().GetAccountDB())
+		sub := GetSubAccount(txRaw.Source, txRaw.Target, GetBlockChain().GetAccountDB())
 		if nil == sub {
 			result = []byte{}
 		} else {
@@ -56,7 +56,7 @@ func (executor *GameExecutor) Tx(msg notify.Message) {
 		}
 
 	case types.GetAsset:
-		sub := GetSubAccount(txRaw.Target, txRaw.Data, GetBlockChain().GetAccountDB())
+		sub := GetSubAccount(txRaw.Source, txRaw.Target, GetBlockChain().GetAccountDB())
 		if nil == sub {
 			result = []byte{}
 		}
@@ -66,14 +66,14 @@ func (executor *GameExecutor) Tx(msg notify.Message) {
 			result = []byte{}
 		} else {
 			for _, asset := range assets {
-				if asset.Id == string(txRaw.ExtraData) {
+				if asset.Id == string(txRaw.Data) {
 					result = []byte(asset.Value)
 				}
 			}
 		}
 
 	case types.GetAllAssets:
-		sub := GetSubAccount(txRaw.Target, txRaw.Data, GetBlockChain().GetAccountDB())
+		sub := GetSubAccount(txRaw.Source, txRaw.Target, GetBlockChain().GetAccountDB())
 		if nil == sub {
 			result = []byte{}
 		}
@@ -81,7 +81,7 @@ func (executor *GameExecutor) Tx(msg notify.Message) {
 		assets := sub.Assets
 		result, _ = json.Marshal(assets)
 	case types.StateMachineNonce:
-		result = []byte(strconv.Itoa(statemachine.Docker.Nonce(txRaw.Data)))
+		result = []byte(strconv.Itoa(statemachine.Docker.Nonce(txRaw.Target)))
 	}
 
 	// reply to the client

@@ -183,7 +183,7 @@ func (api *GtasAPI) TransPool() (*Result, error) {
 	for _, v := range transactions {
 		transList = append(transList, Transactions{
 			Hash:   v.Hash.String(),
-			Source: v.Source.GetHexString(),
+			Source: v.Source,
 			Target: v.Target,
 		})
 	}
@@ -198,7 +198,7 @@ func (api *GtasAPI) GetTransaction(hash string) (*Result, error) {
 	}
 	detail := make(map[string]interface{})
 	detail["hash"] = hash
-	detail["source"] = transaction.Source.Hash().Hex()
+	detail["source"] = transaction.Source
 
 	detail["target"] = transaction.Target
 

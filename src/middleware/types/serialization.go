@@ -144,12 +144,10 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 		return Transaction{}
 	}
 
-	var source *common.Address
-	var target, data string
+	var source,target, data string
 	var sign *common.Sign
 	if t.Source != nil {
-		s := common.BytesToAddress(t.Source)
-		source = &s
+		source = string(t.Source)
 	}
 	if t.Target != nil {
 
@@ -318,8 +316,8 @@ func transactionToPb(t *Transaction) *middleware_pb.Transaction {
 	if len(t.Data) != 0 {
 		data = &t.Data
 	}
-	if t.Source != nil {
-		source = t.Source.Bytes()
+	if len(t.Source) != 0 {
+		source = []byte(t.Source)
 	}
 
 	if t.Sign != nil {

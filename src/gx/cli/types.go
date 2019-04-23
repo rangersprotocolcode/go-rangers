@@ -185,7 +185,7 @@ type Transaction struct {
 	Data string `json:"data"`
 
 	Nonce  uint64          `json:"nonce"`
-	Source *common.Address `json:"source"`
+	Source string `json:"source"`
 	Target string          `json:"target"`
 	Type   int32           `json:"type"`
 
