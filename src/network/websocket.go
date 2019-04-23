@@ -38,10 +38,8 @@ func (s *server) send(method []byte, targetId string, msg Message, nonce uint64)
 		hash64 := fnv.New64()
 		hash64.Write([]byte(targetId))
 		target = hash64.Sum64()
-		Logger.Debugf("Send group to:%d,%v", target, utility.UInt64ToByte(target))
 	} else {
 		target, err = strconv.ParseUint(targetId, 10, 64)
-		Logger.Debugf("Send  to:%d", target)
 		if err != nil {
 			Logger.Errorf("Parse target id %s error:%s", targetId, err.Error())
 			return
@@ -61,7 +59,6 @@ func (s *server) receiveMessage() {
 			Logger.Errorf("Rcv msg error:%s", err.Error())
 			continue
 		}
-		Logger.Debugf("Rcv msg:%v", message)
 		s.rcvChan <- message
 	}
 }
@@ -76,13 +73,13 @@ func (s *server) loop() {
 				continue
 			}
 
-			if bytes.Equal(header.method,methodCodeClientSend)||bytes.Equal(header.method,methodCodeBroadcast)||bytes.Equal(header.method,methodCodeSendToGroup){
-				s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce)
+			if bytes.Equal(header.method,methodCodeSend)||bytes.Equal(header.method,methodCodeBroadcast)||bytes.Equal(header.method,methodCodeSendToGroup){
+				s.handleMinerMessage(data, strconv.FormatUint(header.sourceId, 10))
 				continue
 			}
 
 			if bytes.Equal(header.method,methodCodeCoinProxySend){
-				s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce)
+				s.handleCoinProxyMessage(data)
 				continue
 			}
 		case message := <-s.sendChan:

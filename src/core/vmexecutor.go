@@ -22,6 +22,22 @@ type VMExecutor struct {
 	bc BlockChain
 }
 
+type WithdrawInfo struct {
+	Address string
+
+	GameId string
+
+	Amount string
+}
+
+type DepositInfo struct {
+	Address string
+
+	GameId string
+
+	Amount string
+}
+
 func NewVMExecutor(bc BlockChain) *VMExecutor {
 	return &VMExecutor{
 		bc: bc,
@@ -57,10 +73,6 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		switch transaction.Type {
 		case types.TransactionTypeTransfer:
 			success, err, cumulativeGasUsed = executor.executeTransferTx(accountdb, transaction, castor)
-			//case types.TransactionTypeContractCreate:
-			//	success, err, cumulativeGasUsed, contractAddress = executor.executeContractCreateTx(accountdb, transaction, castor, block)
-			//case types.TransactionTypeContractCall:
-			//	success, err, cumulativeGasUsed, logs = executor.executeContractCallTx(accountdb, transaction, castor, block)
 		case types.TransactionTypeBonus:
 			success = executor.executeBonusTx(accountdb, transaction, castor)
 		case types.TransactionTypeMinerApply:
@@ -108,9 +120,9 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 		case types.TransactionTypeAssetOnChain:
 		case types.TransactionTypeDepositExecute:
-
+			success = executor.executeDepositNotify(accountdb, transaction)
 		case types.TransactionTypeWithdrawExecute:
-
+			success = executor.executeWithdrawNotify(accountdb, transaction)
 		}
 
 		if !success {
@@ -249,18 +261,6 @@ func (executor *VMExecutor) executeMinerRefundTx(accountdb *account.AccountDB, t
 	return success
 }
 
-func createContract(accountdb *account.AccountDB, transaction *types.Transaction) (common.Address, *types.TransactionError) {
-	contractAddr := common.BytesToAddress(common.Sha256(common.BytesCombine(transaction.Source[:], common.Uint64ToByte(transaction.Nonce))))
-
-	if accountdb.GetCodeHash(contractAddr) != (common.Hash{}) {
-		return common.Address{}, types.NewTransactionError(types.TxErrorCode_ContractAddressConflict, "contract address conflict")
-	}
-	accountdb.CreateAccount(contractAddr)
-	accountdb.SetCode(contractAddr, []byte(transaction.Data))
-	accountdb.SetNonce(contractAddr, 1)
-	return contractAddr, nil
-}
-
 func canTransfer(db *account.AccountDB, addr common.Address, amount *big.Int, gasFee *big.Int) bool {
 	totalAmount := new(big.Int).Add(amount, gasFee)
 	return db.GetBalance(addr).Cmp(totalAmount) >= 0
@@ -293,52 +293,50 @@ func isActive(minerId []byte, currentBlockHeight uint64) bool {
 	return false
 }
 
-type WithdrawInfo struct {
-	Address string
-
-	GameId string
-
-	Amount string
-}
-
-type DepositInfo struct {
-	Address string
-
-	GameId string
-
-	Amount string
-}
-
-func (executor *VMExecutor)executeDeposit(accountdb *account.AccountDB, transaction *types.Transaction)bool{
-	depositInfo := DepositInfo{}
-	err := json.Unmarshal([]byte(transaction.Data),depositInfo)
-	if err != nil{
-		logger.Errorf("Execute deposit json unmarshal err:%s",err.Error())
-		return false
-	}
-
-	depositAmount,_ := new(big.Int).SetString(depositInfo.Amount,10)
-	account := accountdb.GetSubAccount(common.HexToAddress(depositInfo.Address),depositInfo.GameId)
-	account.Balance.Add(account.Balance,depositAmount)
-	accountdb.UpdateSubAccount(common.HexToAddress(depositInfo.Address),depositInfo.GameId,*account)
+func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transaction *types.Transaction) bool {
 	return true
 }
 
-func (executor *VMExecutor)executeWithdraw(accountdb *account.AccountDB, transaction *types.Transaction)bool{
-	withdrawInfo := WithdrawInfo{}
-	err := json.Unmarshal([]byte(transaction.Data),withdrawInfo)
-	if err != nil{
-		logger.Errorf("Execute withdraw json unmarshal err:%s",err.Error())
+
+func (executor *VMExecutor) executeAssetOnChain(accountdb *account.AccountDB, transaction *types.Transaction) bool {
+	return true
+}
+
+func (executor *VMExecutor) executeDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
+	depositInfo := DepositInfo{}
+	err := json.Unmarshal([]byte(transaction.Data), depositInfo)
+	if err != nil {
+		logger.Errorf("Execute deposit json unmarshal err:%s", err.Error())
 		return false
 	}
 
-	withdrawAmount,_ := new(big.Int).SetString(withdrawInfo.Amount,10)
-	account := accountdb.GetSubAccount(common.HexToAddress(withdrawInfo.Address),withdrawInfo.GameId)
-	if account.Balance.Cmp(withdrawAmount) <0{
-		logger.Errorf("Execute withdraw balance not enough:curr*ent balance:%d,deposit balance:%d",account.Balance.Uint64(),withdrawAmount.Uint64())
+	depositAmount, _ := new(big.Int).SetString(depositInfo.Amount, 10)
+	account := accountdb.GetSubAccount(common.HexToAddress(depositInfo.Address), depositInfo.GameId)
+	logger.Debugf("Execute deposit:%s,current balance:%d,deposit balance:%d", transaction.Hash.String(), account.Balance.Uint64(), depositAmount.Uint64())
+
+	account.Balance.Add(account.Balance, depositAmount)
+	logger.Debugf("After execute deposit:%s, balance:%d", transaction.Hash.String(), account.Balance.Uint64())
+	accountdb.UpdateSubAccount(common.HexToAddress(depositInfo.Address), depositInfo.GameId, *account)
+	return true
+}
+
+func (executor *VMExecutor) executeWithdrawNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
+	withdrawInfo := WithdrawInfo{}
+	err := json.Unmarshal([]byte(transaction.Data), withdrawInfo)
+	if err != nil {
+		logger.Errorf("Execute withdraw json unmarshal err:%s", err.Error())
 		return false
 	}
-	account.Balance.Sub(account.Balance,withdrawAmount)
-	accountdb.UpdateSubAccount(common.HexToAddress(withdrawInfo.Address),withdrawInfo.GameId,*account)
+
+	withdrawAmount, _ := new(big.Int).SetString(withdrawInfo.Amount, 10)
+	account := accountdb.GetSubAccount(common.HexToAddress(withdrawInfo.Address), withdrawInfo.GameId)
+	logger.Errorf("Execute withdraw:%s,current balance:%d,withdraw balance:%d", transaction.Hash.String(), account.Balance.Uint64(), withdrawAmount.Uint64())
+	if account.Balance.Cmp(withdrawAmount) < 0 {
+		logger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", account.Balance.Uint64(), withdrawAmount.Uint64())
+		return false
+	}
+	account.Balance.Sub(account.Balance, withdrawAmount)
+	logger.Debugf("After execute withdraw:%s, balance:%d", transaction.Hash.String(), account.Balance.Uint64())
+	accountdb.UpdateSubAccount(common.HexToAddress(withdrawInfo.Address), withdrawInfo.GameId, *account)
 	return true
 }

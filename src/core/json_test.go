@@ -4,7 +4,7 @@ import (
 	"testing"
 	"encoding/json"
 	"fmt"
-	"log"
+	"math/big"
 )
 
 func TestJson(t *testing.T){
@@ -22,24 +22,14 @@ func TestJson(t *testing.T){
 	fmt.Println(string(b))
 }
 
-type Account struct {
-	Email string
-	password string
-	Money float64
-}
 
-func TestJson1(t *testing.T){
-	account := Account{
-		Email: "rsj217@gmail.com",
-		password: "123456",
-		Money: 100.5,
-	}
+func TestBigInt(t *testing.T){
+	bigInt := new(big.Int).SetUint64(111)
+	str := bigInt.String()
+	fmt.Printf("big int str:%s\n",str)
 
-	rs, err := json.Marshal(account)
-	if err != nil{
-		log.Fatalln(err)
-	}
-
-	fmt.Println(rs)
-	fmt.Println(string(rs))
+	bi,_:= new(big.Int).SetString(str,10)
+	bi = bi.Add(bi,new(big.Int).SetUint64(222))
+	u := bi.Uint64()
+	fmt.Printf("big int uint64:%d\n",u)
 }
