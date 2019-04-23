@@ -3,10 +3,10 @@ package network
 import (
 	"encoding/hex"
 	"x/src/utility"
-	"bytes"
 	"strconv"
-	"github.com/gorilla/websocket"
+	"bytes"
 	"hash/fnv"
+	"github.com/gorilla/websocket"
 )
 
 var methodCodeClientSend, _ = hex.DecodeString("80000000")
@@ -15,48 +15,13 @@ var methodCodeBroadcast, _ = hex.DecodeString("80000002")
 var methodCodeSendToGroup, _ = hex.DecodeString("80000003")
 var methodCodeJoinGroup, _ = hex.DecodeString("80000004")
 var methodCodeQuitGroup, _ = hex.DecodeString("80000005")
+var methodCodeCoinProxySend, _ = hex.DecodeString("80000006")
 
 type header struct {
 	method   []byte
 	sourceId uint64
 	targetId uint64
 	nonce    uint64
-}
-
-func loadWebSocketMsg(header header, body []byte) []byte {
-	h := header.toBytes()
-
-	message := make([]byte, protocolHeaderSize+len(body))
-	copy(message[:protocolHeaderSize], h[:])
-	copy(message[protocolHeaderSize:], body)
-	return message
-}
-
-func unloadWebSocketMsg(m []byte) (header header, body []byte) {
-	if len(m) < protocolHeaderSize {
-		return header, nil
-	}
-
-	header = byteToHeader(m[:protocolHeaderSize])
-	body = m[protocolHeaderSize:]
-	Logger.Debugf("Rcv msg header:%v,body:%v", header, body)
-	return
-}
-
-func (h *header) toBytes() []byte {
-	byte := make([]byte, protocolHeaderSize)
-	copy(byte[0:4], h.method)
-	copy(byte[12:20], utility.UInt64ToByte(h.targetId))
-	copy(byte[20:28], utility.UInt64ToByte(h.nonce))
-	return byte
-}
-
-func byteToHeader(b []byte) header {
-	header := header{}
-	header.method = b[0:4]
-	header.sourceId = utility.ByteToUInt64(b[4:12])
-	header.nonce = utility.ByteToUInt64(b[20:])
-	return header
 }
 
 func (s *server) send(method []byte, targetId string, msg Message, nonce uint64) {
@@ -66,7 +31,7 @@ func (s *server) send(method []byte, targetId string, msg Message, nonce uint64)
 		return
 	}
 
-	header := header{method: method, nonce:nonce}
+	header := header{method: method, nonce: nonce}
 
 	var target uint64
 	if bytes.Equal(method, methodCodeSendToGroup) {
@@ -106,10 +71,19 @@ func (s *server) loop() {
 		select {
 		case message := <-s.rcvChan:
 			header, data := unloadWebSocketMsg(message)
-			if bytes.Equal(header.method, methodCodeClientSend) {
+			if bytes.Equal(header.method,methodCodeClientSend){
 				s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce)
-			} else {
-				go s.handleMinerMessage(data, strconv.FormatUint(header.sourceId, 10))
+				continue
+			}
+
+			if bytes.Equal(header.method,methodCodeClientSend)||bytes.Equal(header.method,methodCodeBroadcast)||bytes.Equal(header.method,methodCodeSendToGroup){
+				s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce)
+				continue
+			}
+
+			if bytes.Equal(header.method,methodCodeCoinProxySend){
+				s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce)
+				continue
 			}
 		case message := <-s.sendChan:
 			err := s.conn.WriteMessage(websocket.BinaryMessage, message)
@@ -120,3 +94,41 @@ func (s *server) loop() {
 		}
 	}
 }
+
+func loadWebSocketMsg(header header, body []byte) []byte {
+	h := header.toBytes()
+
+	message := make([]byte, protocolHeaderSize+len(body))
+	copy(message[:protocolHeaderSize], h[:])
+	copy(message[protocolHeaderSize:], body)
+	return message
+}
+
+func unloadWebSocketMsg(m []byte) (header header, body []byte) {
+	if len(m) < protocolHeaderSize {
+		return header, nil
+	}
+
+	header = byteToHeader(m[:protocolHeaderSize])
+	body = m[protocolHeaderSize:]
+	Logger.Debugf("Rcv msg header:%v,body:%v", header, body)
+	return
+}
+
+func (h *header) toBytes() []byte {
+	byte := make([]byte, protocolHeaderSize)
+	copy(byte[0:4], h.method)
+	copy(byte[12:20], utility.UInt64ToByte(h.targetId))
+	copy(byte[20:28], utility.UInt64ToByte(h.nonce))
+	return byte
+}
+
+func byteToHeader(b []byte) header {
+	header := header{}
+	header.method = b[0:4]
+	header.sourceId = utility.ByteToUInt64(b[4:12])
+	header.nonce = utility.ByteToUInt64(b[20:])
+	return header
+}
+
+

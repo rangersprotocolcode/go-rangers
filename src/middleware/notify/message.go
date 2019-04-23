@@ -290,3 +290,16 @@ func (m *ClientTransactionMessage) GetRaw() []byte {
 func (m *ClientTransactionMessage) GetData() interface{} {
 	return m
 }
+
+type CoinProxyNotifyMessage struct{
+	Tx types.Transaction
+}
+
+
+func (m *CoinProxyNotifyMessage) GetRaw() []byte {
+	// never use it
+	return nil
+}
+func (m *CoinProxyNotifyMessage) GetData() interface{} {
+	return m
+}

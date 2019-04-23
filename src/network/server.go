@@ -34,6 +34,11 @@ func (s *server) SendToClient(id string, msg Message, nonce uint64) {
 	s.send(methodCodeClientSend, id, msg, nonce)
 }
 
+func (s *server) SendToCoinProxy(msg Message) {
+	s.send(methodCodeClientSend, "0", msg, 0)
+}
+
+
 func (s *server) handleMinerMessage(data []byte, from string) {
 	message, error := unMarshalMessage(data)
 	if error != nil {
@@ -120,4 +125,29 @@ func (s *server) handleClientMessage(data []byte, userId string, nonce uint64) {
 	msg := notify.ClientTransactionMessage{Tx: tx, UserId: userId, Nonce: nonce}
 	notify.BUS.Publish(notify.ClientTransaction, &msg)
 
+}
+
+func (s *server) handleCoinProxyMessage(data []byte) {
+	message, error := unMarshalMessage(data)
+	if error != nil {
+		Logger.Errorf("Proto unmarshal error:%s", error.Error())
+		return
+	}
+	Logger.Debugf("Receive message from coin proxy",)
+
+	code := message.Code
+	switch code {
+	case CoinProxyNotify:
+		var tx types.Transaction
+		err := json.Unmarshal(data,tx)
+		if err != nil {
+			Logger.Errorf("Coin proxy msg unmarshal err:",err.Error() )
+			return
+		}
+		Logger.Debugf("Receive message from coin proxy.Tx:%v",tx)
+		if tx.Type == types.TransactionTypeDepositExecute ||tx.Type ==types.TransactionTypeWithdrawExecute{
+			msg := notify.CoinProxyNotifyMessage{Tx:tx}
+			notify.BUS.Publish(notify.CoinProxyNotify, &msg)
+		}
+	}
 }
