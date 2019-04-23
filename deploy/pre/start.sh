@@ -30,7 +30,7 @@ do
 	fi
 
 	if [ $instance_index -eq 1 ];then
-		nohup ./gx miner --config $config_file --rpc --rpcport $rpc_port --super --instance $instance_index --pprof $pprof_port  --apply light --keystore keystore$instance_index > $stdout_log 2>&1 & echo $! > $pid_file
+		nohup ./gx miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --apply light --keystore keystore$instance_index > $stdout_log 2>&1 & echo $! > $pid_file
     elif [ $instance_index -le 6 ];then
 		nohup ./gx miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port   --apply light --keystore keystore$instance_index > $stdout_log 2>&1 & echo $! > $pid_file
 	else
