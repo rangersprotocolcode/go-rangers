@@ -36,9 +36,7 @@ func (executor *GameExecutor) Tx(msg notify.Message) {
 
 	// execute state machine transaction
 	case types.TransactionTypeOperatorEvent:
-		payload := string(txRaw.Data)
-		outputMessage := statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), payload)
-
+		outputMessage := statemachine.Docker.Process(txRaw.Data, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.ExtraData)
 		result, _ = json.Marshal(outputMessage)
 
 		if err := executor.sendTransaction(&txRaw); err != nil {
@@ -82,6 +80,8 @@ func (executor *GameExecutor) Tx(msg notify.Message) {
 
 		assets := sub.Assets
 		result, _ = json.Marshal(assets)
+	case types.StateMachineNonce:
+		result = []byte(strconv.Itoa(statemachine.Docker.Nonce(txRaw.Data)))
 	}
 
 	// reply to the client

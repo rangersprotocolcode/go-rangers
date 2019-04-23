@@ -87,6 +87,7 @@ const (
 	GetBalance                     = 11
 	GetAsset                       = 12
 	GetAllAssets                   = 13
+	StateMachineNonce              = 14
 
 	TransactionTypeToBeRemoved = -1
 )
