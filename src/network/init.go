@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	gateAddr           = "47.98.212.107"
+	gateAddr           = "192.168.3.113"
 	protocolHeaderSize = 28
 	channelSize        = 100
-	bufferSize         = 1024 * 1024 * 32
+	bufferSize         = 4000000000
 )
 
 var Logger log.Logger

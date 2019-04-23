@@ -3,10 +3,10 @@ package network
 import (
 	"encoding/hex"
 	"x/src/utility"
-	"bytes"
 	"strconv"
-	"github.com/gorilla/websocket"
+	"bytes"
 	"hash/fnv"
+	"github.com/gorilla/websocket"
 )
 
 var methodCodeClientSend, _ = hex.DecodeString("80000000")
@@ -15,12 +15,81 @@ var methodCodeBroadcast, _ = hex.DecodeString("80000002")
 var methodCodeSendToGroup, _ = hex.DecodeString("80000003")
 var methodCodeJoinGroup, _ = hex.DecodeString("80000004")
 var methodCodeQuitGroup, _ = hex.DecodeString("80000005")
+var methodCodeCoinProxySend, _ = hex.DecodeString("80000006")
 
 type header struct {
 	method   []byte
 	sourceId uint64
 	targetId uint64
 	nonce    uint64
+}
+
+func (s *server) send(method []byte, targetId string, msg Message, nonce uint64) {
+	m, err := marshalMessage(msg)
+	if err != nil {
+		Logger.Errorf("marshal message error:%s", err.Error())
+		return
+	}
+
+	header := header{method: method, nonce: nonce}
+
+	var target uint64
+	if bytes.Equal(method, methodCodeSendToGroup) {
+		hash64 := fnv.New64()
+		hash64.Write([]byte(targetId))
+		target = hash64.Sum64()
+	} else {
+		target, err = strconv.ParseUint(targetId, 10, 64)
+		if err != nil {
+			Logger.Errorf("Parse target id %s error:%s", targetId, err.Error())
+			return
+		}
+	}
+	header.targetId = target
+	message := loadWebSocketMsg(header, m)
+
+	Logger.Debugf("Send msg:%v", message)
+	s.sendChan <- message
+}
+
+func (s *server) receiveMessage() {
+	for {
+		_, message, err := s.conn.ReadMessage()
+		if err != nil {
+			Logger.Errorf("Rcv msg error:%s", err.Error())
+			continue
+		}
+		s.rcvChan <- message
+	}
+}
+
+func (s *server) loop() {
+	for {
+		select {
+		case message := <-s.rcvChan:
+			header, data := unloadWebSocketMsg(message)
+			if bytes.Equal(header.method,methodCodeClientSend){
+				s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce)
+				continue
+			}
+
+			if bytes.Equal(header.method,methodCodeSend)||bytes.Equal(header.method,methodCodeBroadcast)||bytes.Equal(header.method,methodCodeSendToGroup){
+				s.handleMinerMessage(data, strconv.FormatUint(header.sourceId, 10))
+				continue
+			}
+
+			if bytes.Equal(header.method,methodCodeCoinProxySend){
+				s.handleCoinProxyMessage(data)
+				continue
+			}
+		case message := <-s.sendChan:
+			err := s.conn.WriteMessage(websocket.BinaryMessage, message)
+			if err != nil {
+				Logger.Errorf("Send msg error:%s", err.Error())
+			}
+
+		}
+	}
 }
 
 func loadWebSocketMsg(header header, body []byte) []byte {
@@ -59,64 +128,4 @@ func byteToHeader(b []byte) header {
 	return header
 }
 
-func (s *server) send(method []byte, targetId string, msg Message, nonce uint64) {
-	m, err := marshalMessage(msg)
-	if err != nil {
-		Logger.Errorf("marshal message error:%s", err.Error())
-		return
-	}
 
-	header := header{method: method, nonce:nonce}
-
-	var target uint64
-	if bytes.Equal(method, methodCodeSendToGroup) {
-		hash64 := fnv.New64()
-		hash64.Write([]byte(targetId))
-		target = hash64.Sum64()
-		Logger.Debugf("Send group to:%d,%v", target, utility.UInt64ToByte(target))
-	} else {
-		target, err = strconv.ParseUint(targetId, 10, 64)
-		Logger.Debugf("Send  to:%d", target)
-		if err != nil {
-			Logger.Errorf("Parse target id %s error:%s", targetId, err.Error())
-			return
-		}
-	}
-	header.targetId = target
-	message := loadWebSocketMsg(header, m)
-
-	Logger.Debugf("Send msg:%v", message)
-	s.sendChan <- message
-}
-
-func (s *server) receiveMessage() {
-	for {
-		_, message, err := s.conn.ReadMessage()
-		if err != nil {
-			Logger.Errorf("Rcv msg error:%s", err.Error())
-			continue
-		}
-		Logger.Debugf("Rcv msg:%v", message)
-		s.rcvChan <- message
-	}
-}
-
-func (s *server) loop() {
-	for {
-		select {
-		case message := <-s.rcvChan:
-			header, data := unloadWebSocketMsg(message)
-			if bytes.Equal(header.method, methodCodeClientSend) {
-				s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce)
-			} else {
-				go s.handleMinerMessage(data, strconv.FormatUint(header.sourceId, 10))
-			}
-		case message := <-s.sendChan:
-			err := s.conn.WriteMessage(websocket.BinaryMessage, message)
-			if err != nil {
-				Logger.Errorf("Send msg error:%s", err.Error())
-			}
-
-		}
-	}
-}

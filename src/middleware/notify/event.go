@@ -46,4 +46,6 @@ const (
 	TransactionGotAddSucc = "transaction_got_add_succ"
 
 	ClientTransaction = "client_transaction"
+
+	CoinProxyNotify = "coin_proxy_notify"
 )

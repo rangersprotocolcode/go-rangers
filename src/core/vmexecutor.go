@@ -16,11 +16,26 @@ import (
 )
 
 const TransactionGasCost = 1000
-const CodeBytePrice = 0.3814697265625
 const MaxCastBlockTime = time.Second * 3
 
 type VMExecutor struct {
 	bc BlockChain
+}
+
+type WithdrawInfo struct {
+	Address string
+
+	GameId string
+
+	Amount string
+}
+
+type DepositInfo struct {
+	Address string
+
+	GameId string
+
+	Amount string
 }
 
 func NewVMExecutor(bc BlockChain) *VMExecutor {
@@ -58,10 +73,6 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		switch transaction.Type {
 		case types.TransactionTypeTransfer:
 			success, err, cumulativeGasUsed = executor.executeTransferTx(accountdb, transaction, castor)
-			//case types.TransactionTypeContractCreate:
-			//	success, err, cumulativeGasUsed, contractAddress = executor.executeContractCreateTx(accountdb, transaction, castor, block)
-			//case types.TransactionTypeContractCall:
-			//	success, err, cumulativeGasUsed, logs = executor.executeContractCallTx(accountdb, transaction, castor, block)
 		case types.TransactionTypeBonus:
 			success = executor.executeBonusTx(accountdb, transaction, castor)
 		case types.TransactionTypeMinerApply:
@@ -105,7 +116,13 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 				}
 
 			}
+		case types.TransactionTypeWithdraw:
 
+		case types.TransactionTypeAssetOnChain:
+		case types.TransactionTypeDepositExecute:
+			success = executor.executeDepositNotify(accountdb, transaction)
+		case types.TransactionTypeWithdrawExecute:
+			success = executor.executeWithdrawNotify(accountdb, transaction)
 		}
 
 		if !success {
@@ -147,100 +164,6 @@ func (executor *VMExecutor) executeTransferTx(accountdb *account.AccountDB, tran
 	//logger.Debugf("VMExecutor Execute Transfer Source:%s Target:%s Value:%d Height:%d Type:%s,Gas:%d,Success:%t", transaction.Source.GetHexString(), transaction.Target.GetHexString(), transaction.Value, height, mark,cumulativeGasUsed,success)
 	return success, err, cumulativeGasUsed
 }
-
-//func (executor *VMExecutor) executeContractCreateTx(accountdb *account.AccountDB, transaction *types.Transaction, castor common.Address, block *types.Block) (success bool, err *types.TransactionError, cumulativeGasUsed uint64, contractAddress common.Address) {
-//	success = true
-//	txExecuteGasFee := big.NewInt(int64(transaction.GasPrice * TransactionGasCost))
-//	gasLimit := transaction.GasLimit
-//	gasLimitFee := new(big.Int).SetUint64(transaction.GasLimit * transaction.GasPrice)
-//
-//	if canTransfer(accountdb, *transaction.Source, gasLimitFee, txExecuteGasFee) {
-//		accountdb.SubBalance(*transaction.Source, txExecuteGasFee)
-//		accountdb.AddBalance(castor, txExecuteGasFee)
-//
-//		accountdb.SubBalance(*transaction.Source, gasLimitFee)
-//		controller := vm.NewController(accountdb, BlockChainImpl, block.Header, transaction, common.GlobalConf.GetString("tvm", "pylib", "lib"))
-//		snapshot := controller.AccountDB.Snapshot()
-//		contractAddress, err = createContract(accountdb, transaction)
-//		if err != nil {
-//			logger.Debugf("ContractCreate tx %s execute error:%s ", transaction.Hash.String(), err.Message)
-//			success = false
-//			controller.AccountDB.RevertToSnapshot(snapshot)
-//		} else {
-//			deploySpend := uint64(float32(len(transaction.Data)) * CodeBytePrice)
-//			if gasLimit < deploySpend {
-//				success = false
-//				err = types.TxErrorDeployGasNotEnough
-//				controller.AccountDB.RevertToSnapshot(snapshot)
-//			} else {
-//				controller.GasLeft -= deploySpend
-//				contract := tvm.LoadContract(contractAddress)
-//				errorCode, errorMsg := controller.Deploy(transaction.Source, contract)
-//				if errorCode != 0 {
-//					success = false
-//					err = types.NewTransactionError(errorCode, errorMsg)
-//					controller.AccountDB.RevertToSnapshot(snapshot)
-//				} else {
-//					logger.Debugf("Contract create success! Tx hash:%s, contract addr:%s", transaction.Hash.String(), contractAddress.String())
-//				}
-//			}
-//		}
-//		gasLeft := controller.GetGasLeft()
-//		returnFee := new(big.Int).SetUint64(gasLeft * transaction.GasPrice)
-//		accountdb.AddBalance(*transaction.Source, returnFee)
-//
-//		cumulativeGasUsed = gasLimit - gasLeft + TransactionGasCost
-//	} else {
-//		success = false
-//		err = types.TxErrorBalanceNotEnough
-//		logger.Infof("ContractCreate balance not enough! transaction %s source %s  ", transaction.Hash.String(), transaction.Source.String())
-//	}
-//	//logger.Debugf("VMExecutor Execute ContractCreate Transaction %s,success:%t", transaction.Hash.Hex(),success)
-//	return success, err, cumulativeGasUsed, contractAddress
-//}
-//
-//func (executor *VMExecutor) executeContractCallTx(accountdb *account.AccountDB, transaction *types.Transaction, castor common.Address, block *types.Block) (success bool, err *types.TransactionError, cumulativeGasUsed uint64, logs []*types.Log) {
-//	success = true
-//	transferAmount := new(big.Int).SetUint64(transaction.Value)
-//	txExecuteFee := big.NewInt(int64(transaction.GasPrice * TransactionGasCost))
-//	gasLimit := transaction.GasLimit
-//	gasLimitFee := new(big.Int).SetUint64(transaction.GasLimit * transaction.GasPrice)
-//
-//	totalAmount := new(big.Int).Add(transferAmount, gasLimitFee)
-//	if canTransfer(accountdb, *transaction.Source, totalAmount, txExecuteFee) {
-//		accountdb.SubBalance(*transaction.Source, txExecuteFee)
-//		accountdb.AddBalance(castor, txExecuteFee)
-//
-//		accountdb.SubBalance(*transaction.Source, gasLimitFee)
-//		controller := tvm.NewController(accountdb, BlockChainImpl, block.Header, transaction, common.GlobalConf.GetString("tvm", "pylib", "lib"))
-//		contract := tvm.LoadContract(*transaction.Target)
-//		if contract.Code == "" {
-//			err = types.NewTransactionError(types.TxErrorCode_NO_CODE, fmt.Sprintf(types.NO_CODE_ERROR_MSG, *transaction.Target))
-//			success = false
-//		} else {
-//			snapshot := controller.AccountDB.Snapshot()
-//			var success bool
-//			success, logs, err = controller.ExecuteAbi(transaction.Source, contract, string(transaction.Data))
-//			if !success {
-//				controller.AccountDB.RevertToSnapshot(snapshot)
-//				success = false
-//			} else {
-//				accountdb.SubBalance(*transaction.Source, transferAmount)
-//				accountdb.AddBalance(*contract.ContractAddress, transferAmount)
-//			}
-//		}
-//		gasLeft := controller.GetGasLeft()
-//		returnFee := new(big.Int).SetUint64(gasLeft * transaction.GasPrice)
-//		accountdb.AddBalance(*transaction.Source, returnFee)
-//
-//		cumulativeGasUsed = gasLimit - gasLeft + TransactionGasCost
-//	} else {
-//		success = false
-//		err = types.TxErrorBalanceNotEnough
-//	}
-//	logger.Debugf("VMExecutor Execute ContractCall Transaction %s,success:%t", transaction.Hash.Hex(), success)
-//	return success, err, cumulativeGasUsed, logs
-//}
 
 func (executor *VMExecutor) executeBonusTx(accountdb *account.AccountDB, transaction *types.Transaction, castor common.Address) (success bool) {
 	//logger.Debugf("VMExecutor Execute Bonus Transaction:%s Group:%s,Success:%t", common.BytesToHash(transaction.Data).Hex(), common.BytesToHash(groupId).ShortS(),success)
@@ -338,18 +261,6 @@ func (executor *VMExecutor) executeMinerRefundTx(accountdb *account.AccountDB, t
 	return success
 }
 
-func createContract(accountdb *account.AccountDB, transaction *types.Transaction) (common.Address, *types.TransactionError) {
-	contractAddr := common.BytesToAddress(common.Sha256(common.BytesCombine(transaction.Source[:], common.Uint64ToByte(transaction.Nonce))))
-
-	if accountdb.GetCodeHash(contractAddr) != (common.Hash{}) {
-		return common.Address{}, types.NewTransactionError(types.TxErrorCode_ContractAddressConflict, "contract address conflict")
-	}
-	accountdb.CreateAccount(contractAddr)
-	accountdb.SetCode(contractAddr, []byte(transaction.Data))
-	accountdb.SetNonce(contractAddr, 1)
-	return contractAddr, nil
-}
-
 func canTransfer(db *account.AccountDB, addr common.Address, amount *big.Int, gasFee *big.Int) bool {
 	totalAmount := new(big.Int).Add(amount, gasFee)
 	return db.GetBalance(addr).Cmp(totalAmount) >= 0
@@ -380,4 +291,52 @@ func isActive(minerId []byte, currentBlockHeight uint64) bool {
 		}
 	}
 	return false
+}
+
+func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transaction *types.Transaction) bool {
+	return true
+}
+
+
+func (executor *VMExecutor) executeAssetOnChain(accountdb *account.AccountDB, transaction *types.Transaction) bool {
+	return true
+}
+
+func (executor *VMExecutor) executeDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
+	depositInfo := DepositInfo{}
+	err := json.Unmarshal([]byte(transaction.Data), depositInfo)
+	if err != nil {
+		logger.Errorf("Execute deposit json unmarshal err:%s", err.Error())
+		return false
+	}
+
+	depositAmount, _ := new(big.Int).SetString(depositInfo.Amount, 10)
+	account := accountdb.GetSubAccount(common.HexToAddress(depositInfo.Address), depositInfo.GameId)
+	logger.Debugf("Execute deposit:%s,current balance:%d,deposit balance:%d", transaction.Hash.String(), account.Balance.Uint64(), depositAmount.Uint64())
+
+	account.Balance.Add(account.Balance, depositAmount)
+	logger.Debugf("After execute deposit:%s, balance:%d", transaction.Hash.String(), account.Balance.Uint64())
+	accountdb.UpdateSubAccount(common.HexToAddress(depositInfo.Address), depositInfo.GameId, *account)
+	return true
+}
+
+func (executor *VMExecutor) executeWithdrawNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
+	withdrawInfo := WithdrawInfo{}
+	err := json.Unmarshal([]byte(transaction.Data), withdrawInfo)
+	if err != nil {
+		logger.Errorf("Execute withdraw json unmarshal err:%s", err.Error())
+		return false
+	}
+
+	withdrawAmount, _ := new(big.Int).SetString(withdrawInfo.Amount, 10)
+	account := accountdb.GetSubAccount(common.HexToAddress(withdrawInfo.Address), withdrawInfo.GameId)
+	logger.Errorf("Execute withdraw:%s,current balance:%d,withdraw balance:%d", transaction.Hash.String(), account.Balance.Uint64(), withdrawAmount.Uint64())
+	if account.Balance.Cmp(withdrawAmount) < 0 {
+		logger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", account.Balance.Uint64(), withdrawAmount.Uint64())
+		return false
+	}
+	account.Balance.Sub(account.Balance, withdrawAmount)
+	logger.Debugf("After execute withdraw:%s, balance:%d", transaction.Hash.String(), account.Balance.Uint64())
+	accountdb.UpdateSubAccount(common.HexToAddress(withdrawInfo.Address), withdrawInfo.GameId, *account)
+	return true
 }

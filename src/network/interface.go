@@ -51,25 +51,11 @@ const (
 	CreateGroupaRaw uint32 = 23
 
 	CreateGroupSign uint32 = 24
-	//---------------------轻节点状态同步-----------------------
-	//ReqStateInfoMsg uint32 = 25
-	//
-	//StateInfoMsg uint32 = 26
 
 	//==================铸块分红=========
 	CastRewardSignReq uint32 = 27
 	CastRewardSignGot uint32 = 28
 
-	//==================Trace=========
-	//RequestTraceMsg  uint32 = 29
-	//ResponseTraceMsg uint32 = 30
-
-	//------------------------------
-	//NewBlockHeaderMsg uint32 = 31
-	//
-	//BlockBodyReqMsg uint32 = 32
-	//
-	//BlockBodyMsg               uint32 = 33
 
 	//===================请求组内成员签名公钥======
 	AskSignPkMsg    uint32 = 34
@@ -81,16 +67,15 @@ const (
 	GroupPing uint32 = 100
 	GroupPong uint32 = 101
 
-	//
+
 	ReqSharePiece      uint32 = 102
 	ResponseSharePiece uint32 = 103
+
+	CoinProxyNotify uint32 = 1000
+	WithDraw        uint32 = 1001
+	AssetOnChain           = 1002
 )
 
-type Conn struct {
-	Id   string
-	Ip   string
-	Port string
-}
 
 type MsgDigest []byte
 
@@ -102,6 +87,8 @@ type Network interface {
 	Broadcast(msg Message)
 
 	SendToClient(id string, msg Message, nonce uint64)
+
+	SendToCoinProxy(msg Message)
 }
 
 func GetNetInstance() Network {
