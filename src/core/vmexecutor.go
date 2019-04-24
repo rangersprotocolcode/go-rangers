@@ -91,8 +91,8 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			success = true
 			data := make([]types.UserData, 0)
 			if err := json.Unmarshal([]byte(transaction.Data), &data); err != nil {
+				logger.Error("Execute TransactionUpdateOperatorEvent tx:%s json unmarshal, err:%s", transaction.Hash.String(), err.Error())
 				success = false
-
 			} else {
 				if nil != data && 0 != len(data) {
 					snapshot := accountdb.Snapshot()
@@ -119,6 +119,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		}
 
 		if !success {
+			logger.Debugf("Execute failed tx:%s", transaction.Hash.String())
 			evictedTxs = append(evictedTxs, transaction.Hash)
 		}
 
@@ -185,7 +186,8 @@ func (executor *VMExecutor) executeAssetOnChain(accountdb *account.AccountDB, tr
 		return false
 	}
 
-	account := accountdb.GetSubAccount(common.StringToAddress(transaction.Source), transaction.Target)
+	account := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
+
 	var assets []types.Asset
 	for _, assetId := range assetIdList {
 		exist := false

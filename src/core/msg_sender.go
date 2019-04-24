@@ -41,7 +41,7 @@ func requestTransaction(m transactionRequestMessage, castorId string) {
 	}
 	logger.Debugf("send REQ_TRANSACTION_MSG to %s,height:%d,tx_len:%d,hash:%s,time at:%v", castorId, m.BlockHeight, m.CurrentBlockHash, len(m.TransactionHashes), time.Now())
 	message := network.Message{Code: network.ReqTransactionMsg, Body: body}
-	network.GetNetInstance().Send(castorId, message)
+	network.GetNetInstance().Broadcast(message)
 }
 
 func sendTransactions(txs []*types.Transaction, sourceId string) {
