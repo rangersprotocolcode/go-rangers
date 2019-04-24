@@ -89,21 +89,18 @@ const (
 	GetAllAssets                   = 13
 	StateMachineNonce              = 14
 
-
-	TransactionTypeDepositExecute = 101
-	TransactionTypeDepositAck = 102
-	TransactionTypeWithdrawExecute = 103
-	TransactionTypeWithDrawAck = 104
+	TransactionTypeDepositExecute          = 101
+	TransactionTypeDepositAck              = 102
+	TransactionTypeWithdrawExecute         = 103
+	TransactionTypeWithDrawAck             = 104
 	TransactionTypeWithAssetOnChainExecute = 105
 	TransactionTypeWithDrawAssetOnChainAck = 106
 
-
-	TransactionTypeWithdraw = 201
+	TransactionTypeWithdraw     = 201
 	TransactionTypeAssetOnChain = 202
 
 	TransactionTypeToBeRemoved = -1
 )
-
 
 type Transaction struct {
 	Data   string // 入参
@@ -117,6 +114,7 @@ type Transaction struct {
 	ExtraDataType int32
 
 	Sign *common.Sign
+	Time string
 }
 
 //source,sign在hash计算范围内
@@ -140,11 +138,9 @@ func (tx *Transaction) GenHash() common.Hash {
 
 	buffer.Write(common.UInt32ToByte(tx.Type))
 
-	if 0 != len(tx.ExtraData) {
-		buffer.Write([]byte(tx.ExtraData))
+	if tx.Time != "" {
+		buffer.Write([]byte(tx.Time))
 	}
-	buffer.Write(common.UInt32ToByte(tx.ExtraDataType))
-
 	return common.BytesToHash(common.Sha256(buffer.Bytes()))
 }
 
@@ -333,7 +329,6 @@ type StateNode struct {
 	Value []byte
 }
 
-
 type SubAccount struct {
 	Balance *big.Int
 	Assets  []*Asset
@@ -349,4 +344,31 @@ type UserData struct {
 	Address string
 	Balance string
 	Assets  map[string]string
+}
+
+type TxJson struct {
+	Source string // 用户id
+	Target string // 游戏id
+	Type   int32  // 场景id
+
+	Data  string // 入参
+	Nonce uint64
+
+	Hash string
+	Sign string
+	Time string
+}
+
+func (txJson TxJson) ToTransaction() Transaction {
+	tx := Transaction{Source: txJson.Source, Target: txJson.Target, Type: txJson.Type, Data: txJson.Data, Nonce: txJson.Nonce}
+
+	if txJson.Hash != "" {
+		tx.Hash = common.HexToHash(txJson.Hash)
+	}
+
+	if txJson.Sign != "" {
+		tx.Sign = common.HexStringToSign(txJson.Sign)
+	}
+	tx.Time = txJson.Time
+	return tx
 }

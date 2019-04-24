@@ -35,9 +35,8 @@ func (s *server) SendToClient(id string, msg Message, nonce uint64) {
 }
 
 func (s *server) SendToCoinProxy(msg Message) {
-	s.send(methodCodeClientSend, "0", msg, 0)
+	s.send(methodCodeCoinProxySend, "0", msg, 0)
 }
-
 
 func (s *server) handleMinerMessage(data []byte, from string) {
 	message, error := unMarshalMessage(data)
@@ -112,15 +111,15 @@ func (s *server) joinGroup(groupID string) {
 }
 
 func (s *server) handleClientMessage(data []byte, userId string, nonce uint64) {
-	var tx types.Transaction
-	err := json.Unmarshal(data, &tx)
+	var txJson types.TxJson
+	err := json.Unmarshal(data, &txJson)
 	if nil != err {
 		Logger.Errorf("handleClientMessage json error:%s", err.Error())
 		return
 	}
 
-	tx.Hash = tx.GenHash()
-
+	tx := txJson.ToTransaction()
+	Logger.Debugf("Receive message from client.Tx:%v", txJson)
 	// 记录返回地址
 	msg := notify.ClientTransactionMessage{Tx: tx, UserId: userId, Nonce: nonce}
 	notify.BUS.Publish(notify.ClientTransaction, &msg)
@@ -133,20 +132,21 @@ func (s *server) handleCoinProxyMessage(data []byte) {
 		Logger.Errorf("Proto unmarshal error:%s", error.Error())
 		return
 	}
-	Logger.Debugf("Receive message from coin proxy",)
 
 	code := message.Code
 	switch code {
 	case CoinProxyNotify:
-		var tx types.Transaction
-		err := json.Unmarshal(data,tx)
+		var txJson types.TxJson
+		err := json.Unmarshal(message.Body, &txJson)
 		if err != nil {
-			Logger.Errorf("Coin proxy msg unmarshal err:",err.Error() )
+			Logger.Errorf("Coin proxy msg unmarshal err:", err.Error())
 			return
 		}
-		Logger.Debugf("Receive message from coin proxy.Tx:%v",tx)
-		if tx.Type == types.TransactionTypeDepositExecute ||tx.Type ==types.TransactionTypeWithdrawExecute{
-			msg := notify.CoinProxyNotifyMessage{Tx:tx}
+		Logger.Debugf("Receive message from coin proxy.Tx:%v", txJson)
+		tx := txJson.ToTransaction()
+		Logger.Debugf(".Tx:%v", tx)
+		if tx.Type == types.TransactionTypeDepositAck {
+			msg := notify.CoinProxyNotifyMessage{Tx: tx}
 			notify.BUS.Publish(notify.CoinProxyNotify, &msg)
 		}
 	}
