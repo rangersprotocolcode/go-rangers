@@ -45,7 +45,7 @@ type TxPool struct {
 
 func NewTransactionPool() TransactionPool {
 	pool := &TxPool{
-		lock:            middleware.NewLoglock("txPool"),
+		lock: middleware.NewLoglock("txPool"),
 	}
 	pool.received = newSimpleContainer(rcvTxPoolSize)
 	pool.minerTxs, _ = lru.New(minerTxCacheSize)
@@ -70,6 +70,7 @@ func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 	defer pool.lock.Unlock("AddTransaction")
 
 	b, err := pool.add(tx)
+	logger.Debugf("Add tx %s to pool result:%t", tx.Hash.String(), b)
 	return b, err
 }
 
@@ -247,6 +248,10 @@ func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
 		return ErrNil
 	}
 
+	if tx.Hash != tx.GenHash() {
+		logger.Debugf("Bad tx: hash not illegal,hash:%s,", tx.Hash.String())
+		return ErrHash
+	}
 	return nil
 }
 
@@ -292,7 +297,6 @@ func (pool *TxPool) remove(txHash common.Hash) {
 	pool.missTxs.Remove(txHash)
 	pool.received.remove(txHash)
 }
-
 
 func (pool *TxPool) isTransactionExisted(hash common.Hash) bool {
 	existInMinerTxs := pool.minerTxs.Contains(hash)
@@ -353,4 +357,3 @@ func (pool *TxPool) packTx(packedTxs []*types.Transaction) []*types.Transaction 
 	}
 	return packedTxs
 }
-

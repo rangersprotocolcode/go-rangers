@@ -11,6 +11,8 @@ import (
 	"x/src/statemachine"
 	"strconv"
 	"encoding/json"
+	"x/src/utility"
+	"x/src/network"
 )
 
 const MaxCastBlockTime = time.Second * 3
@@ -25,6 +27,8 @@ type WithdrawInfo struct {
 	GameId string
 
 	Amount string
+
+	Hash string
 }
 
 type DepositInfo struct {
@@ -33,6 +37,16 @@ type DepositInfo struct {
 	GameId string
 
 	Amount string
+}
+
+type AssetOnChainInfo struct {
+	Address string
+
+	GameId string
+
+	Assets []types.Asset
+
+	Hash string
 }
 
 func NewVMExecutor(bc BlockChain) *VMExecutor {
@@ -77,8 +91,8 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			success = true
 			data := make([]types.UserData, 0)
 			if err := json.Unmarshal([]byte(transaction.Data), &data); err != nil {
+				logger.Error("Execute TransactionUpdateOperatorEvent tx:%s json unmarshal, err:%s", transaction.Hash.String(), err.Error())
 				success = false
-
 			} else {
 				if nil != data && 0 != len(data) {
 					snapshot := accountdb.Snapshot()
@@ -97,16 +111,26 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 			}
 		case types.TransactionTypeWithdraw:
-
+			success = executor.executeWithdraw(accountdb, transaction)
 		case types.TransactionTypeAssetOnChain:
-		case types.TransactionTypeDepositExecute:
+			success = executor.executeAssetOnChain(accountdb, transaction)
+		case types.TransactionTypeDepositAck:
 			success = executor.executeDepositNotify(accountdb, transaction)
-		case types.TransactionTypeWithdrawExecute:
-			success = executor.executeWithdrawNotify(accountdb, transaction)
 		}
 
 		if !success {
+			logger.Debugf("Execute failed tx:%s", transaction.Hash.String())
 			evictedTxs = append(evictedTxs, transaction.Hash)
+		}
+
+		if success || transaction.Type != types.TransactionTypeBonus {
+			transactions = append(transactions, transaction)
+			receipt := types.NewReceipt(nil, !success, 0)
+			receipt.TxHash = transaction.Hash
+			receipts = append(receipts, receipt)
+			if transaction.Source != "" {
+				accountdb.SetNonce(common.HexToAddress(transaction.Source), transaction.Nonce)
+			}
 		}
 
 	}
@@ -122,48 +146,86 @@ func (executor *VMExecutor) validateNonce(accountdb *account.AccountDB, transact
 }
 
 func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transaction *types.Transaction) bool {
+	logger.Debugf("Execute withdraw tx:%v", transaction)
+	amount, err := utility.StrToBigInt(transaction.Data)
+	if err != nil {
+		logger.Error("Execute withdraw bad amount!Hash:%s, err:%s", transaction.Hash.String(), err.Error())
+		return false
+	}
+	account := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
+	logger.Errorf("Execute withdraw :%s,current balance:%d,withdraw balance:%d", transaction.Hash.String(), account.Balance.Uint64(), amount.Uint64())
+	if account.Balance.Cmp(amount) < 0 {
+		logger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", account.Balance.Uint64(), amount.Uint64())
+		return false
+	}
+
+	account.Balance.Sub(account.Balance, amount)
+	logger.Debugf("After execute withdraw:%s, balance:%d", transaction.Hash.String(), account.Balance.Uint64())
+	accountdb.UpdateSubAccount(common.HexToAddress(transaction.Source), transaction.Target, *account)
+
+	withdrawInfo := WithdrawInfo{Address: transaction.Source, GameId: transaction.Target, Amount: amount.String(), Hash: transaction.Hash.String()}
+	b, err := json.Marshal(withdrawInfo)
+	if err != nil {
+		logger.Error("Execute withdraw tx:%s json marshal err, err:%s", transaction.Hash.String(), err.Error())
+		return false
+	}
+
+	logger.Debugf("After execute withdraw.Send msg to coin proxy:%s", string(b))
+	message := network.Message{Code: network.WithDraw, Body: b}
+	network.GetNetInstance().SendToCoinProxy(message)
 	return true
 }
 
 func (executor *VMExecutor) executeAssetOnChain(accountdb *account.AccountDB, transaction *types.Transaction) bool {
+	logger.Debugf("Execute asset on chain tx:%v", transaction)
+	assetOnChainInfo := AssetOnChainInfo{Address: transaction.Source, GameId: transaction.Target, Hash: transaction.Hash.String()}
+
+	var assetIdList []string
+	if err := json.Unmarshal([]byte(transaction.Data), &assetIdList); err != nil {
+		logger.Errorf("Execute asset on chain tx:%s,json unmarshal error:%s", transaction.Hash.String(), err.Error())
+		return false
+	}
+
+	account := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
+
+	var assets []types.Asset
+	for _, assetId := range assetIdList {
+		exist := false
+		for _, asset := range account.Assets {
+			if assetId == asset.Id {
+				assets = append(assets, *asset)
+				exist = true
+				break
+			}
+		}
+		if exist == false {
+			logger.Errorf("AssetOnChain tx:%s,unknown asset id:%s", transaction.Hash.String(), assetId)
+		}
+	}
+	assetOnChainInfo.Assets = assets
+
+	b, err := json.Marshal(assetOnChainInfo)
+	if err != nil {
+		logger.Error("Execute asset on chain tx:%s json marshal err, err:%s", transaction.Hash.String(), err.Error())
+		return false
+	}
+
+	logger.Debugf("After execute asset on chain.Send msg to coin proxy:%s", string(b))
+	message := network.Message{Code: network.AssetOnChain, Body: b}
+	network.GetNetInstance().SendToCoinProxy(message)
 	return true
 }
 
 func (executor *VMExecutor) executeDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	depositInfo := DepositInfo{}
-	err := json.Unmarshal([]byte(transaction.Data), depositInfo)
-	if err != nil {
-		logger.Errorf("Execute deposit json unmarshal err:%s", err.Error())
-		return false
-	}
-
-	depositAmount, _ := new(big.Int).SetString(depositInfo.Amount, 10)
-	account := accountdb.GetSubAccount(common.HexToAddress(depositInfo.Address), depositInfo.GameId)
-	logger.Debugf("Execute deposit:%s,current balance:%d,deposit balance:%d", transaction.Hash.String(), account.Balance.Uint64(), depositAmount.Uint64())
+	depositAmount, _ := new(big.Int).SetString(transaction.Data, 10)
+	account := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
+	logger.Debugf("Execute deposit notify:%s,address:%s,gameId:%s,current balance:%d,deposit balance:%d", transaction.Hash.String(), transaction.Source, transaction.Target, account.Balance.Uint64(), depositAmount.Uint64())
 
 	account.Balance.Add(account.Balance, depositAmount)
 	logger.Debugf("After execute deposit:%s, balance:%d", transaction.Hash.String(), account.Balance.Uint64())
-	accountdb.UpdateSubAccount(common.HexToAddress(depositInfo.Address), depositInfo.GameId, *account)
-	return true
-}
+	accountdb.UpdateSubAccount(common.HexToAddress(transaction.Source), transaction.Target, *account)
 
-func (executor *VMExecutor) executeWithdrawNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	withdrawInfo := WithdrawInfo{}
-	err := json.Unmarshal([]byte(transaction.Data), withdrawInfo)
-	if err != nil {
-		logger.Errorf("Execute withdraw json unmarshal err:%s", err.Error())
-		return false
-	}
-
-	withdrawAmount, _ := new(big.Int).SetString(withdrawInfo.Amount, 10)
-	account := accountdb.GetSubAccount(common.HexToAddress(withdrawInfo.Address), withdrawInfo.GameId)
-	logger.Errorf("Execute withdraw:%s,current balance:%d,withdraw balance:%d", transaction.Hash.String(), account.Balance.Uint64(), withdrawAmount.Uint64())
-	if account.Balance.Cmp(withdrawAmount) < 0 {
-		logger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", account.Balance.Uint64(), withdrawAmount.Uint64())
-		return false
-	}
-	account.Balance.Sub(account.Balance, withdrawAmount)
-	logger.Debugf("After execute withdraw:%s, balance:%d", transaction.Hash.String(), account.Balance.Uint64())
-	accountdb.UpdateSubAccount(common.HexToAddress(withdrawInfo.Address), withdrawInfo.GameId, *account)
+	b := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
+	logger.Debugf("After  deposit update,current balance:%d", b.Balance.Uint64())
 	return true
 }

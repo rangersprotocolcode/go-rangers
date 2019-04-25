@@ -3,6 +3,8 @@ package types
 import (
 	"math/big"
 	"testing"
+	"github.com/gin-gonic/gin/json"
+	"fmt"
 )
 
 func TestBloom(t *testing.T) {
@@ -34,32 +36,18 @@ func TestBloom(t *testing.T) {
 	}
 }
 
-/*
-import (
-	"testing"
+func TestWithdrawTransactionHash(t *testing.T) {
+	txJson := TxJson{Source: "aaa", Target: "111", Type: 201, Data: "1.2", Nonce: 1, Time: "1556076659050692000"}
+	j, _ := json.Marshal(txJson)
+	fmt.Printf("json:%s\n", string(j))
 
-	"vm/core/state"
-)
+	tx := txJson.ToTransaction()
+	fmt.Printf("TX:%v\n", tx)
 
-func TestBloom9(t *testing.T) {
-	testCase := []byte("testtest")
-	bin := LogsBloom([]state.Log{
-		{testCase, [][]byte{[]byte("hellohello")}, nil},
-	}).Bytes()
-	res := BloomLookup(bin, testCase)
+    tx.Hash = tx.GenHash()
+	fmt.Printf("Hash:%s\n", tx.Hash.String())
 
-	if !res {
-		t.Errorf("Bloom lookup failed")
-	}
+
 }
 
 
-func TestAddress(t *testing.T) {
-	block := &Block{}
-	block.Coinbase = common.Hex2Bytes("22341ae42d6dd7384bc8584e50419ea3ac75b83f")
-	fmt.Printf("%x\n", crypto.Keccak256(block.Coinbase))
-
-	bin := CreateBloom(block)
-	fmt.Printf("bin = %x\n", common.LeftPadBytes(bin, 64))
-}
-*/

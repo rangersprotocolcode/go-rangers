@@ -148,6 +148,7 @@ func (ch ChainHandler) coinProxyHandler(msg notify.Message){
 		return
 	}
 	tx := cpn.Tx
+	logger.Debugf("coinProxyHandler rcv tx:%v",tx)
 	blockChainImpl.transactionPool.AddTransaction(&tx)
 }
 

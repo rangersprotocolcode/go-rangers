@@ -83,6 +83,15 @@ func (executor *GameExecutor) Tx(msg notify.Message) {
 		result, _ = json.Marshal(assets)
 	case types.StateMachineNonce:
 		result = []byte(strconv.Itoa(statemachine.Docker.Nonce(txRaw.Target)))
+	case types.TransactionTypeWithdraw:
+		if err := executor.sendTransaction(&txRaw); err != nil {
+			return
+		}
+		result = []byte("success")
+	case types.TransactionTypeAssetOnChain:
+		if err := executor.sendTransaction(&txRaw); err != nil {
+			return
+		}
 	}
 
 	// reply to the client

@@ -144,7 +144,7 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 		return Transaction{}
 	}
 
-	var source,target, data string
+	var source, target, data string
 	var sign *common.Sign
 	if t.Source != nil {
 		source = string(t.Source)
@@ -167,7 +167,7 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 
 	transaction := Transaction{Data: data, Nonce: *t.Nonce, Source: source,
 		Target: target, Hash: common.BytesToHash(t.Hash),
-		ExtraData: string(t.ExtraData), ExtraDataType: *t.ExtraDataType, Type: *t.Type, Sign: sign}
+		ExtraData: string(t.ExtraData), ExtraDataType: *t.ExtraDataType, Type: *t.Type, Sign: sign, Time: *t.Time}
 	return transaction
 }
 
@@ -326,14 +326,10 @@ func transactionToPb(t *Transaction) *middleware_pb.Transaction {
 			logger.Errorf("Bad sign len:%d", len(sign))
 		}
 	}
-	//achates add for testing<<
-	if len(sign) != 65 {
-		fmt.Println("Bad sign in transactionToPb sign=", sign)
-	}
-	//>>achates add for testing
+
 	transaction := middleware_pb.Transaction{Data: data, Nonce: &t.Nonce, Source: source,
 		Target: target, Hash: t.Hash.Bytes(),
-		ExtraData: []byte(t.ExtraData), ExtraDataType: &t.ExtraDataType, Type: &t.Type, Sign: sign}
+		ExtraData: []byte(t.ExtraData), ExtraDataType: &t.ExtraDataType, Type: &t.Type, Sign: sign, Time: &t.Time}
 	return &transaction
 }
 

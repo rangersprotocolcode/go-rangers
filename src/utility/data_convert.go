@@ -3,6 +3,8 @@ package utility
 import (
 	"bytes"
 	"encoding/binary"
+	"math/big"
+	"strconv"
 )
 
 func UInt32ToByte(i uint32) []byte {
@@ -42,4 +44,10 @@ func ByteToUInt64(b []byte) uint64 {
 	var x uint64
 	binary.Read(buf, binary.BigEndian, &x)
 	return x
+}
+
+//"11.22"
+func StrToBigInt(s string) (*big.Int, error) {
+	f, err := strconv.ParseFloat(s, 64)
+	return big.NewInt(int64(f * 1000000000)), err
 }
