@@ -21,10 +21,11 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor := GameExecutor{chain: blockChainImpl}
 
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.Tx)
+
+	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.Read)
 }
 
-func (executor *GameExecutor) Tx(msg notify.Message) {
-
+func (executor *GameExecutor) Read(msg notify.Message) {
 	message, ok := msg.(*notify.ClientTransactionMessage)
 	if !ok {
 		logger.Debugf("blockReqHandler:Message assert not ok!")
@@ -34,19 +35,7 @@ func (executor *GameExecutor) Tx(msg notify.Message) {
 	var result []byte
 	txRaw := message.Tx
 	switch txRaw.Type {
-
-	// execute state machine transaction
-	case types.TransactionTypeOperatorEvent:
-		outputMessage := statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
-		result, _ = json.Marshal(outputMessage)
-
-		if err := executor.sendTransaction(&txRaw); err != nil {
-			return
-		}
-
-		executor.chain.GetTransactionPool().AddExecuted(&txRaw)
-
-		// query balance
+	// query balance
 	case types.GetBalance:
 		sub := GetSubAccount(txRaw.Source, txRaw.Target, GetBlockChain().GetAccountDB())
 		if nil == sub {
@@ -83,6 +72,35 @@ func (executor *GameExecutor) Tx(msg notify.Message) {
 		result, _ = json.Marshal(assets)
 	case types.StateMachineNonce:
 		result = []byte(strconv.Itoa(statemachine.Docker.Nonce(txRaw.Target)))
+	}
+
+	// reply to the client
+	network.GetNetInstance().SendToClientReader(message.UserId, network.Message{Body: result}, message.Nonce)
+	return
+}
+
+func (executor *GameExecutor) Tx(msg notify.Message) {
+
+	message, ok := msg.(*notify.ClientTransactionMessage)
+	if !ok {
+		logger.Debugf("blockReqHandler:Message assert not ok!")
+		return
+	}
+
+	var result []byte
+	txRaw := message.Tx
+	switch txRaw.Type {
+
+	// execute state machine transaction
+	case types.TransactionTypeOperatorEvent:
+		outputMessage := statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
+		result, _ = json.Marshal(outputMessage)
+
+		if err := executor.sendTransaction(&txRaw); err != nil {
+			return
+		}
+
+		executor.chain.GetTransactionPool().AddExecuted(&txRaw)
 	case types.TransactionTypeWithdraw:
 		if err := executor.sendTransaction(&txRaw); err != nil {
 			return
@@ -95,7 +113,7 @@ func (executor *GameExecutor) Tx(msg notify.Message) {
 	}
 
 	// reply to the client
-	network.GetNetInstance().SendToClient(message.UserId, network.Message{Body: result}, message.Nonce)
+	network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: result}, message.Nonce)
 	return
 
 }

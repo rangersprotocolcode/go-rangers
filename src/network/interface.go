@@ -86,7 +86,9 @@ type Network interface {
 
 	Broadcast(msg Message)
 
-	SendToClient(id string, msg Message, nonce uint64)
+	SendToClientReader(id string, msg Message, nonce uint64)
+
+	SendToClientWriter(id string, msg Message, nonce uint64)
 
 	SendToCoinProxy(msg Message)
 }

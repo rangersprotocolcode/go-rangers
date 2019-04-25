@@ -30,8 +30,12 @@ func (s *server) Broadcast(msg Message) {
 	s.send(methodCodeBroadcast, "0", msg, 0)
 }
 
-func (s *server) SendToClient(id string, msg Message, nonce uint64) {
-	s.send(methodCodeClientSend, id, msg, nonce)
+func (s *server) SendToClientReader(id string, msg Message, nonce uint64) {
+	s.send(methodCodeClientReader, id, msg, nonce)
+}
+
+func (s *server) SendToClientWriter(id string, msg Message, nonce uint64) {
+	s.send(methodCodeClientWriter, id, msg, nonce)
 }
 
 func (s *server) SendToCoinProxy(msg Message) {
@@ -110,7 +114,7 @@ func (s *server) joinGroup(groupID string) {
 	s.sendChan <- header.toBytes()
 }
 
-func (s *server) handleClientMessage(data []byte, userId string, nonce uint64) {
+func (s *server) handleClientMessage(data []byte, userId string, nonce uint64, event string) {
 	var txJson types.TxJson
 	err := json.Unmarshal(data, &txJson)
 	if nil != err {
@@ -120,13 +124,13 @@ func (s *server) handleClientMessage(data []byte, userId string, nonce uint64) {
 
 	tx := txJson.ToTransaction()
 	Logger.Debugf("Receive message from client.Tx:%v", txJson)
-	// 记录返回地址
+
 	msg := notify.ClientTransactionMessage{Tx: tx, UserId: userId, Nonce: nonce}
-	notify.BUS.Publish(notify.ClientTransaction, &msg)
+	notify.BUS.Publish(event, &msg)
 
 }
 
-func (s *server) handleCoinProxyMessage(data []byte) {
+func (s *server) handleCoinProxyMessage(data []byte, nonce uint64) {
 	message, error := unMarshalMessage(data)
 	if error != nil {
 		Logger.Errorf("Proto unmarshal error:%s", error.Error())
@@ -144,6 +148,7 @@ func (s *server) handleCoinProxyMessage(data []byte) {
 		}
 		Logger.Debugf("Receive message from coin proxy.Tx:%v", txJson)
 		tx := txJson.ToTransaction()
+		tx.Nonce = nonce
 		Logger.Debugf(".Tx:%v", tx)
 		if tx.Type == types.TransactionTypeDepositAck {
 			msg := notify.CoinProxyNotifyMessage{Tx: tx}

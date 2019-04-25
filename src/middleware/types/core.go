@@ -104,7 +104,7 @@ const (
 
 type Transaction struct {
 	Data   string // 入参
-	Nonce  uint64
+	Nonce  uint64 // 用户级别nonce
 	Source string // 用户id
 	Target string // 游戏id
 	Type   int32  // 场景id

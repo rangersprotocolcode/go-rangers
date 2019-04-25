@@ -47,5 +47,7 @@ const (
 
 	ClientTransaction = "client_transaction"
 
+	ClientTransactionRead = "client_transaction_read"
+
 	CoinProxyNotify = "coin_proxy_notify"
 )
