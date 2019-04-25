@@ -17,7 +17,7 @@ var methodCodeBroadcast, _ = hex.DecodeString("80000002")
 var methodCodeSendToGroup, _ = hex.DecodeString("80000003")
 var methodCodeJoinGroup, _ = hex.DecodeString("80000004")
 var methodCodeQuitGroup, _ = hex.DecodeString("80000005")
-var methodCodeCoinProxySend, _ = hex.DecodeString("80000006")
+var methodCodeCoinProxySend, _ = hex.DecodeString("40000000")
 
 type header struct {
 	method   []byte
