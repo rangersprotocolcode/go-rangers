@@ -10,6 +10,7 @@ import (
 	"x/src/middleware/notify"
 )
 
+// 用于处理client websocket请求
 type GameExecutor struct {
 	chain *blockChain
 }
