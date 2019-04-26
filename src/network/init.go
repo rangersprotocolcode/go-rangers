@@ -19,7 +19,7 @@ var Logger log.Logger
 func InitNetwork(selfMinerId string, consensusHandler MsgHandler) {
 	Logger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
-	url := url.URL{Scheme: "ws", Host: gateAddr, Path: "/service"}
+	url := url.URL{Scheme: "ws", Host: gateAddr, Path: "/srv/worker"}
 	Logger.Debugf("connecting to %s", url.String())
 
 	conn, _, err := newDialer().Dial(url.String(), nil)

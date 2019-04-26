@@ -7,15 +7,17 @@ import (
 	"bytes"
 	"hash/fnv"
 	"github.com/gorilla/websocket"
+	"x/src/middleware/notify"
 )
 
-var methodCodeClientSend, _ = hex.DecodeString("80000000")
+var methodCodeClientReader, _ = hex.DecodeString("60000000")
+var methodCodeClientWriter, _ = hex.DecodeString("60000001")
 var methodCodeSend, _ = hex.DecodeString("80000001")
 var methodCodeBroadcast, _ = hex.DecodeString("80000002")
 var methodCodeSendToGroup, _ = hex.DecodeString("80000003")
 var methodCodeJoinGroup, _ = hex.DecodeString("80000004")
 var methodCodeQuitGroup, _ = hex.DecodeString("80000005")
-var methodCodeCoinProxySend, _ = hex.DecodeString("80000006")
+var methodCodeCoinProxySend, _ = hex.DecodeString("40000000")
 
 type header struct {
 	method   []byte
@@ -68,18 +70,24 @@ func (s *server) loop() {
 		select {
 		case message := <-s.rcvChan:
 			header, data := unloadWebSocketMsg(message)
-			if bytes.Equal(header.method,methodCodeClientSend){
-				s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce)
-				continue
-			}
 
-			if bytes.Equal(header.method,methodCodeSend)||bytes.Equal(header.method,methodCodeBroadcast)||bytes.Equal(header.method,methodCodeSendToGroup){
+			if bytes.Equal(header.method, methodCodeSend) || bytes.Equal(header.method, methodCodeBroadcast) || bytes.Equal(header.method, methodCodeSendToGroup) {
 				s.handleMinerMessage(data, strconv.FormatUint(header.sourceId, 10))
 				continue
 			}
 
-			if bytes.Equal(header.method,methodCodeCoinProxySend){
-				s.handleCoinProxyMessage(data)
+			if bytes.Equal(header.method, methodCodeClientReader) {
+				s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce, notify.ClientTransactionRead)
+				continue
+			}
+
+			if bytes.Equal(header.method, methodCodeClientWriter) {
+				s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce, notify.ClientTransaction)
+				continue
+			}
+
+			if bytes.Equal(header.method, methodCodeCoinProxySend) {
+				s.handleCoinProxyMessage(data, header.nonce)
 				continue
 			}
 		case message := <-s.sendChan:
@@ -127,5 +135,3 @@ func byteToHeader(b []byte) header {
 	header.nonce = utility.ByteToUInt64(b[20:])
 	return header
 }
-
-
