@@ -103,12 +103,13 @@ const (
 )
 
 type Transaction struct {
-	Data   string // 入参
-	Nonce  uint64 // 用户级别nonce
-	Source string // 用户id
-	Target string // 游戏id
-	Type   int32  // 场景id
-	Hash   common.Hash
+	Data      string // 入参
+	Nonce     uint64 // 用户级别nonce
+	Source    string // 用户id
+	Target    string // 游戏id
+	Type      int32  // 场景id
+	RequestId uint64 // 消息编号
+	Hash      common.Hash
 
 	ExtraData     string
 	ExtraDataType int32
@@ -117,7 +118,7 @@ type Transaction struct {
 	Time string
 }
 
-//source,sign在hash计算范围内
+//source 在hash计算范围内
 func (tx *Transaction) GenHash() common.Hash {
 	if nil == tx {
 		return common.Hash{}
@@ -354,13 +355,17 @@ type TxJson struct {
 	Data  string // 入参
 	Nonce uint64
 
+	RequestId uint64
+
 	Hash string
 	Sign string
 	Time string
 }
 
 func (txJson TxJson) ToTransaction() Transaction {
-	tx := Transaction{Source: txJson.Source, Target: txJson.Target, Type: txJson.Type, Data: txJson.Data, Nonce: txJson.Nonce}
+	tx := Transaction{Source: txJson.Source, Target: txJson.Target,
+		Type: txJson.Type, Data: txJson.Data, Nonce: txJson.Nonce,
+		RequestId: txJson.RequestId}
 
 	if txJson.Hash != "" {
 		tx.Hash = common.HexToHash(txJson.Hash)

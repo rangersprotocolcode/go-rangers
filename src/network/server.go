@@ -148,7 +148,7 @@ func (s *server) handleCoinProxyMessage(data []byte, nonce uint64) {
 		}
 		Logger.Debugf("Receive message from coin proxy.Tx:%v", txJson)
 		tx := txJson.ToTransaction()
-		tx.Nonce = nonce
+		tx.RequestId = nonce
 		Logger.Debugf(".Tx:%v", tx)
 		if tx.Type == types.TransactionTypeDepositAck {
 			msg := notify.CoinProxyNotifyMessage{Tx: tx}

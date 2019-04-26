@@ -122,6 +122,7 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string) (*Result, error)
 		Type:   types.TransactionUpdateOperatorEvent,
 		Target: gameId,
 		Nonce:  uint64(time.Now().Unix()),
+		// todo RequestId:
 	}
 	tx.Hash = tx.GenHash()
 	_, err := core.GetBlockChain().GetTransactionPool().AddTransaction(tx)

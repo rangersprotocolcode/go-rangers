@@ -20,7 +20,7 @@ type GameExecutor struct {
 func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor := GameExecutor{chain: blockChainImpl}
 
-	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.Tx)
+	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.Write)
 
 	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.Read)
 }
@@ -35,6 +35,7 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	var result []byte
 	txRaw := message.Tx
 	switch txRaw.Type {
+
 	// query balance
 	case types.GetBalance:
 		sub := GetSubAccount(txRaw.Source, txRaw.Target, GetBlockChain().GetAccountDB())
@@ -79,7 +80,7 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	return
 }
 
-func (executor *GameExecutor) Tx(msg notify.Message) {
+func (executor *GameExecutor) Write(msg notify.Message) {
 
 	message, ok := msg.(*notify.ClientTransactionMessage)
 	if !ok {
@@ -87,29 +88,24 @@ func (executor *GameExecutor) Tx(msg notify.Message) {
 		return
 	}
 
-	var result []byte
 	txRaw := message.Tx
+	txRaw.RequestId = message.Nonce
+
+	if err := executor.sendTransaction(&txRaw); err != nil {
+		return
+	}
+
+	var result []byte
 	switch txRaw.Type {
 
 	// execute state machine transaction
 	case types.TransactionTypeOperatorEvent:
 		outputMessage := statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
 		result, _ = json.Marshal(outputMessage)
-
-		if err := executor.sendTransaction(&txRaw); err != nil {
-			return
-		}
-
 		executor.chain.GetTransactionPool().AddExecuted(&txRaw)
+
 	case types.TransactionTypeWithdraw:
-		if err := executor.sendTransaction(&txRaw); err != nil {
-			return
-		}
 		result = []byte("success")
-	case types.TransactionTypeAssetOnChain:
-		if err := executor.sendTransaction(&txRaw); err != nil {
-			return
-		}
 	}
 
 	// reply to the client

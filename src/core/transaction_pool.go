@@ -74,6 +74,7 @@ func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 	return b, err
 }
 
+// deprecated
 func (pool *TxPool) AddBroadcastTransactions(txs []*types.Transaction) {
 	if nil == txs || 0 == len(txs) {
 		return
@@ -252,6 +253,9 @@ func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
 		logger.Debugf("Bad tx: hash not illegal,hash:%s,", tx.Hash.String())
 		return ErrHash
 	}
+
+	// 校验 requestId，按序执行
+
 	return nil
 }
 
