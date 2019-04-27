@@ -119,6 +119,7 @@ type Transaction struct {
 }
 
 //source 在hash计算范围内
+//RequestId 不列入hash计算范围
 func (tx *Transaction) GenHash() common.Hash {
 	if nil == tx {
 		return common.Hash{}
@@ -154,7 +155,7 @@ func (c Transactions) Swap(i, j int) {
 	c[i], c[j] = c[j], c[i]
 }
 func (c Transactions) Less(i, j int) bool {
-	return c[i].Nonce < c[j].Nonce
+	return c[i].RequestId < c[j].RequestId
 }
 
 type Bonus struct {
@@ -197,6 +198,7 @@ type BlockHeader struct {
 	GroupId      []byte        //组ID，groupsig.ID的二进制表示
 	Signature    []byte        // 组签名
 	Nonce        uint64        //盐
+	RequestId    uint64        //盐
 	Transactions []common.Hash // 交易集哈希列表
 	TxTree       common.Hash   // 交易默克尔树根hash
 	ReceiptTree  common.Hash
@@ -208,15 +210,16 @@ type BlockHeader struct {
 }
 
 type header struct {
-	Height       uint64        // 本块的高度
-	PreHash      common.Hash   //上一块哈希
-	PreTime      time.Time     //上一块铸块时间
-	ProveValue   *big.Int      //轮转序号
-	TotalQN      uint64        //整条链的QN
-	CurTime      time.Time     //当前铸块时间
-	Castor       []byte        //出块人ID
-	GroupId      []byte        //组ID，groupsig.ID的二进制表示
-	Nonce        uint64        //盐
+	Height       uint64      // 本块的高度
+	PreHash      common.Hash //上一块哈希
+	PreTime      time.Time   //上一块铸块时间
+	ProveValue   *big.Int    //轮转序号
+	TotalQN      uint64      //整条链的QN
+	CurTime      time.Time   //当前铸块时间
+	Castor       []byte      //出块人ID
+	GroupId      []byte      //组ID，groupsig.ID的二进制表示
+	Nonce        uint64      //盐
+	RequestId    uint64
 	Transactions []common.Hash // 交易集哈希列表
 	TxTree       common.Hash   // 交易默克尔树根hash
 	ReceiptTree  common.Hash
@@ -236,6 +239,7 @@ func (bh *BlockHeader) GenHash() common.Hash {
 		CurTime:      bh.CurTime,
 		Castor:       bh.Castor,
 		Nonce:        bh.Nonce,
+		RequestId:    bh.RequestId,
 		Transactions: bh.Transactions,
 		TxTree:       bh.TxTree,
 		ReceiptTree:  bh.ReceiptTree,

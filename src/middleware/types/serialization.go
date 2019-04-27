@@ -165,7 +165,7 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 		sign = common.BytesToSign(t.Sign)
 	}
 
-	transaction := Transaction{Data: data, Nonce: *t.Nonce, Source: source,
+	transaction := Transaction{Data: data, Nonce: *t.Nonce, RequestId: *t.RequestId, Source: source,
 		Target: target, Hash: common.BytesToHash(t.Hash),
 		ExtraData: string(t.ExtraData), ExtraDataType: *t.ExtraDataType, Type: *t.Type, Sign: sign, Time: *t.Time}
 	return transaction
@@ -232,7 +232,7 @@ func PbToBlockHeader(h *middleware_pb.BlockHeader) *BlockHeader {
 	//log.Printf("PbToBlockHeader height:%d StateTree Hash:%s",*h.Height,common.Bytes2Hex(h.StateTree))
 	header := BlockHeader{Hash: common.BytesToHash(h.Hash), Height: *h.Height, PreHash: common.BytesToHash(h.PreHash), PreTime: preTime,
 		ProveValue: proveValue, CurTime: curTime, Castor: h.Castor, GroupId: h.GroupId, Signature: h.Signature,
-		Nonce: *h.Nonce, Transactions: hashes, TxTree: common.BytesToHash(h.TxTree), ReceiptTree: common.BytesToHash(h.ReceiptTree), StateTree: common.BytesToHash(h.StateTree),
+		Nonce: *h.Nonce, RequestId: *h.RequestId, Transactions: hashes, TxTree: common.BytesToHash(h.TxTree), ReceiptTree: common.BytesToHash(h.ReceiptTree), StateTree: common.BytesToHash(h.StateTree),
 		ExtraData: h.ExtraData, TotalQN: *h.TotalQN, Random: h.Random, ProveRoot: common.BytesToHash(h.ProveRoot), EvictedTxs: hashes2}
 	return &header
 }
@@ -327,7 +327,7 @@ func transactionToPb(t *Transaction) *middleware_pb.Transaction {
 		}
 	}
 
-	transaction := middleware_pb.Transaction{Data: data, Nonce: &t.Nonce, Source: source,
+	transaction := middleware_pb.Transaction{Data: data, Nonce: &t.Nonce, RequestId: &t.RequestId, Source: source,
 		Target: target, Hash: t.Hash.Bytes(),
 		ExtraData: []byte(t.ExtraData), ExtraDataType: &t.ExtraDataType, Type: &t.Type, Sign: sign, Time: &t.Time}
 	return &transaction
@@ -385,7 +385,7 @@ func BlockHeaderToPb(h *BlockHeader) *middleware_pb.BlockHeader {
 
 	header := middleware_pb.BlockHeader{Hash: h.Hash.Bytes(), Height: &h.Height, PreHash: h.PreHash.Bytes(), PreTime: preTime,
 		ProveValue: proveValueByte, CurTime: curTime, Castor: h.Castor, GroupId: h.GroupId, Signature: h.Signature,
-		Nonce: &h.Nonce, Transactions: &txHashes, TxTree: h.TxTree.Bytes(), ReceiptTree: h.ReceiptTree.Bytes(), StateTree: h.StateTree.Bytes(),
+		Nonce: &h.Nonce, RequestId: &h.RequestId, Transactions: &txHashes, TxTree: h.TxTree.Bytes(), ReceiptTree: h.ReceiptTree.Bytes(), StateTree: h.StateTree.Bytes(),
 		ExtraData: h.ExtraData, TotalQN: &h.TotalQN, Random: h.Random, ProveRoot: h.ProveRoot.Bytes(), EvictedTxs: &evictedTxs}
 	return &header
 }

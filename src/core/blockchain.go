@@ -42,6 +42,7 @@ type blockChain struct {
 
 	latestBlock   *types.BlockHeader
 	latestStateDB *account.AccountDB
+	requestId     uint64
 
 	topBlocks         *lru.Cache
 	futureBlocks      *lru.Cache
@@ -175,6 +176,7 @@ func (chain *blockChain) CastBlock(height uint64, proveValue *big.Int, proveRoot
 		PreHash:    latestBlock.Hash,
 		PreTime:    latestBlock.CurTime,
 	}
+	block.Header.RequestId = getRequestIdFromTransactions(block.Transactions, latestBlock.RequestId)
 
 	preStateRoot := common.BytesToHash(latestBlock.StateTree.Bytes())
 	state, err := account.NewAccountDB(preStateRoot, chain.stateDB)
@@ -207,6 +209,33 @@ func (chain *blockChain) CastBlock(height uint64, proveValue *big.Int, proveRoot
 		height, block.Header.Hash.String(), block.Header.TotalQN, len(block.Transactions), block.Header.TxTree.Hex(),
 		consensusHelper.VRFProve2Value(block.Header.ProveValue), block.Header.StateTree.String(), preStateRoot.String())
 	return block
+}
+
+func getRequestIdFromTransactions(transactions []*types.Transaction, lastOne uint64) uint64 {
+	if nil == transactions || 0 == len(transactions) {
+		return lastOne
+	}
+
+	requestId := transactions[len(transactions)-1].RequestId
+	if requestId < lastOne {
+		return lastOne
+	}
+
+	return requestId
+}
+
+func (chain *blockChain) GetRequestId() uint64 {
+	chain.lock.RLock("GetRequestId")
+	defer chain.lock.RUnlock("GetRequestId")
+
+	return chain.requestId
+}
+
+func (chain *blockChain) AddRequestId() {
+	chain.lock.Lock("GetRequestId")
+	defer chain.lock.Unlock("GetRequestId")
+
+	chain.requestId = chain.requestId + 1
 }
 
 func (chain *blockChain) GenerateBlock(bh types.BlockHeader) *types.Block {

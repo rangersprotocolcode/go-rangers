@@ -71,6 +71,7 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 
 		assets := sub.Assets
 		result, _ = json.Marshal(assets)
+
 	case types.StateMachineNonce:
 		result = []byte(strconv.Itoa(statemachine.Docker.Nonce(txRaw.Target)))
 	}

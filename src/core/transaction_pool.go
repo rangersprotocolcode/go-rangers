@@ -62,12 +62,13 @@ func NewTransactionPool() TransactionPool {
 }
 
 func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
+	pool.lock.Lock("AddTransaction")
+	defer pool.lock.Unlock("AddTransaction")
+
 	if err := pool.verifyTransaction(tx); err != nil {
 		logger.Debugf("Tx %s verify sig error:%s, tx type:%d", tx.Hash.String(), err.Error(), tx.Type)
 		return false, err
 	}
-	pool.lock.Lock("AddTransaction")
-	defer pool.lock.Unlock("AddTransaction")
 
 	b, err := pool.add(tx)
 	logger.Debugf("Add tx %s to pool result:%t", tx.Hash.String(), b)
@@ -241,6 +242,8 @@ func (pool *TxPool) PackForCast() []*types.Transaction {
 		return minerTxs
 	}
 	result := pool.packTx(minerTxs)
+
+	// transactions 已经根据RequestId排序
 	return result
 }
 

@@ -31,6 +31,8 @@ message Transaction{
     optional bytes Sign = 9;
 
     optional string Time = 10;
+
+    optional uint64 RequestId = 11;
 }
 
 message TransactionRequestMessage{
@@ -101,6 +103,8 @@ message BlockHeader{
      optional bytes ProveRoot = 18;
 
      optional Hashes EvictedTxs = 19;
+
+     optional uint64 RequestId = 20;
 }
 
 message BlockBody{
