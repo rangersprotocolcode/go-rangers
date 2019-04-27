@@ -8,8 +8,6 @@ import (
 	"x/src/middleware/types"
 	"x/src/storage/account"
 
-	"x/src/statemachine"
-	"strconv"
 	"encoding/json"
 	"x/src/utility"
 	"x/src/network"
@@ -80,13 +78,8 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		case types.TransactionTypeOperatorEvent:
 
 			// 已经执行过了，则直接返回true
-			if nil == GetBlockChain().GetTransactionPool().GetExecuted(transaction.Hash) {
-				payload := transaction.Data
-				statemachine.Docker.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), payload)
-
-			}
-
 			success = true
+
 		case types.TransactionUpdateOperatorEvent:
 			success = true
 			data := make([]types.UserData, 0)

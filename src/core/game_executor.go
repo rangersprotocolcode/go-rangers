@@ -8,17 +8,25 @@ import (
 	"encoding/json"
 	"x/src/network"
 	"x/src/middleware/notify"
+	"sync"
 )
 
 // 用于处理client websocket请求
 type GameExecutor struct {
 	chain *blockChain
+
+	requestId uint64
+	cond      *sync.Cond
 }
 
 //var gameExecutor *GameExecutor
 
 func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor := GameExecutor{chain: blockChainImpl}
+
+	// 初始值，从已有的块中获取
+	gameExecutor.requestId = blockChainImpl.requestId
+	gameExecutor.cond = sync.NewCond(new(sync.Mutex))
 
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.Write)
 
@@ -89,6 +97,35 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 		return
 	}
 
+	// 校验 requestId
+	requestId := message.Nonce
+	if requestId <= executor.requestId {
+		// 已经执行过的消息，忽略
+		if common.DefaultLogger != nil {
+			common.DefaultLogger.Errorf("requestId :%d skipped, current requestId: %d", requestId, executor.requestId)
+		}
+		return
+	}
+
+	// requestId 按序执行
+	executor.cond.L.Lock()
+	for ; requestId != (executor.requestId + 1); {
+
+		// waiting until the right requestId
+		if common.DefaultLogger != nil {
+			common.DefaultLogger.Errorf("requestId :%d is waiting, current requestId: %d", requestId, executor.requestId)
+		}
+		executor.cond.Wait()
+	}
+
+	executor.runTransaction(msg)
+
+	executor.cond.Broadcast()
+	executor.cond.L.Unlock()
+
+}
+func (executor *GameExecutor) runTransaction(msg notify.Message) {
+	message, _ := msg.(*notify.ClientTransactionMessage)
 	txRaw := message.Tx
 	txRaw.RequestId = message.Nonce
 
@@ -103,16 +140,16 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 	case types.TransactionTypeOperatorEvent:
 		outputMessage := statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
 		result, _ = json.Marshal(outputMessage)
-		executor.chain.GetTransactionPool().AddExecuted(&txRaw)
 
 	case types.TransactionTypeWithdraw:
 		result = []byte("success")
 	}
 
 	// reply to the client
-	network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: result}, message.Nonce)
-	return
+	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: result}, message.Nonce)
 
+	// bingo
+	executor.requestId++
 }
 
 func (executor *GameExecutor) sendTransaction(trans *types.Transaction) error {

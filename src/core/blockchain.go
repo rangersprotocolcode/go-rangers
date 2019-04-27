@@ -122,7 +122,6 @@ func initBlockChain() error {
 	chain.stateDB = account.NewDatabase(db)
 
 	chain.bonusManager = newBonusManager()
-	chain.transactionPool = NewTransactionPool()
 	chain.executor = NewVMExecutor(chain)
 	chain.forkProcessor = initForkProcessor()
 
@@ -146,6 +145,8 @@ func initBlockChain() error {
 	}
 	chain.init = true
 	blockChainImpl = chain
+
+	chain.transactionPool = NewTransactionPool()
 	return nil
 }
 

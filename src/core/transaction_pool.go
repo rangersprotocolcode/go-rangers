@@ -41,6 +41,7 @@ type TxPool struct {
 
 	txCount uint64
 	lock    middleware.Loglock
+
 }
 
 func NewTransactionPool() TransactionPool {
@@ -58,18 +59,18 @@ func NewTransactionPool() TransactionPool {
 	}
 	pool.executed = executed
 	pool.batch = pool.executed.NewBatch()
+
 	return pool
 }
 
 func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
-	pool.lock.Lock("AddTransaction")
-	defer pool.lock.Unlock("AddTransaction")
-
 	if err := pool.verifyTransaction(tx); err != nil {
 		logger.Debugf("Tx %s verify sig error:%s, tx type:%d", tx.Hash.String(), err.Error(), tx.Type)
 		return false, err
 	}
 
+	pool.lock.Lock("AddTransaction")
+	defer pool.lock.Unlock("AddTransaction")
 	b, err := pool.add(tx)
 	logger.Debugf("Add tx %s to pool result:%t", tx.Hash.String(), b)
 	return b, err
@@ -252,12 +253,10 @@ func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
 		return ErrNil
 	}
 
-	if tx.Hash != tx.GenHash() {
-		logger.Debugf("Bad tx: hash not illegal,hash:%s,", tx.Hash.String())
-		return ErrHash
-	}
-
-	// 校验 requestId，按序执行
+	//if tx.Hash != tx.GenHash() {
+	//	logger.Debugf("Bad tx: hash not illegal,hash:%s,", tx.Hash.String())
+	//	return ErrHash
+	//}
 
 	return nil
 }
