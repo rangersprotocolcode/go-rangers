@@ -96,6 +96,7 @@ const (
 	TransactionTypeWithAssetOnChainExecute = 105
 	TransactionTypeWithDrawAssetOnChainAck = 106
 
+	// 客户端发送的请求，提现资金与提现资产
 	TransactionTypeWithdraw     = 201
 	TransactionTypeAssetOnChain = 202
 
@@ -155,6 +156,10 @@ func (c Transactions) Swap(i, j int) {
 	c[i], c[j] = c[j], c[i]
 }
 func (c Transactions) Less(i, j int) bool {
+	if c[i].RequestId == 0 && c[j].RequestId == 0 {
+		return c[i].Nonce < c[j].Nonce
+	}
+
 	return c[i].RequestId < c[j].RequestId
 }
 

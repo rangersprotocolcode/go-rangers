@@ -93,7 +93,17 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 
 	message, ok := msg.(*notify.ClientTransactionMessage)
 	if !ok {
-		logger.Debugf("blockReqHandler:Message assert not ok!")
+		logger.Debugf("GameExecutor:Write assert not ok!")
+		return
+	}
+
+	txRaw := message.Tx
+	txRaw.RequestId = message.Nonce
+
+	// 校验交易类型
+	transactionType := txRaw.Type
+	if transactionType != types.TransactionTypeOperatorEvent || transactionType != types.TransactionTypeWithdraw || transactionType != types.TransactionTypeAssetOnChain {
+		logger.Debugf("GameExecutor:Write transactionType: %d, not ok!", transactionType)
 		return
 	}
 
@@ -118,19 +128,18 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 		executor.cond.Wait()
 	}
 
-	executor.runTransaction(msg)
+	result := executor.runTransaction(txRaw)
+
+	// reply to the client
+	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: result}, message.Nonce)
 
 	executor.cond.Broadcast()
 	executor.cond.L.Unlock()
 
 }
-func (executor *GameExecutor) runTransaction(msg notify.Message) {
-	message, _ := msg.(*notify.ClientTransactionMessage)
-	txRaw := message.Tx
-	txRaw.RequestId = message.Nonce
-
+func (executor *GameExecutor) runTransaction(txRaw types.Transaction) []byte {
 	if err := executor.sendTransaction(&txRaw); err != nil {
-		return
+		return []byte{}
 	}
 
 	var result []byte
@@ -145,11 +154,10 @@ func (executor *GameExecutor) runTransaction(msg notify.Message) {
 		result = []byte("success")
 	}
 
-	// reply to the client
-	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: result}, message.Nonce)
-
 	// bingo
 	executor.requestId++
+
+	return result
 }
 
 func (executor *GameExecutor) sendTransaction(trans *types.Transaction) error {

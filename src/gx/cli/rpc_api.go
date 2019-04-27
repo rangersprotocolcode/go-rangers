@@ -14,7 +14,6 @@ import (
 	"math"
 	"x/src/consensus"
 	"strconv"
-	"time"
 	"sync"
 )
 
@@ -91,7 +90,7 @@ func (api *GtasAPI) GetAllAssets(address string, gameId string) (*Result, error)
 	return successResult(sub.Assets)
 }
 
-func (api *GtasAPI) UpdateAssets(gameId string, rawjson string) (*Result, error) {
+func (api *GtasAPI) UpdateAssets(gameId string, rawjson string, nonce uint64) (*Result, error) {
 	//todo 并发问题 临时加锁控制
 	gxLock.Lock()
 	defer gxLock.Unlock()
@@ -121,8 +120,7 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string) (*Result, error)
 		Data:   rawjson,
 		Type:   types.TransactionUpdateOperatorEvent,
 		Target: gameId,
-		Nonce:  uint64(time.Now().Unix()),
-		// todo RequestId:
+		Nonce:  nonce,
 	}
 	tx.Hash = tx.GenHash()
 	_, err := core.GetBlockChain().GetTransactionPool().AddTransaction(tx)
