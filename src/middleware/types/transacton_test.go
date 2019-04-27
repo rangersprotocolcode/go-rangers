@@ -7,7 +7,7 @@ import (
 )
 
 func TestAssetOnChainTransactionHash(t *testing.T) {
-	a := []string{"123", "456"}
+	a := []string{"ss", "dd"}
 	b, err := json.Marshal(a)
 	if err != nil {
 		fmt.Printf("Json marshal []string err:%s", err.Error())
