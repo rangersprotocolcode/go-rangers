@@ -1,11 +1,10 @@
 title: x9
 services:
   - priority: 0
-    game: "j"
-    name: "j9"
-    image: "tcsm_state_machine:68"
+    game: "tuntunbiu"
+    name: "tuntunbiu9"
+    image: "state_machine_demo:latest"
     ports:
       - host: 8889
-        target: 80
+        target: 8080
     detached: true
-    cmd: "npm start"

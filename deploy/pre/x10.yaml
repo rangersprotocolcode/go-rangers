@@ -1,11 +1,10 @@
 title: x10
 services:
   - priority: 0
-    game: "j"
-    name: "j10"
-    image: "tcsm_state_machine:68"
+    game: "tuntunbiu"
+    name: "tuntunbiu10"
+    image: "state_machine_demo:latest"
     ports:
       - host: 8880
-        target: 80
+        target: 8080
     detached: true
-    cmd: "npm start"
