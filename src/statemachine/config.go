@@ -281,7 +281,7 @@ type YAMLConfig struct {
 
 // Init toml from *.yaml
 //filename: 文件名信息
-func (t *YAMLConfig) InitFromFile(filename string, port int) map[string]PortInt {
+func (t *YAMLConfig) InitFromFile(filename string, port uint) map[string]PortInt {
 	yamlFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Fatal(err)
@@ -305,7 +305,7 @@ func (t *YAMLConfig) InitFromFile(filename string, port int) map[string]PortInt 
 //RunContainers: 从配置运行容器
 //cli:  用于访问 docker 守护进程
 //ctx:  传递本次操作的上下文信息
-func (t *YAMLConfig) runContainers(port int) map[string]PortInt {
+func (t *YAMLConfig) runContainers(port uint) map[string]PortInt {
 	if 0 == len(t.Services) {
 		return nil
 	}
@@ -325,10 +325,12 @@ func (t *YAMLConfig) runContainers(port int) map[string]PortInt {
 
 	return mapping
 }
-func (config *YAMLConfig) setPort(portInt PortInt, layer2Port int) {
+func (config *YAMLConfig) setPort(portInt PortInt, layer2Port uint) {
 	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", portInt, "port")
 	values := url.Values{}
-	values["port"] = []string{strconv.Itoa(layer2Port)}
+	values["port"] = []string{strconv.FormatUint(uint64(layer2Port), 10)}
+	common.DefaultLogger.Errorf("Send post req:path:%s,values:%v", path, values)
+
 	resp, err := http.PostForm(path, values)
 
 	if err != nil && nil != common.DefaultLogger {

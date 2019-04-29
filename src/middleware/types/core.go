@@ -386,3 +386,14 @@ func (txJson TxJson) ToTransaction() Transaction {
 	tx.Time = txJson.Time
 	return tx
 }
+
+func (tx Transaction) ToTxJson() TxJson {
+	txJson := TxJson{Source: tx.Source, Target: tx.Target,
+		Type: tx.Type, Data: tx.Data, Nonce: tx.Nonce,
+		RequestId: tx.RequestId, Hash: tx.Hash.String(), Time: tx.Time}
+
+	if tx.Sign != nil {
+		txJson.Sign = tx.Sign.GetHexString()
+	}
+	return txJson
+}
