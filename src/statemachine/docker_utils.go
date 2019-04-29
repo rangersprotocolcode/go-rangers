@@ -17,7 +17,7 @@ type DockerManager struct {
 	Filename string
 }
 
-func DockerInit(filename string) {
+func DockerInit(filename string,port int) {
 
 	if nil != Docker {
 		return
