@@ -102,7 +102,7 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 		return c.Game, c.makePorts(container.Ports[0].PublicPort)
 	}
 	if "created" == container.State {
-		cli.ContainerRemove(ctx, container.ID, types.ContainerRemoveOptions{Force:true})
+		cli.ContainerRemove(ctx, container.ID, types.ContainerRemoveOptions{Force: true})
 
 		// refresh container status
 		containers, _ = cli.ContainerList(ctx, types.ContainerListOptions{All: true})
@@ -328,9 +328,21 @@ func (config *YAMLConfig) setPort(portInt PortInt) {
 	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", portInt, "port")
 	values := url.Values{}
 	values["port"] = []string{portInt.String()}
-	_, err := http.PostForm(path, values)
+	resp, err := http.PostForm(path, values)
 
 	if err != nil && nil != common.DefaultLogger {
 		common.DefaultLogger.Errorf(err.Error())
+		return
+	}
+
+	defer resp.Body.Close()
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		// handle error
+		return
+	}
+
+	if common.DefaultLogger != nil {
+		common.DefaultLogger.Error(string(body))
 	}
 }
