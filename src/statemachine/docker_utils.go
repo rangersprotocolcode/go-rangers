@@ -17,7 +17,7 @@ type DockerManager struct {
 	Filename string
 }
 
-func DockerInit(filename string,port int) {
+func DockerInit(filename string, port uint) {
 
 	if nil != Docker {
 		return
@@ -29,7 +29,7 @@ func DockerInit(filename string,port int) {
 	Docker.init(port)
 }
 
-func (d *DockerManager) init(port int) {
+func (d *DockerManager) init(port uint) {
 	d.Mapping = d.Config.InitFromFile(d.Filename, port)
 }
 
@@ -126,4 +126,3 @@ func (d *DockerManager) getUrlPrefix(name string) string {
 	//call local container
 	return fmt.Sprintf("http://0.0.0.0:%d/api/v1/", port)
 }
-

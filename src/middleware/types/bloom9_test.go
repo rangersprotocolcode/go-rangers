@@ -3,8 +3,6 @@ package types
 import (
 	"math/big"
 	"testing"
-	"github.com/gin-gonic/gin/json"
-	"fmt"
 )
 
 func TestBloom(t *testing.T) {
@@ -35,19 +33,3 @@ func TestBloom(t *testing.T) {
 		}
 	}
 }
-
-func TestWithdrawTransactionHash(t *testing.T) {
-	txJson := TxJson{Source: "aaa", Target: "111", Type: 201, Data: "1.2", Nonce: 1, Time: "1556076659050692000"}
-	j, _ := json.Marshal(txJson)
-	fmt.Printf("json:%s\n", string(j))
-
-	tx := txJson.ToTransaction()
-	fmt.Printf("TX:%v\n", tx)
-
-    tx.Hash = tx.GenHash()
-	fmt.Printf("Hash:%s\n", tx.Hash.String())
-
-
-}
-
-
