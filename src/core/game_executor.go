@@ -17,9 +17,9 @@ type GameExecutor struct {
 
 	requestId uint64
 	cond      *sync.Cond
-}
 
-//var gameExecutor *GameExecutor
+	debug bool // debug 为true，则不开启requestId校验
+}
 
 func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor := GameExecutor{chain: blockChainImpl}
@@ -27,6 +27,12 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	// 初始值，从已有的块中获取
 	gameExecutor.requestId = blockChainImpl.requestId
 	gameExecutor.cond = sync.NewCond(new(sync.Mutex))
+
+	if nil != common.GlobalConf {
+		gameExecutor.debug = common.GlobalConf.GetBool("gx", "debug", true)
+	} else {
+		gameExecutor.debug = true
+	}
 
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.Write)
 
@@ -85,7 +91,8 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	}
 
 	// reply to the client
-	network.GetNetInstance().SendToClientReader(message.UserId, network.Message{Body: result}, message.Nonce)
+	go network.GetNetInstance().SendToClientReader(message.UserId, network.Message{Body: result}, message.Nonce)
+
 	return
 }
 
@@ -102,30 +109,34 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 
 	// 校验交易类型
 	transactionType := txRaw.Type
-	if transactionType != types.TransactionTypeOperatorEvent || transactionType != types.TransactionTypeWithdraw || transactionType != types.TransactionTypeAssetOnChain {
+	if transactionType != types.TransactionTypeOperatorEvent &&
+		transactionType != types.TransactionTypeWithdraw &&
+		transactionType != types.TransactionTypeAssetOnChain {
 		logger.Debugf("GameExecutor:Write transactionType: %d, not ok!", transactionType)
 		return
 	}
 
 	// 校验 requestId
-	requestId := message.Nonce
-	if requestId <= executor.requestId {
-		// 已经执行过的消息，忽略
-		if common.DefaultLogger != nil {
-			common.DefaultLogger.Errorf("requestId :%d skipped, current requestId: %d", requestId, executor.requestId)
+	if !executor.debug {
+		requestId := message.Nonce
+		if requestId <= executor.requestId {
+			// 已经执行过的消息，忽略
+			if common.DefaultLogger != nil {
+				common.DefaultLogger.Errorf("requestId :%d skipped, current requestId: %d", requestId, executor.requestId)
+			}
+			return
 		}
-		return
-	}
 
-	// requestId 按序执行
-	executor.cond.L.Lock()
-	for ; requestId != (executor.requestId + 1); {
+		// requestId 按序执行
+		executor.cond.L.Lock()
+		for ; requestId != (executor.requestId + 1); {
 
-		// waiting until the right requestId
-		if common.DefaultLogger != nil {
-			common.DefaultLogger.Errorf("requestId :%d is waiting, current requestId: %d", requestId, executor.requestId)
+			// waiting until the right requestId
+			if common.DefaultLogger != nil {
+				common.DefaultLogger.Errorf("requestId :%d is waiting, current requestId: %d", requestId, executor.requestId)
+			}
+			executor.cond.Wait()
 		}
-		executor.cond.Wait()
 	}
 
 	result := executor.runTransaction(txRaw)
@@ -133,8 +144,10 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 	// reply to the client
 	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: result}, message.Nonce)
 
-	executor.cond.Broadcast()
-	executor.cond.L.Unlock()
+	if !executor.debug {
+		executor.cond.Broadcast()
+		executor.cond.L.Unlock()
+	}
 
 }
 func (executor *GameExecutor) runTransaction(txRaw types.Transaction) []byte {

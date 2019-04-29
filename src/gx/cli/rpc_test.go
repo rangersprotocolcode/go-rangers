@@ -23,15 +23,15 @@ func TestRPC(t *testing.T) {
 		method string
 		params []interface{}
 	}{
-		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"50\",\"assets\":{\"1\":\"dj\"}}]"}},
+		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"50\",\"assets\":{\"1\":\"dj\"}}]",1}},
 		{"Rocket_getBalance", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
 		{"Rocket_getAsset", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "1"}},
 		{"Rocket_getAllAssets", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
-		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"-2.25\",\"assets\":{\"1\":\"dj11\",\"2\":\"yyyy\"}}]"}},
+		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"-2.25\",\"assets\":{\"1\":\"dj11\",\"2\":\"yyyy\"}}]",2}},
 		{"Rocket_getAsset", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "1"}},
 		{"Rocket_getAllAssets", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
 		{"Rocket_getBalance", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
-		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"2.25\",\"assets\":{\"1\":\"\",\"2\":\"yyyy\"}}]"}},
+		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"2.25\",\"assets\":{\"1\":\"\",\"2\":\"yyyy\"}}]",3}},
 		{"Rocket_getAsset", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "1"}},
 		{"Rocket_getAllAssets", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
 		{"Rocket_getBalance", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
