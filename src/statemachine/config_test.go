@@ -13,7 +13,6 @@ func TestConfig(t *testing.T) {
 
 	assertEqual(t, len(tom.Services), 2)
 
-	tom.runContainers()
 }
 
 func TestDocker(t *testing.T) {

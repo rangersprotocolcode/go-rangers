@@ -11,11 +11,9 @@ services:
     cmd: "npm start"
 
   - priority: 1
-    game: "jj"
-    name: "j6"
-    image: "tcsm_state_machine:68"
+    game: "abc"
+    image: "state_machine_demo_tuntun:latest"
     ports:
-      - host: 8886
-        target: 80
+      - host: 8866
+        target: 8080
     detached: true
-    cmd: "npm start"

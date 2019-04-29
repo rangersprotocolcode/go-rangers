@@ -14,6 +14,9 @@ import (
 	"github.com/docker/go-connections/nat"
 	"gopkg.in/yaml.v2"
 	"github.com/docker/docker/api/types/container"
+	"net/http"
+	"net/url"
+	"x/src/common"
 )
 
 //PortInt: 端口号类型
@@ -85,6 +88,10 @@ func (c *ContainerConfig) JSONStr() string {
 //ctx:  传递本次操作的上下文信息
 //net:  网络配置
 func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, containers []types.Container) (string, Ports) {
+	// c.name 如果不申明，则默认为c.game
+	if 0 == len(c.Name) {
+		c.Name = c.Game
+	}
 
 	container := c.checkStatus(containers)
 	if nil == container {
@@ -93,6 +100,13 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 
 	if "running" == container.State {
 		return c.Game, c.makePorts(container.Ports[0].PublicPort)
+	}
+	if "created" == container.State {
+		cli.ContainerRemove(ctx, container.ID, types.ContainerRemoveOptions{Force:true})
+
+		// refresh container status
+		containers, _ = cli.ContainerList(ctx, types.ContainerListOptions{All: true})
+		return c.RunContainer(cli, ctx, containers)
 	}
 
 	if "exited" == container.State {
@@ -305,7 +319,18 @@ func (t *YAMLConfig) runContainers() map[string]PortInt {
 			continue
 		}
 		mapping[name] = ports[0].Host
+		t.setPort(ports[0].Host)
 	}
 
 	return mapping
+}
+func (config *YAMLConfig) setPort(portInt PortInt) {
+	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", portInt, "port")
+	values := url.Values{}
+	values["port"] = []string{portInt.String()}
+	_, err := http.PostForm(path, values)
+
+	if err != nil && nil != common.DefaultLogger {
+		common.DefaultLogger.Errorf(err.Error())
+	}
 }
