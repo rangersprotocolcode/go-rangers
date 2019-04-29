@@ -26,11 +26,11 @@ func DockerInit(filename string,port int) {
 	Docker = &DockerManager{
 		Filename: filename,
 	}
-	Docker.init()
+	Docker.init(port)
 }
 
-func (d *DockerManager) init() {
-	d.Mapping = d.Config.InitFromFile(d.Filename)
+func (d *DockerManager) init(port int) {
+	d.Mapping = d.Config.InitFromFile(d.Filename, port)
 }
 
 func (d *DockerManager) Process(name string, kind string, nonce string, payload string) *types.OutputMessage {
