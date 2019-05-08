@@ -35,9 +35,9 @@ func DockerInit(filename string, port uint) {
 }
 
 const (
-	MaxIdleConns        int = 10
-	MaxIdleConnsPerHost int = 10
-	IdleConnTimeout     int = 90
+	maxIdleConns        int = 10
+	maxIdleConnsPerHost int = 10
+	idleConnTimeout     int = 90
 )
 
 // createHTTPClient for connection re-use
@@ -49,9 +49,9 @@ func createHTTPClient() *http.Client {
 				Timeout:   30 * time.Second,
 				KeepAlive: 30 * time.Second,
 			}).DialContext,
-			MaxIdleConns:        MaxIdleConns,
-			MaxIdleConnsPerHost: MaxIdleConnsPerHost,
-			IdleConnTimeout:     time.Duration(IdleConnTimeout) * time.Second,
+			MaxIdleConns:        maxIdleConns,
+			MaxIdleConnsPerHost: maxIdleConnsPerHost,
+			IdleConnTimeout:     time.Duration(idleConnTimeout) * time.Second,
 		},
 	}
 

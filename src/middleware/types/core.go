@@ -203,7 +203,7 @@ type BlockHeader struct {
 	GroupId      []byte        //组ID，groupsig.ID的二进制表示
 	Signature    []byte        // 组签名
 	Nonce        uint64        //盐
-	RequestId    uint64        //盐
+	RequestIds   map[string]uint64
 	Transactions []common.Hash // 交易集哈希列表
 	TxTree       common.Hash   // 交易默克尔树根hash
 	ReceiptTree  common.Hash
@@ -224,7 +224,7 @@ type header struct {
 	Castor       []byte      //出块人ID
 	GroupId      []byte      //组ID，groupsig.ID的二进制表示
 	Nonce        uint64      //盐
-	RequestId    uint64
+	RequestId    map[string]uint64
 	Transactions []common.Hash // 交易集哈希列表
 	TxTree       common.Hash   // 交易默克尔树根hash
 	ReceiptTree  common.Hash
@@ -244,7 +244,7 @@ func (bh *BlockHeader) GenHash() common.Hash {
 		CurTime:      bh.CurTime,
 		Castor:       bh.Castor,
 		Nonce:        bh.Nonce,
-		RequestId:    bh.RequestId,
+		RequestId:    bh.RequestIds,
 		Transactions: bh.Transactions,
 		TxTree:       bh.TxTree,
 		ReceiptTree:  bh.ReceiptTree,

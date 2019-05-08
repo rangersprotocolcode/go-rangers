@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"x/src/middleware/log"
+	"encoding/json"
 )
 
 var logger log.Logger
@@ -235,8 +236,8 @@ func PbToBlockHeader(h *middleware_pb.BlockHeader) *BlockHeader {
 		Nonce: *h.Nonce, Transactions: hashes, TxTree: common.BytesToHash(h.TxTree), ReceiptTree: common.BytesToHash(h.ReceiptTree), StateTree: common.BytesToHash(h.StateTree),
 		ExtraData: h.ExtraData, TotalQN: *h.TotalQN, Random: h.Random, ProveRoot: common.BytesToHash(h.ProveRoot), EvictedTxs: hashes2}
 
-	if nil != h.RequestId {
-		header.RequestId = *h.RequestId
+	if nil != h.RequestIds {
+		json.Unmarshal(h.RequestIds, &header.RequestIds)
 	}
 	return &header
 }
@@ -389,8 +390,10 @@ func BlockHeaderToPb(h *BlockHeader) *middleware_pb.BlockHeader {
 
 	header := middleware_pb.BlockHeader{Hash: h.Hash.Bytes(), Height: &h.Height, PreHash: h.PreHash.Bytes(), PreTime: preTime,
 		ProveValue: proveValueByte, CurTime: curTime, Castor: h.Castor, GroupId: h.GroupId, Signature: h.Signature,
-		Nonce: &h.Nonce, RequestId: &h.RequestId, Transactions: &txHashes, TxTree: h.TxTree.Bytes(), ReceiptTree: h.ReceiptTree.Bytes(), StateTree: h.StateTree.Bytes(),
+		Nonce: &h.Nonce, Transactions: &txHashes, TxTree: h.TxTree.Bytes(), ReceiptTree: h.ReceiptTree.Bytes(), StateTree: h.StateTree.Bytes(),
 		ExtraData: h.ExtraData, TotalQN: &h.TotalQN, Random: h.Random, ProveRoot: h.ProveRoot.Bytes(), EvictedTxs: &evictedTxs}
+
+	header.RequestIds, _ = json.Marshal(h.RequestIds)
 	return &header
 }
 

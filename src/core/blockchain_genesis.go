@@ -57,9 +57,9 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 		Transactions: make([]common.Hash, 0), //important!!
 		EvictedTxs:   make([]common.Hash, 0), //important!!
 		Nonce:        ChainDataVersion,
-		RequestId:    0,
 	}
 
+	block.Header.RequestIds = make(map[string]uint64)
 	block.Header.Signature = common.Sha256([]byte("tas"))
 	block.Header.Random = common.Sha256([]byte("tas_initial_random"))
 

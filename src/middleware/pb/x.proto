@@ -104,7 +104,7 @@ message BlockHeader{
 
      optional Hashes EvictedTxs = 19;
 
-     optional uint64 RequestId = 20;
+     optional bytes RequestIds = 20;
 }
 
 message BlockBody{

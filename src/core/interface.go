@@ -67,10 +67,6 @@ type BlockChain interface {
 	GetVerifyHash(height uint64) (common.Hash, error)
 
 	GetAccountDB() *account.AccountDB
-
-	GetRequestId() uint64
-
-	AddRequestId()
 }
 
 type GroupChain interface {
