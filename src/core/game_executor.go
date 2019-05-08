@@ -15,15 +15,15 @@ import (
 type GameExecutor struct {
 	chain *blockChain
 
-	requestId uint64
-	cond      *sync.Cond
+	requestIds map[string]uint64
+	conds      sync.Map
 
 	debug bool // debug 为true，则不开启requestId校验
 }
 
 type response struct {
-	Data    []byte
-	Id      []byte
+	Data    string
+	Hash    string
 	Status  byte
 	Version string
 }
@@ -32,8 +32,12 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor := GameExecutor{chain: blockChainImpl}
 
 	// 初始值，从已有的块中获取
-	gameExecutor.requestId = blockChainImpl.requestId
-	gameExecutor.cond = sync.NewCond(new(sync.Mutex))
+	gameExecutor.requestIds = blockChainImpl.requestIds
+	if nil == gameExecutor.requestIds {
+		gameExecutor.requestIds = make(map[string]uint64)
+	}
+
+	gameExecutor.conds = sync.Map{}
 
 	if nil != common.GlobalConf {
 		gameExecutor.debug = common.GlobalConf.GetBool("gx", "debug", true)
@@ -48,21 +52,31 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	//notify.BUS.Subscribe(notify.BlockAddSucc, gameExecutor.onBlockAddSuccess)
 }
 
+func (executor *GameExecutor) getCond(gameId string) *sync.Cond {
+	defaultValue := sync.NewCond(new(sync.Mutex))
+	value, _ := executor.conds.LoadOrStore(gameId, defaultValue)
+
+	return value.(*sync.Cond)
+}
+
 func (executor *GameExecutor) onBlockAddSuccess(message notify.Message) {
 	block := message.GetData().(types.Block)
 	bh := block.Header
 
-	if executor.requestId < bh.RequestId {
-		executor.cond.L.Lock()
+	for key, value := range bh.RequestIds {
+		if executor.requestIds[key] < value {
+			executor.getCond(key).L.Lock()
 
-		if common.DefaultLogger != nil {
-			common.DefaultLogger.Errorf("upgrade requestid, from %d to %d", executor.requestId, bh.RequestId)
+			if common.DefaultLogger != nil {
+				common.DefaultLogger.Errorf("upgrade %s requestId, from %d to %d", key, executor.requestIds[key], value)
+			}
+			executor.requestIds[key] = value
+
+			executor.getCond(key).Broadcast()
+			executor.getCond(key).L.Unlock()
 		}
-		executor.requestId = bh.RequestId
-
-		executor.cond.Broadcast()
-		executor.cond.L.Unlock()
 	}
+
 }
 
 func (executor *GameExecutor) Read(msg notify.Message) {
@@ -72,7 +86,7 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 		return
 	}
 
-	var result []byte
+	var result string
 	txRaw := message.Tx
 	switch txRaw.Type {
 
@@ -80,25 +94,25 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	case types.GetBalance:
 		sub := GetSubAccount(txRaw.Source, txRaw.Target, GetBlockChain().GetAccountDB())
 		if nil == sub {
-			result = []byte{}
+			result = ""
 		} else {
 			floatdata := float64(sub.Balance.Int64()) / 1000000000
-			result = []byte(strconv.FormatFloat(floatdata, 'f', -1, 64))
+			result = strconv.FormatFloat(floatdata, 'f', -1, 64)
 		}
 
 	case types.GetAsset:
 		sub := GetSubAccount(txRaw.Source, txRaw.Target, GetBlockChain().GetAccountDB())
 		if nil == sub {
-			result = []byte{}
+			result = ""
 		}
 
 		assets := sub.Assets
 		if nil == assets || 0 == len(assets) {
-			result = []byte{}
+			result = ""
 		} else {
 			for _, asset := range assets {
 				if asset.Id == string(txRaw.Data) {
-					result = []byte(asset.Value)
+					result = asset.Value
 				}
 			}
 		}
@@ -106,26 +120,27 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	case types.GetAllAssets:
 		sub := GetSubAccount(txRaw.Source, txRaw.Target, GetBlockChain().GetAccountDB())
 		if nil == sub {
-			result = []byte{}
+			result = ""
 		}
 
 		assets := sub.Assets
-		result, _ = json.Marshal(assets)
+		bytes, _ := json.Marshal(assets)
+		result = string(bytes)
 
 	case types.StateMachineNonce:
-		result = []byte(strconv.Itoa(statemachine.Docker.Nonce(txRaw.Target)))
+		result = strconv.Itoa(statemachine.Docker.Nonce(txRaw.Target))
 	}
 
 	// reply to the client
-	go network.GetNetInstance().SendToClientReader(message.UserId, network.Message{Body: executor.makeSuccessRespone(result, txRaw.Hash)}, message.Nonce)
+	go network.GetNetInstance().SendToClientReader(message.UserId, network.Message{Body: executor.makeSuccessResponse(result, txRaw.Hash)}, message.Nonce)
 
 	return
 }
 
-func (executor *GameExecutor) makeSuccessRespone(bytes []byte, hash common.Hash) []byte {
+func (executor *GameExecutor) makeSuccessResponse(bytes string, hash common.Hash) []byte {
 	res := response{
 		Data:   bytes,
-		Id:     hash.Bytes(),
+		Hash:   hash.String(),
 		Status: 0,
 	}
 
@@ -144,6 +159,7 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 
 	txRaw := message.Tx
 	txRaw.RequestId = message.Nonce
+	gameId := txRaw.Target
 
 	// 校验交易类型
 	transactionType := txRaw.Type
@@ -157,57 +173,58 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 	// 校验 requestId
 	if !executor.debug {
 		requestId := message.Nonce
-		if requestId <= executor.requestId {
+		if requestId <= executor.requestIds[gameId] {
 			// 已经执行过的消息，忽略
 			if common.DefaultLogger != nil {
-				common.DefaultLogger.Errorf("requestId :%d skipped, current requestId: %d", requestId, executor.requestId)
+				common.DefaultLogger.Errorf("%s requestId :%d skipped, current requestId: %d", gameId, requestId, executor.requestIds[gameId])
 			}
 			return
 		}
 
 		// requestId 按序执行
-		executor.cond.L.Lock()
-		for ; requestId != (executor.requestId + 1); {
+		executor.getCond(gameId).L.Lock()
+		for ; requestId != (executor.requestIds[gameId] + 1); {
 
 			// waiting until the right requestId
 			if common.DefaultLogger != nil {
-				common.DefaultLogger.Errorf("requestId :%d is waiting, current requestId: %d", requestId, executor.requestId)
+				common.DefaultLogger.Errorf("%s requestId :%d is waiting, current requestId: %d", gameId, requestId, executor.requestIds[gameId])
 			}
 			// todo 超时放弃
-			executor.cond.Wait()
+			executor.getCond(gameId).Wait()
 		}
 	}
 
 	result := executor.runTransaction(txRaw)
 
 	// reply to the client
-	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: executor.makeSuccessRespone(result, txRaw.Hash)}, message.Nonce)
+	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: executor.makeSuccessResponse(result, txRaw.Hash)}, message.Nonce)
 
 	if !executor.debug {
-		executor.cond.Broadcast()
-		executor.cond.L.Unlock()
+		executor.getCond(gameId).Broadcast()
+		executor.getCond(gameId).L.Unlock()
 	}
 
 }
-func (executor *GameExecutor) runTransaction(txRaw types.Transaction) []byte {
+func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 	if err := executor.sendTransaction(&txRaw); err != nil {
-		return []byte{}
+		return ""
 	}
 
-	var result []byte
+	var result string
 	switch txRaw.Type {
 
 	// execute state machine transaction
 	case types.TransactionTypeOperatorEvent:
 		outputMessage := statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
-		result, _ = json.Marshal(outputMessage)
+		bytes, _ := json.Marshal(outputMessage)
+		result = string(bytes)
 
 	case types.TransactionTypeWithdraw:
-		result = []byte("success")
+		result = "success"
 	}
 
 	// bingo
-	executor.requestId++
+	executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
 
 	return result
 }

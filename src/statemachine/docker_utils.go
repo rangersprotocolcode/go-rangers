@@ -7,14 +7,17 @@ import (
 	"fmt"
 	"net/url"
 	"x/src/middleware/types"
+	"time"
+	"net"
 )
 
 var Docker *DockerManager
 
 type DockerManager struct {
-	Mapping  map[string]PortInt
-	Config   YAMLConfig
-	Filename string
+	Mapping    map[string]PortInt
+	Config     YAMLConfig
+	Filename   string
+	httpClient *http.Client
 }
 
 func DockerInit(filename string, port uint) {
@@ -27,6 +30,32 @@ func DockerInit(filename string, port uint) {
 		Filename: filename,
 	}
 	Docker.init(port)
+
+	Docker.httpClient = createHTTPClient()
+}
+
+const (
+	maxIdleConns        int = 10
+	maxIdleConnsPerHost int = 10
+	idleConnTimeout     int = 90
+)
+
+// createHTTPClient for connection re-use
+func createHTTPClient() *http.Client {
+	client := &http.Client{
+		Transport: &http.Transport{
+			Proxy: http.ProxyFromEnvironment,
+			DialContext: (&net.Dialer{
+				Timeout:   30 * time.Second,
+				KeepAlive: 30 * time.Second,
+			}).DialContext,
+			MaxIdleConns:        maxIdleConns,
+			MaxIdleConnsPerHost: maxIdleConnsPerHost,
+			IdleConnTimeout:     time.Duration(idleConnTimeout) * time.Second,
+		},
+	}
+
+	return client
 }
 
 func (d *DockerManager) init(port uint) {
@@ -44,8 +73,8 @@ func (d *DockerManager) Process(name string, kind string, nonce string, payload 
 	values["type"] = []string{kind}
 	values["nonce"] = []string{nonce}
 	values["payload"] = []string{payload}
-	resp, err := http.PostForm(path, values)
 
+	resp, err := d.httpClient.PostForm(path, values)
 	if err != nil {
 		// handle error
 		return nil
@@ -74,7 +103,7 @@ func (d *DockerManager) Validate(name string, key string, value string) string {
 	}
 
 	path := fmt.Sprintf("%svalidate", prefix)
-	resp, err := http.PostForm(path, url.Values{"key": {key}, "value": {value}})
+	resp, err := d.httpClient.PostForm(path, url.Values{"key": {key}, "value": {value}})
 	if err != nil {
 		// handle error
 		return ""
@@ -97,7 +126,7 @@ func (d *DockerManager) Nonce(name string) int {
 	}
 
 	url := fmt.Sprintf("%snonce", prefix)
-	resp, err := http.Get(url)
+	resp, err := d.httpClient.Get(url)
 	if err != nil {
 		// handle error
 		return -2
@@ -117,6 +146,7 @@ func (d *DockerManager) Nonce(name string) int {
 
 	return nonce.Nonce
 }
+
 func (d *DockerManager) getUrlPrefix(name string) string {
 	port := d.Mapping[name]
 	if 0 == port {

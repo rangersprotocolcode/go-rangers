@@ -26,12 +26,18 @@ type header struct {
 	nonce    uint64
 }
 
+func (s *server) send(method []byte, targetId string, msg Message, nonce uint64, isClient bool) {
+	var m []byte
+	var err error
 
-func (s *server) send(method []byte, targetId string, msg Message, nonce uint64) {
-	m, err := marshalMessage(msg)
-	if err != nil {
-		Logger.Errorf("marshal message error:%s", err.Error())
-		return
+	if isClient {
+		m = msg.Body
+	} else {
+		m, err = marshalMessage(msg)
+		if err != nil {
+			Logger.Errorf("marshal message error:%s", err.Error())
+			return
+		}
 	}
 
 	header := header{method: method, nonce: nonce}

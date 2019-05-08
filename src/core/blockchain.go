@@ -42,7 +42,7 @@ type blockChain struct {
 
 	latestBlock   *types.BlockHeader
 	latestStateDB *account.AccountDB
-	requestId     uint64
+	requestIds    map[string]uint64
 
 	topBlocks         *lru.Cache
 	futureBlocks      *lru.Cache
@@ -177,7 +177,7 @@ func (chain *blockChain) CastBlock(height uint64, proveValue *big.Int, proveRoot
 		PreHash:    latestBlock.Hash,
 		PreTime:    latestBlock.CurTime,
 	}
-	block.Header.RequestId = getRequestIdFromTransactions(block.Transactions, latestBlock.RequestId)
+	block.Header.RequestIds = getRequestIdFromTransactions(block.Transactions, latestBlock.RequestIds)
 
 	preStateRoot := common.BytesToHash(latestBlock.StateTree.Bytes())
 	state, err := account.NewAccountDB(preStateRoot, chain.stateDB)
@@ -212,31 +212,21 @@ func (chain *blockChain) CastBlock(height uint64, proveValue *big.Int, proveRoot
 	return block
 }
 
-func getRequestIdFromTransactions(transactions []*types.Transaction, lastOne uint64) uint64 {
-	if nil == transactions || 0 == len(transactions) {
-		return lastOne
+func getRequestIdFromTransactions(transactions []*types.Transaction, lastOne map[string]uint64) map[string]uint64 {
+	result := make(map[string]uint64)
+	for key, value := range lastOne {
+		result[key] = value
 	}
 
-	requestId := transactions[len(transactions)-1].RequestId
-	if requestId < lastOne {
-		return lastOne
+	if nil != transactions && 0 != len(transactions) {
+		for _, tx := range transactions {
+			if result[tx.Target] < tx.RequestId {
+				result[tx.Target] = tx.RequestId
+			}
+		}
 	}
 
-	return requestId
-}
-
-func (chain *blockChain) GetRequestId() uint64 {
-	chain.lock.RLock("GetRequestId")
-	defer chain.lock.RUnlock("GetRequestId")
-
-	return chain.requestId
-}
-
-func (chain *blockChain) AddRequestId() {
-	chain.lock.Lock("GetRequestId")
-	defer chain.lock.Unlock("GetRequestId")
-
-	chain.requestId = chain.requestId + 1
+	return result
 }
 
 func (chain *blockChain) GenerateBlock(bh types.BlockHeader) *types.Block {

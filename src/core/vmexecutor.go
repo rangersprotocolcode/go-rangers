@@ -11,6 +11,8 @@ import (
 	"encoding/json"
 	"x/src/utility"
 	"x/src/network"
+	"x/src/statemachine"
+	"strconv"
 )
 
 const MaxCastBlockTime = time.Second * 3
@@ -78,6 +80,12 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		case types.TransactionTypeOperatorEvent:
 
 			// 已经执行过了，则直接返回true
+			if nil == GetBlockChain().GetTransactionPool().GetExecuted(transaction.Hash) {
+				payload := transaction.Data
+				statemachine.Docker.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), payload)
+
+			}
+
 			success = true
 
 		case types.TransactionUpdateOperatorEvent:
