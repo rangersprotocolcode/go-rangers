@@ -26,7 +26,7 @@ func InitNetwork(selfMinerId string, consensusHandler MsgHandler) {
 	if err != nil {
 		panic("Dial to" + url.String() + " err:" + err.Error())
 	}
-	Server = server{conn: conn, consensusHandler: consensusHandler, sendChan: make(chan []byte, channelSize), rcvChan: make(chan []byte, channelSize)}
+	Server = server{conn: conn, consensusHandler: consensusHandler, textSendChan: make(chan []byte, channelSize), binarySendChan: make(chan []byte, channelSize), rcvChan: make(chan []byte, channelSize)}
 	go Server.receiveMessage()
 	go Server.loop()
 

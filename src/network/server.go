@@ -14,8 +14,9 @@ type server struct {
 	conn             *websocket.Conn
 	consensusHandler MsgHandler
 
-	sendChan chan []byte
-	rcvChan  chan []byte
+	textSendChan   chan []byte
+	binarySendChan chan []byte
+	rcvChan        chan []byte
 }
 
 func (s *server) Send(id string, msg Message) {
@@ -111,7 +112,7 @@ func (s *server) joinGroup(groupID string) {
 	Logger.Debugf("Join group:%d", target)
 	header.targetId = target
 
-	s.sendChan <- header.toBytes()
+	s.binarySendChan <- header.toBytes()
 }
 
 func (s *server) handleClientMessage(data []byte, userId string, nonce uint64, event string) {
