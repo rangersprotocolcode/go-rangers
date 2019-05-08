@@ -3,7 +3,7 @@ services:
   - priority: 0
     game: "tuntunbiu"
     name: "tuntunbiu1"
-    image: "state_machine_demo:latest"
+    image: "tuntunbiu_image:latest"
     ports:
       - host: 8881
         target: 8080
