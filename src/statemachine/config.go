@@ -320,21 +320,27 @@ func (t *YAMLConfig) runContainers(port uint) map[string]PortInt {
 			continue
 		}
 		mapping[name] = ports[0].Host
-		t.setPort(ports[0].Host, port)
+		t.setUrl(ports[0].Host, port)
 	}
 
 	return mapping
 }
-func (config *YAMLConfig) setPort(portInt PortInt, layer2Port uint) {
+func (config *YAMLConfig) setUrl(portInt PortInt, layer2Port uint) {
 	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", portInt, "port")
 	values := url.Values{}
+	// todo : refactor statemachine sdk
+	//values["url"] = []string{fmt.Sprintf("http://%s:%d","host.docker.internal",layer2Port)}
 	values["port"] = []string{strconv.FormatUint(uint64(layer2Port), 10)}
-	common.DefaultLogger.Errorf("Send post req:path:%s,values:%v", path, values)
+	if nil != common.DefaultLogger {
+		common.DefaultLogger.Errorf("Send post req:path:%s,values:%v", path, values)
+	}
 
 	resp, err := http.PostForm(path, values)
 
-	if err != nil && nil != common.DefaultLogger {
-		common.DefaultLogger.Errorf(err.Error())
+	if err != nil {
+		if nil != common.DefaultLogger {
+			common.DefaultLogger.Errorf(err.Error())
+		}
 		return
 	}
 

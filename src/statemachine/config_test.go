@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"strconv"
 	"encoding/json"
+	"runtime"
 )
 
 func TestConfig(t *testing.T) {
+	fmt.Println(runtime.GOOS)
+
 	var tom = new(YAMLConfig)
-	tom.InitFromFile("test.yaml")
+	tom.InitFromFile("test.yaml", 10)
 
 	assertEqual(t, len(tom.Services), 2)
 
@@ -18,7 +21,7 @@ func TestConfig(t *testing.T) {
 func TestDocker(t *testing.T) {
 	var tom = new(DockerManager)
 	tom.Filename = "test.yaml"
-	tom.init()
+	tom.init(8080)
 
 	nonce := tom.Nonce("j")
 	fmt.Println(nonce)
