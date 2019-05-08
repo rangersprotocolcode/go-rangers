@@ -73,8 +73,8 @@ func (d *DockerManager) Process(name string, kind string, nonce string, payload 
 	values["type"] = []string{kind}
 	values["nonce"] = []string{nonce}
 	values["payload"] = []string{payload}
-	resp, err := d.httpClient.PostForm(path, values)
 
+	resp, err := d.httpClient.PostForm(path, values)
 	if err != nil {
 		// handle error
 		return nil
