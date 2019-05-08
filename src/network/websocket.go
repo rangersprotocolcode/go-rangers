@@ -51,7 +51,12 @@ func (s *server) send(method []byte, targetId string, msg Message, nonce uint64)
 	message := loadWebSocketMsg(header, m)
 
 	Logger.Debugf("Send msg:%v", message)
-	s.sendChan <- message
+
+	if bytes.Equal(method, methodCodeClientReader) || bytes.Equal(method, methodCodeClientWriter) {
+		s.textSendChan <- message
+	} else {
+		s.binarySendChan <- message
+	}
 }
 
 func (s *server) receiveMessage() {
@@ -90,10 +95,15 @@ func (s *server) loop() {
 				s.handleCoinProxyMessage(data, header.nonce)
 				continue
 			}
-		case message := <-s.sendChan:
+		case message := <-s.binarySendChan:
 			err := s.conn.WriteMessage(websocket.BinaryMessage, message)
 			if err != nil {
-				Logger.Errorf("Send msg error:%s", err.Error())
+				Logger.Errorf("Send binary msg error:%s", err.Error())
+			}
+		case message := <-s.textSendChan:
+			err := s.conn.WriteMessage(websocket.TextMessage, message)
+			if err != nil {
+				Logger.Errorf("Send text msg error:%s", err.Error())
 			}
 
 		}

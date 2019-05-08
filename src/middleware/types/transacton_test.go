@@ -15,7 +15,7 @@ func TestAssetOnChainTransactionHash(t *testing.T) {
 	}
 	str := string(b)
 
-	txJson := TxJson{Source: "dragonMother", Target: "tuntunbiu", Type: 202, Data: str, Nonce: 2, Time: "1556076659050692000"}
+	txJson := TxJson{Source: "dragonMother", Target: "tuntunbiu", Type: 202, Data: str, Nonce: 3, Time: "1556076659050692000"}
 	tx := txJson.ToTransaction()
 	tx.Hash = tx.GenHash()
 
@@ -25,7 +25,7 @@ func TestAssetOnChainTransactionHash(t *testing.T) {
 }
 
 func TestUpgradeDragonTransactionHash(t *testing.T) {
-	txJson := TxJson{Target: "tuntunbiu", Type: 8, Data: "u", Nonce: 2,}
+	txJson := TxJson{Target: "tuntunbiu", Type: 8, Data: "u", Nonce: 6,}
 	tx := txJson.ToTransaction()
 	tx.Hash = tx.GenHash()
 
@@ -34,7 +34,7 @@ func TestUpgradeDragonTransactionHash(t *testing.T) {
 }
 
 func TestWithdrawTransactionHash(t *testing.T) {
-	txJson := TxJson{Source: "dragonMother", Target: "tuntunbiu", Type: 201, Data: "1.2", Nonce: 1, Time: "1556076659050692000"}
+	txJson := TxJson{Source: "dragonMother", Target: "tuntunbiu", Type: 201, Data: "1.35", Nonce: 1, Time: "1556076659050692000"}
 	tx := txJson.ToTransaction()
 	tx.Hash = tx.GenHash()
 
