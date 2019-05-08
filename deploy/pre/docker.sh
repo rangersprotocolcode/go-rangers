@@ -3,7 +3,7 @@
 image_name=$1
 file_name=$2
 
-docker stop $(docker ps -q);
+docker stop $(docker ps | grep $image_name| awk '{print $1}');
 docker container prune;
 docker rmi $(docker images | grep $image_name | awk '{print $3}');
 docker rmi $(docker images | grep "none" | awk '{print $3}');
