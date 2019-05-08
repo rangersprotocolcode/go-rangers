@@ -19,6 +19,7 @@ import (
 	"x/src/consensus/model"
 	cnet "x/src/consensus/net"
 	"x/src/middleware/log"
+	"x/src/statemachine"
 )
 
 const (
@@ -128,7 +129,7 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 	common.GlobalConf.SetString(chainSection, databaseKey, databaseValue)
 
 	middleware.InitMiddleware()
-	//statemachine.DockerInit(common.GlobalConf.GetString("docker", "config", ""), port)
+	statemachine.DockerInit(common.GlobalConf.GetString("docker", "config", ""), port)
 
 	minerAddr := common.GlobalConf.GetString(Section, "miner", "")
 	err := gx.getAccountInfo(keystore, minerAddr)
