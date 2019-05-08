@@ -21,6 +21,13 @@ type GameExecutor struct {
 	debug bool // debug 为true，则不开启requestId校验
 }
 
+type response struct {
+	Data    []byte
+	Id      []byte
+	Status  byte
+	Version string
+}
+
 func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor := GameExecutor{chain: blockChainImpl}
 
@@ -37,6 +44,25 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.Write)
 
 	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.Read)
+
+	//notify.BUS.Subscribe(notify.BlockAddSucc, gameExecutor.onBlockAddSuccess)
+}
+
+func (executor *GameExecutor) onBlockAddSuccess(message notify.Message) {
+	block := message.GetData().(types.Block)
+	bh := block.Header
+
+	if executor.requestId < bh.RequestId {
+		executor.cond.L.Lock()
+
+		if common.DefaultLogger != nil {
+			common.DefaultLogger.Errorf("upgrade requestid, from %d to %d", executor.requestId, bh.RequestId)
+		}
+		executor.requestId = bh.RequestId
+
+		executor.cond.Broadcast()
+		executor.cond.L.Unlock()
+	}
 }
 
 func (executor *GameExecutor) Read(msg notify.Message) {
@@ -91,9 +117,21 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	}
 
 	// reply to the client
-	go network.GetNetInstance().SendToClientReader(message.UserId, network.Message{Body: result}, message.Nonce)
+	go network.GetNetInstance().SendToClientReader(message.UserId, network.Message{Body: executor.makeSuccessRespone(result, txRaw.Hash)}, message.Nonce)
 
 	return
+}
+
+func (executor *GameExecutor) makeSuccessRespone(bytes []byte, hash common.Hash) []byte {
+	res := response{
+		Data:   bytes,
+		Id:     hash.Bytes(),
+		Status: 0,
+	}
+
+	data, _ := json.Marshal(res)
+
+	return data
 }
 
 func (executor *GameExecutor) Write(msg notify.Message) {
@@ -135,6 +173,7 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 			if common.DefaultLogger != nil {
 				common.DefaultLogger.Errorf("requestId :%d is waiting, current requestId: %d", requestId, executor.requestId)
 			}
+			// todo 超时放弃
 			executor.cond.Wait()
 		}
 	}
@@ -142,7 +181,7 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 	result := executor.runTransaction(txRaw)
 
 	// reply to the client
-	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: result}, message.Nonce)
+	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: executor.makeSuccessRespone(result, txRaw.Hash)}, message.Nonce)
 
 	if !executor.debug {
 		executor.cond.Broadcast()

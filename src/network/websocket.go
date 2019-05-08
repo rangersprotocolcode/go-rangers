@@ -26,6 +26,7 @@ type header struct {
 	nonce    uint64
 }
 
+
 func (s *server) send(method []byte, targetId string, msg Message, nonce uint64) {
 	m, err := marshalMessage(msg)
 	if err != nil {
@@ -93,9 +94,8 @@ func (s *server) loop() {
 		case message := <-s.sendChan:
 			err := s.conn.WriteMessage(websocket.BinaryMessage, message)
 			if err != nil {
-				Logger.Errorf("Send msg error:%s", err.Error())
+				Logger.Errorf("Send binary msg error:%s", err.Error())
 			}
-
 		}
 	}
 }

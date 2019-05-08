@@ -111,7 +111,7 @@ func (s *server) joinGroup(groupID string) {
 	Logger.Debugf("Join group:%d", target)
 	header.targetId = target
 
-	s.sendChan <- header.toBytes()
+	s.sendChan <-header.toBytes()
 }
 
 func (s *server) handleClientMessage(data []byte, userId string, nonce uint64, event string) {
