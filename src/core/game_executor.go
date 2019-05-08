@@ -181,7 +181,7 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 	result := executor.runTransaction(txRaw)
 
 	// reply to the client
-	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: result}, message.Nonce)
+	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: executor.makeSuccessRespone(result, txRaw.Hash)}, message.Nonce)
 
 	if !executor.debug {
 		executor.cond.Broadcast()
