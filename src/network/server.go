@@ -19,27 +19,27 @@ type server struct {
 }
 
 func (s *server) Send(id string, msg Message) {
-	s.send(methodCodeSend, id, msg, 0)
+	s.send(methodCodeSend, id, msg, 0, false)
 }
 
 func (s *server) SpreadToGroup(groupId string, msg Message) {
-	s.send(methodCodeSendToGroup, groupId, msg, 0)
+	s.send(methodCodeSendToGroup, groupId, msg, 0, false)
 }
 
 func (s *server) Broadcast(msg Message) {
-	s.send(methodCodeBroadcast, "0", msg, 0)
+	s.send(methodCodeBroadcast, "0", msg, 0, false)
 }
 
 func (s *server) SendToClientReader(id string, msg Message, nonce uint64) {
-	s.send(methodCodeClientReader, id, msg, nonce)
+	s.send(methodCodeClientReader, id, msg, nonce, true)
 }
 
 func (s *server) SendToClientWriter(id string, msg Message, nonce uint64) {
-	s.send(methodCodeClientWriter, id, msg, nonce)
+	s.send(methodCodeClientWriter, id, msg, nonce, true)
 }
 
 func (s *server) SendToCoinProxy(msg Message) {
-	s.send(methodCodeCoinProxySend, "0", msg, 0)
+	s.send(methodCodeCoinProxySend, "0", msg, 0, false)
 }
 
 func (s *server) handleMinerMessage(data []byte, from string) {
@@ -111,7 +111,7 @@ func (s *server) joinGroup(groupID string) {
 	Logger.Debugf("Join group:%d", target)
 	header.targetId = target
 
-	s.sendChan <-header.toBytes()
+	s.sendChan <- header.toBytes()
 }
 
 func (s *server) handleClientMessage(data []byte, userId string, nonce uint64, event string) {
