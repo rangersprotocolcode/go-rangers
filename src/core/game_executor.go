@@ -33,6 +33,10 @@ func initGameExecutor(blockChainImpl *blockChain) {
 
 	// 初始值，从已有的块中获取
 	gameExecutor.requestIds = blockChainImpl.requestIds
+	if nil == gameExecutor.requestIds {
+		gameExecutor.requestIds = make(map[string]uint64)
+	}
+
 	gameExecutor.conds = sync.Map{}
 
 	if nil != common.GlobalConf {
