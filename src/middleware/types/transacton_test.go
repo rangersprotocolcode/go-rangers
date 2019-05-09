@@ -20,7 +20,7 @@ func TestAssetOnChainTransactionHash(t *testing.T) {
 	tx.Hash = tx.GenHash()
 
 	j,_:=  json.Marshal(tx.ToTxJson())
-	fmt.Printf("TX JSON:%s\n", string(j))
+	fmt.Printf("TX JSON:\n%s\n", string(j))
 
 }
 
@@ -30,7 +30,7 @@ func TestUpgradeDragonTransactionHash(t *testing.T) {
 	tx.Hash = tx.GenHash()
 
 	j,_:=  json.Marshal(tx.ToTxJson())
-	fmt.Printf("TX JSON:%s\n", string(j))
+	fmt.Printf("TX JSON:\n%s\n", string(j))
 }
 
 func TestWithdrawTransactionHash(t *testing.T) {
@@ -39,5 +39,15 @@ func TestWithdrawTransactionHash(t *testing.T) {
 	tx.Hash = tx.GenHash()
 
 	j,_:=  json.Marshal(tx.ToTxJson())
-	fmt.Printf("TX JSON:%s\n", string(j))
+	fmt.Printf("TX JSON:\n%s\n", string(j))
+}
+
+
+func TestTransactionHash(t *testing.T) {
+	txJson := TxJson{Source: "dragonMother", Target: "tuntunbiu", Type: 11,  Time: "1556076659050692000"}
+	tx := txJson.ToTransaction()
+	tx.Hash = tx.GenHash()
+
+	j,_:=  json.Marshal(tx.ToTxJson())
+	fmt.Printf("TX JSON:\n%s\n", string(j))
 }

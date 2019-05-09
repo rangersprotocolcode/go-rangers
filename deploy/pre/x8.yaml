@@ -8,3 +8,13 @@ services:
       - host: 8888
         target: 8080
     detached: true
+
+  - priority: 1
+    game: "appid_demo_1"
+    name: "appid_demo_1_8"
+    image: "state_machine_demo:latest"
+    ports:
+      - host: 7778
+        target: 7001
+    detached: true
+    cmd: "npm start"
