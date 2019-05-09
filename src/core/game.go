@@ -3,8 +3,6 @@ package core
 import (
 	"x/src/middleware/types"
 	"x/src/common"
-	"math/big"
-	"strconv"
 	"x/src/storage/account"
 )
 
@@ -13,41 +11,10 @@ func GetSubAccount(address string, gameId string, account *account.AccountDB) *t
 }
 
 func UpdateAsset(user types.UserData, gameId string, account *account.AccountDB) bool {
-	if 0 != len(user.Balance) {
-		// 转账失败
-		if !changeBalance(user.Address, gameId, user.Balance, account) {
-			return false
-		}
-	}
-
 	if 0 != len(user.Assets) {
 		setAsset(user.Address, gameId, user.Assets, account)
 	}
 
-	return true
-}
-
-func convert(s string) *big.Int {
-	f, _ := strconv.ParseFloat(s, 64)
-	return big.NewInt(int64(f * 1000000000))
-}
-
-func changeBalance(address string, gameId string, bstring string, accountdb *account.AccountDB) bool {
-	balance := convert(bstring)
-	sub := GetSubAccount(address, gameId, accountdb)
-
-	if sub != nil {
-		sub.Balance = sub.Balance.Add(balance, sub.Balance)
-	} else {
-		sub = &types.SubAccount{}
-		sub.Balance = balance
-	}
-
-	if sub.Balance.Sign() == -1 {
-		return false
-	}
-
-	accountdb.UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
 	return true
 }
 
