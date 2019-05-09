@@ -32,6 +32,13 @@ func changeBalances(gameId string, source string, targets map[string]string, acc
 
 	for address, valueString := range targets {
 		value := convert(valueString)
+
+		// 不能扣钱
+		if value.Sign() == -1{
+			accountdb.RevertToSnapshot(snapshot)
+			return false
+		}
+
 		if !changeBalance(address, gameId, value, accountdb) {
 			accountdb.RevertToSnapshot(snapshot)
 			return false
@@ -39,7 +46,7 @@ func changeBalances(gameId string, source string, targets map[string]string, acc
 		overall = overall.Add(overall, value)
 	}
 
-	// source 账户中扣钱，要判断source钱够不够
+	// source 账户中扣钱
 	overall = overall.Mul(overall, big.NewInt(-1))
 	if !changeBalance(source, gameId, overall, accountdb) {
 		accountdb.RevertToSnapshot(snapshot)
