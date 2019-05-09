@@ -192,17 +192,17 @@ type Miner struct {
 
 //区块头结构
 type BlockHeader struct {
-	Hash         common.Hash   // 本块的hash，to do : 是对哪些数据的哈希
-	Height       uint64        // 本块的高度
-	PreHash      common.Hash   //上一块哈希
-	PreTime      time.Time     //上一块铸块时间
-	ProveValue   *big.Int      //轮转序号
-	TotalQN      uint64        //整条链的QN
-	CurTime      time.Time     //当前铸块时间
-	Castor       []byte        //出块人ID
-	GroupId      []byte        //组ID，groupsig.ID的二进制表示
-	Signature    []byte        // 组签名
-	Nonce        uint64        //盐
+	Hash         common.Hash // 本块的hash，to do : 是对哪些数据的哈希
+	Height       uint64      // 本块的高度
+	PreHash      common.Hash //上一块哈希
+	PreTime      time.Time   //上一块铸块时间
+	ProveValue   *big.Int    //轮转序号
+	TotalQN      uint64      //整条链的QN
+	CurTime      time.Time   //当前铸块时间
+	Castor       []byte      //出块人ID
+	GroupId      []byte      //组ID，groupsig.ID的二进制表示
+	Signature    []byte      // 组签名
+	Nonce        uint64      //盐
 	RequestIds   map[string]uint64
 	Transactions []common.Hash // 交易集哈希列表
 	TxTree       common.Hash   // 交易默克尔树根hash
@@ -369,12 +369,14 @@ type TxJson struct {
 	Hash string
 	Sign string
 	Time string
+
+	ExtraData string
 }
 
 func (txJson TxJson) ToTransaction() Transaction {
 	tx := Transaction{Source: txJson.Source, Target: txJson.Target,
 		Type: txJson.Type, Data: txJson.Data, Nonce: txJson.Nonce,
-		RequestId: txJson.RequestId}
+		RequestId: txJson.RequestId, ExtraData: txJson.ExtraData}
 
 	if txJson.Hash != "" {
 		tx.Hash = common.HexToHash(txJson.Hash)

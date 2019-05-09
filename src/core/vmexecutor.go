@@ -81,6 +81,22 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 			// 已经执行过了，则直接返回true
 			if nil == GetBlockChain().GetTransactionPool().GetExecuted(transaction.Hash) {
+				// 处理转账
+				// 支持多人转账{"address1":"value1", "address2":"value2"}
+				if 0 != len(transaction.ExtraData) {
+					mm := make(map[string]string, 0)
+					if err := json.Unmarshal([]byte(transaction.ExtraData), &mm); nil != err {
+						success = false
+						break
+					}
+					accountDB := GetBlockChain().GetAccountDB()
+					if !changeBalances(transaction.Target, transaction.Source, mm, accountDB) {
+						success = false
+						break
+					}
+
+				}
+
 				payload := transaction.Data
 				statemachine.Docker.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), payload)
 

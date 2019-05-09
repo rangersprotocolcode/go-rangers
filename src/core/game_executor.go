@@ -215,6 +215,22 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 
 	// execute state machine transaction
 	case types.TransactionTypeOperatorEvent:
+		// 处理转账
+		// 支持多人转账{"address1":"value1", "address2":"value2"}
+		if 0 != len(txRaw.ExtraData) {
+			mm := make(map[string]string, 0)
+			if err := json.Unmarshal([]byte(txRaw.ExtraData), &mm); nil != err {
+				result = "fail to transfer"
+				break
+			}
+			accountDB := GetBlockChain().GetAccountDB()
+			if !changeBalances(txRaw.Target, txRaw.Source, mm, accountDB) {
+				result = "fail to transfer"
+				break
+			}
+
+		}
+
 		outputMessage := statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
 		bytes, _ := json.Marshal(outputMessage)
 		result = string(bytes)

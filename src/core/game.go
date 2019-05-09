@@ -4,6 +4,8 @@ import (
 	"x/src/middleware/types"
 	"x/src/common"
 	"x/src/storage/account"
+	"math/big"
+	"strconv"
 )
 
 func GetSubAccount(address string, gameId string, account *account.AccountDB) *types.SubAccount {
@@ -15,6 +17,54 @@ func UpdateAsset(user types.UserData, gameId string, account *account.AccountDB)
 		setAsset(user.Address, gameId, user.Assets, account)
 	}
 
+	return true
+}
+
+func convert(s string) *big.Int {
+	f, _ := strconv.ParseFloat(s, 64)
+	return big.NewInt(int64(f * 1000000000))
+}
+
+// false 表示转账失败
+func changeBalances(gameId string, source string, targets map[string]string, accountdb *account.AccountDB) bool {
+	snapshot := accountdb.Snapshot()
+	overall := big.NewInt(0)
+
+	for address, valueString := range targets {
+		value := convert(valueString)
+		if !changeBalance(address, gameId, value, accountdb) {
+			accountdb.RevertToSnapshot(snapshot)
+			return false
+		}
+		overall = overall.Add(overall, value)
+	}
+
+	// source 账户中扣钱，要判断source钱够不够
+	overall = overall.Mul(overall, big.NewInt(-1))
+	if !changeBalance(source, gameId, overall, accountdb) {
+		accountdb.RevertToSnapshot(snapshot)
+		return false
+	}
+
+	return true
+}
+
+// false 表示转账失败
+func changeBalance(address string, gameId string, balance *big.Int, accountdb *account.AccountDB) bool {
+	sub := GetSubAccount(address, gameId, accountdb)
+
+	if sub != nil {
+		sub.Balance = sub.Balance.Add(balance, sub.Balance)
+	} else {
+		sub = &types.SubAccount{}
+		sub.Balance = balance
+	}
+
+	if sub.Balance.Sign() == -1 {
+		return false
+	}
+
+	accountdb.UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
 	return true
 }
 
