@@ -91,11 +91,11 @@ func (api *GtasAPI) GetAllAssets(address string, gameId string) (*Result, error)
 }
 
 func (api *GtasAPI) UpdateAssets(gameId string, rawjson string, nonce uint64) (*Result, error) {
+	common.DefaultLogger.Debugf("UpdateAssets Rcv gameId:%s,rawJson:%s,nonce:%d", gameId, rawjson, nonce)
 	//todo 并发问题 临时加锁控制
 	gxLock.Lock()
 	defer gxLock.Unlock()
 
-	common.DefaultLogger.Debugf("Rcv gameId:%s,rawJson:%s,nonce:%d", gameId, rawjson, nonce)
 	data := make([]types.UserData, 0)
 	if err := json.Unmarshal([]byte(rawjson), &data); err != nil {
 		return failResult(err.Error())
