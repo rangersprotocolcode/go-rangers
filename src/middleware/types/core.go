@@ -341,9 +341,11 @@ type StateNode struct {
 
 type SubAccount struct {
 	Balance *big.Int
-	Assets  []*Asset
+	Nonce   uint64
+	Assets  map[string]string
 }
 
+// 仅仅供资产上链使用
 type Asset struct {
 	Id string `json:"id"`
 

@@ -34,7 +34,7 @@ func changeBalances(gameId string, source string, targets map[string]string, acc
 		value := convert(valueString)
 
 		// 不能扣钱
-		if value.Sign() == -1{
+		if value.Sign() == -1 {
 			accountdb.RevertToSnapshot(snapshot)
 			return false
 		}
@@ -87,51 +87,29 @@ func setAsset(address string, gameId string, assets map[string]string, accountdb
 
 	// append everything if there is no asset right now
 	if nil == sub.Assets || 0 == len(sub.Assets) {
-		sub.Assets = []*types.Asset{}
+		sub.Assets = make(map[string]string)
 		for id, value := range assets {
 			if 0 == len(value) {
 				continue
 			}
 
-			asset := &types.Asset{
-				Id:    id,
-				Value: value,
-			}
-
-			sub.Assets = append(sub.Assets, asset)
+			sub.Assets[id] = value
 		}
 
 		accountdb.UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
 		return
 	}
 
-	// update and append
+	// update/add and delete
 	for assetId, assetValue := range assets {
-		update := false
-		for i, assetInner := range sub.Assets {
-			// update
-			if assetInner.Id == assetId {
-				update = true
-
-				//assetValue空字符串，则是移除
-				if 0 != len(assetValue) {
-					assetInner.Value = assetValue
-				} else {
-					sub.Assets = append(sub.Assets[:i], sub.Assets[i+1:]...)
-				}
-				break
-			}
+		// 已有，assetValue空字符串，则是移除
+		if 0 != len(sub.Assets[assetId]) && 0 == len(assetValue) {
+			delete(sub.Assets, assetId)
+			continue
 		}
 
-		//append if not exists
-		if !update {
-			asset := &types.Asset{
-				Id:    assetId,
-				Value: assetValue,
-			}
-
-			sub.Assets = append(sub.Assets, asset)
-		}
+		//update/add
+		sub.Assets[assetId] = assetValue
 	}
 
 	accountdb.UpdateSubAccount(common.HexToAddress(address), gameId, *sub)

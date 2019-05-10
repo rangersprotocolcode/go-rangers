@@ -448,13 +448,9 @@ func memberToPb(m *Member) *middleware_pb.Member {
 }
 
 func MarshalSubAccount(subAccount SubAccount) ([]byte, error) {
-	assets := make([]*middleware_pb.Asset, 0)
-	for _, a := range subAccount.Assets {
-		asset := &middleware_pb.Asset{Id: []byte(a.Id), Value: []byte(a.Value)}
-		assets = append(assets, asset)
-	}
+	assets, _ := json.Marshal(subAccount.Assets)
 
-	account := middleware_pb.SubAccount{Balance: subAccount.Balance.Bytes(), Assets: assets}
+	account := middleware_pb.SubAccount{Balance: subAccount.Balance.Bytes(), Assets: assets, Nonce: &subAccount.Nonce}
 	byte, err := proto.Marshal(&account)
 	if err != nil {
 		logger.Errorf("Marshal sub account error:%s", err.Error())
@@ -473,11 +469,14 @@ func UnMarshalSubAccount(b []byte) (*SubAccount, error) {
 	balance := &big.Int{}
 	balance.SetBytes(account.Balance)
 
-	assets := make([]*Asset, 0)
-	for _, a := range account.Assets {
-		asset := &Asset{Id: string(a.Id), Value: string(a.Value)}
-		assets = append(assets, asset)
+	assets := make(map[string]string)
+	json.Unmarshal(account.Assets, &assets)
+
+	subAccount := SubAccount{Balance: balance, Assets: assets,}
+	if nil != account.Nonce {
+		subAccount.Nonce = *account.Nonce
+	} else {
+		subAccount.Nonce = 0
 	}
-	subAccount := SubAccount{Balance: balance, Assets: assets}
 	return &subAccount, nil
 }
