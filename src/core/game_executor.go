@@ -88,43 +88,34 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 
 	var result string
 	txRaw := message.Tx
-	switch txRaw.Type {
+	sub := GetSubAccount(txRaw.Source, txRaw.Target, GetBlockChain().GetAccountDB())
+	if nil == sub {
+		result = ""
+	} else {
+		switch txRaw.Type {
 
-	// query balance
-	case types.GetBalance:
-		sub := GetSubAccount(txRaw.Source, txRaw.Target, GetBlockChain().GetAccountDB())
-		if nil == sub {
-			result = ""
-		} else {
+		// query balance
+		case types.GetBalance:
 			floatdata := float64(sub.Balance.Int64()) / 1000000000
 			result = strconv.FormatFloat(floatdata, 'f', -1, 64)
+
+		case types.GetAsset:
+			assets := sub.Assets
+			if nil == assets || 0 == len(assets) {
+				result = ""
+			} else {
+				result = assets[txRaw.Data]
+			}
+
+		case types.GetAllAssets:
+			assets := sub.Assets
+			bytes, _ := json.Marshal(assets)
+			result = string(bytes)
+
+		case types.StateMachineNonce:
+			result = strconv.FormatUint(sub.Nonce, 10)
+
 		}
-
-	case types.GetAsset:
-		sub := GetSubAccount(txRaw.Source, txRaw.Target, GetBlockChain().GetAccountDB())
-		if nil == sub {
-			result = ""
-		}
-
-		assets := sub.Assets
-		if nil == assets || 0 == len(assets) {
-			result = ""
-		} else {
-			result = assets[txRaw.Data]
-		}
-
-	case types.GetAllAssets:
-		sub := GetSubAccount(txRaw.Source, txRaw.Target, GetBlockChain().GetAccountDB())
-		if nil == sub {
-			result = ""
-		}
-
-		assets := sub.Assets
-		bytes, _ := json.Marshal(assets)
-		result = string(bytes)
-
-	case types.StateMachineNonce:
-		result = strconv.Itoa(statemachine.Docker.Nonce(txRaw.Target))
 	}
 
 	// reply to the client
