@@ -95,6 +95,7 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string, nonce uint64) (*
 	gxLock.Lock()
 	defer gxLock.Unlock()
 
+	common.DefaultLogger.Debugf("Rcv gameId:%s,rawJson:%s,nonce:%d", gameId, rawjson, nonce)
 	data := make([]types.UserData, 0)
 	if err := json.Unmarshal([]byte(rawjson), &data); err != nil {
 		return failResult(err.Error())
