@@ -207,17 +207,14 @@ func (executor *VMExecutor) executeAssetOnChain(accountdb *account.AccountDB, tr
 
 	var assets []types.Asset
 	for _, assetId := range assetIdList {
-		exist := false
-		for _, asset := range account.Assets {
-			if assetId == asset.Id {
-				assets = append(assets, *asset)
-				exist = true
-				break
-			}
-		}
-		if exist == false {
+		value := account.Assets[assetId]
+		if 0 == len(value) {
 			logger.Errorf("AssetOnChain tx:%s,unknown asset id:%s", transaction.Hash.String(), assetId)
+			continue
 		}
+
+		assets = append(assets, types.Asset{Id: assetId, Value: value})
+
 	}
 	assetOnChainInfo.Assets = assets
 

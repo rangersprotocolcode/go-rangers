@@ -110,11 +110,7 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 		if nil == assets || 0 == len(assets) {
 			result = ""
 		} else {
-			for _, asset := range assets {
-				if asset.Id == string(txRaw.Data) {
-					result = asset.Value
-				}
-			}
+			result = assets[txRaw.Data]
 		}
 
 	case types.GetAllAssets:
