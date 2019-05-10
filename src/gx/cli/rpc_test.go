@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"fmt"
 	"time"
+	"x/src/middleware/types"
 )
 
 func TestRPC(t *testing.T) {
@@ -23,15 +24,15 @@ func TestRPC(t *testing.T) {
 		method string
 		params []interface{}
 	}{
-		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"50\",\"assets\":{\"1\":\"dj\"}}]",1}},
+		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"50\",\"assets\":{\"1\":\"dj\"}}]", 1}},
 		{"Rocket_getBalance", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
 		{"Rocket_getAsset", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "1"}},
 		{"Rocket_getAllAssets", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
-		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"-2.25\",\"assets\":{\"1\":\"dj11\",\"2\":\"yyyy\"}}]",2}},
+		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"-2.25\",\"assets\":{\"1\":\"dj11\",\"2\":\"yyyy\"}}]", 2}},
 		{"Rocket_getAsset", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "1"}},
 		{"Rocket_getAllAssets", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
 		{"Rocket_getBalance", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
-		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"2.25\",\"assets\":{\"1\":\"\",\"2\":\"yyyy\"}}]",3}},
+		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"2.25\",\"assets\":{\"1\":\"\",\"2\":\"yyyy\"}}]", 3}},
 		{"Rocket_getAsset", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "1"}},
 		{"Rocket_getAllAssets", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
 		{"Rocket_getBalance", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
@@ -52,7 +53,7 @@ func TestRPC(t *testing.T) {
 		log.Printf("%s response data: %s", test.method, data)
 	}
 
-	time.Sleep(10000*time.Second)
+	time.Sleep(10000 * time.Second)
 }
 
 func TestStrToFloat(t *testing.T) {
@@ -85,4 +86,13 @@ func TestSlice(t *testing.T) {
 	i := 4
 	a = append(a[:i], a[i+1:]...)
 	fmt.Println(a)
+}
+
+func TestJSON(t *testing.T) {
+	s := "[{\"address\":\"dragonMother\",\"assets\":{\"drogon\":\"12\"}}]"
+	data := make([]types.UserData, 0)
+	if err := json.Unmarshal([]byte(s), &data); err != nil {
+		fmt.Println(err.Error())
+	}
+	fmt.Printf("%v\n",data)
 }

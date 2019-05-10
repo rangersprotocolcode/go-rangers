@@ -351,9 +351,9 @@ type Asset struct {
 }
 
 type UserData struct {
-	Address string
-	Balance string
-	Assets  map[string]string
+	Address string `json:"address"`
+	Balance string `json:"balance"`
+	Assets  map[string]string `json:"assets"`
 }
 
 type TxJson struct {
