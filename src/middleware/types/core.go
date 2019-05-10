@@ -353,8 +353,8 @@ type Asset struct {
 }
 
 type UserData struct {
-	Address string `json:"address"`
-	Balance string `json:"balance"`
+	Address string            `json:"address"`
+	Balance string            `json:"balance"`
 	Assets  map[string]string `json:"assets"`
 }
 
