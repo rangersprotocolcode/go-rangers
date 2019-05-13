@@ -82,7 +82,7 @@ func setAsset(address string, gameId string, assets map[string]string, accountdb
 
 	sub := GetSubAccount(address, gameId, accountdb)
 	if sub == nil {
-		sub = &types.SubAccount{}
+		sub = &types.SubAccount{Balance: new(big.Int).SetUint64(0)}
 	}
 
 	// append everything if there is no asset right now
