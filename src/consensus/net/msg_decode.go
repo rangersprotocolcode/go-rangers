@@ -320,61 +320,6 @@ func unMarshalConsensusCreateGroupSignMessage(b []byte) (*model.ConsensusCreateG
 	return &m, nil
 }
 
-func pbToBonus(b *middleware_pb.Bonus) *types.Bonus {
-	return &types.Bonus{
-		TxHash:     common.BytesToHash(b.TxHash),
-		TargetIds:  b.TargetIds,
-		BlockHash:  common.BytesToHash(b.BlockHash),
-		GroupId:    b.GroupId,
-		Sign:       b.Sign,
-		TotalValue: *b.TotalValue,
-	}
-}
-
-func unMarshalCastRewardReqMessage(b []byte) (*model.CastRewardTransSignReqMessage, error) {
-	message := new(middleware_pb.CastRewardTransSignReqMessage)
-	e := proto.Unmarshal(b, message)
-	if e != nil {
-		network.Logger.Errorf("[handler]unMarshalCastRewardReqMessage error:%s", e.Error())
-		return nil, e
-	}
-
-	rw := pbToBonus(message.Reward)
-	sign := pbToSignData(message.Sign)
-	base := model.BaseSignedMessage{SI: *sign}
-
-	signPieces := make([]groupsig.Signature, len(message.SignedPieces))
-	for idx, sp := range message.SignedPieces {
-		signPieces[idx] = *groupsig.DeserializeSign(sp)
-	}
-
-	m := &model.CastRewardTransSignReqMessage{
-		BaseSignedMessage: base,
-		Reward:            *rw,
-		SignedPieces:      signPieces,
-	}
-	return m, nil
-}
-
-func unMarshalCastRewardSignMessage(b []byte) (*model.CastRewardTransSignMessage, error) {
-	message := new(middleware_pb.CastRewardTransSignMessage)
-	e := proto.Unmarshal(b, message)
-	if e != nil {
-		network.Logger.Errorf("[handler]unMarshalCastRewardSignMessage error:%s", e.Error())
-		return nil, e
-	}
-
-	sign := pbToSignData(message.Sign)
-	base := model.BaseSignedMessage{SI: *sign}
-
-	m := &model.CastRewardTransSignMessage{
-		BaseSignedMessage: base,
-		ReqHash:           common.BytesToHash(message.ReqHash),
-		BlockHash:         common.BytesToHash(message.BlockHash),
-	}
-	return m, nil
-}
-
 func unMarshalCreateGroupPingMessage(b []byte) (*model.CreateGroupPingMessage, error) {
 	message := new(middleware_pb.CreateGroupPingMessage)
 	e := proto.Unmarshal(b, message)

@@ -9,7 +9,6 @@ import (
 	"x/src/consensus/net"
 
 	"x/src/middleware/types"
-	"strings"
 	"sync"
 	"time"
 	"runtime/debug"
@@ -254,10 +253,6 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 	vctx.markBroadcast()
 	slot.setSlotStatus(SS_SUCCESS)
 
-	//不打分红交易
-	if !consensusConfManager.GetBool("league", true) {
-		p.reqRewardTransSign(vctx, bh)
-	}
 	blog.log("After BroadcastNewBlock hash=%v:%v", bh.Hash.ShortS(), time.Now().Format(TIMESTAMP_LAYOUT))
 	return
 }
@@ -375,69 +370,6 @@ func (p *Processor) blockProposal() {
 		//	time.Now().UnixNano(), p.GetMinerID().ShortS(), gid.ShortS(), common.InstanceIndex, ccm.BH.CurTime.UnixNano())
 	} else {
 		blog.log("bh/prehash Error or sign Error, bh=%v, real height=%v. bc.prehash=%v, bh.prehash=%v", height, bh.Height, worker.baseBH.Hash, bh.PreHash)
-	}
-
-}
-
-//请求组内对奖励交易签名
-func (p *Processor) reqRewardTransSign(vctx *VerifyContext, bh *types.BlockHeader) {
-	blog := newBizLog("reqRewardTransSign")
-	blog.log("start, bh=%v", p.blockPreview(bh))
-	slot := vctx.GetSlotByHash(bh.Hash)
-	if slot == nil {
-		blog.log("slot is nil")
-		return
-	}
-	if !slot.gSignGenerator.Recovered() {
-		blog.log("slot not recovered")
-		return
-	}
-	if !slot.IsSuccess() && !slot.IsVerified() {
-		blog.log("slot not verified or success,status=%v", slot.GetSlotStatus())
-		return
-	}
-	//签过了自己就不用再发了
-	if slot.hasSignedRewardTx() {
-		blog.log("has signed reward tx")
-		return
-	}
-
-	groupID := groupsig.DeserializeId(bh.GroupId)
-	group := p.GetGroup(groupID)
-
-	size := slot.gSignGenerator.WitnessSize()
-	targetIdIndexs := make([]int32, size)
-	signs := make([]groupsig.Signature, size)
-	idHexs := make([]string, size)
-
-	i := 0
-	for idx, mem := range group.GetMembers() {
-		if sig, ok := slot.gSignGenerator.GetWitness(mem); ok {
-			signs[i] = sig
-			targetIdIndexs[i] = int32(idx)
-			idHexs[i] = mem.ShortS()
-			i++
-		}
-	}
-
-	bonus, tx := p.MainChain.GetBonusManager().GenerateBonus(targetIdIndexs, bh.Hash, bh.GroupId, model.Param.VerifyBonus)
-	blog.debug("generate bonus txHash=%v, targetIds=%v, height=%v", bonus.TxHash.ShortS(), bonus.TargetIds, bh.Height)
-
-	tlog := newHashTraceLog("REWARD_REQ", bh.Hash, p.GetMinerID())
-	tlog.log("txHash=%v, targetIds=%v", bonus.TxHash.ShortS(), strings.Join(idHexs, ","))
-
-	if slot.SetRewardTrans(tx) {
-		msg := &model.CastRewardTransSignReqMessage{
-			Reward:       *bonus,
-			SignedPieces: signs,
-		}
-		ski := model.NewSecKeyInfo(p.GetMinerID(), p.getSignKey(groupID))
-		if msg.GenSign(ski, msg) {
-			p.NetServer.SendCastRewardSignReq(msg)
-			blog.log("reward req send height=%v, gid=%v", bh.Height, groupID.ShortS())
-		} else {
-			blog.debug("genSign fail, id=%v, sk=%v, belong=%v", ski.ID.ShortS(), ski.SK.ShortS(), p.IsMinerGroup(groupID))
-		}
 	}
 
 }

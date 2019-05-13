@@ -140,12 +140,9 @@ type Block struct {
 
 type BlockDetail struct {
 	Block
-	GenBonusTx *BonusTransaction `json:"gen_bonus_tx"`
 	//Signature groupsig.Signature `json:"signature"`
 	//Random 	groupsig.Signature `json:"random"`
 	Trans        []Transaction        `json:"trans"`
-	BodyBonusTxs []BonusTransaction   `json:"body_bonus_txs"`
-	MinerBonus   []*MinerBonusBalance `json:"miner_bonus"`
 	PreTotalQN   uint64               `json:"pre_total_qn"`
 }
 
@@ -170,16 +167,6 @@ type Group struct {
 	Members       []string    `json:"members"`
 }
 
-type MinerBonusBalance struct {
-	ID            groupsig.ID `json:"id"`
-	Proposal      bool        `json:"proposal"`      //是否有提案
-	PackBonusTx   int         `json:"pack_bonus_tx"` //打包分红交易个数
-	VerifyBlock   int         `json:"verify_block"`  //验证块数
-	PreBalance    *big.Int    `json:"pre_balance"`
-	CurrBalance   *big.Int    `json:"curr_balance"`
-	ExpectBalance *big.Int    `json:"expect_balance"`
-	Explain       string      `json:"explain"`
-}
 
 type Transaction struct {
 	Data string `json:"data"`
@@ -193,16 +180,6 @@ type Transaction struct {
 
 	ExtraData     string `json:"extra_data"`
 	ExtraDataType int32  `json:"extra_data_type"`
-}
-
-type BonusTransaction struct {
-	Hash         common.Hash   `json:"hash"`
-	BlockHash    common.Hash   `json:"block_hash"`
-	GroupID      groupsig.ID   `json:"group_id"`
-	TargetIDs    []groupsig.ID `json:"target_ids"`
-	Value        uint64        `json:"value"`
-	StatusReport string        `json:"status_report"`
-	Success      bool          `json:"success"`
 }
 
 type Dashboard struct {
@@ -253,10 +230,4 @@ type ExplorerAccount struct {
 	CodeHash  string                 `json:"code_hash"`
 	Code      string                 `json:"code"`
 	StateData map[string]interface{} `json:"state_data"`
-}
-
-type ExploreBlockBonus struct {
-	ProposalId    string           `json:"proposal_id"`
-	ProposalBonus uint64           `json:"proposal_bonus"`
-	VerifierBonus BonusTransaction `json:"verifier_bonus"`
 }

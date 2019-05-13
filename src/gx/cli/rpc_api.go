@@ -3,12 +3,9 @@ package cli
 import (
 	"x/src/common"
 	"x/src/consensus/groupsig"
-	"x/src/consensus/model"
 	"x/src/core"
 	"encoding/json"
 	"fmt"
-	"log"
-	"math/big"
 	"x/src/middleware/types"
 	"encoding/hex"
 	"math"
@@ -53,7 +50,6 @@ func (api *GtasAPI) GetBalance(address string, gameId string) (*Result, error) {
 }
 
 func (api *GtasAPI) GetAsset(address string, gameId string, assetId string) (*Result, error) {
-	fmt.Printf("GetAsset Rcv gameId:%s,address:%s,assetId:%s\n", gameId, address, assetId)
 	gxLock.RLock()
 	defer gxLock.RUnlock()
 
@@ -100,7 +96,7 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string, nonce uint64) (*
 	data := make([]types.UserData, 0)
 	if err := json.Unmarshal([]byte(rawjson), &data); err != nil {
 		fmt.Printf("Json unmarshal error:%s,raw:%s\n", err.Error(), rawjson)
-		return failResult(rawjson)
+		return failResult(err.Error())
 	}
 
 	if nil == data || 0 == len(data) {
@@ -580,99 +576,17 @@ func (api *GtasAPI) BlockDetail(h string) (*Result, error) {
 	preBH := chain.QueryBlockByHash(bh.PreHash).Header
 	block.Qn = bh.TotalQN - preBH.TotalQN
 
-	castor := block.Castor.GetHexString()
-
 	trans := make([]Transaction, 0)
-	bonusTxs := make([]BonusTransaction, 0)
-	minerBonus := make(map[string]*MinerBonusBalance)
-	uniqueBonusBlockHash := make(map[common.Hash]byte)
-	minerVerifyBlockHash := make(map[string][]common.Hash)
-	blockVerifyBonus := make(map[common.Hash]uint64)
-
-	minerBonus[castor] = genMinerBalance(block.Castor, bh)
-
 	for _, tx := range b.Transactions {
-		if tx.Type == types.TransactionTypeBonus {
-			btx := *convertBonusTransaction(tx)
-			if st, err := consensus.Proc.MainChain.GetTransactionPool().GetTransactionStatus(tx.Hash); err != nil {
-				log.Printf("getTransactions statue error, hash %v, err %v", tx.Hash.Hex(), err)
-				btx.StatusReport = "获取状态错误" + err.Error()
-			} else {
-				if st == types.ReceiptStatusSuccessful {
-					btx.StatusReport = "成功"
-					btx.Success = true
-				} else {
-					btx.StatusReport = "失败"
-				}
-			}
-			bonusTxs = append(bonusTxs, btx)
-			blockVerifyBonus[btx.BlockHash] = btx.Value
-			for _, tid := range btx.TargetIDs {
-				if _, ok := minerBonus[tid.GetHexString()]; !ok {
-					minerBonus[tid.GetHexString()] = genMinerBalance(tid, bh)
-				}
-				if !btx.Success {
-					continue
-				}
-				if hs, ok := minerVerifyBlockHash[tid.GetHexString()]; ok {
-					find := false
-					for _, h := range hs {
-						if h == btx.BlockHash {
-							find = true
-							break
-						}
-					}
-					if !find {
-						hs = append(hs, btx.BlockHash)
-						minerVerifyBlockHash[tid.GetHexString()] = hs
-					}
-				} else {
-					hs = make([]common.Hash, 0)
-					hs = append(hs, btx.BlockHash)
-					minerVerifyBlockHash[tid.GetHexString()] = hs
-				}
-			}
-			if btx.Success {
-				uniqueBonusBlockHash[btx.BlockHash] = 1
-			}
-		} else {
-			trans = append(trans, *convertTransaction(tx))
-		}
-	}
 
-	mbs := make([]*MinerBonusBalance, 0)
-	for id, mb := range minerBonus {
-		mb.Explain = ""
-		increase := uint64(0)
-		if id == castor {
-			mb.Proposal = true
-			mb.PackBonusTx = len(uniqueBonusBlockHash)
-			increase += model.Param.ProposalBonus + uint64(mb.PackBonusTx)*model.Param.PackBonus
-			mb.Explain = fmt.Sprintf("提案 打包分红交易%v个", mb.PackBonusTx)
-		}
-		if hs, ok := minerVerifyBlockHash[id]; ok {
-			for _, h := range hs {
-				increase += blockVerifyBonus[h]
-			}
-			mb.VerifyBlock = len(hs)
-			mb.Explain = fmt.Sprintf("%v 验证%v块", mb.Explain, mb.VerifyBlock)
-		}
-		mb.ExpectBalance = new(big.Int).SetUint64(mb.PreBalance.Uint64() + increase)
-		mbs = append(mbs, mb)
-	}
+		trans = append(trans, *convertTransaction(tx))
 
-	var genBonus *BonusTransaction
-	if bonusTx := chain.GetBonusManager().GetBonusTransactionByBlockHash(bh.Hash.Bytes()); bonusTx != nil {
-		genBonus = convertBonusTransaction(bonusTx)
 	}
 
 	bd := &BlockDetail{
-		Block:        *block,
-		GenBonusTx:   genBonus,
-		Trans:        trans,
-		BodyBonusTxs: bonusTxs,
-		MinerBonus:   mbs,
-		PreTotalQN:   preBH.TotalQN,
+		Block:      *block,
+		Trans:      trans,
+		PreTotalQN: preBH.TotalQN,
 	}
 	return successResult(bd)
 }
@@ -763,12 +677,6 @@ func (api *GtasAPI) Dashboard() (*Result, error) {
 //
 //	return data
 //}
-
-func (api *GtasAPI) Nonce(addr string) (*Result, error) {
-	address := common.HexToAddress(addr)
-	nonce := core.GetBlockChain().GetNonce(address)
-	return successResult(nonce)
-}
 
 func (api *GtasAPI) TxReceipt(h string) (*Result, error) {
 	w := core.GetBlockChain().GetTransactionPool().GetExecuted(common.HexToHash(h))

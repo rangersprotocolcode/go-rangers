@@ -271,17 +271,6 @@ func (msg *ConsensusCreateGroupSignMessage) GenHash() common.Hash {
 }
 
 //==============================奖励交易==============================
-type CastRewardTransSignReqMessage struct {
-	BaseSignedMessage
-	Reward 		types.Bonus
-	SignedPieces []groupsig.Signature
-	ReceiveTime time.Time	//收到请求信息的时间戳，加入future的msg，若对应的块长期未上链则需要根据此时间戳清除
-}
-
-func (msg *CastRewardTransSignReqMessage) GenHash() common.Hash {
-	return msg.Reward.TxHash
-}
-
 type CastRewardTransSignMessage struct {
 	BaseSignedMessage
 	ReqHash	common.Hash

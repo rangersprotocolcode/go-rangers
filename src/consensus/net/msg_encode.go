@@ -170,42 +170,6 @@ func marshalConsensusCreateGroupSignMessage(msg *model.ConsensusCreateGroupSignM
 	return proto.Marshal(&message)
 }
 
-func bonusToPB(bonus *types.Bonus) *middleware_pb.Bonus {
-	return &middleware_pb.Bonus{
-		TxHash:     bonus.TxHash.Bytes(),
-		TargetIds:  bonus.TargetIds,
-		BlockHash:  bonus.BlockHash.Bytes(),
-		GroupId:    bonus.GroupId,
-		Sign:       bonus.Sign,
-		TotalValue: &bonus.TotalValue,
-	}
-}
-
-func marshalCastRewardTransSignReqMessage(msg *model.CastRewardTransSignReqMessage) ([]byte, error) {
-	b := bonusToPB(&msg.Reward)
-	si := signDataToPb(&msg.SI)
-	pieces := make([][]byte, 0)
-	for _, sp := range msg.SignedPieces {
-		pieces = append(pieces, sp.Serialize())
-	}
-	message := &middleware_pb.CastRewardTransSignReqMessage{
-		Sign:         si,
-		Reward:       b,
-		SignedPieces: pieces,
-	}
-	return proto.Marshal(message)
-}
-
-func marshalCastRewardTransSignMessage(msg *model.CastRewardTransSignMessage) ([]byte, error) {
-	si := signDataToPb(&msg.SI)
-	message := &middleware_pb.CastRewardTransSignMessage{
-		Sign:      si,
-		ReqHash:   msg.ReqHash.Bytes(),
-		BlockHash: msg.BlockHash.Bytes(),
-	}
-	return proto.Marshal(message)
-}
-
 func marshalCreateGroupPingMessage(msg *model.CreateGroupPingMessage) ([]byte, error) {
 	si := signDataToPb(&msg.SI)
 	message := &middleware_pb.CreateGroupPingMessage{

@@ -129,22 +129,6 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 
 		c.processor.OnMessageCreateGroupSign(m)
 		return nil
-	case network.CastRewardSignReq:
-		m, e := unMarshalCastRewardReqMessage(body)
-		if e != nil {
-			network.Logger.Errorf("[handler]Discard CastRewardSignReqMessage because of unmarshal error%s", e.Error())
-			return e
-		}
-
-		c.processor.OnMessageCastRewardSignReq(m)
-	case network.CastRewardSignGot:
-		m, e := unMarshalCastRewardSignMessage(body)
-		if e != nil {
-			network.Logger.Errorf("[handler]Discard CastRewardSignMessage because of unmarshal error%s", e.Error())
-			return e
-		}
-
-		c.processor.OnMessageCastRewardSign(m)
 	case network.AskSignPkMsg:
 		m, e := unMarshalConsensusSignPKReqMessage(body)
 		if e != nil {

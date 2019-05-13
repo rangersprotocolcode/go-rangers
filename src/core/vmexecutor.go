@@ -121,7 +121,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						}
 
 						address := common.HexToAddress(user.Address)
-						accountdb.SetNonce(address, accountdb.GetNonce(address)+1)
+						accountdb.SetNonce(address, 1)
 					}
 
 				}

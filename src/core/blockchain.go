@@ -58,7 +58,6 @@ type blockChain struct {
 	executor        *VMExecutor
 	forkProcessor   *forkProcessor
 	transactionPool TransactionPool
-	bonusManager    *BonusManager
 
 	lock middleware.Loglock
 }
@@ -121,7 +120,6 @@ func initBlockChain() error {
 	}
 	chain.stateDB = account.NewDatabase(db)
 
-	chain.bonusManager = newBonusManager()
 	chain.executor = NewVMExecutor(chain)
 	chain.forkProcessor = initForkProcessor()
 
@@ -392,22 +390,18 @@ func (chain *blockChain) GetAccountDB() *account.AccountDB {
 	return chain.latestStateDB
 }
 
-func (chain *blockChain) GetNonce(address common.Address) uint64 {
+func (chain *blockChain) GetNonce(address common.Address, gameId string) uint64 {
 	if nil == chain.latestStateDB {
 		return 0
 	}
 
-	return chain.latestStateDB.GetNonce(common.BytesToAddress(address.Bytes()))
+	return chain.latestStateDB.GetNonce(common.BytesToAddress(address.Bytes()), gameId)
 }
 
 func (chain *blockChain) Close() {
 	chain.hashDB.Close()
 	chain.heightDB.Close()
 	chain.verifyHashDB.Close()
-}
-
-func (chain *blockChain) GetBonusManager() *BonusManager {
-	return chain.bonusManager
 }
 
 func (chain *blockChain) LatestStateDB() *account.AccountDB {

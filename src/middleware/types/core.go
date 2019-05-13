@@ -163,15 +163,6 @@ func (c Transactions) Less(i, j int) bool {
 	return c[i].RequestId < c[j].RequestId
 }
 
-type Bonus struct {
-	TxHash     common.Hash
-	TargetIds  []int32
-	BlockHash  common.Hash
-	GroupId    []byte
-	Sign       []byte
-	TotalValue uint64
-}
-
 const (
 	MinerTypeLight    = 0
 	MinerTypeHeavy    = 1

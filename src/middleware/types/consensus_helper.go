@@ -48,6 +48,4 @@ type ConsensusHelper interface {
 	//check group
 	CheckGroup(g *Group) (bool, error)
 
-	//verify bonus transaction
-	VerifyBonusTransaction(tx *Transaction) (bool, error)
 }

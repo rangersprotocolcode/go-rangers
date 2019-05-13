@@ -251,34 +251,6 @@ func (ns *NetworkServerImpl) SendCreateGroupSignMessage(msg *model.ConsensusCrea
 	//go ns.net.SendWithGroupRelay(msg.Launcher.String(), parentGid.GetHexString(), m)
 }
 
-func (ns *NetworkServerImpl) SendCastRewardSignReq(msg *model.CastRewardTransSignReqMessage) {
-	body, e := marshalCastRewardTransSignReqMessage(msg)
-	if e != nil {
-		network.Logger.Errorf("[peer]Discard send CastRewardTransSignReqMessage because of marshal error:%s", e.Error())
-		return
-	}
-	m := network.Message{Code: network.CastRewardSignReq, Body: body}
-
-	gid := groupsig.DeserializeId(msg.Reward.GroupId)
-
-	network.Logger.Debugf("send SendCastRewardSignReq to %v", gid.GetHexString())
-
-	ns.net.SpreadToGroup(gid.GetHexString(), m)
-}
-
-func (ns *NetworkServerImpl) SendCastRewardSign(msg *model.CastRewardTransSignMessage) {
-	//todo
-	//body, e := marshalCastRewardTransSignMessage(msg)
-	//if e != nil {
-	//	network.Logger.Errorf("[peer]Discard send CastRewardTransSignMessage because of marshal error:%s", e.Error())
-	//	return
-	//}
-
-
-	//m := network.Message{Code: network.CastRewardSignGot, Body: body}
-	//ns.net.SendWithGroupRelay(msg.Launcher.String(), msg.GroupID.GetHexString(), m)
-}
-
 func (ns *NetworkServerImpl) SendGroupPingMessage(msg *model.CreateGroupPingMessage, receiver groupsig.ID) {
 	body, e := marshalCreateGroupPingMessage(msg)
 	if e != nil {

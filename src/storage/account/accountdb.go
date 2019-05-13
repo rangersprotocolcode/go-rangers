@@ -128,7 +128,7 @@ func (self *AccountDB) GetBalance(addr common.Address) *big.Int {
 	return common.Big0
 }
 
-func (self *AccountDB) GetNonce(addr common.Address) uint64 {
+func (self *AccountDB) GetNonce(addr common.Address, gameId string) uint64 {
 	accountObject := self.getAccountObject(addr)
 	if accountObject != nil {
 		return accountObject.Nonce()

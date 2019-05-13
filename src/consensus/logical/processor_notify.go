@@ -27,21 +27,6 @@ func (p *Processor) triggerFutureVerifyMsg(hash common.Hash) {
 
 }
 
-func (p *Processor) triggerFutureRewardSign(bh *types.BlockHeader) {
-	futures := p.futureRewardReqs.getMessages(bh.Hash)
-	if futures == nil || len(futures) == 0 {
-		return
-	}
-	p.futureRewardReqs.remove(bh.Hash)
-	mtype := "CMCRSR-Future"
-	for _, msg := range futures {
-		blog := newBizLog(mtype)
-		slog := newSlowLog(mtype, 0.5)
-		send, err := p.signCastRewardReq(msg.(*model.CastRewardTransSignReqMessage), bh, slog)
-		blog.log("send %v, result %v", send, err)
-	}
-}
-
 //func (p *Processor) triggerFutureBlockMsg(preBH *types.BlockHeader) {
 //	futureMsgs := p.getFutureBlockMsgs(preBH.Hash)
 //	if futureMsgs == nil || len(futureMsgs) == 0 {
@@ -89,7 +74,7 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 
 	//p.triggerFutureBlockMsg(bh)
 	p.triggerFutureVerifyMsg(bh.Hash)
-	p.triggerFutureRewardSign(bh)
+
 	p.groupManager.CreateNextGroupRoutine()
 
 	p.cleanVerifyContext(bh.Height)

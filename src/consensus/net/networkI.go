@@ -36,10 +36,6 @@ type MessageProcessor interface {
 
 	OnMessageCreateGroupSign(msg *model.ConsensusCreateGroupSignMessage)
 
-	OnMessageCastRewardSignReq(msg *model.CastRewardTransSignReqMessage)
-
-	OnMessageCastRewardSign(msg *model.CastRewardTransSignMessage)
-
 	OnMessageCreateGroupPing(msg *model.CreateGroupPingMessage)
 
 	OnMessageCreateGroupPong(msg *model.CreateGroupPongMessage)
@@ -75,10 +71,6 @@ type NetworkServer interface {
 	BuildGroupNet(groupIdentifier string, mems []groupsig.ID)
 
 	ReleaseGroupNet(groupIdentifier string)
-
-	SendCastRewardSignReq(msg *model.CastRewardTransSignReqMessage)
-
-	SendCastRewardSign(msg *model.CastRewardTransSignMessage)
 
 	AnswerSignPkMessage(msg *model.ConsensusSignPubKeyMessage, receiver groupsig.ID)
 

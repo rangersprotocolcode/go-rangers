@@ -4,7 +4,6 @@ import (
 	"x/src/middleware/types"
 	"x/src/consensus/groupsig"
 	"x/src/common"
-	"x/src/consensus"
 )
 
 func convertTransaction(tx *types.Transaction) *Transaction {
@@ -45,42 +44,5 @@ func convertBlockHeader(bh *types.BlockHeader) *Block {
 	return block
 }
 
-func convertBonusTransaction(tx *types.Transaction) *BonusTransaction {
-	if tx.Type != types.TransactionTypeBonus {
-		return nil
-	}
-	gid, ids, bhash, value := consensus.Proc.MainChain.GetBonusManager().ParseBonusTransaction(tx)
-
-	targets := make([]groupsig.ID, len(ids))
-	for i, id := range ids {
-		targets[i] = groupsig.DeserializeId(id)
-	}
-	return &BonusTransaction{
-		Hash:      tx.Hash,
-		BlockHash: bhash,
-		GroupID:   groupsig.DeserializeId(gid),
-		TargetIDs: targets,
-		Value:     value,
-	}
-}
-
-func genMinerBalance(id groupsig.ID, bh *types.BlockHeader) *MinerBonusBalance {
-	mb := &MinerBonusBalance{
-		ID: id,
-	}
-	db, err := consensus.Proc.MainChain.GetAccountDBByHash(bh.Hash)
-	if err != nil {
-		common.DefaultLogger.Errorf("GetAccountDBByHash err %v, hash %v", err, bh.Hash)
-		return mb
-	}
-	mb.CurrBalance = db.GetBalance(id.ToAddress())
-	preDB, err := consensus.Proc.MainChain.GetAccountDBByHash(bh.PreHash)
-	if err != nil {
-		common.DefaultLogger.Errorf("GetAccountDBByHash err %v hash %v", err, bh.PreHash)
-		return mb
-	}
-	mb.PreBalance = preDB.GetBalance(id.ToAddress())
-	return mb
-}
 
 

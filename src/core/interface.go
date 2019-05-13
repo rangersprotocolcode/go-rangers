@@ -48,7 +48,7 @@ type BlockChain interface {
 
 	GetBalance(address common.Address) *big.Int
 
-	GetNonce(address common.Address) uint64
+	GetNonce(address common.Address, gameId string) uint64
 
 	GetTransaction(txHash common.Hash) (*types.Transaction, error)
 
@@ -59,8 +59,6 @@ type BlockChain interface {
 	Clear() error
 
 	Close()
-
-	GetBonusManager() *BonusManager
 
 	GetAccountDBByHash(hash common.Hash) (*account.AccountDB, error)
 

@@ -225,7 +225,6 @@ func (p *Processor) BlockContextSummary() string {
 		NumReserVctx       int            `json:"num_reser_vctx"`
 		ReservVctxs        []*vctxSummary `json:"reserv_vctxs"`
 		NumFutureVerifyMsg int            `json:"num_future_verify_msg"`
-		NumFutureRewardMsg int            `json:"num_future_reward_msg"`
 		NumVerifyCache     int            `json:"num_verify_cache"`
 	}
 	bctxs := make([]*bctxSummary, 0)
@@ -283,7 +282,6 @@ func (p *Processor) BlockContextSummary() string {
 		NumBctxs:           len(bctxs),
 		NumReserVctx:       len(reservVctxs),
 		NumFutureVerifyMsg: p.futureVerifyMsgs.size(),
-		NumFutureRewardMsg: p.futureRewardReqs.size(),
 		NumVerifyCache:     p.verifyMsgCaches.Len(),
 	}
 	b, _ := json.MarshalIndent(cs, "", "\t")

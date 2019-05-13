@@ -77,22 +77,3 @@ func (helper *ConsensusHelperImpl) VerifyBlockHeader(bh *types.BlockHeader) (boo
 func (helper *ConsensusHelperImpl) CheckGroup(g *types.Group) (ok bool, err error) {
 	return Proc.VerifyGroup(g)
 }
-
-func (helper *ConsensusHelperImpl) VerifyBonusTransaction(tx *types.Transaction) (ok bool, err error) {
-	sign_bytes := tx.Sign.Bytes()
-	if len(sign_bytes) < common.SignLength {
-		return false, fmt.Errorf("not enough bytes for bonus signature, sign =%v", sign_bytes)
-	}
-	groupID, _, _, _ := Proc.MainChain.GetBonusManager().ParseBonusTransaction(tx)
-	group := Proc.GroupChain.GetGroupById(groupID)
-	if group == nil {
-		return false, fmt.Errorf("VerifyBonusTransaction fail, Can't get groupinfo(gid=%x)", groupID)
-	}
-	gpk := groupsig.DeserializePubkeyBytes(group.PubKey)
-	//AcceptRewardPiece Function store groupsig in common sign buff, here will recover the groupsig
-	gsign := groupsig.DeserializeSign(sign_bytes[0:33]) //size of groupsig == 33
-	if !groupsig.VerifySig(gpk, tx.Hash.Bytes(), *gsign) {
-		return false, fmt.Errorf("verify bonus sign fail, gsign=%v", gsign.GetHexString())
-	}
-	return true, nil
-}

@@ -24,7 +24,7 @@ type Processor struct {
 
 	blockContexts    *CastBlockContexts   //组ID->组铸块上下文
 	futureVerifyMsgs *FutureMessageHolder //存储缺失前一块的验证消息
-	futureRewardReqs *FutureMessageHolder //块仍未上链的分红交易签名请求
+
 	verifyMsgCaches  *lru.Cache           //缓存验证消息
 
 	joiningGroups *JoiningGroups //已加入未完成初始化的组(组初始化完成上链后，不再需要)。组内成员数据过程数据。
@@ -61,7 +61,7 @@ func (p *Processor) Init(mi model.SelfMinerDO, conf common.ConfManager) bool {
 	p.conf = conf
 	//p.futureBlockMsgs = NewFutureMessageHolder()
 	p.futureVerifyMsgs = NewFutureMessageHolder()
-	p.futureRewardReqs = NewFutureMessageHolder()
+
 	p.MainChain = core.GetBlockChain()
 	p.GroupChain = core.GetGroupChain()
 	p.mi = &mi
