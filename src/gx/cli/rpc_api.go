@@ -99,8 +99,8 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string, nonce uint64) (*
 
 	data := make([]types.UserData, 0)
 	if err := json.Unmarshal([]byte(rawjson), &data); err != nil {
-		fmt.Printf("Json unmarshal error:%s,raw:%s\n", err.Error(),rawjson)
-		return failResult(err.Error())
+		fmt.Printf("Json unmarshal error:%s,raw:%s\n", err.Error(), rawjson)
+		return failResult(err.Error() + rawjson)
 	}
 
 	if nil == data || 0 == len(data) {
