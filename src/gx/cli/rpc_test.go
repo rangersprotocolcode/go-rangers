@@ -4,34 +4,37 @@ import (
 	"encoding/json"
 	"log"
 	"testing"
-	"x/src/common"
 	"strconv"
 	"fmt"
 	"time"
+	"x/src/common"
 )
 
 func TestRPC(t *testing.T) {
 	gx := NewGX()
 	common.InitConf("tas.ini")
 	walletManager = newWallets()
-	gx.initMiner(0, "heavy", "keystore", 1080)
+	gx.initMiner(0, "heavy", "keystore", 8080)
 
-	host := "127.0.0.1"
-	var port uint = 8080
-	StartRPC(host, port)
+	host := "0.0.0.0"
+	var port uint = 8989
+	if err := StartRPC(host, port); err != nil {
+		panic(err)
+	}
+
 	tests := []struct {
 		method string
 		params []interface{}
 	}{
-		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"50\",\"assets\":{\"1\":\"dj\"}}]",1}},
+		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"50\",\"assets\":{\"1\":\"dj\"}}]", 1}},
 		{"Rocket_getBalance", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
 		{"Rocket_getAsset", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "1"}},
 		{"Rocket_getAllAssets", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
-		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"-2.25\",\"assets\":{\"1\":\"dj11\",\"2\":\"yyyy\"}}]",2}},
+		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"-2.25\",\"assets\":{\"1\":\"dj11\",\"2\":\"yyyy\"}}]", 2}},
 		{"Rocket_getAsset", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "1"}},
 		{"Rocket_getAllAssets", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
 		{"Rocket_getBalance", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
-		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"2.25\",\"assets\":{\"1\":\"\",\"2\":\"yyyy\"}}]",3}},
+		{"Rocket_updateAssets", []interface{}{"0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "[{\"address\":\"a\",\"balance\":\"2.25\",\"assets\":{\"1\":\"\",\"2\":\"yyyy\"}}]", 3}},
 		{"Rocket_getAsset", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "1"}},
 		{"Rocket_getAllAssets", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
 		{"Rocket_getBalance", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
@@ -39,7 +42,7 @@ func TestRPC(t *testing.T) {
 		//{"GTAS_getWallets", nil},
 	}
 	for _, test := range tests {
-		res, err := rpcPost(host, port, test.method, test.params...)
+		res, err := rpcPost("127.0.0.1", port, test.method, test.params...)
 		if err != nil {
 			t.Errorf("%s failed: %v", test.method, err)
 			continue
@@ -52,7 +55,7 @@ func TestRPC(t *testing.T) {
 		log.Printf("%s response data: %s", test.method, data)
 	}
 
-	time.Sleep(10000*time.Second)
+	time.Sleep(10000 * time.Second)
 }
 
 func TestStrToFloat(t *testing.T) {
