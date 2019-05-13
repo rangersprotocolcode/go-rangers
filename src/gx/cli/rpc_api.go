@@ -59,16 +59,16 @@ func (api *GtasAPI) GetAsset(address string, gameId string, assetId string) (*Re
 		return successResult("")
 	}
 
-	assetsResult, _ := api.GetAllAssets(address, gameId)
+	assetsResult, _ := getAssets(address, gameId)
 
-	assets := assetsResult.Data.([]*types.Asset)
+	assets := assetsResult.Data.(map[string]string)
 	if nil == assets || 0 == len(assets) {
 		return successResult("")
 	}
 
-	for _, asset := range assets {
-		if asset.Id == assetId {
-			return successResult(asset.Value)
+	for id, value := range assets {
+		if id == assetId {
+			return successResult(value)
 		}
 	}
 	return successResult("")
@@ -78,10 +78,14 @@ func (api *GtasAPI) GetAllAssets(address string, gameId string) (*Result, error)
 	gxLock.RLock()
 	defer gxLock.RUnlock()
 
+	return getAssets(address, gameId)
+}
+
+func getAssets(address string, gameId string) (*Result, error) {
 	sub := core.GetSubAccount(address, gameId, core.GetBlockChain().GetAccountDB())
 
 	if nil == sub {
-		return successResult([]types.Asset{})
+		return successResult(make(map[string]string))
 	}
 
 	return successResult(sub.Assets)
