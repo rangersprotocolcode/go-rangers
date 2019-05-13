@@ -4,22 +4,24 @@ import (
 	"encoding/json"
 	"log"
 	"testing"
-	"x/src/common"
 	"strconv"
 	"fmt"
 	"time"
-	"x/src/middleware/types"
+	"x/src/common"
 )
 
 func TestRPC(t *testing.T) {
 	gx := NewGX()
 	common.InitConf("tas.ini")
 	walletManager = newWallets()
-	gx.initMiner(0, "heavy", "keystore", 1080)
+	gx.initMiner(0, "heavy", "keystore", 8080)
 
-	host := "127.0.0.1"
-	var port uint = 8080
-	StartRPC(host, port)
+	host := "0.0.0.0"
+	var port uint = 8989
+	if err := StartRPC(host, port); err != nil {
+		panic(err)
+	}
+
 	tests := []struct {
 		method string
 		params []interface{}
@@ -40,7 +42,7 @@ func TestRPC(t *testing.T) {
 		//{"GTAS_getWallets", nil},
 	}
 	for _, test := range tests {
-		res, err := rpcPost(host, port, test.method, test.params...)
+		res, err := rpcPost("127.0.0.1", port, test.method, test.params...)
 		if err != nil {
 			t.Errorf("%s failed: %v", test.method, err)
 			continue
@@ -86,13 +88,4 @@ func TestSlice(t *testing.T) {
 	i := 4
 	a = append(a[:i], a[i+1:]...)
 	fmt.Println(a)
-}
-
-func TestJSON(t *testing.T) {
-	s := "[{\"address\":\"dragonMother\",\"assets\":{\"drogon\":\"12\"}}]"
-	data := make([]types.UserData, 0)
-	if err := json.Unmarshal([]byte(s), &data); err != nil {
-		fmt.Println(err.Error())
-	}
-	fmt.Printf("%v\n",data)
 }
