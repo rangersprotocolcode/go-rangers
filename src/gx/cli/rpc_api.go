@@ -53,6 +53,7 @@ func (api *GtasAPI) GetBalance(address string, gameId string) (*Result, error) {
 }
 
 func (api *GtasAPI) GetAsset(address string, gameId string, assetId string) (*Result, error) {
+	fmt.Printf("GetAsset Rcv gameId:%s,address:%s,assetId:%s\n", gameId, address, assetId)
 	gxLock.RLock()
 	defer gxLock.RUnlock()
 
@@ -98,8 +99,8 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string, nonce uint64) (*
 
 	data := make([]types.UserData, 0)
 	if err := json.Unmarshal([]byte(rawjson), &data); err != nil {
-		fmt.Printf("Json unmarshal error:%s,raw:%s\n", err.Error(),rawjson)
-		return failResult(err.Error())
+		fmt.Printf("Json unmarshal error:%s,raw:%s\n", err.Error(), rawjson)
+		return failResult(rawjson)
 	}
 
 	if nil == data || 0 == len(data) {
