@@ -53,6 +53,7 @@ func (api *GtasAPI) GetBalance(address string, gameId string) (*Result, error) {
 }
 
 func (api *GtasAPI) GetAsset(address string, gameId string, assetId string) (*Result, error) {
+	fmt.Printf("GetAsset Rcv gameId:%s,address:%s,assetId:%s\n", gameId, address, assetId)
 	gxLock.RLock()
 	defer gxLock.RUnlock()
 
