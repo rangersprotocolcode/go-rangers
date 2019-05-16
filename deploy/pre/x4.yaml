@@ -12,7 +12,7 @@ services:
   - priority: 1
     game: "appid_demo_1"
     name: "appid_demo_1_4"
-    image: "state_machine_demo:latest"
+    image: "state_machine_demo_js:latest"
     ports:
       - host: 7774
         target: 7001
