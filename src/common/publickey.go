@@ -3,10 +3,9 @@ package common
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
+	"golang.org/x/crypto/sha3"
 	"encoding/hex"
 	"io"
-	"crypto/sha256"
-
 	"x/src/common/secp256k1"
 	"x/src/common/ecies"
 )
@@ -28,7 +27,7 @@ func (pk PublicKey) GetAddress() Address {
 	y := pk.PubKey.Y.Bytes()
 	x = append(x, y...)
 
-	addr_buf := sha256.Sum256(x)
+	addr_buf := sha3.Sum256(x)
 	if len(addr_buf) != AddressLength {
 		panic("地址长度错误")
 	}
@@ -65,7 +64,7 @@ func (pk PublicKey) GetHexString() string {
 }
 
 func (pk *PublicKey) Encrypt(rand io.Reader, msg []byte) ([]byte, error) {
-    return Encrypt(rand, pk, msg)
+	return Encrypt(rand, pk, msg)
 }
 
 //导入函数
