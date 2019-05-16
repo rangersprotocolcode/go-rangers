@@ -56,7 +56,6 @@ const (
 	CastRewardSignReq uint32 = 27
 	CastRewardSignGot uint32 = 28
 
-
 	//===================请求组内成员签名公钥======
 	AskSignPkMsg    uint32 = 34
 	AnswerSignPkMsg uint32 = 35
@@ -67,7 +66,6 @@ const (
 	GroupPing uint32 = 100
 	GroupPong uint32 = 101
 
-
 	ReqSharePiece      uint32 = 102
 	ResponseSharePiece uint32 = 103
 
@@ -75,7 +73,6 @@ const (
 	WithDraw        uint32 = 1001
 	AssetOnChain           = 1002
 )
-
 
 type MsgDigest []byte
 
@@ -91,6 +88,8 @@ type Network interface {
 	SendToClientWriter(id string, msg Message, nonce uint64)
 
 	SendToCoinProxy(msg Message)
+
+	Notify(isunicast bool, gameId string, userid string, msg string)
 }
 
 func GetNetInstance() Network {

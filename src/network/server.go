@@ -6,6 +6,10 @@ import (
 	"hash/fnv"
 	"encoding/json"
 	"x/src/middleware/types"
+	"crypto/md5"
+	"encoding/binary"
+	"strconv"
+	"sync"
 )
 
 var Server server
@@ -16,6 +20,9 @@ type server struct {
 
 	sendChan chan []byte
 	rcvChan  chan []byte
+
+	notifyNonce uint64
+	nonceLock   *sync.Mutex
 }
 
 func (s *server) Send(id string, msg Message) {
@@ -40,6 +47,30 @@ func (s *server) SendToClientWriter(id string, msg Message, nonce uint64) {
 
 func (s *server) SendToCoinProxy(msg Message) {
 	s.send(methodCodeCoinProxySend, "0", msg, 0, false)
+}
+
+func (s *server) Notify(isunicast bool, gameId string, userid string, msg string) {
+	if 0 == len(gameId) {
+		return
+	}
+
+	method := methodNotify
+	if !isunicast {
+		if 0 == len(userid) {
+			method = methodNotifyBroadcast
+		} else {
+			method = methodNotifyGroup
+		}
+	}
+
+	s.nonceLock.Lock()
+	defer s.nonceLock.Unlock()
+
+	s.notifyNonce = s.notifyNonce + 1
+	notifyId := s.generateNotifyId(gameId, userid)
+
+	s.send(method, notifyId, Message{Body: []byte(msg)}, s.notifyNonce, true)
+
 }
 
 func (s *server) handleMinerMessage(data []byte, from string) {
@@ -155,4 +186,16 @@ func (s *server) handleCoinProxyMessage(data []byte, nonce uint64) {
 			notify.BUS.Publish(notify.CoinProxyNotify, &msg)
 		}
 	}
+}
+func (s *server) generateNotifyId(gameId string, userId string) string {
+	data := []byte(gameId)
+	if 0 != len(userId) {
+		data = append(data, []byte(userId)...)
+	}
+
+	md5Result := md5.Sum(data)
+	idBytes := md5Result[4:12]
+	id := uint64(binary.BigEndian.Uint64(idBytes))
+
+	return strconv.FormatUint(id, 10)
 }

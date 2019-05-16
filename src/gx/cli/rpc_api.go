@@ -12,6 +12,7 @@ import (
 	"x/src/consensus"
 	"strconv"
 	"sync"
+	"x/src/network"
 )
 
 func successResult(data interface{}) (*Result, error) {
@@ -132,6 +133,18 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string, nonce uint64) (*
 	}
 
 	return successResult(data)
+}
+
+func (api *GtasAPI) Notify(gameId string, userid string, message string) {
+	go network.GetNetInstance().Notify(true, gameId, userid, message)
+}
+
+func (api *GtasAPI) NotifyGroup(gameId string, groupId string, message string) {
+	go network.GetNetInstance().Notify(false, gameId, groupId, message)
+}
+
+func (api *GtasAPI) NotifyBroadcast(gameId string, message string) {
+	api.NotifyGroup(gameId, "", message)
 }
 
 // NewWallet 新建账户接口
