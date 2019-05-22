@@ -54,12 +54,12 @@ const ProcNum = 3
 func initProcessor(conf string) *Processor {
 	cm := common.NewConfINIManager(conf)
 	proc := new(Processor)
-	addr := common.HexToAddress(cm.GetString("gx", "miner", ""))
+	addr := cm.GetString("gx", "miner", "")
 
 	gstore := fmt.Sprintf("%v/groupstore%v", confPathPrefix, cm.GetString("instance", "index", ""))
 	cm.SetString("consensus", "groupstore", gstore)
 
-	proc.Init(model.NewSelfMinerDO(addr), cm)
+	proc.Init(model.NewSelfMinerDO(common.Hex2Bytes(addr)), cm)
 	//log.Printf("%v", proc.mi.VrfPK)
 	return proc
 }

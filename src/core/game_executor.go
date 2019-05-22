@@ -118,16 +118,21 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 		}
 	}
 
+	responseId := txRaw.SocketRequestId
+	if 0 == len(responseId) {
+		responseId = txRaw.Hash.String()
+	}
+
 	// reply to the client
-	go network.GetNetInstance().SendToClientReader(message.UserId, network.Message{Body: executor.makeSuccessResponse(result, txRaw.Hash)}, message.Nonce)
+	go network.GetNetInstance().SendToClientReader(message.UserId, network.Message{Body: executor.makeSuccessResponse(result, responseId)}, message.Nonce)
 
 	return
 }
 
-func (executor *GameExecutor) makeSuccessResponse(bytes string, hash common.Hash) []byte {
+func (executor *GameExecutor) makeSuccessResponse(bytes string, hash string) []byte {
 	res := response{
 		Data:   bytes,
-		Hash:   hash.String(),
+		Hash:   hash,
 		Status: 0,
 	}
 
@@ -184,7 +189,7 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 	result := executor.runTransaction(txRaw)
 
 	// reply to the client
-	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: executor.makeSuccessResponse(result, txRaw.Hash)}, message.Nonce)
+	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: executor.makeSuccessResponse(result, txRaw.Hash.String())}, message.Nonce)
 
 	if !executor.debug {
 		executor.getCond(gameId).Broadcast()

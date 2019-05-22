@@ -117,6 +117,8 @@ type Transaction struct {
 
 	Sign *common.Sign
 	Time string
+
+	SocketRequestId string
 }
 
 //source 在hash计算范围内
@@ -372,7 +374,17 @@ func (txJson TxJson) ToTransaction() Transaction {
 		RequestId: txJson.RequestId, ExtraData: txJson.ExtraData}
 
 	if txJson.Hash != "" {
-		tx.Hash = common.HexToHash(txJson.Hash)
+		s := txJson.Hash
+		if s[0:2] == "0x" || s[0:2] == "0X" {
+			s = s[2:]
+		}
+
+		if 64 != len(s) {
+			tx.SocketRequestId = txJson.Hash
+		} else {
+			tx.Hash = common.HexToHash(txJson.Hash)
+		}
+
 	}
 
 	if txJson.Sign != "" {
