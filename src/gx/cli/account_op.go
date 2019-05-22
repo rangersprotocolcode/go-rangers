@@ -59,6 +59,7 @@ type MinerRaw struct {
 	BSk   string
 	VrfPk string
 	VrfSk string
+	ID    [32]byte
 }
 
 func (am *AccountManager) NewAccount(password string, miner bool) *Result {
@@ -74,12 +75,14 @@ func (am *AccountManager) NewAccount(password string, miner bool) *Result {
 	}
 
 	if miner {
-		minerDO := model.NewSelfMinerDO(publicKey.GetID()[:])
+		id := publicKey.GetID()
+		minerDO := model.NewSelfMinerDO(id[:])
 		minerRaw := &MinerRaw{
 			BPk:   minerDO.PK.GetHexString(),
 			BSk:   minerDO.SK.GetHexString(),
 			VrfPk: minerDO.VrfPK.GetHexString(),
 			VrfSk: minerDO.VrfSK.GetHexString(),
+			ID:    id,
 		}
 		account.Miner = minerRaw
 	}
@@ -196,7 +199,7 @@ func newAccountManager(ks string) (*AccountManager, error) {
 }
 
 func (am *AccountManager) loadAccount(addr string) (*Account, error) {
-	v, err := am.db.Get([]byte(addr))
+	v, err := am.db.Get(common.FromHex(addr))
 	if err != nil {
 		return nil, err
 	}
@@ -225,7 +228,7 @@ func (am *AccountManager) storeAccount(account *Account) error {
 		return err
 	}
 
-	err = am.db.Put([]byte(account.Address), ct)
+	err = am.db.Put(account.Miner.ID[:], ct)
 	return err
 }
 

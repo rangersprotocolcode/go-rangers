@@ -65,7 +65,7 @@ func (p *Processor) BeginGenesisGroupMember() {
 		jg := p.belongGroups.getJoinedGroup(sgi.GroupID)
 		if jg == nil {
 			time.Sleep(time.Second * 1)
-			panic("genesisMember find join_group fail")
+			panic("genesisMember find join_group fail" + sgi.GroupID.GetHexString())
 		}
 		p.joinGroup(jg)
 	}
@@ -73,7 +73,7 @@ func (p *Processor) BeginGenesisGroupMember() {
 }
 
 func generateGenesisGroupHeader(memIds []groupsig.ID) *types.GroupHeader {
-	//parentId := "0x3f36baa255bb4df4f07144f8ac366629ec990888677db80a03612212a0a9a3f7"
+	//parentId := "0xf2cb0c8e7d1086c8f311a28f51871564c5cc31361e7d1f1498d3306d54fd729b"
 	//var id groupsig.ID
 	//id.SetHexString(parentId)
 	//idByte := id.Serialize()

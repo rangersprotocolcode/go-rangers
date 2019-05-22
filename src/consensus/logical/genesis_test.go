@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	confPathPrefix       = `/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/pre1`
-	joinedGroupStorePath = "/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/pre1"
-	groupstore           = "/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/pre1"
+	confPathPrefix       = `/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/pre2`
+	joinedGroupStorePath = "/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/pre2"
+	groupstore           = "/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/pre2"
 )
 const ProcNum = 3
 
@@ -59,7 +59,7 @@ func initProcessor(conf string) *Processor {
 	gstore := fmt.Sprintf("%v/groupstore%v", confPathPrefix, cm.GetString("instance", "index", ""))
 	cm.SetString("consensus", "groupstore", gstore)
 
-	proc.Init(model.NewSelfMinerDO(common.Hex2Bytes(addr)), cm)
+	proc.Init(model.NewSelfMinerDO(common.FromHex(addr)), cm)
 	//log.Printf("%v", proc.mi.VrfPK)
 	return proc
 }

@@ -19,6 +19,7 @@ import (
 	"x/src/consensus/model"
 	cnet "x/src/consensus/net"
 	"x/src/middleware/log"
+	"x/src/statemachine"
 )
 
 const (
@@ -128,17 +129,18 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 	common.GlobalConf.SetString(chainSection, databaseKey, databaseValue)
 
 	middleware.InitMiddleware()
-	//statemachine.DockerInit(common.GlobalConf.GetString("docker", "config", ""), port)
+	statemachine.DockerInit(common.GlobalConf.GetString("docker", "config", ""), port)
 
 	minerAddr := common.GlobalConf.GetString(Section, "miner", "")
 	err := gx.getAccountInfo(keystore, minerAddr)
 	if err != nil {
 		panic("Init miner get account info error:" + err.Error())
 	}
-	common.GlobalConf.SetString(Section, "miner", gx.account.Address)
 	fmt.Println("Your Miner Address:", gx.account.Address)
 
-	minerInfo := model.NewSelfMinerDO(common.Hex2Bytes(gx.account.Address))
+	minerInfo := model.NewSelfMinerDO(gx.account.Miner.ID[:])
+	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
+
 	if apply == "light" {
 		minerInfo.NType = types.MinerTypeLight
 	} else if apply == "heavy" {
@@ -149,20 +151,20 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 		panic("Init miner core init error:" + err.Error())
 	}
 
-	network.InitNetwork(gx.account.Address, cnet.MessageHandler)
+	network.InitNetwork("0x"+common.Bytes2Hex(gx.account.Miner.ID[:]), cnet.MessageHandler)
 
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
 	if !ok {
 		panic("Init miner consensus init error!")
 
 	}
+	gx.dumpAccountInfo(minerInfo)
 	consensus.Proc.BeginGenesisGroupMember()
 
 	ok = consensus.StartMiner()
 	if !ok {
 		panic("Init miner start miner error!")
 	}
-	gx.dumpAccountInfo(minerInfo)
 	syncChainInfo()
 	gx.init = true
 }

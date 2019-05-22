@@ -40,9 +40,6 @@ func (pk PublicKey) GetID() [32]byte {
 	x = append(x, y...)
 
 	addr_buf := sha256.Sum256(x)
-	if len(addr_buf) != AddressLength {
-		panic("地址长度错误")
-	}
 
 	return addr_buf
 }
