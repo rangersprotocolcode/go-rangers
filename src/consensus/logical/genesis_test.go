@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	confPathPrefix       = `/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/pre`
-	joinedGroupStorePath = "/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/pre"
-	groupstore           = "/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/pre"
+	confPathPrefix       = `/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/pre1`
+	joinedGroupStorePath = "/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/pre1"
+	groupstore           = "/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/pre1"
 )
 const ProcNum = 3
 
@@ -70,7 +70,7 @@ func mockProcessors(index int) (map[string]*Processor, map[string]int) {
 	indexs := make(map[string]int, maxProcNum)
 
 	for i := index; i <= maxProcNum; i++ {
-		path := fmt.Sprintf("%v/tas%v.ini", confPathPrefix, i)
+		path := fmt.Sprintf("%v/x%v.ini", confPathPrefix, i)
 		proc := initProcessor(path)
 		procs[proc.GetMinerID().GetHexString()] = proc
 		indexs[proc.getPrefix()] = i
@@ -81,7 +81,7 @@ func mockProcessors(index int) (map[string]*Processor, map[string]int) {
 
 
 func TestGenesisGroup(t *testing.T) {
-	common.InitConf(confPathPrefix + "/tas1.ini")
+	common.InitConf(confPathPrefix + "/x1.ini")
 	common.GlobalConf.SetString(ConsensusConfSection, "groupstore", groupstore)
 	middleware.InitMiddleware()
 	InitConsensus()
