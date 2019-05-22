@@ -51,3 +51,12 @@ func TestTransactionHash(t *testing.T) {
 	j,_:=  json.Marshal(tx.ToTxJson())
 	fmt.Printf("TX JSON:\n%s\n", string(j))
 }
+
+func TestNonceTransaction(t *testing.T) {
+	txJson := TxJson{Source: "0x00113898717aafe49f28ca587219e1188550edfb", Target: "appid_demo_1", Type: 14,  Time: "1556076659050692000"}
+	tx := txJson.ToTransaction()
+	tx.Hash = tx.GenHash()
+
+	j,_:=  json.Marshal(tx.ToTxJson())
+	fmt.Printf("TX JSON:\n%s\n", string(j))
+}

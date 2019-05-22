@@ -193,6 +193,7 @@ func TestAccount(test *testing.T) {
 	pubkey := privateKey.GetPubKey()
 	address := pubkey.GetAddress()
 	fmt.Printf("sk:%s\n", privateKey.GetHexString())
+	fmt.Printf("pk:%s\n", pubkey.GetHexString())
 	fmt.Printf("address:%s\n", address.GetHexString())
 }
 
