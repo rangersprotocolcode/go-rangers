@@ -74,7 +74,7 @@ func (am *AccountManager) NewAccount(password string, miner bool) *Result {
 	}
 
 	if miner {
-		minerDO := model.NewSelfMinerDO(address)
+		minerDO := model.NewSelfMinerDO(publicKey.GetID()[:])
 		minerRaw := &MinerRaw{
 			BPk:   minerDO.PK.GetHexString(),
 			BSk:   minerDO.SK.GetHexString(),

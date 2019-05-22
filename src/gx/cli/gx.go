@@ -139,7 +139,7 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 	common.GlobalConf.SetString(Section, "miner", gx.account.Address)
 	fmt.Println("Your Miner Address:", gx.account.Address)
 
-	minerInfo := model.NewSelfMinerDO(common.HexToAddress(gx.account.Address))
+	minerInfo := model.NewSelfMinerDO(common.Hex2Bytes(gx.account.Address))
 	if apply == "light" {
 		minerInfo.NType = types.MinerTypeLight
 	} else if apply == "heavy" {

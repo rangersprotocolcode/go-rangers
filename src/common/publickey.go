@@ -8,6 +8,7 @@ import (
 	"io"
 	"x/src/common/secp256k1"
 	"x/src/common/ecies"
+	"crypto/sha256"
 )
 
 //用户公钥
@@ -30,6 +31,20 @@ func (pk PublicKey) GetAddress() Address {
 	addr_buf := sha3.Sum256(x)
 	Addr := BytesToAddress(addr_buf[:])
 	return Addr
+}
+
+//由公钥萃取矿工ID
+func (pk PublicKey) GetID() [32]byte {
+	x := pk.PubKey.X.Bytes()
+	y := pk.PubKey.Y.Bytes()
+	x = append(x, y...)
+
+	addr_buf := sha256.Sum256(x)
+	if len(addr_buf) != AddressLength {
+		panic("地址长度错误")
+	}
+
+	return addr_buf
 }
 
 //把公钥转换成字节切片
