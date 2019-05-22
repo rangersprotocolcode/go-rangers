@@ -207,3 +207,11 @@ func TestGenerateKey(t *testing.T) {
 	sk3 := GenerateKey(s)
 	t.Logf(sk3.GetHexString())
 }
+
+func TestHashFromBytes(t *testing.T) {
+	s := "ca978112ca1bbdcafac231b39a23dc4da786eff8147c4e72b9807785afee48bb"
+	hash := HexToHash(s)
+
+	fmt.Println(hash)
+	fmt.Println(len(hash))
+}
