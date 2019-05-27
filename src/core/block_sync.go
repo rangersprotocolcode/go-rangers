@@ -35,7 +35,7 @@ type blockSyncer struct {
 	syncTimer            *time.Timer
 	blockInfoNotifyTimer *time.Timer
 
-	lock   middleware.Loglock
+	Lock   middleware.Loglock
 	logger log.Logger
 }
 
@@ -47,7 +47,7 @@ type TopBlockInfo struct {
 }
 
 func InitBlockSyncer() {
-	BlockSyncer = &blockSyncer{syncing: false, candidate: "", candidatePool: make(map[string]TopBlockInfo), lock: middleware.NewLoglock(""), init: false,}
+	BlockSyncer = &blockSyncer{syncing: false, candidate: "", candidatePool: make(map[string]TopBlockInfo), Lock: middleware.NewLoglock(""), init: false,}
 	BlockSyncer.logger = log.GetLoggerByIndex(log.BlockSyncLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	BlockSyncer.reqTimeoutTimer = time.NewTimer(blockSyncReqTimeout)
 	BlockSyncer.syncTimer = time.NewTimer(blockSyncInterval)
@@ -105,8 +105,8 @@ func (bs *blockSyncer) GetCandidateForSync() (string, uint64, uint64, bool) {
 }
 
 func (bs *blockSyncer) trySync() {
-	bs.lock.Lock("trySync")
-	defer bs.lock.Unlock("trySync")
+	bs.Lock.Lock("trySync")
+	defer bs.Lock.Unlock("trySync")
 
 	bs.syncTimer.Reset(blockSyncInterval)
 	if bs.syncing {
@@ -143,18 +143,18 @@ func (bs *blockSyncer) loop() {
 		case <-bs.reqTimeoutTimer.C:
 			bs.logger.Debugf("Block sync to %s time out!", bs.candidate)
 			PeerManager.markEvil(bs.candidate)
-			bs.lock.Lock("req time out")
+			bs.Lock.Lock("req time out")
 			bs.syncing = false
 			bs.candidate = ""
-			bs.lock.Unlock("req time out")
+			bs.Lock.Unlock("req time out")
 		}
 	}
 }
 
 func (bs *blockSyncer) sendTopBlockInfoToNeighbor(bi TopBlockInfo) {
-	bs.lock.Lock("sendTopBlockInfoToNeighbor")
+	bs.Lock.Lock("sendTopBlockInfoToNeighbor")
 	bs.blockInfoNotifyTimer.Reset(sendTopBlockInfoInterval)
-	bs.lock.Unlock("sendTopBlockInfoToNeighbor")
+	bs.Lock.Unlock("sendTopBlockInfoToNeighbor")
 	if bi.Height == 0 {
 		return
 	}
@@ -232,11 +232,11 @@ func (bs *blockSyncer) blockResponseMsgHandler(msg notify.Message) {
 	}
 	if isLastBlock {
 		bs.logger.Debugf("Rcv last block! Set syncing false.Set candidate nil!")
-		bs.lock.Lock("blockResponseMsgHandler")
+		bs.Lock.Lock("blockResponseMsgHandler")
 		bs.candidate = ""
 		bs.syncing = false
 		bs.reqTimeoutTimer.Stop()
-		bs.lock.Unlock("blockResponseMsgHandler")
+		bs.Lock.Unlock("blockResponseMsgHandler")
 
 		if sync {
 			go bs.trySync()
@@ -249,8 +249,8 @@ func (bs *blockSyncer) addCandidatePool(id string, topBlockInfo TopBlockInfo) {
 		bs.logger.Debugf("Top block info notify id:%s is marked evil.Drop it!", id)
 		return
 	}
-	bs.lock.Lock("addCandidatePool")
-	defer bs.lock.Unlock("addCandidatePool")
+	bs.Lock.Lock("addCandidatePool")
+	defer bs.Lock.Unlock("addCandidatePool")
 
 	if len(bs.candidatePool) < blockSyncCandidatePoolSize {
 		bs.candidatePool[id] = topBlockInfo

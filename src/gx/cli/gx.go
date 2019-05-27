@@ -211,7 +211,9 @@ func syncChainInfo() {
 			} else {
 				var candicateHeight uint64
 				if core.BlockSyncer != nil {
+					core.BlockSyncer.Lock.Lock("trySync")
 					_, _, candicateHeight, _ = core.BlockSyncer.GetCandidateForSync()
+					core.BlockSyncer.Lock.Unlock("trySync")
 				}
 				localBlockHeight := core.GetBlockChain().Height()
 				fmt.Printf("Sync candidate block height:%d,local block height:%d\n", candicateHeight, localBlockHeight)
