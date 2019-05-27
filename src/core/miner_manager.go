@@ -57,6 +57,7 @@ func (mm *MinerManager) GetMinerById(id []byte, ttype byte, accountdb *account.A
 	if accountdb == nil {
 		accountdb = blockChainImpl.LatestStateDB()
 	}
+	logger.Debugf("Miner manager get miner %v", id)
 	db := mm.getMinerDatabase(ttype)
 	data := accountdb.GetData(db, string(id))
 	if data != nil && len(data) > 0 {
@@ -196,6 +197,7 @@ func (mm *MinerManager) addGenesesProposer(miners []*types.Miner, accountdb *acc
 		if accountdb.GetData(dbh, string(miner.Id)) == nil {
 			miner.Type = types.MinerTypeHeavy
 			data, _ := msgpack.Marshal(miner)
+			logger.Debugf("Miner manager add genesis miner %v", miner.Id)
 			accountdb.SetData(dbh, string(miner.Id), data)
 			mm.heavyMiners = append(mm.heavyMiners, groupsig.DeserializeId(miner.Id).String())
 			mm.updateMinerCount(types.MinerTypeHeavy, minerCountIncrease, accountdb)
