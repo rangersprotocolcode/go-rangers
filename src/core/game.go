@@ -13,6 +13,27 @@ func GetSubAccount(address string, gameId string, account *account.AccountDB) *t
 }
 
 func UpdateAsset(user types.UserData, gameId string, account *account.AccountDB) bool {
+	balanceDelta := convert(user.Balance)
+	if balanceDelta.Sign() == -1 {
+		// 扣玩家钱。这里允许扣钱，为了状态机操作方便（理论上是需要用户签名的）
+
+		// 1. 先从玩家账户里扣
+		if !changeBalance(user.Address, gameId, balanceDelta.Mul(balanceDelta, big.NewInt(-1)), account) {
+			return false
+		}
+
+		// 2. 给游戏钱，游戏账户也即gameId
+		changeBalance(gameId, gameId, balanceDelta, account)
+	} else {
+		// 1. 先从游戏账户里扣，游戏账户也即gameId
+		if !changeBalance(gameId, gameId, balanceDelta.Mul(balanceDelta, big.NewInt(-1)), account) {
+			return false
+		}
+
+		// 2. 给玩家钱
+		changeBalance(user.Address, gameId, balanceDelta, account)
+	}
+
 	if 0 != len(user.Assets) {
 		setAsset(user.Address, gameId, user.Assets, account)
 	}
@@ -57,6 +78,7 @@ func changeBalances(gameId string, source string, targets map[string]string, acc
 }
 
 // false 表示转账失败
+// 给address账户下的gameId字账户转账
 func changeBalance(address string, gameId string, balance *big.Int, accountdb *account.AccountDB) bool {
 	sub := GetSubAccount(address, gameId, accountdb)
 
