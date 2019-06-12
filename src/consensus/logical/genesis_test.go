@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	confPathPrefix       = `/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/pre2`
-	joinedGroupStorePath = "/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/pre2"
-	groupstore           = "/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/pre2"
+	confPathPrefix       = `/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/daily1`
+	joinedGroupStorePath = "/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/daily1"
+	groupstore           = "/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/daily1"
 )
 const ProcNum = 3
 

@@ -184,6 +184,7 @@ func initAccountManager(keystore string, readyOnly bool) (accountOp, error) {
 	}
 
 	if accountManager, err := newAccountManager(keystore); err != nil {
+		fmt.Printf("new lelvel db error:%s\n",err.Error())
 		return nil, err
 	} else {
 		return accountManager, nil
@@ -199,7 +200,9 @@ func newAccountManager(ks string) (*AccountManager, error) {
 }
 
 func (am *AccountManager) loadAccount(addr string) (*Account, error) {
+	//fmt.Printf("key:%v\n",[]byte(addr))
 	v, err := am.db.Get(common.FromHex(addr))
+	//v, err := am.db.Get([]byte(addr))
 	if err != nil {
 		return nil, err
 	}
@@ -229,6 +232,7 @@ func (am *AccountManager) storeAccount(account *Account) error {
 	}
 
 	err = am.db.Put(account.Miner.ID[:], ct)
+	fmt.Printf("store account:%v\n",account.Miner.ID[:])
 	return err
 }
 
@@ -236,7 +240,7 @@ func (am *AccountManager) getFirstMinerAccount() *Account {
 	iter := am.db.NewIterator()
 	for iter.Next() {
 		if ac, err := am.getAccountInfo(string(iter.Key())); err != nil {
-			panic(fmt.Sprintf("getAccountInfo err,addr=%v,err=%v", string(iter.Key()), err.Error()))
+			panic(fmt.Sprintf("getAccountInfo err,addr=%v,err=%v", iter.Key(), err.Error()))
 		} else {
 			if ac.Miner != nil {
 				return &ac.Account

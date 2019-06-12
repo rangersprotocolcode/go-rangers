@@ -172,6 +172,7 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 func (gx *GX) getAccountInfo(keystore, address string) error {
 	aop, err := initAccountManager(keystore, true)
 	if err != nil {
+		fmt.Printf("initAccountManager:%s\n",err.Error())
 		return err
 	}
 	defer aop.Close()
