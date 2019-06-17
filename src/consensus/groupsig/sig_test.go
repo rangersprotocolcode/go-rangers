@@ -5,6 +5,7 @@ import (
 
 	"x/src/common"
 	"fmt"
+	"x/src/common/secp256k1"
 )
 
 func TestVerifySig(t *testing.T) {
@@ -30,4 +31,21 @@ func TestPubkeyAddress(t *testing.T){
 	gpk.SetHexString("0x04e32df42865e97135acfb65f3bae71bdc86f4d49150ad6a440b6f15878109880a0a2b2667f7e725ceea70c673093bf67663e0312623c8e091b13cf2c0f11ef652")
 
 	fmt.Printf(gpk.GetAddress().String())
+}
+
+func TestSign(t *testing.T){
+	privateKeyStr := "0x0415a3f885882169f6b740059c12dccbd4776acc7a90c0387b90418166ad9364a9f3c7fd293af8808bdea7d1f00371cbf0dbd44199d6288b7d833d25d6f8c74f7162f0f08eeb8db3a2a710397c4ddfcdb61512dbca31da457995d86e51c0f66679"
+	privateKey := common.HexStringToSecKey(privateKeyStr)
+	fmt.Printf("Private key:%s\n",privateKey.GetHexString())
+
+	pubkey := privateKey.GetPubKey()
+	fmt.Printf("Public key:%s\n",pubkey.GetHexString())
+
+	msg := "abcdef"
+	sign:= privateKey.Sign([]byte(msg))
+	fmt.Printf("Sign:%s\n",sign.GetHexString())
+
+	compress := secp256k1.CompressPubkey(pubkey.PubKey.X,pubkey.PubKey.Y)
+	fmt.Printf("Compress pubkey:%02x",compress)
+
 }
