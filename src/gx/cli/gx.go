@@ -111,7 +111,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(*instanceIndex, *apply, *keystore, *portRpc, env)
+		gx.initMiner(*instanceIndex, *apply, *keystore, *portRpc, *env)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc)
 			if err != nil {
