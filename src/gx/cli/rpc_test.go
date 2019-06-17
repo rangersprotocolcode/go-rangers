@@ -41,13 +41,13 @@ func TestRPC(t *testing.T) {
 		{"Rocket_getAllAssets", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
 		{"Rocket_getBalance", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
 		{"Rocket_notify", []interface{}{"tuntun", "a19d069d48d2e9392ec2bb41ecab0a72119d633b","notify one"}},
-		{"Rocket_notifyGroup", []interface{}{"tuntun", "groupA","notify groupA"}},
-		{"Rocket_notifyBroadcast", []interface{}{"tuntun", "notify all"}},
+		//{"Rocket_notifyGroup", []interface{}{"tuntun", "groupA","notify groupA"}},
+		//{"Rocket_notifyBroadcast", []interface{}{"tuntun", "notify all"}},
 		//{"GTAS_blockHeight", nil},
 		//{"GTAS_getWallets", nil},
 	}
 	for _, test := range tests {
-		res, err := rpcPost("127.0.0.1", port, test.method, test.params...)
+		res, err := rpcPost(host, port, test.method, test.params...)
 		if err != nil {
 			t.Errorf("%s failed: %v", test.method, err)
 			continue

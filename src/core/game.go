@@ -47,6 +47,7 @@ func convert(s string) *big.Int {
 }
 
 // false 表示转账失败
+// 这里是玩家与玩家（游戏）之间的转账，不操作游戏对玩家对转账
 func changeBalances(gameId string, source string, targets map[string]string, accountdb *account.AccountDB) bool {
 	snapshot := accountdb.Snapshot()
 	overall := big.NewInt(0)
@@ -78,7 +79,7 @@ func changeBalances(gameId string, source string, targets map[string]string, acc
 }
 
 // false 表示转账失败
-// 给address账户下的gameId字账户转账
+// 给address账户下的gameId子账户转账
 func changeBalance(address string, gameId string, balance *big.Int, accountdb *account.AccountDB) bool {
 	sub := GetSubAccount(address, gameId, accountdb)
 
