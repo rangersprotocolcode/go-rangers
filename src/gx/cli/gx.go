@@ -79,6 +79,7 @@ func (gx *GX) Run() {
 	portRpc := mineCmd.Flag("rpcport", "rpc port").Short('p').Default("8088").Uint()
 	instanceIndex := mineCmd.Flag("instance", "instance index").Short('i').Default("0").Int()
 	apply := mineCmd.Flag("apply", "apply heavy or light miner").String()
+	env := mineCmd.Flag("env", "the environment application run in").String()
 
 	command, err := app.Parse(os.Args[1:])
 	if err != nil {
@@ -110,7 +111,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(*instanceIndex, *apply, *keystore, *portRpc)
+		gx.initMiner(*instanceIndex, *apply, *keystore, *portRpc, env)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc)
 			if err != nil {
@@ -122,7 +123,7 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port uint) {
+func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port uint, env string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	databaseValue := "d" + strconv.Itoa(instanceIndex)
@@ -151,7 +152,7 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 		panic("Init miner core init error:" + err.Error())
 	}
 
-	network.InitNetwork("0x"+common.Bytes2Hex(gx.account.Miner.ID[:]), cnet.MessageHandler)
+	network.InitNetwork("0x"+common.Bytes2Hex(gx.account.Miner.ID[:]), cnet.MessageHandler, env)
 
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
 	if !ok {
@@ -172,7 +173,7 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 func (gx *GX) getAccountInfo(keystore, address string) error {
 	aop, err := initAccountManager(keystore, true)
 	if err != nil {
-		fmt.Printf("initAccountManager:%s\n",err.Error())
+		fmt.Printf("initAccountManager:%s\n", err.Error())
 		return err
 	}
 	defer aop.Close()
