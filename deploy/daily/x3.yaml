@@ -1,0 +1,20 @@
+title: x3
+services:
+  - priority: 0
+    game: "tuntunbiu"
+    name: "tuntunbiu3"
+    image: "tuntunbiu_image:latest"
+    ports:
+      - host: 8883
+        target: 8080
+    detached: true
+
+  - priority: 1
+    game: "appid_demo_1"
+    name: "appid_demo_1_3"
+    image: "state_machine_demo_js:latest"
+    ports:
+      - host: 7773
+        target: 7001
+    detached: true
+    cmd: "npm start"
