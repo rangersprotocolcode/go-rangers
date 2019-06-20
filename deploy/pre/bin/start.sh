@@ -22,14 +22,14 @@ do
 	rpc_port=$[8100+$instance_index]
 	pprof_port=$[9000+$instance_index]
 	config_file='x'$instance_index'.ini'
-	stdout_log='/home/x/run/logs/nohup_out_'$instance_index'.log'
-	pid_file='/home/x/run/pid/pid_gx'$instance_index'.txt'
+	stdout_log='logs/nohup_out_'$instance_index'.log'
+	pid_file='pid/pid_gx'$instance_index'.txt'
 
 	if [ -e $pid_file ];then
 		kill -9 `cat $pid_file`
 	fi
 
-	cd /home/x/run/node_info
+	cd /home/x/run
 	if [ $instance_index -eq 1 ];then
 		nohup ./gx miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --apply light --keystore keystore$instance_index --env production > $stdout_log 2>&1 & echo $! > $pid_file
     elif [ $instance_index -le 6 ];then
