@@ -4,8 +4,6 @@
 #限制Arena内存池个数，控制虚拟内存消耗
 export MALLOC_ARENA_MAX=4
 
-run_dir='/home/x/run'
-
 instance_index=$1
 instance_count=$2
 instance_end=$instance_index+$instance_count
@@ -24,8 +22,8 @@ do
 	rpc_port=$[8100+$instance_index]
 	pprof_port=$[9000+$instance_index]
 	config_file='x'$instance_index'.ini'
-	stdout_log='$run_dir/logs/nohup_out_'$instance_index'.log'
-	pid_file='$run_dir/pid/pid_gx'$instance_index'.txt'
+	stdout_log='/home/x/run/logs/nohup_out_'$instance_index'.log'
+	pid_file='/home/x/run/pid/pid_gx'$instance_index'.txt'
 
 	if [ -e $pid_file ];then
 		kill -9 `cat $pid_file`
