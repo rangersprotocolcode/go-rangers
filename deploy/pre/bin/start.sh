@@ -30,11 +30,11 @@ do
 	fi
 
 	if [ $instance_index -eq 1 ];then
-		nohup ./../node_info/gx miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --apply light --keystore keystore$instance_index --env production > $stdout_log 2>&1 & echo $! > $pid_file
+		nohup ./home/x/run/node_info/gx miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --apply light --keystore keystore$instance_index --env production > $stdout_log 2>&1 & echo $! > $pid_file
     elif [ $instance_index -le 6 ];then
-		nohup ./../node_info/gx miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port   --apply light --keystore keystore$instance_index --env production > $stdout_log 2>&1 & echo $! > $pid_file
+		nohup ./home/x/run/node_info/gx miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port   --apply light --keystore keystore$instance_index --env production > $stdout_log 2>&1 & echo $! > $pid_file
 	else
-		nohup ./../node_info/gx miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port --apply heavy --keystore keystore$instance_index --env production > $stdout_log 2>&1 & echo $! > $pid_file
+		nohup ./home/x/run/node_info/gx miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port --apply heavy --keystore keystore$instance_index --env production > $stdout_log 2>&1 & echo $! > $pid_file
 	fi
 	sleep 1
 done

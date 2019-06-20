@@ -1,4 +1,4 @@
 #!/bin/bash
-rm -rf /d*
-rm -rf /logs
-rm -rf /pid
+rm -rf /home/x/run/node_info/d*
+rm -rf /home/x/run/logs
+rm -rf /home/x/run/pid
