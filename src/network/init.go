@@ -8,17 +8,25 @@ import (
 )
 
 const (
-	gateAddr           = "101.37.67.214"
 	protocolHeaderSize = 28
 	channelSize        = 100
 	bufferSize         = 1024 * 1024 * 32
+
+	gateAddrProduction = "47.110.143.114"
+	gateAddrDaily = "101.37.67.214"
 )
 
+var 	gateAddr string
 var Logger log.Logger
 
-func InitNetwork(selfMinerId string, consensusHandler MsgHandler) {
+func InitNetwork(selfMinerId string, consensusHandler MsgHandler,env string) {
 	Logger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
+	if env == "production"{
+		gateAddr = gateAddrProduction
+	}else {
+		gateAddr = gateAddrDaily
+	}
 	url := url.URL{Scheme: "ws", Host: gateAddr, Path: "/srv/worker"}
 	Logger.Debugf("connecting to %s", url.String())
 

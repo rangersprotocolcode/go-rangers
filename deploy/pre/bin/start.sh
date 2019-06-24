@@ -29,12 +29,13 @@ do
 		kill -9 `cat $pid_file`
 	fi
 
+	cd /home/x/run
 	if [ $instance_index -eq 1 ];then
-		nohup ./gx miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --apply light --keystore keystore$instance_index > $stdout_log 2>&1 & echo $! > $pid_file
+		nohup ./gx miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --apply light --keystore keystore$instance_index --env production > $stdout_log 2>&1 & echo $! > $pid_file
     elif [ $instance_index -le 6 ];then
-		nohup ./gx miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port   --apply light --keystore keystore$instance_index > $stdout_log 2>&1 & echo $! > $pid_file
+		nohup ./gx miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port   --apply light --keystore keystore$instance_index --env production > $stdout_log 2>&1 & echo $! > $pid_file
 	else
-		nohup ./gx miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port --apply heavy --keystore keystore$instance_index > $stdout_log 2>&1 & echo $! > $pid_file
+		nohup ./gx miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port --apply heavy --keystore keystore$instance_index --env production > $stdout_log 2>&1 & echo $! > $pid_file
 	fi
 	sleep 1
 done
