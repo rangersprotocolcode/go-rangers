@@ -41,7 +41,6 @@ type TxPool struct {
 
 	txCount uint64
 	lock    middleware.Loglock
-
 }
 
 func NewTransactionPool() TransactionPool {
@@ -169,6 +168,9 @@ func (pool *TxPool) UnMarkExecuted(txs []*types.Transaction) {
 		pool.executed.Delete(tx.Hash.Bytes())
 		pool.add(tx)
 	}
+}
+func (pool *TxPool) IsExisted(hash common.Hash) bool {
+	return pool.isTransactionExisted(hash)
 }
 
 func (pool *TxPool) GetTransaction(hash common.Hash) (*types.Transaction, error) {

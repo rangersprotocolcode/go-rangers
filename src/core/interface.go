@@ -112,4 +112,6 @@ type TransactionPool interface {
 	AddExecuted(tx *types.Transaction) error
 
 	Clear()
+
+	IsExisted(hash common.Hash) bool
 }

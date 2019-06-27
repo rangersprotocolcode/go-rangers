@@ -11,8 +11,6 @@ import (
 	"encoding/json"
 	"x/src/utility"
 	"x/src/network"
-	"x/src/statemachine"
-	"strconv"
 )
 
 const MaxCastBlockTime = time.Second * 3
@@ -70,11 +68,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		}
 		//logger.Debugf("VMExecutor Execute %v,type:%d", transaction.Hash, transaction.Type)
 		var success = false
-
-		if !executor.validateNonce(accountdb, transaction) {
-			evictedTxs = append(evictedTxs, transaction.Hash)
-			continue
-		}
+		snapshot := accountdb.Snapshot()
 
 		switch transaction.Type {
 		case types.TransactionTypeOperatorEvent:
@@ -83,50 +77,49 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			if nil == GetBlockChain().GetTransactionPool().GetExecuted(transaction.Hash) {
 				// 处理转账
 				// 支持多人转账{"address1":"value1", "address2":"value2"}
+				// 理论上这里不应该失败，nonce保证了这一点
+				// 这里不应该再调用状态机
 				if 0 != len(transaction.ExtraData) {
 					mm := make(map[string]string, 0)
 					if err := json.Unmarshal([]byte(transaction.ExtraData), &mm); nil != err {
 						success = false
 						break
 					}
-					accountDB := GetBlockChain().GetAccountDB()
-					if !changeBalances(transaction.Target, transaction.Source, mm, accountDB) {
+					if !changeBalances(transaction.Target, transaction.Source, mm, accountdb) {
 						success = false
 						break
 					}
 
 				}
 
-				payload := transaction.Data
-				statemachine.Docker.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), payload)
-
-			}
-
-			success = true
-
-		case types.TransactionUpdateOperatorEvent:
-			success = true
-			data := make([]types.UserData, 0)
-			if err := json.Unmarshal([]byte(transaction.Data), &data); err != nil {
-				logger.Error("Execute TransactionUpdateOperatorEvent tx:%s json unmarshal, err:%s", transaction.Hash.String(), err.Error())
-				success = false
-			} else {
-				if nil != data && 0 != len(data) {
-					snapshot := accountdb.Snapshot()
-					for _, user := range data {
-						if !UpdateAsset(user, transaction.Target, accountdb) {
-							accountdb.RevertToSnapshot(snapshot)
+				//types.TransactionUpdateOperatorEvent
+				if 0 != len(transaction.SubTransactions) {
+					for _, sub := range transaction.SubTransactions {
+						data := make([]types.UserData, 0)
+						if err := json.Unmarshal([]byte(sub), &data); err != nil {
+							logger.Error("Execute TransactionUpdateOperatorEvent tx:%s json unmarshal, err:%s", sub, err.Error())
 							success = false
-							break
+						} else {
+							if nil != data && 0 != len(data) {
+								for _, user := range data {
+									if !UpdateAsset(user, transaction.Target, accountdb) {
+										success = false
+										break
+									}
+
+									address := common.HexToAddress(user.Address)
+									accountdb.SetNonce(address, 1)
+								}
+
+							}
+
 						}
-
-						address := common.HexToAddress(user.Address)
-						accountdb.SetNonce(address, 1)
 					}
-
 				}
-
 			}
+
+			success = true
+
 		case types.TransactionTypeWithdraw:
 			success = executor.executeWithdraw(accountdb, transaction)
 		case types.TransactionTypeAssetOnChain:
@@ -138,6 +131,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		if !success {
 			logger.Debugf("Execute failed tx:%s", transaction.Hash.String())
 			evictedTxs = append(evictedTxs, transaction.Hash)
+			accountdb.RevertToSnapshot(snapshot)
 		}
 
 		if success || transaction.Type != types.TransactionTypeBonus {

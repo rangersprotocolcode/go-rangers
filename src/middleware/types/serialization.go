@@ -168,7 +168,9 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 
 	transaction := Transaction{Data: data, Nonce: *t.Nonce, RequestId: *t.RequestId, Source: source,
 		Target: target, Hash: common.BytesToHash(t.Hash),
-		ExtraData: string(t.ExtraData), ExtraDataType: *t.ExtraDataType, Type: *t.Type, Sign: sign, Time: *t.Time}
+		ExtraData: string(t.ExtraData), ExtraDataType: *t.ExtraDataType, Type: *t.Type, Sign: sign,
+		Time: *t.Time, SocketRequestId: *t.SocketRequestId, SubTransactions: t.SubTransactions}
+
 	return transaction
 }
 
@@ -334,7 +336,8 @@ func transactionToPb(t *Transaction) *middleware_pb.Transaction {
 
 	transaction := middleware_pb.Transaction{Data: data, Nonce: &t.Nonce, RequestId: &t.RequestId, Source: source,
 		Target: target, Hash: t.Hash.Bytes(),
-		ExtraData: []byte(t.ExtraData), ExtraDataType: &t.ExtraDataType, Type: &t.Type, Sign: sign, Time: &t.Time}
+		ExtraData: []byte(t.ExtraData), ExtraDataType: &t.ExtraDataType, Type: &t.Type, Sign: sign,
+		Time: &t.Time, SubTransactions: t.SubTransactions}
 	return &transaction
 }
 

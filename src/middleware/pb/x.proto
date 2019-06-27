@@ -33,6 +33,10 @@ message Transaction{
     optional string Time = 10;
 
     optional uint64 RequestId = 11;
+
+    optional string SocketRequestId = 12;
+
+    repeated string SubTransactions = 13;
 }
 
 message TransactionRequestMessage{

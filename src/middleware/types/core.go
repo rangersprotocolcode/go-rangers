@@ -119,6 +119,7 @@ type Transaction struct {
 	Time string
 
 	SocketRequestId string
+	SubTransactions []string // 用于存储状态机rpc调用的交易数据
 }
 
 //source 在hash计算范围内

@@ -2,13 +2,13 @@ package core
 
 import (
 	"x/src/middleware/types"
-	"x/src/statemachine"
 	"strconv"
 	"x/src/common"
 	"encoding/json"
 	"x/src/network"
 	"x/src/middleware/notify"
 	"sync"
+	"x/src/statemachine"
 )
 
 // 用于处理client websocket请求
@@ -198,24 +198,28 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 
 }
 func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
-	if err := executor.sendTransaction(&txRaw); err != nil {
+	if executor.isExisted(txRaw) {
 		return ""
 	}
 
-	var result string
+	result := ""
 	switch txRaw.Type {
 
 	// execute state machine transaction
 	case types.TransactionTypeOperatorEvent:
 		// 处理转账
 		// 支持多人转账{"address1":"value1", "address2":"value2"}
+		accountDB := GetBlockChain().GetAccountDB()
+		gameId := txRaw.Target
+		TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw)
+
 		if 0 != len(txRaw.ExtraData) {
 			mm := make(map[string]string, 0)
 			if err := json.Unmarshal([]byte(txRaw.ExtraData), &mm); nil != err {
 				result = "fail to transfer"
 				break
 			}
-			accountDB := GetBlockChain().GetAccountDB()
+
 			if !changeBalances(txRaw.Target, txRaw.Source, mm, accountDB) {
 				result = "fail to transfer"
 				break
@@ -223,13 +227,34 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 
 		}
 
-		outputMessage := statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
-		bytes, _ := json.Marshal(outputMessage)
-		result = string(bytes)
+		// 转账成功，调用状态机
+		if result != "fail to transfer" {
+			// 调用状态机
+			outputMessage := statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
+			bytes, _ := json.Marshal(outputMessage)
+			result = string(bytes)
+		}
+
+		// 没有结果返回，默认出错，回滚
+		if 0 == len(result) || result == "fail to transfer" {
+			TxManagerInstance.RollBack(gameId)
+
+			// 加入到已执行过的交易池，打包入块不会再执行这笔交易
+			executor.markExecuted(&txRaw)
+			if 0 == len(result) {
+				result = "fail to executed"
+			}
+		} else {
+			TxManagerInstance.Commit(gameId)
+		}
 
 	case types.TransactionTypeWithdraw:
 		result = "success"
 	}
+
+	// 打包入块
+	// 入块时不再需要调用状态机，因为已经执行过了
+	executor.sendTransaction(&txRaw)
 
 	// bingo
 	executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
@@ -246,4 +271,12 @@ func (executor *GameExecutor) sendTransaction(trans *types.Transaction) error {
 	}
 
 	return nil
+}
+
+func (executor *GameExecutor) markExecuted(trans *types.Transaction) {
+	executor.chain.GetTransactionPool().AddExecuted(trans)
+}
+
+func (executor *GameExecutor) isExisted(tx types.Transaction) bool {
+	return executor.chain.GetTransactionPool().IsExisted(tx.Hash)
 }
