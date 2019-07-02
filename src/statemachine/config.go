@@ -165,7 +165,7 @@ func (c *ContainerConfig) runContainer(cli *client.Client, ctx context.Context) 
 	//}
 
 	if 0 == len(c.Image) || 0 == len(c.Name) {
-		log.Println("skip to start image")
+		common.DefaultLogger.Infof("skip to start image")
 		return "", nil
 	}
 
@@ -216,10 +216,10 @@ func (c *ContainerConfig) runContainer(cli *client.Client, ctx context.Context) 
 
 	//遇到容器创建错误时发起 panic
 	if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		log.Println(err.Error())
+		common.DefaultLogger.Errorf(err.Error())
 		panic(err)
 	} else {
-		log.Printf("Container %s is created and started.\n", resp.ID)
+		common.DefaultLogger.Infof("Container %s is created and started.\n", resp.ID)
 		// 创建成功 记录端口号与name的关联关系
 		return c.Game, c.Ports
 	}
