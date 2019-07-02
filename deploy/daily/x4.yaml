@@ -18,3 +18,14 @@ services:
         target: 7001
     detached: true
     cmd: "npm start"
+
+  - priority: 2
+    game: "snake"
+    name: "snake4"
+    image: "snake_image:latest"
+    ports:
+      - host: 6664
+        target: 8080
+      - host: 6654
+        target: 3306
+    detached: true
