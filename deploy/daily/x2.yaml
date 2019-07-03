@@ -17,6 +17,6 @@ services:
     ports:
       - host: 6662
         target: 8080
-      - host: 6652
+      - host: 6602
         target: 3306
     detached: true
