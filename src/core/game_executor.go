@@ -187,7 +187,7 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 	}
 
 	result := executor.runTransaction(txRaw)
-
+	logger.Infof("run tx result:%s,tx:%v", result, txRaw)
 	// reply to the client
 	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: executor.makeSuccessResponse(result, txRaw.Hash.String())}, message.Nonce)
 
@@ -198,7 +198,9 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 
 }
 func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
+	logger.Infof("Game executor run tx:%v", txRaw)
 	if executor.isExisted(txRaw) {
+		logger.Infof("Game executor is existed:%v", txRaw)
 		return ""
 	}
 
@@ -231,6 +233,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 		if result != "fail to transfer" {
 			// 调用状态机
 			outputMessage := statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
+			logger.Infof("invoke state machine result:%s", outputMessage)
 			bytes, _ := json.Marshal(outputMessage)
 			result = string(bytes)
 		}
