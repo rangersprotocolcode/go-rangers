@@ -367,6 +367,8 @@ type TxJson struct {
 	Time string
 
 	ExtraData string
+
+	SocketRequestId string
 }
 
 func (txJson TxJson) ToTransaction() Transaction {
@@ -379,18 +381,13 @@ func (txJson TxJson) ToTransaction() Transaction {
 		if s[0:2] == "0x" || s[0:2] == "0X" {
 			s = s[2:]
 		}
-
-		if 64 != len(s) {
-			tx.SocketRequestId = txJson.Hash
-		} else {
-			tx.Hash = common.HexToHash(txJson.Hash)
-		}
-
+		tx.Hash = common.HexToHash(txJson.Hash)
 	}
 
 	if txJson.Sign != "" {
 		tx.Sign = common.HexStringToSign(txJson.Sign)
 	}
+	tx.SocketRequestId = txJson.SocketRequestId
 	tx.Time = txJson.Time
 	return tx
 }
@@ -403,5 +400,6 @@ func (tx Transaction) ToTxJson() TxJson {
 	if tx.Sign != nil {
 		txJson.Sign = tx.Sign.GetHexString()
 	}
+	txJson.SocketRequestId = tx.SocketRequestId
 	return txJson
 }

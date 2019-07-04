@@ -153,6 +153,7 @@ func (s *server) handleClientMessage(data []byte, userId string, nonce uint64, e
 		return
 	}
 
+	Logger.Debugf("Receive message from client.TxJson:%s", txJson)
 	tx := txJson.ToTransaction()
 	Logger.Debugf("Receive message from client.Tx:%v", tx)
 
