@@ -18,6 +18,7 @@ import (
 	"net/url"
 	"x/src/common"
 	"sort"
+	"time"
 )
 
 //PortInt: 端口号类型
@@ -99,6 +100,7 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 		return c.runContainer(cli, ctx)
 	}
 
+	common.DefaultLogger.Infof("Contain id:%s,state:%s", container.ID, container.Status)
 	if "running" == container.State {
 		var p uint16 = 0
 		for _, port := range container.Ports {
@@ -343,6 +345,8 @@ func (t *YAMLConfig) runContainers(port uint) map[string]PortInt {
 			continue
 		}
 		mapping[name] = ports[0].Host
+		//需要等到docker镜像启动完成
+		time.Sleep(time.Second * 3)
 		t.setUrl(ports[0].Host, port)
 	}
 
