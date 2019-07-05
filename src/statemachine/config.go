@@ -100,7 +100,13 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 	}
 
 	if "running" == container.State {
-		return c.Game, c.makePorts(container.Ports[0].PublicPort)
+		var p uint16 = 0
+		for _, port := range container.Ports {
+			if port.PublicPort > p {
+				p = port.PublicPort
+			}
+		}
+		return c.Game, c.makePorts(p)
 	}
 	if "created" == container.State {
 		cli.ContainerRemove(ctx, container.ID, types.ContainerRemoveOptions{Force: true})
@@ -126,7 +132,13 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 			panic(err)
 		}
 
-		return c.Game, c.makePorts(container.Ports[0].PublicPort)
+		var p uint16 = 0
+		for _, port := range container.Ports {
+			if port.PublicPort > p {
+				p = port.PublicPort
+			}
+		}
+		return c.Game, c.makePorts(p)
 	}
 
 	return "", nil
