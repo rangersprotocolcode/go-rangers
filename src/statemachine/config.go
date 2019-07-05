@@ -17,6 +17,7 @@ import (
 	"net/http"
 	"net/url"
 	"x/src/common"
+	"sort"
 )
 
 //PortInt: 端口号类型
@@ -65,7 +66,7 @@ type ContainerConfig struct {
 	WorkDir    string `yaml:"work_dir"`
 	CMD        string `yaml:"cmd"`
 	Net        string `yaml:"net"`
-	Ports      []Port `yaml:"ports"`
+	Ports      Ports  `yaml:"ports"`
 	Volumes    Vols   `yaml:"volumes"`
 	AutoRemove bool   `yaml:"auto_remove"`
 	Import     string `yaml:"import"`
@@ -238,6 +239,16 @@ func (p *Port) String() string {
 	return fmt.Sprintf("%d:%d", p.Host, p.Target)
 }
 
+func (p Ports) Len() int {
+	return len(p)
+}
+func (p Ports) Less(i, j int) bool {
+	return p[i].Host > p[j].Host
+}
+func (p Ports) Swap(i, j int) {
+	p[i], p[j] = p[j], p[i]
+}
+
 //Vol: 设置卷映射
 //Vol.Host: 宿主机文件夹
 //Vol.Target: 目标容器文件夹
@@ -318,6 +329,7 @@ func (t *YAMLConfig) runContainers(port uint) map[string]PortInt {
 		if name == "" || ports == nil {
 			continue
 		}
+		sort.Sort(service.Ports)
 		mapping[name] = ports[0].Host
 		t.setUrl(ports[0].Host, port)
 	}
@@ -328,7 +340,7 @@ func (config *YAMLConfig) setUrl(portInt PortInt, layer2Port uint) {
 	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", portInt, "init")
 	values := url.Values{}
 	// todo : refactor statemachine sdk
-	values["url"] = []string{fmt.Sprintf("http://%s:%d","host.docker.internal",layer2Port)}
+	values["url"] = []string{fmt.Sprintf("http://%s:%d", "host.docker.internal", layer2Port)}
 	//values["port"] = []string{strconv.FormatUint(uint64(layer2Port), 10)}
 	if nil != common.DefaultLogger {
 		common.DefaultLogger.Errorf("Send post req:path:%s,values:%v", path, values)
