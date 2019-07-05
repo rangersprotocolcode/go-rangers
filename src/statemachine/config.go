@@ -17,7 +17,6 @@ import (
 	"net/http"
 	"net/url"
 	"x/src/common"
-	"strconv"
 )
 
 //PortInt: 端口号类型
@@ -326,11 +325,11 @@ func (t *YAMLConfig) runContainers(port uint) map[string]PortInt {
 	return mapping
 }
 func (config *YAMLConfig) setUrl(portInt PortInt, layer2Port uint) {
-	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", portInt, "port")
+	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", portInt, "init")
 	values := url.Values{}
 	// todo : refactor statemachine sdk
-	//values["url"] = []string{fmt.Sprintf("http://%s:%d","host.docker.internal",layer2Port)}
-	values["port"] = []string{strconv.FormatUint(uint64(layer2Port), 10)}
+	values["url"] = []string{fmt.Sprintf("http://%s:%d","host.docker.internal",layer2Port)}
+	//values["port"] = []string{strconv.FormatUint(uint64(layer2Port), 10)}
 	if nil != common.DefaultLogger {
 		common.DefaultLogger.Errorf("Send post req:path:%s,values:%v", path, values)
 	}

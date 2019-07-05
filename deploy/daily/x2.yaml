@@ -1,16 +1,6 @@
 title: x2
 services:
   - priority: 0
-    game: "tuntunbiu"
-    name: "tuntunbiu2"
-    image: "tuntunbiu_image:latest"
-    ports:
-      - host: 8882
-        target: 8080
-    detached: true
-
-
-  - priority: 1
     game: "snake"
     name: "snake2"
     image: "snake_image:latest"
