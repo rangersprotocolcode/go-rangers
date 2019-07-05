@@ -18,7 +18,6 @@ import (
 	"net/url"
 	"x/src/common"
 	"sort"
-	"time"
 )
 
 //PortInt: 端口号类型
@@ -347,7 +346,7 @@ func (t *YAMLConfig) runContainers(port uint) map[string]PortInt {
 		}
 		mapping[name] = ports[0].Host
 		//需要等到docker镜像启动完成
-		time.Sleep(time.Second * 10)
+		//time.Sleep(time.Second * 10)
 		t.setUrl(ports[0].Host, port)
 	}
 
