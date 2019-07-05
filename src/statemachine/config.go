@@ -182,6 +182,7 @@ func (c *ContainerConfig) runContainer(cli *client.Client, ctx context.Context) 
 	exports := make(nat.PortSet)
 	pts := make(nat.PortMap)
 
+	sort.Sort(c.Ports)
 	//配置端口映射数据结构
 	for _, p := range c.Ports {
 		tmpPort, _ := nat.NewPort("tcp", p.Target.String())
@@ -329,7 +330,6 @@ func (t *YAMLConfig) runContainers(port uint) map[string]PortInt {
 		if name == "" || ports == nil {
 			continue
 		}
-		sort.Sort(service.Ports)
 		mapping[name] = ports[0].Host
 		t.setUrl(ports[0].Host, port)
 	}
