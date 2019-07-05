@@ -97,6 +97,7 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 
 	container := c.checkStatus(containers)
 	if nil == container {
+		common.DefaultLogger.Infof("Contain is nil.Create container!")
 		return c.runContainer(cli, ctx)
 	}
 
@@ -346,7 +347,7 @@ func (t *YAMLConfig) runContainers(port uint) map[string]PortInt {
 		}
 		mapping[name] = ports[0].Host
 		//需要等到docker镜像启动完成
-		time.Sleep(time.Second * 3)
+		time.Sleep(time.Second * 10)
 		t.setUrl(ports[0].Host, port)
 	}
 
