@@ -119,9 +119,6 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	}
 
 	responseId := txRaw.SocketRequestId
-	if 0 == len(responseId) {
-		responseId = txRaw.Hash.String()
-	}
 
 	// reply to the client
 	go network.GetNetInstance().SendToClientReader(message.UserId, network.Message{Body: executor.makeSuccessResponse(result, responseId)}, message.Nonce)
@@ -136,8 +133,13 @@ func (executor *GameExecutor) makeSuccessResponse(bytes string, hash string) []b
 		Status: 0,
 	}
 
-	data, _ := json.Marshal(res)
-
+	logger.Debugf("res:%v", res)
+	data, err := json.Marshal(res)
+	if err != nil {
+		logger.Debugf("json make success response err:%s", err.Error())
+	}
+	logger.Debugf("json marshal result:%s", data)
+	logger.Debugf("json marshal result byte:%v", data)
 	return data
 }
 
@@ -187,9 +189,11 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 	}
 
 	result := executor.runTransaction(txRaw)
-
+	logger.Infof("run tx result:%s,tx:%v", result, txRaw)
+	logger.Infof("result byte:%v", []byte(result))
 	// reply to the client
-	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: executor.makeSuccessResponse(result, txRaw.Hash.String())}, message.Nonce)
+	response := executor.makeSuccessResponse(result, txRaw.SocketRequestId)
+	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: response}, message.Nonce)
 
 	if !executor.debug {
 		executor.getCond(gameId).Broadcast()
@@ -198,7 +202,9 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 
 }
 func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
+	logger.Infof("Game executor run tx:%v", txRaw)
 	if executor.isExisted(txRaw) {
+		logger.Infof("Game executor is existed:%v", txRaw)
 		return ""
 	}
 
@@ -231,6 +237,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 		if result != "fail to transfer" {
 			// 调用状态机
 			outputMessage := statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
+			logger.Infof("invoke state machine result:%v", outputMessage)
 			bytes, _ := json.Marshal(outputMessage)
 			result = string(bytes)
 		}

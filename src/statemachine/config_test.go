@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"encoding/json"
 	"runtime"
+	"strings"
 )
 
 func TestConfig(t *testing.T) {
@@ -40,4 +41,12 @@ func assertEqual(t *testing.T, a, b interface{}) {
 	if a != b {
 		t.Errorf("Not Equal. %d %d", a, b)
 	}
+}
+
+func TestString(t *testing.T){
+	str := "Up"
+
+	fmt.Println(strings.EqualFold("up",str[0:2]))
+
+	fmt.Println(strings.HasPrefix(strings.ToLower(str), "exited"))
 }

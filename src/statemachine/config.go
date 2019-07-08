@@ -17,7 +17,7 @@ import (
 	"net/http"
 	"net/url"
 	"x/src/common"
-	"strconv"
+	"sort"
 )
 
 //PortInt: 端口号类型
@@ -66,7 +66,7 @@ type ContainerConfig struct {
 	WorkDir    string `yaml:"work_dir"`
 	CMD        string `yaml:"cmd"`
 	Net        string `yaml:"net"`
-	Ports      []Port `yaml:"ports"`
+	Ports      Ports  `yaml:"ports"`
 	Volumes    Vols   `yaml:"volumes"`
 	AutoRemove bool   `yaml:"auto_remove"`
 	Import     string `yaml:"import"`
@@ -96,14 +96,21 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 
 	container := c.checkStatus(containers)
 	if nil == container {
+		common.DefaultLogger.Infof("Contain is nil.Create container!")
 		return c.runContainer(cli, ctx)
 	}
 
-	state := strings.ToLower(container.State)
-	if "running" == state || strings.HasPrefix(state, "up") {
-		return c.Game, c.makePorts(container.Ports[0].PublicPort)
+	common.DefaultLogger.Infof("Contain id:%s,state:%s", container.ID, container.Status)
+	if "running" == container.State {
+		var p uint16 = 0
+		for _, port := range container.Ports {
+			if port.PublicPort > p {
+				p = port.PublicPort
+			}
+		}
+		return c.Game, c.makePorts(p)
 	}
-	if "created" == state || strings.HasPrefix(state, "created") {
+	if "created" == container.State {
 		cli.ContainerRemove(ctx, container.ID, types.ContainerRemoveOptions{Force: true})
 
 		// refresh container status
@@ -111,7 +118,7 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 		return c.RunContainer(cli, ctx, containers)
 	}
 
-	if "exited" == state || strings.HasPrefix(state, "exited") {
+	if "exited" == container.State {
 		if err := cli.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); nil != err {
 			panic(err)
 		}
@@ -122,20 +129,23 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 		return c.RunContainer(cli, ctx, containers)
 	}
 
-	if "paused" == container.State || strings.HasPrefix(state, "paused") {
+	if "paused" == container.State {
 		if err := cli.ContainerUnpause(ctx, container.ID); nil != err {
 			panic(err)
 		}
 
-		return c.Game, c.makePorts(container.Ports[0].PublicPort)
+		var p uint16 = 0
+		for _, port := range container.Ports {
+			if port.PublicPort > p {
+				p = port.PublicPort
+			}
+		}
+		return c.Game, c.makePorts(p)
 	}
 
 	return "", nil
 }
 
-func (c *ContainerConfig) compareState(source string, target string) {
-
-}
 func (c *ContainerConfig) makePorts(port uint16) Ports {
 	ports := make(Ports, 1)
 	ports[0] = Port{Host: PortInt(port)}
@@ -186,6 +196,7 @@ func (c *ContainerConfig) runContainer(cli *client.Client, ctx context.Context) 
 	exports := make(nat.PortSet)
 	pts := make(nat.PortMap)
 
+	sort.Sort(c.Ports)
 	//配置端口映射数据结构
 	for _, p := range c.Ports {
 		tmpPort, _ := nat.NewPort("tcp", p.Target.String())
@@ -241,6 +252,16 @@ type Ports []Port
 //Port.String: 输出端口映射配列
 func (p *Port) String() string {
 	return fmt.Sprintf("%d:%d", p.Host, p.Target)
+}
+
+func (p Ports) Len() int {
+	return len(p)
+}
+func (p Ports) Less(i, j int) bool {
+	return p[i].Host > p[j].Host
+}
+func (p Ports) Swap(i, j int) {
+	p[i], p[j] = p[j], p[i]
 }
 
 //Vol: 设置卷映射
@@ -324,17 +345,19 @@ func (t *YAMLConfig) runContainers(port uint) map[string]PortInt {
 			continue
 		}
 		mapping[name] = ports[0].Host
+		//需要等到docker镜像启动完成
+		//time.Sleep(time.Second * 10)
 		t.setUrl(ports[0].Host, port)
 	}
 
 	return mapping
 }
 func (config *YAMLConfig) setUrl(portInt PortInt, layer2Port uint) {
-	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", portInt, "port")
+	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", portInt, "init")
 	values := url.Values{}
 	// todo : refactor statemachine sdk
-	//values["url"] = []string{fmt.Sprintf("http://%s:%d","host.docker.internal",layer2Port)}
-	values["port"] = []string{strconv.FormatUint(uint64(layer2Port), 10)}
+	values["url"] = []string{fmt.Sprintf("http://%s:%d", "host.docker.internal", layer2Port)}
+	//values["port"] = []string{strconv.FormatUint(uint64(layer2Port), 10)}
 	if nil != common.DefaultLogger {
 		common.DefaultLogger.Errorf("Send post req:path:%s,values:%v", path, values)
 	}

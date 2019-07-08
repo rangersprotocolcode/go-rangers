@@ -145,8 +145,9 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 		return Transaction{}
 	}
 
-	var source, target, data string
+	var source, target, data, socketRequestId string
 	var sign *common.Sign
+	var subTransactions []string
 	if t.Source != nil {
 		source = string(t.Source)
 	}
@@ -159,6 +160,14 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 		data = *t.Data
 	}
 
+	if t.SocketRequestId != nil {
+		socketRequestId = *t.SocketRequestId
+	}
+
+	if t.SubTransactions != nil {
+		subTransactions = t.SubTransactions
+	}
+
 	if t.Sign != nil && len(t.Sign) != 0 {
 		if len(t.Sign) != 65 {
 			fmt.Printf("Bad sign hash:%v, sign:%v\n", common.BytesToHash(t.Hash), t.Sign)
@@ -169,7 +178,7 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 	transaction := Transaction{Data: data, Nonce: *t.Nonce, RequestId: *t.RequestId, Source: source,
 		Target: target, Hash: common.BytesToHash(t.Hash),
 		ExtraData: string(t.ExtraData), ExtraDataType: *t.ExtraDataType, Type: *t.Type, Sign: sign,
-		Time: *t.Time, SocketRequestId: *t.SocketRequestId, SubTransactions: t.SubTransactions}
+		Time: *t.Time, SocketRequestId: socketRequestId, SubTransactions: subTransactions}
 
 	return transaction
 }

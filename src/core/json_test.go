@@ -35,3 +35,17 @@ func TestStrToJson(t *testing.T) {
 	}
 	fmt.Printf("C:%v\n", c)
 }
+
+func TestResponse(t *testing.T) {
+	res := response{
+		Data:   "{\"status\":0,\"payload\":\"{\"code\":0,\"data\":{},\"status\":0}\"}",
+		Hash:   "hash",
+		Status: 0,
+	}
+
+	data, err := json.Marshal(res)
+	if err != nil {
+		fmt.Errorf(err.Error())
+	}
+	fmt.Printf("data:%s", data)
+}
