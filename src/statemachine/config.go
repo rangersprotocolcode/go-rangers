@@ -99,10 +99,11 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 		return c.runContainer(cli, ctx)
 	}
 
-	if "running" == container.State {
+	state := strings.ToLower(container.State)
+	if "running" == state || strings.HasPrefix(state, "up") {
 		return c.Game, c.makePorts(container.Ports[0].PublicPort)
 	}
-	if "created" == container.State {
+	if "created" == state || strings.HasPrefix(state, "created") {
 		cli.ContainerRemove(ctx, container.ID, types.ContainerRemoveOptions{Force: true})
 
 		// refresh container status
@@ -110,7 +111,7 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 		return c.RunContainer(cli, ctx, containers)
 	}
 
-	if "exited" == container.State {
+	if "exited" == state || strings.HasPrefix(state, "exited") {
 		if err := cli.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); nil != err {
 			panic(err)
 		}
@@ -121,7 +122,7 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 		return c.RunContainer(cli, ctx, containers)
 	}
 
-	if "paused" == container.State {
+	if "paused" == container.State || strings.HasPrefix(state, "paused") {
 		if err := cli.ContainerUnpause(ctx, container.ID); nil != err {
 			panic(err)
 		}
@@ -132,6 +133,9 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 	return "", nil
 }
 
+func (c *ContainerConfig) compareState(source string, target string) {
+
+}
 func (c *ContainerConfig) makePorts(port uint16) Ports {
 	ports := make(Ports, 1)
 	ports[0] = Port{Host: PortInt(port)}
