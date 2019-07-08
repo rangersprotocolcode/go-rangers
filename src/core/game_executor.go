@@ -138,6 +138,7 @@ func (executor *GameExecutor) makeSuccessResponse(bytes string, hash string) []b
 	if err != nil {
 		logger.Debugf("json make success response err:%s", err.Error())
 	}
+	logger.Debugf("json marshal result:%s", data)
 	return data
 }
 
