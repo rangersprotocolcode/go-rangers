@@ -190,9 +190,11 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 
 	result := executor.runTransaction(txRaw)
 	logger.Infof("run tx result:%s,tx:%v", result, txRaw)
+	logger.Infof("result byte:%v", []byte(result))
 	// reply to the client
-	response := executor.makeSuccessResponse(result, txRaw.SocketRequestId)
-	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: response}, message.Nonce)
+	//response := executor.makeSuccessResponse(result, txRaw.SocketRequestId)
+	//go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: response}, message.Nonce)
+	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: []byte(result)}, message.Nonce)
 
 	if !executor.debug {
 		executor.getCond(gameId).Broadcast()
