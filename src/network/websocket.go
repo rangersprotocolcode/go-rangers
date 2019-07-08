@@ -19,9 +19,9 @@ var methodCodeJoinGroup, _ = hex.DecodeString("80000004")
 var methodCodeQuitGroup, _ = hex.DecodeString("80000005")
 var methodCodeCoinProxySend, _ = hex.DecodeString("40000000")
 
-var methodNotify,_ = hex.DecodeString("20000000")
-var methodNotifyBroadcast,_ = hex.DecodeString("20000001")
-var methodNotifyGroup,_ = hex.DecodeString("20000002")
+var methodNotify, _ = hex.DecodeString("20000000")
+var methodNotifyBroadcast, _ = hex.DecodeString("20000001")
+var methodNotifyGroup, _ = hex.DecodeString("20000002")
 
 type header struct {
 	method   []byte
@@ -102,6 +102,7 @@ func (s *server) loop() {
 				continue
 			}
 		case message := <-s.sendChan:
+			Logger.Debugf("WS send:%v", message)
 			err := s.conn.WriteMessage(websocket.BinaryMessage, message)
 			if err != nil {
 				Logger.Errorf("Send binary msg error:%s", err.Error())
