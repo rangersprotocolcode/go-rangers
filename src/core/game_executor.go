@@ -133,8 +133,11 @@ func (executor *GameExecutor) makeSuccessResponse(bytes string, hash string) []b
 		Status: 0,
 	}
 
-	data, _ := json.Marshal(res)
-
+	logger.Debugf("res:%v", res)
+	data, err := json.Marshal(res)
+	if err != nil {
+		logger.Debugf("json make success response err:%s", err.Error())
+	}
 	return data
 }
 
