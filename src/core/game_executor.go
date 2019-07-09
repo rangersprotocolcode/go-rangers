@@ -238,8 +238,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 			// 调用状态机
 			outputMessage := statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
 			logger.Infof("invoke state machine result:%v", outputMessage)
-			bytes, _ := json.Marshal(outputMessage)
-			result = string(bytes)
+			result = outputMessage.Payload
 		}
 
 		// 没有结果返回，默认出错，回滚
