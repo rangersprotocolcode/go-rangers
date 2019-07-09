@@ -9,6 +9,7 @@ import (
 	"x/src/middleware/types"
 	"time"
 	"net"
+	"x/src/common"
 )
 
 var Docker *DockerManager
@@ -90,6 +91,7 @@ func (d *DockerManager) Process(name string, kind string, nonce string, payload 
 	output := &types.OutputMessage{}
 
 	if err = json.Unmarshal(body, &output); nil != err {
+		common.DefaultLogger.Debugf("Docker process result unmarshal error:%s", err.Error())
 		return nil
 	}
 
