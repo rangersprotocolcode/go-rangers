@@ -134,13 +134,10 @@ func (executor *GameExecutor) makeSuccessResponse(bytes string, hash string) []b
 		Version: "0.1",
 	}
 
-	logger.Debugf("res:%v", res)
 	data, err := json.Marshal(res)
 	if err != nil {
 		logger.Debugf("json make success response err:%s", err.Error())
 	}
-	logger.Debugf("json marshal result:%s", data)
-	logger.Debugf("json marshal result byte:%v", data)
 	return data
 }
 
@@ -191,7 +188,6 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 
 	result := executor.runTransaction(txRaw)
 	logger.Infof("run tx result:%s,tx:%v", result, txRaw)
-	logger.Infof("result byte:%v", []byte(result))
 	// reply to the client
 	response := executor.makeSuccessResponse(result, txRaw.SocketRequestId)
 	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: response}, message.Nonce)

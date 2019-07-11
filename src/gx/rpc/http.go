@@ -180,9 +180,9 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url:=r.URL.String()
-	fmt.Println("host: "+r.Host)
-	fmt.Println("url: "+ url)
+	//url:=r.URL.String()
+	//fmt.Println("host: "+r.Host)
+	//fmt.Println("url: "+ url)
 
 
 	if code, err := validateRequest(r); err != nil {
