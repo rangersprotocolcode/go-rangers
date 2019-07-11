@@ -77,9 +77,6 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 		stateDB.SetBalance(common.BytesToAddress(proposer.Id), tenThousandGxCoin)
 	}
 
-	//游戏账户充值
-	//subAccount := types.SubAccount{Balance: tenThousandGxCoin}
-	//stateDB.UpdateSubAccount(common.HexToAddress("0x5d6fd9f54085490457cd534d4bdf90289fae65a7"), "0x5d6fd9f54085490457cd534d4bdf90289fae65a7", subAccount)
 
 	stage := stateDB.IntermediateRoot(false)
 	logger.Debugf("GenesisBlock Stage1 Root:%s", stage.Hex())
@@ -94,6 +91,10 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	MinerManagerImpl.addGenesesVerifier(verifyMiners, stateDB)
 	MinerManagerImpl.addGenesesProposer(genesisProposers, stateDB)
 
+	//游戏账户充值
+	subAccount := types.SubAccount{Balance: tenThousandGxCoin}
+	stateDB.UpdateSubAccount(common.HexToAddress("0x5d6fd9f54085490457cd534d4bdf90289fae65a7"), "0x5d6fd9f54085490457cd534d4bdf90289fae65a7", subAccount)
+
 	stage = stateDB.IntermediateRoot(false)
 	logger.Debugf("GenesisBlock Stage2 Root:%s", stage.Hex())
 	stateDB.SetNonce(common.BonusStorageAddress, 1)
@@ -107,6 +108,9 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	block.Header.Hash = block.Header.GenHash()
 
 	logger.Debugf("GenesisBlock %+v", block.Header)
+
+	subAccount = *blockChainImpl.latestStateDB.GetSubAccount(common.HexToAddress("0x5d6fd9f54085490457cd534d4bdf90289fae65a7"), "0x5d6fd9f54085490457cd534d4bdf90289fae65a7")
+	logger.Debugf("Test subaccount %+v", subAccount)
 	return block
 }
 
