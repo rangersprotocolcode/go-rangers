@@ -78,8 +78,8 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	}
 
 	//游戏账户充值
-	subAccount := types.SubAccount{Balance: tenThousandGxCoin}
-	stateDB.UpdateSubAccount(common.HexToAddress("0x5d6fd9f54085490457cd534d4bdf90289fae65a7"), "0x5d6fd9f54085490457cd534d4bdf90289fae65a7", subAccount)
+	//subAccount := types.SubAccount{Balance: tenThousandGxCoin}
+	//stateDB.UpdateSubAccount(common.HexToAddress("0x5d6fd9f54085490457cd534d4bdf90289fae65a7"), "0x5d6fd9f54085490457cd534d4bdf90289fae65a7", subAccount)
 
 	stage := stateDB.IntermediateRoot(false)
 	logger.Debugf("GenesisBlock Stage1 Root:%s", stage.Hex())
