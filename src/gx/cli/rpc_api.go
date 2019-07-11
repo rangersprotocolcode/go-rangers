@@ -5,7 +5,6 @@ import (
 	"x/src/consensus/groupsig"
 	"x/src/core"
 	"encoding/json"
-	"fmt"
 	"x/src/middleware/types"
 	"encoding/hex"
 	"math"
@@ -94,18 +93,19 @@ func getAssets(address string, gameId string) (*Result, error) {
 
 // 通过rpc的方式，让本地的docker镜像调用
 func (api *GtasAPI) UpdateAssets(gameId string, rawjson string, nonce uint64) (*Result, error) {
-	fmt.Printf("UpdateAssets Rcv gameId:%s,rawJson:%s,nonce:%d\n", gameId, rawjson, nonce)
+	common.DefaultLogger.Debugf("UpdateAssets Rcv gameId:%s,rawJson:%s,nonce:%d\n", gameId, rawjson, nonce)
 	//todo 并发问题 临时加锁控制
 	gxLock.Lock()
 	defer gxLock.Unlock()
 
 	data := make([]types.UserData, 0)
 	if err := json.Unmarshal([]byte(rawjson), &data); err != nil {
-		fmt.Printf("Json unmarshal error:%s,raw:%s\n", err.Error(), rawjson)
+		common.DefaultLogger.Debugf("Json unmarshal error:%s,raw:%s\n", err.Error(), rawjson)
 		return failResult(err.Error())
 	}
 
 	if nil == data || 0 == len(data) {
+		common.DefaultLogger.Debugf("update asset data is nil!")
 		return failResult("nil data")
 	}
 
@@ -114,6 +114,7 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string, nonce uint64) (*
 
 	// 不再事务里，不应该啊
 	if nil == context {
+		common.DefaultLogger.Debugf("update asset game context is nil!")
 		return failResult("not in transaction")
 	}
 

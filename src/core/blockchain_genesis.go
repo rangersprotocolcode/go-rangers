@@ -77,6 +77,9 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 		stateDB.SetBalance(common.BytesToAddress(proposer.Id), tenThousandGxCoin)
 	}
 
+	//游戏账户充值
+	stateDB.SetBalance(common.HexToAddress("0x5d6fd9f54085490457cd534d4bdf90289fae65a7"), tenThousandGxCoin)
+
 	stage := stateDB.IntermediateRoot(false)
 	logger.Debugf("GenesisBlock Stage1 Root:%s", stage.Hex())
 
