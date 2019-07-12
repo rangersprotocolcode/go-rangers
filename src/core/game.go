@@ -18,7 +18,9 @@ func UpdateAsset(user types.UserData, gameId string, account *account.AccountDB)
 		// 扣玩家钱。这里允许扣钱，为了状态机操作方便（理论上是需要用户签名的）
 
 		// 1. 先从玩家账户里扣
-		if !changeBalance(user.Address, gameId, balanceDelta.Mul(balanceDelta, big.NewInt(-1)), account) {
+		var b *big.Int
+		b.Mul(balanceDelta, big.NewInt(-1))
+		if !changeBalance(user.Address, gameId, b, account) {
 			return false
 		}
 
@@ -26,7 +28,9 @@ func UpdateAsset(user types.UserData, gameId string, account *account.AccountDB)
 		changeBalance(gameId, gameId, balanceDelta, account)
 	} else {
 		// 1. 先从游戏账户里扣，游戏账户也即gameId
-		if !changeBalance(gameId, gameId, balanceDelta.Mul(balanceDelta, big.NewInt(-1)), account) {
+		var b *big.Int
+		b.Mul(balanceDelta, big.NewInt(-1))
+		if !changeBalance(gameId, gameId, b, account) {
 			return false
 		}
 
@@ -78,7 +82,7 @@ func changeBalances(gameId string, source string, targets map[string]string, acc
 // false 表示转账失败
 // 给address账户下的gameId子账户转账
 func changeBalance(address string, gameId string, balance *big.Int, accountdb *account.AccountDB) bool {
-	common.DefaultLogger.Debugf("change balance: addr:%s,balance:%v,gameId:%s",address,balance,gameId)
+	common.DefaultLogger.Debugf("change balance: addr:%s,balance:%v,gameId:%s", address, balance, gameId)
 	sub := GetSubAccount(address, gameId, accountdb)
 
 	if sub != nil {
