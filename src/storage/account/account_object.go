@@ -63,7 +63,7 @@ type accountObject struct {
 }
 
 func (s *accountObject) empty() bool {
-	return s.data.Nonce == 0 && s.data.Balance.Sign() == 0 && bytes.Equal(s.data.CodeHash, emptyCodeHash[:])
+	return s.data.Nonce == 0 && s.data.Balance.Sign() == 0 && bytes.Equal(s.data.CodeHash, emptyCodeHash[:]) && len(s.cachedStorage) == 0
 }
 
 type Account struct {
