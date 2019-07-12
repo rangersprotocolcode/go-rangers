@@ -53,9 +53,10 @@ func TestResponse(t *testing.T) {
 
 
 func TestFloatConvert(t *testing.T) {
-	var str = "100000.0"
+	var str = "-15000.0"
 	b := convert(str)
 	fmt.Printf("result:%v",b)
+	fmt.Printf("result:%v",b.Sign())
 }
 
 func TestAddr(t *testing.T){

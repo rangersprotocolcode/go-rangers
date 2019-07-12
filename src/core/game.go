@@ -18,14 +18,14 @@ func UpdateAsset(user types.UserData, gameId string, account *account.AccountDB)
 		// 扣玩家钱。这里允许扣钱，为了状态机操作方便（理论上是需要用户签名的）
 
 		// 1. 先从玩家账户里扣
-		var b = big.NewInt(0)
-		b.Mul(balanceDelta, big.NewInt(-1))
-		if !changeBalance(user.Address, gameId, b, account) {
+		if !changeBalance(user.Address, gameId, balanceDelta, account) {
 			return false
 		}
 
 		// 2. 给游戏钱，游戏账户也即gameId
-		changeBalance(gameId, gameId, balanceDelta, account)
+		var b = big.NewInt(0)
+		b.Mul(balanceDelta, big.NewInt(-1))
+		changeBalance(gameId, gameId, b, account)
 	} else {
 		// 1. 先从游戏账户里扣，游戏账户也即gameId
 		var b = big.NewInt(0)
