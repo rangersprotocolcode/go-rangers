@@ -1,7 +1,7 @@
 title: x4
 services:
   - priority: 0
-    game: "snake"
+    game: "0x5d6fd9f54085490457cd534d4bdf90289fae65a7"
     name: "snake4"
     image: "snake_image:latest"
     ports:
