@@ -26,7 +26,7 @@ func UpdateAsset(user types.UserData, gameId string, account *account.AccountDB)
 		var b = big.NewInt(0)
 		b.Mul(balanceDelta, big.NewInt(-1))
 		changeBalance(gameId, gameId, b, account)
-	} else {
+	} else if balanceDelta.Sign() == 1 {
 		// 1. 先从游戏账户里扣，游戏账户也即gameId
 		var b = big.NewInt(0)
 		b.Mul(balanceDelta, big.NewInt(-1))
