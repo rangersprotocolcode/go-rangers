@@ -114,4 +114,8 @@ type TransactionPool interface {
 	Clear()
 
 	IsExisted(hash common.Hash) bool
+
+	IsGameData(hash common.Hash) bool
+
+	PutGameData(hash common.Hash)
 }

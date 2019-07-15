@@ -157,11 +157,18 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 
 	// execute state machine transaction
 	case types.TransactionTypeOperatorEvent:
+
 		// 处理转账
 		// 支持多人转账{"address1":"value1", "address2":"value2"}
 		accountDB := GetBlockChain().GetAccountDB()
 		gameId := txRaw.Target
-		TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw)
+
+		// 已经执行过了（入块时），则不用再执行了
+		if nil != TxManagerInstance.BeginTransaction(gameId, accountDB, true, &txRaw) || GetBlockChain().GetTransactionPool().IsGameData(txRaw.Hash) {
+			// bingo
+			executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
+			return ""
+		}
 
 		if 0 != len(txRaw.ExtraData) {
 			mm := make(map[string]string, 0)
@@ -186,11 +193,13 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 			if outputMessage != nil {
 				result = outputMessage.Payload
 			}
+
+			GetBlockChain().GetTransactionPool().PutGameData(txRaw.Hash)
 		}
 
 		// 没有结果返回，默认出错，回滚
 		if 0 == len(result) || result == "fail to transfer" || outputMessage == nil || outputMessage.Status == 1 {
-			TxManagerInstance.RollBack(gameId)
+			TxManagerInstance.RollBack(gameId, txRaw.Hash)
 
 			// 加入到已执行过的交易池，打包入块不会再执行这笔交易
 			executor.markExecuted(&txRaw)
@@ -198,7 +207,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 				result = "fail to executed"
 			}
 		} else {
-			TxManagerInstance.Commit(gameId)
+			TxManagerInstance.Commit(gameId, txRaw.Hash)
 		}
 
 	case types.TransactionTypeWithdraw:
@@ -284,8 +293,11 @@ func (executor *GameExecutor) loop() {
 			result := executor.runTransaction(txRaw)
 			logger.Infof("run tx result:%s,tx:%v", result, txRaw)
 			// reply to the client
-			response := executor.makeSuccessResponse(result, txRaw.SocketRequestId)
-			go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: response}, message.Nonce)
+			if 0 != len(result) {
+				response := executor.makeSuccessResponse(result, txRaw.SocketRequestId)
+				go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: response}, message.Nonce)
+
+			}
 
 			if !executor.debug {
 				executor.getCond(gameId).Broadcast()

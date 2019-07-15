@@ -118,7 +118,7 @@ type Transaction struct {
 	Sign *common.Sign
 	Time string
 
-	SocketRequestId string
+	SocketRequestId string   // websocket id，用于客户端表示请求id
 	SubTransactions []string // 用于存储状态机rpc调用的交易数据
 }
 
@@ -348,7 +348,7 @@ type Asset struct {
 
 type UserData struct {
 	Address string            `json:"address"`
-	Balance string           `json:"balance,omitempty"`
+	Balance string            `json:"balance,omitempty"`
 	Assets  map[string]string `json:"assets,omitempty"`
 }
 

@@ -11,6 +11,8 @@ import (
 	"encoding/json"
 	"x/src/utility"
 	"x/src/network"
+	"x/src/statemachine"
+	"strconv"
 )
 
 const MaxCastBlockTime = time.Second * 3
@@ -73,27 +75,32 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		switch transaction.Type {
 		case types.TransactionTypeOperatorEvent:
 
-			// 已经执行过了，则直接返回true
-			if nil == GetBlockChain().GetTransactionPool().GetExecuted(transaction.Hash) {
+			// 在交易池里，表示game_executor已经执行过状态机了
+			// 只要处理交易里的subTransaction即可
+			if nil != TxManagerInstance.BeginTransaction(transaction.Target, accountdb, false, transaction) {
 				// 处理转账
 				// 支持多人转账{"address1":"value1", "address2":"value2"}
 				// 理论上这里不应该失败，nonce保证了这一点
-				// 这里不应该再调用状态机
 				if 0 != len(transaction.ExtraData) {
 					mm := make(map[string]string, 0)
 					if err := json.Unmarshal([]byte(transaction.ExtraData), &mm); nil != err {
+						TxManagerInstance.Commit(transaction.Target, transaction.Hash)
 						success = false
 						break
 					}
 					if !changeBalances(transaction.Target, transaction.Source, mm, accountdb) {
+						TxManagerInstance.Commit(transaction.Target, transaction.Hash)
 						success = false
 						break
 					}
 
 				}
 
-				//types.TransactionUpdateOperatorEvent
-				if 0 != len(transaction.SubTransactions) {
+				// 本地没有执行过状态机(game_executor还没有收到消息)，则需要调用状态机
+				if !GetBlockChain().GetTransactionPool().IsGameData(transaction.Hash) {
+					statemachine.Docker.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), transaction.Data)
+					GetBlockChain().GetTransactionPool().PutGameData(transaction.Hash)
+				} else if 0 != len(transaction.SubTransactions) {
 					for _, sub := range transaction.SubTransactions {
 						data := make([]types.UserData, 0)
 						if err := json.Unmarshal([]byte(sub), &data); err != nil {
@@ -116,6 +123,8 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						}
 					}
 				}
+
+				TxManagerInstance.Commit(transaction.Target, transaction.Hash)
 			}
 
 			success = true

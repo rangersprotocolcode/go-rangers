@@ -15,7 +15,7 @@ import (
 
 const (
 	txDataBasePrefix = "tx"
-
+	gameDataPrefix   = "g"
 	rcvTxPoolSize    = 50000
 	minerTxCacheSize = 1000
 	missTxCacheSize  = 60000
@@ -37,6 +37,7 @@ type TxPool struct {
 	received *simpleContainer
 
 	executed db.Database
+	gameData db.Database
 	batch    db.Batch
 
 	txCount uint64
@@ -58,6 +59,13 @@ func NewTransactionPool() TransactionPool {
 	}
 	pool.executed = executed
 	pool.batch = pool.executed.NewBatch()
+
+	gameData, err := db.NewDatabase(gameDataPrefix)
+	if err != nil {
+		logger.Errorf("Init transaction pool error! Error:%s", err.Error())
+		return nil
+	}
+	pool.gameData = gameData
 
 	return pool
 }
@@ -215,6 +223,17 @@ func (pool *TxPool) Clear() {
 	pool.received = newSimpleContainer(rcvTxPoolSize)
 	pool.minerTxs, _ = lru.New(minerTxCacheSize)
 	pool.missTxs, _ = lru.New(missTxCacheSize)
+}
+
+func (pool *TxPool) IsGameData(hash common.Hash) bool {
+	result, _ := pool.gameData.Has(hash.Bytes())
+
+	return result
+}
+
+func (pool *TxPool) PutGameData(hash common.Hash) {
+	value := []byte{0}
+	pool.gameData.Put(hash.Bytes(), value)
 }
 
 func (pool *TxPool) GetReceived() []*types.Transaction {
