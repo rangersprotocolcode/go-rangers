@@ -5,7 +5,6 @@ import (
 	"x/src/common"
 	"bytes"
 	"x/src/consensus/groupsig"
-	"github.com/vmihailenco/msgpack"
 	"x/src/middleware/serialize"
 	"x/src/storage/trie"
 )
@@ -86,15 +85,14 @@ func (chain *blockChain) validateTxRoot(txMerkleTreeRoot common.Hash, txs []*typ
 	return true
 }
 
-func calcTxTree(tx []*types.Transaction) common.Hash {
-	if nil == tx || 0 == len(tx) {
+func calcTxTree(txs []*types.Transaction) common.Hash {
+	if nil == txs || 0 == len(txs) {
 		return emptyHash
 	}
 
 	buf := new(bytes.Buffer)
-	for i := 0; i < len(tx); i++ {
-		encode, _ := msgpack.Marshal(tx[i])
-		serialize.Encode(buf, encode)
+	for _, tx := range txs {
+		buf.Write(tx.Hash.Bytes())
 	}
 	return common.BytesToHash(common.Sha256(buf.Bytes()))
 }
