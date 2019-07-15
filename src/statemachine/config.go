@@ -101,7 +101,9 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 	}
 
 	common.DefaultLogger.Infof("Contain id:%s,state:%s", container.ID, container.Status)
-	if "running" == container.State {
+
+	state := strings.ToLower(container.State)
+	if "running" == container.State || strings.HasPrefix(state,"up"){
 		var p uint16 = 0
 		for _, port := range container.Ports {
 			if port.PublicPort > p {
@@ -110,7 +112,7 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 		}
 		return c.Game, c.makePorts(p)
 	}
-	if "created" == container.State {
+	if "created" == container.State || strings.HasPrefix(state,"created"){
 		cli.ContainerRemove(ctx, container.ID, types.ContainerRemoveOptions{Force: true})
 
 		// refresh container status
@@ -118,7 +120,7 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 		return c.RunContainer(cli, ctx, containers)
 	}
 
-	if "exited" == container.State {
+	if "exited" == container.State || strings.HasPrefix(state,"exited"){
 		if err := cli.ContainerStart(ctx, container.ID, types.ContainerStartOptions{}); nil != err {
 			panic(err)
 		}
@@ -129,7 +131,7 @@ func (c *ContainerConfig) RunContainer(cli *client.Client, ctx context.Context, 
 		return c.RunContainer(cli, ctx, containers)
 	}
 
-	if "paused" == container.State {
+	if "paused" == container.State || strings.HasPrefix(state,"paused"){
 		if err := cli.ContainerUnpause(ctx, container.ID); nil != err {
 			panic(err)
 		}

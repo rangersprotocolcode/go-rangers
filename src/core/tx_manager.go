@@ -30,8 +30,9 @@ func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.Acc
 	}
 
 	tx.SubTransactions = make([]string, 0)
-	snapshot := accountDB.Snapshot()
-	manager.context[gameId] = &TxContext{AccountDB: accountDB, Tx: tx, snapshot: snapshot}
+	copy := accountDB.Copy()
+	snapshot := copy.Snapshot()
+	manager.context[gameId] = &TxContext{AccountDB: copy, Tx: tx, snapshot: snapshot}
 }
 
 func (manager *TxManager) GetContext(gameId string) *TxContext {
