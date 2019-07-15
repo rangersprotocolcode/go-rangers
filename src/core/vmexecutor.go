@@ -91,7 +91,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 					}
 
 				}
-
+				logger.Debugf("Execute tx:%s,sub tx len:%d", transaction.Hash.String(), len(transaction.SubTransactions))
 				//types.TransactionUpdateOperatorEvent
 				if 0 != len(transaction.SubTransactions) {
 					for _, sub := range transaction.SubTransactions {
