@@ -128,18 +128,16 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 
 func (executor *GameExecutor) makeSuccessResponse(bytes string, hash string) []byte {
 	res := response{
-		Data:   bytes,
-		Hash:   hash,
-		Status: 0,
+		Data:    bytes,
+		Hash:    hash,
+		Status:  0,
+		Version: "0.1",
 	}
 
-	logger.Debugf("res:%v", res)
 	data, err := json.Marshal(res)
 	if err != nil {
 		logger.Debugf("json make success response err:%s", err.Error())
 	}
-	logger.Debugf("json marshal result:%s", data)
-	logger.Debugf("json marshal result byte:%v", data)
 	return data
 }
 
@@ -190,7 +188,6 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 
 	result := executor.runTransaction(txRaw)
 	logger.Infof("run tx result:%s,tx:%v", result, txRaw)
-	logger.Infof("result byte:%v", []byte(result))
 	// reply to the client
 	response := executor.makeSuccessResponse(result, txRaw.SocketRequestId)
 	go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: response}, message.Nonce)
@@ -233,17 +230,19 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 
 		}
 
+		var outputMessage *types.OutputMessage
 		// 转账成功，调用状态机
 		if result != "fail to transfer" {
 			// 调用状态机
-			outputMessage := statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
+			outputMessage = statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
 			logger.Infof("invoke state machine result:%v", outputMessage)
-			bytes, _ := json.Marshal(outputMessage)
-			result = string(bytes)
+			if outputMessage != nil{
+				result = outputMessage.Payload
+			}
 		}
 
 		// 没有结果返回，默认出错，回滚
-		if 0 == len(result) || result == "fail to transfer" {
+		if 0 == len(result) || result == "fail to transfer" || outputMessage == nil || outputMessage.Status == 1 {
 			TxManagerInstance.RollBack(gameId)
 
 			// 加入到已执行过的交易池，打包入块不会再执行这笔交易

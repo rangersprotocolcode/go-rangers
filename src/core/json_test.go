@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"x/src/common"
 )
 
 func TestBigInt(t *testing.T) {
@@ -48,4 +49,18 @@ func TestResponse(t *testing.T) {
 		fmt.Errorf(err.Error())
 	}
 	fmt.Printf("data:%s", data)
+}
+
+
+func TestFloatConvert(t *testing.T) {
+	var str = "-15000.0"
+	b := convert(str)
+	fmt.Printf("result:%v",b)
+	fmt.Printf("result:%v",b.Sign())
+}
+
+func TestAddr(t *testing.T){
+	s:= "TAD5ZbvETHrNobKa41hGkCkB37jEXCEQss"
+	addr := common.HexToAddress(s)
+	fmt.Printf("Addr:%v",addr)
 }

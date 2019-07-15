@@ -9,6 +9,7 @@ import (
 	"x/src/middleware/types"
 	"time"
 	"net"
+	"x/src/common"
 )
 
 var Docker *DockerManager
@@ -76,24 +77,24 @@ func (d *DockerManager) Process(name string, kind string, nonce string, payload 
 
 	resp, err := d.httpClient.PostForm(path, values)
 	if err != nil {
-		// handle error
+		common.DefaultLogger.Debugf("Docker process post error.Path:%s,values:%v,error:%s",path,values,values, err.Error())
 		return nil
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		// handle error
+		common.DefaultLogger.Debugf("Docker process read response error:%s", err.Error())
 		return nil
 	}
 
-	output := &types.OutputMessage{}
-
+	output := types.OutputMessage{}
 	if err = json.Unmarshal(body, &output); nil != err {
+		common.DefaultLogger.Debugf("Docker process result unmarshal error:%s", err.Error())
 		return nil
 	}
 
-	return output
+	return &output
 }
 
 func (d *DockerManager) Validate(name string, key string, value string) string {
