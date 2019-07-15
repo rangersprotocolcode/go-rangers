@@ -389,16 +389,17 @@ func (self *AccountDB) Copy() *AccountDB {
 	defer self.lock.Unlock()
 
 	state := &AccountDB{
-		db:   self.db,
-		trie: self.trie,
-		//accountObjects:      make(map[common.Address]*accountObject, len(self.accountObjectsDirty)),
+		db:                  self.db,
+		trie:                self.trie,
+		accountObjects:      new(sync.Map),
 		accountObjectsDirty: make(map[common.Address]struct{}, len(self.accountObjectsDirty)),
 		refund:              self.refund,
 		logSize:             self.logSize,
 	}
 
 	for addr := range self.accountObjectsDirty {
-		//state.accountObjects[addr] = self.accountObjects[addr].deepCopy(state, state.MarkAccountObjectDirty)
+		obj, _ := self.accountObjects.Load(addr)
+		state.accountObjects.Store(addr, obj.(*accountObject).deepCopy(state, state.MarkAccountObjectDirty))
 		state.accountObjectsDirty[addr] = struct{}{}
 	}
 	return state
