@@ -105,6 +105,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 				} else if 0 != len(transaction.SubTransactions) {
 					logger.Debugf("Is not game data")
 					for _, sub := range transaction.SubTransactions {
+						logger.Debugf("Execute sub tx:%v", sub)
 						data := make([]types.UserData, 0)
 						if err := json.Unmarshal([]byte(sub), &data); err != nil {
 							logger.Error("Execute TransactionUpdateOperatorEvent tx:%s json unmarshal, err:%s", sub, err.Error())
