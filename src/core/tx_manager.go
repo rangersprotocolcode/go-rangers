@@ -6,13 +6,11 @@ import (
 	"sync"
 	"fmt"
 	"x/src/common"
-	"x/src/middleware"
 )
 
 // 基于gameId的事务管理器
 type TxManager struct {
 	context     map[string]*TxContext
-	contextLock map[common.Hash]*middleware.Loglock
 	lock        *sync.Mutex
 }
 
@@ -28,7 +26,6 @@ func initTxManager() {
 	TxManagerInstance = &TxManager{}
 
 	TxManagerInstance.context = make(map[string]*TxContext)
-	TxManagerInstance.contextLock = make(map[common.Hash]*middleware.Loglock)
 	TxManagerInstance.lock = &sync.Mutex{}
 }
 
@@ -37,14 +34,8 @@ func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.Acc
 		return nil
 	}
 
-	// 对tx.Hash加锁
-	// 同个时间内，只允许一个相同的交易被执行
-	txLock := manager.getTxLock(tx.Hash)
-	txLock.Lock(fmt.Sprintf("txM: %s", tx.Hash.String()))
-
 	// 已经执行过了
 	if GetBlockChain().GetTransactionPool().IsExisted(tx.Hash) {
-		manager.unlock(tx.Hash)
 		return fmt.Errorf("isExisted")
 	}
 
@@ -67,12 +58,9 @@ func (manager *TxManager) Commit(gameId string, hash common.Hash) {
 	logger.Debugf("before remove")
 	manager.remove(gameId)
 	logger.Debugf("after remove")
-	manager.unlock(hash)
 }
 
 func (manager *TxManager) RollBack(gameId string, hash common.Hash) {
-	defer manager.unlock(hash)
-
 	context := manager.GetContext(gameId)
 	if nil == context {
 		return
@@ -86,30 +74,3 @@ func (manager *TxManager) remove(gameId string) {
 	delete(manager.context, gameId)
 }
 
-func (manager *TxManager) unlock(hash common.Hash) {
-	manager.contextLock[hash].Unlock(fmt.Sprintf("txM: %s", hash.String()))
-
-	logger.Debugf("after tx manager context lock unlock ")
-	manager.lock.Lock()
-	logger.Debugf("after tx manager lock.lock ")
-	defer manager.lock.Unlock()
-	logger.Debugf("after tx manager lock.unlock ")
-
-	delete(manager.contextLock, hash)
-}
-
-func (manager *TxManager) getTxLock(hash common.Hash) *middleware.Loglock {
-	txLock := manager.contextLock[hash]
-	if nil == txLock {
-		manager.lock.Lock()
-		txLock = manager.contextLock[hash]
-		if nil == txLock {
-			lock := middleware.NewLoglock("tx_manager")
-			txLock = &lock
-			manager.contextLock[hash] = txLock
-		}
-		manager.lock.Unlock()
-	}
-
-	return txLock
-}
