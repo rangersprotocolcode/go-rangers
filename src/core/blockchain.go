@@ -387,7 +387,12 @@ func (chain *blockChain) GetAccountDB() *account.AccountDB {
 		return nil
 	}
 
-	return chain.latestStateDB
+	db, err := account.NewAccountDB(chain.latestBlock.StateTree, chain.stateDB)
+	if nil != err {
+		return nil
+	}
+
+	return db
 }
 
 func (chain *blockChain) GetNonce(address common.Address, gameId string) uint64 {

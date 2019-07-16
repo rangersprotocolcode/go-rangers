@@ -164,7 +164,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 		gameId := txRaw.Target
 
 		// 已经执行过了（入块时），则不用再执行了
-		if nil != TxManagerInstance.BeginTransaction(gameId, accountDB, true, &txRaw) || GetBlockChain().GetTransactionPool().IsGameData(txRaw.Hash) {
+		if nil != TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw) || GetBlockChain().GetTransactionPool().IsGameData(txRaw.Hash) {
 			// bingo
 			executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
 			return ""

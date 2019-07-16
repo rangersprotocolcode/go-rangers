@@ -29,7 +29,7 @@ func initTxManager() {
 	TxManagerInstance.lock = &sync.Mutex{}
 }
 
-func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.AccountDB, isCopy bool, tx *types.Transaction) error {
+func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.AccountDB, tx *types.Transaction) error {
 	if nil == accountDB || nil == tx || 0 == len(gameId) {
 		return nil
 	}
