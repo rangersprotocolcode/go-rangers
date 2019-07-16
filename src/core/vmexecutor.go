@@ -68,7 +68,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			logger.Infof("Cast block execute tx time out!Tx hash:%s ", transaction.Hash.String())
 			break
 		}
-		//logger.Debugf("VMExecutor Execute %v,type:%d", transaction.Hash, transaction.Type)
+		logger.Debugf("VMExecutor Execute %v,type:%d", transaction.Hash, transaction.Type)
 		var success = false
 		snapshot := accountdb.Snapshot()
 
@@ -78,6 +78,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			// 在交易池里，表示game_executor已经执行过状态机了
 			// 只要处理交易里的subTransaction即可
 			if nil != TxManagerInstance.BeginTransaction(transaction.Target, accountdb, false, transaction) {
+				logger.Debugf("Begin transaction is not nil!")
 				// 处理转账
 				// 支持多人转账{"address1":"value1", "address2":"value2"}
 				// 理论上这里不应该失败，nonce保证了这一点
@@ -98,9 +99,11 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 				// 本地没有执行过状态机(game_executor还没有收到消息)，则需要调用状态机
 				if !GetBlockChain().GetTransactionPool().IsGameData(transaction.Hash) {
+					logger.Debugf("Is game data")
 					statemachine.Docker.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), transaction.Data)
 					GetBlockChain().GetTransactionPool().PutGameData(transaction.Hash)
 				} else if 0 != len(transaction.SubTransactions) {
+					logger.Debugf("Is not game data")
 					for _, sub := range transaction.SubTransactions {
 						data := make([]types.UserData, 0)
 						if err := json.Unmarshal([]byte(sub), &data); err != nil {
@@ -124,6 +127,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 					}
 				}
 
+				logger.Debugf("Tx manager commit!")
 				TxManagerInstance.Commit(transaction.Target, transaction.Hash)
 			}
 
