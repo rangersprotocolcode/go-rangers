@@ -64,7 +64,9 @@ func (manager *TxManager) GetContext(gameId string) *TxContext {
 }
 
 func (manager *TxManager) Commit(gameId string, hash common.Hash) {
+	logger.Debugf("before remove")
 	manager.remove(gameId)
+	logger.Debugf("after remove")
 	manager.unlock(hash)
 }
 
@@ -87,8 +89,11 @@ func (manager *TxManager) remove(gameId string) {
 func (manager *TxManager) unlock(hash common.Hash) {
 	manager.contextLock[hash].Unlock(fmt.Sprintf("txM: %s", hash.String()))
 
+	logger.Debugf("after tx manager context lock unlock ")
 	manager.lock.Lock()
+	logger.Debugf("after tx manager lock.lock ")
 	defer manager.lock.Unlock()
+	logger.Debugf("after tx manager lock.unlock ")
 
 	delete(manager.contextLock, hash)
 }
@@ -99,7 +104,7 @@ func (manager *TxManager) getTxLock(hash common.Hash) *middleware.Loglock {
 		manager.lock.Lock()
 		txLock = manager.contextLock[hash]
 		if nil == txLock {
-			lock:=middleware.NewLoglock("tx_manager")
+			lock := middleware.NewLoglock("tx_manager")
 			txLock = &lock
 			manager.contextLock[hash] = txLock
 		}
