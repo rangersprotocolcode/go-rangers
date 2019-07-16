@@ -43,7 +43,7 @@ func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.Acc
 
 	// 已经执行过了
 	if GetBlockChain().GetTransactionPool().IsExisted(tx.Hash) {
-		txLock.Unlock()
+		manager.unlock(tx.Hash)
 		return fmt.Errorf("isExisted")
 	}
 
@@ -85,7 +85,9 @@ func (manager *TxManager) remove(gameId string) {
 
 func (manager *TxManager) unlock(hash common.Hash) {
 	manager.contextLock[hash].Unlock()
+	delete(manager.contextLock, hash)
 }
+
 func (manager *TxManager) getTxLock(hash common.Hash) *sync.Mutex {
 	txLock := manager.contextLock[hash]
 	if nil == txLock {
