@@ -86,6 +86,10 @@ func (manager *TxManager) remove(gameId string) {
 
 func (manager *TxManager) unlock(hash common.Hash) {
 	manager.contextLock[hash].Unlock(fmt.Sprintf("txM: %s", hash.String()))
+
+	manager.lock.Lock()
+	defer manager.lock.Unlock()
+
 	delete(manager.contextLock, hash)
 }
 
