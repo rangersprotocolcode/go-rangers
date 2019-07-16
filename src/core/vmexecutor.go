@@ -129,6 +129,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 				logger.Debugf("Tx manager commit!")
 				TxManagerInstance.Commit(transaction.Target, transaction.Hash)
+				logger.Debugf("After Tx manager commit!")
 			}
 
 			success = true
