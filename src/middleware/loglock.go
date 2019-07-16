@@ -68,10 +68,8 @@ func (lock *Loglock) Unlock(msg string) {
 	lock.lock.Unlock()
 	duration := time.Since(lock.begin)
 	cost := time.Since(begin)
-	if 0 != len(msg) && (cost > costLimit || duration > durationLimit) {
-		lockLogger.Debugf("UnLocked: %s, with msg: %s duration:%v wait: %v", lock.addr, msg, duration, cost)
-	}
 
+	lockLogger.Debugf("UnLocked: %s, with msg: %s duration:%v wait: %v", lock.addr, msg, duration, cost)
 }
 
 func (lock *Loglock) RUnlock(msg string) {
