@@ -41,10 +41,6 @@ func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.Acc
 
 	tx.SubTransactions = make([]string, 0)
 	copy := accountDB
-	if isCopy {
-		copy = accountDB.Copy()
-	}
-
 	snapshot := copy.Snapshot()
 	manager.context[gameId] = &TxContext{AccountDB: copy, Tx: tx, snapshot: snapshot}
 	return nil

@@ -391,15 +391,15 @@ func (self *AccountDB) Copy() *AccountDB {
 	state := &AccountDB{
 		db:                  self.db,
 		trie:                self.trie,
-		accountObjects:      new(sync.Map),
+		//accountObjects:      new(sync.Map),
 		accountObjectsDirty: make(map[common.Address]struct{}, len(self.accountObjectsDirty)),
 		refund:              self.refund,
 		logSize:             self.logSize,
 	}
 
 	for addr := range self.accountObjectsDirty {
-		obj, _ := self.accountObjects.Load(addr)
-		state.accountObjects.Store(addr, obj.(*accountObject).deepCopy(state, state.MarkAccountObjectDirty))
+		//obj, _ := self.accountObjects.Load(addr)
+		//state.accountObjects.Store(addr, obj.(*accountObject).deepCopy(state, state.MarkAccountObjectDirty))
 		state.accountObjectsDirty[addr] = struct{}{}
 	}
 	return state
