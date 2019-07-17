@@ -82,7 +82,7 @@ func changeBalances(gameId string, source string, targets map[string]string, acc
 // false 表示转账失败
 // 给address账户下的gameId子账户转账
 func changeBalance(address string, gameId string, balance *big.Int, accountdb *account.AccountDB) bool {
-	common.DefaultLogger.Debugf("change balance: addr:%s,balance:%v,gameId:%s", address, balance, gameId)
+	//common.DefaultLogger.Debugf("change balance: addr:%s,balance:%v,gameId:%s", address, balance, gameId)
 	sub := GetSubAccount(address, gameId, accountdb)
 
 	if sub != nil {

@@ -51,9 +51,7 @@ func (manager *TxManager) GetContext(gameId string) *TxContext {
 }
 
 func (manager *TxManager) Commit(gameId string, hash common.Hash) {
-	logger.Debugf("before remove")
 	manager.remove(gameId)
-	logger.Debugf("after remove")
 }
 
 func (manager *TxManager) RollBack(gameId string, hash common.Hash) {
