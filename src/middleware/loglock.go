@@ -42,10 +42,7 @@ func (lock *Loglock) Lock(msg string) {
 	lock.begin = time.Now()
 	cost := time.Since(begin)
 
-	if 0 != len(msg) && cost > costLimit {
-		lockLogger.Debugf("locked: %s, with msg: %s wait: %v", lock.addr, msg, cost)
-	}
-
+	lockLogger.Debugf("locked: %s, with msg: %s wait: %v", lock.addr, msg, cost)
 }
 
 func (lock *Loglock) RLock(msg string) {
@@ -55,9 +52,8 @@ func (lock *Loglock) RLock(msg string) {
 	begin := time.Now()
 	lock.lock.RLock()
 	cost := time.Since(begin)
-	if 0 != len(msg) && cost > costLimit {
-		lockLogger.Debugf("Rlocked: %s, with msg: %s wait: %v", lock.addr, msg, cost)
-	}
+
+	lockLogger.Debugf("Rlocked: %s, with msg: %s wait: %v", lock.addr, msg, cost)
 }
 
 func (lock *Loglock) Unlock(msg string) {
@@ -79,8 +75,6 @@ func (lock *Loglock) RUnlock(msg string) {
 	begin := time.Now()
 	lock.lock.RUnlock()
 	cost := time.Since(begin)
-	if 0 != len(msg) && cost > costLimit {
-		lockLogger.Debugf("UnRLocked: %s, with msg: %s wait: %v", lock.addr, msg, cost)
-	}
 
+	lockLogger.Debugf("UnRLocked: %s, with msg: %s wait: %v", lock.addr, msg, cost)
 }
