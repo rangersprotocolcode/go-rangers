@@ -31,6 +31,7 @@ func InitCore(helper types.ConsensusHelper) error {
 	initChainHandler()
 
 	initGameExecutor(blockChainImpl)
+	initAccountDBManager()
 	initTxManager()
 	return nil
 }

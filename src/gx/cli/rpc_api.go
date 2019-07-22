@@ -39,7 +39,7 @@ func (api *GtasAPI) GetBalance(address string, gameId string) (*Result, error) {
 	gxLock.RLock()
 	defer gxLock.RUnlock()
 
-	sub := core.GetSubAccount(address, gameId, core.GetBlockChain().GetAccountDB())
+	sub := core.GetSubAccount(address, gameId, core.AccountDBManagerInstance.GetAccountDB(gameId))
 
 	if nil == sub {
 		return successResult("-1")
@@ -53,7 +53,7 @@ func (api *GtasAPI) GetAsset(address string, gameId string, assetId string) (*Re
 	gxLock.RLock()
 	defer gxLock.RUnlock()
 
-	sub := core.GetSubAccount(address, gameId, core.GetBlockChain().GetAccountDB())
+	sub := core.GetSubAccount(address, gameId, core.AccountDBManagerInstance.GetAccountDB(gameId))
 
 	if nil == sub {
 		return successResult("")
@@ -82,7 +82,7 @@ func (api *GtasAPI) GetAllAssets(address string, gameId string) (*Result, error)
 }
 
 func getAssets(address string, gameId string) (*Result, error) {
-	sub := core.GetSubAccount(address, gameId, core.GetBlockChain().GetAccountDB())
+	sub := core.GetSubAccount(address, gameId, core.AccountDBManagerInstance.GetAccountDB(gameId))
 
 	if nil == sub {
 		return successResult(make(map[string]string))

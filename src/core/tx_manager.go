@@ -10,14 +10,15 @@ import (
 
 // 基于gameId的事务管理器
 type TxManager struct {
-	context     map[string]*TxContext
-	lock        *sync.Mutex
+	context map[string]*TxContext
+	lock    *sync.Mutex
 }
 
 type TxContext struct {
 	AccountDB *account.AccountDB
 	Tx        *types.Transaction
 	snapshot  int
+	lock      *sync.Mutex
 }
 
 var TxManagerInstance *TxManager
@@ -29,7 +30,7 @@ func initTxManager() {
 	TxManagerInstance.lock = &sync.Mutex{}
 }
 
-func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.AccountDB, tx *types.Transaction, isCopy bool) error {
+func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.AccountDB, tx *types.Transaction) error {
 	if nil == accountDB || nil == tx || 0 == len(gameId) {
 		return nil
 	}
@@ -39,14 +40,23 @@ func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.Acc
 		return fmt.Errorf("isExisted")
 	}
 
-	tx.SubTransactions = make([]string, 0)
-
-	copy := accountDB
-	if isCopy {
-		copy = copy.Copy()
+	context := manager.context[gameId]
+	if nil == context {
+		manager.lock.Lock()
+		context = manager.context[gameId]
+		if nil == context {
+			context = &TxContext{lock: &sync.Mutex{}}
+			manager.context[gameId] = context
+		}
+		manager.lock.Unlock()
 	}
-	snapshot := copy.Snapshot()
-	manager.context[gameId] = &TxContext{AccountDB: copy, Tx: tx, snapshot: snapshot}
+
+	context.lock.Lock()
+	tx.SubTransactions = make([]string, 0)
+	context.snapshot = accountDB.Snapshot()
+	context.AccountDB = accountDB
+	context.Tx = tx
+
 	return nil
 }
 
@@ -55,7 +65,7 @@ func (manager *TxManager) GetContext(gameId string) *TxContext {
 }
 
 func (manager *TxManager) Commit(gameId string, hash common.Hash) {
-	manager.remove(gameId)
+	manager.clean(gameId)
 }
 
 func (manager *TxManager) RollBack(gameId string, hash common.Hash) {
@@ -65,10 +75,12 @@ func (manager *TxManager) RollBack(gameId string, hash common.Hash) {
 	}
 
 	context.AccountDB.RevertToSnapshot(context.snapshot)
-	manager.remove(gameId)
+	manager.clean(gameId)
 }
 
-func (manager *TxManager) remove(gameId string) {
-	delete(manager.context, gameId)
+func (manager *TxManager) clean(gameId string) {
+	context := manager.context[gameId]
+	context.AccountDB = nil
+	context.Tx = nil
+	context.lock.Unlock()
 }
-

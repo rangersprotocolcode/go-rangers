@@ -89,7 +89,8 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 
 	var result string
 	txRaw := message.Tx
-	sub := GetSubAccount(txRaw.Source, txRaw.Target, GetBlockChain().GetAccountDB())
+	gameId := txRaw.Target
+	sub := GetSubAccount(txRaw.Source, gameId, AccountDBManagerInstance.GetAccountDB(gameId))
 	if nil == sub {
 		result = ""
 	} else {
@@ -160,11 +161,11 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 
 		// 处理转账
 		// 支持多人转账{"address1":"value1", "address2":"value2"}
-		accountDB := GetBlockChain().GetAccountDB()
 		gameId := txRaw.Target
+		accountDB := AccountDBManagerInstance.GetAccountDB(gameId)
 
 		// 已经执行过了（入块时），则不用再执行了
-		if nil != TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw, true) || GetBlockChain().GetTransactionPool().IsGameData(txRaw.Hash) {
+		if nil != TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw) || GetBlockChain().GetTransactionPool().IsGameData(txRaw.Hash) {
 			// bingo
 			executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
 			return ""
