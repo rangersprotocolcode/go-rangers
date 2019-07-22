@@ -100,6 +100,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 				// 本地没有执行过状态机(game_executor还没有收到消息)，则需要调用状态机
 				if !GetBlockChain().GetTransactionPool().IsGameData(transaction.Hash) {
 					logger.Debugf("Is game data")
+					transaction.SubTransactions = make([]string, 0)
 					statemachine.Docker.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), transaction.Data)
 					GetBlockChain().GetTransactionPool().PutGameData(transaction.Hash)
 				} else if 0 != len(transaction.SubTransactions) {

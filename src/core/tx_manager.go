@@ -52,7 +52,6 @@ func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.Acc
 	}
 
 	context.lock.Lock()
-	tx.SubTransactions = make([]string, 0)
 	context.snapshot = accountDB.Snapshot()
 	context.AccountDB = accountDB
 	context.Tx = tx

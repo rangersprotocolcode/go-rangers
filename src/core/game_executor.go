@@ -171,6 +171,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 			return ""
 		}
 
+		txRaw.SubTransactions = make([]string, 0)
 		if 0 != len(txRaw.ExtraData) {
 			mm := make(map[string]string, 0)
 			if err := json.Unmarshal([]byte(txRaw.ExtraData), &mm); nil != err {
