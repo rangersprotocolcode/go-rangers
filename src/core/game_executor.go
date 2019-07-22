@@ -171,7 +171,6 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 			return ""
 		}
 
-		txRaw.SubTransactions = make([]string, 0)
 		if 0 != len(txRaw.ExtraData) {
 			mm := make(map[string]string, 0)
 			if err := json.Unmarshal([]byte(txRaw.ExtraData), &mm); nil != err {
@@ -190,6 +189,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 		// 转账成功，调用状态机
 		if result != "fail to transfer" {
 			// 调用状态机
+			txRaw.SubTransactions = make([]string, 0)
 			outputMessage = statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
 			logger.Infof("invoke state machine result:%v", outputMessage)
 			if outputMessage != nil {
