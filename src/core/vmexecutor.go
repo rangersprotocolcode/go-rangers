@@ -77,7 +77,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 			// 在交易池里，表示game_executor已经执行过状态机了
 			// 只要处理交易里的subTransaction即可
-			if nil != TxManagerInstance.BeginTransaction(transaction.Target, accountdb, transaction) {
+			if nil != TxManagerInstance.BeginTransaction(transaction.Target, accountdb, transaction, false) {
 				logger.Debugf("Begin transaction is not nil!")
 				// 处理转账
 				// 支持多人转账{"address1":"value1", "address2":"value2"}

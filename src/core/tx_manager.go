@@ -29,7 +29,7 @@ func initTxManager() {
 	TxManagerInstance.lock = &sync.Mutex{}
 }
 
-func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.AccountDB, tx *types.Transaction) error {
+func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.AccountDB, tx *types.Transaction, isCopy bool) error {
 	if nil == accountDB || nil == tx || 0 == len(gameId) {
 		return nil
 	}
@@ -40,7 +40,11 @@ func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.Acc
 	}
 
 	tx.SubTransactions = make([]string, 0)
+
 	copy := accountDB
+	if isCopy {
+		copy = copy.Copy()
+	}
 	snapshot := copy.Snapshot()
 	manager.context[gameId] = &TxContext{AccountDB: copy, Tx: tx, snapshot: snapshot}
 	return nil
