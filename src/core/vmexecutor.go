@@ -85,12 +85,12 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 				if 0 != len(transaction.ExtraData) {
 					mm := make(map[string]string, 0)
 					if err := json.Unmarshal([]byte(transaction.ExtraData), &mm); nil != err {
-						TxManagerInstance.Commit(transaction.Target, transaction.Hash)
+						TxManagerInstance.RollBack(transaction.Target)
 						success = false
 						break
 					}
 					if !changeBalances(transaction.Target, transaction.Source, mm, accountdb) {
-						TxManagerInstance.Commit(transaction.Target, transaction.Hash)
+						TxManagerInstance.RollBack(transaction.Target)
 						success = false
 						break
 					}
@@ -130,7 +130,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 				}
 
 				logger.Debugf("Tx manager commit!")
-				TxManagerInstance.Commit(transaction.Target, transaction.Hash)
+				TxManagerInstance.Commit(transaction.Target)
 				logger.Debugf("After Tx manager commit!")
 			}
 

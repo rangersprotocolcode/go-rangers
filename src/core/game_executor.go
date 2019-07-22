@@ -201,7 +201,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 
 		// 没有结果返回，默认出错，回滚
 		if 0 == len(result) || result == "fail to transfer" || outputMessage == nil || outputMessage.Status == 1 {
-			TxManagerInstance.RollBack(gameId, txRaw.Hash)
+			TxManagerInstance.RollBack(gameId)
 
 			// 加入到已执行过的交易池，打包入块不会再执行这笔交易
 			executor.markExecuted(&txRaw)
@@ -209,7 +209,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 				result = "fail to executed"
 			}
 		} else {
-			TxManagerInstance.Commit(gameId, txRaw.Hash)
+			TxManagerInstance.Commit(gameId)
 		}
 
 	case types.TransactionTypeWithdraw:

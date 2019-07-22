@@ -5,7 +5,6 @@ import (
 	"x/src/middleware/types"
 	"sync"
 	"fmt"
-	"x/src/common"
 )
 
 // 基于gameId的事务管理器
@@ -19,6 +18,7 @@ type TxContext struct {
 	Tx        *types.Transaction
 	snapshot  int
 	lock      *sync.Mutex
+	count     int
 }
 
 var TxManagerInstance *TxManager
@@ -32,7 +32,7 @@ func initTxManager() {
 
 func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.AccountDB, tx *types.Transaction) error {
 	if nil == accountDB || nil == tx || 0 == len(gameId) {
-		return nil
+		return fmt.Errorf("no value")
 	}
 
 	// 已经执行过了
@@ -55,6 +55,9 @@ func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.Acc
 	context.snapshot = accountDB.Snapshot()
 	context.AccountDB = accountDB
 	context.Tx = tx
+	context.count = context.count + 1
+
+	logger.Errorf("BeginTransaction. %s %s %d", gameId, tx.Hash, context.count)
 
 	return nil
 }
@@ -63,23 +66,31 @@ func (manager *TxManager) GetContext(gameId string) *TxContext {
 	return manager.context[gameId]
 }
 
-func (manager *TxManager) Commit(gameId string, hash common.Hash) {
-	manager.clean(gameId)
+func (manager *TxManager) Commit(gameId string) {
+	manager.clean(false, gameId)
 }
 
-func (manager *TxManager) RollBack(gameId string, hash common.Hash) {
+func (manager *TxManager) RollBack(gameId string) {
+	manager.clean(true, gameId)
+}
+
+func (manager *TxManager) clean(isRollback bool, gameId string) {
 	context := manager.GetContext(gameId)
 	if nil == context {
 		return
 	}
 
-	context.AccountDB.RevertToSnapshot(context.snapshot)
-	manager.clean(gameId)
-}
+	logger.Errorf("endTransaction. %s %s %d %s", gameId, context.Tx.Hash, context.count-1, isRollback)
 
-func (manager *TxManager) clean(gameId string) {
-	context := manager.context[gameId]
+	if isRollback {
+		context.AccountDB.RevertToSnapshot(context.snapshot)
+	}
+
+	if context.count == 0 {
+
+	}
 	context.AccountDB = nil
 	context.Tx = nil
+	context.count = context.count - 1
 	context.lock.Unlock()
 }
