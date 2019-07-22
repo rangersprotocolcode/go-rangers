@@ -74,36 +74,28 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 		switch transaction.Type {
 		case types.TransactionTypeOperatorEvent:
+			logger.Debugf("Begin transaction is not nil!")
+			// 处理转账
+			// 支持多人转账{"address1":"value1", "address2":"value2"}
+			// 理论上这里不应该失败，nonce保证了这一点
+			if 0 != len(transaction.ExtraData) {
+				mm := make(map[string]string, 0)
+				if err := json.Unmarshal([]byte(transaction.ExtraData), &mm); nil != err {
+					success = false
+					break
+				}
+				if !changeBalances(transaction.Target, transaction.Source, mm, accountdb) {
+					success = false
+					break
+				}
+
+			}
 
 			// 在交易池里，表示game_executor已经执行过状态机了
 			// 只要处理交易里的subTransaction即可
 			if nil != TxManagerInstance.BeginTransaction(transaction.Target, accountdb, transaction) {
-				logger.Debugf("Begin transaction is not nil!")
-				// 处理转账
-				// 支持多人转账{"address1":"value1", "address2":"value2"}
-				// 理论上这里不应该失败，nonce保证了这一点
-				if 0 != len(transaction.ExtraData) {
-					mm := make(map[string]string, 0)
-					if err := json.Unmarshal([]byte(transaction.ExtraData), &mm); nil != err {
-						TxManagerInstance.RollBack(transaction.Target)
-						success = false
-						break
-					}
-					if !changeBalances(transaction.Target, transaction.Source, mm, accountdb) {
-						TxManagerInstance.RollBack(transaction.Target)
-						success = false
-						break
-					}
-
-				}
-
-				// 本地没有执行过状态机(game_executor还没有收到消息)，则需要调用状态机
-				if !GetBlockChain().GetTransactionPool().IsGameData(transaction.Hash) {
-					logger.Debugf("Is game data")
-					transaction.SubTransactions = make([]string, 0)
-					statemachine.Docker.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), transaction.Data)
-					GetBlockChain().GetTransactionPool().PutGameData(transaction.Hash)
-				} else if 0 != len(transaction.SubTransactions) {
+				success = true
+				if 0 != len(transaction.SubTransactions) {
 					logger.Debugf("Is not game data")
 					for _, sub := range transaction.SubTransactions {
 						logger.Debugf("Execute sub tx:%v", sub)
@@ -128,13 +120,27 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						}
 					}
 				}
+			} else {
+				// 本地没有执行过状态机(game_executor还没有收到消息)，则需要调用状态机
+				logger.Debugf("Is game data")
+				transaction.SubTransactions = make([]string, 0)
+				outputMessage := statemachine.Docker.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), transaction.Data)
+				GetBlockChain().GetTransactionPool().PutGameData(transaction.Hash)
+				result := ""
+				if outputMessage != nil {
+					result = outputMessage.Payload
+				}
 
-				logger.Debugf("Tx manager commit!")
-				TxManagerInstance.Commit(transaction.Target)
-				logger.Debugf("After Tx manager commit!")
+				logger.Debugf("Tx manager finish!")
+				if 0 == len(result) || result == "fail to transfer" || outputMessage == nil || outputMessage.Status == 1 {
+					TxManagerInstance.RollBack(transaction.Target)
+				} else {
+					TxManagerInstance.Commit(transaction.Target)
+					success = true
+				}
+				logger.Debugf("After Tx manager finish!")
+
 			}
-
-			success = true
 
 		case types.TransactionTypeWithdraw:
 			success = executor.executeWithdraw(accountdb, transaction)
