@@ -80,7 +80,12 @@ func (manager *TxManager) clean(isRollback bool, gameId string) {
 		return
 	}
 
-	logger.Errorf("endTransaction. %s %s %d %s", gameId, context.Tx.Hash, context.count-1, isRollback)
+	if nil == context.Tx{
+		logger.Errorf("endTransaction. %s %s %d %s", gameId, "<nil tx>", context.count-1, isRollback)
+	}else{
+		logger.Errorf("endTransaction. %s %s %d %s", gameId, context.Tx.Hash, context.count-1, isRollback)
+	}
+
 
 	if isRollback {
 		context.AccountDB.RevertToSnapshot(context.snapshot)
