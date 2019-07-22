@@ -18,7 +18,7 @@ type TxContext struct {
 	Tx        *types.Transaction
 	snapshot  int
 	lock      *sync.Mutex
-	count     int
+
 }
 
 var TxManagerInstance *TxManager
@@ -55,9 +55,6 @@ func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.Acc
 	context.snapshot = accountDB.Snapshot()
 	context.AccountDB = accountDB
 	context.Tx = tx
-	context.count = context.count + 1
-
-	logger.Errorf("BeginTransaction. %s %s %d", gameId, tx.Hash, context.count)
 
 	return nil
 }
@@ -80,22 +77,11 @@ func (manager *TxManager) clean(isRollback bool, gameId string) {
 		return
 	}
 
-	if nil == context.Tx{
-		logger.Errorf("endTransaction. %s %s %d %s", gameId, "<nil tx>", context.count-1, isRollback)
-	}else{
-		logger.Errorf("endTransaction. %s %s %d %s", gameId, context.Tx.Hash, context.count-1, isRollback)
-	}
-
-
 	if isRollback {
 		context.AccountDB.RevertToSnapshot(context.snapshot)
 	}
 
-	if context.count == 0 {
-
-	}
 	context.AccountDB = nil
 	context.Tx = nil
-	context.count = context.count - 1
 	context.lock.Unlock()
 }

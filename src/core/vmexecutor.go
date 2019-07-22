@@ -122,7 +122,6 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 				}
 			} else {
 				// 本地没有执行过状态机(game_executor还没有收到消息)，则需要调用状态机
-				logger.Debugf("Is game data")
 				transaction.SubTransactions = make([]string, 0)
 				outputMessage := statemachine.Docker.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), transaction.Data)
 				GetBlockChain().GetTransactionPool().PutGameData(transaction.Hash)
@@ -131,14 +130,13 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 					result = outputMessage.Payload
 				}
 
-				logger.Debugf("Tx manager finish!")
+
 				if 0 == len(result) || result == "fail to transfer" || outputMessage == nil || outputMessage.Status == 1 {
 					TxManagerInstance.RollBack(transaction.Target)
 				} else {
 					TxManagerInstance.Commit(transaction.Target)
 					success = true
 				}
-				logger.Debugf("After Tx manager finish!")
 
 			}
 
