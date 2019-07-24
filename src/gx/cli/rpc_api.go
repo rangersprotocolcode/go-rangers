@@ -81,6 +81,18 @@ func (api *GtasAPI) GetAllAssets(address string, gameId string) (*Result, error)
 	return getAssets(address, gameId)
 }
 
+func (api *GtasAPI) GetAccount(address string, gameId string) (*Result, error) {
+	gxLock.RLock()
+	defer gxLock.RUnlock()
+
+	sub := core.GetSubAccount(address, gameId, core.AccountDBManagerInstance.GetAccountDB(gameId))
+	if nil == sub {
+		return successResult(make(map[string]string))
+	}
+
+	return successResult(sub)
+}
+
 func getAssets(address string, gameId string) (*Result, error) {
 	sub := core.GetSubAccount(address, gameId, core.AccountDBManagerInstance.GetAccountDB(gameId))
 
