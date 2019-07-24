@@ -112,7 +112,7 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string, nonce uint64) (*
 	// 立即执行
 	context := core.TxManagerInstance.GetContext(gameId)
 
-	// 不再事务里，不应该啊
+	// 不在事务里，不应该啊
 	if nil == context {
 		common.DefaultLogger.Debugf("update asset game context is nil!")
 		return failResult("not in transaction")

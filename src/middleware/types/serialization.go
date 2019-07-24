@@ -461,8 +461,9 @@ func memberToPb(m *Member) *middleware_pb.Member {
 
 func MarshalSubAccount(subAccount SubAccount) ([]byte, error) {
 	assets, _ := json.Marshal(subAccount.Assets)
+	ft, _ := json.Marshal(subAccount.Ft)
 
-	account := middleware_pb.SubAccount{Balance: subAccount.Balance.Bytes(), Assets: assets, Nonce: &subAccount.Nonce}
+	account := middleware_pb.SubAccount{Balance: subAccount.Balance.Bytes(), Assets: assets, Nonce: &subAccount.Nonce, Ft: ft}
 	byte, err := proto.Marshal(&account)
 	if err != nil {
 		logger.Errorf("Marshal sub account error:%s", err.Error())
@@ -484,7 +485,10 @@ func UnMarshalSubAccount(b []byte) (*SubAccount, error) {
 	assets := make(map[string]string)
 	json.Unmarshal(account.Assets, &assets)
 
-	subAccount := SubAccount{Balance: balance, Assets: assets,}
+	ft := make(map[string]string)
+	json.Unmarshal(account.Ft, &ft)
+
+	subAccount := SubAccount{Balance: balance, Assets: assets, Ft: ft}
 	if nil != account.Nonce {
 		subAccount.Nonce = *account.Nonce
 	} else {

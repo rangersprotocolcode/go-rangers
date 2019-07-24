@@ -8,6 +8,8 @@ import (
 	"strconv"
 )
 
+var minusOne = big.NewInt(-1)
+
 func GetSubAccount(address string, gameId string, account *account.AccountDB) *types.SubAccount {
 	return account.GetSubAccount(common.HexToAddress(address), gameId)
 }
@@ -50,30 +52,98 @@ func convert(s string) *big.Int {
 	return big.NewInt(int64(f * 1000000000))
 }
 
+func convertWithoutBase(s string) *big.Int {
+	f, _ := strconv.ParseFloat(s, 64)
+	return big.NewInt(int64(f))
+}
+
 // false 表示转账失败
-// 这里是玩家与玩家（游戏）之间的转账，不操作游戏对玩家对转账
-// 这里不处理事务。调用本方法之前处理
-func changeBalances(gameId string, source string, targets map[string]string, accountdb *account.AccountDB) bool {
-	overall := big.NewInt(0)
+// 这里是玩家与玩家（游戏）之间的转账，不操作游戏对玩家转账
+// 这里不处理事务。调用本方法之前自行处理事务
+func changeBalances(gameId string, source string, targets map[string]types.TransferData, accountdb *account.AccountDB) bool {
+	sub := GetSubAccount(source, gameId, accountdb)
 
-	for address, valueString := range targets {
-		value := convert(valueString)
+	for address, transferData := range targets {
+		target := GetSubAccount(address, gameId, accountdb)
 
-		// 不能扣钱
-		if value.Sign() == -1 {
+		if !transferBalance(transferData.Balance, sub, target) {
 			return false
 		}
 
-		if !changeBalance(address, gameId, value, accountdb) {
+		if !transferFT(transferData.FT, sub, target) {
 			return false
 		}
-		overall = overall.Add(overall, value)
+
+		if !transferNFT(transferData.NFT, sub, target) {
+			return false
+		}
+
+		accountdb.UpdateSubAccount(common.HexToAddress(address), gameId, *target)
 	}
 
-	// source 账户中扣钱
-	overall = overall.Mul(overall, big.NewInt(-1))
-	if !changeBalance(source, gameId, overall, accountdb) {
+	// 刷新本账户
+	accountdb.UpdateSubAccount(common.HexToAddress(source), gameId, *sub)
+	return true
+}
+
+func transferNFT(nft []string, source *types.SubAccount, target *types.SubAccount) bool {
+	if 0 != len(nft) {
+		for _, id := range nft {
+			value := source.Assets[id]
+			if 0 == len(source.Assets[id]) {
+				return false
+			}
+
+			target.Assets[id] = value
+			delete(source.Assets, id)
+		}
+	}
+
+	return true
+}
+
+func transferBalance(value string, source *types.SubAccount, target *types.SubAccount) bool {
+	balance := convert(value)
+	// 不能扣钱
+	if balance.Sign() == -1 {
 		return false
+	}
+
+	// 钱不够转账，再见
+	if source.Balance.Cmp(balance) == -1 {
+		return false
+	}
+
+	target.Balance = target.Balance.Add(balance, target.Balance)
+	balance = balance.Mul(balance, minusOne)
+	source.Balance = source.Balance.Add(source.Balance, balance)
+	return true
+}
+
+func transferFT(ft map[string]string, source *types.SubAccount, target *types.SubAccount) bool {
+	if 0 != len(ft) {
+		for ftName, valueString := range ft {
+			owner := source.Ft[ftName]
+			if 0 == len(owner) {
+				return false
+			}
+
+			value := convert(valueString)
+			ownerValue := convertWithoutBase(owner)
+			// ft 数量不够，再见
+			if ownerValue.Cmp(value) == -1 {
+				return false
+			}
+
+			targetValue := convertWithoutBase(target.Ft[ftName])
+
+			targetLeft := targetValue.Add(targetValue, value)
+			left := ownerValue.Add(ownerValue, value.Mul(value, minusOne))
+
+			source.Ft[ftName] = left.String()
+			target.Ft[ftName] = targetLeft.String()
+
+		}
 	}
 
 	return true

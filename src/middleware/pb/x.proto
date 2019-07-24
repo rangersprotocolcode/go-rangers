@@ -429,4 +429,5 @@ message SubAccount  {
 	optional bytes Balance = 1;
 	optional uint64 Nonce = 2;
 	optional bytes Assets = 3;
+	optional bytes Ft = 4;
 }

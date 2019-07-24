@@ -104,7 +104,7 @@ const (
 )
 
 type Transaction struct {
-	Data      string // 入参
+	Data      string // 状态机入参
 	Nonce     uint64 // 用户级别nonce
 	Source    string // 用户id
 	Target    string // 游戏id
@@ -112,13 +112,13 @@ type Transaction struct {
 	RequestId uint64 // 消息编号
 	Hash      common.Hash
 
-	ExtraData     string
+	ExtraData     string // 在rocketProtocol里，用于转账。包括余额转账、FT转账、NFT转账
 	ExtraDataType int32
 
 	Sign *common.Sign
 	Time string
 
-	SocketRequestId string   // websocket id，用于客户端表示请求id
+	SocketRequestId string   // websocket id，用于客户端标示请求id，方便回调处理
 	SubTransactions []string // 用于存储状态机rpc调用的交易数据
 }
 
@@ -328,28 +328,35 @@ type Group struct {
 	GroupHeight uint64
 }
 
-type StateNode struct {
-	Key   []byte
-	Value []byte
-}
-
+// 游戏的子账户
 type SubAccount struct {
 	Balance *big.Int
 	Nonce   uint64
+	Ft      map[string]string // key: 货币名 value：字符串1000000000
 	Assets  map[string]string
 }
 
-// 仅仅供资产上链使用
+// NFT资产
 type Asset struct {
 	Id string `json:"id"`
 
 	Value string `json:"value"`
+
+	Status int `json:"status"`
 }
 
+// 用于状态机内通过SDK调用layer2的数据结构
 type UserData struct {
 	Address string            `json:"address"`
 	Balance string            `json:"balance,omitempty"`
 	Assets  map[string]string `json:"assets,omitempty"`
+}
+
+// 转账时写在extraData里的复杂结构，用于转账NFT、FT以及余额
+type TransferData struct {
+	Balance string            `json:"balance,omitempty"`
+	FT      map[string]string `json:"ft,omitempty"`
+	NFT     []string          `nft:"balance,omitempty"`
 }
 
 type TxJson struct {

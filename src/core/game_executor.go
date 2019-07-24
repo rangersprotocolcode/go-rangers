@@ -159,8 +159,6 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 	// execute state machine transaction
 	case types.TransactionTypeOperatorEvent:
 
-		// 处理转账
-		// 支持多人转账{"address1":"value1", "address2":"value2"}
 		gameId := txRaw.Target
 		accountDB := AccountDBManagerInstance.GetAccountDB(gameId)
 
@@ -171,8 +169,26 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 			return ""
 		}
 
+		// 处理转账
+		// 支持source地址给多人转账，包含余额，ft，nft
+		// 数据格式{"address1":{"balance":"127","ft":{"name1":"189","name2":"1"},"nft":["id1","sword2"]}, "address2":{"balance":"1"}}
+
+		//	{
+		//	"address1": {
+		//		"balance": "127",
+		//		"ft": {
+		//			"name1": "189",
+		//			"name2": "1"
+		//		},
+		//		"nft": ["id1", "sword2"]
+		//	},
+		//	"address2": {
+		//		"balance": "1"
+		//	}
+		//}
+
 		if 0 != len(txRaw.ExtraData) {
-			mm := make(map[string]string, 0)
+			mm := make(map[string]types.TransferData, 0)
 			if err := json.Unmarshal([]byte(txRaw.ExtraData), &mm); nil != err {
 				result = "fail to transfer"
 				break

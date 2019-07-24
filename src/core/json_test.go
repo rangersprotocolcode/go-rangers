@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/big"
 	"x/src/common"
+	"x/src/middleware/types"
 )
 
 func TestBigInt(t *testing.T) {
@@ -63,4 +64,15 @@ func TestAddr(t *testing.T){
 	s:= "TAD5ZbvETHrNobKa41hGkCkB37jEXCEQss"
 	addr := common.HexToAddress(s)
 	fmt.Printf("Addr:%v",addr)
+}
+
+func TestJSONTransferData(t *testing.T)  {
+	s:="{\"address1\":{\"balance\":\"127\",\"ft\":{\"name1\":\"189\",\"name2\":\"1\"},\"nft\":[\"id1\",\"sword2\"]}, \"address2\":{\"balance\":\"1\"}}"
+	mm := make(map[string]types.TransferData, 0)
+	if err := json.Unmarshal([]byte(s), &mm); nil != err {
+		fmt.Errorf("fail to unmarshal")
+	}
+
+	fmt.Printf("length: %d\n", len(mm))
+	fmt.Printf("length: %s", mm)
 }

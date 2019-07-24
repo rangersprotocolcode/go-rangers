@@ -79,7 +79,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			// 支持多人转账{"address1":"value1", "address2":"value2"}
 			// 理论上这里不应该失败，nonce保证了这一点
 			if 0 != len(transaction.ExtraData) {
-				mm := make(map[string]string, 0)
+				mm := make(map[string]types.TransferData, 0)
 				if err := json.Unmarshal([]byte(transaction.ExtraData), &mm); nil != err {
 					success = false
 					break
