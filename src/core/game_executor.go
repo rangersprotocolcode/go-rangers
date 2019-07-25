@@ -117,6 +117,9 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 		case types.StateMachineNonce:
 			result = strconv.FormatUint(sub.Nonce, 10)
 
+		case types.GetAllAsset:
+			bytes, _ := json.Marshal(sub)
+			result = string(bytes)
 		}
 	}
 

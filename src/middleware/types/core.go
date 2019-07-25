@@ -87,6 +87,7 @@ const (
 	GetBalance                     = 11
 	GetAsset                       = 12
 	GetAllAssets                   = 13
+	GetAllAsset                    = 15 // 获取一个账户的所有资产情况
 	StateMachineNonce              = 14
 
 	TransactionTypeDepositExecute          = 101
