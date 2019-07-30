@@ -57,6 +57,7 @@ func (n *NetworkConfig) String() string {
 //    AutoRemove    设定容器运行完毕后是否删除该容器
 //                  true 表示自动删除
 //                  false 表示不删除
+//    Type          公链类型
 type ContainerConfig struct {
 	Priority   uint   `yaml:"priority"`
 	Game       string `yaml:"game"`
@@ -70,6 +71,7 @@ type ContainerConfig struct {
 	Volumes    Vols   `yaml:"volumes"`
 	AutoRemove bool   `yaml:"auto_remove"`
 	Import     string `yaml:"import"`
+	Type       string `yaml:"type"`
 }
 
 //将配置信息转换为 json 数据用于输出

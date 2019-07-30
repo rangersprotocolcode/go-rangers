@@ -10,6 +10,7 @@ import (
 	"time"
 	"net"
 	"x/src/common"
+	"strings"
 )
 
 var Docker *DockerManager
@@ -77,7 +78,7 @@ func (d *DockerManager) Process(name string, kind string, nonce string, payload 
 
 	resp, err := d.httpClient.PostForm(path, values)
 	if err != nil {
-		common.DefaultLogger.Debugf("Docker process post error.Path:%s,values:%v,error:%s",path,values,values, err.Error())
+		common.DefaultLogger.Debugf("Docker process post error.Path:%s,values:%v,error:%s", path, values, values, err.Error())
 		return nil
 	}
 
@@ -156,4 +157,19 @@ func (d *DockerManager) getUrlPrefix(name string) string {
 
 	//call local container
 	return fmt.Sprintf("http://0.0.0.0:%d/api/v1/", port)
+}
+
+func (d *DockerManager) GetType(gameId string) string {
+	configs := d.Config.Services
+	if 0 == len(configs) {
+		return ""
+	}
+
+	for _, value := range configs {
+		if 0 == strings.Compare(value.Game, gameId) {
+			return value.Type
+		}
+	}
+
+	return ""
 }
