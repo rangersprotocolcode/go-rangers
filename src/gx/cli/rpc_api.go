@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"sync"
 	"x/src/network"
+	"x/src/statemachine"
 )
 
 func successResult(data interface{}) (*Result, error) {
@@ -34,6 +35,11 @@ type GtasAPI struct {
 }
 
 var gxLock *sync.RWMutex
+
+func (api *GtasAPI) GetGameType(gameId string) (*Result, error) {
+	gameType:=statemachine.Docker.GetType(gameId)
+	return successResult(gameType)
+}
 
 func (api *GtasAPI) GetBalance(address string, gameId string) (*Result, error) {
 	gxLock.RLock()
