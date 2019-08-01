@@ -142,8 +142,6 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 		case types.TransactionTypeWithdraw:
 			success = executor.executeWithdraw(accountdb, transaction)
-		case types.TransactionTypeAssetOnChain:
-			success = executor.executeAssetOnChain(accountdb, transaction)
 		case types.TransactionTypeDepositAck:
 			success = executor.executeDepositNotify(accountdb, transaction)
 		}
@@ -178,6 +176,7 @@ func (executor *VMExecutor) validateNonce(accountdb *account.AccountDB, transact
 
 func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transaction *types.Transaction) bool {
 	logger.Debugf("Execute withdraw tx:%v", transaction)
+	//todo 提现这里修改
 	amount, err := utility.StrToBigInt(transaction.Data)
 	if err != nil {
 		logger.Error("Execute withdraw bad amount!Hash:%s, err:%s", transaction.Hash.String(), err.Error())
@@ -207,44 +206,45 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 	return true
 }
 
-func (executor *VMExecutor) executeAssetOnChain(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	logger.Debugf("Execute asset on chain tx:%v", transaction)
-	assetOnChainInfo := AssetOnChainInfo{Address: transaction.Source, GameId: transaction.Target, Hash: transaction.Hash.String()}
-
-	var assetIdList []string
-	if err := json.Unmarshal([]byte(transaction.Data), &assetIdList); err != nil {
-		logger.Errorf("Execute asset on chain tx:%s,json unmarshal error:%s", transaction.Hash.String(), err.Error())
-		return false
-	}
-
-	account := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
-
-	var assets []types.Asset
-	for _, assetId := range assetIdList {
-		value := account.Assets[assetId]
-		if 0 == len(value) {
-			logger.Errorf("AssetOnChain tx:%s,unknown asset id:%s", transaction.Hash.String(), assetId)
-			continue
-		}
-
-		assets = append(assets, types.Asset{Id: assetId, Value: value})
-
-	}
-	assetOnChainInfo.Assets = assets
-
-	b, err := json.Marshal(assetOnChainInfo)
-	if err != nil {
-		logger.Error("Execute asset on chain tx:%s json marshal err, err:%s", transaction.Hash.String(), err.Error())
-		return false
-	}
-
-	logger.Debugf("After execute asset on chain.Send msg to coin proxy:%s", string(b))
-	message := network.Message{Code: network.AssetOnChain, Body: b}
-	network.GetNetInstance().SendToCoinProxy(message)
-	return true
-}
+//func (executor *VMExecutor) executeAssetOnChain(accountdb *account.AccountDB, transaction *types.Transaction) bool {
+//	logger.Debugf("Execute asset on chain tx:%v", transaction)
+//	assetOnChainInfo := AssetOnChainInfo{Address: transaction.Source, GameId: transaction.Target, Hash: transaction.Hash.String()}
+//
+//	var assetIdList []string
+//	if err := json.Unmarshal([]byte(transaction.Data), &assetIdList); err != nil {
+//		logger.Errorf("Execute asset on chain tx:%s,json unmarshal error:%s", transaction.Hash.String(), err.Error())
+//		return false
+//	}
+//
+//	account := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
+//
+//	var assets []types.Asset
+//	for _, assetId := range assetIdList {
+//		value := account.Assets[assetId]
+//		if 0 == len(value) {
+//			logger.Errorf("AssetOnChain tx:%s,unknown asset id:%s", transaction.Hash.String(), assetId)
+//			continue
+//		}
+//
+//		assets = append(assets, types.Asset{Id: assetId, Value: value})
+//
+//	}
+//	assetOnChainInfo.Assets = assets
+//
+//	b, err := json.Marshal(assetOnChainInfo)
+//	if err != nil {
+//		logger.Error("Execute asset on chain tx:%s json marshal err, err:%s", transaction.Hash.String(), err.Error())
+//		return false
+//	}
+//
+//	logger.Debugf("After execute asset on chain.Send msg to coin proxy:%s", string(b))
+//	message := network.Message{Code: network.AssetOnChain, Body: b}
+//	network.GetNetInstance().SendToCoinProxy(message)
+//	return true
+//}
 
 func (executor *VMExecutor) executeDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
+	//todo 充值确认这里修改
 	depositAmount, _ := new(big.Int).SetString(transaction.Data, 10)
 	account := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
 	logger.Debugf("Execute deposit notify:%s,address:%s,gameId:%s,current balance:%d,deposit balance:%d", transaction.Hash.String(), transaction.Source, transaction.Target, account.Balance.Uint64(), depositAmount.Uint64())

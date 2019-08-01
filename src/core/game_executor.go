@@ -22,10 +22,13 @@ type GameExecutor struct {
 	writeChan chan notify.Message
 }
 
+/**
+客户端web socket 请求的返回数据
+ */
 type response struct {
+	Id    string
+	Status  string
 	Data    string
-	Hash    string
-	Status  byte
 	Version string
 }
 
@@ -97,11 +100,11 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 		switch txRaw.Type {
 
 		// query balance
-		case types.GetBalance:
+		case types.TransactionTypeGetBalance:
 			floatdata := float64(sub.Balance.Int64()) / 1000000000
 			result = strconv.FormatFloat(floatdata, 'f', -1, 64)
 
-		case types.GetAsset:
+		case types.TransactionTypeGetAsset:
 			assets := sub.Assets
 			if nil == assets || 0 == len(assets) {
 				result = ""
@@ -109,15 +112,15 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 				result = assets[txRaw.Data]
 			}
 
-		case types.GetAllAssets:
+		case types.TransactionTypeGetAllAssets:
 			assets := sub.Assets
 			bytes, _ := json.Marshal(assets)
 			result = string(bytes)
 
-		case types.StateMachineNonce:
+		case types.TransactionTypeStateMachineNonce:
 			result = strconv.FormatUint(sub.Nonce, 10)
 
-		case types.GetAllAsset:
+		case types.TransactionTypeGetAllAsset:
 			bytes, _ := json.Marshal(sub)
 			result = string(bytes)
 		}
@@ -126,24 +129,24 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	responseId := txRaw.SocketRequestId
 
 	// reply to the client
-	go network.GetNetInstance().SendToClientReader(message.UserId, network.Message{Body: executor.makeSuccessResponse(result, responseId)}, message.Nonce)
+	go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
 
 	return
 }
 
-func (executor *GameExecutor) makeSuccessResponse(bytes string, hash string) []byte {
+func (executor *GameExecutor) makeSuccessResponse(data string, id string) []byte {
 	res := response{
-		Data:    bytes,
-		Hash:    hash,
-		Status:  0,
+		Data:    data,
+		Id:    id,
+		Status:  "0",
 		Version: "0.1",
 	}
 
-	data, err := json.Marshal(res)
+	result, err := json.Marshal(res)
 	if err != nil {
 		logger.Debugf("json make success response err:%s", err.Error())
 	}
-	return data
+	return result
 }
 
 func (executor *GameExecutor) Write(msg notify.Message) {
@@ -281,8 +284,7 @@ func (executor *GameExecutor) loop() {
 			// 校验交易类型
 			transactionType := txRaw.Type
 			if transactionType != types.TransactionTypeOperatorEvent &&
-				transactionType != types.TransactionTypeWithdraw &&
-				transactionType != types.TransactionTypeAssetOnChain {
+				transactionType != types.TransactionTypeWithdraw {
 				logger.Debugf("GameExecutor:Write transactionType: %d, not ok!", transactionType)
 				return
 			}
@@ -316,7 +318,7 @@ func (executor *GameExecutor) loop() {
 			// reply to the client
 			if 0 != len(result) {
 				response := executor.makeSuccessResponse(result, txRaw.SocketRequestId)
-				go network.GetNetInstance().SendToClientWriter(message.UserId, network.Message{Body: response}, message.Nonce)
+				go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
 
 			}
 

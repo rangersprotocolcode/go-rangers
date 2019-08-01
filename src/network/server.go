@@ -26,27 +26,27 @@ type server struct {
 }
 
 func (s *server) Send(id string, msg Message) {
-	s.send(methodCodeSend, id, msg, 0, false)
+	s.sendMessage(methodCodeSend, id, msg, 0)
 }
 
 func (s *server) SpreadToGroup(groupId string, msg Message) {
-	s.send(methodCodeSendToGroup, groupId, msg, 0, false)
+	s.sendMessage(methodCodeSendToGroup, groupId, msg, 0)
 }
 
 func (s *server) Broadcast(msg Message) {
-	s.send(methodCodeBroadcast, "0", msg, 0, false)
+	s.sendMessage(methodCodeBroadcast, "0", msg, 0)
 }
 
-func (s *server) SendToClientReader(id string, msg Message, nonce uint64) {
-	s.send(methodCodeClientReader, id, msg, nonce, true)
+func (s *server) SendToClientReader(id string, msg []byte, nonce uint64) {
+	s.send(methodCodeClientReader, id, msg, nonce)
 }
 
-func (s *server) SendToClientWriter(id string, msg Message, nonce uint64) {
-	s.send(methodCodeClientWriter, id, msg, nonce, true)
+func (s *server) SendToClientWriter(id string, msg []byte, nonce uint64) {
+	s.send(methodCodeClientWriter, id, msg, nonce)
 }
 
 func (s *server) SendToCoinProxy(msg Message) {
-	s.send(methodCodeCoinProxySend, "0", msg, 0, false)
+	s.sendMessage(methodCodeCoinProxySend, "0", msg, 0)
 }
 
 func (s *server) Notify(isunicast bool, gameId string, userid string, msg string) {
@@ -69,7 +69,7 @@ func (s *server) Notify(isunicast bool, gameId string, userid string, msg string
 	s.notifyNonce = s.notifyNonce + 1
 	notifyId := s.generateNotifyId(gameId, userid)
 
-	s.send(method, notifyId, Message{Body: []byte(msg)}, s.notifyNonce, true)
+	s.send(method, notifyId,  []byte(msg), s.notifyNonce)
 
 }
 

@@ -73,35 +73,20 @@ func NewTransactionError(code int, msg string) *TransactionError {
 }
 
 const (
-	TransactionTypeTransfer        = 0
-	TransactionTypeContractCreate  = 1
-	TransactionTypeContractCall    = 2
-	TransactionTypeBonus           = 3
-	TransactionTypeMinerApply      = 4
-	TransactionTypeMinerAbort      = 5
-	TransactionTypeMinerRefund     = 6
-	TransactionTypeBlockEvent      = 7
-	TransactionTypeOperatorEvent   = 8
-	TransactionTypeUserEvent       = 9
-	TransactionUpdateOperatorEvent = 10
-	GetBalance                     = 11
-	GetAsset                       = 12
-	GetAllAssets                   = 13
-	GetAllAsset                    = 15 // 获取一个账户的所有资产情况
-	StateMachineNonce              = 14
+	TransactionTypeBonus       = 1
+	TransactionTypeMinerApply  = 2
+	TransactionTypeMinerAbort  = 3
+	TransactionTypeMinerRefund = 4
 
-	TransactionTypeDepositExecute          = 101
-	TransactionTypeDepositAck              = 102
-	TransactionTypeWithdrawExecute         = 103
-	TransactionTypeWithDrawAck             = 104
-	TransactionTypeWithAssetOnChainExecute = 105
-	TransactionTypeWithDrawAssetOnChainAck = 106
-
-	// 客户端发送的请求，提现资金与提现资产
-	TransactionTypeWithdraw     = 201
-	TransactionTypeAssetOnChain = 202
-
-	TransactionTypeToBeRemoved = -1
+	//以下交易类型会被外部使用 禁止更改
+	TransactionTypeOperatorEvent     = 100
+	TransactionTypeGetBalance        = 101
+	TransactionTypeGetAsset          = 102
+	TransactionTypeGetAllAssets      = 103
+	TransactionTypeGetAllAsset       = 104 // 获取一个账户的所有资产情况
+	TransactionTypeStateMachineNonce = 105
+	TransactionTypeDepositAck        = 106
+	TransactionTypeWithdraw          = 107
 )
 
 type Transaction struct {

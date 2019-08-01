@@ -30,23 +30,11 @@ type header struct {
 	nonce    uint64
 }
 
-func (s *server) send(method []byte, targetId string, msg Message, nonce uint64, isClient bool) {
-	var m []byte
-	var err error
-
-	if isClient {
-		m = msg.Body
-	} else {
-		m, err = marshalMessage(msg)
-		if err != nil {
-			Logger.Errorf("marshal message error:%s", err.Error())
-			return
-		}
-	}
-
+func  (s *server)send(method []byte, targetId string, msg []byte, nonce uint64)  {
 	header := header{method: method, nonce: nonce}
 
-	var target uint64
+	var target  uint64
+	var err error
 	if bytes.Equal(method, methodCodeSendToGroup) {
 		hash64 := fnv.New64()
 		hash64.Write([]byte(targetId))
@@ -59,10 +47,22 @@ func (s *server) send(method []byte, targetId string, msg Message, nonce uint64,
 		}
 	}
 	header.targetId = target
-	message := loadWebSocketMsg(header, m)
+	message := loadWebSocketMsg(header, msg)
 
 	Logger.Debugf("Send msg:%v", message)
 	s.sendChan <- message
+}
+
+func (s *server) sendMessage(method []byte, targetId string, msg Message, nonce uint64) {
+	var m []byte
+	var err error
+
+	m, err = marshalMessage(msg)
+	if err != nil {
+		Logger.Errorf("marshal message error:%s", err.Error())
+		return
+	}
+	s.send(method,targetId,m,nonce)
 }
 
 func (s *server) receiveMessage() {
