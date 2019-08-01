@@ -41,8 +41,8 @@ func TestStrToJson(t *testing.T) {
 func TestResponse(t *testing.T) {
 	res := response{
 		Data:   "{\"status\":0,\"payload\":\"{\"code\":0,\"data\":{},\"status\":0}\"}",
-		Hash:   "hash",
-		Status: 0,
+		Id:     "hash",
+		Status: "0",
 	}
 
 	data, err := json.Marshal(res)
@@ -52,22 +52,21 @@ func TestResponse(t *testing.T) {
 	fmt.Printf("data:%s", data)
 }
 
-
 func TestFloatConvert(t *testing.T) {
 	var str = "-15000.0"
 	b := convert(str)
-	fmt.Printf("result:%v",b)
-	fmt.Printf("result:%v",b.Sign())
+	fmt.Printf("result:%v", b)
+	fmt.Printf("result:%v", b.Sign())
 }
 
-func TestAddr(t *testing.T){
-	s:= "TAD5ZbvETHrNobKa41hGkCkB37jEXCEQss"
+func TestAddr(t *testing.T) {
+	s := "TAD5ZbvETHrNobKa41hGkCkB37jEXCEQss"
 	addr := common.HexToAddress(s)
-	fmt.Printf("Addr:%v",addr)
+	fmt.Printf("Addr:%v", addr)
 }
 
-func TestJSONTransferData(t *testing.T)  {
-	s:="{\"address1\":{\"balance\":\"127\",\"ft\":{\"name1\":\"189\",\"name2\":\"1\"},\"nft\":[\"id1\",\"sword2\"]}, \"address2\":{\"balance\":\"1\"}}"
+func TestJSONTransferData(t *testing.T) {
+	s := "{\"address1\":{\"balance\":\"127\",\"ft\":{\"name1\":\"189\",\"name2\":\"1\"},\"nft\":[\"id1\",\"sword2\"]}, \"address2\":{\"balance\":\"1\"}}"
 	mm := make(map[string]types.TransferData, 0)
 	if err := json.Unmarshal([]byte(s), &mm); nil != err {
 		fmt.Errorf("fail to unmarshal")
@@ -75,4 +74,58 @@ func TestJSONTransferData(t *testing.T)  {
 
 	fmt.Printf("length: %d\n", len(mm))
 	fmt.Printf("length: %s", mm)
+}
+
+func TestJSONWithDrawData(t *testing.T) {
+	w := types.WithDrawData{ChainType: "ETH", Balance: "12.56"}
+	ft := make(map[string]string, 0)
+	ft["ft1"] = "23.55"
+	ft["ft2"] = "125.68"
+	w.FT = ft
+
+	nft := make(map[string]string, 0)
+	nft["nft1"] = "dafjls;djfa"
+	nft["nft2"] = "{'key':'v'}"
+	w.NFT = nft
+
+	b, err := json.Marshal(w)
+	if err != nil {
+		fmt.Printf("json marshal err: %s\n", err.Error())
+	}
+	fmt.Printf("marshal result:%s\n", b)
+
+	s := "{\"chainType\":\"ETH\",\"balance\":\"12.56\",\"ft\":{\"ft1\":\"23.55\",\"ft2\":\"125.68\"},\"nft\":{\"nft1\":\"dafjls;djfa\",\"nft2\":\"{'key':'v'}\"}}"
+	a := types.WithDrawData{}
+	err1 := json.Unmarshal([]byte(s), &a)
+	if err1 != nil {
+		fmt.Printf("json unmarshal err: %s\n", err.Error())
+	}
+	fmt.Printf("unmarshal result:%v\n", a)
+}
+
+func TestJSONWithDepositData(t *testing.T) {
+	w := types.DepositData{ChainType: "ETH", Amount: "12.56", TxId: "1213r43qr"}
+	ft := make(map[string]string, 0)
+	ft["ft1"] = "23.55"
+	ft["ft2"] = "125.68"
+	w.FT = ft
+
+	nft := make(map[string]string, 0)
+	nft["nft1"] = "dafjls;djfa"
+	nft["nft2"] = "{'key':'v'}"
+	w.NFT = nft
+
+	b, err := json.Marshal(w)
+	if err != nil {
+		fmt.Printf("json marshal err: %s\n", err.Error())
+	}
+	fmt.Printf("marshal result:%s\n", b)
+
+	s := "{\"chainType\":\"ETH\",\"amount\":\"12.56\",\"txId\":\"1213r43qr\",\"ft\":{\"ft1\":\"23.55\",\"ft2\":\"125.68\"},\"nft\":{\"nft1\":\"dafjls;djfa\",\"nft2\":\"{'key':'v'}\"}}"
+	a := types.DepositData{}
+	err1 := json.Unmarshal([]byte(s), &a)
+	if err1 != nil {
+		fmt.Printf("json unmarshal err: %s\n", err.Error())
+	}
+	fmt.Printf("unmarshal result:%v\n", a)
 }

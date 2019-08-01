@@ -2,8 +2,6 @@ package core
 
 import (
 	"time"
-	"math/big"
-
 	"x/src/common"
 	"x/src/middleware/types"
 	"x/src/storage/account"
@@ -13,40 +11,13 @@ import (
 	"x/src/network"
 	"x/src/statemachine"
 	"strconv"
+	"math/big"
 )
 
 const MaxCastBlockTime = time.Second * 3
 
 type VMExecutor struct {
 	bc BlockChain
-}
-
-type WithdrawInfo struct {
-	Address string
-
-	GameId string
-
-	Amount string
-
-	Hash string
-}
-
-type DepositInfo struct {
-	Address string
-
-	GameId string
-
-	Amount string
-}
-
-type AssetOnChainInfo struct {
-	Address string
-
-	GameId string
-
-	Assets []types.Asset
-
-	Hash string
 }
 
 func NewVMExecutor(bc BlockChain) *VMExecutor {
@@ -130,7 +101,6 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 					result = outputMessage.Payload
 				}
 
-
 				if 0 == len(result) || result == "fail to transfer" || outputMessage == nil || outputMessage.Status == 1 {
 					TxManagerInstance.RollBack(transaction.Target)
 				} else {
@@ -175,85 +145,189 @@ func (executor *VMExecutor) validateNonce(accountdb *account.AccountDB, transact
 }
 
 func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	logger.Debugf("Execute withdraw tx:%v", transaction)
-	//todo 提现这里修改
-	amount, err := utility.StrToBigInt(transaction.Data)
+	txLogger.Debugf("Execute withdraw tx:%v", transaction)
+	if transaction.Data == "" {
+		return false
+	}
+	var withDrawReq types.WithDrawReq
+	err := json.Unmarshal([]byte(transaction.Data), &withDrawReq)
 	if err != nil {
-		logger.Error("Execute withdraw bad amount!Hash:%s, err:%s", transaction.Hash.String(), err.Error())
+		txLogger.Debugf("Unmarshal data error:%s", err.Error())
 		return false
 	}
-	account := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
-	logger.Errorf("Execute withdraw :%s,current balance:%d,withdraw balance:%d", transaction.Hash.String(), account.Balance.Uint64(), amount.Uint64())
-	if account.Balance.Cmp(amount) < 0 {
-		logger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", account.Balance.Uint64(), amount.Uint64())
+	if withDrawReq.ChainType == "" {
 		return false
 	}
 
-	account.Balance.Sub(account.Balance, amount)
-	logger.Debugf("After execute withdraw:%s, balance:%d", transaction.Hash.String(), account.Balance.Uint64())
-	accountdb.UpdateSubAccount(common.HexToAddress(transaction.Source), transaction.Target, *account)
+	subAccount := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
+	txLogger.Debugf("Before execute withdraw tx,subAccount:%v", subAccount)
 
-	withdrawInfo := WithdrawInfo{Address: transaction.Source, GameId: transaction.Target, Amount: amount.String(), Hash: transaction.Hash.String()}
-	b, err := json.Marshal(withdrawInfo)
+	//余额检查
+	var withdrawAmount = big.NewInt(0)
+	if withDrawReq.Balance != "" {
+		withdrawAmount, err = utility.StrToBigInt(withDrawReq.Balance)
+		if err != nil {
+			txLogger.Error("Execute withdraw bad amount!Hash:%s, err:%s", transaction.Hash.String(), err.Error())
+			return false
+		}
+		txLogger.Errorf("Execute withdraw :%s,current balance:%d,withdraw balance:%d", transaction.Hash.String(), subAccount.Balance.Uint64(), withdrawAmount.Uint64())
+		if subAccount.Balance.Cmp(withdrawAmount) < 0 {
+			txLogger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", subAccount.Balance.Uint64(), withdrawAmount.Uint64())
+			return false
+		}
+	}
+
+	//ft检查
+	ftInfo := make(map[string]string, 0)
+	if withDrawReq.FT != nil && len(withDrawReq.FT) != 0 {
+		if subAccount.Ft == nil || len(subAccount.Ft) == 0 {
+			return false
+		}
+		for k, v := range withDrawReq.FT {
+			subValue := subAccount.Ft[k]
+			if subValue == "" {
+				return false
+			}
+
+			compareResult, sub := canWithDraw(v, subValue)
+			if !compareResult {
+				return false
+			}
+			ftInfo[k] = sub
+		}
+	}
+
+	//nft检查
+	nftInfo := make(map[string]string, 0)
+	if withDrawReq.NFT != nil && len(withDrawReq.NFT) != 0 {
+		if subAccount.Assets == nil || len(subAccount.Assets) == 0 {
+			return false
+		}
+		for _, k := range withDrawReq.NFT {
+			subValue := subAccount.Assets[k]
+			if subValue == "" {
+				return false
+			}
+			nftInfo[k] = subValue
+		}
+	}
+
+	//执行提现
+
+	//扣余额
+	subAccount.Balance.Sub(subAccount.Balance, withdrawAmount)
+
+	//FT扣钱
+	if len(ftInfo) != 0 {
+		for k, v := range ftInfo {
+			subAccount.Ft[k] = v
+		}
+	}
+
+	//删除要提现的NFT
+	if len(nftInfo) != 0 {
+		for k, _ := range nftInfo {
+			delete(subAccount.Assets, k)
+		}
+	}
+	txLogger.Debugf("After execute withdraw:, subAccount:%v", subAccount)
+	accountdb.UpdateSubAccount(common.HexToAddress(transaction.Source), transaction.Target, *subAccount)
+
+	//发送给Coin Connector
+	withdrawData := types.WithDrawData{ChainType: withDrawReq.ChainType, Balance: withDrawReq.Balance}
+	withdrawData.FT = withDrawReq.FT
+	withdrawData.NFT = nftInfo
+
+	b, err := json.Marshal(withdrawData)
 	if err != nil {
-		logger.Error("Execute withdraw tx:%s json marshal err, err:%s", transaction.Hash.String(), err.Error())
+		txLogger.Error("Execute withdraw tx:%s json marshal err, err:%s", transaction.Hash.String(), err.Error())
 		return false
 	}
 
-	logger.Debugf("After execute withdraw.Send msg to coin proxy:%s", string(b))
+	txLogger.Debugf("After execute withdraw.Send msg to coin proxy:%s", string(b))
 	message := network.Message{Code: network.WithDraw, Body: b}
 	network.GetNetInstance().SendToCoinProxy(message)
 	return true
 }
 
-//func (executor *VMExecutor) executeAssetOnChain(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-//	logger.Debugf("Execute asset on chain tx:%v", transaction)
-//	assetOnChainInfo := AssetOnChainInfo{Address: transaction.Source, GameId: transaction.Target, Hash: transaction.Hash.String()}
-//
-//	var assetIdList []string
-//	if err := json.Unmarshal([]byte(transaction.Data), &assetIdList); err != nil {
-//		logger.Errorf("Execute asset on chain tx:%s,json unmarshal error:%s", transaction.Hash.String(), err.Error())
-//		return false
-//	}
-//
-//	account := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
-//
-//	var assets []types.Asset
-//	for _, assetId := range assetIdList {
-//		value := account.Assets[assetId]
-//		if 0 == len(value) {
-//			logger.Errorf("AssetOnChain tx:%s,unknown asset id:%s", transaction.Hash.String(), assetId)
-//			continue
-//		}
-//
-//		assets = append(assets, types.Asset{Id: assetId, Value: value})
-//
-//	}
-//	assetOnChainInfo.Assets = assets
-//
-//	b, err := json.Marshal(assetOnChainInfo)
-//	if err != nil {
-//		logger.Error("Execute asset on chain tx:%s json marshal err, err:%s", transaction.Hash.String(), err.Error())
-//		return false
-//	}
-//
-//	logger.Debugf("After execute asset on chain.Send msg to coin proxy:%s", string(b))
-//	message := network.Message{Code: network.AssetOnChain, Body: b}
-//	network.GetNetInstance().SendToCoinProxy(message)
-//	return true
-//}
-
+/**
+ 充值确认
+ */
 func (executor *VMExecutor) executeDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	//todo 充值确认这里修改
-	depositAmount, _ := new(big.Int).SetString(transaction.Data, 10)
-	account := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
-	logger.Debugf("Execute deposit notify:%s,address:%s,gameId:%s,current balance:%d,deposit balance:%d", transaction.Hash.String(), transaction.Source, transaction.Target, account.Balance.Uint64(), depositAmount.Uint64())
+	txLogger.Debugf("Execute deposit ack tx:%v", transaction)
+	if transaction.Data == "" {
+		return false
+	}
+	var depositData types.DepositData
+	err := json.Unmarshal([]byte(transaction.Data), &depositData)
+	if err != nil {
+		txLogger.Debugf("Unmarshal data error:%s", err.Error())
+		return false
+	}
+	if depositData.Amount == "" {
+		return false
+	}
 
-	account.Balance.Add(account.Balance, depositAmount)
-	logger.Debugf("After execute deposit:%s, balance:%d", transaction.Hash.String(), account.Balance.Uint64())
-	accountdb.UpdateSubAccount(common.HexToAddress(transaction.Source), transaction.Target, *account)
+	subAccount := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
+	txLogger.Debugf("address:%s,gameId:%s,current balance:%d,deposit balance:%d", transaction.Source, transaction.Target, subAccount.Balance.Uint64(), depositData.Amount)
 
+	depositAmount, err := utility.StrToBigInt(depositData.Amount)
+	if err != nil {
+		txLogger.Debugf("deposit amount to big int error:%s", err.Error())
+		return false
+	}
+	subAccount.Balance.Add(subAccount.Balance, depositAmount)
+	txLogger.Debugf("After execute deposit:%s, balance:%d", transaction.Hash.String(), subAccount.Balance.Uint64())
+	//todo for test
+	if subAccount.Ft == nil {
+		subAccount.Ft = make(map[string]string, 0)
+	}
+	if depositData.FT != nil {
+		for key, value := range depositData.FT {
+			b1, _ := utility.StrToBigInt(value)
+			subAccount.Ft[key] = b1.String()
+		}
+	}
+
+	if subAccount.Assets == nil {
+		subAccount.Assets = make(map[string]string, 0)
+	}
+	if depositData.NFT != nil {
+		for key, value := range depositData.NFT {
+			subAccount.Assets[key] = value
+		}
+	}
+	//end for test
+
+	accountdb.UpdateSubAccount(common.HexToAddress(transaction.Source), transaction.Target, *subAccount)
 	b := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
-	logger.Debugf("After  deposit update,current balance:%d", b.Balance.Uint64())
+	txLogger.Debugf("After  deposit update,current balance:%d", b.Balance.Uint64())
 	return true
+}
+
+/**
+字符串的余额比较
+withDrawAmount金额大于等于ftValue 返回TRUE 否则返回FALSE
+withDrawAmount 是浮点数的STRING "11.256"
+ftValue 是bigInt的STRING "56631"
+如果格式有错误返回FALSE
+返回为true的话 返回二者的差值string
+*/
+func canWithDraw(withDrawAmount string, ftValue string) (bool, string) {
+	b1, err1 := utility.StrToBigInt(withDrawAmount)
+	if err1 != nil {
+		return false, ""
+	}
+
+	b2, r2 := new(big.Int).SetString(ftValue, 10)
+	if !r2 {
+		return false, ""
+	}
+
+	if b1.Cmp(b2) > 0 {
+		return false, ""
+	}
+	var sub big.Int
+	sub.Sub(b2, b1)
+	return true, sub.String()
 }

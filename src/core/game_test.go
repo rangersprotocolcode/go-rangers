@@ -4,6 +4,8 @@ import (
 	"testing"
 	"x/src/middleware/types"
 	"math/big"
+	"fmt"
+	"x/src/utility"
 )
 
 func TestTransferNFT(t *testing.T) {
@@ -117,33 +119,51 @@ func TestTransferBalance2(t *testing.T) {
 	}
 }
 
-func TestTransferFT(t *testing.T){
+func TestTransferFT(t *testing.T) {
 	source := &types.SubAccount{}
 	target := &types.SubAccount{}
 
 	source.Ft = make(map[string]string)
 	target.Ft = make(map[string]string)
 
-	ft:= make(map[string]string)
+	ft := make(map[string]string)
 
-	if !transferFT(ft,source,target){
+	if !transferFT(ft, source, target) {
 		t.Errorf("fail to transfer ft 1")
 	}
 
-	ft["jifen"]="1"
-	if transferFT(ft,source,target){
+	ft["jifen"] = "1"
+	if transferFT(ft, source, target) {
 		t.Errorf("fail to transfer ft 2")
 	}
 
-	source.Ft["jifen"]="3000000000"
-	if !transferFT(ft,source,target){
+	source.Ft["jifen"] = "3000000000"
+	if !transferFT(ft, source, target) {
 		t.Errorf("fail to transfer ft 3")
 	}
 
-	if source.Ft["jifen"]!="2000000000"{
+	if source.Ft["jifen"] != "2000000000" {
 		t.Errorf("fail to transfer ft 4")
 	}
-	if target.Ft["jifen"]!="1000000000"{
+	if target.Ft["jifen"] != "1000000000" {
 		t.Errorf("fail to transfer ft 5")
 	}
+}
+
+func TestBalanceCmp(t *testing.T) {
+	s1 := "1.233"
+	s2, _ := utility.StrToBigInt("50")
+	s := s2.String()
+	r, sub := canWithDraw(s1, s)
+	fmt.Printf("r:%t,sub:%s\n", r, sub)
+}
+
+func TestStrToBigInt(t *testing.T) {
+	s := "11.22334455667788"
+	b, err := utility.StrToBigInt(s)
+	if err != nil {
+		fmt.Printf("err:%s\n", err.Error())
+	}
+	fmt.Printf("result:%s\n", b.String())
+
 }

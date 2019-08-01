@@ -322,15 +322,6 @@ type SubAccount struct {
 	Assets  map[string]string
 }
 
-// NFT资产
-type Asset struct {
-	Id string `json:"id"`
-
-	Value string `json:"value"`
-
-	Status int `json:"status"`
-}
-
 // 用于状态机内通过SDK调用layer2的数据结构
 type UserData struct {
 	Address string            `json:"address"`
@@ -342,7 +333,33 @@ type UserData struct {
 type TransferData struct {
 	Balance string            `json:"balance,omitempty"`
 	FT      map[string]string `json:"ft,omitempty"`
-	NFT     []string          `nft:"balance,omitempty"`
+	NFT     []string          `json:"nft,omitempty"`
+}
+
+//提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链
+type WithDrawReq struct {
+	ChainType string            `json:"chainType,omitempty"`
+	Address   string            `json:"address,omitempty"`
+	Balance   string            `json:"balance,omitempty"`
+	FT        map[string]string `json:"ft,omitempty"`
+	NFT       []string          `json:"nft,omitempty"`
+}
+
+type WithDrawData struct {
+	ChainType string            `json:"chainType,omitempty"`
+	Balance   string            `json:"balance,omitempty"`
+	FT        map[string]string `json:"ft,omitempty"`
+	NFT       map[string]string `json:"nft,omitempty"`
+}
+
+//提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链
+type DepositData struct {
+	ChainType string `json:"chainType,omitempty"`
+	Amount    string `json:"amount,omitempty"`
+	TxId      string `json:"txId,omitempty"`
+	//todo 这里为了方便测试加入FT和NFT 上线时要去掉
+	FT  map[string]string `json:"ft,omitempty"`
+	NFT map[string]string `json:"nft,omitempty"`
 }
 
 type TxJson struct {

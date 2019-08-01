@@ -30,10 +30,10 @@ type header struct {
 	nonce    uint64
 }
 
-func  (s *server)send(method []byte, targetId string, msg []byte, nonce uint64)  {
+func (s *server) send(method []byte, targetId string, msg []byte, nonce uint64) {
 	header := header{method: method, nonce: nonce}
 
-	var target  uint64
+	var target uint64
 	var err error
 	if bytes.Equal(method, methodCodeSendToGroup) {
 		hash64 := fnv.New64()
@@ -62,7 +62,7 @@ func (s *server) sendMessage(method []byte, targetId string, msg Message, nonce 
 		Logger.Errorf("marshal message error:%s", err.Error())
 		return
 	}
-	s.send(method,targetId,m,nonce)
+	s.send(method, targetId, m, nonce)
 }
 
 func (s *server) receiveMessage() {
@@ -98,7 +98,7 @@ func (s *server) loop() {
 			}
 
 			if bytes.Equal(header.method, methodCodeCoinProxySend) {
-				s.handleCoinProxyMessage(data, header.nonce)
+				s.handleCoinConnectorMessage(data, header.nonce)
 				continue
 			}
 		case message := <-s.sendChan:

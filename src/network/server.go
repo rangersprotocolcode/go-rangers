@@ -69,7 +69,7 @@ func (s *server) Notify(isunicast bool, gameId string, userid string, msg string
 	s.notifyNonce = s.notifyNonce + 1
 	notifyId := s.generateNotifyId(gameId, userid)
 
-	s.send(method, notifyId,  []byte(msg), s.notifyNonce)
+	s.send(method, notifyId, []byte(msg), s.notifyNonce)
 
 }
 
@@ -162,31 +162,23 @@ func (s *server) handleClientMessage(data []byte, userId string, nonce uint64, e
 
 }
 
-func (s *server) handleCoinProxyMessage(data []byte, nonce uint64) {
-	message, error := unMarshalMessage(data)
-	if error != nil {
-		Logger.Errorf("Proto unmarshal error:%s", error.Error())
+func (s *server) handleCoinConnectorMessage(data []byte, nonce uint64) {
+	var txJson types.TxJson
+	err := json.Unmarshal(data, &txJson)
+	if err != nil {
+		Logger.Errorf("Coin connector msg unmarshal err:", err.Error())
 		return
 	}
+	Logger.Debugf("Receive message from coin connector.Tx:%v", txJson)
+	tx := txJson.ToTransaction()
+	tx.RequestId = nonce
+	Logger.Debugf(".Tx:%v", tx)
 
-	code := message.Code
-	switch code {
-	case CoinProxyNotify:
-		var txJson types.TxJson
-		err := json.Unmarshal(message.Body, &txJson)
-		if err != nil {
-			Logger.Errorf("Coin proxy msg unmarshal err:", err.Error())
-			return
-		}
-		Logger.Debugf("Receive message from coin proxy.Tx:%v", txJson)
-		tx := txJson.ToTransaction()
-		tx.RequestId = nonce
-		Logger.Debugf(".Tx:%v", tx)
-		if tx.Type == types.TransactionTypeDepositAck {
-			msg := notify.CoinProxyNotifyMessage{Tx: tx}
-			notify.BUS.Publish(notify.CoinProxyNotify, &msg)
-		}
+	if tx.Type == types.TransactionTypeDepositAck {
+		msg := notify.CoinProxyNotifyMessage{Tx: tx}
+		notify.BUS.Publish(notify.CoinProxyNotify, &msg)
 	}
+
 }
 func (s *server) generateNotifyId(gameId string, userId string) string {
 	data := []byte(gameId)
