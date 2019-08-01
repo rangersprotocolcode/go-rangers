@@ -64,7 +64,8 @@ func BytesToSign(b []byte) *Sign {
 		recid := b[64]
 		return &Sign{r, s, recid}
 	} else {
-		panic("BytesToSign must input 65 bytes!")
+		//这里组签名暂不处理
+		return nil
 	}
 }
 
