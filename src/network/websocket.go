@@ -17,7 +17,9 @@ var methodCodeBroadcast, _ = hex.DecodeString("80000002")
 var methodCodeSendToGroup, _ = hex.DecodeString("80000003")
 var methodCodeJoinGroup, _ = hex.DecodeString("80000004")
 var methodCodeQuitGroup, _ = hex.DecodeString("80000005")
-var methodCodeCoinProxySend, _ = hex.DecodeString("40000000")
+
+var methodSendToCoinConnector, _ = hex.DecodeString("30000003")
+var methodRcvFromCoinConnector, _ = hex.DecodeString("30000002")
 
 var methodNotify, _ = hex.DecodeString("20000000")
 var methodNotifyBroadcast, _ = hex.DecodeString("20000001")
@@ -97,7 +99,7 @@ func (s *server) loop() {
 				continue
 			}
 
-			if bytes.Equal(header.method, methodCodeCoinProxySend) {
+			if bytes.Equal(header.method, methodRcvFromCoinConnector) {
 				s.handleCoinConnectorMessage(data, header.nonce)
 				continue
 			}

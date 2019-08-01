@@ -45,8 +45,8 @@ func (s *server) SendToClientWriter(id string, msg []byte, nonce uint64) {
 	s.send(methodCodeClientWriter, id, msg, nonce)
 }
 
-func (s *server) SendToCoinProxy(msg Message) {
-	s.sendMessage(methodCodeCoinProxySend, "0", msg, 0)
+func (s *server) SendToCoinConnector(msg []byte) {
+	s.send(methodSendToCoinConnector, "0", msg, 0)
 }
 
 func (s *server) Notify(isunicast bool, gameId string, userid string, msg string) {

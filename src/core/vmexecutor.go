@@ -245,8 +245,7 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 	}
 
 	txLogger.Debugf("After execute withdraw.Send msg to coin proxy:%s", string(b))
-	message := network.Message{Code: network.WithDraw, Body: b}
-	network.GetNetInstance().SendToCoinProxy(message)
+	network.GetNetInstance().SendToCoinConnector(b)
 	return true
 }
 
