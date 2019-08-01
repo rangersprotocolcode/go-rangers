@@ -37,7 +37,7 @@ type GtasAPI struct {
 var gxLock *sync.RWMutex
 
 func (api *GtasAPI) GetGameType(gameId string) (*Result, error) {
-	gameType:=statemachine.Docker.GetType(gameId)
+	gameType := statemachine.Docker.GetType(gameId)
 	return successResult(gameType)
 }
 
@@ -95,7 +95,7 @@ func (api *GtasAPI) GetAccount(address string, gameId string) (*Result, error) {
 	if nil == sub {
 		return successResult(make(map[string]string))
 	}
-
+	common.DefaultLogger.Debugf("Get account address:%s,gameId:%s,account:%v", address, gameId, sub)
 	return successResult(sub)
 }
 

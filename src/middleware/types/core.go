@@ -393,6 +393,8 @@ func (txJson TxJson) ToTransaction() Transaction {
 			s = s[2:]
 		}
 		tx.Hash = common.HexToHash(txJson.Hash)
+	} else {
+		tx.Hash = tx.GenHash()
 	}
 
 	if txJson.Sign != "" {

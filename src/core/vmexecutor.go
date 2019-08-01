@@ -269,6 +269,7 @@ func (executor *VMExecutor) executeDepositNotify(accountdb *account.AccountDB, t
 
 	subAccount := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
 	txLogger.Debugf("address:%s,gameId:%s,current balance:%d,deposit balance:%d", transaction.Source, transaction.Target, subAccount.Balance.Uint64(), depositData.Amount)
+	txLogger.Debugf("Before execute deposit tx,subAccount:%v", subAccount)
 
 	depositAmount, err := utility.StrToBigInt(depositData.Amount)
 	if err != nil {
@@ -300,7 +301,7 @@ func (executor *VMExecutor) executeDepositNotify(accountdb *account.AccountDB, t
 
 	accountdb.UpdateSubAccount(common.HexToAddress(transaction.Source), transaction.Target, *subAccount)
 	b := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
-	txLogger.Debugf("After  deposit update,current balance:%d", b.Balance.Uint64())
+	txLogger.Debugf("After  deposit update,current sub account:%v", b)
 	return true
 }
 
