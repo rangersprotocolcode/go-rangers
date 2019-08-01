@@ -155,7 +155,7 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 		txLogger.Debugf("Unmarshal data error:%s", err.Error())
 		return false
 	}
-	if withDrawReq.ChainType == "" {
+	if withDrawReq.ChainType == "" || withDrawReq.Address == "" {
 		return false
 	}
 
@@ -234,7 +234,7 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 	accountdb.UpdateSubAccount(common.HexToAddress(transaction.Source), transaction.Target, *subAccount)
 
 	//发送给Coin Connector
-	withdrawData := types.WithDrawData{ChainType: withDrawReq.ChainType, Balance: withDrawReq.Balance}
+	withdrawData := types.WithDrawData{ChainType: withDrawReq.ChainType, Balance: withDrawReq.Balance, Address: withDrawReq.Address}
 	withdrawData.FT = withDrawReq.FT
 	withdrawData.NFT = nftInfo
 

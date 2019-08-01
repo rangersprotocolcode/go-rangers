@@ -346,6 +346,7 @@ type WithDrawReq struct {
 }
 
 type WithDrawData struct {
+	Address   string            `json:"address,omitempty"`
 	ChainType string            `json:"chainType,omitempty"`
 	Balance   string            `json:"balance,omitempty"`
 	FT        map[string]string `json:"ft,omitempty"`
