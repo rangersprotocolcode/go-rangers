@@ -315,12 +315,17 @@ type Group struct {
 }
 
 // 游戏的子账户
-//该结构体是要返回给客户端的，json字段不能随意更改
 type SubAccount struct {
-	Balance *big.Int          `json:"balance,omitempty"`
-	Nonce   uint64            `json:"nonce,omitempty"`
-	Ft      map[string]string `json:"ft,omitempty"` // key: 货币名 value：字符串1000000000
-	Assets  map[string]string `json:"nft,omitempty"`
+	Balance *big.Int
+	Nonce   uint64
+	Ft      map[string]string // key: 货币名 value：字符串1000000000
+	Assets  map[string]string
+}
+
+type SubAccountData struct {
+	Balance string            `json:"balance,omitempty"`
+	Ft      map[string]string `json:"ft,omitempty"`
+	Nft     map[string]string `json:"nft,omitempty"`
 }
 
 // 用于状态机内通过SDK调用layer2的数据结构
