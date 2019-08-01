@@ -26,10 +26,10 @@ type GameExecutor struct {
 客户端web socket 请求的返回数据
  */
 type response struct {
-	Id    string
-	Status  string
-	Data    string
-	Version string
+	Id      string `json:"id,omitempty"`
+	Status  string `json:"status,omitempty"`
+	Data    string `json:"data,omitempty"`
+	Version string `json:"version,omitempty"`
 }
 
 func initGameExecutor(blockChainImpl *blockChain) {
@@ -137,7 +137,7 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 func (executor *GameExecutor) makeSuccessResponse(data string, id string) []byte {
 	res := response{
 		Data:    data,
-		Id:    id,
+		Id:      id,
 		Status:  "0",
 		Version: "0.1",
 	}
