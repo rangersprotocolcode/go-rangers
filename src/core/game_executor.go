@@ -121,8 +121,7 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 			result = strconv.FormatUint(sub.Nonce, 10)
 
 		case types.TransactionTypeGetAllAsset:
-			subAccountData := types.SubAccountData{Ft: sub.Ft, Nft: sub.Assets}
-			subAccountData.Balance = strconv.FormatFloat(float64(sub.Balance.Int64())/1000000000, 'f', -1, 64)
+			subAccountData := sub.ToSubAccountData()
 			bytes, _ := json.Marshal(subAccountData)
 			result = string(bytes)
 		}

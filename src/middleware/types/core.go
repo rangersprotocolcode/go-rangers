@@ -7,6 +7,8 @@ import (
 	"bytes"
 
 	"x/src/common"
+	"strconv"
+	"x/src/utility"
 )
 
 type AddBlockOnChainSituation string
@@ -421,4 +423,17 @@ func (tx Transaction) ToTxJson() TxJson {
 	}
 	txJson.SocketRequestId = tx.SocketRequestId
 	return txJson
+}
+
+func (sub SubAccount) ToSubAccountData() SubAccountData {
+	subAccountData := SubAccountData{Ft: sub.Ft, Nft: sub.Assets}
+	subAccountData.Ft = make(map[string]string, 0)
+	if sub.Ft != nil {
+		for k, v := range sub.Ft {
+			bigInt, _ := utility.StrToBigInt(v)
+			subAccountData.Ft[k] = strconv.FormatFloat(float64(bigInt.Int64())/1000000000, 'f', -1, 64)
+		}
+	}
+	subAccountData.Balance = strconv.FormatFloat(float64(sub.Balance.Int64())/1000000000, 'f', -1, 64)
+	return subAccountData
 }

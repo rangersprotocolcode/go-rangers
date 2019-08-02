@@ -38,6 +38,25 @@ func TestStrToJson(t *testing.T) {
 	fmt.Printf("C:%v\n", c)
 }
 
+func TestStrToJson1(t *testing.T) {
+	//a := []string{"1111"}
+	//b, err := json.Marshal(a)
+	//if err != nil {
+	//	fmt.Printf("Json marshal []string err:%s", err.Error())
+	//	return
+	//}
+	//str := string(b)
+	//fmt.Println(str)
+
+	b := "[\"yyy\"]"
+	var c []string
+	err := json.Unmarshal([]byte(b), &c)
+	if err != nil {
+		fmt.Printf("Json Unmarshal []string err:%s", err.Error())
+	}
+	fmt.Printf("C:%v\n", c)
+}
+
 func TestResponse(t *testing.T) {
 	res := response{
 		Data:   "{\"status\":0,\"payload\":\"{\"code\":0,\"data\":{},\"status\":0}\"}",

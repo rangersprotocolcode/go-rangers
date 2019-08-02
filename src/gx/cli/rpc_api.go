@@ -96,7 +96,8 @@ func (api *GtasAPI) GetAccount(address string, gameId string) (*Result, error) {
 		return successResult(make(map[string]string))
 	}
 	common.DefaultLogger.Debugf("Get account address:%s,gameId:%s,account:%v", address, gameId, sub)
-	return successResult(sub)
+	data := sub.ToSubAccountData()
+	return successResult(data)
 }
 
 func getAssets(address string, gameId string) (*Result, error) {
