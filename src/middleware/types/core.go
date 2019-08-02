@@ -8,7 +8,6 @@ import (
 
 	"x/src/common"
 	"strconv"
-	"x/src/utility"
 )
 
 type AddBlockOnChainSituation string
@@ -430,7 +429,7 @@ func (sub SubAccount) ToSubAccountData() SubAccountData {
 	subAccountData.Ft = make(map[string]string, 0)
 	if sub.Ft != nil {
 		for k, v := range sub.Ft {
-			bigInt, _ := utility.StrToBigInt(v)
+			bigInt, _ := new(big.Int).SetString(v, 10)
 			subAccountData.Ft[k] = strconv.FormatFloat(float64(bigInt.Int64())/1000000000, 'f', -1, 64)
 		}
 	}

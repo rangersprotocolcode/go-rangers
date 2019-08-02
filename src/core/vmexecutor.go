@@ -246,8 +246,12 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 	t := types.Transaction{Source: transaction.Source, Target: transaction.Target, Data: string(b), Type: transaction.Type}
 	t.Hash = t.GenHash()
 
-	txLogger.Debugf("After execute withdraw.Send msg to coin proxy:%s", t.ToTxJson())
-	network.GetNetInstance().SendToCoinConnector(b)
+	msg,err := json.Marshal(t.ToTxJson())
+	if err != nil{
+		txLogger.Debugf("Json marshal tx json error:%s",err.Error())
+	}
+	txLogger.Debugf("After execute withdraw.Send msg to coin proxy:%s", msg)
+	network.GetNetInstance().SendToCoinConnector(msg)
 	return true
 }
 
