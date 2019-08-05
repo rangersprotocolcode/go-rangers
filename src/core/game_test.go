@@ -167,3 +167,11 @@ func TestStrToBigInt(t *testing.T) {
 	fmt.Printf("result:%s\n", b.String())
 
 }
+
+func TestNilStrToBigInt(t *testing.T) {
+	//m := make(map[string]string, 0)
+	//v := m["11"]
+	b := convertWithoutBase("10000000000")
+	fmt.Printf("result:%s\n", b.String())
+
+}

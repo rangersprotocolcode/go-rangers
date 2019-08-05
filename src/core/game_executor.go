@@ -205,7 +205,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 
 			if !changeBalances(txRaw.Target, txRaw.Source, mm, accountDB) {
 				result = "fail to transfer"
-				logger.Debugf("change balance  error")
+				logger.Debugf("change balances  failed")
 				break
 			}
 
