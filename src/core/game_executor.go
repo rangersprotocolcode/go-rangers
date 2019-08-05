@@ -194,15 +194,18 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 		//	}
 		//}
 
+		logger.Debugf("Rcv operator event tx:%v", txRaw)
 		if 0 != len(txRaw.ExtraData) {
 			mm := make(map[string]types.TransferData, 0)
 			if err := json.Unmarshal([]byte(txRaw.ExtraData), &mm); nil != err {
 				result = "fail to transfer"
+				logger.Debugf("Transfer data unmarshal error:%s", err.Error())
 				break
 			}
 
 			if !changeBalances(txRaw.Target, txRaw.Source, mm, accountDB) {
 				result = "fail to transfer"
+				logger.Debugf("change balance  error")
 				break
 			}
 
@@ -210,7 +213,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 
 		var outputMessage *types.OutputMessage
 		// 转账成功，调用状态机
-		if result != "fail to transfer" {
+		if result != "fail to transfer" && len(txRaw.Data) != 0 {
 			// 调用状态机
 			txRaw.SubTransactions = make([]string, 0)
 			outputMessage = statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
@@ -223,7 +226,8 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 		}
 
 		// 没有结果返回，默认出错，回滚
-		if 0 == len(result) || result == "fail to transfer" || outputMessage == nil || outputMessage.Status == 1 {
+		if 0 == len(result) || result == "fail to transfer" || len(txRaw.Data) != 0 && (outputMessage == nil || outputMessage.Status == 1) {
+			logger.Infof("Roll back tx.")
 			TxManagerInstance.RollBack(gameId)
 
 			// 加入到已执行过的交易池，打包入块不会再执行这笔交易

@@ -270,7 +270,7 @@ func (pool *TxPool) PackForCast() []*types.Transaction {
 }
 
 func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
-	if tx.Target == "" || len(tx.Data) == 0 {
+	if tx.Target == "" {
 		return ErrNil
 	}
 
