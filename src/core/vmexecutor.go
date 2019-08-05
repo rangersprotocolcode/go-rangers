@@ -120,11 +120,11 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			logger.Debugf("Execute failed tx:%s", transaction.Hash.String())
 			evictedTxs = append(evictedTxs, transaction.Hash)
 			accountdb.RevertToSnapshot(snapshot)
-			subAccount := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), "0xad77feef282221a9e9cbd24cc56ef0195353a828")
-			txLogger.Debugf("After roll back 0xad77feef282221a9e9cbd24cc56ef0195353a828:%v", subAccount)
-
-			subAccount1 := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), "0xad77feef282221a9e9cbd24cc56ef0195353a829")
-			txLogger.Debugf("After roll back 0xad77feef282221a9e9cbd24cc56ef0195353a829:%v", subAccount1)
+			//subAccount := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), "0xad77feef282221a9e9cbd24cc56ef0195353a828")
+			//txLogger.Debugf("After roll back 0xad77feef282221a9e9cbd24cc56ef0195353a828:%v", subAccount)
+			//
+			//subAccount1 := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), "0xad77feef282221a9e9cbd24cc56ef0195353a829")
+			//txLogger.Debugf("After roll back 0xad77feef282221a9e9cbd24cc56ef0195353a829:%v", subAccount1)
 		}
 
 		if success || transaction.Type != types.TransactionTypeBonus {
