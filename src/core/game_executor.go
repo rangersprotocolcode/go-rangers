@@ -173,7 +173,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 		if nil != TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw) || GetBlockChain().GetTransactionPool().IsGameData(txRaw.Hash) {
 			// bingo
 			executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
-			return ""
+			return "Tx is executed"
 		}
 
 		// 处理转账
@@ -226,7 +226,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 		}
 
 		// 没有结果返回，默认出错，回滚
-		if 0 == len(result) || result == "fail to transfer" || len(txRaw.Data) != 0 && (outputMessage == nil || outputMessage.Status == 1) {
+		if result == "fail to transfer" || len(txRaw.Data) != 0 && (outputMessage == nil || outputMessage.Status == 1) {
 			logger.Infof("Roll back tx.")
 			TxManagerInstance.RollBack(gameId)
 
@@ -237,6 +237,9 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 			}
 		} else {
 			TxManagerInstance.Commit(gameId)
+			if 0 == len(result) {
+				result = "success"
+			}
 		}
 
 	case types.TransactionTypeWithdraw:
@@ -321,11 +324,8 @@ func (executor *GameExecutor) loop() {
 			result := executor.runTransaction(txRaw)
 			logger.Infof("run tx result:%s,tx:%v", result, txRaw)
 			// reply to the client
-			if 0 != len(result) {
-				response := executor.makeSuccessResponse(result, txRaw.SocketRequestId)
-				go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
-
-			}
+			response := executor.makeSuccessResponse(result, txRaw.SocketRequestId)
+			go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
 
 			if !executor.debug {
 				executor.getCond(gameId).Broadcast()

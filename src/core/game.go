@@ -62,12 +62,12 @@ func convertWithoutBase(s string) *big.Int {
 // 这里不处理事务。调用本方法之前自行处理事务
 func changeBalances(gameId string, source string, targets map[string]types.TransferData, accountdb *account.AccountDB) bool {
 	sub := GetSubAccount(source, gameId, accountdb)
-	logger.Debugf("Change balance source sub account:%v", sub)
+	//logger.Debugf("Change balance source sub account:%v", sub)
 
 	for address, transferData := range targets {
-		logger.Debugf("transfer data:%v", transferData)
+		//logger.Debugf("transfer data:%v", transferData)
 		target := GetSubAccount(address, gameId, accountdb)
-		logger.Debugf("Change balance target sub account:%v", sub)
+		//logger.Debugf("Change balance target sub account:%v", sub)
 
 		if !transferBalance(transferData.Balance, sub, target) {
 			logger.Debugf("Change balance failed!")
@@ -136,7 +136,7 @@ func transferFT(ft map[string]string, source *types.SubAccount, target *types.Su
 
 			value := convert(valueString)
 			ownerValue := convertWithoutBase(owner)
-			logger.Debugf("ft name:%s,value:%s,value convert:%s,owner value:%s", ftName, valueString, value.String(), ownerValue.String())
+			//logger.Debugf("ft name:%s,value:%s,value convert:%s,owner value:%s", ftName, valueString, value.String(), ownerValue.String())
 			// ft 数量不够，再见
 			if ownerValue.Cmp(value) == -1 {
 				return false
