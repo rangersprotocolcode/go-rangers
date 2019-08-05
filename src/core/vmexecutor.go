@@ -120,6 +120,11 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			logger.Debugf("Execute failed tx:%s", transaction.Hash.String())
 			evictedTxs = append(evictedTxs, transaction.Hash)
 			accountdb.RevertToSnapshot(snapshot)
+			subAccount := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), "0xad77feef282221a9e9cbd24cc56ef0195353a828")
+			txLogger.Debugf("After roll back 0xad77feef282221a9e9cbd24cc56ef0195353a828:%v", subAccount)
+
+			subAccount1 := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), "0xad77feef282221a9e9cbd24cc56ef0195353a829")
+			txLogger.Debugf("After roll back 0xad77feef282221a9e9cbd24cc56ef0195353a829:%v", subAccount1)
 		}
 
 		if success || transaction.Type != types.TransactionTypeBonus {
@@ -246,9 +251,9 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 	t := types.Transaction{Source: transaction.Source, Target: transaction.Target, Data: string(b), Type: transaction.Type}
 	t.Hash = t.GenHash()
 
-	msg,err := json.Marshal(t.ToTxJson())
-	if err != nil{
-		txLogger.Debugf("Json marshal tx json error:%s",err.Error())
+	msg, err := json.Marshal(t.ToTxJson())
+	if err != nil {
+		txLogger.Debugf("Json marshal tx json error:%s", err.Error())
 	}
 	txLogger.Debugf("After execute withdraw.Send msg to coin proxy:%s", msg)
 	network.GetNetInstance().SendToCoinConnector(msg)
