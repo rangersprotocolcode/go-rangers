@@ -203,13 +203,11 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 			if err := json.Unmarshal([]byte(txRaw.ExtraData), &mm); nil != err {
 				result = "fail to transfer"
 				logger.Debugf("Transfer data unmarshal error:%s", err.Error())
-				break
 			}
 
 			if !changeBalances(txRaw.Target, txRaw.Source, mm, accountDB) {
 				result = "fail to transfer"
 				logger.Debugf("change balances  failed")
-				break
 			}
 
 		}
