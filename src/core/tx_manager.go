@@ -18,7 +18,6 @@ type TxContext struct {
 	Tx        *types.Transaction
 	snapshot  int
 	lock      *sync.Mutex
-
 }
 
 var TxManagerInstance *TxManager
@@ -42,6 +41,7 @@ func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.Acc
 
 	context := manager.context[gameId]
 	if nil == context {
+		logger.Debugf("context is nil")
 		manager.lock.Lock()
 		context = manager.context[gameId]
 		if nil == context {
@@ -72,8 +72,10 @@ func (manager *TxManager) RollBack(gameId string) {
 }
 
 func (manager *TxManager) clean(isRollback bool, gameId string) {
+	logger.Debugf("is rollback %t,game id:%s", isRollback, gameId)
 	context := manager.GetContext(gameId)
 	if nil == context {
+		logger.Debugf("clean context is nil")
 		return
 	}
 

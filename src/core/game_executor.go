@@ -169,10 +169,12 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 
 		gameId := txRaw.Target
 		accountDB := AccountDBManagerInstance.GetAccountDB(gameId)
+		logger.Infof("After get account db!")
 
 		// 已经执行过了（入块时），则不用再执行了
 		if nil != TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw) || GetBlockChain().GetTransactionPool().IsGameData(txRaw.Hash) {
 			// bingo
+			logger.Infof("Tx is executed!")
 			executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
 			return "Tx is executed"
 		}
