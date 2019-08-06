@@ -151,6 +151,7 @@ func (executor *GameExecutor) makeSuccessResponse(data string, id string) []byte
 }
 
 func (executor *GameExecutor) Write(msg notify.Message) {
+	logger.Infof("Game executor write rcv message :%v", msg)
 	executor.writeChan <- msg
 }
 func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
@@ -279,6 +280,7 @@ func (executor *GameExecutor) loop() {
 	for {
 		select {
 		case msg := <-executor.writeChan:
+			logger.Infof("Game executor write chan rcv message :%v", msg)
 			message, ok := msg.(*notify.ClientTransactionMessage)
 			if !ok {
 				logger.Debugf("GameExecutor:Write assert not ok!")
