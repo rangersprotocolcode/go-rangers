@@ -74,9 +74,32 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						if err := json.Unmarshal([]byte(sub), &data); err != nil {
 							logger.Error("Execute TransactionUpdateOperatorEvent tx:%s json unmarshal, err:%s", sub, err.Error())
 							success = false
+							break
 						} else {
 							if nil != data && 0 != len(data) {
 								for _, user := range data {
+									// 发币
+									if user.Address == "StartFT" {
+										_, flag := StartFT(user.Assets["gameId"], user.Assets["name"], user.Assets["symbol"], user.Assets["totalSupply"], accountdb)
+										if !flag {
+											success = false
+											break
+										}
+
+										continue
+									}
+
+									// 给用户币
+									if user.Address == "TransferFT" {
+										_, flag := TransferFT(user.Assets["gameId"], user.Assets["symbol"], user.Assets["target"], user.Assets["supply"], accountdb)
+										if !flag {
+											success = false
+											break
+										}
+										continue
+									}
+
+									// 用户之间转账
 									if !UpdateAsset(user, transaction.Target, accountdb) {
 										success = false
 										break

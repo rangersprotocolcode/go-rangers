@@ -319,7 +319,7 @@ type Group struct {
 type SubAccount struct {
 	Balance *big.Int
 	Nonce   uint64
-	Ft      map[string]string // key: 货币名 value：字符串1000000000
+	Ft      map[string]string // key: 货币名 value：字符串1000000000(乘以10的9次方)
 	Assets  map[string]string
 }
 
@@ -327,6 +327,22 @@ type SubAccountData struct {
 	Balance string            `json:"balance,omitempty"`
 	Ft      map[string]string `json:"ft,omitempty"`
 	Nft     map[string]string `json:"nft,omitempty"`
+}
+
+type FtInitialization struct {
+	TotalSupply string `json:"totalSupply,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Remain      string `json:"remain,omitempty"`
+}
+
+func (ft *FtInitialization) Convert(s string) *big.Int {
+	f, _ := strconv.ParseFloat(s, 64)
+	return big.NewInt(int64(f * 1000000000))
+}
+
+func (ft *FtInitialization) ConvertWithoutBase(s string) *big.Int {
+	f, _ := strconv.ParseFloat(s, 64)
+	return big.NewInt(int64(f))
 }
 
 // 用于状态机内通过SDK调用layer2的数据结构

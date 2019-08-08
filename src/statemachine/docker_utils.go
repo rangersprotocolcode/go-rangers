@@ -173,3 +173,20 @@ func (d *DockerManager) GetType(gameId string) string {
 
 	return ""
 }
+
+// 判断是否是游戏地址
+// todo: 这里只判断了本地运行的statemachine，会有漏洞
+func (d *DockerManager) IsGame(address string) bool {
+	configs := d.Config.Services
+	if 0 == len(configs) {
+		return false
+	}
+
+	for _, value := range configs {
+		if 0 == strings.Compare(value.Game, address) {
+			return true
+		}
+	}
+
+	return false
+}

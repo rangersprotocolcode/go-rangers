@@ -6,6 +6,7 @@ import (
 	"x/src/storage/account"
 	"math/big"
 	"strconv"
+	"x/src/statemachine"
 )
 
 var minusOne = big.NewInt(-1)
@@ -58,27 +59,41 @@ func convertWithoutBase(s string) *big.Int {
 }
 
 // false 表示转账失败
-// 这里是玩家与玩家（游戏）之间的转账，不操作游戏对玩家转账
+// 这里的转账包括货币、FT、NFT
+// 注意：如果source是游戏本身，那么FT会走其专属流程
 // 这里不处理事务。调用本方法之前自行处理事务
 func changeBalances(gameId string, source string, targets map[string]types.TransferData, accountdb *account.AccountDB) bool {
 	sub := GetSubAccount(source, gameId, accountdb)
-	//logger.Debugf("Change balance source sub account:%v", sub)
 
 	for address, transferData := range targets {
-		//logger.Debugf("transfer data:%v", transferData)
 		target := GetSubAccount(address, gameId, accountdb)
-		//logger.Debugf("Change balance target sub account:%v", sub)
 
+		// 转钱
 		if !transferBalance(transferData.Balance, sub, target) {
 			logger.Debugf("Change balance failed!")
 			return false
 		}
 
-		if !transferFT(transferData.FT, sub, target) {
-			logger.Debugf("Change ft failed!")
-			return false
+		// 转FT
+		ftList := transferData.FT
+		if 0 != len(ftList) {
+			// 游戏给用户转FT的特殊流程
+			// 根据source，来判断是否是游戏自己的地址
+			if statemachine.Docker.IsGame(source) {
+				for ftName, valueString := range ftList {
+					_, flag := TransferFT(gameId, ftName, address, valueString, accountdb)
+					if !flag {
+						logger.Debugf("Game Change ft failed!")
+						return false
+					}
+				}
+			} else if !transferFT(ftList, sub, target) {
+				logger.Debugf("Change ft failed!")
+				return false
+			}
 		}
 
+		// 转NFT
 		if !transferNFT(transferData.NFT, sub, target) {
 			logger.Debugf("Change nft failed!")
 			return false
