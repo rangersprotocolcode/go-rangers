@@ -10,3 +10,14 @@ services:
       - host: 6602
         target: 3306
     detached: true
+    type: "ETH"
+
+  - priority: 1
+    game: "0xf677e4051eeff7a60598cc6419b982cdeef60b01"
+    name: "mixmarvel2"
+    image: "mixmarvel_image:latest"
+    ports:
+      - host: 7772
+        target: 8080
+    detached: true
+    type: "ETH"
