@@ -17,7 +17,7 @@ services:
     name: "mixmarvel1"
     image: "mixmarvel_image:latest"
     ports:
-      - host: 7771
+      - host: 5551
         target: 8080
     detached: true
     type: "ETH"
