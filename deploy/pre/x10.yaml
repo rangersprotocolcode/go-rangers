@@ -1,21 +1,23 @@
 title: x10
 services:
   - priority: 0
-    game: "tuntunbiu"
-    name: "tuntunbiu10"
-    image: "tuntunbiu_image:latest"
+    game: "0x5d6fd9f54085490457cd534d4bdf90289fae65a7"
+    name: "snake10"
+    image: "snake_image:latest"
     ports:
-      - host: 8880
+      - host: 6660
         target: 8080
+      - host: 6600
+        target: 3306
     detached: true
-
+    type: "ETH"
 
   - priority: 1
-    game: "appid_demo_1"
-    name: "appid_demo_1_10"
-    image: "state_machine_demo_js:latest"
+    game: "0xf677e4051eeff7a60598cc6419b982cdeef60b01"
+    name: "mixmarvel10"
+    image: "mixmarvel_image:latest"
     ports:
-      - host: 7770
-        target: 7001
+      - host: 5550
+        target: 8080
     detached: true
-    cmd: "npm start"
+    type: "ETH"

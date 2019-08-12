@@ -1,20 +1,23 @@
 title: x5
 services:
   - priority: 0
-    game: "tuntunbiu"
-    name: "tuntunbiu5"
-    image: "tuntunbiu_image:latest"
+    game: "0x5d6fd9f54085490457cd534d4bdf90289fae65a7"
+    name: "snake5"
+    image: "snake_image:latest"
     ports:
-      - host: 8885
+      - host: 6665
         target: 8080
+      - host: 6605
+        target: 3306
     detached: true
+    type: "ETH"
 
   - priority: 1
-    game: "appid_demo_1"
-    name: "appid_demo_1_5"
-    image: "state_machine_demo_js:latest"
+    game: "0xf677e4051eeff7a60598cc6419b982cdeef60b01"
+    name: "mixmarvel5"
+    image: "mixmarvel_image:latest"
     ports:
-      - host: 7775
-        target: 7001
+      - host: 5555
+        target: 8080
     detached: true
-    cmd: "npm start"
+    type: "ETH"

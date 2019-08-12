@@ -1,20 +1,23 @@
 title: x6
 services:
   - priority: 0
-    game: "tuntunbiu"
-    name: "tuntunbiu6"
-    image: "tuntunbiu_image:latest"
+    game: "0x5d6fd9f54085490457cd534d4bdf90289fae65a7"
+    name: "snake6"
+    image: "snake_image:latest"
     ports:
-      - host: 8886
+      - host: 6666
         target: 8080
+      - host: 6606
+        target: 3306
     detached: true
+    type: "ETH"
 
   - priority: 1
-    game: "appid_demo_1"
-    name: "appid_demo_1_6"
-    image: "state_machine_demo_js:latest"
+    game: "0xf677e4051eeff7a60598cc6419b982cdeef60b01"
+    name: "mixmarvel6"
+    image: "mixmarvel_image:latest"
     ports:
-      - host: 7776
-        target: 7001
+      - host: 5556
+        target: 8080
     detached: true
-    cmd: "npm start"
+    type: "ETH"
