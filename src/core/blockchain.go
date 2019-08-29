@@ -395,7 +395,7 @@ func (chain *blockChain) GetNonce(address common.Address, gameId string) uint64 
 		return 0
 	}
 
-	return chain.latestStateDB.GetNonce(common.BytesToAddress(address.Bytes()), gameId)
+	return chain.latestStateDB.GetNonce(common.BytesToAddress(address.Bytes()))
 }
 
 func (chain *blockChain) Close() {

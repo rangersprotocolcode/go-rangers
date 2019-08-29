@@ -196,6 +196,27 @@ func (adb *AccountDB) Database() AccountDatabase {
 	return adb.db
 }
 
+func (self *AccountDB) Copy() *AccountDB {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
+	state := &AccountDB{
+		db:                  self.db,
+		trie:                self.trie,
+		accountObjects:      new(sync.Map),
+		accountObjectsDirty: make(map[common.Address]struct{}, len(self.accountObjectsDirty)),
+		refund:              self.refund,
+		logSize:             self.logSize,
+	}
+
+	for addr := range self.accountObjectsDirty {
+		obj, _ := self.accountObjects.Load(addr)
+		state.accountObjects.Store(addr, obj.(*accountObject).deepCopy(state, state.MarkAccountObjectDirty))
+		state.accountObjectsDirty[addr] = struct{}{}
+	}
+	return state
+}
+
 // StorageTrie returns the storage trie of an account.
 // The return value is a copy and is nil for non-existent accounts.
 func (adb *AccountDB) StorageTrie(a common.Address) Trie {
