@@ -6,9 +6,8 @@ import (
 
 	"x/src/common"
 	"x/src/storage/trie"
-	"x/src/middleware/serialize"
+	"x/src/storage/rlp"
 )
-
 // NodeIterator is an iterator to traverse the entire state trie post-order,
 // including all of the contract code and contract state tries.
 type NodeIterator struct {
@@ -89,7 +88,7 @@ func (it *NodeIterator) step() error {
 	}
 	// Otherwise we've reached an account node, initiate data iteration
 	var account Account
-	if err := serialize.Decode(bytes.NewReader(it.stateIt.LeafBlob()), &account); err != nil {
+	if err := rlp.Decode(bytes.NewReader(it.stateIt.LeafBlob()), &account); err != nil {
 		return err
 	}
 	dataTrie, err := it.state.db.OpenStorageTrie(common.BytesToHash(it.stateIt.LeafKey()), account.Root)

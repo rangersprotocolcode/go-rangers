@@ -33,8 +33,8 @@ type (
 		prev    uint64
 	}
 	storageChange struct {
-		account       *common.Address
-		key string
+		account  *common.Address
+		key      []byte
 		prevalue []byte
 	}
 	codeChange struct {
@@ -56,7 +56,6 @@ type (
 )
 
 func (ch createObjectChange) undo(s *AccountDB) {
-	//delete(s.accountObjects, *ch.account)
 	s.accountObjects.Delete(*ch.account)
 	delete(s.accountObjectsDirty, *ch.account)
 }
@@ -73,7 +72,7 @@ func (ch suicideChange) undo(s *AccountDB) {
 	}
 }
 
-var ripemd = common.HexToAddress("0000000000000000000000000000000000000003")
+var ripemd = common.StringToAddress("0000000000000000000000000000000000000003")
 
 func (ch touchChange) undo(s *AccountDB) {
 	if !ch.prev && *ch.account != ripemd {

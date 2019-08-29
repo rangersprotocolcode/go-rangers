@@ -11,12 +11,12 @@ type DataIterator struct {
 	prefix string
 }
 
-func (di *DataIterator) Next() bool{
-	if len(di.prefix) == 0{
+func (di *DataIterator) Next() bool {
+	if len(di.prefix) == 0 {
 		return di.Iterator.Next()
 	}
-	for di.Iterator.Next(){
-		if strings.HasPrefix(string(di.Key), di.prefix){
+	for di.Iterator.Next() {
+		if strings.HasPrefix(string(di.Key), di.prefix) {
 			return true
 		}
 	}
@@ -24,9 +24,8 @@ func (di *DataIterator) Next() bool{
 }
 
 func (di *DataIterator) GetValue() []byte {
-	if v,ok := di.object.dirtyStorage[string(di.Key)];ok{
+	if v, ok := di.object.dirtyStorage[string(di.Key)]; ok {
 		return v
-	} else {
-		return di.Value
 	}
+	return di.Value
 }

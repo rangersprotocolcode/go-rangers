@@ -7,12 +7,12 @@ import (
 	"sync"
 
 	"x/src/storage/trie"
-	"x/src/middleware/serialize"
+
 	"golang.org/x/crypto/sha3"
 	"x/src/common"
-	"unsafe"
-	"x/src/middleware/types"
+
 	"x/src/storage/rlp"
+	"x/src/middleware/types"
 )
 
 type revision struct {
@@ -21,19 +21,30 @@ type revision struct {
 }
 
 var (
+	// emptyData is the known root hash of an empty trie.
 	emptyData = sha3.Sum256(nil)
 
+	// emptyCode is the known hash of the empty TVM bytecode.
 	emptyCode = sha3.Sum256(nil)
 )
 
+// AccountDB are used to store anything
+// within the merkle trie. AccountDB take care of caching and storing
+// nested states. It's the general query interface to retrieve:
+// * Contracts
+// * Accounts
 type AccountDB struct {
 	db   AccountDatabase
 	trie Trie
 
-	//accountObjects      map[common.Address]*accountObject
 	accountObjects      *sync.Map
 	accountObjectsDirty map[common.Address]struct{}
 
+	// DB error.
+	// Account objects are used by the consensus core and VM which are
+	// unable to deal with database-level errors. Any error that occurs
+	// du	ring a database read is memoized here and will eventually be returned
+	// by AccountDB.Commit.
 	dbErr error
 
 	refund uint64
@@ -44,93 +55,92 @@ type AccountDB struct {
 
 	transitions    transition
 	validRevisions []revision
-	nextRevisionId int
+	nextRevisionID int
 
-	lock sync.Mutex
+	lock sync.RWMutex
 }
 
-//func NewAccountDBWithMap(root common.Hash, db AccountDatabase, nodes map[string]*[]byte) (*AccountDB, error) {
-//	tr, err := db.OpenTrieWithMap(root, nodes)
-//	if err != nil {
-//		return nil, err
-//	}
-//	return &AccountDB{
-//		db:   db,
-//		trie: tr,
-//		//accountObjects:      make(map[common.Address]*accountObject),
-//		accountObjectsDirty: make(map[common.Address]struct{}),
-//	}, nil
-//}
-
+// Create a new account from a given trie.
 func NewAccountDB(root common.Hash, db AccountDatabase) (*AccountDB, error) {
 	tr, err := db.OpenTrie(root)
 	if err != nil {
 		return nil, err
 	}
-	accountdb := &AccountDB{
-		db:   db,
-		trie: tr,
-		//accountObjects:      make(map[common.Address]*accountObject),
+	accountDb := &AccountDB{
+		db:                  db,
+		trie:                tr,
 		accountObjects:      new(sync.Map),
 		accountObjectsDirty: make(map[common.Address]struct{}),
 	}
-	return accountdb, nil
+	return accountDb, nil
 }
 
-func (self *AccountDB) GetTrie() Trie {
-	return self.trie
-}
-
-func (self *AccountDB) setError(err error) {
-	if self.dbErr == nil {
-		self.dbErr = err
+// setError remembers the first non-nil error it is called with.
+func (adb *AccountDB) setError(err error) {
+	if adb.dbErr == nil {
+		adb.dbErr = err
 	}
 }
 
-func (self *AccountDB) Error() error {
-	return self.dbErr
+// RemoveData set data nil
+func (adb *AccountDB) RemoveData(addr common.Address, key []byte) {
+	adb.SetData(addr, key, nil)
 }
 
-func (self *AccountDB) Reset(root common.Hash) error {
-	tr, err := self.db.OpenTrie(root)
+// Error get the first non-nil error it is called with.
+func (adb *AccountDB) Error() error {
+	return adb.dbErr
+}
+
+// Reset clears out all ephemeral state objects from the state db, but keeps
+// the underlying state trie to avoid reloading data for the next operations.
+func (adb *AccountDB) Reset(root common.Hash) error {
+	tr, err := adb.db.OpenTrie(root)
 	if err != nil {
 		return err
 	}
-	self.trie = tr
-	self.accountObjects = new(sync.Map)
-	self.accountObjectsDirty = make(map[common.Address]struct{})
-	self.thash = common.Hash{}
-	self.bhash = common.Hash{}
-	self.txIndex = 0
-	self.logSize = 0
-	self.clearJournalAndRefund()
+	adb.trie = tr
+	adb.accountObjects = new(sync.Map)
+	adb.accountObjectsDirty = make(map[common.Address]struct{})
+	adb.thash = common.Hash{}
+	adb.bhash = common.Hash{}
+	adb.txIndex = 0
+	adb.logSize = 0
+	adb.clearJournalAndRefund()
 	return nil
 }
 
-func (self *AccountDB) AddRefund(gas uint64) {
-	self.transitions = append(self.transitions, refundChange{prev: self.refund})
-	self.refund += gas
+// AddRefund adds gas to the refund counter
+func (adb *AccountDB) AddRefund(gas uint64) {
+	adb.transitions = append(adb.transitions, refundChange{prev: adb.refund})
+	adb.refund += gas
 }
 
-func (self *AccountDB) Exist(addr common.Address) bool {
-	return self.getAccountObject(addr) != nil
+// Exist reports whether the given account address exists in the state.
+// Notably this also returns true for suicided accounts.
+func (adb *AccountDB) Exist(addr common.Address) bool {
+	return adb.getAccountObject(addr) != nil
 }
 
-func (self *AccountDB) Empty(addr common.Address) bool {
-	so := self.getAccountObject(addr)
+// Empty returns whether the state object is either non-existent
+// or (balance = nonce = code = 0)
+func (adb *AccountDB) Empty(addr common.Address) bool {
+	so := adb.getAccountObject(addr)
 	return so == nil || so.empty()
 }
 
-func (self *AccountDB) GetBalance(addr common.Address) *big.Int {
-	accountObject := self.getAccountObject(addr)
+// GetBalance Retrieve the balance from the given address or 0 if object not found
+func (adb *AccountDB) GetBalance(addr common.Address) *big.Int {
+	accountObject := adb.getAccountObject(addr)
 	if accountObject != nil {
 		return accountObject.Balance()
 	}
 	return common.Big0
 }
 
-func (self *AccountDB) GetNonce(addr common.Address, gameId string) uint64 {
-	accountObject := self.getAccountObject(addr)
+// GetBalance Retrieve the nonce from the given address or 0 if object not found
+func (adb *AccountDB) GetNonce(addr common.Address) uint64 {
+	accountObject := adb.getAccountObject(addr)
 	if accountObject != nil {
 		return accountObject.Nonce()
 	}
@@ -138,118 +148,145 @@ func (self *AccountDB) GetNonce(addr common.Address, gameId string) uint64 {
 	return 0
 }
 
-func (self *AccountDB) GetCode(addr common.Address) []byte {
-	stateObject := self.getAccountObject(addr)
+// GetCode returns the contract code associated with this object, if any.
+func (adb *AccountDB) GetCode(addr common.Address) []byte {
+	stateObject := adb.getAccountObject(addr)
 	if stateObject != nil {
-		return stateObject.Code(self.db)
+		return stateObject.Code(adb.db)
 	}
 	return nil
 }
 
-func (self *AccountDB) GetCodeSize(addr common.Address) int {
-	stateObject := self.getAccountObject(addr)
+// GetCodeSize retrieves a particular contracts code's size.
+func (adb *AccountDB) GetCodeSize(addr common.Address) int {
+	stateObject := adb.getAccountObject(addr)
 	if stateObject == nil {
 		return 0
 	}
 	if stateObject.code != nil {
 		return len(stateObject.code)
 	}
-	size, err := self.db.ContractCodeSize(stateObject.addrHash, common.BytesToHash(stateObject.CodeHash()))
+	size, err := adb.db.ContractCodeSize(stateObject.addrHash, common.BytesToHash(stateObject.CodeHash()))
 	if err != nil {
-		self.setError(err)
+		adb.setError(err)
 	}
 	return size
 }
 
-func (self *AccountDB) GetCodeHash(addr common.Address) common.Hash {
-	stateObject := self.getAccountObject(addr)
+// GetCodeHash returns code's hash
+func (adb *AccountDB) GetCodeHash(addr common.Address) common.Hash {
+	stateObject := adb.getAccountObject(addr)
 	if stateObject == nil {
 		return common.Hash{}
 	}
 	return common.BytesToHash(stateObject.CodeHash())
 }
 
-func (self *AccountDB) GetData(a common.Address, b string) []byte {
-	stateObject := self.getAccountObject(a)
+// GetData retrieves a value from the account storage trie.
+func (adb *AccountDB) GetData(a common.Address, key []byte) []byte {
+	stateObject := adb.getAccountObject(a)
 	if stateObject != nil {
-		return stateObject.GetData(self.db, b)
+		return stateObject.GetData(adb.db, key)
 	}
 	return nil
 }
 
-func (self *AccountDB) RemoveData(a common.Address, b string) {
-	self.SetData(a, b, nil)
+// Database retrieves the low level database supporting the lower level trie ops.
+func (adb *AccountDB) Database() AccountDatabase {
+	return adb.db
 }
 
-func (self *AccountDB) Database() AccountDatabase {
-	return self.db
-}
-
-func (self *AccountDB) StorageTrie(a common.Address) Trie {
-	stateObject := self.getAccountObject(a)
+// StorageTrie returns the storage trie of an account.
+// The return value is a copy and is nil for non-existent accounts.
+func (adb *AccountDB) StorageTrie(a common.Address) Trie {
+	stateObject := adb.getAccountObject(a)
 	if stateObject == nil {
 		return nil
 	}
-	cpy := stateObject.deepCopy(self, nil)
-	return cpy.updateTrie(self.db)
+	cpy := stateObject.deepCopy(adb, nil)
+	return cpy.updateTrie(adb.db)
 }
 
-func (self *AccountDB) HasSuicided(addr common.Address) bool {
-	stateObject := self.getAccountObject(addr)
+// HasSuicided returns this account is suicided
+func (adb *AccountDB) HasSuicided(addr common.Address) bool {
+	stateObject := adb.getAccountObject(addr)
 	if stateObject != nil {
 		return stateObject.suicided
 	}
 	return false
 }
 
-func (self *AccountDB) AddBalance(addr common.Address, amount *big.Int) {
-	stateObject := self.GetOrNewAccountObject(addr)
+// AddBalance adds amount to the account associated with addr.
+func (adb *AccountDB) AddBalance(addr common.Address, amount *big.Int) {
+	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {
 		stateObject.AddBalance(amount)
 	}
 }
 
-func (self *AccountDB) SubBalance(addr common.Address, amount *big.Int) {
-	stateObject := self.GetOrNewAccountObject(addr)
+// SubBalance subtracts amount from the account associated with addr.
+func (adb *AccountDB) SubBalance(addr common.Address, amount *big.Int) {
+	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {
 		stateObject.SubBalance(amount)
 	}
 }
 
-func (self *AccountDB) SetBalance(addr common.Address, amount *big.Int) {
-	stateObject := self.GetOrNewAccountObject(addr)
+func (adb *AccountDB) SetBalance(addr common.Address, amount *big.Int) {
+	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {
 		stateObject.SetBalance(amount)
 	}
 }
 
-func (self *AccountDB) SetNonce(addr common.Address, nonce uint64) {
-	stateObject := self.GetOrNewAccountObject(addr)
+func (adb *AccountDB) SetNonce(addr common.Address, nonce uint64) {
+	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {
 		stateObject.SetNonce(nonce)
 	}
 }
 
-func (self *AccountDB) SetCode(addr common.Address, code []byte) {
-	stateObject := self.GetOrNewAccountObject(addr)
+func (adb *AccountDB) SetCode(addr common.Address, code []byte) {
+	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {
 		stateObject.SetCode(sha3.Sum256(code), code)
 	}
 }
 
-func (self *AccountDB) SetData(addr common.Address, key string, value []byte) {
-	stateObject := self.GetOrNewAccountObject(addr)
+func (adb *AccountDB) SetData(addr common.Address, key []byte, value []byte) {
+	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {
-		stateObject.SetData(self.db, key, value)
+		stateObject.SetData(adb.db, key, value)
 	}
 }
 
-func (self *AccountDB) Suicide(addr common.Address) bool {
-	stateObject := self.getAccountObject(addr)
+func (adb *AccountDB) Transfer(sender, recipient common.Address, amount *big.Int) {
+	// Escape if amount is zero
+	if amount.Sign() <= 0 {
+		return
+	}
+	adb.SubBalance(sender, amount)
+	adb.AddBalance(recipient, amount)
+}
+
+func (adb *AccountDB) CanTransfer(addr common.Address, amount *big.Int) bool {
+	if amount.Sign() == -1 {
+		return false
+	}
+	return adb.GetBalance(addr).Cmp(amount) >= 0
+}
+
+// Suicide marks the given account as suicided.
+// This clears the account balance.
+//
+// The account's account object is still available until the account is committed,
+// getAccountObject will return a non-nil account after Suicide.
+func (adb *AccountDB) Suicide(addr common.Address) bool {
+	stateObject := adb.getAccountObject(addr)
 	if stateObject == nil {
 		return false
 	}
-	self.transitions = append(self.transitions, suicideChange{
+	adb.transitions = append(adb.transitions, suicideChange{
 		account:     &addr,
 		prev:        stateObject.suicided,
 		prevbalance: new(big.Int).Set(stateObject.Balance()),
@@ -260,41 +297,42 @@ func (self *AccountDB) Suicide(addr common.Address) bool {
 	return true
 }
 
-func (self *AccountDB) updateAccountObject(stateObject *accountObject) {
+// updateStateObject writes the given object to the trie.
+func (adb *AccountDB) updateAccountObject(stateObject *accountObject) {
 	addr := stateObject.Address()
-	data, err := rlp.EncodeToBytes(stateObject)
+	data, err := rlp.EncodeToBytes(stateObject.data)
 	if err != nil {
 		panic(fmt.Errorf("can't serialize object at %x: %v", addr[:], err))
 	}
-	self.setError(self.trie.TryUpdate(addr[:], data))
+	adb.setError(adb.trie.TryUpdate(addr[:], data))
 }
 
-func (self *AccountDB) deleteAccountObject(stateObject *accountObject) {
+// deleteStateObject removes the given object from the state trie.
+func (adb *AccountDB) deleteAccountObject(stateObject *accountObject) {
 	stateObject.deleted = true
 	addr := stateObject.Address()
-	self.setError(self.trie.TryDelete(addr[:]))
+	adb.setError(adb.trie.TryDelete(addr[:]))
 }
 
-func (self *AccountDB) getAccountObjectFromTrie(addr common.Address) (stateObject *accountObject) {
-	enc, err := self.trie.TryGet(addr[:])
+// Retrieve a account object given by the address. Returns nil if not found.
+func (adb *AccountDB) getAccountObjectFromTrie(addr common.Address) (stateObject *accountObject) {
+	enc, err := adb.trie.TryGet(addr[:])
 	if len(enc) == 0 {
-		self.setError(err)
+		adb.setError(err)
 		return nil
 	}
 	var data Account
 	if err := rlp.DecodeBytes(enc, &data); err != nil {
-		common.DefaultLogger.Error("Failed to decode state object", "addr", addr, "err", err)
 		return nil
 	}
 
-	obj := newAccountObject(self, addr, data, self.MarkAccountObjectDirty)
-	//self.setAccountObject(obj)
+	obj := newAccountObject(adb, addr, data, adb.MarkAccountObjectDirty)
 	return obj
 }
 
-func (self *AccountDB) getAccountObject(addr common.Address) (stateObject *accountObject) {
-
-	if obj, ok := self.accountObjects.Load(addr); ok {
+// Retrieve a state object given by the address. Returns nil if not found.
+func (adb *AccountDB) getAccountObject(addr common.Address) (stateObject *accountObject) {
+	if obj, ok := adb.accountObjects.Load(addr); ok {
 		obj2 := obj.(*accountObject)
 		if obj2.deleted {
 			return nil
@@ -302,239 +340,208 @@ func (self *AccountDB) getAccountObject(addr common.Address) (stateObject *accou
 		return obj2
 	}
 
-	obj := self.getAccountObjectFromTrie(addr)
+	obj := adb.getAccountObjectFromTrie(addr)
 	if obj != nil {
-		self.setAccountObject(obj)
+		adb.setAccountObject(obj)
 	}
 	return obj
 }
 
-func (self *AccountDB) setAccountObject(object *accountObject) {
-	self.accountObjects.Store(object.Address(), object)
+func (adb *AccountDB) setAccountObject(object *accountObject) {
+	adb.accountObjects.LoadOrStore(object.Address(), object)
 }
 
-func (self *AccountDB) GetOrNewAccountObject(addr common.Address) *accountObject {
-	stateObject := self.getAccountObject(addr)
+func (adb *AccountDB) getOrNewAccountObject(addr common.Address) *accountObject {
+	stateObject := adb.getAccountObject(addr)
 	if stateObject == nil || stateObject.deleted {
-		stateObject, _ = self.createObject(addr)
+		stateObject, _ = adb.createObject(addr)
 	}
 	return stateObject
 }
 
-func (self *AccountDB) MarkAccountObjectDirty(addr common.Address) {
-	self.accountObjectsDirty[addr] = struct{}{}
+// MarkAccountObjectDirty Record the modified accounts
+func (adb *AccountDB) MarkAccountObjectDirty(addr common.Address) {
+	adb.accountObjectsDirty[addr] = struct{}{}
 }
 
-func (self *AccountDB) createObject(addr common.Address) (newobj, prev *accountObject) {
-	prev = self.getAccountObject(addr)
-	newobj = newAccountObject(self, addr, Account{}, self.MarkAccountObjectDirty)
+func (adb *AccountDB) createObject(addr common.Address) (newobj, prev *accountObject) {
+	prev = adb.getAccountObject(addr)
+	newobj = newAccountObject(adb, addr, Account{}, adb.MarkAccountObjectDirty)
 	newobj.setNonce(0) // sets the object to dirty
 	if prev == nil {
-		self.transitions = append(self.transitions, createObjectChange{account: &addr})
+		adb.transitions = append(adb.transitions, createObjectChange{account: &addr})
 	} else {
-		self.transitions = append(self.transitions, resetObjectChange{prev: prev})
+		adb.transitions = append(adb.transitions, resetObjectChange{prev: prev})
 	}
-	self.setAccountObject(newobj)
+	adb.setAccountObject(newobj)
 	return newobj, prev
 }
 
-func (self *AccountDB) CreateAccount(addr common.Address) {
-	new, prev := self.createObject(addr)
+// CreateAccount explicitly creates a state object. If a state object with the address
+// already exists the balance is carried over to the new account.
+func (adb *AccountDB) CreateAccount(addr common.Address) {
+	new, prev := adb.createObject(addr)
 	if prev != nil {
 		new.setBalance(prev.data.Balance)
 	}
 }
 
-func (self *AccountDB) DataIterator(addr common.Address, prefix string) *trie.Iterator {
-	stateObject := self.getAccountObjectFromTrie(addr)
+// DataIterator returns a new key-value iterator from a node iterator
+func (adb *AccountDB) DataIterator(addr common.Address, prefix []byte) *trie.Iterator {
+	stateObject := adb.getAccountObject(addr)
 	if stateObject != nil {
-		return stateObject.DataIterator(self.db, []byte(prefix))
-	} else {
-		return nil
+		return stateObject.DataIterator(adb.db, prefix)
 	}
+	return nil
 }
 
-func (self *AccountDB) DataNext(iterator uintptr) string {
-	iter := (*trie.Iterator)(unsafe.Pointer(iterator))
-	if iter == nil {
-		return `{"key":"","value":"","hasValue":0}`
-	}
-	hasValue := 1
-	var key string = ""
-	var value string = ""
-	if len(iter.Key) != 0 {
-		key = string(iter.Key)
-		value = string(iter.Value)
-	}
-	if !iter.Next() { //no data
-		hasValue = 0
-	}
-	if key == "" {
-		return fmt.Sprintf(`{"key":"","value":"","hasValue":%d}`, hasValue)
-	}
-	if len(value) > 0 {
-		valueType := value[0:1]
-		if valueType == "0" { //this is map node
-			hasValue = 2
-		} else {
-			value = value[1:]
-		}
-	} else {
-		return `{"key":"","value":"","hasValue":0}`
-	}
-	return fmt.Sprintf(`{"key":"%s","value":%s,"hasValue":%d}`, key, value, hasValue)
-}
+////DataNext returns next key-value data from iterator
+//func (adb *AccountDB) DataNext(iterator uintptr) []byte {
+//	iter := (*trie.Iterator)(unsafe.Pointer(iterator))
+//	if iter == nil {
+//		return `{"key":"","value":"","hasValue":0}`
+//	}
+//	hasValue := 1
+//	var key string
+//	var value string
+//	if len(iter.Key) != 0 {
+//		key = string(iter.Key)
+//		value = string(iter.Value)
+//	}
+//
+//	// Means no data
+//	if !iter.Next() {
+//		hasValue = 0
+//	}
+//	if key == "" {
+//		return fmt.Sprintf(`{"key":"","value":"","hasValue":%d}`, hasValue)
+//	}
+//	if len(value) > 0 {
+//		valueType := value[0:1]
+//		if valueType == "0" { // This is map node
+//			hasValue = 2
+//		} else {
+//			value = value[1:]
+//		}
+//	} else {
+//		return `{"key":"","value":"","hasValue":0}`
+//	}
+//	return fmt.Sprintf(`{"key":"%s","value":%s,"hasValue":%d}`, key, value, hasValue)
+//}
 
-func (self *AccountDB) Copy() *AccountDB {
-	self.lock.Lock()
-	defer self.lock.Unlock()
-
-	state := &AccountDB{
-		db:                  self.db,
-		trie:                self.trie,
-		accountObjects:      new(sync.Map),
-		accountObjectsDirty: make(map[common.Address]struct{}, len(self.accountObjectsDirty)),
-		refund:              self.refund,
-		logSize:             self.logSize,
-	}
-
-	for addr := range self.accountObjectsDirty {
-		obj, _ := self.accountObjects.Load(addr)
-		state.accountObjects.Store(addr, obj.(*accountObject).deepCopy(state, state.MarkAccountObjectDirty))
-		state.accountObjectsDirty[addr] = struct{}{}
-	}
-	return state
-}
-
-func (self *AccountDB) Snapshot() int {
-	id := self.nextRevisionId
-	self.nextRevisionId++
-	self.validRevisions = append(self.validRevisions, revision{id, len(self.transitions)})
+//// Snapshot returns an identifier for the current revision of the account.
+func (adb *AccountDB) Snapshot() int {
+	id := adb.nextRevisionID
+	adb.nextRevisionID++
+	adb.validRevisions = append(adb.validRevisions, revision{id, len(adb.transitions)})
 	return id
 }
 
-func (self *AccountDB) RevertToSnapshot(revid int) {
-
-	idx := sort.Search(len(self.validRevisions), func(i int) bool {
-		return self.validRevisions[i].id >= revid
+// RevertToSnapshot reverts all state changes made since the given revision.
+func (adb *AccountDB) RevertToSnapshot(revid int) {
+	// Find the snapshot in the stack of valid snapshots.
+	idx := sort.Search(len(adb.validRevisions), func(i int) bool {
+		return adb.validRevisions[i].id >= revid
 	})
-	if idx == len(self.validRevisions) || self.validRevisions[idx].id != revid {
+	if idx == len(adb.validRevisions) || adb.validRevisions[idx].id != revid {
 		panic(fmt.Errorf("revision id %v cannot be reverted", revid))
 	}
-	snapshot := self.validRevisions[idx].journalIndex
-
-	for i := len(self.transitions) - 1; i >= snapshot; i-- {
-		self.transitions[i].undo(self)
+	snapshot := adb.validRevisions[idx].journalIndex
+	for i := len(adb.transitions) - 1; i >= snapshot; i-- {
+		adb.transitions[i].undo(adb)
 	}
-	self.transitions = self.transitions[:snapshot]
-
-	self.validRevisions = self.validRevisions[:idx]
+	adb.transitions = adb.transitions[:snapshot]
+	adb.validRevisions = adb.validRevisions[:idx]
 }
 
-func (self *AccountDB) GetRefund() uint64 {
-	return self.refund
+// GetRefund returns the current value of the refund counter.
+func (adb *AccountDB) GetRefund() uint64 {
+	return adb.refund
 }
 
-func (s *AccountDB) Finalise(deleteEmptyObjects bool) {
-	for addr := range s.accountObjectsDirty {
-		object, _ := s.accountObjects.Load(addr)
+// Finalise finalises the state by removing the self destructed objects
+// and clears the journal as well as the refunds.
+func (adb *AccountDB) Finalise(deleteEmptyObjects bool) {
+	for addr := range adb.accountObjectsDirty {
+		object, exist := adb.accountObjects.Load(addr)
+		if !exist {
+			continue
+		}
 		accountObject := object.(*accountObject)
 		if accountObject.suicided || (deleteEmptyObjects && accountObject.empty()) {
-			s.deleteAccountObject(accountObject)
+			adb.deleteAccountObject(accountObject)
 		} else {
-			accountObject.updateRoot(s.db)
-			s.updateAccountObject(accountObject)
+			accountObject.updateRoot(adb.db)
+			adb.updateAccountObject(accountObject)
 		}
 	}
 
-	s.clearJournalAndRefund()
+	adb.clearJournalAndRefund()
 }
 
-func (s *AccountDB) IntermediateRoot(deleteEmptyObjects bool) common.Hash {
-	s.Finalise(deleteEmptyObjects)
-	return s.trie.Hash()
+// IntermediateRoot computes the current root hash of the state trie.
+// It is called in between transactions to get the root hash that
+// goes into transaction receipts.
+func (adb *AccountDB) IntermediateRoot(deleteEmptyObjects bool) common.Hash {
+	adb.Finalise(deleteEmptyObjects)
+	return adb.trie.Hash()
 }
 
-func (self *AccountDB) Prepare(thash, bhash common.Hash, ti int) {
-	self.thash = thash
-	self.bhash = bhash
-	self.txIndex = ti
+func (adb *AccountDB) clearJournalAndRefund() {
+	adb.transitions = nil
+	adb.validRevisions = adb.validRevisions[:0]
+	adb.refund = 0
 }
 
-func (s *AccountDB) DeleteSuicides() {
-	s.clearJournalAndRefund()
-
-	for addr := range s.accountObjectsDirty {
-		object, _ := s.accountObjects.Load(addr)
-		accountObject := object.(*accountObject)
-
-		if accountObject.suicided {
-			accountObject.deleted = true
-		}
-		delete(s.accountObjectsDirty, addr)
-	}
-}
-
-func (s *AccountDB) clearJournalAndRefund() {
-	s.transitions = nil
-	s.validRevisions = s.validRevisions[:0]
-	s.refund = 0
-}
-
-func (s *AccountDB) Commit(deleteEmptyObjects bool) (root common.Hash, err error) {
-	defer s.clearJournalAndRefund()
+// Commit writes the state to the underlying in-memory trie database.
+func (adb *AccountDB) Commit(deleteEmptyObjects bool) (root common.Hash, err error) {
+	defer adb.clearJournalAndRefund()
 	var e *error
-	s.accountObjects.Range(func(key, value interface{}) bool {
-		//for addr, accountObject := range s.accountObjects {
+	adb.accountObjects.Range(func(key, value interface{}) bool {
 		addr := key.(common.Address)
-		_, isDirty := s.accountObjectsDirty[addr]
+		_, isDirty := adb.accountObjectsDirty[addr]
 		accountObject := value.(*accountObject)
 		switch {
 		case accountObject.suicided || (isDirty && deleteEmptyObjects && accountObject.empty()):
-
-			s.deleteAccountObject(accountObject)
+			adb.deleteAccountObject(accountObject)
 		case isDirty:
-
 			if accountObject.code != nil && accountObject.dirtyCode {
-				s.db.TrieDB().InsertBlob(common.BytesToHash(accountObject.CodeHash()), accountObject.code)
+				adb.db.TrieDB().InsertBlob(common.BytesToHash(accountObject.CodeHash()), accountObject.code)
 				accountObject.dirtyCode = false
 			}
-
-			if err := accountObject.CommitTrie(s.db); err != nil {
+			// Write any storage changes in the state object to its storage trie.
+			if err := accountObject.CommitTrie(adb.db); err != nil {
 				e = &err
 				return false
-				//return common.Hash{}, err
 			}
-
-			s.updateAccountObject(accountObject)
+			// Update the object in the main account trie.
+			adb.updateAccountObject(accountObject)
 		}
-		delete(s.accountObjectsDirty, addr)
+		delete(adb.accountObjectsDirty, addr)
 		return true
 	})
 	if e != nil {
 		return common.Hash{}, *e
 	}
-
-	root, err = s.trie.Commit(func(leaf []byte, parent common.Hash) error {
+	root, err = adb.trie.Commit(func(leaf []byte, parent common.Hash) error {
 		var account Account
-		if err := serialize.DecodeBytes(leaf, &account); err != nil {
+		if err := rlp.DecodeBytes(leaf, &account); err != nil {
 			return nil
 		}
 		if account.Root != emptyData {
-			s.db.TrieDB().Reference(account.Root, parent)
+			adb.db.TrieDB().Reference(account.Root, parent)
 		}
 		code := common.BytesToHash(account.CodeHash)
 		if code != emptyCode {
-			s.db.TrieDB().Reference(code, parent)
+			adb.db.TrieDB().Reference(code, parent)
 		}
 		return nil
 	})
-	//s.db.PushTrie(root, s.trie)
 	return root, err
 }
 
 func (accountDB *AccountDB) GetSubAccount(address common.Address, gameId string) *types.SubAccount {
-	subAccountByte := accountDB.GetData(address, gameId)
+	subAccountByte := accountDB.GetData(address, []byte(gameId))
 	subAccount, err := types.UnMarshalSubAccount(subAccountByte)
 	if err != nil {
 		return nil
@@ -543,10 +550,10 @@ func (accountDB *AccountDB) GetSubAccount(address common.Address, gameId string)
 }
 
 func (accountDB *AccountDB) UpdateSubAccount(address common.Address, gameId string, subAccount types.SubAccount) {
-	byte, err := types.MarshalSubAccount(subAccount)
+	data, err := types.MarshalSubAccount(subAccount)
 	if err != nil {
 		return
 	}
 
-	accountDB.SetData(address, gameId, byte)
+	accountDB.SetData(address, []byte(gameId), data)
 }

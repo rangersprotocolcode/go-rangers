@@ -8,7 +8,6 @@ import (
 	"x/src/common"
 	"x/src/storage/rlp"
 )
-
 type hasher struct {
 	tmp        sliceBuffer
 	sha        keccakState
