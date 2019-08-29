@@ -6,11 +6,11 @@ import (
 	"math/big"
 	"sync"
 
-	"x/src/middleware/serialize"
 	"io"
 	"golang.org/x/crypto/sha3"
 	"x/src/common"
 	"x/src/storage/trie"
+	"x/src/storage/rlp"
 )
 
 var emptyCodeHash = sha3.Sum256(nil)
@@ -91,8 +91,9 @@ func newAccountObject(db *AccountDB, address common.Address, data Account, onDir
 	}
 }
 
-func (c *accountObject) Encode(w io.Writer) error {
-	return serialize.Encode(w, c.data)
+// EncodeRLP implements rlp.Encoder.
+func (s *accountObject) EncodeRLP(w io.Writer) error {
+	return rlp.Encode(w, s.data)
 }
 
 func (self *accountObject) setError(err error) {

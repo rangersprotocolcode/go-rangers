@@ -12,6 +12,7 @@ import (
 	"x/src/common"
 	"unsafe"
 	"x/src/middleware/types"
+	"x/src/storage/rlp"
 )
 
 type revision struct {
@@ -261,7 +262,7 @@ func (self *AccountDB) Suicide(addr common.Address) bool {
 
 func (self *AccountDB) updateAccountObject(stateObject *accountObject) {
 	addr := stateObject.Address()
-	data, err := serialize.EncodeToBytes(stateObject)
+	data, err := rlp.EncodeToBytes(stateObject)
 	if err != nil {
 		panic(fmt.Errorf("can't serialize object at %x: %v", addr[:], err))
 	}
@@ -281,7 +282,7 @@ func (self *AccountDB) getAccountObjectFromTrie(addr common.Address) (stateObjec
 		return nil
 	}
 	var data Account
-	if err := serialize.DecodeBytes(enc, &data); err != nil {
+	if err := rlp.DecodeBytes(enc, &data); err != nil {
 		common.DefaultLogger.Error("Failed to decode state object", "addr", addr, "err", err)
 		return nil
 	}
