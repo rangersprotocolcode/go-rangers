@@ -39,10 +39,11 @@ func (self *AccountDB) GetFTByGameId(addr common.Address, gameId string, ftName 
 		return big.NewInt(0)
 	}
 
-	if data.Ft[ftName] == nil {
+	raw := accountObject.getFT(accountObject.data.Ft, ftName)
+	if raw == nil {
 		return big.NewInt(0)
 	}
-	return data.Ft[ftName].Balance
+	return raw.Balance
 }
 
 func (self *AccountDB) GetAllFTByGameId(addr common.Address, gameId string) map[string]*big.Int {
@@ -53,8 +54,8 @@ func (self *AccountDB) GetAllFTByGameId(addr common.Address, gameId string) map[
 	}
 
 	result := make(map[string]*big.Int, len(data.Ft))
-	for key, value := range data.Ft {
-		result[key] = value.Balance
+	for _, value := range data.Ft {
+		result[value.ID] = value.Balance
 	}
 	return result
 }
@@ -87,25 +88,27 @@ func (self *AccountDB) SubFTByGameId(addr common.Address, gameId string, ftName 
 func (self *AccountDB) GetNFTByGameId(addr common.Address, gameId string, name string) string {
 	accountObject := self.getOrNewAccountObject(addr)
 	data := accountObject.data
-	if 0 == len(data.GameData[gameId]) {
+	nftList := data.GameData.GetNFTMaps(gameId)
+	if nil == nftList {
 		return ""
 	}
 
-	return data.GameData[gameId][name].Data[gameId]
+	nft := nftList.GetNFT(name)
+	if nil != nft {
+		return nft.GetData(gameId)
+	}
+	return ""
 }
 
 func (self *AccountDB) GetAllNFTByGameId(addr common.Address, gameId string) map[string]string {
 	accountObject := self.getOrNewAccountObject(addr)
 	data := accountObject.data
-	if 0 == len(data.GameData[gameId]) {
+	nftList := data.GameData.GetNFTMaps(gameId)
+	if nil == nftList {
 		return nil
 	}
 
-	result := make(map[string]string, 0)
-	for key, value := range data.GameData[gameId] {
-		result[key] = value.Data[gameId]
-	}
-	return result
+	return nftList.GetAllNFT(gameId)
 }
 
 func (self *AccountDB) SetNFTByGameId(addr common.Address, gameId string, name string, value string) {

@@ -10,13 +10,23 @@ func (self *accountObject) checkAndCreate(gameId string) {
 		self.touch()
 	}
 
-	if self.data.GameData[gameId] == nil {
-		self.data.GameData[gameId] = make(map[string]*types.NFT, 0)
+	if self.data.GameData.GetNFTMaps(gameId) == nil {
+		self.data.GameData.SetNFT(gameId, &types.NFTMap{})
 		self.db.transitions = append(self.db.transitions, createGameDataChange{
 			account: &self.address,
 			gameId:  gameId,
 		})
 	}
+}
+
+func (self *accountObject) getFT(ftList []*types.FT, name string) *types.FT {
+	for _, ft := range ftList {
+		if ft.ID == name {
+			return ft
+		}
+	}
+
+	return nil
 }
 
 func (c *accountObject) AddFT(amount *big.Int, name string) {
@@ -27,8 +37,8 @@ func (c *accountObject) AddFT(amount *big.Int, name string) {
 
 		return
 	}
-	raw := c.data.Ft[name]
-	if raw == nil {
+	raw := c.getFT(c.data.Ft, name)
+	if nil != raw {
 		c.SetFT(new(big.Int).Set(amount), name)
 	} else {
 		c.SetFT(new(big.Int).Add(raw.Balance, amount), name)
@@ -41,7 +51,7 @@ func (c *accountObject) SubFT(amount *big.Int, name string) bool {
 		return true
 	}
 
-	raw := c.data.Ft[name]
+	raw := c.getFT(c.data.Ft, name)
 	// 余额不足就滚粗
 	if nil == raw || raw.Balance.Cmp(amount) == -1 {
 		return false
@@ -52,12 +62,12 @@ func (c *accountObject) SubFT(amount *big.Int, name string) bool {
 }
 
 func (self *accountObject) SetFT(amount *big.Int, name string) {
-	raw := self.data.Ft[name]
+	raw := self.getFT(self.data.Ft, name)
 	change := tuntunFTChange{
 		account: &self.address,
 		name:    name,
 	}
-	if nil != raw {
+	if raw != nil {
 		change.prev = new(big.Int).Set(raw.Balance)
 	} else {
 		change.prev = nil
@@ -69,14 +79,23 @@ func (self *accountObject) SetFT(amount *big.Int, name string) {
 
 func (self *accountObject) setFT(amount *big.Int, name string) {
 	if nil == amount || amount.Sign() == 0 {
-		delete(self.data.Ft, name)
+		index := -1
+		for i, ft := range self.data.Ft {
+			if ft.ID == name {
+				index = i
+				break
+			}
+		}
+		if -1 != index {
+			self.data.Ft = append(self.data.Ft[:index], self.data.Ft[index+1:]...)
+		}
 	} else {
-		ftObject := self.data.Ft[name]
-		if nil == ftObject {
+		ftObject := self.getFT(self.data.Ft, name)
+		if ftObject == nil {
 			ftObject = &types.FT{}
 			ftObject.ID = name
 
-			self.data.Ft[name] = ftObject
+			self.data.Ft = append(self.data.Ft, ftObject)
 		}
 		ftObject.Balance = new(big.Int).Set(amount)
 	}
@@ -86,31 +105,31 @@ func (self *accountObject) setFT(amount *big.Int, name string) {
 
 func (self *accountObject) SetNFTByGameId(gameId string, name string, value string) {
 	self.checkAndCreate(gameId)
-	data := self.data.GameData[gameId]
+	data := self.data.GameData.GetNFTMaps(gameId)
 	change := tuntunNFTChange{
 		account: &self.address,
 		gameId:  gameId,
 		name:    name,
 	}
-	if data != nil && nil != data[name] && 0 != len(data[name].Data[gameId]) {
-		change.prev = data[name].Data[gameId]
+	if data != nil && nil != data.GetNFT(name) && 0 != len(data.GetNFT(name).GetData(gameId)) {
+		change.prev = data.GetNFT(name).GetData(gameId)
 	}
 	self.db.transitions = append(self.db.transitions, change)
 	self.setNFTByGameId(gameId, name, value)
 }
 
 func (self *accountObject) setNFTByGameId(gameId string, name string, value string) {
-	data := self.data.GameData[gameId]
+	data := self.data.GameData.GetNFTMaps(gameId)
 	if nil == data {
 		return
 	}
 
 	if 0 == len(value) {
-		delete(data, name)
+		data.Delete(name)
 	} else {
-		nftData := data[name]
+		nftData := data.GetNFT(name)
 		if nil != nftData {
-			nftData.Data[gameId] = value
+			nftData.SetData(value,gameId)
 		}
 
 	}

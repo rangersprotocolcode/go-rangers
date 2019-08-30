@@ -36,8 +36,167 @@ type NFT struct {
 	//ReturnTime      byte // 到指定块高后使用权回收
 
 	// 3. NFT业务数据
-	GameId string            // 当前游戏id
-	Data   map[string]string //key为gameId，用于读取历史上别的游戏中的数据。
+	GameId string // 当前游戏id
+
+	// 4. NFT在游戏中的数据
+	DataValue []string //key为gameId，
+	DataKey   []string
+}
+
+func (self *NFT) GetData(gameId string) string {
+	index := -1
+	for i, key := range self.DataKey {
+		if key == gameId {
+			index = i
+			break
+		}
+	}
+
+	if -1 == index {
+		return ""
+	}
+
+	return self.DataValue[index]
+}
+
+func (self *NFT) SetData(data string, gameId string) {
+	index := -1
+	for i, key := range self.DataKey {
+		if key == gameId {
+			index = i
+			break
+		}
+	}
+
+	if -1 == index {
+		self.DataKey = append(self.DataKey, gameId)
+		self.DataValue = append(self.DataValue, data)
+	} else {
+		self.DataValue[index] = data
+	}
+
+}
+
+type NFTMap struct {
+	NFTList   []*NFT
+	NFTIDList []string
+}
+
+func (self *NFTMap) Delete(id string) {
+	index := -1
+	for i, key := range self.NFTIDList {
+		if key == id {
+			index = i
+			break
+		}
+	}
+
+	if -1 == index {
+		return
+	}
+
+	self.NFTList = append(self.NFTList[:index], self.NFTList[index+1:]...)
+	self.NFTIDList = append(self.NFTIDList[:index], self.NFTIDList[index+1:]...)
+}
+
+func (self *NFTMap) GetNFT(id string) *NFT {
+	index := -1
+	for i, key := range self.NFTIDList {
+		if key == id {
+			index = i
+			break
+		}
+	}
+
+	if -1 == index {
+		return nil
+	}
+	return self.NFTList[index]
+}
+
+func (self *NFTMap) SetNFT(id string, nft *NFT) bool {
+	index := -1
+	for i, key := range self.NFTIDList {
+		if key == id {
+			index = i
+			break
+		}
+	}
+
+	if -1 == index {
+		self.NFTIDList = append(self.NFTIDList, id)
+		self.NFTList = append(self.NFTList, nft)
+		return true
+	}
+
+	self.NFTList[index] = nft
+	return false
+}
+
+func (self *NFTMap) GetAllNFT(gameId string) map[string]string {
+	result := make(map[string]string, len(self.NFTIDList))
+	for i, value := range self.NFTIDList {
+		result[value] = self.NFTList[i].GetData(gameId)
+	}
+	return result
+}
+
+type GameData struct {
+	GameIDList []string
+	NFTMaps    []*NFTMap
+}
+
+func (self *GameData) GetNFTMaps(id string) *NFTMap {
+	index := -1
+	for i, key := range self.GameIDList {
+		if key == id {
+			index = i
+			break
+		}
+	}
+
+	if -1 == index {
+		return nil
+	}
+	return self.NFTMaps[index]
+}
+
+func (self *GameData) SetNFT(id string, nft *NFTMap) bool {
+	index := -1
+	for i, key := range self.GameIDList {
+		if key == id {
+			index = i
+			break
+		}
+	}
+
+	if -1 == index {
+		self.GameIDList = append(self.GameIDList, id)
+		self.NFTMaps = append(self.NFTMaps, nft)
+		return true
+	}
+
+	self.NFTMaps[index] = nft
+	return false
+}
+
+func (self *GameData) Delete(gameId string) bool {
+	index := -1
+	for i, key := range self.GameIDList {
+		if key == gameId {
+			index = i
+			break
+		}
+	}
+
+	if -1 == index {
+		return false
+	}
+
+	self.GameIDList = append(self.GameIDList[:index], self.GameIDList[index+1:]...)
+	self.NFTMaps = append(self.NFTMaps[:index], self.NFTMaps[index+1:]...)
+
+	return true
 }
 
 // FT发行配置

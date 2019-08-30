@@ -6,11 +6,8 @@ import (
 	"x/src/common"
 	"sync"
 	"bytes"
-	"x/src/middleware/serialize"
 	"x/src/storage/trie"
 	"golang.org/x/crypto/sha3"
-	"io"
-
 	"x/src/middleware/types"
 )
 
@@ -87,8 +84,8 @@ type Account struct {
 	CodeHash []byte
 
 	Balance  *big.Int
-	Ft       map[string]*types.FT
-	GameData map[string]map[string]*types.NFT
+	Ft       []*types.FT
+	GameData *types.GameData
 }
 
 // newObject creates a account object.
@@ -97,10 +94,10 @@ func newAccountObject(db *AccountDB, address common.Address, data Account, onDir
 		data.Balance = new(big.Int)
 	}
 	if data.Ft == nil {
-		data.Ft = make(map[string]*types.FT, 0)
+		data.Ft = make([]*types.FT, 0)
 	}
 	if data.GameData == nil {
-		data.GameData = make(map[string]map[string]*types.NFT, 0)
+		data.GameData = &types.GameData{}
 	}
 	if data.CodeHash == nil {
 		data.CodeHash = emptyCodeHash[:]
@@ -114,11 +111,6 @@ func newAccountObject(db *AccountDB, address common.Address, data Account, onDir
 		dirtyStorage:  make(Storage),
 		onDirty:       onDirty,
 	}
-}
-
-// EncodeRLP implements rlp.Encoder.
-func (ao *accountObject) Encode(w io.Writer) error {
-	return serialize.Encode(w, ao.data)
 }
 
 // setError remembers the first non-nil error it is called with.

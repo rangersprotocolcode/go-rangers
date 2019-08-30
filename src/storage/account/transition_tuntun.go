@@ -30,5 +30,6 @@ func (ch tuntunNFTChange) undo(s *AccountDB) {
 	s.getAccountObject(*ch.account).setNFTByGameId(ch.gameId, ch.name, ch.prev)
 }
 func (ch createGameDataChange) undo(s *AccountDB) {
-	delete(s.getAccountObject(*ch.account).data.GameData, ch.gameId)
+	s.getAccountObject(*ch.account).data.GameData.Delete(ch.gameId)
+
 }
