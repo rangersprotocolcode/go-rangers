@@ -9,6 +9,8 @@ import (
 	"x/src/storage/account"
 )
 
+var minusOne = big.NewInt(-1)
+
 func StartFT(gameId string, name string, symbol string, totalSupply string, accountDB *account.AccountDB) (string, bool) {
 	if 0 == len(gameId) || 0 == len(name) || 0 == len(symbol) || 0 == len(totalSupply) {
 		return "wrong params", false

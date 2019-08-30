@@ -93,7 +93,9 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	var result string
 	txRaw := message.Tx
 	gameId := txRaw.Target
-	sub := GetSubAccount(txRaw.Source, gameId, AccountDBManagerInstance.GetAccountDB(gameId))
+	accountDB := AccountDBManagerInstance.GetAccountDB(gameId)
+
+	sub := GetSubAccount(txRaw.Source, gameId, )
 	if nil == sub {
 		result = ""
 	} else {
@@ -101,7 +103,7 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 
 		// query balance
 		case types.TransactionTypeGetBalance:
-			floatdata := float64(sub.Balance.Int64()) / 1000000000
+			floatdata := float64(accountDB.GetBalance(txRaw.Source).Int64()) / 1000000000
 			result = strconv.FormatFloat(floatdata, 'f', -1, 64)
 
 		case types.TransactionTypeGetAsset:
