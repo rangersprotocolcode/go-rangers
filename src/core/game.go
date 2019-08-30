@@ -9,12 +9,6 @@ import (
 	"x/src/statemachine"
 )
 
-var minusOne = big.NewInt(-1)
-
-func GetSubAccount(address string, gameId string, account *account.AccountDB) *types.SubAccount {
-	return account.GetSubAccount(common.HexToAddress(address), gameId)
-}
-
 func UpdateAsset(user types.UserData, gameId string, account *account.AccountDB) bool {
 	balanceDelta := convert(user.Balance)
 	if balanceDelta.Sign() == -1 {
@@ -63,13 +57,14 @@ func convertWithoutBase(s string) *big.Int {
 // 注意：如果source是游戏本身，那么FT会走其专属流程
 // 这里不处理事务。调用本方法之前自行处理事务
 func changeBalances(gameId string, source string, targets map[string]types.TransferData, accountdb *account.AccountDB) bool {
-	sub := GetSubAccount(source, gameId, accountdb)
+	//sub := GetSubAccount(source, gameId, accountdb)
+	sourceAddr := common.HexToAddress(source)
 
 	for address, transferData := range targets {
-		target := GetSubAccount(address, gameId, accountdb)
+		targetAddr := common.HexToAddress(address)
 
 		// 转钱
-		if !transferBalance(transferData.Balance, sub, target) {
+		if !transferBalance(transferData.Balance, sourceAddr, targetAddr, gameId, accountdb) {
 			logger.Debugf("Change balance failed!")
 			return false
 		}
@@ -87,85 +82,95 @@ func changeBalances(gameId string, source string, targets map[string]types.Trans
 						return false
 					}
 				}
-			} else if !transferFT(ftList, sub, target) {
+			} else if !transferFT(ftList, sourceAddr, targetAddr, gameId, accountdb) {
 				logger.Debugf("Change ft failed!")
 				return false
 			}
 		}
 
 		// 转NFT
-		if !transferNFT(transferData.NFT, sub, target) {
+		if !transferNFT(transferData.NFT, sourceAddr, targetAddr, gameId, accountdb) {
 			logger.Debugf("Change nft failed!")
 			return false
 		}
 
-		accountdb.UpdateSubAccount(common.HexToAddress(address), gameId, *target)
 	}
 
-	// 刷新本账户
-	accountdb.UpdateSubAccount(common.HexToAddress(source), gameId, *sub)
 	return true
 }
 
-func transferNFT(nft []string, source *types.SubAccount, target *types.SubAccount) bool {
-	if 0 != len(nft) {
-		for _, id := range nft {
-			value := source.Assets[id]
-			if 0 == len(source.Assets[id]) {
-				return false
-			}
+func transferNFT(nft []string, source common.Address, target common.Address, gameId string, db *account.AccountDB) bool {
+	if 0 == len(nft) {
+		return true
+	}
 
-			target.Assets[id] = value
-			delete(source.Assets, id)
+	sourceNFT := db.GetAllNFTByGameId(source, gameId)
+	for _, id := range nft {
+		value := sourceNFT[id]
+		if 0 == len(value) {
+			return false
 		}
+
+		//todo: target
+		db.SetNFTByGameId(target, gameId, id, value)
+		db.RemoveNFTByGameId(source, gameId, id)
 	}
 
 	return true
 }
 
-func transferBalance(value string, source *types.SubAccount, target *types.SubAccount) bool {
+func transferBalance(value string, source common.Address, target common.Address, gameId string, accountDB *account.AccountDB) bool {
 	balance := convert(value)
 	// 不能扣钱
 	if balance.Sign() == -1 {
 		return false
 	}
 
+	sourceBalance := accountDB.GetBalanceByGameId(source, gameId)
+
 	// 钱不够转账，再见
-	if source.Balance.Cmp(balance) == -1 {
+	if sourceBalance.Cmp(balance) == -1 {
 		return false
 	}
 
-	target.Balance = target.Balance.Add(balance, target.Balance)
-	balance = balance.Mul(balance, minusOne)
-	source.Balance = source.Balance.Add(source.Balance, balance)
+	// 目标加钱
+	targetBalance := accountDB.GetBalanceByGameId(target, gameId)
+	targetBalance = targetBalance.Add(balance, targetBalance)
+	accountDB.SetBalanceByGameId(target, gameId, targetBalance)
+
+	// 自己减钱
+	sourceBalance = sourceBalance.Sub(sourceBalance, balance)
+	accountDB.SetBalanceByGameId(source, gameId, sourceBalance)
 	return true
 }
 
-func transferFT(ft map[string]string, source *types.SubAccount, target *types.SubAccount) bool {
-	if 0 != len(ft) {
-		for ftName, valueString := range ft {
-			owner := source.Ft[ftName]
-			if 0 == len(owner) {
-				return false
-			}
+func transferFT(ft map[string]string, source common.Address, target common.Address, gameId string, accountDB *account.AccountDB) bool {
+	if 0 == len(ft) {
+		return true
+	}
 
-			value := convert(valueString)
-			ownerValue := convertWithoutBase(owner)
-			//logger.Debugf("ft name:%s,value:%s,value convert:%s,owner value:%s", ftName, valueString, value.String(), ownerValue.String())
-			// ft 数量不够，再见
-			if ownerValue.Cmp(value) == -1 {
-				return false
-			}
+	sourceFt := accountDB.GetAllFTByGameId(source, gameId)
 
-			targetValue := convertWithoutBase(target.Ft[ftName])
-
-			targetLeft := targetValue.Add(targetValue, value)
-			left := ownerValue.Add(ownerValue, value.Mul(value, minusOne))
-
-			source.Ft[ftName] = left.String()
-			target.Ft[ftName] = targetLeft.String()
-
+	for ftName, valueString := range ft {
+		owner := sourceFt[ftName]
+		if nil == owner {
+			return false
 		}
+
+		value := convert(valueString)
+
+		//logger.Debugf("ft name:%s,value:%s,value convert:%s,owner value:%s", ftName, valueString, value.String(), ownerValue.String())
+		// ft 数量不够，再见
+		if owner.Cmp(value) == -1 {
+			return false
+		}
+
+		targetValue := accountDB.GetFTByGameId(target, gameId, ftName)
+		targetLeft := targetValue.Add(targetValue, value)
+		accountDB.SetFTByGameId(target, gameId, ftName, targetLeft)
+
+		left := owner.Sub(owner, value)
+		accountDB.SetFTByGameId(source, gameId, ftName, left)
 	}
 
 	return true
@@ -173,61 +178,57 @@ func transferFT(ft map[string]string, source *types.SubAccount, target *types.Su
 
 // false 表示转账失败
 // 给address账户下的gameId子账户转账
-func changeBalance(address string, gameId string, balance *big.Int, accountdb *account.AccountDB) bool {
-	common.DefaultLogger.Debugf("change balance: addr:%s,balance:%v,gameId:%s", address, balance, gameId)
-	sub := GetSubAccount(address, gameId, accountdb)
+// 允许扣钱
+func changeBalance(addressString string, gameId string, balance *big.Int, accountdb *account.AccountDB) bool {
+	common.DefaultLogger.Debugf("change balance: addr:%s,balance:%v,gameId:%s", addressString, balance, gameId)
+	address := common.HexToAddress(addressString)
+	subBalance := accountdb.GetBalanceByGameId(address, gameId)
 
-	if sub != nil {
-		sub.Balance = sub.Balance.Add(balance, sub.Balance)
+	if subBalance != nil {
+		subBalance = subBalance.Add(balance, subBalance)
 	} else {
-		sub = &types.SubAccount{}
-		sub.Balance = balance
+		subBalance = balance
 	}
 
-	if sub.Balance.Sign() == -1 {
+	if subBalance.Sign() == -1 {
 		return false
 	}
 
-	accountdb.UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
+	accountdb.SetBalanceByGameId(address, gameId, subBalance)
 	return true
 }
 
-func setAsset(address string, gameId string, assets map[string]string, accountdb *account.AccountDB) {
+func setAsset(addressString string, gameId string, assets map[string]string, accountdb *account.AccountDB) {
 	if nil == assets || 0 == len(assets) {
 		return
 	}
 
-	sub := GetSubAccount(address, gameId, accountdb)
-	if sub == nil {
-		sub = &types.SubAccount{Balance: new(big.Int).SetUint64(0)}
-	}
+	address := common.HexToAddress(addressString)
+	sub := accountdb.GetAllNFTByGameId(address, gameId)
 
 	// append everything if there is no asset right now
-	if nil == sub.Assets || 0 == len(sub.Assets) {
-		sub.Assets = make(map[string]string)
+	if nil == sub || 0 == len(sub) {
 		for id, value := range assets {
 			if 0 == len(value) {
 				continue
 			}
 
-			sub.Assets[id] = value
+			accountdb.SetNFTByGameId(address, gameId, id, value)
 		}
 
-		accountdb.UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
 		return
 	}
 
 	// update/add and delete
 	for assetId, assetValue := range assets {
 		// 已有，assetValue空字符串，则是移除
-		if 0 != len(sub.Assets[assetId]) && 0 == len(assetValue) {
-			delete(sub.Assets, assetId)
+		if 0 != len(sub[assetId]) && 0 == len(assetValue) {
+			accountdb.RemoveNFTByGameId(address, gameId, assetId)
 			continue
 		}
 
 		//update/add
-		sub.Assets[assetId] = assetValue
+		accountdb.SetNFTByGameId(address, gameId, assetId, assetValue)
 	}
 
-	accountdb.UpdateSubAccount(common.HexToAddress(address), gameId, *sub)
 }

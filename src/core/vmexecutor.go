@@ -39,7 +39,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			logger.Infof("Cast block execute tx time out!Tx hash:%s ", transaction.Hash.String())
 			break
 		}
-		logger.Debugf("VMExecutor Execute %v,type:%d", transaction.Hash, transaction.Type)
+		logger.Debugf("VMExecutor Execute %s,type:%d", transaction.Hash.String(), transaction.Type)
 		var success = false
 		snapshot := accountdb.Snapshot()
 
@@ -158,7 +158,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 	}
 	accountdb.AddBalance(common.BytesToAddress(block.Header.Castor), consensusHelper.ProposalBonus())
 
-	state := accountdb.IntermediateRoot(false)
+	state := accountdb.IntermediateRoot(true)
 	logger.Debugf("VMExecutor End Execute State %s", state.Hex())
 	return state, evictedTxs, transactions, receipts, nil, errs
 }
@@ -182,79 +182,58 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 		return false
 	}
 
-	subAccount := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
-	txLogger.Debugf("Before execute withdraw tx,subAccount:%v", subAccount)
+	source := common.HexToAddress(transaction.Source)
+	gameId := transaction.Target
 
 	//余额检查
 	var withdrawAmount = big.NewInt(0)
+	subAccountBalance := accountdb.GetBalanceByGameId(source, gameId)
 	if withDrawReq.Balance != "" {
 		withdrawAmount, err = utility.StrToBigInt(withDrawReq.Balance)
 		if err != nil {
 			txLogger.Error("Execute withdraw bad amount!Hash:%s, err:%s", transaction.Hash.String(), err.Error())
 			return false
 		}
-		txLogger.Errorf("Execute withdraw :%s,current balance:%d,withdraw balance:%d", transaction.Hash.String(), subAccount.Balance.Uint64(), withdrawAmount.Uint64())
-		if subAccount.Balance.Cmp(withdrawAmount) < 0 {
-			txLogger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", subAccount.Balance.Uint64(), withdrawAmount.Uint64())
+
+		txLogger.Errorf("Execute withdraw :%s,current balance:%d,withdraw balance:%d", transaction.Hash.String(), subAccountBalance.Uint64(), withdrawAmount.Uint64())
+		if subAccountBalance.Cmp(withdrawAmount) < 0 {
+			txLogger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", subAccountBalance.Uint64(), withdrawAmount.Uint64())
 			return false
 		}
+
+		//扣余额
+		subAccountBalance.Sub(subAccountBalance, withdrawAmount)
+		accountdb.SetBalanceByGameId(source, gameId, subAccountBalance)
 	}
 
-	//ft检查
-	ftInfo := make(map[string]string, 0)
+	//ft
 	if withDrawReq.FT != nil && len(withDrawReq.FT) != 0 {
-		if subAccount.Ft == nil || len(subAccount.Ft) == 0 {
-			return false
-		}
 		for k, v := range withDrawReq.FT {
-			subValue := subAccount.Ft[k]
-			if subValue == "" {
-				return false
-			}
-
+			subValue := accountdb.GetFTByGameId(source, gameId, k)
 			compareResult, sub := canWithDraw(v, subValue)
 			if !compareResult {
 				return false
 			}
-			ftInfo[k] = sub
+
+			// 扣ft
+			accountdb.SetFTByGameId(source, gameId, k, sub)
 		}
 	}
 
-	//nft检查
+	//nft
 	nftInfo := make(map[string]string, 0)
 	if withDrawReq.NFT != nil && len(withDrawReq.NFT) != 0 {
-		if subAccount.Assets == nil || len(subAccount.Assets) == 0 {
-			return false
-		}
 		for _, k := range withDrawReq.NFT {
-			subValue := subAccount.Assets[k]
-			if subValue == "" {
+			subValue := accountdb.GetNFTByGameId(source, gameId, k)
+			if 0 == len(subValue) {
 				return false
 			}
 			nftInfo[k] = subValue
+
+			//删除要提现的NFT
+			accountdb.RemoveNFTByGameId(source, gameId, k)
 		}
 	}
-
-	//执行提现
-
-	//扣余额
-	subAccount.Balance.Sub(subAccount.Balance, withdrawAmount)
-
-	//FT扣钱
-	if len(ftInfo) != 0 {
-		for k, v := range ftInfo {
-			subAccount.Ft[k] = v
-		}
-	}
-
-	//删除要提现的NFT
-	if len(nftInfo) != 0 {
-		for k, _ := range nftInfo {
-			delete(subAccount.Assets, k)
-		}
-	}
-	txLogger.Debugf("After execute withdraw:, subAccount:%v", subAccount)
-	accountdb.UpdateSubAccount(common.HexToAddress(transaction.Source), transaction.Target, *subAccount)
 
 	//发送给Coin Connector
 	withdrawData := types.WithDrawData{ChainType: withDrawReq.ChainType, Balance: withDrawReq.Balance, Address: withDrawReq.Address}
@@ -292,45 +271,41 @@ func (executor *VMExecutor) executeDepositNotify(accountdb *account.AccountDB, t
 		txLogger.Debugf("Unmarshal data error:%s", err.Error())
 		return false
 	}
+	txLogger.Debugf("deposit data:%v", depositData)
 	if depositData.Amount == "" {
 		return false
 	}
 
-	subAccount := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
-	txLogger.Debugf("address:%s,gameId:%s,current balance:%d,deposit balance:%d", transaction.Source, transaction.Target, subAccount.Balance.Uint64(), depositData.Amount)
-	txLogger.Debugf("Before execute deposit tx,subAccount:%v", subAccount)
+	gameId := transaction.Target
+	address := common.HexToAddress(transaction.Source)
 
+	// 打钱
 	depositAmount, err := utility.StrToBigInt(depositData.Amount)
 	if err != nil {
 		txLogger.Debugf("deposit amount to big int error:%s", err.Error())
 		return false
 	}
-	subAccount.Balance.Add(subAccount.Balance, depositAmount)
-	txLogger.Debugf("After execute deposit:%s, balance:%d", transaction.Hash.String(), subAccount.Balance.Uint64())
-	//todo for test
-	if subAccount.Ft == nil {
-		subAccount.Ft = make(map[string]string, 0)
-	}
+
+	accountdb.AddBalanceByGameId(address, gameId, depositAmount)
+
+	//FT
 	if depositData.FT != nil {
 		for key, value := range depositData.FT {
 			b1, _ := utility.StrToBigInt(value)
-			subAccount.Ft[key] = b1.String()
+			accountdb.AddFTByGameId(address, gameId, key, b1)
 		}
 	}
 
-	if subAccount.Assets == nil {
-		subAccount.Assets = make(map[string]string, 0)
-	}
+	// NFT
 	if depositData.NFT != nil {
 		for key, value := range depositData.NFT {
-			subAccount.Assets[key] = value
+			//todo: key 冲突了咋办
+			accountdb.SetNFTByGameId(address, gameId, key, value)
+
 		}
 	}
 	//end for test
 
-	accountdb.UpdateSubAccount(common.HexToAddress(transaction.Source), transaction.Target, *subAccount)
-	b := accountdb.GetSubAccount(common.HexToAddress(transaction.Source), transaction.Target)
-	txLogger.Debugf("After  deposit update,current sub account:%v", b)
 	return true
 }
 
@@ -342,21 +317,15 @@ ftValue 是bigInt的STRING "56631"
 如果格式有错误返回FALSE
 返回为true的话 返回二者的差值string
 */
-func canWithDraw(withDrawAmount string, ftValue string) (bool, string) {
+func canWithDraw(withDrawAmount string, ftValue *big.Int) (bool, *big.Int) {
 	b1, err1 := utility.StrToBigInt(withDrawAmount)
 	if err1 != nil {
-		return false, ""
+		return false, nil
 	}
 
-	b2, r2 := new(big.Int).SetString(ftValue, 10)
-	if !r2 {
-		return false, ""
+	if b1.Cmp(ftValue) > 0 {
+		return false, nil
 	}
 
-	if b1.Cmp(b2) > 0 {
-		return false, ""
-	}
-	var sub big.Int
-	sub.Sub(b2, b1)
-	return true, sub.String()
+	return true, ftValue.Sub(ftValue, b1)
 }
