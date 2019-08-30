@@ -38,7 +38,7 @@ func (c *accountObject) AddFT(amount *big.Int, name string) {
 		return
 	}
 	raw := c.getFT(c.data.Ft, name)
-	if nil != raw {
+	if nil == raw {
 		c.SetFT(new(big.Int).Set(amount), name)
 	} else {
 		c.SetFT(new(big.Int).Add(raw.Balance, amount), name)
