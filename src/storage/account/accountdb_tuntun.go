@@ -63,58 +63,64 @@ func (self *AccountDB) SetFTByGameId(addr common.Address, gameId string, ftName 
 	if nil == balance {
 		return
 	}
-	account := self.GetOrNewAccountObject(addr)
-	account.SetFTByGameId(balance, gameId, ftName)
-
+	account := self.getOrNewAccountObject(addr)
+	account.SetFT(balance, ftName)
 }
 
 func (self *AccountDB) AddFTByGameId(addr common.Address, gameId string, ftName string, balance *big.Int) {
 	if nil == balance {
 		return
 	}
-	account := self.GetOrNewAccountObject(addr)
-	account.AddFTByGameId(balance, gameId, ftName)
+	account := self.getOrNewAccountObject(addr)
+	account.AddFT(balance, ftName)
 }
 
 func (self *AccountDB) SubFTByGameId(addr common.Address, gameId string, ftName string, balance *big.Int) bool {
 	if nil == balance {
 		return true
 	}
-	account := self.GetOrNewAccountObject(addr)
-	return account.SubFTByGameId(balance, gameId, ftName)
+	account := self.getOrNewAccountObject(addr)
+	return account.SubFT(balance, ftName)
 
 }
 
 func (self *AccountDB) GetNFTByGameId(addr common.Address, gameId string, name string) string {
-	data := self.getGameData(addr, gameId)
-	if nil == data || 0 == len(data.Nft) {
+	accountObject := self.getOrNewAccountObject(addr)
+	data := accountObject.data
+	if 0 == len(data.GameData[gameId]) {
 		return ""
 	}
 
-	return data.Nft[name]
+	return data.GameData[gameId][name].Data[gameId]
 }
 
 func (self *AccountDB) GetAllNFTByGameId(addr common.Address, gameId string) map[string]string {
-	data := self.getGameData(addr, gameId)
-	if nil == data {
+	accountObject := self.getOrNewAccountObject(addr)
+	data := accountObject.data
+	if 0 == len(data.GameData[gameId]) {
 		return nil
 	}
-	return data.Nft
+
+	result := make(map[string]string, 0)
+	for key, value := range data.GameData[gameId] {
+		result[key] = value.Data[gameId]
+	}
+	return result
 }
 
 func (self *AccountDB) SetNFTByGameId(addr common.Address, gameId string, name string, value string) {
-	stateObject := self.GetOrNewAccountObject(addr)
+	stateObject := self.getOrNewAccountObject(addr)
 	stateObject.SetNFTByGameId(gameId, name, value)
 }
 
 func (self *AccountDB) RemoveNFTByGameId(addr common.Address, gameId string, name string) {
-	stateObject := self.GetOrNewAccountObject(addr)
+	stateObject := self.getOrNewAccountObject(addr)
 	stateObject.SetNFTByGameId(gameId, name, "")
 }
 
 // 获取游戏已经发行的ft
 func (self *AccountDB) GetFtList(gameAddr common.Address) map[string]string {
-	data := self.GetData(gameAddr, "ft")
+	data := self.GetData(gameAddr, []byte("ft"))
 	var result map[string]string
 
 	err := json.Unmarshal(data, &result)
@@ -130,5 +136,5 @@ func (self *AccountDB) GetFtList(gameAddr common.Address) map[string]string {
 // 这里先简单处理
 func (self *AccountDB) UpdateFtList(gameAddr common.Address, value map[string]string) {
 	bytes, _ := json.Marshal(value)
-	self.SetData(gameAddr, "ft", bytes)
+	self.SetData(gameAddr, []byte("ft"), bytes)
 }
