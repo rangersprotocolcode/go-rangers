@@ -1,15 +1,40 @@
 package core
 
 import (
+	"x/src/common"
+	"x/src/network"
+	"encoding/json"
+	"sync"
+	"x/src/middleware/notify"
 	"x/src/middleware/types"
 	"strconv"
-	"x/src/common"
-	"encoding/json"
-	"x/src/network"
-	"x/src/middleware/notify"
-	"sync"
 	"x/src/statemachine"
 )
+
+/**
+客户端web socket 请求的返回数据结构
+ */
+type response struct {
+	Id      string `json:"id,omitempty"`
+	Status  string `json:"status,omitempty"`
+	Data    string `json:"data,omitempty"`
+	Version string `json:"version,omitempty"`
+}
+
+func (executor *GameExecutor) makeSuccessResponse(data string, id string) []byte {
+	res := response{
+		Data:    data,
+		Id:      id,
+		Status:  "0",
+		Version: "0.1",
+	}
+
+	result, err := json.Marshal(res)
+	if err != nil {
+		logger.Debugf("json make success response err:%s", err.Error())
+	}
+	return result
+}
 
 // 用于处理client websocket请求
 type GameExecutor struct {
@@ -20,16 +45,6 @@ type GameExecutor struct {
 
 	debug     bool // debug 为true，则不开启requestId校验
 	writeChan chan notify.Message
-}
-
-/**
-客户端web socket 请求的返回数据
- */
-type response struct {
-	Id      string `json:"id,omitempty"`
-	Status  string `json:"status,omitempty"`
-	Data    string `json:"data,omitempty"`
-	Version string `json:"version,omitempty"`
 }
 
 func initGameExecutor(blockChainImpl *blockChain) {
@@ -92,41 +107,51 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 
 	var result string
 	txRaw := message.Tx
+	sourceString := txRaw.Source
+	source := common.HexToAddress(sourceString)
 	gameId := txRaw.Target
 	accountDB := AccountDBManagerInstance.GetAccountDB(gameId)
 
-	sub := GetSubAccount(txRaw.Source, gameId, )
-	if nil == sub {
-		result = ""
-	} else {
-		switch txRaw.Type {
+	switch txRaw.Type {
 
-		// query balance
-		case types.TransactionTypeGetBalance:
-			floatdata := float64(accountDB.GetBalance(txRaw.Source).Int64()) / 1000000000
-			result = strconv.FormatFloat(floatdata, 'f', -1, 64)
+	// query balance
+	case types.TransactionTypeGetBalance:
+		balance := accountDB.GetBalanceByGameId(source, gameId)
+		floatdata := float64(balance.Int64()) / 1000000000
+		result = strconv.FormatFloat(floatdata, 'f', -1, 64)
 
-		case types.TransactionTypeGetAsset:
-			assets := sub.Assets
-			if nil == assets || 0 == len(assets) {
-				result = ""
-			} else {
-				result = assets[txRaw.Data]
+	case types.TransactionTypeGetAsset:
+		nftId := txRaw.Data
+		result = accountDB.GetNFTByGameId(source, gameId, nftId)
+
+	case types.TransactionTypeGetAllAssets:
+		bytes, _ := json.Marshal(accountDB.GetAllNFTByGameId(source, gameId))
+		result = string(bytes)
+
+	case types.TransactionTypeStateMachineNonce:
+		result = strconv.FormatUint(0, 10)
+
+	case types.TransactionTypeGetAllAsset:
+
+		subAccountData := make(map[string]interface{})
+
+		ftList := accountDB.GetAllFTByGameId(source, gameId)
+		ftMap := make(map[string]string)
+		if 0 != len(ftList) {
+			for id, value := range ftList {
+				ftMap[id] = strconv.FormatFloat(float64(value.Int64())/1000000000, 'f', -1, 64)
 			}
-
-		case types.TransactionTypeGetAllAssets:
-			assets := sub.Assets
-			bytes, _ := json.Marshal(assets)
-			result = string(bytes)
-
-		case types.TransactionTypeStateMachineNonce:
-			result = strconv.FormatUint(sub.Nonce, 10)
-
-		case types.TransactionTypeGetAllAsset:
-			subAccountData := sub.ToSubAccountData()
-			bytes, _ := json.Marshal(subAccountData)
-			result = string(bytes)
 		}
+		subAccountData["ft"] = ftMap
+
+		subAccountData["nft"] = accountDB.GetAllNFTByGameId(source, gameId)
+
+		balance := accountDB.GetBalanceByGameId(source, gameId)
+		floatdata := float64(balance.Int64()) / 1000000000
+		subAccountData["balance"] = strconv.FormatFloat(floatdata, 'f', -1, 64)
+
+		bytes, _ := json.Marshal(subAccountData)
+		result = string(bytes)
 	}
 
 	responseId := txRaw.SocketRequestId
@@ -135,21 +160,6 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
 
 	return
-}
-
-func (executor *GameExecutor) makeSuccessResponse(data string, id string) []byte {
-	res := response{
-		Data:    data,
-		Id:      id,
-		Status:  "0",
-		Version: "0.1",
-	}
-
-	result, err := json.Marshal(res)
-	if err != nil {
-		logger.Debugf("json make success response err:%s", err.Error())
-	}
-	return result
 }
 
 func (executor *GameExecutor) Write(msg notify.Message) {
@@ -205,7 +215,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 			if err := json.Unmarshal([]byte(txRaw.ExtraData), &mm); nil != err {
 				result = "fail to transfer"
 				logger.Debugf("Transfer data unmarshal error:%s", err.Error())
-			}else if !changeBalances(txRaw.Target, txRaw.Source, mm, accountDB) {
+			} else if !changeBalances(txRaw.Target, txRaw.Source, mm, accountDB) {
 				result = "fail to transfer"
 				logger.Debugf("change balances  failed")
 			}
@@ -258,6 +268,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 }
 
 func (executor *GameExecutor) sendTransaction(trans *types.Transaction) error {
+	//trans.SubHash = trans.GenSubHash()
 	if ok, err := executor.chain.GetTransactionPool().AddTransaction(trans); err != nil || !ok {
 		if nil != common.DefaultLogger {
 			common.DefaultLogger.Errorf("AddTransaction not ok or error:%s", err.Error())
@@ -284,7 +295,7 @@ func (executor *GameExecutor) loop() {
 			message, ok := msg.(*notify.ClientTransactionMessage)
 			if !ok {
 				logger.Debugf("GameExecutor:Write assert not ok!")
-				return
+				continue
 			}
 
 			txRaw := message.Tx
@@ -296,7 +307,7 @@ func (executor *GameExecutor) loop() {
 			if transactionType != types.TransactionTypeOperatorEvent &&
 				transactionType != types.TransactionTypeWithdraw {
 				logger.Debugf("GameExecutor:Write transactionType: %d, not ok!", transactionType)
-				return
+				continue
 			}
 
 			// 校验 requestId
@@ -307,7 +318,7 @@ func (executor *GameExecutor) loop() {
 					if common.DefaultLogger != nil {
 						common.DefaultLogger.Errorf("%s requestId :%d skipped, current requestId: %d", gameId, requestId, executor.requestIds[gameId])
 					}
-					return
+					continue
 				}
 
 				// requestId 按序执行
