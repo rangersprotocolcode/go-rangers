@@ -11,6 +11,7 @@ import (
 	"golang.org/x/crypto/sha3"
 	"io"
 
+	"x/src/middleware/types"
 )
 
 var emptyCodeHash = sha3.Sum256(nil)
@@ -82,15 +83,24 @@ func (ao *accountObject) empty() bool {
 // These objects are stored in the main account trie.
 type Account struct {
 	Nonce    uint64
-	Balance  *big.Int
 	Root     common.Hash
 	CodeHash []byte
+
+	Balance  *big.Int
+	Ft       map[string]*types.FT
+	GameData map[string]map[string]*types.NFT
 }
 
 // newObject creates a account object.
 func newAccountObject(db *AccountDB, address common.Address, data Account, onDirty func(addr common.Address)) *accountObject {
 	if data.Balance == nil {
 		data.Balance = new(big.Int)
+	}
+	if data.Ft == nil {
+		data.Ft = make(map[string]*types.FT, 0)
+	}
+	if data.GameData == nil {
+		data.GameData = make(map[string]map[string]*types.NFT, 0)
 	}
 	if data.CodeHash == nil {
 		data.CodeHash = emptyCodeHash[:]
