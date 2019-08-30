@@ -45,13 +45,9 @@ func (api *GtasAPI) GetBalance(address string, gameId string) (*Result, error) {
 	gxLock.RLock()
 	defer gxLock.RUnlock()
 
-	sub := core.GetSubAccount(address, gameId, core.AccountDBManagerInstance.GetAccountDB(gameId))
-
-	if nil == sub {
-		return successResult("-1")
-	}
-
-	floatdata := float64(sub.Balance.Int64()) / 1000000000
+	accountDB := core.AccountDBManagerInstance.GetAccountDB(gameId)
+	balance := accountDB.GetBalanceByGameId(common.HexToAddress(address), gameId)
+	floatdata := float64(balance.Int64()) / 1000000000
 	return successResult(strconv.FormatFloat(floatdata, 'f', -1, 64))
 }
 
@@ -59,25 +55,10 @@ func (api *GtasAPI) GetAsset(address string, gameId string, assetId string) (*Re
 	gxLock.RLock()
 	defer gxLock.RUnlock()
 
-	sub := core.GetSubAccount(address, gameId, core.AccountDBManagerInstance.GetAccountDB(gameId))
+	accountDB := core.AccountDBManagerInstance.GetAccountDB(gameId)
+	nft := accountDB.GetNFTByGameId(common.HexToAddress(address), gameId, assetId)
 
-	if nil == sub {
-		return successResult("")
-	}
-
-	assetsResult, _ := getAssets(address, gameId)
-
-	assets := assetsResult.Data.(map[string]string)
-	if nil == assets || 0 == len(assets) {
-		return successResult("")
-	}
-
-	for id, value := range assets {
-		if id == assetId {
-			return successResult(value)
-		}
-	}
-	return successResult("")
+	return successResult(nft)
 }
 
 func (api *GtasAPI) GetAllAssets(address string, gameId string) (*Result, error) {
@@ -91,23 +72,32 @@ func (api *GtasAPI) GetAccount(address string, gameId string) (*Result, error) {
 	gxLock.RLock()
 	defer gxLock.RUnlock()
 
-	sub := core.GetSubAccount(address, gameId, core.AccountDBManagerInstance.GetAccountDB(gameId))
-	if nil == sub {
-		return successResult(make(map[string]string))
+	accountDB := core.AccountDBManagerInstance.GetAccountDB(gameId)
+	source := common.HexToAddress(address)
+
+	subAccountData := make(map[string]interface{})
+
+	ftList := accountDB.GetAllFTByGameId(source, gameId)
+	ftMap := make(map[string]string)
+	if 0 != len(ftList) {
+		for id, value := range ftList {
+			ftMap[id] = strconv.FormatFloat(float64(value.Int64())/1000000000, 'f', -1, 64)
+		}
 	}
-	common.DefaultLogger.Debugf("Get account address:%s,gameId:%s,account:%v", address, gameId, sub)
-	data := sub.ToSubAccountData()
-	return successResult(data)
+	subAccountData["ft"] = ftMap
+	subAccountData["nft"] = accountDB.GetAllNFTByGameId(source, gameId)
+
+	balance := accountDB.GetBalanceByGameId(source, gameId)
+	floatdata := float64(balance.Int64()) / 1000000000
+	subAccountData["balance"] = strconv.FormatFloat(floatdata, 'f', -1, 64)
+
+	return successResult(subAccountData)
 }
 
 func getAssets(address string, gameId string) (*Result, error) {
-	sub := core.GetSubAccount(address, gameId, core.AccountDBManagerInstance.GetAccountDB(gameId))
-
-	if nil == sub {
-		return successResult(make(map[string]string))
-	}
-
-	return successResult(sub.Assets)
+	accountDB := core.AccountDBManagerInstance.GetAccountDB(gameId)
+	sub := accountDB.GetAllNFTByGameId(common.HexToAddress(address), gameId)
+	return successResult(sub)
 }
 
 // 通过rpc的方式，让本地的docker镜像调用
