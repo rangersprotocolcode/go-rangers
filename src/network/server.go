@@ -172,7 +172,7 @@ func (s *server) handleCoinConnectorMessage(data []byte, nonce uint64) {
 	Logger.Debugf("Receive message from coin connector.Tx:%v", txJson)
 	tx := txJson.ToTransaction()
 	tx.RequestId = nonce
-	Logger.Debugf(".Tx:%v", tx)
+	Logger.Debugf("Tx hash:%s", tx.Hash.String())
 
 	if tx.Type == types.TransactionTypeDepositAck {
 		msg := notify.CoinProxyNotifyMessage{Tx: tx}

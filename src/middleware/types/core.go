@@ -91,22 +91,22 @@ const (
 )
 
 type Transaction struct {
-	Data      string // 状态机入参
-	Nonce     uint64 // 用户级别nonce
-	Source    string // 用户id
-	Target    string // 游戏id
-	Type      int32  // 场景id
-	RequestId uint64 // 消息编号
-	Hash      common.Hash
+	Source string // 用户id
+	Target string // 游戏id
+	Type   int32  // 场景id
+	Time   string
 
-	ExtraData     string // 在rocketProtocol里，用于转账。包括余额转账、FT转账、NFT转账
-	ExtraDataType int32
-
-	Sign *common.Sign
-	Time string
-
-	SocketRequestId string   // websocket id，用于客户端标示请求id，方便回调处理
+	Data            string // 状态机入参
+	ExtraData       string // 在rocketProtocol里，用于转账。包括余额转账、FT转账、NFT转账
+	ExtraDataType   int32
 	SubTransactions []string // 用于存储状态机rpc调用的交易数据
+
+	Hash common.Hash
+	Sign *common.Sign
+
+	Nonce uint64 // 用户级别nonce
+	RequestId uint64 // 消息编号 由网关添加
+	SocketRequestId string // websocket id，用于客户端标示请求id，方便回调处理
 }
 
 //source 在hash计算范围内
@@ -371,22 +371,24 @@ type DepositData struct {
 }
 
 type TxJson struct {
-	Source string // 用户id
-	Target string // 游戏id
-	Type   int32  // 场景id
+	// 用户id
+	Source string `json:"source"`
+	// 游戏id
+	Target string `json:"target"`
+	// 场景id
+	Type int32  `json:"type"`
+	Time string `json:"time,omitempty"`
 
-	Data  string // 入参
-	Nonce uint64
+	// 入参
+	Data      string `json:"data,omitempty"`
+	ExtraData string `json:"extraData,omitempty"`
 
-	RequestId uint64
+	Hash string `json:"hash,omitempty"`
+	Sign string `json:"sign,omitempty"`
 
-	Hash string
-	Sign string
-	Time string
-
-	ExtraData string
-
-	SocketRequestId string
+	Nonce           uint64 `json:"nonce,omitempty"`
+	RequestId       uint64
+	SocketRequestId string `json:"socketRequestId,omitempty"`
 }
 
 func (txJson TxJson) ToTransaction() Transaction {

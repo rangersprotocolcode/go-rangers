@@ -67,6 +67,9 @@ func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Tran
 		if error != nil {
 			panic("Groupsig id deserialize error:" + error.Error())
 		}
+		for _, tx := range missing {
+			logger.Debugf("miss tx:%s", tx.String())
+		}
 		//向CASTOR索取交易
 		m := &transactionRequestMessage{TransactionHashes: missing, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue,}
 		go requestTransaction(*m, castorId.String())
