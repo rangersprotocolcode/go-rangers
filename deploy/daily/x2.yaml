@@ -10,7 +10,7 @@ services:
       - host: 6602
         target: 3306
     detached: true
-    type: "ETH"
+    type: "NEO"
 
   - priority: 1
     game: "0xf677e4051eeff7a60598cc6419b982cdeef60b01"
