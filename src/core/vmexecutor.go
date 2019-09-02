@@ -279,6 +279,7 @@ func (executor *VMExecutor) executeDepositNotify(accountdb *account.AccountDB, t
 	gameId := transaction.Target
 	address := common.HexToAddress(transaction.Source)
 
+	txLogger.Debugf("address:%s,gameId:%s,deposit balance:%s", transaction.Source, transaction.Target, depositData.Amount)
 	// 打钱
 	depositAmount, err := utility.StrToBigInt(depositData.Amount)
 	if err != nil {
