@@ -77,7 +77,7 @@ func (api *GtasAPI) GetAccount(address string, gameId string) (*Result, error) {
 
 	subAccountData := make(map[string]interface{})
 
-	ftList := accountDB.GetAllFTByGameId(source, gameId)
+	ftList := accountDB.GetAllFT(source)
 	ftMap := make(map[string]string)
 	if 0 != len(ftList) {
 		for id, value := range ftList {
@@ -157,7 +157,7 @@ func (api *GtasAPI) NotifyBroadcast(gameId string, message string) {
 
 // todo: 经济模型，发币的费用问题
 // 状态机发币
-func (api *GtasAPI) StartFT(gameId string, name string, symbol string, totalSupply string) (*Result, error) {
+func (api *GtasAPI) PublishFT(gameId string, name string, symbol string, totalSupply string) (*Result, error) {
 	if 0 == len(gameId) {
 		return failResult("wrong params")
 	}
@@ -170,7 +170,7 @@ func (api *GtasAPI) StartFT(gameId string, name string, symbol string, totalSupp
 		return failResult("not in transaction")
 	}
 
-	result, flag := core.StartFT(gameId, name, symbol, totalSupply, context.AccountDB)
+	result, flag := core.FTManagerInstance.PublishFTSet(name, symbol, gameId, totalSupply, 1, context.AccountDB)
 	if flag {
 		dataList := make([]types.UserData, 0)
 		data := types.UserData{}

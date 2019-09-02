@@ -135,7 +135,7 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 
 		subAccountData := make(map[string]interface{})
 
-		ftList := accountDB.GetAllFTByGameId(source, gameId)
+		ftList := accountDB.GetAllFT(source)
 		ftMap := make(map[string]string)
 		if 0 != len(ftList) {
 			for id, value := range ftList {

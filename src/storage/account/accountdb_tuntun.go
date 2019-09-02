@@ -32,7 +32,7 @@ func (self *AccountDB) SubBalanceByGameId(addr common.Address, gameId string, ba
 	return true
 }
 
-func (self *AccountDB) GetFTByGameId(addr common.Address, gameId string, ftName string) *big.Int {
+func (self *AccountDB) GetFT(addr common.Address, ftName string) *big.Int {
 	accountObject := self.getOrNewAccountObject(addr)
 	data := accountObject.data
 	if 0 == len(data.Ft) {
@@ -46,7 +46,7 @@ func (self *AccountDB) GetFTByGameId(addr common.Address, gameId string, ftName 
 	return raw.Balance
 }
 
-func (self *AccountDB) GetAllFTByGameId(addr common.Address, gameId string) map[string]*big.Int {
+func (self *AccountDB) GetAllFT(addr common.Address) map[string]*big.Int {
 	accountObject := self.getOrNewAccountObject(addr)
 	data := accountObject.data
 	if 0 == len(data.Ft) {
@@ -60,7 +60,7 @@ func (self *AccountDB) GetAllFTByGameId(addr common.Address, gameId string) map[
 	return result
 }
 
-func (self *AccountDB) SetFTByGameId(addr common.Address, gameId string, ftName string, balance *big.Int) {
+func (self *AccountDB) SetFT(addr common.Address, ftName string, balance *big.Int) {
 	if nil == balance {
 		return
 	}
@@ -68,7 +68,7 @@ func (self *AccountDB) SetFTByGameId(addr common.Address, gameId string, ftName 
 	account.SetFT(balance, ftName)
 }
 
-func (self *AccountDB) AddFTByGameId(addr common.Address, gameId string, ftName string, balance *big.Int) {
+func (self *AccountDB) AddFT(addr common.Address, ftName string, balance *big.Int) {
 	if nil == balance {
 		return
 	}
@@ -76,7 +76,7 @@ func (self *AccountDB) AddFTByGameId(addr common.Address, gameId string, ftName 
 	account.AddFT(balance, ftName)
 }
 
-func (self *AccountDB) SubFTByGameId(addr common.Address, gameId string, ftName string, balance *big.Int) bool {
+func (self *AccountDB) SubFT(addr common.Address, ftName string, balance *big.Int) bool {
 	if nil == balance {
 		return true
 	}

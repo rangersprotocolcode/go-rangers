@@ -124,6 +124,7 @@ func initBlockChain() error {
 	chain.forkProcessor = initForkProcessor()
 
 	initMinerManager()
+	initFTManager()
 
 	chain.latestBlock = chain.queryBlockHeaderByHeight([]byte(latestBlockKey), false)
 	if chain.latestBlock == nil {

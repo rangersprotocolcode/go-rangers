@@ -80,7 +80,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 								for _, user := range data {
 									// 发币
 									if user.Address == "StartFT" {
-										_, flag := StartFT(user.Assets["gameId"], user.Assets["name"], user.Assets["symbol"], user.Assets["totalSupply"], accountdb)
+										_, flag := FTManagerInstance.PublishFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], 1, accountdb)
 										if !flag {
 											success = false
 											break
@@ -209,14 +209,14 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 	//ft
 	if withDrawReq.FT != nil && len(withDrawReq.FT) != 0 {
 		for k, v := range withDrawReq.FT {
-			subValue := accountdb.GetFTByGameId(source, gameId, k)
+			subValue := accountdb.GetFT(source, k)
 			compareResult, sub := canWithDraw(v, subValue)
 			if !compareResult {
 				return false
 			}
 
 			// 扣ft
-			accountdb.SetFTByGameId(source, gameId, k, sub)
+			accountdb.SetFT(source, k, sub)
 		}
 	}
 
@@ -293,7 +293,8 @@ func (executor *VMExecutor) executeDepositNotify(accountdb *account.AccountDB, t
 	if depositData.FT != nil {
 		for key, value := range depositData.FT {
 			b1, _ := utility.StrToBigInt(value)
-			accountdb.AddFTByGameId(address, gameId, key, b1)
+			// todo: 发行ft
+			accountdb.AddFT(address, key, b1)
 		}
 	}
 

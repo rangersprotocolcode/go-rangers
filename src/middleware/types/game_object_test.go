@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"x/src/storage/rlp"
 	"fmt"
+	"encoding/json"
 )
 
 func TestFT_EncodeRLP(t *testing.T) {
@@ -79,6 +80,21 @@ func Test_RLP(t *testing.T) {
 	}
 
 	fmt.Println(data)
+}
+
+func Test_JSON(t *testing.T) {
+	s := Student{Name: "icattlecoder", Sex: "male"}
+	data, err := json.Marshal(s)
+	if err != nil {
+		t.Fatalf("%s", err.Error())
+	}
+
+	var st Student
+	err = json.Unmarshal(data, &st)
+
+	var stp *Student
+	stp = &st
+	fmt.Println(stp.Name)
 }
 
 type Student struct {

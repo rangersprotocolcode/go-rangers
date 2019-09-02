@@ -149,7 +149,7 @@ func transferFT(ft map[string]string, source common.Address, target common.Addre
 		return true
 	}
 
-	sourceFt := accountDB.GetAllFTByGameId(source, gameId)
+	sourceFt := accountDB.GetAllFT(source)
 
 	for ftName, valueString := range ft {
 		owner := sourceFt[ftName]
@@ -165,12 +165,9 @@ func transferFT(ft map[string]string, source common.Address, target common.Addre
 			return false
 		}
 
-		targetValue := accountDB.GetFTByGameId(target, gameId, ftName)
-		targetLeft := targetValue.Add(targetValue, value)
-		accountDB.SetFTByGameId(target, gameId, ftName, targetLeft)
+		accountDB.AddFT(target, ftName, value)
+		accountDB.SubFT(source, ftName, value)
 
-		left := owner.Sub(owner, value)
-		accountDB.SetFTByGameId(source, gameId, ftName, left)
 	}
 
 	return true
