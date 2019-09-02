@@ -6,7 +6,6 @@ import (
 	"x/src/middleware/types"
 	"x/src/storage/rlp"
 	"fmt"
-	"x/src/common"
 )
 
 func Test_RLP_account(t *testing.T) {
@@ -22,6 +21,10 @@ func Test_RLP_account(t *testing.T) {
 	}
 	if account.GameData == nil {
 		account.GameData = &types.GameData{}
+		nftMap := &types.NFTMap{}
+		nft := &types.NFT{ID: "sword1", Name: "yitai", Symbol: "yt"}
+		nftMap.SetNFT("sword1", nft)
+		account.GameData.SetNFT("test1", nftMap)
 	}
 
 	data, err := rlp.EncodeToBytes(account)
@@ -30,13 +33,9 @@ func Test_RLP_account(t *testing.T) {
 	}
 
 	fmt.Println(data)
-}
 
-type AccountTest struct {
-	Nonce    uint64
-	Root     common.Hash
-	CodeHash []byte
+	accountBeta := &Account{}
+	err = rlp.DecodeBytes(data, accountBeta)
 
-	Balance *big.Int
-	Ft      []*types.FT
+	fmt.Println(accountBeta.GameData.GetNFTMaps("test1").GetNFT("sword1").Name)
 }

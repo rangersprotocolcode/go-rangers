@@ -5,6 +5,10 @@ import (
 	"math/big"
 )
 
+// NFT 数据结构综述
+// GameData 的结构可以用map来简单描述
+// GameData = map[string]*NFTMap key为gameId
+// NFTMap = map[string]*NFT key为nftId
 type NFTSet struct {
 	ID          string
 	Name        string
@@ -206,7 +210,7 @@ type FTSet struct {
 	Symbol string // 代币代号，例如ETH
 	AppId  string // 发行方
 
-	TotalSupply int64 //发行总数， -1表示无限量（对于公链币，也是如此）
+	TotalSupply int64 // 发行总数， -1表示无限量（对于公链币，也是如此）
 	Remain      int64 // 还剩下多少，-1表示无限（对于公链币，也是如此）
 	Type        byte  // 类型，0代表公链币，1代表游戏发行的FT
 }
