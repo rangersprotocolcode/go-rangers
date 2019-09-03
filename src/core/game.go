@@ -7,36 +7,53 @@ import (
 	"math/big"
 	"strconv"
 	"x/src/statemachine"
+	"strings"
+	"fmt"
 )
 
-func UpdateAsset(user types.UserData, gameId string, account *account.AccountDB) bool {
-	balanceDelta := convert(user.Balance)
-	if balanceDelta.Sign() == -1 {
-		// 扣玩家钱。这里允许扣钱，为了状态机操作方便（理论上是需要用户签名的）
+// 状态机更新资产
+// 包括货币转账、NFT资产修改
+func UpdateAsset(user types.UserData, appId string, accountDB *account.AccountDB) bool {
+	userAddr := common.HexToAddress(user.Address)
+	appAddr := common.HexToAddress(appId)
 
-		// 1. 先从玩家账户里扣
-		if !changeBalance(user.Address, gameId, balanceDelta, account) {
-			return false
-		}
-
-		// 2. 给游戏钱，游戏账户也即gameId
-		var b = big.NewInt(0)
-		b.Mul(balanceDelta, big.NewInt(-1))
-		changeBalance(gameId, gameId, b, account)
-	} else if balanceDelta.Sign() == 1 {
-		// 1. 先从游戏账户里扣，游戏账户也即gameId
-		var b = big.NewInt(0)
-		b.Mul(balanceDelta, big.NewInt(-1))
-		if !changeBalance(gameId, gameId, b, account) {
-			return false
-		}
-
-		// 2. 给玩家钱
-		changeBalance(user.Address, gameId, balanceDelta, account)
+	// 转balance
+	if !transferBalance(user.Balance, appAddr, userAddr, accountDB) {
+		logger.Debugf("Change balance failed!")
+		return false
 	}
 
-	if 0 != len(user.Assets) {
-		setAsset(user.Address, gameId, user.Assets, account)
+	// 转coin
+	if !transferFT(user.Coin, appAddr, userAddr, accountDB, true) {
+		logger.Debugf("Change coin failed!")
+		return false
+	}
+
+	// 转FT
+	ftList := user.FT
+	if 0 != len(ftList) {
+		for ftName, valueString := range ftList {
+			ftInfo := strings.Split(ftName, "-")
+			if 2 != len(ftInfo) || ftInfo[0] != appId {
+				return false
+			}
+			_, flag := TransferFT(ftInfo[0], ftInfo[1], user.Address, valueString, accountDB)
+			if !flag {
+				logger.Debugf("Game Change ft failed!")
+				return false
+			}
+		}
+	}
+
+	// 修改NFT属性
+	// 若修改不存在的NFT，则会失败
+	nftList := user.NFT
+	if 0 != len(nftList) {
+		for _, nft := range nftList {
+			if !nftManagerInstance.UpdateNFT(userAddr, appId, nft.SetId, nft.Id, nft.Data, accountDB) {
+				return false
+			}
+		}
 	}
 
 	return true
@@ -56,7 +73,7 @@ func convertWithoutBase(s string) *big.Int {
 // 这里的转账包括货币、FT、NFT
 // 注意：如果source是游戏本身，那么FT会走其专属流程
 // 这里不处理事务。调用本方法之前自行处理事务
-func changeBalances(gameId string, source string, targets map[string]types.TransferData, accountdb *account.AccountDB) bool {
+func changeAssets(gameId string, source string, targets map[string]types.TransferData, accountdb *account.AccountDB) bool {
 	//sub := GetSubAccount(source, gameId, accountdb)
 	sourceAddr := common.HexToAddress(source)
 
@@ -64,8 +81,14 @@ func changeBalances(gameId string, source string, targets map[string]types.Trans
 		targetAddr := common.HexToAddress(address)
 
 		// 转钱
-		if !transferBalance(transferData.Balance, sourceAddr, targetAddr, gameId, accountdb) {
+		if !transferBalance(transferData.Balance, sourceAddr, targetAddr, accountdb) {
 			logger.Debugf("Change balance failed!")
+			return false
+		}
+
+		// 转coin
+		if !transferFT(transferData.Coin, sourceAddr, targetAddr, accountdb, true) {
+			logger.Debugf("Change coin failed!")
 			return false
 		}
 
@@ -76,13 +99,18 @@ func changeBalances(gameId string, source string, targets map[string]types.Trans
 			// 根据source，来判断是否是游戏自己的地址
 			if statemachine.Docker.IsGame(source) {
 				for ftName, valueString := range ftList {
-					_, flag := TransferFT(gameId, ftName, address, valueString, accountdb)
+					ftInfo := strings.Split(ftName, "-")
+					//
+					if 2 != len(ftInfo) || ftInfo[0] != source {
+						return false
+					}
+					_, flag := TransferFT(ftInfo[0], ftInfo[1], address, valueString, accountdb)
 					if !flag {
 						logger.Debugf("Game Change ft failed!")
 						return false
 					}
 				}
-			} else if !transferFT(ftList, sourceAddr, targetAddr, gameId, accountdb) {
+			} else if !transferFT(ftList, sourceAddr, targetAddr, accountdb, false) {
 				logger.Debugf("Change ft failed!")
 				return false
 			}
@@ -99,34 +127,29 @@ func changeBalances(gameId string, source string, targets map[string]types.Trans
 	return true
 }
 
-func transferNFT(nft []string, source common.Address, target common.Address, gameId string, db *account.AccountDB) bool {
-	if 0 == len(nft) {
+func transferNFT(nftIDList []types.NFTID, source common.Address, target common.Address, appId string, db *account.AccountDB) bool {
+	if 0 == len(nftIDList) {
 		return true
 	}
 
-	sourceNFT := db.GetAllNFTByGameId(source, gameId)
-	for _, id := range nft {
-		value := sourceNFT[id]
-		if 0 == len(value) {
+	for _, id := range nftIDList {
+		_, flag := nftManagerInstance.Transfer(appId, id.SetId, id.Id, source, target, db)
+		if !flag {
 			return false
 		}
-
-		//todo: target
-		db.SetNFTByGameId(target, gameId, id, value)
-		db.RemoveNFTByGameId(source, gameId, id)
 	}
 
 	return true
 }
 
-func transferBalance(value string, source common.Address, target common.Address, gameId string, accountDB *account.AccountDB) bool {
+func transferBalance(value string, source common.Address, target common.Address, accountDB *account.AccountDB) bool {
 	balance := convert(value)
 	// 不能扣钱
 	if balance.Sign() == -1 {
 		return false
 	}
 
-	sourceBalance := accountDB.GetBalanceByGameId(source, gameId)
+	sourceBalance := accountDB.GetBalance(source)
 
 	// 钱不够转账，再见
 	if sourceBalance.Cmp(balance) == -1 {
@@ -134,17 +157,16 @@ func transferBalance(value string, source common.Address, target common.Address,
 	}
 
 	// 目标加钱
-	targetBalance := accountDB.GetBalanceByGameId(target, gameId)
-	targetBalance = targetBalance.Add(balance, targetBalance)
-	accountDB.SetBalanceByGameId(target, gameId, targetBalance)
+	accountDB.AddBalance(target, balance)
 
 	// 自己减钱
-	sourceBalance = sourceBalance.Sub(sourceBalance, balance)
-	accountDB.SetBalanceByGameId(source, gameId, sourceBalance)
+	accountDB.SubBalance(source, balance)
+
 	return true
 }
 
-func transferFT(ft map[string]string, source common.Address, target common.Address, gameId string, accountDB *account.AccountDB) bool {
+// 这里只处理玩家之间的ft转让，不涉及状态机给玩家转ft
+func transferFT(ft map[string]string, source common.Address, target common.Address, accountDB *account.AccountDB, isCoin bool) bool {
 	if 0 == len(ft) {
 		return true
 	}
@@ -152,7 +174,13 @@ func transferFT(ft map[string]string, source common.Address, target common.Addre
 	sourceFt := accountDB.GetAllFT(source)
 
 	for ftName, valueString := range ft {
-		owner := sourceFt[ftName]
+		var owner *big.Int
+		if isCoin {
+			owner = sourceFt[fmt.Sprintf("official-%s", ftName)]
+		} else {
+			owner = sourceFt[ftName]
+		}
+
 		if nil == owner {
 			return false
 		}
@@ -167,65 +195,7 @@ func transferFT(ft map[string]string, source common.Address, target common.Addre
 
 		accountDB.AddFT(target, ftName, value)
 		accountDB.SubFT(source, ftName, value)
-
 	}
 
 	return true
-}
-
-// false 表示转账失败
-// 给address账户下的gameId子账户转账
-// 允许扣钱
-func changeBalance(addressString string, gameId string, balance *big.Int, accountdb *account.AccountDB) bool {
-	common.DefaultLogger.Debugf("change balance: addr:%s,balance:%v,gameId:%s", addressString, balance, gameId)
-	address := common.HexToAddress(addressString)
-	subBalance := accountdb.GetBalanceByGameId(address, gameId)
-
-	if subBalance != nil {
-		subBalance = subBalance.Add(balance, subBalance)
-	} else {
-		subBalance = balance
-	}
-
-	if subBalance.Sign() == -1 {
-		return false
-	}
-
-	accountdb.SetBalanceByGameId(address, gameId, subBalance)
-	return true
-}
-
-func setAsset(addressString string, gameId string, assets map[string]string, accountdb *account.AccountDB) {
-	if nil == assets || 0 == len(assets) {
-		return
-	}
-
-	address := common.HexToAddress(addressString)
-	sub := accountdb.GetAllNFTByGameId(address, gameId)
-
-	// append everything if there is no asset right now
-	if nil == sub || 0 == len(sub) {
-		for id, value := range assets {
-			if 0 == len(value) {
-				continue
-			}
-
-			accountdb.SetNFTByGameId(address, gameId, id, value)
-		}
-
-		return
-	}
-
-	// update/add and delete
-	for assetId, assetValue := range assets {
-		// 已有，assetValue空字符串，则是移除
-		if 0 != len(sub[assetId]) && 0 == len(assetValue) {
-			accountdb.RemoveNFTByGameId(address, gameId, assetId)
-			continue
-		}
-
-		//update/add
-		accountdb.SetNFTByGameId(address, gameId, assetId, assetValue)
-	}
-
 }

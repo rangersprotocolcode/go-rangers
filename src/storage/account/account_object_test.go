@@ -22,9 +22,9 @@ func Test_RLP_account(t *testing.T) {
 	if account.GameData == nil {
 		account.GameData = &types.GameData{}
 		nftMap := &types.NFTMap{}
-		nft := &types.NFT{ID: "sword1", Name: "yitai", Symbol: "yt"}
-		nftMap.SetNFT("sword1", nft)
-		account.GameData.SetNFT("test1", nftMap)
+		nft := &types.NFT{ID: "sword1", Name: "yitai", Symbol: "yt", SetID: "game1"}
+		nftMap.SetNFT(nft)
+		account.GameData.SetNFTMaps("test1", nftMap)
 	}
 
 	data, err := rlp.EncodeToBytes(account)
@@ -37,5 +37,5 @@ func Test_RLP_account(t *testing.T) {
 	accountBeta := &Account{}
 	err = rlp.DecodeBytes(data, accountBeta)
 
-	fmt.Println(accountBeta.GameData.GetNFTMaps("test1").GetNFT("sword1").Name)
+	fmt.Println(accountBeta.GameData.GetNFTMaps("test1").GetNFT("game1", "sword1").Name)
 }

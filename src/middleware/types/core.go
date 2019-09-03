@@ -80,14 +80,20 @@ const (
 	TransactionTypeMinerRefund = 4
 
 	//以下交易类型会被外部使用 禁止更改
-	TransactionTypeOperatorEvent     = 100
-	TransactionTypeGetBalance        = 101
-	TransactionTypeGetAsset          = 102
-	TransactionTypeGetAllAssets      = 103
-	TransactionTypeGetAllAsset       = 104 // 获取一个账户的所有资产情况
-	TransactionTypeStateMachineNonce = 105
-	TransactionTypeDepositAck        = 106
-	TransactionTypeWithdraw          = 107
+	TransactionTypeOperatorEvent    = 100
+	TransactionTypeGetCoin          = 101 // 查询主链币
+	TransactionTypeGetAllCoin       = 102 // 查询所有主链币
+	TransactionTypeFT               = 103 // 查询特定FT
+	TransactionTypeAllFT            = 104 // 查询所有FT
+	TransactionTypeNFT              = 105 // 根据setId、id查询特定NFT
+	TransactionTypeNFTListByAddress = 106 // 查询账户下所有NFT
+
+	TransactionTypeGetAllAssets      = 103222
+	TransactionTypeGetAllAsset       = 1042222
+	TransactionTypeStateMachineNonce = 105222
+	TransactionTypeDepositAck        = 106222
+	TransactionTypeWithdraw          = 107222
+	TransactionTypeGetAsset          = 10211111
 )
 
 type Transaction struct {
@@ -104,8 +110,8 @@ type Transaction struct {
 	Hash common.Hash
 	Sign *common.Sign
 
-	Nonce uint64 // 用户级别nonce
-	RequestId uint64 // 消息编号 由网关添加
+	Nonce           uint64 // 用户级别nonce
+	RequestId       uint64 // 消息编号 由网关添加
 	SocketRequestId string // websocket id，用于客户端标示请求id，方便回调处理
 }
 
@@ -331,16 +337,23 @@ type SubAccountData struct {
 
 // 用于状态机内通过SDK调用layer2的数据结构
 type UserData struct {
-	Address string            `json:"address"`
-	Balance string            `json:"balance,omitempty"`
-	Assets  map[string]string `json:"assets,omitempty"`
+	Address string `json:"address"`
+	TransferData
+	Assets  map[string]string
 }
 
 // 转账时写在extraData里的复杂结构，用于转账NFT、FT以及余额
 type TransferData struct {
 	Balance string            `json:"balance,omitempty"`
+	Coin    map[string]string `json:"coin,omitempty"`
 	FT      map[string]string `json:"ft,omitempty"`
-	NFT     []string          `json:"nft,omitempty"`
+	NFT     []NFTID           `json:"nft,omitempty"`
+}
+
+type NFTID struct {
+	SetId string `json:"setId,omitempty"`
+	Id    string `json:"id,omitempty"`
+	Data  string `json:"data,omitempty"`
 }
 
 //提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链

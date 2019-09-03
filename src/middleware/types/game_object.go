@@ -3,6 +3,8 @@ package types
 import (
 	"time"
 	"math/big"
+	"fmt"
+	"x/src/common"
 )
 
 // NFT 数据结构综述
@@ -10,11 +12,15 @@ import (
 // GameData = map[string]*NFTMap key为gameId
 // NFTMap = map[string]*NFT key为nftId
 type NFTSet struct {
-	ID          string
+	SetID       string
 	Name        string
 	Symbol      string
 	TotalSupply uint
-	Occupied    uint
+	OccupiedID  map[string]common.Address // 已经发行的NFTID及其拥有者
+}
+
+func (self *NFTSet) ChangeOwner(id string, newOwner common.Address) {
+	self.OccupiedID[id] = newOwner
 }
 
 type NFT struct {
@@ -40,7 +46,7 @@ type NFT struct {
 	//ReturnTime      byte // 到指定块高后使用权回收
 
 	// 3. NFT业务数据
-	GameId string // 当前游戏id
+	AppId string // 当前游戏id
 
 	// 4. NFT在游戏中的数据
 	DataValue []string //key为gameId，
@@ -86,10 +92,15 @@ type NFTMap struct {
 	NFTIDList []string
 }
 
-func (self *NFTMap) Delete(id string) {
+func (self *NFTMap) genID(setId, id string) string {
+	return fmt.Sprintf("%s-%s", setId, id)
+}
+
+func (self *NFTMap) Delete(setId, id string) {
+	name := self.genID(setId, id)
 	index := -1
 	for i, key := range self.NFTIDList {
-		if key == id {
+		if key == name {
 			index = i
 			break
 		}
@@ -103,10 +114,11 @@ func (self *NFTMap) Delete(id string) {
 	self.NFTIDList = append(self.NFTIDList[:index], self.NFTIDList[index+1:]...)
 }
 
-func (self *NFTMap) GetNFT(id string) *NFT {
+func (self *NFTMap) GetNFT(setId, id string) *NFT {
+	name := self.genID(setId, id)
 	index := -1
 	for i, key := range self.NFTIDList {
-		if key == id {
+		if key == name {
 			index = i
 			break
 		}
@@ -118,7 +130,12 @@ func (self *NFTMap) GetNFT(id string) *NFT {
 	return self.NFTList[index]
 }
 
-func (self *NFTMap) SetNFT(id string, nft *NFT) bool {
+func (self *NFTMap) SetNFT(nft *NFT) bool {
+	if nil == nft {
+		return false
+	}
+
+	id := self.genID(nft.SetID, nft.ID)
 	index := -1
 	for i, key := range self.NFTIDList {
 		if key == id {
@@ -137,12 +154,8 @@ func (self *NFTMap) SetNFT(id string, nft *NFT) bool {
 	return false
 }
 
-func (self *NFTMap) GetAllNFT(gameId string) map[string]string {
-	result := make(map[string]string, len(self.NFTIDList))
-	for i, value := range self.NFTIDList {
-		result[value] = self.NFTList[i].GetData(gameId)
-	}
-	return result
+func (self *NFTMap) GetAllNFT() []*NFT {
+	return self.NFTList
 }
 
 type GameData struct {
@@ -150,10 +163,10 @@ type GameData struct {
 	NFTMaps    []*NFTMap
 }
 
-func (self *GameData) GetNFTMaps(id string) *NFTMap {
+func (self *GameData) GetNFTMaps(appId string) *NFTMap {
 	index := -1
 	for i, key := range self.GameIDList {
-		if key == id {
+		if key == appId {
 			index = i
 			break
 		}
@@ -165,7 +178,7 @@ func (self *GameData) GetNFTMaps(id string) *NFTMap {
 	return self.NFTMaps[index]
 }
 
-func (self *GameData) SetNFT(id string, nft *NFTMap) bool {
+func (self *GameData) SetNFTMaps(id string, nft *NFTMap) bool {
 	index := -1
 	for i, key := range self.GameIDList {
 		if key == id {

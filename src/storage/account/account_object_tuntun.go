@@ -11,7 +11,7 @@ func (self *accountObject) checkAndCreate(gameId string) {
 	}
 
 	if self.data.GameData.GetNFTMaps(gameId) == nil {
-		self.data.GameData.SetNFT(gameId, &types.NFTMap{})
+		self.data.GameData.SetNFTMaps(gameId, &types.NFTMap{})
 		self.db.transitions = append(self.db.transitions, createGameDataChange{
 			account: &self.address,
 			gameId:  gameId,
@@ -103,38 +103,72 @@ func (self *accountObject) setFT(amount *big.Int, name string) {
 	self.callback()
 }
 
-func (self *accountObject) SetNFTByGameId(gameId string, name string, value string) {
+// 新增一个nft实例
+func (self *accountObject) AddNFTByGameId(gameId string, nft *types.NFT) bool {
+	if nil == nft {
+		return false
+	}
 	self.checkAndCreate(gameId)
+	nftMaps := self.data.GameData.GetNFTMaps(gameId)
+	if nftMaps.GetNFT(nft.SetID, nft.ID) != nil {
+		return false
+	}
+
+	change := tuntunAddNFTChange{
+		account: &self.address,
+		gameId:  gameId,
+		id:      nft.ID,
+		setId:   nft.SetID,
+	}
+	self.db.transitions = append(self.db.transitions, change)
+	return nftMaps.SetNFT(nft)
+}
+
+// 更新nft属性值
+func (self *accountObject) SetNFTValueByGameId(gameId, setId, id, value string) bool {
 	data := self.data.GameData.GetNFTMaps(gameId)
+	if nil == data {
+		return false
+	}
+
+	self.checkAndCreate(gameId)
+
 	change := tuntunNFTChange{
 		account: &self.address,
 		gameId:  gameId,
-		name:    name,
+		setId:   setId,
+		id:      id,
 	}
-	if data != nil && nil != data.GetNFT(name) && 0 != len(data.GetNFT(name).GetData(gameId)) {
-		change.prev = data.GetNFT(name).GetData(gameId)
+	nft := data.GetNFT(setId, id)
+	if nil != nft {
+		nftValue := nft.GetData(gameId)
+		if 0 != len(nftValue) {
+			change.prev = nftValue
+		}
 	}
 	self.db.transitions = append(self.db.transitions, change)
-	self.setNFTByGameId(gameId, name, value)
+
+	return self.setNFTByGameId(gameId, setId, id, value)
 }
 
-func (self *accountObject) setNFTByGameId(gameId string, name string, value string) {
+func (self *accountObject) setNFTByGameId(gameId, setId, id, value string) bool {
 	data := self.data.GameData.GetNFTMaps(gameId)
 	if nil == data {
-		return
+		return false
 	}
 
 	if 0 == len(value) {
-		data.Delete(name)
+		data.Delete(setId, id)
 	} else {
-		nftData := data.GetNFT(name)
+		nftData := data.GetNFT(setId, id)
 		if nil != nftData {
-			nftData.SetData(value,gameId)
+			nftData.SetData(value, gameId)
 		}
 
 	}
 
 	self.callback()
+	return true
 }
 
 func (self *accountObject) callback() {

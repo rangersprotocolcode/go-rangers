@@ -55,7 +55,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 					success = false
 					break
 				}
-				if !changeBalances(transaction.Target, transaction.Source, mm, accountdb) {
+				if !changeAssets(transaction.Target, transaction.Source, mm, accountdb) {
 					success = false
 					break
 				}
@@ -99,7 +99,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 										continue
 									}
 
-									// 用户之间转账
+									// 更新资产
 									if !UpdateAsset(user, transaction.Target, accountdb) {
 										success = false
 										break
@@ -187,7 +187,7 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 
 	//余额检查
 	var withdrawAmount = big.NewInt(0)
-	subAccountBalance := accountdb.GetBalanceByGameId(source, gameId)
+	subAccountBalance := accountdb.GetBalance(source)
 	if withDrawReq.Balance != "" {
 		withdrawAmount, err = utility.StrToBigInt(withDrawReq.Balance)
 		if err != nil {
@@ -203,7 +203,7 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 
 		//扣余额
 		subAccountBalance.Sub(subAccountBalance, withdrawAmount)
-		accountdb.SetBalanceByGameId(source, gameId, subAccountBalance)
+		accountdb.SetBalance(source, subAccountBalance)
 	}
 
 	//ft
@@ -287,7 +287,7 @@ func (executor *VMExecutor) executeDepositNotify(accountdb *account.AccountDB, t
 		return false
 	}
 
-	accountdb.AddBalanceByGameId(address, gameId, depositAmount)
+	accountdb.AddBalance(address, depositAmount)
 
 	//FT
 	if depositData.FT != nil {

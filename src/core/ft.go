@@ -7,7 +7,6 @@ import (
 	"math/big"
 	"encoding/json"
 	"x/src/storage/account"
-	"github.com/hashicorp/golang-lru"
 	"sync"
 	"fmt"
 )
@@ -31,8 +30,7 @@ func TransferFT(appId string, symbol string, target string, supply string, accou
 }
 
 type FTManager struct {
-	cache *lru.Cache
-	lock  sync.RWMutex
+	lock sync.RWMutex
 }
 
 var FTManagerInstance *FTManager
@@ -46,10 +44,6 @@ func initFTManager() {
 func (self *FTManager) GetFTSet(id string, accountDB *account.AccountDB) *types.FTSet {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
-	value, ok := self.cache.Get(id)
-	if ok {
-		return value.(*types.FTSet)
-	}
 
 	valueByte := accountDB.GetData(common.FTSetAddress, []byte(id))
 	if nil == valueByte || 0 == len(valueByte) {
@@ -63,7 +57,6 @@ func (self *FTManager) GetFTSet(id string, accountDB *account.AccountDB) *types.
 		return nil
 	}
 
-	self.cache.Add(id, &ftSet)
 	return &ftSet
 }
 
@@ -109,25 +102,20 @@ func (self *FTManager) SubFTSet(appId, symbol string, amount *big.Int, accountDB
 
 	id := self.genID(appId, symbol)
 	var ftSet *types.FTSet
-	value, ok := self.cache.Get(id)
-	if ok {
-		ftSet = value.(*types.FTSet)
-	} else {
-		valueByte := accountDB.GetData(common.FTSetAddress, []byte(id))
-		if nil == valueByte || 0 == len(valueByte) {
-			return false
-		}
 
-		var ftSetData types.FTSet
-		err := json.Unmarshal(valueByte, &ftSetData)
-		if err != nil {
-			logger.Error("fail to get ftSet: %s, %s", id, err.Error())
-			return false
-		}
-
-		ftSet = &ftSetData
-		self.cache.Add(id, ftSet)
+	valueByte := accountDB.GetData(common.FTSetAddress, []byte(id))
+	if nil == valueByte || 0 == len(valueByte) {
+		return false
 	}
+
+	var ftSetData types.FTSet
+	err := json.Unmarshal(valueByte, &ftSetData)
+	if err != nil {
+		logger.Error("fail to get ftSet: %s, %s", id, err.Error())
+		return false
+	}
+
+	ftSet = &ftSetData
 
 	if ftSet.Remain.Cmp(amount) == -1 {
 		return false
@@ -143,15 +131,11 @@ func (self *FTManager) genID(appId, symbol string) string {
 }
 
 func (self *FTManager) updateFTSet(id string, ftSet *types.FTSet, accountDB *account.AccountDB) {
-	self.cache.Add(id, ftSet)
 	data, _ := json.Marshal(ftSet)
 	accountDB.SetData(common.FTSetAddress, []byte(id), data)
 }
 
 func (self *FTManager) contains(id string, accountDB *account.AccountDB) bool {
-	if self.cache.Contains(id) {
-		return true
-	}
 
 	valueByte := accountDB.GetData(common.FTSetAddress, []byte(id))
 	if nil == valueByte || 0 == len(valueByte) {

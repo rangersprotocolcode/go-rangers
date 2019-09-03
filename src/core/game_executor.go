@@ -9,11 +9,11 @@ import (
 	"x/src/middleware/types"
 	"strconv"
 	"x/src/statemachine"
+	"fmt"
+	"strings"
 )
 
-/**
-客户端web socket 请求的返回数据结构
- */
+// 客户端web socket 请求的返回数据结构
 type response struct {
 	Id      string `json:"id,omitempty"`
 	Status  string `json:"status,omitempty"`
@@ -114,44 +114,69 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 
 	switch txRaw.Type {
 
-	// query balance
-	case types.TransactionTypeGetBalance:
-		balance := accountDB.GetBalanceByGameId(source, gameId)
+	// 查询主链币
+	case types.TransactionTypeGetCoin:
+		ftName := fmt.Sprintf("official-%s", txRaw.Data)
+		balance := accountDB.GetFT(source, ftName)
 		floatdata := float64(balance.Int64()) / 1000000000
 		result = strconv.FormatFloat(floatdata, 'f', -1, 64)
+		break
 
-	case types.TransactionTypeGetAsset:
-		nftId := txRaw.Data
-		result = accountDB.GetNFTByGameId(source, gameId, nftId)
-
-	case types.TransactionTypeGetAllAssets:
-		bytes, _ := json.Marshal(accountDB.GetAllNFTByGameId(source, gameId))
-		result = string(bytes)
-
-	case types.TransactionTypeStateMachineNonce:
-		result = strconv.FormatUint(0, 10)
-
-	case types.TransactionTypeGetAllAsset:
-
-		subAccountData := make(map[string]interface{})
-
-		ftList := accountDB.GetAllFT(source)
-		ftMap := make(map[string]string)
-		if 0 != len(ftList) {
-			for id, value := range ftList {
-				ftMap[id] = strconv.FormatFloat(float64(value.Int64())/1000000000, 'f', -1, 64)
+		// 查询所有主链币
+	case types.TransactionTypeGetAllCoin:
+		ftMap := accountDB.GetAllFT(source)
+		data := make(map[string]string, 0)
+		for key, value := range ftMap {
+			keyItems := strings.Split(key, "-")
+			if "official" == keyItems[0] {
+				data[keyItems[1]] = strconv.FormatFloat(float64(value.Int64())/1000000000, 'f', -1, 64)
 			}
 		}
-		subAccountData["ft"] = ftMap
-
-		subAccountData["nft"] = accountDB.GetAllNFTByGameId(source, gameId)
-
-		balance := accountDB.GetBalanceByGameId(source, gameId)
-		floatdata := float64(balance.Int64()) / 1000000000
-		subAccountData["balance"] = strconv.FormatFloat(floatdata, 'f', -1, 64)
-
-		bytes, _ := json.Marshal(subAccountData)
+		bytes, _ := json.Marshal(data)
 		result = string(bytes)
+		break
+
+		// 查询FT
+	case types.TransactionTypeFT:
+		balance := accountDB.GetFT(source, txRaw.Data)
+		floatdata := float64(balance.Int64()) / 1000000000
+		result = strconv.FormatFloat(floatdata, 'f', -1, 64)
+		break
+
+		// 查询所有FT
+	case types.TransactionTypeAllFT:
+		ftMap := accountDB.GetAllFT(source)
+		data := make(map[string]string, 0)
+		for key, value := range ftMap {
+			keyItems := strings.Split(key, "-")
+			if "official" != keyItems[0] {
+				data[key] = strconv.FormatFloat(float64(value.Int64())/1000000000, 'f', -1, 64)
+			}
+		}
+		bytes, _ := json.Marshal(data)
+		result = string(bytes)
+		break
+
+		//查询特定NFT
+	case types.TransactionTypeNFT:
+		var id types.NFTID
+		err := json.Unmarshal([]byte(txRaw.Data), &id)
+		if nil == err {
+			nft := nftManagerInstance.GetNFT(id.SetId, id.Id, accountDB)
+			if nil != nft {
+				bytes, _ := json.Marshal(nft)
+				result = string(bytes)
+			}
+		}
+		break
+
+		// 查询账户下某个游戏的所有NFT
+	case types.TransactionTypeNFTListByAddress:
+		nftList := nftManagerInstance.GetNFTListByAddress(source, gameId, accountDB)
+		bytes, _ := json.Marshal(nftList)
+		result = string(bytes)
+		break
+
 	}
 
 	responseId := txRaw.SocketRequestId
@@ -202,7 +227,9 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 		//			"name1": "189",
 		//			"name2": "1"
 		//		},
-		//		"nft": ["id1", "sword2"]
+		//		"nft": [{"setId":"suit1","id":"xizhuang"},
+		//              {"setId":"gun","id":"rifle"}
+		// 				]
 		//	},
 		//	"address2": {
 		//		"balance": "1"
@@ -215,7 +242,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 			if err := json.Unmarshal([]byte(txRaw.ExtraData), &mm); nil != err {
 				result = "fail to transfer"
 				logger.Debugf("Transfer data unmarshal error:%s", err.Error())
-			} else if !changeBalances(txRaw.Target, txRaw.Source, mm, accountDB) {
+			} else if !changeAssets(txRaw.Target, txRaw.Source, mm, accountDB) {
 				result = "fail to transfer"
 				logger.Debugf("change balances  failed")
 			}

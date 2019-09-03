@@ -3,34 +3,8 @@ package account
 import (
 	"x/src/common"
 	"math/big"
-	"encoding/json"
+	"x/src/middleware/types"
 )
-
-// 读取对应gameId下的余额
-func (self *AccountDB) GetBalanceByGameId(addr common.Address, gameId string) *big.Int {
-	return self.GetBalance(addr)
-}
-
-// 设置对应gameId下的余额
-func (self *AccountDB) SetBalanceByGameId(addr common.Address, gameId string, balance *big.Int) {
-	self.SetBalance(addr, balance)
-}
-
-// 对应gameId下的余额
-func (self *AccountDB) AddBalanceByGameId(addr common.Address, gameId string, balance *big.Int) {
-	self.AddBalance(addr, balance)
-}
-
-// 减少余额
-func (self *AccountDB) SubBalanceByGameId(addr common.Address, gameId string, balance *big.Int) bool {
-	value := self.GetBalance(addr)
-	if value.Cmp(balance) == -1 {
-		return false
-	}
-
-	self.SubBalance(addr, balance)
-	return true
-}
 
 func (self *AccountDB) GetFT(addr common.Address, ftName string) *big.Int {
 	accountObject := self.getOrNewAccountObject(addr)
@@ -85,7 +59,23 @@ func (self *AccountDB) SubFT(addr common.Address, ftName string, balance *big.In
 
 }
 
-func (self *AccountDB) GetNFTByGameId(addr common.Address, gameId string, name string) string {
+// 根据setId/id 查找NFT
+func (self *AccountDB) GetNFTById(addr common.Address, setId, id string) *types.NFT {
+	accountObject := self.getOrNewAccountObject(addr)
+	data := accountObject.data.GameData
+
+	for _, nftMap := range data.NFTMaps {
+		nft := nftMap.GetNFT(setId, id)
+		if nil != nft {
+			return nft
+		}
+	}
+
+	return nil
+}
+
+// 在某个gameId下根据setId/id 查找NFT
+func (self *AccountDB) GetNFTByGameId(addr common.Address, gameId, setId, id string) string {
 	accountObject := self.getOrNewAccountObject(addr)
 	data := accountObject.data
 	nftList := data.GameData.GetNFTMaps(gameId)
@@ -93,14 +83,14 @@ func (self *AccountDB) GetNFTByGameId(addr common.Address, gameId string, name s
 		return ""
 	}
 
-	nft := nftList.GetNFT(name)
+	nft := nftList.GetNFT(setId, id)
 	if nil != nft {
 		return nft.GetData(gameId)
 	}
 	return ""
 }
 
-func (self *AccountDB) GetAllNFTByGameId(addr common.Address, gameId string) map[string]string {
+func (self *AccountDB) GetAllNFTByGameId(addr common.Address, gameId string) []*types.NFT {
 	accountObject := self.getOrNewAccountObject(addr)
 	data := accountObject.data
 	nftList := data.GameData.GetNFTMaps(gameId)
@@ -108,36 +98,20 @@ func (self *AccountDB) GetAllNFTByGameId(addr common.Address, gameId string) map
 		return nil
 	}
 
-	return nftList.GetAllNFT(gameId)
+	return nftList.GetAllNFT()
 }
 
-func (self *AccountDB) SetNFTByGameId(addr common.Address, gameId string, name string, value string) {
+func (self *AccountDB) AddNFTByGameId(addr common.Address, appId string, nft *types.NFT) bool {
 	stateObject := self.getOrNewAccountObject(addr)
-	stateObject.SetNFTByGameId(gameId, name, value)
+	return stateObject.AddNFTByGameId(appId, nft)
 }
 
-func (self *AccountDB) RemoveNFTByGameId(addr common.Address, gameId string, name string) {
+func (self *AccountDB) SetNFTValueByGameId(addr common.Address, appId, setId, id, value string) bool{
 	stateObject := self.getOrNewAccountObject(addr)
-	stateObject.SetNFTByGameId(gameId, name, "")
+	return stateObject.SetNFTValueByGameId(appId, setId, id, value)
 }
 
-// 获取游戏已经发行的ft
-func (self *AccountDB) GetFtList(gameAddr common.Address) map[string]string {
-	data := self.GetData(gameAddr, []byte("ft"))
-	var result map[string]string
-
-	err := json.Unmarshal(data, &result)
-	if nil != err {
-		//todo: log
-		result = make(map[string]string)
-	}
-
-	return result
-}
-
-// 对于游戏开发者账户，有发行FT的需求
-// 这里先简单处理
-func (self *AccountDB) UpdateFtList(gameAddr common.Address, value map[string]string) {
-	bytes, _ := json.Marshal(value)
-	self.SetData(gameAddr, []byte("ft"), bytes)
+func (self *AccountDB) RemoveNFTByGameId(addr common.Address, gameId, setId, id string) bool{
+	stateObject := self.getOrNewAccountObject(addr)
+	return stateObject.SetNFTValueByGameId(gameId, setId, id, "")
 }

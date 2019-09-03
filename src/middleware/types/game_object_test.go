@@ -6,6 +6,7 @@ import (
 	"x/src/storage/rlp"
 	"fmt"
 	"encoding/json"
+	"strings"
 )
 
 func TestFT_EncodeRLP(t *testing.T) {
@@ -47,11 +48,11 @@ func TestNFT_EncodeRLP(t *testing.T) {
 func TestGameData_SetNFT(t *testing.T) {
 	gameData := &GameData{}
 	nftMap := &NFTMap{}
-	nft := &NFT{ID: "sword1", Name: "yitai", Symbol: "yt"}
-	nftMap.SetNFT("sword1", nft)
-	gameData.SetNFT("test1", nftMap)
+	nft := &NFT{SetID: "g1", ID: "sword1", Name: "yitai", Symbol: "yt"}
+	nftMap.SetNFT(nft)
+	gameData.SetNFTMaps("test1", nftMap)
 
-	fmt.Println(gameData.GetNFTMaps("test1").GetNFT("sword1").Name)
+	fmt.Println(gameData.GetNFTMaps("test1").GetNFT("g1", "sword1").Name)
 
 	data, err := rlp.EncodeToBytes(gameData)
 	if err != nil {
@@ -66,8 +67,8 @@ func TestGameData_SetNFT(t *testing.T) {
 	}
 	nftMap = g.GetNFTMaps("test1")
 	fmt.Println(nftMap)
-	fmt.Println(nftMap.GetAllNFT("test1"))
-	nft = nftMap.GetNFT("sword1")
+	fmt.Println(nftMap.GetAllNFT())
+	nft = nftMap.GetNFT("g1", "sword1")
 	fmt.Println(nft.Name)
 }
 
@@ -95,6 +96,12 @@ func Test_JSON(t *testing.T) {
 	var stp *Student
 	stp = &st
 	fmt.Println(stp.Name)
+
+	ftName := "abc-123"
+	ftInfo := strings.Split(ftName, "-")
+	fmt.Println(ftInfo[0])
+	fmt.Println(ftInfo[1])
+	fmt.Println(len(ftInfo))
 }
 
 type Student struct {

@@ -20,7 +20,7 @@ func (api *GtasAPI) GetBalance(address string, gameId string) (*Result, error) {
 	defer gxLock.RUnlock()
 
 	accountDB := core.AccountDBManagerInstance.GetAccountDB(gameId)
-	balance := accountDB.GetBalanceByGameId(common.HexToAddress(address), gameId)
+	balance := accountDB.GetBalance(common.HexToAddress(address))
 	floatdata := float64(balance.Int64()) / 1000000000
 	return successResult(strconv.FormatFloat(floatdata, 'f', -1, 64))
 }
@@ -61,7 +61,7 @@ func (api *GtasAPI) GetAccount(address string, gameId string) (*Result, error) {
 	subAccountData["ft"] = ftMap
 	subAccountData["nft"] = accountDB.GetAllNFTByGameId(source, gameId)
 
-	balance := accountDB.GetBalanceByGameId(source, gameId)
+	balance := accountDB.GetBalance(source)
 	floatdata := float64(balance.Int64()) / 1000000000
 	subAccountData["balance"] = strconv.FormatFloat(floatdata, 'f', -1, 64)
 
@@ -75,8 +75,8 @@ func getAssets(address string, gameId string) (*Result, error) {
 }
 
 // 通过rpc的方式，让本地的docker镜像调用
-func (api *GtasAPI) UpdateAssets(gameId string, rawjson string, nonce uint64) (*Result, error) {
-	common.DefaultLogger.Debugf("UpdateAssets Rcv gameId:%s,rawJson:%s,nonce:%d\n", gameId, rawjson, nonce)
+func (api *GtasAPI) UpdateAssets(appId, rawjson string, nonce uint64) (*Result, error) {
+	common.DefaultLogger.Debugf("UpdateAssets Rcv gameId:%s,rawJson:%s,nonce:%d\n", appId, rawjson, nonce)
 	//todo 并发问题 临时加锁控制
 	gxLock.Lock()
 	defer gxLock.Unlock()
@@ -93,7 +93,7 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string, nonce uint64) (*
 	}
 
 	// 立即执行
-	context := core.TxManagerInstance.GetContext(gameId)
+	context := core.TxManagerInstance.GetContext(appId)
 
 	// 不在事务里，不应该啊
 	if nil == context {
@@ -101,9 +101,16 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string, nonce uint64) (*
 		return failResult("not in transaction")
 	}
 
+	// 校验appId
+	tx := context.Tx
+	if nil == tx || tx.Target != appId {
+		common.DefaultLogger.Debugf("wrong appId: %s!", appId)
+		return failResult("appId wrong")
+	}
+
 	accountDb := context.AccountDB
 	for _, user := range data {
-		flag := core.UpdateAsset(user, gameId, accountDb)
+		flag := core.UpdateAsset(user, appId, accountDb)
 		if !flag {
 			// 这里不应该回滚了
 			//accountDb.RevertToSnapshot(snapshot)
@@ -112,7 +119,7 @@ func (api *GtasAPI) UpdateAssets(gameId string, rawjson string, nonce uint64) (*
 	}
 
 	// 记录下，供上链用
-	context.Tx.SubTransactions = append(context.Tx.SubTransactions, rawjson)
+	context.Tx.SubTransactions = append(tx.SubTransactions, rawjson)
 
 	return successResult(data)
 }
