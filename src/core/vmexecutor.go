@@ -55,7 +55,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 					success = false
 					break
 				}
-				if !changeAssets(transaction.Target, transaction.Source, mm, accountdb) {
+				if !changeBalances(transaction.Target, transaction.Source, mm, accountdb) {
 					success = false
 					break
 				}
@@ -99,7 +99,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 										continue
 									}
 
-									// 更新资产
+									// 用户之间转账
 									if !UpdateAsset(user, transaction.Target, accountdb) {
 										success = false
 										break
@@ -135,8 +135,12 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 		case types.TransactionTypeWithdraw:
 			success = executor.executeWithdraw(accountdb, transaction)
-		case types.TransactionTypeDepositAck:
-			success = executor.executeDepositNotify(accountdb, transaction)
+		case types.TransactionTypeCoinDepositAck:
+			success = executor.executeCoinDepositNotify(accountdb, transaction)
+		case types.TransactionTypeFTDepositAck:
+			success = executor.executeFTDepositNotify(accountdb, transaction)
+		case types.TransactionTypeNFTDepositAck:
+			success = executor.executeNFTFTDepositNotify(accountdb, transaction)
 		}
 
 		if !success {
@@ -187,7 +191,7 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 
 	//余额检查
 	var withdrawAmount = big.NewInt(0)
-	subAccountBalance := accountdb.GetBalance(source)
+	subAccountBalance := accountdb.GetBalanceByGameId(source, gameId)
 	if withDrawReq.Balance != "" {
 		withdrawAmount, err = utility.StrToBigInt(withDrawReq.Balance)
 		if err != nil {
@@ -203,7 +207,7 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 
 		//扣余额
 		subAccountBalance.Sub(subAccountBalance, withdrawAmount)
-		accountdb.SetBalance(source, subAccountBalance)
+		accountdb.SetBalanceByGameId(source, gameId, subAccountBalance)
 	}
 
 	//ft
@@ -257,57 +261,64 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 	return true
 }
 
-/**
- 充值确认
- */
-func (executor *VMExecutor) executeDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	txLogger.Debugf("Execute deposit ack tx:%v", transaction)
+//主链币充值确认
+func (executor *VMExecutor) executeCoinDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
+	txLogger.Debugf("Execute coin deposit ack tx:%v", transaction)
 	if transaction.Data == "" {
 		return false
 	}
-	var depositData types.DepositData
-	err := json.Unmarshal([]byte(transaction.Data), &depositData)
+	var depositCoinData types.DepositCoinData
+	err := json.Unmarshal([]byte(transaction.Data), &depositCoinData)
 	if err != nil {
-		txLogger.Debugf("Unmarshal data error:%s", err.Error())
+		txLogger.Debugf("Deposit coin data unmarshal error:%s", err.Error())
 		return false
 	}
-	txLogger.Debugf("deposit data:%v", depositData)
-	if depositData.Amount == "" {
+	txLogger.Debugf("deposit coin data:%v,target address:%s", depositCoinData, transaction.Source)
+	if depositCoinData.Amount == "" || depositCoinData.ChainType == "" {
 		return false
 	}
+	//todo implement
+	return true
+}
 
-	gameId := transaction.Target
-	address := common.HexToAddress(transaction.Source)
-
-	txLogger.Debugf("address:%s,gameId:%s,deposit balance:%s", transaction.Source, transaction.Target, depositData.Amount)
-	// 打钱
-	depositAmount, err := utility.StrToBigInt(depositData.Amount)
+//FT充值确认
+func (executor *VMExecutor) executeFTDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
+	txLogger.Debugf("Execute ft deposit ack tx:%v", transaction)
+	if transaction.Data == "" {
+		return false
+	}
+	var depositFTData types.DepositFTData
+	err := json.Unmarshal([]byte(transaction.Data), &depositFTData)
 	if err != nil {
-		txLogger.Debugf("deposit amount to big int error:%s", err.Error())
+		txLogger.Debugf("Deposit ft data unmarshal error:%s", err.Error())
 		return false
 	}
-
-	accountdb.AddBalance(address, depositAmount)
-
-	//FT
-	if depositData.FT != nil {
-		for key, value := range depositData.FT {
-			b1, _ := utility.StrToBigInt(value)
-			// todo: 发行ft
-			accountdb.AddFT(address, key, b1)
-		}
+	txLogger.Debugf("deposit ft data:%v,target address:%s", depositFTData, transaction.Source)
+	if depositFTData.Amount == "" || depositFTData.FTId == "" {
+		return false
 	}
+	//todo implement
+	return true
+}
 
-	// NFT
-	if depositData.NFT != nil {
-		for key, value := range depositData.NFT {
-			//todo: key 冲突了咋办
-			accountdb.SetNFTByGameId(address, gameId, key, value)
-
-		}
+//NFT充值确认
+func (executor *VMExecutor) executeNFTFTDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
+	txLogger.Debugf("Execute nft deposit ack tx:%v", transaction)
+	if transaction.Data == "" {
+		return false
 	}
-	//end for test
-
+	var depositNFTData types.DepositNFTData
+	err := json.Unmarshal([]byte(transaction.Data), &depositNFTData)
+	if err != nil {
+		txLogger.Debugf("Deposit nft data unmarshal error:%s", err.Error())
+		return false
+	}
+	txLogger.Debugf("deposit nft data:%v,target address:%s", depositNFTData, transaction.Source)
+	//todo 这里NFT充值的必须字段检查可能不止Value这一个字段
+	if depositNFTData.Value == "" {
+		return false
+	}
+	//todo implement
 	return true
 }
 

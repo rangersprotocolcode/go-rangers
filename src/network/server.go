@@ -174,7 +174,7 @@ func (s *server) handleCoinConnectorMessage(data []byte, nonce uint64) {
 	tx.RequestId = nonce
 	Logger.Debugf("Tx hash:%s", tx.Hash.String())
 
-	if tx.Type == types.TransactionTypeDepositAck {
+	if tx.Type == types.TransactionTypeCoinDepositAck || tx.Type == types.TransactionTypeFTDepositAck || tx.Type == types.TransactionTypeNFTDepositAck {
 		msg := notify.CoinProxyNotifyMessage{Tx: tx}
 		notify.BUS.Publish(notify.CoinProxyNotify, &msg)
 	}
