@@ -25,12 +25,12 @@ func (api *GtasAPI) GetBalance(address string, gameId string) (*Result, error) {
 	return successResult(strconv.FormatFloat(floatdata, 'f', -1, 64))
 }
 
-func (api *GtasAPI) GetAsset(address string, gameId string, assetId string) (*Result, error) {
+func (api *GtasAPI) GetAsset(address, gameId, setId, id string) (*Result, error) {
 	gxLock.RLock()
 	defer gxLock.RUnlock()
 
 	accountDB := core.AccountDBManagerInstance.GetAccountDB(gameId)
-	nft := accountDB.GetNFTByGameId(common.HexToAddress(address), gameId, assetId)
+	nft := accountDB.GetNFTByGameId(common.HexToAddress(address), gameId, setId, id)
 
 	return successResult(nft)
 }
