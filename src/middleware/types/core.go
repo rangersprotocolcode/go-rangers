@@ -91,9 +91,13 @@ const (
 	TransactionTypeGetAllAssets      = 103222
 	TransactionTypeGetAllAsset       = 1042222
 	TransactionTypeStateMachineNonce = 105222
-	TransactionTypeDepositAck        = 106222
-	TransactionTypeWithdraw          = 107222
 	TransactionTypeGetAsset          = 10211111
+
+	TransactionTypeWithdraw = 109
+
+	TransactionTypeCoinDepositAck = 201
+	TransactionTypeFTDepositAck   = 202
+	TransactionTypeNFTDepositAck  = 203
 )
 
 type Transaction struct {
@@ -362,7 +366,7 @@ type WithDrawReq struct {
 	Address   string            `json:"address,omitempty"`
 	Balance   string            `json:"balance,omitempty"`
 	FT        map[string]string `json:"ft,omitempty"`
-	NFT       []string          `json:"nft,omitempty"`
+	NFT       []NFTID           `json:"nft,omitempty"`
 }
 
 type WithDrawData struct {
@@ -370,7 +374,7 @@ type WithDrawData struct {
 	ChainType string            `json:"chainType,omitempty"`
 	Balance   string            `json:"balance,omitempty"`
 	FT        map[string]string `json:"ft,omitempty"`
-	NFT       map[string]string `json:"nft,omitempty"`
+	NFT       []NFTID           `json:"nft,omitempty"`
 }
 
 //提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链
@@ -450,4 +454,30 @@ func (sub SubAccount) ToSubAccountData() SubAccountData {
 	}
 	subAccountData.Balance = strconv.FormatFloat(float64(sub.Balance.Int64())/1000000000, 'f', -1, 64)
 	return subAccountData
+}
+
+type DepositCoinData struct {
+	ChainType string `json:"chainType,omitempty"`
+	Amount    string `json:"amount,omitempty"`
+	TxId      string `json:"txId,omitempty"`
+}
+
+//FT充值确认数据结构
+type DepositFTData struct {
+	FTId   string `json:"ftId,omitempty"`
+	Amount string `json:"amount,omitempty"`
+	TxId   string `json:"txId,omitempty"`
+}
+
+//NFT充值确认数据结构
+type DepositNFTData struct {
+	SetId      string `json:"setId,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Symbol     string `json:"symbol,omitempty"`
+	ID         string `json:"id,omitempty"`
+	Creator    string `json:"creator,omitempty"`
+	CreateTime string `json:"createTime,omitempty"`
+	Owner      string `json:"owner,omitempty"`
+	Value      string `json:"value,omitempty"`
+	TxId       string `json:"txId,omitempty"`
 }

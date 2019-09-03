@@ -55,7 +55,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 					success = false
 					break
 				}
-				if !changeBalances(transaction.Target, transaction.Source, mm, accountdb) {
+				if !changeAssets(transaction.Target, transaction.Source, mm, accountdb) {
 					success = false
 					break
 				}
@@ -191,7 +191,7 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 
 	//余额检查
 	var withdrawAmount = big.NewInt(0)
-	subAccountBalance := accountdb.GetBalanceByGameId(source, gameId)
+	subAccountBalance := accountdb.GetBalance(source)
 	if withDrawReq.Balance != "" {
 		withdrawAmount, err = utility.StrToBigInt(withDrawReq.Balance)
 		if err != nil {
@@ -207,7 +207,7 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 
 		//扣余额
 		subAccountBalance.Sub(subAccountBalance, withdrawAmount)
-		accountdb.SetBalanceByGameId(source, gameId, subAccountBalance)
+		accountdb.SetBalance(source, subAccountBalance)
 	}
 
 	//ft
@@ -225,17 +225,18 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 	}
 
 	//nft
-	nftInfo := make(map[string]string, 0)
+	nftInfo := make([]types.NFTID, 0)
 	if withDrawReq.NFT != nil && len(withDrawReq.NFT) != 0 {
 		for _, k := range withDrawReq.NFT {
-			subValue := accountdb.GetNFTByGameId(source, gameId, k)
+			subValue := accountdb.GetNFTByGameId(source, gameId, k.SetId, k.Id)
 			if 0 == len(subValue) {
 				return false
 			}
-			nftInfo[k] = subValue
+
+			nftInfo = append(nftInfo, types.NFTID{SetId: k.SetId, Id: k.Id, Data: subValue})
 
 			//删除要提现的NFT
-			accountdb.RemoveNFTByGameId(source, gameId, k)
+			accountdb.RemoveNFTByGameId(source, gameId, k.SetId, k.Id)
 		}
 	}
 
