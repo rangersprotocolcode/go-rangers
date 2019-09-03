@@ -86,8 +86,12 @@ const (
 	TransactionTypeGetAllAssets      = 103
 	TransactionTypeGetAllAsset       = 104 // 获取一个账户的所有资产情况
 	TransactionTypeStateMachineNonce = 105
-	TransactionTypeDepositAck        = 106
-	TransactionTypeWithdraw          = 107
+
+	TransactionTypeWithdraw = 109
+
+	TransactionTypeCoinDepositAck = 201
+	TransactionTypeFTDepositAck   = 202
+	TransactionTypeNFTDepositAck  = 203
 )
 
 type Transaction struct {
@@ -104,8 +108,8 @@ type Transaction struct {
 	Hash common.Hash
 	Sign *common.Sign
 
-	Nonce uint64 // 用户级别nonce
-	RequestId uint64 // 消息编号 由网关添加
+	Nonce           uint64 // 用户级别nonce
+	RequestId       uint64 // 消息编号 由网关添加
 	SocketRequestId string // websocket id，用于客户端标示请求id，方便回调处理
 }
 
@@ -360,14 +364,31 @@ type WithDrawData struct {
 	NFT       map[string]string `json:"nft,omitempty"`
 }
 
-//提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链
-type DepositData struct {
+//主链币充值确认数据结构
+type DepositCoinData struct {
 	ChainType string `json:"chainType,omitempty"`
 	Amount    string `json:"amount,omitempty"`
 	TxId      string `json:"txId,omitempty"`
-	//todo 这里为了方便测试加入FT和NFT 上线时要去掉
-	FT  map[string]string `json:"ft,omitempty"`
-	NFT map[string]string `json:"nft,omitempty"`
+}
+
+//FT充值确认数据结构
+type DepositFTData struct {
+	FTId   string `json:"ftId,omitempty"`
+	Amount string `json:"amount,omitempty"`
+	TxId   string `json:"txId,omitempty"`
+}
+
+//NFT充值确认数据结构
+type DepositNFTData struct {
+	SetId      string `json:"setId,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Symbol     string `json:"symbol,omitempty"`
+	ID         string `json:"id,omitempty"`
+	Creator    string `json:"creator,omitempty"`
+	CreateTime string `json:"createTime,omitempty"`
+	Owner      string `json:"owner,omitempty"`
+	Value      string `json:"value,omitempty"`
+	TxId       string `json:"txId,omitempty"`
 }
 
 type TxJson struct {
