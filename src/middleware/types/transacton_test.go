@@ -73,23 +73,7 @@ func TestGetBalanceTx(t *testing.T) {
 }
 
 func TestOneAssetTx(t *testing.T) {
-	tx := Transaction{Source: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54", Target: "0xf677e4051eeff7a60598cc6419b982cdeef60b01", Type: TransactionTypeGetAsset, Time: "1556076659050692000", SocketRequestId: "12135", Data: "xxx"}
-	tx.Hash = tx.GenHash()
-
-	j, _ := json.Marshal(tx.ToTxJson())
-	fmt.Printf("TX JSON:\n%s\n", string(j))
-}
-
-func TestGetAllAssetsTx(t *testing.T) {
-	tx := Transaction{Source: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54", Target: "0xf677e4051eeff7a60598cc6419b982cdeef60b01", Type: TransactionTypeGetAllAssets, Time: "1556076659050692000", SocketRequestId: "12136"}
-	tx.Hash = tx.GenHash()
-
-	j, _ := json.Marshal(tx.ToTxJson())
-	fmt.Printf("TX JSON:\n%s\n", string(j))
-}
-
-func TestGetAccountTx(t *testing.T) {
-	tx := Transaction{Source: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54", Target: "0xf677e4051eeff7a60598cc6419b982cdeef60b01", Type: TransactionTypeGetAllAsset, Time: "1556076659050692000", SocketRequestId: "12137"}
+	tx := Transaction{Source: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54", Target: "0xf677e4051eeff7a60598cc6419b982cdeef60b01", Type: TransactionTypeNFT, Time: "1556076659050692000", SocketRequestId: "12135", Data: "xxx"}
 	tx.Hash = tx.GenHash()
 
 	j, _ := json.Marshal(tx.ToTxJson())
@@ -111,8 +95,8 @@ func TestWithdrawTx(t *testing.T) {
 	ft["ftId1"] = "2.56"
 	ft["ftId2"] = "5.99"
 
-	nft := make([]string, 0)
-	nft = append(nft, "nftId1")
+	nft := make([]NFTID, 0)
+	nft = append(nft, NFTID{SetId: "test1", Id: "test2"})
 
 	req := WithDrawReq{Balance: "11.12", ChainType: "ETH", Address: "0xf3426Ae90e962f49D71307DB309535815e16808f", FT: ft, NFT: nft}
 	b, _ := json.Marshal(req)
@@ -134,9 +118,9 @@ func TestOperateTx(t *testing.T) {
 	ft["ftId2"] = "5.99"
 
 	nft := make([]NFTID, 0)
-	nft = append(nft, NFTID{SetId:"abc",Id:"123"})
+	nft = append(nft, NFTID{SetId: "abc", Id: "123"})
 
-	req := TransferData{Balance: "11.12",  FT: ft, NFT: nft}
+	req := TransferData{Balance: "11.12", FT: ft, NFT: nft}
 	b, _ := json.Marshal(req)
 	tx.Data = string(b)
 	fmt.Printf("data:\n%s\n", tx.Data)

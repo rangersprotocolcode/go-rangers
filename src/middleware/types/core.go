@@ -80,19 +80,15 @@ const (
 	TransactionTypeMinerRefund = 4
 
 	//以下交易类型会被外部使用 禁止更改
-	TransactionTypeOperatorEvent    = 100
-	TransactionTypeGetCoin          = 101 // 查询主链币
-	TransactionTypeGetAllCoin       = 102 // 查询所有主链币
-	TransactionTypeFT               = 103 // 查询特定FT
-	TransactionTypeAllFT            = 104 // 查询所有FT
-	TransactionTypeNFT              = 105 // 根据setId、id查询特定NFT
-	TransactionTypeNFTListByAddress = 106 // 查询账户下所有NFT
-	TransactionTypeNFTSet           = 107 // 查询NFTSet信息
-
-	TransactionTypeGetAllAssets      = 103222
-	TransactionTypeGetAllAsset       = 1042222
-	TransactionTypeStateMachineNonce = 105222
-	TransactionTypeGetAsset          = 10211111
+	TransactionTypeOperatorEvent     = 100
+	TransactionTypeGetCoin           = 101 // 查询主链币
+	TransactionTypeGetAllCoin        = 102 // 查询所有主链币
+	TransactionTypeFT                = 103 // 查询特定FT
+	TransactionTypeAllFT             = 104 // 查询所有FT
+	TransactionTypeNFT               = 105 // 根据setId、id查询特定NFT
+	TransactionTypeNFTListByAddress  = 106 // 查询账户下所有NFT
+	TransactionTypeNFTSet            = 107 // 查询NFTSet信息
+	TransactionTypeStateMachineNonce = 108 // 调用状态机nonce(预留接口）
 
 	TransactionTypeWithdraw = 109
 
