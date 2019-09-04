@@ -177,6 +177,14 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 		result = string(bytes)
 		break
 
+		// 查询NFTSet信息
+	case types.TransactionTypeNFTSet:
+		setId := txRaw.Data
+		nftSet := nftManagerInstance.GetNFTSet(setId, accountDB)
+		bytes, _ := json.Marshal(nftSet)
+		result = string(bytes)
+		break
+
 	}
 
 	responseId := txRaw.SocketRequestId

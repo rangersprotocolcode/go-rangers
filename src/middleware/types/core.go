@@ -87,6 +87,7 @@ const (
 	TransactionTypeAllFT            = 104 // 查询所有FT
 	TransactionTypeNFT              = 105 // 根据setId、id查询特定NFT
 	TransactionTypeNFTListByAddress = 106 // 查询账户下所有NFT
+	TransactionTypeNFTSet           = 107 // 查询NFTSet信息
 
 	TransactionTypeGetAllAssets      = 103222
 	TransactionTypeGetAllAsset       = 1042222
