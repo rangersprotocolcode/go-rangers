@@ -12,11 +12,12 @@ import (
 // GameData = map[string]*NFTMap key为gameId
 // NFTMap = map[string]*NFT key为nftId
 type NFTSet struct {
-	SetID       string
-	Name        string
-	Symbol      string
-	TotalSupply uint
-	OccupiedID  map[string]common.Address // 已经发行的NFTID及其拥有者
+	SetID       string `json:"setId,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Symbol      string `json:"symbol,omitempty"`
+	TotalSupply uint   `json:"totalSupply,omitempty"`
+	// 已经发行的NFTID及其拥有者
+	OccupiedID map[string]common.Address `json:"occupied,omitempty"`
 }
 
 func (self *NFTSet) ChangeOwner(id string, newOwner common.Address) {
@@ -25,32 +26,32 @@ func (self *NFTSet) ChangeOwner(id string, newOwner common.Address) {
 
 type NFT struct {
 	//
-	SetID  string
-	Name   string
-	Symbol string
+	SetID  string `json:"setId,omitempty"`
+	Name   string `json:"name,omitempty"`
+	Symbol string `json:"symbol,omitempty"`
 
 	// 1. 通用数据
-	ID         string    // NFT自身ID，创建时指定。创建后不可修改
-	Creator    string    // 初次创建者，一般为gameId
-	CreateTime time.Time // 创建时间
+	ID         string    `json:"id,omitempty"`         // NFT自身ID，创建时指定。创建后不可修改
+	Creator    string    `json:"creator,omitempty"`    // 初次创建者，一般为appId
+	CreateTime time.Time `json:"createTime,omitempty"` // 创建时间
 
 	// 2. 状态数据
 	// 2.1 物权
-	Owner  string // 当前所有权拥有者。如果为空，则表示由创建者所有。只有owner有权transfer。一个NFT只有一个owner
-	Renter string // 当前使用权拥有者。由owner指定。owner默认有使用权。同一时间内，一个NFT只有一个renter
+	Owner  string `json:"owner,omitempty"`  // 当前所有权拥有者。如果为空，则表示由创建者所有。只有owner有权transfer。一个NFT只有一个owner
+	Renter string `json:"renter,omitempty"` // 当前使用权拥有者。由owner指定。owner默认有使用权。同一时间内，一个NFT只有一个renter
 	// 2.2 锁定状态
-	Status    byte // 状态位（默认0） 0：正常，1：锁定（数据与状态不可变更，例如：提现待确认）
-	Condition byte // 解锁条件 1：锁定直到状态机解锁 2：锁定直到用户解锁
+	Status    byte `json:"status,omitempty"`    // 状态位（默认0） 0：正常，1：锁定（数据与状态不可变更，例如：提现待确认）
+	Condition byte `json:"condition,omitempty"` // 解锁条件 1：锁定直到状态机解锁 2：锁定直到用户解锁
 	// 2.3 使用权回收条件（待定）
 	//ReturnCondition byte // 使用权结束条件 0：到期自动结束 1：所有者触发结束 2：使用者触发结束
 	//ReturnTime      byte // 到指定块高后使用权回收
 
 	// 3. NFT业务数据
-	AppId string // 当前游戏id
+	AppId string `json:"appId,omitempty"` // 当前游戏id
 
 	// 4. NFT在游戏中的数据
-	DataValue []string //key为gameId，
-	DataKey   []string
+	DataValue []string `json:"dataValue,omitempty"` //key为appId，
+	DataKey   []string `json:"dataKey,omitempty"`
 }
 
 func (self *NFT) GetData(gameId string) string {
