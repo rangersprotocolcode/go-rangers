@@ -18,14 +18,14 @@ type AccountDBManager struct {
 type accountContext struct {
 	accountDB *account.AccountDB
 	height    uint64
-	lock      *sync.Mutex // 锁自己
+	lock      *sync.RWMutex // 锁自己
 }
 
 var AccountDBManagerInstance *AccountDBManager
 
 func initAccountDBManager() {
 	AccountDBManagerInstance = &AccountDBManager{}
-	AccountDBManagerInstance.lock = &sync.Mutex{}
+	AccountDBManagerInstance.lock = &sync.RWMutex{}
 	AccountDBManagerInstance.context = make(map[string]*accountContext)
 
 	// chain初始化在前，所以链上数据已经有了
