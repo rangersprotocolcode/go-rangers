@@ -6,6 +6,7 @@ import (
 	"x/src/common"
 	"x/src/middleware/types"
 	"encoding/json"
+	"strconv"
 )
 
 func (api *GtasAPI) UpdateNFT(appId, setId, id, data string) (*Result, error) {
@@ -58,7 +59,7 @@ func (api *GtasAPI) BatchUpdateNFT(appId, setId string, id, data []string) (*Res
 
 	for i := range id {
 		_, err := api.UpdateNFT(appId, setId, id[i], data[i])
-		if nil!=err{
+		if nil != err {
 			msg := fmt.Sprintf("fail to BatchUpdateNFT setId %s", setId)
 			common.DefaultLogger.Debugf(msg)
 			return failResult(msg)
@@ -140,4 +141,47 @@ func (api *GtasAPI) ApproveNFT(appId, setId, id, target string) (*Result, error)
 // 将状态机持有的NFT的使用权回收
 func (api *GtasAPI) RevokeNFT(appId, setId, id string) (*Result, error) {
 	return api.ApproveNFT(appId, setId, id, appId)
+}
+
+// 锁定游戏持有的nft
+func (api *GtasAPI) LockNFT(appId, setId, id string) (*Result, error) {
+	return api.changeNFTStatus(appId, setId, id, 1)
+}
+
+// 解锁游戏持有的nft
+func (api *GtasAPI) UnLockNFT(appId, setId, id string) (*Result, error) {
+	return api.changeNFTStatus(appId, setId, id, 0)
+}
+
+func (api *GtasAPI) changeNFTStatus(appId, setId, id string, status int) (*Result, error) {
+	context, tx, ok := api.checkTx(appId)
+	if !ok {
+		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
+		common.DefaultLogger.Debugf(msg)
+		return failResult(msg)
+	}
+
+	accountDB := context.AccountDB
+	if accountDB.ChangeNFTStatus(common.HexToAddress(appId), appId, setId, id, 1) {
+		// 生成交易，上链 context.Tx.SubTransactions
+		dataList := make([]types.UserData, 0)
+		userData := types.UserData{}
+		userData.Address = "changeNFTStatus"
+		userData.Assets = make(map[string]string, 0)
+		userData.Assets["appId"] = appId
+		userData.Assets["setId"] = setId
+		userData.Assets["id"] = id
+		userData.Assets["status"] = strconv.Itoa(status)
+
+		dataList = append(dataList, userData)
+		rawJson, _ := json.Marshal(dataList)
+
+		// 生成交易，上链
+		context.Tx.SubTransactions = append(tx.SubTransactions, string(rawJson))
+		return successResult("success LockNFT nft")
+	} else {
+		msg := fmt.Sprintf("fail to LockNFT setId %s or id %s appId %s", setId, id, appId)
+		common.DefaultLogger.Debugf(msg)
+		return failResult(msg)
+	}
 }

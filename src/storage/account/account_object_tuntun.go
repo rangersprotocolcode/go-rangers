@@ -125,18 +125,17 @@ func (self *accountObject) AddNFTByGameId(gameId string, nft *types.NFT) bool {
 }
 
 func (self *accountObject) ApproveNFT(gameId, setId, id, renter string) bool {
-	data := self.data.GameData.GetNFTMaps(gameId)
-	if nil == data {
-		return false
-	}
-	nft := data.GetNFT(setId, id)
+	nft := self.getNFT(gameId, setId, id)
 	if nft == nil {
 		return false
 	}
 
 	change := tuntunNFTApproveChange{
-		nft:  nft,
-		prev: nft.Renter,
+		account: &self.address,
+		appId:   gameId,
+		id:      nft.ID,
+		setId:   nft.SetID,
+		prev:    nft.Renter,
 	}
 	self.db.transitions = append(self.db.transitions, change)
 	nft.Renter = renter
@@ -188,6 +187,33 @@ func (self *accountObject) setNFTByGameId(gameId, setId, id, value string) bool 
 
 	self.callback()
 	return true
+}
+
+func (self *accountObject) ChangeNFTStatus(gameId, setId, id string, status byte) bool {
+	nft := self.getNFT(gameId, setId, id)
+	if nft == nil {
+		return false
+	}
+
+	change := tuntunNFTStatusChange{
+		account: &self.address,
+		appId:   gameId,
+		id:      nft.ID,
+		setId:   nft.SetID,
+		prev:    nft.Status,
+	}
+	self.db.transitions = append(self.db.transitions, change)
+	nft.Status = status
+	return true
+}
+
+func (self *accountObject) getNFT(appId, setId, id string) *types.NFT {
+	data := self.data.GameData.GetNFTMaps(appId)
+	if nil == data {
+		return nil
+	}
+
+	return data.GetNFT(setId, id)
 }
 
 func (self *accountObject) callback() {

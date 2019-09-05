@@ -3,7 +3,6 @@ package account
 import (
 	"x/src/common"
 	"math/big"
-	"x/src/middleware/types"
 )
 
 type (
@@ -20,8 +19,18 @@ type (
 		id      string
 	}
 	tuntunNFTApproveChange struct {
-		nft  *types.NFT
-		prev string
+		account *common.Address
+		appId   string
+		setId   string
+		id      string
+		prev    string
+	}
+	tuntunNFTStatusChange struct {
+		account *common.Address
+		prev    byte
+		appId   string
+		setId   string
+		id      string
 	}
 	tuntunAddNFTChange struct {
 		account *common.Address
@@ -49,5 +58,13 @@ func (ch tuntunAddNFTChange) undo(s *AccountDB) {
 }
 
 func (ch tuntunNFTApproveChange) undo(s *AccountDB) {
-	ch.nft.Renter = ch.prev
+	object := s.getAccountObject(*ch.account)
+	nft := object.getNFT(ch.appId, ch.setId, ch.id)
+	nft.Renter = ch.prev
+}
+
+func (ch tuntunNFTStatusChange) undo(s *AccountDB) {
+	object := s.getAccountObject(*ch.account)
+	nft := object.getNFT(ch.appId, ch.setId, ch.id)
+	nft.Status = ch.prev
 }

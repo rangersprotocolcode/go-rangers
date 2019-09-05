@@ -132,6 +132,17 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 										continue
 									}
 
+									if user.Address == "changeNFTStatus" {
+										appId := user.Assets["appId"]
+										status, _ := strconv.Atoi(user.Assets["status"])
+										ok := accountdb.ChangeNFTStatus(common.HexToAddress(appId), appId, user.Assets["setId"], user.Assets["id"], byte(status))
+										if !ok {
+											success = false
+											break
+										}
+										continue
+									}
+
 									// 用户之间转账
 									if !UpdateAsset(user, transaction.Target, accountdb) {
 										success = false
