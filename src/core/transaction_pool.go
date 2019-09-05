@@ -270,10 +270,6 @@ func (pool *TxPool) PackForCast() []*types.Transaction {
 }
 
 func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
-	if tx.Target == "" {
-		return ErrNil
-	}
-
 	//if tx.Hash != tx.GenHash() {
 	//	logger.Debugf("Bad tx: hash not illegal,hash:%s,", tx.Hash.String())
 	//	return ErrHash
