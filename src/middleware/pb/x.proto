@@ -18,7 +18,7 @@ message Transaction{
 
     optional bytes Source  = 3 ;
 
-    required string Target  = 4 ;
+    optional string Target  = 4 ;
 
     required int32 Type = 5;
 
