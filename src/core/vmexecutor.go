@@ -364,7 +364,7 @@ func (executor *VMExecutor) executeFTDepositNotify(accountdb *account.AccountDB,
 		txLogger.Debugf("Deposit ft data unmarshal error:%s", err.Error())
 		return false
 	}
-	txLogger.Debugf("deposit ft data:%v,target address:%s", depositFTData, transaction.Source)
+	txLogger.Debugf("deposit ft data:%v, address:%s", depositFTData, transaction.Source)
 	if depositFTData.Amount == "" || depositFTData.FTId == "" {
 		return false
 	}
