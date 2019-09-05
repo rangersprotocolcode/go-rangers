@@ -106,7 +106,7 @@ func (self *NFT) ToJSONString() string {
 	for i := range self.DataKey {
 		data[self.DataKey[i]] = self.DataValue[i]
 	}
-
+	nftMap["data"] = data
 	bytes, _ := json.Marshal(nftMap)
 	return string(bytes)
 }

@@ -51,6 +51,11 @@ func (api *GtasAPI) PublishFT(gameId string, name string, symbol string, totalSu
 
 }
 
+
+func (api *GtasAPI) MintFT(appId, ftId, target, balance string) (*Result, error) {
+	return api.TransferFT(appId, target, ftId, balance)
+}
+
 // todo: 经济模型，转币的费用问题
 // 状态机转币给玩家
 func (api *GtasAPI) TransferFT(appId string, target string, ftId string, supply string) (*Result, error) {

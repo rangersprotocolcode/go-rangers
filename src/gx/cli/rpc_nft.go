@@ -185,3 +185,72 @@ func (api *GtasAPI) changeNFTStatus(appId, setId, id string, status int) (*Resul
 		return failResult(msg)
 	}
 }
+
+// 发行NFTSet
+func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol string, totalSupply uint) (*Result, error) {
+	context, tx, ok := api.checkTx(appId)
+	if !ok {
+		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
+		common.DefaultLogger.Debugf(msg)
+		return failResult(msg)
+	}
+
+	accountDB := context.AccountDB
+	if _, ok := core.NFTManagerInstance.PublishNFTSet(setId, name, symbol, totalSupply, accountDB); ok {
+		// 生成交易，上链 context.Tx.SubTransactions
+		dataList := make([]types.UserData, 0)
+		userData := types.UserData{}
+		userData.Address = "PublishNFTSet"
+		userData.Assets = make(map[string]string, 0)
+		userData.Assets["setId"] = setId
+		userData.Assets["name"] = name
+		userData.Assets["symbol"] = symbol
+		userData.Assets["totalSupply"] = strconv.Itoa(int(totalSupply))
+
+		dataList = append(dataList, userData)
+		rawJson, _ := json.Marshal(dataList)
+
+		// 生成交易，上链
+		context.Tx.SubTransactions = append(tx.SubTransactions, string(rawJson))
+		return successResult("success PublishNFTSet")
+	} else {
+		msg := fmt.Sprintf("fail to PublishNFTSet setId %s  appId %s", setId, appId)
+		common.DefaultLogger.Debugf(msg)
+		return failResult(msg)
+	}
+}
+
+// NFT铸币
+func (api *GtasAPI) MintNFT(appId, setId, id, target, data string) (*Result, error) {
+	context, tx, ok := api.checkTx(appId)
+	if !ok {
+		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
+		common.DefaultLogger.Debugf(msg)
+		return failResult(msg)
+	}
+
+	accountDB := context.AccountDB
+	if _, ok := core.NFTManagerInstance.MintNFT(appId, setId, id, data, common.HexToAddress(target), accountDB); ok {
+		// 生成交易，上链 context.Tx.SubTransactions
+		dataList := make([]types.UserData, 0)
+		userData := types.UserData{}
+		userData.Address = "MintNFT"
+		userData.Assets = make(map[string]string, 0)
+		userData.Assets["appId"] = appId
+		userData.Assets["setId"] = setId
+		userData.Assets["id"] = id
+		userData.Assets["target"] = target
+		userData.Assets["data"] = data
+
+		dataList = append(dataList, userData)
+		rawJson, _ := json.Marshal(dataList)
+
+		// 生成交易，上链
+		context.Tx.SubTransactions = append(tx.SubTransactions, string(rawJson))
+		return successResult("success MintNFT")
+	} else {
+		msg := fmt.Sprintf("fail to MintNFT setId %s id %s appId %s", setId, id, appId)
+		common.DefaultLogger.Debugf(msg)
+		return failResult(msg)
+	}
+}

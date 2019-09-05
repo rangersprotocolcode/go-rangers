@@ -143,6 +143,25 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 										continue
 									}
 
+									if user.Address == "PublishNFTSet" {
+										totalSupply, _ := strconv.Atoi(user.Assets["totalSupply"])
+										_, ok := NFTManagerInstance.PublishNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], uint(totalSupply), accountdb)
+										if !ok {
+											success = false
+											break
+										}
+										continue
+									}
+
+									if user.Address == "MintNFT" {
+										_, ok := NFTManagerInstance.MintNFT(user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], common.HexToAddress(user.Assets["target"]), accountdb)
+										if !ok {
+											success = false
+											break
+										}
+										continue
+									}
+
 									// 用户之间转账
 									if !UpdateAsset(user, transaction.Target, accountdb) {
 										success = false
