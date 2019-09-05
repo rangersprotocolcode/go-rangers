@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"fmt"
 	"x/src/common"
+	"encoding/json"
 )
 
 // NFT 数据结构综述
@@ -86,6 +87,28 @@ func (self *NFT) SetData(data string, gameId string) {
 		self.DataValue[index] = data
 	}
 
+}
+
+func (self *NFT) ToJSONString() string {
+	nftMap := make(map[string]interface{}, 12)
+	nftMap["setId"] = self.SetID
+	nftMap["name"] = self.Name
+	nftMap["symbol"] = self.Symbol
+	nftMap["id"] = self.ID
+	nftMap["creator"] = self.Creator
+	nftMap["createTime"] = self.CreateTime.String()
+	nftMap["owner"] = self.Owner
+	nftMap["renter"] = self.Renter
+	nftMap["status"] = self.Status
+	nftMap["condition"] = self.Condition
+	nftMap["appId"] = self.AppId
+	data := make(map[string]string, 0)
+	for i := range self.DataKey {
+		data[self.DataKey[i]] = self.DataValue[i]
+	}
+
+	bytes, _ := json.Marshal(nftMap)
+	return string(bytes)
 }
 
 type NFTMap struct {

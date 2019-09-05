@@ -14,10 +14,10 @@ type TxManager struct {
 }
 
 type TxContext struct {
-	AccountDB *account.AccountDB
-	Tx        *types.Transaction
-	snapshot  int
-	lock      *sync.Mutex
+	AccountDB    *account.AccountDB
+	Tx           *types.Transaction
+	snapshot     int
+	lock         *sync.Mutex
 }
 
 var TxManagerInstance *TxManager

@@ -124,6 +124,25 @@ func (self *accountObject) AddNFTByGameId(gameId string, nft *types.NFT) bool {
 	return nftMaps.SetNFT(nft)
 }
 
+func (self *accountObject) ApproveNFT(gameId, setId, id, renter string) bool {
+	data := self.data.GameData.GetNFTMaps(gameId)
+	if nil == data {
+		return false
+	}
+	nft := data.GetNFT(setId, id)
+	if nft == nil {
+		return false
+	}
+
+	change := tuntunNFTApproveChange{
+		nft:  nft,
+		prev: nft.Renter,
+	}
+	self.db.transitions = append(self.db.transitions, change)
+	nft.Renter = renter
+	return true
+}
+
 // 更新nft属性值
 func (self *accountObject) SetNFTValueByGameId(gameId, setId, id, value string) bool {
 	data := self.data.GameData.GetNFTMaps(gameId)

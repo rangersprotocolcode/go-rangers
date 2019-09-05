@@ -99,6 +99,39 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 										continue
 									}
 
+									// 修改NFT属性
+									if user.Address == "UpdateNFT" {
+										addr := common.HexToAddress(user.Assets["addr"])
+										flag := NFTManagerInstance.UpdateNFT(addr, user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], accountdb)
+										if !flag {
+											success = false
+											break
+										}
+										continue
+									}
+
+									// NFT
+									if user.Address == "TransferNFT" {
+										appId := user.Assets["appId"]
+										_, ok := NFTManagerInstance.Transfer(appId, user.Assets["setId"], user.Assets["id"], common.HexToAddress(appId), common.HexToAddress(user.Assets["target"]), accountdb)
+										if !ok {
+											success = false
+											break
+										}
+										continue
+									}
+
+									// 将状态机持有的NFT的使用权授予某地址
+									if user.Address == "ApproveNFT" {
+										appId := user.Assets["appId"]
+										ok := accountdb.ApproveNFT(common.HexToAddress(appId), appId, user.Assets["setId"], user.Assets["id"], user.Assets["target"])
+										if !ok {
+											success = false
+											break
+										}
+										continue
+									}
+
 									// 用户之间转账
 									if !UpdateAsset(user, transaction.Target, accountdb) {
 										success = false

@@ -8,6 +8,11 @@ import (
 	"fmt"
 )
 
+// 状态机转主链币给玩家
+func (api *GtasAPI) TransferBNT(appId, target, chainType, balance string) (*Result, error) {
+	return api.transferFTOrCoin(appId, target, fmt.Sprintf("official-%s", chainType), balance)
+}
+
 // todo: 经济模型，发币的费用问题
 // 状态机发币
 func (api *GtasAPI) PublishFT(gameId string, name string, symbol string, totalSupply string) (*Result, error) {
@@ -48,37 +53,32 @@ func (api *GtasAPI) PublishFT(gameId string, name string, symbol string, totalSu
 
 // todo: 经济模型，转币的费用问题
 // 状态机转币给玩家
-// 状态机更新资产时，也可以转币给玩家
-func (api *GtasAPI) TransferFT(appId string, symbol string, target string, supply string) (*Result, error) {
+func (api *GtasAPI) TransferFT(appId string, target string, ftId string, supply string) (*Result, error) {
+	return api.transferFTOrCoin(appId, target, ftId, supply)
+}
+
+func (api *GtasAPI) transferFTOrCoin(appId string, target string, ftId string, supply string) (*Result, error) {
 	if 0 == len(appId) {
 		return failResult("wrong params")
 	}
 
-	context := core.TxManagerInstance.GetContext(appId)
-	// 不在事务里，不应该啊
-	if nil == context {
-		common.DefaultLogger.Debugf("transferFT is nil!")
-		return failResult("not in transaction")
-	}
-
-	tx := context.Tx
-	if nil == tx || tx.Target != appId {
-		msg := fmt.Sprintf("wrong appId %s", appId)
+	context, tx, ok := api.checkTx(appId)
+	if !ok {
+		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
 		common.DefaultLogger.Debugf(msg)
 		return failResult(msg)
 	}
 
-	result, flag := core.TransferFT(appId, symbol, target, supply, context.AccountDB)
+	result, flag := core.TransferFT(appId, ftId, target, supply, context.AccountDB)
 	if flag {
 		// 生成交易，上链 context.Tx.SubTransactions
-
 		dataList := make([]types.UserData, 0)
 		data := types.UserData{}
 		data.Address = "TransferFT"
 		data.Assets = make(map[string]string, 0)
 		data.Assets["gameId"] = appId
 		data.Assets["target"] = target
-		data.Assets["symbol"] = symbol
+		data.Assets["symbol"] = ftId
 		data.Assets["supply"] = supply
 
 		dataList = append(dataList, data)
@@ -91,4 +91,26 @@ func (api *GtasAPI) TransferFT(appId string, symbol string, target string, suppl
 	} else {
 		return failResult(result)
 	}
+}
+
+func (api *GtasAPI) checkTx(appId string) (*core.TxContext, *types.Transaction, bool) {
+	if 0 == len(appId) {
+		return nil, nil, false
+	}
+
+	context := core.TxManagerInstance.GetContext(appId)
+	// 不在事务里，不应该啊
+	if nil == context {
+		common.DefaultLogger.Debugf("transferFT is nil!")
+		return nil, nil, false
+	}
+
+	tx := context.Tx
+	if nil == tx || tx.Target != appId {
+		msg := fmt.Sprintf("wrong appId %s", appId)
+		common.DefaultLogger.Debugf(msg)
+		return context, nil, false
+	}
+
+	return context, tx, true
 }

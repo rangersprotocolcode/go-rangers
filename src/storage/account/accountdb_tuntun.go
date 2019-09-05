@@ -106,12 +106,17 @@ func (self *AccountDB) AddNFTByGameId(addr common.Address, appId string, nft *ty
 	return stateObject.AddNFTByGameId(appId, nft)
 }
 
-func (self *AccountDB) SetNFTValueByGameId(addr common.Address, appId, setId, id, value string) bool{
+func (self *AccountDB) SetNFTValueByGameId(addr common.Address, appId, setId, id, value string) bool {
 	stateObject := self.getOrNewAccountObject(addr)
 	return stateObject.SetNFTValueByGameId(appId, setId, id, value)
 }
 
-func (self *AccountDB) RemoveNFTByGameId(addr common.Address, gameId, setId, id string) bool{
+func (self *AccountDB) RemoveNFTByGameId(addr common.Address, gameId, setId, id string) bool {
 	stateObject := self.getOrNewAccountObject(addr)
 	return stateObject.SetNFTValueByGameId(gameId, setId, id, "")
+}
+
+func (self *AccountDB) ApproveNFT(owner common.Address, gameId, setId, id, renter string) bool {
+	stateObject := self.getOrNewAccountObject(owner)
+	return stateObject.ApproveNFT(gameId, setId, id, renter)
 }

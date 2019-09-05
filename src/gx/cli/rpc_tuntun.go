@@ -10,68 +10,54 @@ import (
 	"x/src/network"
 )
 
+func (api *GtasAPI) GetBNTBalance(addr, coin string) (*Result, error) {
+	return successResult(core.GetCoinBalance(common.HexToAddress(addr), coin))
+}
+
+func (api *GtasAPI) GetAllCoinInfo(addr string) (*Result, error) {
+	return successResult(core.GetAllCoinInfo(common.HexToAddress(addr)))
+}
+
+func (api *GtasAPI) GetFTBalance(addr, ft string) (*Result, error) {
+	return successResult(core.GetFTInfo(common.HexToAddress(addr), ft))
+}
+
+func (api *GtasAPI) GetFTSet(id string) (*Result, error) {
+	return successResult(core.GetFTSet(id))
+}
+
+func (api *GtasAPI) GetAllFT(addr string) (*Result, error) {
+	return successResult(core.GetAllFT(common.HexToAddress(addr)))
+}
+
+func (api *GtasAPI) GetNFTCount(addr, setId, appId string) (*Result, error) {
+	return successResult(core.GetNFTCount(addr, setId, appId))
+}
+func (api *GtasAPI) GetNFT(setId, id, appId string) (*Result, error) {
+	return successResult(core.GetNFTInfo(setId, id, appId))
+}
+
+func (api *GtasAPI) GetAllNFT(addr, appId string) (*Result, error) {
+	return successResult(core.GetAllNFT(common.HexToAddress(addr), appId))
+}
+
+func (api *GtasAPI) GetNFTSet(setId string) (*Result, error) {
+	return successResult(core.GetNFTSet(setId))
+}
+
 func (api *GtasAPI) GetGameType(gameId string) (*Result, error) {
 	gameType := statemachine.Docker.GetType(gameId)
 	return successResult(gameType)
 }
 
-func (api *GtasAPI) GetBalance(address string, gameId string) (*Result, error) {
+func (api *GtasAPI) GetBalance(address string) (*Result, error) {
 	gxLock.RLock()
 	defer gxLock.RUnlock()
 
-	accountDB := core.AccountDBManagerInstance.GetAccountDB(gameId)
+	accountDB := core.AccountDBManagerInstance.GetAccountDB("", true)
 	balance := accountDB.GetBalance(common.HexToAddress(address))
 	floatdata := float64(balance.Int64()) / 1000000000
 	return successResult(strconv.FormatFloat(floatdata, 'f', -1, 64))
-}
-
-func (api *GtasAPI) GetAsset(address, gameId, setId, id string) (*Result, error) {
-	gxLock.RLock()
-	defer gxLock.RUnlock()
-
-	accountDB := core.AccountDBManagerInstance.GetAccountDB(gameId)
-	nft := accountDB.GetNFTByGameId(common.HexToAddress(address), gameId, setId, id)
-
-	return successResult(nft)
-}
-
-func (api *GtasAPI) GetAllAssets(address string, gameId string) (*Result, error) {
-	gxLock.RLock()
-	defer gxLock.RUnlock()
-
-	return getAssets(address, gameId)
-}
-
-func (api *GtasAPI) GetAccount(address string, gameId string) (*Result, error) {
-	gxLock.RLock()
-	defer gxLock.RUnlock()
-
-	accountDB := core.AccountDBManagerInstance.GetAccountDB(gameId)
-	source := common.HexToAddress(address)
-
-	subAccountData := make(map[string]interface{})
-
-	ftList := accountDB.GetAllFT(source)
-	ftMap := make(map[string]string)
-	if 0 != len(ftList) {
-		for id, value := range ftList {
-			ftMap[id] = strconv.FormatFloat(float64(value.Int64())/1000000000, 'f', -1, 64)
-		}
-	}
-	subAccountData["ft"] = ftMap
-	subAccountData["nft"] = accountDB.GetAllNFTByGameId(source, gameId)
-
-	balance := accountDB.GetBalance(source)
-	floatdata := float64(balance.Int64()) / 1000000000
-	subAccountData["balance"] = strconv.FormatFloat(floatdata, 'f', -1, 64)
-
-	return successResult(subAccountData)
-}
-
-func getAssets(address string, gameId string) (*Result, error) {
-	accountDB := core.AccountDBManagerInstance.GetAccountDB(gameId)
-	sub := accountDB.GetAllNFTByGameId(common.HexToAddress(address), gameId)
-	return successResult(sub)
 }
 
 // 通过rpc的方式，让本地的docker镜像调用

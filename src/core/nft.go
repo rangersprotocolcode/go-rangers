@@ -10,11 +10,11 @@ import (
 	"fmt"
 )
 
-var nftManagerInstance *NFTManager
+var NFTManagerInstance *NFTManager
 
 func initNFTManager() {
-	nftManagerInstance = &NFTManager{}
-	nftManagerInstance.lock = sync.RWMutex{}
+	NFTManagerInstance = &NFTManager{}
+	NFTManagerInstance.lock = sync.RWMutex{}
 }
 
 type NFTManager struct {
@@ -163,6 +163,21 @@ func (self *NFTManager) GetNFTListByAddress(address common.Address, appId string
 	return accountDB.GetAllNFTByGameId(address, appId)
 }
 
+func (self *NFTManager) GetNFTOwner(setId, id string, accountDB *account.AccountDB) *common.Address {
+	// 检查setId是否存在
+	nftSet := self.GetNFTSet(setId, accountDB)
+	if nil == nftSet {
+		return nil
+	}
+
+	address, ok := nftSet.OccupiedID[id]
+	if ok {
+		return &address
+	} else {
+		return nil
+	}
+}
+
 // 更新用户当前游戏的NFT数据属性
 // 状态机调用
 func (self *NFTManager) UpdateNFT(addr common.Address, appId, setId, id, data string, accountDB *account.AccountDB) bool {
@@ -185,13 +200,13 @@ func (self *NFTManager) BatchUpdateNFT(addr common.Address, appId, setId string,
 // 状态机&玩家(钱包)调用
 func (self *NFTManager) Transfer(appId, setId, id string, owner, newOwner common.Address, accountDB *account.AccountDB) (string, bool) {
 	// 根据setId+id 查找nft
-	nft := self.GetNFT(setId, id, accountDB)
+	nft := accountDB.GetNFTById(owner, setId, id)
 	if nil == nft {
-		return fmt.Sprintf("nft is not existed. setId: %s, id: %s", setId, id), false
+		return fmt.Sprintf("nft is not existed. setId: %s, id: %s, owner: %s", setId, id, owner.String()), false
 	}
 
 	// 判断nft是否可以被transfer
-	if nft.Status != 0 || nft.Owner != owner.GetHexString() {
+	if nft.Status != 0 {
 		return fmt.Sprintf("nft cannot be transferred. setId: %s, id: %s", setId, id), false
 	}
 
@@ -200,6 +215,26 @@ func (self *NFTManager) Transfer(appId, setId, id string, owner, newOwner common
 	nftSet := self.GetNFTSet(setId, accountDB)
 	nftSet.ChangeOwner(id, newOwner)
 	self.updateNFTSet(nftSet, accountDB)
+
+	// 通知本状态机
+	return "nft transfer successful", true
+}
+
+func (self *NFTManager) Approve(appId, setId, id, owner, renter string, accountDB *account.AccountDB) (string, bool) {
+	// 根据setId+id 查找nft
+	nft := accountDB.GetNFTById(common.HexToAddress(owner), setId, id)
+	if nil == nft {
+		return fmt.Sprintf("nft is not existed. setId: %s, id: %s, owner: %s", setId, id, owner), false
+	}
+
+	// 判断nft是否可以被transfer
+	if nft.Status != 0 {
+		return fmt.Sprintf("nft cannot be approved. setId: %s, id: %s", setId, id), false
+	}
+
+	// 修改数据
+	nft.Renter = renter
+	accountDB.SetNFTValueByGameId()
 
 	// 通知本状态机
 	return "nft transfer successful", true

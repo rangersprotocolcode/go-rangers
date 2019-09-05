@@ -9,8 +9,6 @@ import (
 	"x/src/middleware/types"
 	"strconv"
 	"x/src/statemachine"
-	"fmt"
-	"strings"
 )
 
 // 客户端web socket 请求的返回数据结构
@@ -110,51 +108,26 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	sourceString := txRaw.Source
 	source := common.HexToAddress(sourceString)
 	gameId := txRaw.Target
-	accountDB := AccountDBManagerInstance.GetAccountDB(gameId)
-
 	switch txRaw.Type {
 
 	// 查询主链币
 	case types.TransactionTypeGetCoin:
-		ftName := fmt.Sprintf("official-%s", txRaw.Data)
-		balance := accountDB.GetFT(source, ftName)
-		floatdata := float64(balance.Int64()) / 1000000000
-		result = strconv.FormatFloat(floatdata, 'f', -1, 64)
+		result = GetCoinBalance(source, txRaw.Data)
 		break
 
 		// 查询所有主链币
 	case types.TransactionTypeGetAllCoin:
-		ftMap := accountDB.GetAllFT(source)
-		data := make(map[string]string, 0)
-		for key, value := range ftMap {
-			keyItems := strings.Split(key, "-")
-			if "official" == keyItems[0] {
-				data[keyItems[1]] = strconv.FormatFloat(float64(value.Int64())/1000000000, 'f', -1, 64)
-			}
-		}
-		bytes, _ := json.Marshal(data)
-		result = string(bytes)
+		result = GetAllCoinInfo(source)
 		break
 
 		// 查询FT
 	case types.TransactionTypeFT:
-		balance := accountDB.GetFT(source, txRaw.Data)
-		floatdata := float64(balance.Int64()) / 1000000000
-		result = strconv.FormatFloat(floatdata, 'f', -1, 64)
+		result = GetFTInfo(source, txRaw.Data)
 		break
 
-		// 查询所有FT
+		// 查询用户所有FT
 	case types.TransactionTypeAllFT:
-		ftMap := accountDB.GetAllFT(source)
-		data := make(map[string]string, 0)
-		for key, value := range ftMap {
-			keyItems := strings.Split(key, "-")
-			if "official" != keyItems[0] {
-				data[key] = strconv.FormatFloat(float64(value.Int64())/1000000000, 'f', -1, 64)
-			}
-		}
-		bytes, _ := json.Marshal(data)
-		result = string(bytes)
+		result = GetAllFT(source)
 		break
 
 		//查询特定NFT
@@ -162,29 +135,19 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 		var id types.NFTID
 		err := json.Unmarshal([]byte(txRaw.Data), &id)
 		if nil == err {
-			nft := nftManagerInstance.GetNFT(id.SetId, id.Id, accountDB)
-			if nil != nft {
-				bytes, _ := json.Marshal(nft)
-				result = string(bytes)
-			}
+			result = GetNFTInfo(id.SetId, id.Id, gameId)
 		}
 		break
 
 		// 查询账户下某个游戏的所有NFT
 	case types.TransactionTypeNFTListByAddress:
-		nftList := nftManagerInstance.GetNFTListByAddress(source, gameId, accountDB)
-		bytes, _ := json.Marshal(nftList)
-		result = string(bytes)
+		result = GetAllNFT(source, gameId)
 		break
 
 		// 查询NFTSet信息
 	case types.TransactionTypeNFTSet:
-		setId := txRaw.Data
-		nftSet := nftManagerInstance.GetNFTSet(setId, accountDB)
-		bytes, _ := json.Marshal(nftSet)
-		result = string(bytes)
+		result = GetNFTSet(txRaw.Data)
 		break
-
 	}
 
 	responseId := txRaw.SocketRequestId
@@ -213,7 +176,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 	case types.TransactionTypeOperatorEvent:
 
 		gameId := txRaw.Target
-		accountDB := AccountDBManagerInstance.GetAccountDB(gameId)
+		accountDB := AccountDBManagerInstance.GetAccountDB(gameId, true)
 		logger.Infof("After get account db!")
 
 		// 已经执行过了（入块时），则不用再执行了
@@ -335,7 +298,8 @@ func (executor *GameExecutor) loop() {
 
 			txRaw := message.Tx
 			txRaw.RequestId = message.Nonce
-			gameId := txRaw.Target
+			//gameId := txRaw.Target
+			gameId := "fixed"
 
 			// 校验交易类型
 			transactionType := txRaw.Type

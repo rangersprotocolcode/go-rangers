@@ -12,7 +12,7 @@ const BASE = "base"
 // 用于实时计算
 type AccountDBManager struct {
 	context map[string]*accountContext
-	lock    *sync.Mutex //用于锁定BASE
+	lock    *sync.RWMutex //用于锁定BASE
 }
 
 type accountContext struct {
@@ -42,10 +42,15 @@ func (manager *AccountDBManager) onBlockAddSuccess(message notify.Message) {
 	manager.context[BASE] = context
 }
 
-func (manager *AccountDBManager) GetAccountDB(gameId string) *account.AccountDB {
-	context := manager.context[gameId]
-	base := manager.context[BASE]
+func (manager *AccountDBManager) GetAccountDB(gameId string, isBase bool) *account.AccountDB {
+	manager.lock.RLock()
+	defer manager.lock.RUnlock()
 
+	base := manager.context[BASE]
+	if isBase {
+		return base.accountDB
+	}
+	context := manager.context[gameId]
 	if nil == context {
 		// new
 		manager.lock.Lock()

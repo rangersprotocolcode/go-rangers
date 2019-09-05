@@ -9,11 +9,34 @@ import (
 	"x/src/storage/account"
 	"sync"
 	"fmt"
+	"strings"
 )
 
-// todo: 经济模型，转币的费用问题
-// 状态机转币给玩家
-func TransferFT(appId string, symbol string, target string, supply string, accountDB *account.AccountDB) (string, bool) {
+func TransferFT(source string, ftId string, target string, supply string, accountDB *account.AccountDB) (string, bool) {
+	if 0 == len(ftId) || 0 == len(supply) {
+		return "", true
+	}
+	ftInfo := strings.Split(ftId, "-")
+	if 2 != len(ftInfo) {
+		return fmt.Sprintf("invalid ftId: %s", ftId), false
+	}
+
+	// 发行方
+	if source == ftInfo[0] {
+		return transferFTFromPublisher(source, ftInfo[1], target, supply, accountDB)
+	}
+
+	balance := FTManagerInstance.convert(supply)
+	if !accountDB.SubFT(common.HexToAddress(source), ftId, balance) {
+		return fmt.Sprintf("not enough ft. ftId: %s, supply: %s", ftId, supply), false
+	}
+
+	accountDB.AddFT(common.HexToAddress(target), ftId, balance)
+	return "success", true
+}
+
+// 发行方转币给玩家
+func transferFTFromPublisher(appId string, symbol string, target string, supply string, accountDB *account.AccountDB) (string, bool) {
 	if 0 == len(appId) || 0 == len(target) || 0 == len(symbol) || 0 == len(supply) {
 		return "wrong params", false
 	}
