@@ -200,12 +200,15 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 		}
 	}
 
+	balance := state.GetFT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"), "official-eth")
+	common.DefaultLogger.Debugf("Before state commit.Query Balance again:%v", balance)
+
 	root, err := state.Commit(false)
 	if err != nil {
 		logger.Errorf("State commit error:%s", err.Error())
 		return false, state, receipts
 	}
-	balance := state.GetFT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"), "official-eth")
+	balance = state.GetFT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"), "official-eth")
 	common.DefaultLogger.Debugf("After state commit.Query Balance again:%v", balance)
 
 	trieDB := chain.stateDB.TrieDB()
