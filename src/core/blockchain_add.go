@@ -200,7 +200,7 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 		}
 	}
 
-	root, err := state.Commit(true)
+	root, err := state.Commit(false)
 	if err != nil {
 		logger.Errorf("State commit error:%s", err.Error())
 		return false, state, receipts
