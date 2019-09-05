@@ -345,7 +345,10 @@ func (executor *VMExecutor) executeCoinDepositNotify(accountdb *account.AccountD
 	}
 
 	value, _ := utility.StrToBigInt(depositCoinData.Amount)
+	txLogger.Debugf("deposit coin value:%s", value.String())
 	accountdb.AddFT(common.HexToAddress(transaction.Source), fmt.Sprintf("official-%s", depositCoinData.ChainType), value)
+	balance := accountdb.GetFT(common.HexToAddress(transaction.Source), fmt.Sprintf("official-%s", depositCoinData.ChainType))
+	txLogger.Debugf("After deposit coin,balance:%v",balance)
 	return true
 }
 

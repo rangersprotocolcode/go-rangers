@@ -13,6 +13,7 @@ import (
 
 func GetCoinBalance(source common.Address, ft string) string {
 	ftName := fmt.Sprintf("official-%s", ft)
+	common.DefaultLogger.Debugf("RPC get coin balance. fnName:%s,address:%s", ftName, source.String())
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
 	balance := accountDB.GetFT(source, ftName)
 	floatdata := float64(balance.Int64()) / 1000000000
