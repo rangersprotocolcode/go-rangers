@@ -220,26 +220,6 @@ func (self *NFTManager) Transfer(appId, setId, id string, owner, newOwner common
 	return "nft transfer successful", true
 }
 
-func (self *NFTManager) Approve(appId, setId, id, owner, renter string, accountDB *account.AccountDB) (string, bool) {
-	// 根据setId+id 查找nft
-	nft := accountDB.GetNFTById(common.HexToAddress(owner), setId, id)
-	if nil == nft {
-		return fmt.Sprintf("nft is not existed. setId: %s, id: %s, owner: %s", setId, id, owner), false
-	}
-
-	// 判断nft是否可以被transfer
-	if nft.Status != 0 {
-		return fmt.Sprintf("nft cannot be approved. setId: %s, id: %s", setId, id), false
-	}
-
-	// 修改数据
-	nft.Renter = renter
-	accountDB.SetNFTValueByGameId()
-
-	// 通知本状态机
-	return "nft transfer successful", true
-}
-
 // NFT 穿梭
 // 状态机&玩家(钱包)调用
 func (self *NFTManager) Shuttle(setId, id, newAppId string, accountDB *account.AccountDB) (string, bool) {
