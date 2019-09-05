@@ -196,7 +196,7 @@ func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol string, totalSupply
 	}
 
 	accountDB := context.AccountDB
-	if _, ok := core.NFTManagerInstance.PublishNFTSet(setId, name, symbol, totalSupply, accountDB); ok {
+	if _, ok, _ := core.NFTManagerInstance.PublishNFTSet(setId, name, symbol, totalSupply, accountDB); ok {
 		// 生成交易，上链 context.Tx.SubTransactions
 		dataList := make([]types.UserData, 0)
 		userData := types.UserData{}

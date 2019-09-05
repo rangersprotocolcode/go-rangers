@@ -6,8 +6,8 @@ import (
 	"sync"
 	"x/src/storage/account"
 	"encoding/json"
-	"time"
 	"fmt"
+	"time"
 )
 
 var NFTManagerInstance *NFTManager
@@ -56,13 +56,13 @@ func (self *NFTManager) GetNFTSet(setId string, accountDB *account.AccountDB) *t
 
 // L2发行NFTSet
 // 状态机调用
-func (self *NFTManager) PublishNFTSet(setId string, name string, symbol string, totalSupply uint, accountDB *account.AccountDB) (string, bool) {
+func (self *NFTManager) PublishNFTSet(setId string, name string, symbol string, totalSupply uint, accountDB *account.AccountDB) (string, bool, *types.NFTSet) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
 	// 检查setId是否存在
 	if 0 == len(setId) || self.contains(setId, accountDB) {
-		return "setId wrong", false
+		return "setId wrong", false, nil
 	}
 
 	// 创建NFTSet
@@ -75,7 +75,7 @@ func (self *NFTManager) PublishNFTSet(setId string, name string, symbol string, 
 	nftSet.OccupiedID = make(map[string]common.Address, 0)
 
 	self.updateNFTSet(nftSet, accountDB)
-	return "nft publish successful", true
+	return "nft publish successful", true, nftSet
 }
 
 // L2创建NFT
@@ -91,19 +91,24 @@ func (self *NFTManager) MintNFT(appId, setId, id, data string, owner common.Addr
 		return "wrong setId", false
 	}
 
+	return self.GenerateNFT(nftSet, appId, setId, id, data, appId, time.Now(), owner, accountDB)
+
+}
+
+func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data, creator string, timeStamp time.Time, owner common.Address, accountDB *account.AccountDB) (string, bool) {
 	// 检查id是否存在
 	if _, ok := nftSet.OccupiedID[id]; ok {
 		return "wrong id", false
 	}
 
-	// 创建NFT
+	// 创建NFT对象
 	nft := &types.NFT{
 		SetID:      setId,
 		Name:       nftSet.Name,
 		Symbol:     nftSet.Symbol,
 		ID:         id,
-		Creator:    appId,
-		CreateTime: time.Now(),
+		Creator:    creator,
+		CreateTime: timeStamp,
 		Owner:      owner.GetHexString(),
 		Status:     0,
 		AppId:      appId,
@@ -123,7 +128,6 @@ func (self *NFTManager) MintNFT(appId, setId, id, data string, owner common.Addr
 	} else {
 		return "fail to nft mint", false
 	}
-
 }
 
 // 获取NFT信息

@@ -12,6 +12,7 @@ import (
 	"x/src/statemachine"
 	"strconv"
 	"math/big"
+	"fmt"
 )
 
 const MaxCastBlockTime = time.Second * 3
@@ -145,7 +146,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 									if user.Address == "PublishNFTSet" {
 										totalSupply, _ := strconv.Atoi(user.Assets["totalSupply"])
-										_, ok := NFTManagerInstance.PublishNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], uint(totalSupply), accountdb)
+										_, ok, _ := NFTManagerInstance.PublishNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], uint(totalSupply), accountdb)
 										if !ok {
 											success = false
 											break
@@ -203,7 +204,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		case types.TransactionTypeFTDepositAck:
 			success = executor.executeFTDepositNotify(accountdb, transaction)
 		case types.TransactionTypeNFTDepositAck:
-			success = executor.executeNFTFTDepositNotify(accountdb, transaction)
+			success = executor.executeNFTDepositNotify(accountdb, transaction)
 		}
 
 		if !success {
@@ -234,6 +235,7 @@ func (executor *VMExecutor) validateNonce(accountdb *account.AccountDB, transact
 	return true
 }
 
+// 提现
 func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transaction *types.Transaction) bool {
 	txLogger.Debugf("Execute withdraw tx:%v", transaction)
 	if transaction.Data == "" {
@@ -341,7 +343,9 @@ func (executor *VMExecutor) executeCoinDepositNotify(accountdb *account.AccountD
 	if depositCoinData.Amount == "" || depositCoinData.ChainType == "" {
 		return false
 	}
-	//todo implement
+
+	value, _ := utility.StrToBigInt(depositCoinData.Amount)
+	accountdb.AddFT(common.HexToAddress(transaction.Source), fmt.Sprintf("official-%s", depositCoinData.ChainType), value)
 	return true
 }
 
@@ -361,12 +365,14 @@ func (executor *VMExecutor) executeFTDepositNotify(accountdb *account.AccountDB,
 	if depositFTData.Amount == "" || depositFTData.FTId == "" {
 		return false
 	}
-	//todo implement
+	//todo 先不检查此ft是否存在
+	value, _ := utility.StrToBigInt(depositFTData.Amount)
+	accountdb.AddFT(common.HexToAddress(transaction.Source), depositFTData.FTId, value)
 	return true
 }
 
 //NFT充值确认
-func (executor *VMExecutor) executeNFTFTDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
+func (executor *VMExecutor) executeNFTDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
 	txLogger.Debugf("Execute nft deposit ack tx:%v", transaction)
 	if transaction.Data == "" {
 		return false
@@ -382,8 +388,16 @@ func (executor *VMExecutor) executeNFTFTDepositNotify(accountdb *account.Account
 	if depositNFTData.Value == "" {
 		return false
 	}
-	//todo implement
-	return true
+
+	// 检查setId
+	nftSet := NFTManagerInstance.GetNFTSet(depositNFTData.SetId, accountdb)
+	if nil == nftSet {
+		_, _, nftSet = NFTManagerInstance.PublishNFTSet(depositNFTData.SetId, depositNFTData.Name, depositNFTData.Symbol, 0, accountdb)
+	}
+	timestamp, _ := time.Parse("2006-01-02 15:04:05", depositNFTData.CreateTime)
+	appId := transaction.Target
+	_, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, depositNFTData.Value, depositNFTData.Creator, timestamp, common.HexToAddress(transaction.Source), accountdb)
+	return ok
 }
 
 /**
