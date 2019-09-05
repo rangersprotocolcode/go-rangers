@@ -18,7 +18,7 @@ type AccountDBManager struct {
 type accountContext struct {
 	accountDB *account.AccountDB
 	height    uint64
-	lock      *sync.RWMutex // 锁自己
+	lock      *sync.Mutex // 锁自己
 }
 
 var AccountDBManagerInstance *AccountDBManager
