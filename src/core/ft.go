@@ -31,8 +31,12 @@ func TransferFT(source string, ftId string, target string, supply string, accoun
 		return fmt.Sprintf("not enough ft. ftId: %s, supply: %s", ftId, supply), false
 	}
 
-	accountDB.AddFT(common.HexToAddress(target), ftId, balance)
-	return "success", true
+	if accountDB.AddFT(common.HexToAddress(target), ftId, balance) {
+		return "success", true
+	} else {
+		return "overflow", false
+	}
+
 }
 
 // 发行方转币给玩家
@@ -47,9 +51,13 @@ func transferFTFromPublisher(appId string, symbol string, target string, supply 
 	}
 
 	targetAddress := common.HexToAddress(target)
-	accountDB.AddFT(targetAddress, FTManagerInstance.genID(appId, symbol), balance)
+	if accountDB.AddFT(targetAddress, FTManagerInstance.genID(appId, symbol), balance){
+		return "TransferFT successful", true
+	}else {
+		return "overflow", false
+	}
 
-	return "TransferFT successful", true
+
 }
 
 type FTManager struct {

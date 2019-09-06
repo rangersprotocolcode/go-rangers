@@ -42,12 +42,13 @@ func (self *AccountDB) SetFT(addr common.Address, ftName string, balance *big.In
 	account.SetFT(balance, ftName)
 }
 
-func (self *AccountDB) AddFT(addr common.Address, ftName string, balance *big.Int) {
+func (self *AccountDB) AddFT(addr common.Address, ftName string, balance *big.Int) bool {
 	if nil == balance {
-		return
+		return true
 	}
 	account := self.getOrNewAccountObject(addr)
-	account.AddFT(balance, ftName)
+
+	return account.AddFT(balance, ftName)
 }
 
 func (self *AccountDB) SubFT(addr common.Address, ftName string, balance *big.Int) bool {

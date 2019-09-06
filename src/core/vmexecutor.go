@@ -345,8 +345,7 @@ func (executor *VMExecutor) executeCoinDepositNotify(accountdb *account.AccountD
 	}
 
 	value, _ := utility.StrToBigInt(depositCoinData.Amount)
-	accountdb.AddFT(common.HexToAddress(transaction.Source), fmt.Sprintf("official-%s", depositCoinData.ChainType), value)
-	return true
+	return accountdb.AddFT(common.HexToAddress(transaction.Source), fmt.Sprintf("official-%s", depositCoinData.ChainType), value)
 }
 
 //FT充值确认
@@ -367,8 +366,7 @@ func (executor *VMExecutor) executeFTDepositNotify(accountdb *account.AccountDB,
 	}
 	//todo 先不检查此ft是否存在
 	value, _ := utility.StrToBigInt(depositFTData.Amount)
-	accountdb.AddFT(common.HexToAddress(transaction.Source), depositFTData.FTId, value)
-	return true
+	return accountdb.AddFT(common.HexToAddress(transaction.Source), depositFTData.FTId, value)
 }
 
 //NFT充值确认

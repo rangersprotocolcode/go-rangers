@@ -29,19 +29,19 @@ func (self *accountObject) getFT(ftList []*types.FT, name string) *types.FT {
 	return nil
 }
 
-func (c *accountObject) AddFT(amount *big.Int, name string) {
+func (c *accountObject) AddFT(amount *big.Int, name string) bool{
 	if amount.Sign() == 0 {
 		if c.empty() {
 			c.touch()
 		}
 
-		return
+		return true
 	}
 	raw := c.getFT(c.data.Ft, name)
 	if nil == raw {
-		c.SetFT(new(big.Int).Set(amount), name)
+		return c.SetFT(new(big.Int).Set(amount), name)
 	} else {
-		c.SetFT(new(big.Int).Add(raw.Balance, amount), name)
+		return c.SetFT(new(big.Int).Add(raw.Balance, amount), name)
 	}
 
 }
@@ -61,7 +61,7 @@ func (c *accountObject) SubFT(amount *big.Int, name string) bool {
 	return true
 }
 
-func (self *accountObject) SetFT(amount *big.Int, name string) {
+func (self *accountObject) SetFT(amount *big.Int, name string) bool {
 	raw := self.getFT(self.data.Ft, name)
 	change := tuntunFTChange{
 		account: &self.address,
@@ -74,10 +74,10 @@ func (self *accountObject) SetFT(amount *big.Int, name string) {
 	}
 
 	self.db.transitions = append(self.db.transitions, change)
-	self.setFT(amount, name)
+	return self.setFT(amount, name)
 }
 
-func (self *accountObject) setFT(amount *big.Int, name string) {
+func (self *accountObject) setFT(amount *big.Int, name string) bool{
 	if nil == amount || amount.Sign() == 0 {
 		index := -1
 		for i, ft := range self.data.Ft {
@@ -98,9 +98,15 @@ func (self *accountObject) setFT(amount *big.Int, name string) {
 			self.data.Ft = append(self.data.Ft, ftObject)
 		}
 		ftObject.Balance = new(big.Int).Set(amount)
+
+		// 溢出判断
+		if ftObject.Balance.Sign() == -1{
+			return false
+		}
 	}
 
 	self.callback()
+	return true
 }
 
 // 新增一个nft实例
