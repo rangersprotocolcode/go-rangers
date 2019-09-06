@@ -72,7 +72,7 @@ func GetNFTCount(addr, setId, appId string) int {
 }
 func GetNFTInfo(setId, id, appId string) string {
 	common.DefaultLogger.Debugf("Get nft nfo.setId:%s,id:%s,appid:%s,", setId, id, appId)
-	accountDB := AccountDBManagerInstance.GetAccountDB(appId, false)
+	accountDB := AccountDBManagerInstance.GetAccountDB(appId, true)
 	nft := NFTManagerInstance.GetNFT(setId, id, accountDB)
 	if nil != nft {
 		common.DefaultLogger.Debugf("Got nft info:%s,", nft.ToJSONString())
@@ -83,7 +83,7 @@ func GetNFTInfo(setId, id, appId string) string {
 }
 
 func GetAllNFT(source common.Address, appId string) string {
-	accountDB := AccountDBManagerInstance.GetAccountDB(appId, false)
+	accountDB := AccountDBManagerInstance.GetAccountDB(appId, true)
 	nftList := NFTManagerInstance.GetNFTListByAddress(source, appId, accountDB)
 	bytes, _ := json.Marshal(nftList)
 	return string(bytes)
