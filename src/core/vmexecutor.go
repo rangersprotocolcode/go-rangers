@@ -413,7 +413,11 @@ func (executor *VMExecutor) executeNFTDepositNotify(accountdb *account.AccountDB
 	}
 	timestamp, _ := time.Parse("2006-01-02 15:04:05", depositNFTData.CreateTime)
 	appId := transaction.Target
-	_, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, depositNFTData.Value, depositNFTData.Creator, timestamp, common.HexToAddress(transaction.Source), accountdb)
+	str, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, depositNFTData.Value, depositNFTData.Creator, timestamp, common.HexToAddress(transaction.Source), accountdb)
+	txLogger.Debugf("GenerateNFT result:%s,%t", str, ok)
+
+	nft := NFTManagerInstance.GetNFT("aaa-bbb", "2", accountdb)
+	txLogger.Debugf("After deposit nft.NFT:%s", nft.ToJSONString())
 	return ok
 }
 

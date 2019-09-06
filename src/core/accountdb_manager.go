@@ -40,6 +40,8 @@ func (manager *AccountDBManager) onBlockAddSuccess(message notify.Message) {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 	manager.context[BASE] = context
+	nft := NFTManagerInstance.GetNFT("aaa-bbb", "2", context.accountDB)
+	txLogger.Debugf("On block add success.NFT:%s", nft.ToJSONString())
 }
 
 func (manager *AccountDBManager) GetAccountDB(gameId string, isBase bool) *account.AccountDB {
