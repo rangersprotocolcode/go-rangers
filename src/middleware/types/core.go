@@ -92,6 +92,8 @@ const (
 
 	TransactionTypeWithdraw = 109
 
+	TransactionTypePublishFT = 110 // 用户发FT
+
 	TransactionTypeCoinDepositAck = 201
 	TransactionTypeFTDepositAck   = 202
 	TransactionTypeNFTDepositAck  = 203

@@ -197,6 +197,9 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 			}
 
+		case types.TransactionTypePublishFT:
+			success = executor.publishFT(accountdb, transaction)
+			break
 		case types.TransactionTypeWithdraw:
 			success = executor.executeWithdraw(accountdb, transaction)
 		case types.TransactionTypeCoinDepositAck:
@@ -233,6 +236,22 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 func (executor *VMExecutor) validateNonce(accountdb *account.AccountDB, transaction *types.Transaction) bool {
 	return true
+}
+
+// tx.source : 发币方
+// tx.type = 110
+// tx.data 发行参数，map jsonString
+// {"symbol":"","name":"","totalSupply":"12345678"}
+func (self *VMExecutor) publishFT(accountdb *account.AccountDB, tx *types.Transaction) bool {
+	var ftSet map[string]string
+	if err := json.Unmarshal([]byte(tx.Data), &ftSet); nil != err {
+		return false
+	}
+
+	appId := tx.Source
+	_, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["totalSupply"], 1, accountdb)
+
+	return ok
 }
 
 // 提现
