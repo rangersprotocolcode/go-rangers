@@ -40,12 +40,6 @@ func (manager *AccountDBManager) onBlockAddSuccess(message notify.Message) {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 	manager.context[BASE] = context
-	nft := NFTManagerInstance.GetNFT("aaa-bbb", "2", context.accountDB)
-	if nft == nil {
-		txLogger.Debugf("After deposit nft.NFT:nil")
-	} else {
-		txLogger.Debugf("After deposit nft.NFT:%s", nft.ToJSONString())
-	}
 }
 
 func (manager *AccountDBManager) GetAccountDB(gameId string, isBase bool) *account.AccountDB {

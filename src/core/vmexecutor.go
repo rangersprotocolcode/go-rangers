@@ -401,8 +401,7 @@ func (executor *VMExecutor) executeNFTDepositNotify(accountdb *account.AccountDB
 		return false
 	}
 	txLogger.Debugf("deposit nft data:%v,target address:%s", depositNFTData, transaction.Source)
-	//todo 这里NFT充值的必须字段检查可能不止Value这一个字段
-	if depositNFTData.Value == "" {
+	if (depositNFTData.SetId == "" || depositNFTData.ID == "" || depositNFTData.Value == "") {
 		return false
 	}
 
@@ -415,13 +414,6 @@ func (executor *VMExecutor) executeNFTDepositNotify(accountdb *account.AccountDB
 	appId := transaction.Target
 	str, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, depositNFTData.Value, depositNFTData.Creator, timestamp, common.HexToAddress(transaction.Source), accountdb)
 	txLogger.Debugf("GenerateNFT result:%s,%t", str, ok)
-
-	nft := NFTManagerInstance.GetNFT("aaa-bbb", "2", accountdb)
-	if nft == nil {
-		txLogger.Debugf("After deposit nft.NFT:nil")
-	} else {
-		txLogger.Debugf("After deposit nft.NFT:%s", nft.ToJSONString())
-	}
 	return ok
 }
 
