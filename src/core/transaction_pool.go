@@ -29,11 +29,15 @@ var (
 	ErrHash = errors.New("invalid transaction hash")
 
 	ErrExist = errors.New("transaction already exist in pool")
+
+	ErrEvicted = errors.New("error transaction already exist in pool")
 )
 
 type TxPool struct {
-	minerTxs *lru.Cache // miner and bonus tx
-	missTxs  *lru.Cache
+	minerTxs   *lru.Cache // miner and bonus tx
+	missTxs    *lru.Cache
+	evictedTxs *lru.Cache
+
 	received *simpleContainer
 
 	executed db.Database
@@ -51,6 +55,7 @@ func NewTransactionPool() TransactionPool {
 	pool.received = newSimpleContainer(rcvTxPoolSize)
 	pool.minerTxs, _ = lru.New(minerTxCacheSize)
 	pool.missTxs, _ = lru.New(missTxCacheSize)
+	pool.evictedTxs, _ = lru.New(minerTxCacheSize)
 
 	executed, err := db.NewDatabase(txDataBasePrefix)
 	if err != nil {
@@ -161,6 +166,7 @@ func (pool *TxPool) MarkExecuted(receipts types.Receipts, txs []*types.Transacti
 	if evictedTxs != nil {
 		for _, hash := range evictedTxs {
 			pool.remove(hash)
+			pool.evictedTxs.Add(hash, 0)
 		}
 	}
 }
@@ -270,6 +276,9 @@ func (pool *TxPool) PackForCast() []*types.Transaction {
 }
 
 func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
+	if pool.evictedTxs.Contains(tx.Hash) {
+		return ErrEvicted
+	}
 	//if tx.Hash != tx.GenHash() {
 	//	logger.Debugf("Bad tx: hash not illegal,hash:%s,", tx.Hash.String())
 	//	return ErrHash
