@@ -10,7 +10,7 @@ import (
 func TestAccountDB_AddBalance(t *testing.T) {
 	// Create an empty state database
 	//db, _ := db.NewMemDatabase()
-	db, _ := db.NewLDBDatabase("/Users/Kaede/TasProject/work/test", 0, 0)
+	db, _ := db.NewLDBDatabase("account/test", 0, 0)
 	//db, _ := db.NewLDBDatabase("/Volumes/Work/work/test", 0, 0)
 	defer db.Close()
 	triedb := NewDatabase(db)
