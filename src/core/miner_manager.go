@@ -57,7 +57,7 @@ func (mm *MinerManager) GetMinerById(id []byte, ttype byte, accountdb *account.A
 	if accountdb == nil {
 		accountdb = blockChainImpl.LatestStateDB()
 	}
-	//logger.Debugf("Miner manager get miner %v", id)
+	logger.Debugf("Miner manager get miner %v", id)
 	db := mm.getMinerDatabase(ttype)
 	data := accountdb.GetData(db, id)
 	if data != nil && len(data) > 0 {
