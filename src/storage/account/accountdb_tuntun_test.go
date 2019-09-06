@@ -20,7 +20,7 @@ func TestAccountDB_AddFT(t *testing.T) {
 		t.Fatalf("123-%s", money)
 	}
 
-	root, _ := state.Commit(false)
+	root, _ := state.Commit(true)
 	money = state.GetFT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"), "official-eth")
 	if value.Cmp(money) != 0 {
 		t.Fatalf("123-%s", money)
@@ -30,7 +30,5 @@ func TestAccountDB_AddFT(t *testing.T) {
 	money = state2.GetFT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"), "official-eth")
 	if value.Cmp(money) != 0 {
 		t.Fatalf("123-%s", money)
-	}else{
-		t.Fatalf("1234-%s", money)
 	}
 }

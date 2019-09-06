@@ -226,7 +226,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 	}
 	accountdb.AddBalance(common.BytesToAddress(block.Header.Castor), consensusHelper.ProposalBonus())
 
-	state := accountdb.IntermediateRoot(false)
+	state := accountdb.IntermediateRoot(true)
 	logger.Debugf("VMExecutor End Execute State %s", state.Hex())
 	return state, evictedTxs, transactions, receipts, nil, errs
 }
