@@ -4,7 +4,6 @@ import (
 	"x/src/middleware/notify"
 	"sync"
 	"x/src/storage/account"
-	"x/src/common"
 )
 
 const BASE = "base"
@@ -41,8 +40,6 @@ func (manager *AccountDBManager) onBlockAddSuccess(message notify.Message) {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 	manager.context[BASE] = context
-	balance := context.accountDB.GetFT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"), "official-eth")
-	common.DefaultLogger.Debugf("Balance:%v", balance)
 }
 
 func (manager *AccountDBManager) GetAccountDB(gameId string, isBase bool) *account.AccountDB {
