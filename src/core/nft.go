@@ -116,7 +116,7 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 	nft.DataKey = make([]string, 0)
 	nft.DataValue = make([]string, 0)
 	if 0 != len(data) {
-		nft.SetData(appId, data)
+		nft.SetData(data,appId)
 	}
 
 	//分配NFT
