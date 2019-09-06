@@ -417,7 +417,11 @@ func (executor *VMExecutor) executeNFTDepositNotify(accountdb *account.AccountDB
 	txLogger.Debugf("GenerateNFT result:%s,%t", str, ok)
 
 	nft := NFTManagerInstance.GetNFT("aaa-bbb", "2", accountdb)
-	txLogger.Debugf("After deposit nft.NFT:%s", nft.ToJSONString())
+	if nft == nil {
+		txLogger.Debugf("After deposit nft.NFT:nil")
+	} else {
+		txLogger.Debugf("After deposit nft.NFT:%s", nft.ToJSONString())
+	}
 	return ok
 }
 
