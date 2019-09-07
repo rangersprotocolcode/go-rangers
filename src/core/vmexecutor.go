@@ -243,13 +243,16 @@ func (executor *VMExecutor) validateNonce(accountdb *account.AccountDB, transact
 // tx.data 发行参数，map jsonString
 // {"symbol":"","name":"","totalSupply":"12345678"}
 func (self *VMExecutor) publishFT(accountdb *account.AccountDB, tx *types.Transaction) bool {
+	txLogger.Debugf("Execute publish ft tx:%v", tx)
 	var ftSet map[string]string
 	if err := json.Unmarshal([]byte(tx.Data), &ftSet); nil != err {
+		txLogger.Debugf("Unmarshal data error:%s", err.Error())
 		return false
 	}
 
 	appId := tx.Source
-	_, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["totalSupply"], 1, accountdb)
+	id, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["totalSupply"], 1, accountdb)
+	txLogger.Debugf("Publish ft name:%s,symbol:%s,totalSupply:%s,appId:%s,id:%s,publish result:%t", ftSet["name"], ftSet["symbol"], ftSet["totalSupply"], appId, id, ok)
 
 	return ok
 }
