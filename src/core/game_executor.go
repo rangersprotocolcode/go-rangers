@@ -253,6 +253,9 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 
 	case types.TransactionTypeWithdraw:
 		result = "success"
+
+	case types.TransactionTypePublishFT:
+		result = "success"
 	}
 
 	// 打包入块
@@ -304,7 +307,7 @@ func (executor *GameExecutor) loop() {
 			// 校验交易类型
 			transactionType := txRaw.Type
 			if transactionType != types.TransactionTypeOperatorEvent &&
-				transactionType != types.TransactionTypeWithdraw {
+				transactionType != types.TransactionTypeWithdraw && transactionType != types.TransactionTypePublishFT {
 				logger.Debugf("GameExecutor:Write transactionType: %d, not ok!", transactionType)
 				continue
 			}
