@@ -21,3 +21,13 @@ services:
         target: 8080
     detached: true
     type: "ETH"
+
+  - priority: 2
+    game: "0xc37a349ba8f91f8cd4da47c087b6bbc571d4e7ef"
+    name: "genesis2"
+    image: "genesis_image:latest"
+    ports:
+      - host: 7772
+        target: 8080
+    detached: true
+    type: "ETH"
