@@ -41,6 +41,7 @@ func TransferFT(source string, ftId string, target string, supply string, accoun
 
 // 发行方转币给玩家
 func transferFTFromPublisher(appId string, symbol string, target string, supply string, accountDB *account.AccountDB) (string, bool) {
+	common.DefaultLogger.Debugf("transferFTFromPublisher appId%s,symbol:%s,target:%s,supply:%s",appId,symbol,target,supply)
 	if 0 == len(appId) || 0 == len(target) || 0 == len(symbol) || 0 == len(supply) {
 		return "wrong params", false
 	}

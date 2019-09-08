@@ -59,6 +59,7 @@ func (api *GtasAPI) MintFT(appId, ftId, target, balance string) (*Result, error)
 // todo: 经济模型，转币的费用问题
 // 状态机转币给玩家
 func (api *GtasAPI) TransferFT(appId string, target string, ftId string, supply string) (*Result, error) {
+	common.DefaultLogger.Debugf("Transfer FT appId:%s,target:%s,ftId:%s,supply:%s",appId,target,ftId,supply)
 	return api.transferFTOrCoin(appId, target, ftId, supply)
 }
 
@@ -75,6 +76,7 @@ func (api *GtasAPI) transferFTOrCoin(appId string, target string, ftId string, s
 	}
 
 	result, flag := core.TransferFT(appId, ftId, target, supply, context.AccountDB)
+	common.DefaultLogger.Debugf("Transfer FTOrCoin result:%t,message:%s",flag,result)
 	if flag {
 		// 生成交易，上链 context.Tx.SubTransactions
 		dataList := make([]types.UserData, 0)
