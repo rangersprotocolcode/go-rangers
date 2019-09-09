@@ -9,6 +9,8 @@ services:
         target: 8080
       - host: 6602
         target: 3306
+      - host: 6632
+        target: 5005
     detached: true
     type: "ETH"
 
