@@ -116,7 +116,7 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 	nft.DataKey = make([]string, 0)
 	nft.DataValue = make([]string, 0)
 	if 0 != len(data) {
-		nft.SetData(data,appId)
+		nft.SetData(data, appId)
 	}
 
 	//分配NFT
@@ -164,6 +164,10 @@ func (self *NFTManager) GetNFTs(setId string, idList []string, accountDB *accoun
 // 获取用户地址下，某个游戏的所有NFT信息
 // 状态机&玩家(钱包)调用
 func (self *NFTManager) GetNFTListByAddress(address common.Address, appId string, accountDB *account.AccountDB) []*types.NFT {
+	if len(appId) == 0 {
+		return accountDB.GetAllNFT(address)
+	}
+
 	return accountDB.GetAllNFTByGameId(address, appId)
 }
 

@@ -55,7 +55,7 @@ func GetAllFT(source common.Address) string {
 }
 
 func GetNFTCount(addr, setId, appId string) int {
-	accountDB := AccountDBManagerInstance.GetAccountDB(appId, false)
+	accountDB := AccountDBManagerInstance.GetAccountDB(appId, true)
 	nftSet := NFTManagerInstance.GetNFTSet(setId, accountDB)
 	if nil == nftSet {
 		return 0
