@@ -276,25 +276,20 @@ func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transa
 	source := common.HexToAddress(transaction.Source)
 	gameId := transaction.Target
 
-	//余额检查
-	var withdrawAmount = big.NewInt(0)
-	subAccountBalance := accountdb.GetBalance(source)
+	//主链币检查
 	if withDrawReq.Balance != "" {
-		withdrawAmount, err = utility.StrToBigInt(withDrawReq.Balance)
+		withdrawAmount, err := utility.StrToBigInt(withDrawReq.Balance)
 		if err != nil {
 			txLogger.Error("Execute withdraw bad amount!Hash:%s, err:%s", transaction.Hash.String(), err.Error())
 			return false
 		}
 
-		txLogger.Errorf("Execute withdraw :%s,current balance:%d,withdraw balance:%d", transaction.Hash.String(), subAccountBalance.Uint64(), withdrawAmount.Uint64())
-		if subAccountBalance.Cmp(withdrawAmount) < 0 {
+		coinId := fmt.Sprintf("official-%s", withDrawReq.ChainType)
+		if !accountdb.SubFT(source, coinId, withdrawAmount) {
+			subAccountBalance := accountdb.GetFT(source, coinId)
 			txLogger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", subAccountBalance.Uint64(), withdrawAmount.Uint64())
 			return false
 		}
-
-		//扣余额
-		subAccountBalance.Sub(subAccountBalance, withdrawAmount)
-		accountdb.SetBalance(source, subAccountBalance)
 	}
 
 	//ft
