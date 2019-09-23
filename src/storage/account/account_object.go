@@ -146,8 +146,11 @@ func (ao *accountObject) getTrie(db AccountDatabase) Trie {
 	if ao.trie == nil {
 		tr, err := db.OpenStorageTrie(ao.addrHash, ao.data.Root)
 		if err != nil {
-			//taslog.Flush()
-			tr, _ = db.OpenStorageTrie(ao.addrHash, common.Hash{})
+			common.DefaultLogger.Debugf("OpenStorageTrie error! root:%v,err:%s", ao.data.Root, err.Error())
+			tr, err = db.OpenStorageTrie(ao.addrHash, common.Hash{})
+			if tr == nil {
+				common.DefaultLogger.Debugf("OpenStorageTrie get nil! root:%v,err:%s", common.Hash{}, err.Error())
+			}
 			ao.setError(fmt.Errorf("can't create storage trie: %v", err))
 		}
 		ao.trie = tr
