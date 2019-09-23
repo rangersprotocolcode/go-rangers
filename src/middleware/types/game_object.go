@@ -1,11 +1,11 @@
 package types
 
 import (
-	"time"
 	"math/big"
 	"fmt"
 	"x/src/common"
 	"encoding/json"
+	"strconv"
 )
 
 // NFT 数据结构综述
@@ -17,6 +17,11 @@ type NFTSet struct {
 	Name        string `json:"name,omitempty"`
 	Symbol      string `json:"symbol,omitempty"`
 	TotalSupply uint   `json:"totalSupply,omitempty"`
+	MaxSupply   uint   `json:"maxSupply,omitempty"`
+	Creator     string `json:"creator,omitempty"`
+	Owner       string `json:"owner,omitempty"`
+	CreateTime  int64  `json:"createTime,omitempty"`
+
 	// 已经发行的NFTID及其拥有者
 	OccupiedID map[string]common.Address `json:"occupied,omitempty"`
 }
@@ -32,9 +37,9 @@ type NFT struct {
 	Symbol string `json:"symbol,omitempty"`
 
 	// 1. 通用数据
-	ID         string    `json:"id,omitempty"`         // NFT自身ID，创建时指定。创建后不可修改
-	Creator    string    `json:"creator,omitempty"`    // 初次创建者，一般为appId
-	CreateTime time.Time `json:"createTime,omitempty"` // 创建时间
+	ID         string `json:"id,omitempty"`         // NFT自身ID，创建时指定。创建后不可修改
+	Creator    string `json:"creator,omitempty"`    // 初次创建者，一般为appId
+	CreateTime int64  `json:"createTime,omitempty"` // 创建时间
 
 	// 2. 状态数据
 	// 2.1 物权
@@ -96,7 +101,7 @@ func (self *NFT) ToJSONString() string {
 	nftMap["symbol"] = self.Symbol
 	nftMap["id"] = self.ID
 	nftMap["creator"] = self.Creator
-	nftMap["createTime"] = self.CreateTime.String()
+	nftMap["createTime"] = strconv.FormatInt(self.CreateTime, 10)
 	nftMap["owner"] = self.Owner
 	nftMap["renter"] = self.Renter
 	nftMap["status"] = self.Status

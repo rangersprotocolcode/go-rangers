@@ -187,7 +187,7 @@ func (api *GtasAPI) changeNFTStatus(appId, setId, id string, status int) (*Resul
 }
 
 // 发行NFTSet
-func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol string, totalSupply uint) (*Result, error) {
+func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol string, maxSupply uint, createTime int64) (*Result, error) {
 	context, tx, ok := api.checkTx(appId)
 	if !ok {
 		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
@@ -196,7 +196,7 @@ func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol string, totalSupply
 	}
 
 	accountDB := context.AccountDB
-	if _, ok, _ := core.NFTManagerInstance.PublishNFTSet(setId, name, symbol, totalSupply, accountDB); ok {
+	if _, ok, _ := core.NFTManagerInstance.PublishNFTSet(setId, name, symbol, appId, appId, maxSupply, createTime, accountDB); ok {
 		// 生成交易，上链 context.Tx.SubTransactions
 		dataList := make([]types.UserData, 0)
 		userData := types.UserData{}
@@ -205,7 +205,9 @@ func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol string, totalSupply
 		userData.Assets["setId"] = setId
 		userData.Assets["name"] = name
 		userData.Assets["symbol"] = symbol
-		userData.Assets["totalSupply"] = strconv.Itoa(int(totalSupply))
+		userData.Assets["maxSupply"] = strconv.FormatInt(int64(maxSupply), 10)
+		userData.Assets["appId"] = appId
+		userData.Assets["createTime"] = strconv.FormatInt(createTime, 10)
 
 		dataList = append(dataList, userData)
 		rawJson, _ := json.Marshal(dataList)

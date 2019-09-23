@@ -251,11 +251,27 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 			}
 		}
 
-	case types.TransactionTypeWithdraw:
+	case types.TransactionTypeWithdraw, types.TransactionTypeShuttleNFT:
 		result = "success"
 
 	case types.TransactionTypePublishFT:
 		result = "success"
+
+	case types.TransactionTypePublishNFTSet:
+		var nftSet types.NFTSet
+		if err := json.Unmarshal([]byte(txRaw.Data), &nftSet); nil != err {
+			result = "fail"
+			break
+		}
+
+		appId := txRaw.Source
+		accountDB := AccountDBManagerInstance.GetAccountDB(appId, false)
+		_, flag, _ := NFTManagerInstance.PublishNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime, accountDB)
+		if flag {
+			result = txRaw.Data
+			break
+		}
+		result = "fail"
 	}
 
 	// 打包入块
