@@ -81,7 +81,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 								for _, user := range data {
 									// 发币
 									if user.Address == "StartFT" {
-										createTime, _ := strconv.ParseInt(user.Assets["createTime"], 10, 0)
+										createTime, _ := user.Assets["createTime"]
 										_, flag := FTManagerInstance.PublishFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], createTime, 1, accountdb)
 										if !flag {
 											success = false
@@ -162,10 +162,9 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 									if user.Address == "PublishNFTSet" {
 										maxSupply, _ := strconv.ParseInt(user.Assets["maxSupply"], 10, 0)
-										createTime, _ := strconv.ParseInt(user.Assets["createTime"], 10, 0)
 										appId := user.Assets["appId"]
 
-										_, ok, _ := NFTManagerInstance.PublishNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, uint(maxSupply), createTime, accountdb)
+										_, ok, _ := NFTManagerInstance.PublishNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, uint(maxSupply), user.Assets["createTime"], accountdb)
 										if !ok {
 											success = false
 											break
@@ -174,7 +173,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 									}
 
 									if user.Address == "MintNFT" {
-										_, ok := NFTManagerInstance.MintNFT(user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], common.HexToAddress(user.Assets["target"]), accountdb)
+										_, ok := NFTManagerInstance.MintNFT(user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], user.Assets["createTime"], common.HexToAddress(user.Assets["target"]), accountdb)
 										if !ok {
 											success = false
 											break
@@ -276,7 +275,7 @@ func (self *VMExecutor) publishFT(accountdb *account.AccountDB, tx *types.Transa
 	}
 
 	appId := tx.Source
-	createTime, _ := strconv.ParseInt(ftSet["createTime"], 10, 0)
+	createTime := ftSet["createTime"]
 	id, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, createTime, 1, accountdb)
 	txLogger.Debugf("Publish ft name:%s,symbol:%s,totalSupply:%s,appId:%s,id:%s,publish result:%t", ftSet["name"], ftSet["symbol"], ftSet["totalSupply"], appId, id, ok)
 

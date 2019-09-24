@@ -268,7 +268,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 			}
 		}
 
-	case types.TransactionTypeWithdraw, types.TransactionTypeShuttleNFT:
+	case types.TransactionTypeWithdraw:
 		result = "success"
 
 	case types.TransactionTypePublishFT:
@@ -280,9 +280,8 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 		}
 
 		appId := txRaw.Source
-		createTime, _ := strconv.ParseInt(ftSet["createTime"], 10, 0)
 		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-		id, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, createTime, 1, accountDB)
+		id, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, ftSet["createTime"], 1, accountDB)
 		if ok {
 			ftSet["setId"] = id
 			ftSet["creator"] = appId
@@ -322,6 +321,11 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 			break
 		}
 		result = "fail"
+		break
+
+	case types.TransactionTypeShuttleNFT:
+		NFTManagerInstance.Shuttle()
+		break
 
 	}
 

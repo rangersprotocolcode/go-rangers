@@ -97,7 +97,7 @@ const (
 
 	TransactionTypePublishFT     = 110 // 用户发FT
 	TransactionTypePublishNFTSet = 111 // 用户发NFTSet
-	TransactionTypeShuttleNFT    = 112 // 用户发FT
+	TransactionTypeShuttleNFT    = 112 // 用户穿梭NFT
 	TransactionTypeMintFT        = 116 // mintFT
 
 	TransactionTypeCoinDepositAck = 201
@@ -481,7 +481,7 @@ type DepositNFTData struct {
 	Symbol     string `json:"symbol,omitempty"`
 	ID         string `json:"id,omitempty"`
 	Creator    string `json:"creator,omitempty"`
-	CreateTime int64  `json:"createTime,omitempty"`
+	CreateTime string `json:"createTime,omitempty"`
 	Owner      string `json:"owner,omitempty"`
 	Value      string `json:"value,omitempty"`
 	TxId       string `json:"txId,omitempty"`

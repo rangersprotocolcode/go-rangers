@@ -94,7 +94,7 @@ func (self *FTManager) GetFTSet(id string, accountDB *account.AccountDB) *types.
 // TotalSupply int64 // 发行总数， -1表示无限量（对于公链币，也是如此）
 // Remain      int64 // 还剩下多少，-1表示无限（对于公链币，也是如此）
 // Type        byte  // 类型，0代表公链币，1代表游戏发行的FT
-func (self *FTManager) PublishFTSet(name, symbol, appId, total, owner string, createTime int64, kind byte, accountDB *account.AccountDB) (string, bool) {
+func (self *FTManager) PublishFTSet(name, symbol, appId, total, owner, createTime string, kind byte, accountDB *account.AccountDB) (string, bool) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 

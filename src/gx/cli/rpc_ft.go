@@ -6,7 +6,6 @@ import (
 	"x/src/middleware/types"
 	"encoding/json"
 	"fmt"
-	"strconv"
 )
 
 // 状态机转主链币给玩家
@@ -16,7 +15,7 @@ func (api *GtasAPI) TransferBNT(appId, target, chainType, balance string) (*Resu
 
 // todo: 经济模型，发币的费用问题
 // 状态机发币
-func (api *GtasAPI) PublishFT(appId, owner, name, symbol, totalSupply string, createTime int64) (*Result, error) {
+func (api *GtasAPI) PublishFT(appId, owner, name, symbol, totalSupply, createTime string) (*Result, error) {
 	if 0 == len(appId) {
 		return failResult("wrong params")
 	}
@@ -40,7 +39,7 @@ func (api *GtasAPI) PublishFT(appId, owner, name, symbol, totalSupply string, cr
 		data.Assets["symbol"] = symbol
 		data.Assets["totalSupply"] = totalSupply
 		data.Assets["owner"] = owner
-		data.Assets["createTime"] = strconv.FormatInt(createTime, 10)
+		data.Assets["createTime"] = createTime
 
 		dataList = append(dataList, data)
 		rawJson, _ := json.Marshal(dataList)

@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"x/src/common"
 	"encoding/json"
-	"strconv"
 )
 
 // NFT 数据结构综述
@@ -20,7 +19,7 @@ type NFTSet struct {
 	MaxSupply   uint   `json:"maxSupply,omitempty"`
 	Creator     string `json:"creator,omitempty"`
 	Owner       string `json:"owner,omitempty"`
-	CreateTime  int64  `json:"createTime,omitempty"`
+	CreateTime  string `json:"createTime,omitempty"`
 
 	// 已经发行的NFTID及其拥有者
 	OccupiedID map[string]common.Address `json:"occupied,omitempty"`
@@ -39,7 +38,7 @@ type NFT struct {
 	// 1. 通用数据
 	ID         string `json:"id,omitempty"`         // NFT自身ID，创建时指定。创建后不可修改
 	Creator    string `json:"creator,omitempty"`    // 初次创建者，一般为appId
-	CreateTime int64  `json:"createTime,omitempty"` // 创建时间
+	CreateTime string `json:"createTime,omitempty"` // 创建时间
 
 	// 2. 状态数据
 	// 2.1 物权
@@ -101,7 +100,7 @@ func (self *NFT) ToJSONString() string {
 	nftMap["symbol"] = self.Symbol
 	nftMap["id"] = self.ID
 	nftMap["creator"] = self.Creator
-	nftMap["createTime"] = strconv.FormatInt(self.CreateTime, 10)
+	nftMap["createTime"] = self.CreateTime
 	nftMap["owner"] = self.Owner
 	nftMap["renter"] = self.Renter
 	nftMap["status"] = self.Status
@@ -252,7 +251,7 @@ type FTSet struct {
 	Symbol     string // 代币代号，例如ETH
 	AppId      string // 发行方
 	Owner      string // 所有者
-	CreateTime int64  // 发行时间
+	CreateTime string // 发行时间
 
 	TotalSupply *big.Int // 发行总数， -1表示无限量（对于公链币，也是如此）
 	Remain      *big.Int // 还剩下多少，-1表示无限（对于公链币，也是如此）
