@@ -289,6 +289,26 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 			break
 		}
 		result = "fail"
+
+	case types.TransactionTypeMintFT:
+		data := make(map[string]string)
+		json.Unmarshal([]byte(txRaw.Data), &data)
+		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
+		_, flag := MintFT(txRaw.Source, data["ftId"], txRaw.Target, data["supply"], accountDB)
+		if flag {
+			result = "success"
+			break
+		}
+		result = "fail"
+
+
+
+
+
+
+
+
+
 	}
 
 	// 打包入块
@@ -338,12 +358,12 @@ func (executor *GameExecutor) loop() {
 			gameId := "fixed"
 
 			// 校验交易类型
-			transactionType := txRaw.Type
-			if transactionType != types.TransactionTypeOperatorEvent &&
-				transactionType != types.TransactionTypeWithdraw && transactionType != types.TransactionTypePublishFT {
-				logger.Debugf("GameExecutor:Write transactionType: %d, not ok!", transactionType)
-				continue
-			}
+			//transactionType := txRaw.Type
+			//if transactionType != types.TransactionTypeOperatorEvent &&
+			//	transactionType != types.TransactionTypeWithdraw && transactionType != types.TransactionTypePublishFT {
+			//	logger.Debugf("GameExecutor:Write transactionType: %d, not ok!", transactionType)
+			//	continue
+			//}
 
 			// 校验 requestId
 			if !executor.debug {

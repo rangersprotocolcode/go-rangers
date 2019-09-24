@@ -96,8 +96,9 @@ const (
 	TransactionTypeWithdraw = 109
 
 	TransactionTypePublishFT     = 110 // 用户发FT
-	TransactionTypePublishNFTSet = 111 // 用户发FT
+	TransactionTypePublishNFTSet = 111 // 用户发NFTSet
 	TransactionTypeShuttleNFT    = 112 // 用户发FT
+	TransactionTypeMintFT        = 116 // mintFT
 
 	TransactionTypeCoinDepositAck = 201
 	TransactionTypeFTDepositAck   = 202

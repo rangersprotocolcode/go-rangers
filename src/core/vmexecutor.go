@@ -222,6 +222,9 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		case types.TransactionTypePublishNFTSet:
 			success = executor.publishNFT(accountdb, transaction)
 			break
+		case types.TransactionTypeMintFT:
+			success = executor.mintFT(accountdb, transaction)
+			break
 		case types.TransactionTypeWithdraw:
 			success = executor.executeWithdraw(accountdb, transaction)
 		case types.TransactionTypeCoinDepositAck:
@@ -278,6 +281,14 @@ func (self *VMExecutor) publishFT(accountdb *account.AccountDB, tx *types.Transa
 	txLogger.Debugf("Publish ft name:%s,symbol:%s,totalSupply:%s,appId:%s,id:%s,publish result:%t", ftSet["name"], ftSet["symbol"], ftSet["totalSupply"], appId, id, ok)
 
 	return ok
+}
+
+func (self *VMExecutor) mintFT(accountdb *account.AccountDB, tx *types.Transaction) bool {
+	data := make(map[string]string)
+	json.Unmarshal([]byte(tx.Data), &data)
+
+	_, result := MintFT(tx.Source, data["ftId"], tx.Target, data["supply"], accountdb)
+	return result
 }
 
 func (self *VMExecutor) publishNFT(accountdb *account.AccountDB, tx *types.Transaction) bool {
