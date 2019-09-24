@@ -29,7 +29,7 @@ func (self *accountObject) getFT(ftList []*types.FT, name string) *types.FT {
 	return nil
 }
 
-func (c *accountObject) AddFT(amount *big.Int, name string) bool{
+func (c *accountObject) AddFT(amount *big.Int, name string) bool {
 	if amount.Sign() == 0 {
 		if c.empty() {
 			c.touch()
@@ -46,19 +46,22 @@ func (c *accountObject) AddFT(amount *big.Int, name string) bool{
 
 }
 
-func (c *accountObject) SubFT(amount *big.Int, name string) bool {
+func (c *accountObject) SubFT(amount *big.Int, name string) (*big.Int, bool) {
 	if amount.Sign() == 0 {
-		return true
+		raw := c.getFT(c.data.Ft, name)
+		return raw.Balance, true
 	}
 
 	raw := c.getFT(c.data.Ft, name)
 	// 余额不足就滚粗
 	if nil == raw || raw.Balance.Cmp(amount) == -1 {
-		return false
+		return nil, false
 	}
 
-	c.SetFT(new(big.Int).Sub(raw.Balance, amount), name)
-	return true
+	left := new(big.Int).Sub(raw.Balance, amount)
+	c.SetFT(left, name)
+
+	return left, true
 }
 
 func (self *accountObject) SetFT(amount *big.Int, name string) bool {
@@ -77,7 +80,7 @@ func (self *accountObject) SetFT(amount *big.Int, name string) bool {
 	return self.setFT(amount, name)
 }
 
-func (self *accountObject) setFT(amount *big.Int, name string) bool{
+func (self *accountObject) setFT(amount *big.Int, name string) bool {
 	if nil == amount || amount.Sign() == 0 {
 		index := -1
 		for i, ft := range self.data.Ft {
@@ -100,7 +103,7 @@ func (self *accountObject) setFT(amount *big.Int, name string) bool{
 		ftObject.Balance = new(big.Int).Set(amount)
 
 		// 溢出判断
-		if ftObject.Balance.Sign() == -1{
+		if ftObject.Balance.Sign() == -1 {
 			return false
 		}
 	}

@@ -144,7 +144,7 @@ func UpdateAsset(user types.UserData, appId string, accountDB *account.AccountDB
 	ftList := user.FT
 	if 0 != len(ftList) {
 		for ftName, valueString := range ftList {
-			_, flag := TransferFT(appId, ftName, user.Address, valueString, accountDB)
+			_, flag := FTManagerInstance.TransferFT(appId, ftName, user.Address, valueString, accountDB)
 			if !flag {
 				logger.Debugf("Game Change ft failed!")
 				return false
@@ -257,7 +257,7 @@ func transferFT(ft map[string]string, source string, target string, accountDB *a
 	}
 
 	for ftName, valueString := range ft {
-		if _, ok := TransferFT(source, ftName, target, valueString, accountDB); !ok {
+		if _, ok := FTManagerInstance.TransferFT(source, ftName, target, valueString, accountDB); !ok {
 			return false
 		}
 	}
@@ -276,4 +276,56 @@ func transferCoin(coin map[string]string, source string, target string, accountD
 	}
 
 	return transferFT(ft, source, target, accountDB)
+}
+
+// tx.source : 发币方
+// tx.type = 110
+// tx.data 发行参数，map jsonString
+// {"symbol":"","name":"","totalSupply":"12345678"}
+func PublishFT(accountdb *account.AccountDB, tx *types.Transaction) (string, bool) {
+	txLogger.Debugf("Execute publish ft tx:%v", tx)
+	var ftSet map[string]string
+	if err := json.Unmarshal([]byte(tx.Data), &ftSet); nil != err {
+		txLogger.Debugf("Unmarshal data error:%s", err.Error())
+		return "", false
+	}
+
+	appId := tx.Source
+	createTime := ftSet["createTime"]
+	id, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, createTime, 1, accountdb)
+	txLogger.Debugf("Publish ft name:%s,symbol:%s,totalSupply:%s,appId:%s,id:%s,publish result:%t", ftSet["name"], ftSet["symbol"], ftSet["totalSupply"], appId, id, ok)
+
+	return id, ok
+}
+
+func PublishNFTSet(accountdb *account.AccountDB, tx *types.Transaction) bool {
+	txLogger.Debugf("Execute publish nft tx:%v", tx)
+
+	var nftSet types.NFTSet
+	if err := json.Unmarshal([]byte(tx.Data), &nftSet); nil != err {
+		txLogger.Debugf("Unmarshal data error:%s", err.Error())
+		return false
+	}
+
+	appId := tx.Source
+
+	_, flag, _ := NFTManagerInstance.PublishNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime, accountdb)
+	return flag
+}
+
+func MintFT(accountdb *account.AccountDB, tx *types.Transaction) bool {
+	data := make(map[string]string)
+	json.Unmarshal([]byte(tx.Data), &data)
+
+	_, result := FTManagerInstance.MintFT(tx.Source, data["ftId"], tx.Target, data["supply"], accountdb)
+	return result
+}
+
+func ShuttleNFT(db *account.AccountDB, tx *types.Transaction) bool {
+	data := make(map[string]string)
+	json.Unmarshal([]byte(tx.Data), &data)
+
+	_, ok := NFTManagerInstance.Shuttle(data["setId"], data["id"], data["newAppId"], db)
+
+	return ok
 }

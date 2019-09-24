@@ -65,7 +65,7 @@ func (api *GtasAPI) MintFT(appId, ftId, target, balance string) (*Result, error)
 		return failResult(msg)
 	}
 
-	result, flag := core.MintFT(appId, ftId, target, balance, context.AccountDB)
+	result, flag := core.FTManagerInstance.MintFT(appId, ftId, target, balance, context.AccountDB)
 	if flag {
 		// 生成交易，上链 context.Tx.SubTransactions
 		dataList := make([]types.UserData, 0)
@@ -108,7 +108,7 @@ func (api *GtasAPI) transferFTOrCoin(appId string, target string, ftId string, s
 		return failResult(msg)
 	}
 
-	result, flag := core.TransferFT(appId, ftId, target, supply, context.AccountDB)
+	result, flag := core.FTManagerInstance.TransferFT(appId, ftId, target, supply, context.AccountDB)
 	common.DefaultLogger.Debugf("Transfer FTOrCoin result:%t,message:%s", flag, result)
 	if flag {
 		// 生成交易，上链 context.Tx.SubTransactions

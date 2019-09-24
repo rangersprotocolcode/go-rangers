@@ -12,49 +12,6 @@ import (
 	"strings"
 )
 
-func TransferFT(source string, ftId string, target string, supply string, accountDB *account.AccountDB) (string, bool) {
-	if 0 == len(ftId) || 0 == len(supply) {
-		return "", true
-	}
-	ftInfo := strings.Split(ftId, "-")
-	if 2 != len(ftInfo) {
-		return fmt.Sprintf("invalid ftId: %s", ftId), false
-	}
-
-	balance := FTManagerInstance.convert(supply)
-	if !accountDB.SubFT(common.HexToAddress(source), ftId, balance) {
-		return fmt.Sprintf("not enough ft. ftId: %s, supply: %s", ftId, supply), false
-	}
-
-	if accountDB.AddFT(common.HexToAddress(target), ftId, balance) {
-		return "success", true
-	} else {
-		return "overflow", false
-	}
-
-}
-
-// 发行方转币给玩家
-func MintFT(owner, ftId, target, supply string, accountDB *account.AccountDB) (string, bool) {
-	common.DefaultLogger.Debugf("MintFT ftId %s,target:%s,supply:%s", ftId, target, supply)
-	if 0 == len(target) || 0 == len(ftId) || 0 == len(supply) {
-		return "wrong params", false
-	}
-
-	balance := FTManagerInstance.convert(supply)
-	if !FTManagerInstance.SubFTSet(owner, ftId, balance, accountDB) {
-		return "not enough FT", false
-	}
-
-	targetAddress := common.HexToAddress(target)
-	if accountDB.AddFT(targetAddress, ftId, balance) {
-		return "TransferFT successful", true
-	} else {
-		return "overflow", false
-	}
-
-}
-
 type FTManager struct {
 	lock sync.RWMutex
 }
@@ -149,6 +106,49 @@ func (self *FTManager) SubFTSet(owner, ftId string, amount *big.Int, accountDB *
 	ftSet.Remain = ftSet.Remain.Sub(ftSet.Remain, amount)
 	self.updateFTSet(ftId, ftSet, accountDB)
 	return true
+}
+
+func (self *FTManager) TransferFT(source string, ftId string, target string, supply string, accountDB *account.AccountDB) (string, bool) {
+	if 0 == len(ftId) || 0 == len(supply) {
+		return "", true
+	}
+	ftInfo := strings.Split(ftId, "-")
+	if 2 != len(ftInfo) {
+		return fmt.Sprintf("invalid ftId: %s", ftId), false
+	}
+
+	balance := self.convert(supply)
+	if _, ok := accountDB.SubFT(common.HexToAddress(source), ftId, balance); !ok {
+		return fmt.Sprintf("not enough ft. ftId: %s, supply: %s", ftId, supply), false
+	}
+
+	if accountDB.AddFT(common.HexToAddress(target), ftId, balance) {
+		return "success", true
+	} else {
+		return "overflow", false
+	}
+
+}
+
+// 发行方转币给玩家
+func (self *FTManager) MintFT(owner, ftId, target, supply string, accountDB *account.AccountDB) (string, bool) {
+	common.DefaultLogger.Debugf("MintFT ftId %s,target:%s,supply:%s", ftId, target, supply)
+	if 0 == len(target) || 0 == len(ftId) || 0 == len(supply) {
+		return "wrong params", false
+	}
+
+	balance := self.convert(supply)
+	if !self.SubFTSet(owner, ftId, balance, accountDB) {
+		return "not enough FT", false
+	}
+
+	targetAddress := common.HexToAddress(target)
+	if accountDB.AddFT(targetAddress, ftId, balance) {
+		return "TransferFT successful", true
+	} else {
+		return "overflow", false
+	}
+
 }
 
 func (self *FTManager) genID(appId, symbol string) string {

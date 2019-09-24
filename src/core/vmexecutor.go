@@ -8,7 +8,6 @@ import (
 
 	"encoding/json"
 	"x/src/utility"
-	"x/src/network"
 	"x/src/statemachine"
 	"strconv"
 	"math/big"
@@ -96,7 +95,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 										ftId := user.Assets["ftId"]
 										target := user.Assets["target"]
 										supply := user.Assets["balance"]
-										_, flag := MintFT(owner, ftId, target, supply, accountdb)
+										_, flag := FTManagerInstance.MintFT(owner, ftId, target, supply, accountdb)
 
 										if !flag {
 											success = false
@@ -108,7 +107,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 									// 给用户币
 									if user.Address == "TransferFT" {
-										_, flag := TransferFT(user.Assets["gameId"], user.Assets["symbol"], user.Assets["target"], user.Assets["supply"], accountdb)
+										_, flag := FTManagerInstance.TransferFT(user.Assets["gameId"], user.Assets["symbol"], user.Assets["target"], user.Assets["supply"], accountdb)
 										if !flag {
 											success = false
 											break
@@ -214,24 +213,31 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 				}
 
 			}
-
+			break
 		case types.TransactionTypePublishFT:
-			success = executor.publishFT(accountdb, transaction)
+			_, success = PublishFT(accountdb, transaction)
 			break
 		case types.TransactionTypePublishNFTSet:
-			success = executor.publishNFT(accountdb, transaction)
+			success = PublishNFTSet(accountdb, transaction)
 			break
 		case types.TransactionTypeMintFT:
-			success = executor.mintFT(accountdb, transaction)
+			success = MintFT(accountdb, transaction)
 			break
 		case types.TransactionTypeWithdraw:
-			success = executor.executeWithdraw(accountdb, transaction)
+			_, success = Withdraw(accountdb, transaction, true)
+			break
 		case types.TransactionTypeCoinDepositAck:
 			success = executor.executeCoinDepositNotify(accountdb, transaction)
+			break
 		case types.TransactionTypeFTDepositAck:
 			success = executor.executeFTDepositNotify(accountdb, transaction)
+			break
 		case types.TransactionTypeNFTDepositAck:
 			success = executor.executeNFTDepositNotify(accountdb, transaction)
+			break
+		case types.TransactionTypeShuttleNFT:
+			success = ShuttleNFT(accountdb, transaction)
+			break
 		}
 
 		if !success {
@@ -259,136 +265,6 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 }
 
 func (executor *VMExecutor) validateNonce(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	return true
-}
-
-// tx.source : 发币方
-// tx.type = 110
-// tx.data 发行参数，map jsonString
-// {"symbol":"","name":"","totalSupply":"12345678"}
-func (self *VMExecutor) publishFT(accountdb *account.AccountDB, tx *types.Transaction) bool {
-	txLogger.Debugf("Execute publish ft tx:%v", tx)
-	var ftSet map[string]string
-	if err := json.Unmarshal([]byte(tx.Data), &ftSet); nil != err {
-		txLogger.Debugf("Unmarshal data error:%s", err.Error())
-		return false
-	}
-
-	appId := tx.Source
-	createTime := ftSet["createTime"]
-	id, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, createTime, 1, accountdb)
-	txLogger.Debugf("Publish ft name:%s,symbol:%s,totalSupply:%s,appId:%s,id:%s,publish result:%t", ftSet["name"], ftSet["symbol"], ftSet["totalSupply"], appId, id, ok)
-
-	return ok
-}
-
-func (self *VMExecutor) mintFT(accountdb *account.AccountDB, tx *types.Transaction) bool {
-	data := make(map[string]string)
-	json.Unmarshal([]byte(tx.Data), &data)
-
-	_, result := MintFT(tx.Source, data["ftId"], tx.Target, data["supply"], accountdb)
-	return result
-}
-
-func (self *VMExecutor) publishNFT(accountdb *account.AccountDB, tx *types.Transaction) bool {
-	txLogger.Debugf("Execute publish nft tx:%v", tx)
-
-	var nftSet types.NFTSet
-	if err := json.Unmarshal([]byte(tx.Data), &nftSet); nil != err {
-		txLogger.Debugf("Unmarshal data error:%s", err.Error())
-		return false
-	}
-
-	appId := tx.Source
-
-	_, flag, _ := NFTManagerInstance.PublishNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime, accountdb)
-	return flag
-}
-
-// 提现
-func (executor *VMExecutor) executeWithdraw(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	txLogger.Debugf("Execute withdraw tx:%v", transaction)
-	if transaction.Data == "" {
-		return false
-	}
-	var withDrawReq types.WithDrawReq
-	err := json.Unmarshal([]byte(transaction.Data), &withDrawReq)
-	if err != nil {
-		txLogger.Debugf("Unmarshal data error:%s", err.Error())
-		return false
-	}
-	if withDrawReq.ChainType == "" || withDrawReq.Address == "" {
-		return false
-	}
-
-	source := common.HexToAddress(transaction.Source)
-	gameId := transaction.Target
-
-	//主链币检查
-	if withDrawReq.Balance != "" {
-		withdrawAmount, err := utility.StrToBigInt(withDrawReq.Balance)
-		if err != nil {
-			txLogger.Error("Execute withdraw bad amount!Hash:%s, err:%s", transaction.Hash.String(), err.Error())
-			return false
-		}
-
-		coinId := fmt.Sprintf("official-%s", withDrawReq.ChainType)
-		if !accountdb.SubFT(source, coinId, withdrawAmount) {
-			subAccountBalance := accountdb.GetFT(source, coinId)
-			txLogger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", subAccountBalance.Uint64(), withdrawAmount.Uint64())
-			return false
-		}
-	}
-
-	//ft
-	if withDrawReq.FT != nil && len(withDrawReq.FT) != 0 {
-		for k, v := range withDrawReq.FT {
-			subValue := accountdb.GetFT(source, k)
-			compareResult, sub := canWithDraw(v, subValue)
-			if !compareResult {
-				return false
-			}
-
-			// 扣ft
-			accountdb.SetFT(source, k, sub)
-		}
-	}
-
-	//nft
-	nftInfo := make([]types.NFTID, 0)
-	if withDrawReq.NFT != nil && len(withDrawReq.NFT) != 0 {
-		for _, k := range withDrawReq.NFT {
-			subValue := accountdb.GetNFTByGameId(source, gameId, k.SetId, k.Id)
-			if 0 == len(subValue) {
-				return false
-			}
-
-			nftInfo = append(nftInfo, types.NFTID{SetId: k.SetId, Id: k.Id, Data: subValue})
-
-			//删除要提现的NFT
-			accountdb.RemoveNFTByGameId(source, gameId, k.SetId, k.Id)
-		}
-	}
-
-	//发送给Coin Connector
-	withdrawData := types.WithDrawData{ChainType: withDrawReq.ChainType, Balance: withDrawReq.Balance, Address: withDrawReq.Address}
-	withdrawData.FT = withDrawReq.FT
-	withdrawData.NFT = nftInfo
-
-	b, err := json.Marshal(withdrawData)
-	if err != nil {
-		txLogger.Error("Execute withdraw tx:%s json marshal err, err:%s", transaction.Hash.String(), err.Error())
-		return false
-	}
-	t := types.Transaction{Source: transaction.Source, Target: transaction.Target, Data: string(b), Type: transaction.Type}
-	t.Hash = t.GenHash()
-
-	msg, err := json.Marshal(t.ToTxJson())
-	if err != nil {
-		txLogger.Debugf("Json marshal tx json error:%s", err.Error())
-	}
-	txLogger.Debugf("After execute withdraw.Send msg to coin proxy:%s", msg)
-	network.GetNetInstance().SendToCoinConnector(msg)
 	return true
 }
 

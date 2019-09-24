@@ -269,20 +269,23 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 		}
 
 	case types.TransactionTypeWithdraw:
-		result = "success"
+		gameId := txRaw.Target
+		accountDB := AccountDBManagerInstance.GetAccountDB(gameId, false)
 
-	case types.TransactionTypePublishFT:
-		var ftSet map[string]string
-		if err := json.Unmarshal([]byte(txRaw.Data), &ftSet); nil != err {
-			txLogger.Debugf("Unmarshal data error:%s", err.Error())
+		response, ok := Withdraw(accountDB, &txRaw, false)
+		if ok {
+			result = response
+		} else {
 			result = "fail"
-			break
 		}
-
+		break
+	case types.TransactionTypePublishFT:
 		appId := txRaw.Source
 		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-		id, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, ftSet["createTime"], 1, accountDB)
+		id, ok := PublishFT(accountDB, &txRaw)
 		if ok {
+			var ftSet map[string]string
+			json.Unmarshal([]byte(txRaw.Data), &ftSet)
 			ftSet["setId"] = id
 			ftSet["creator"] = appId
 			ftSet["owner"] = appId
@@ -296,35 +299,34 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 		break
 
 	case types.TransactionTypePublishNFTSet:
-		var nftSet types.NFTSet
-		if err := json.Unmarshal([]byte(txRaw.Data), &nftSet); nil != err {
-			result = "fail"
-			break
-		}
-
 		appId := txRaw.Source
 		accountDB := AccountDBManagerInstance.GetAccountDB(appId, false)
-		_, flag, _ := NFTManagerInstance.PublishNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime, accountDB)
+		flag := PublishNFTSet(accountDB, &txRaw)
 		if flag {
 			result = txRaw.Data
-			break
-		}
-		result = "fail"
 
+		} else {
+			result = "fail"
+		}
+		break
 	case types.TransactionTypeMintFT:
-		data := make(map[string]string)
-		json.Unmarshal([]byte(txRaw.Data), &data)
 		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-		_, flag := MintFT(txRaw.Source, data["ftId"], txRaw.Target, data["supply"], accountDB)
+		flag := MintFT(accountDB, &txRaw)
 		if flag {
 			result = "success"
-			break
+		} else {
+			result = "fail"
 		}
-		result = "fail"
 		break
 
 	case types.TransactionTypeShuttleNFT:
-		NFTManagerInstance.Shuttle()
+		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
+		ok := ShuttleNFT(accountDB, &txRaw)
+		if ok {
+			result = "success"
+		} else {
+			result = "fail"
+		}
 		break
 
 	}

@@ -100,9 +100,10 @@ const (
 	TransactionTypeShuttleNFT    = 112 // 用户穿梭NFT
 	TransactionTypeMintFT        = 116 // mintFT
 
-	TransactionTypeCoinDepositAck = 201
-	TransactionTypeFTDepositAck   = 202
-	TransactionTypeNFTDepositAck  = 203
+	// 从rocket_connector来的消息
+	TransactionTypeCoinDepositAck = 201 // 充值
+	TransactionTypeFTDepositAck   = 202 // 充值
+	TransactionTypeNFTDepositAck  = 203 // 充值
 )
 
 type Transaction struct {
