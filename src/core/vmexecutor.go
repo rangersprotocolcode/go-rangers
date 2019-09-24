@@ -277,7 +277,7 @@ func (self *VMExecutor) publishFT(accountdb *account.AccountDB, tx *types.Transa
 
 	appId := tx.Source
 	createTime, _ := strconv.ParseInt(ftSet["createTime"], 10, 0)
-	id, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["totalSupply"], appId, createTime, 1, accountdb)
+	id, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, createTime, 1, accountdb)
 	txLogger.Debugf("Publish ft name:%s,symbol:%s,totalSupply:%s,appId:%s,id:%s,publish result:%t", ftSet["name"], ftSet["symbol"], ftSet["totalSupply"], appId, id, ok)
 
 	return ok

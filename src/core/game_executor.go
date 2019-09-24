@@ -272,7 +272,29 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 		result = "success"
 
 	case types.TransactionTypePublishFT:
-		result = "success"
+		var ftSet map[string]string
+		if err := json.Unmarshal([]byte(txRaw.Data), &ftSet); nil != err {
+			txLogger.Debugf("Unmarshal data error:%s", err.Error())
+			result = "fail"
+			break
+		}
+
+		appId := txRaw.Source
+		createTime, _ := strconv.ParseInt(ftSet["createTime"], 10, 0)
+		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
+		id, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, createTime, 1, accountDB)
+		if ok {
+			ftSet["setId"] = id
+			ftSet["creator"] = appId
+			ftSet["owner"] = appId
+
+			data, _ := json.Marshal(ftSet)
+			result = string(data)
+		} else {
+			result = "fail"
+		}
+
+		break
 
 	case types.TransactionTypePublishNFTSet:
 		var nftSet types.NFTSet
@@ -300,14 +322,6 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 			break
 		}
 		result = "fail"
-
-
-
-
-
-
-
-
 
 	}
 
