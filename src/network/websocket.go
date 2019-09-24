@@ -105,6 +105,12 @@ func (s *server) loop() {
 			}
 		case message := <-s.sendChan:
 			Logger.Debugf("WS send:%v", message)
+			if len(message) == 0 {
+				Logger.Debugf("send 0 byte message")
+			}
+			if len(message) == 28 {
+				Logger.Debugf("send 28 byte message:%v", message)
+			}
 			err := s.conn.WriteMessage(websocket.BinaryMessage, message)
 			if err != nil {
 				Logger.Errorf("Send binary msg error:%s", err.Error())
