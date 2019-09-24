@@ -89,6 +89,24 @@ func GetAllNFT(source common.Address, appId string) string {
 	return string(bytes)
 }
 
+func GetAllNFTBySetId(source string, setId string) string {
+	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
+	nftList := NFTManagerInstance.GetNFTListByAddress(common.HexToAddress(source), "", accountDB)
+
+	result := make([]types.NFT, 0)
+
+	if 0 != len(nftList) {
+		for _, nft := range nftList {
+			if nft.SetID == setId {
+				result = append(result, *nft)
+			}
+		}
+	}
+
+	bytes, _ := json.Marshal(result)
+	return string(bytes)
+}
+
 func GetNFTSet(setId string) string {
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
 	nftSet := NFTManagerInstance.GetNFTSet(setId, accountDB)
@@ -151,11 +169,6 @@ func UpdateAsset(user types.UserData, appId string, accountDB *account.AccountDB
 func convert(s string) *big.Int {
 	f, _ := strconv.ParseFloat(s, 64)
 	return big.NewInt(int64(f * 1000000000))
-}
-
-func convertWithoutBase(s string) *big.Int {
-	f, _ := strconv.ParseFloat(s, 64)
-	return big.NewInt(int64(f))
 }
 
 // false 表示转账失败

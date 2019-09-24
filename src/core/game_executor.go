@@ -148,6 +148,23 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	case types.TransactionTypeNFTSet:
 		result = GetNFTSet(txRaw.Data)
 		break
+
+	case types.TransactionTypeFTSet:
+		result = GetFTSet(txRaw.Data)
+		break
+
+	case types.TransactionTypeNFTCount:
+		param := make(map[string]string, 0)
+		json.Unmarshal([]byte(txRaw.Data), &param)
+
+		result = strconv.Itoa(GetNFTCount(param["address"], param["setId"], ""))
+		break
+
+	case types.TransactionTypeNFTList:
+		param := make(map[string]string, 0)
+		json.Unmarshal([]byte(txRaw.Data), &param)
+		result = GetAllNFTBySetId(param["address"], param["setId"])
+		break
 	}
 
 	responseId := txRaw.SocketRequestId

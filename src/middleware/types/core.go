@@ -89,12 +89,15 @@ const (
 	TransactionTypeNFTListByAddress  = 106 // 查询账户下所有NFT
 	TransactionTypeNFTSet            = 107 // 查询NFTSet信息
 	TransactionTypeStateMachineNonce = 108 // 调用状态机nonce(预留接口）
+	TransactionTypeFTSet             = 113 // 根据ftId, 查询ftSet信息
+	TransactionTypeNFTCount          = 114 // 查询用户Rocket上的指定NFT的拥有数量
+	TransactionTypeNFTList           = 115 // 查询用户Rocket上的指定NFT的拥有数量
 
 	TransactionTypeWithdraw = 109
 
 	TransactionTypePublishFT     = 110 // 用户发FT
 	TransactionTypePublishNFTSet = 111 // 用户发FT
-	TransactionTypeShuttleNFT    = 113 // 用户发FT
+	TransactionTypeShuttleNFT    = 112 // 用户发FT
 
 	TransactionTypeCoinDepositAck = 201
 	TransactionTypeFTDepositAck   = 202
