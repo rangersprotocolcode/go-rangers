@@ -247,10 +247,12 @@ func (self *GameData) Delete(gameId string) bool {
 
 // FT发行配置
 type FTSet struct {
-	ID     string // 代币ID，在发行时由layer2生成。生成规则时appId-symbol。例如0x12ef3-NOX。特别的，对于公链币，layer2会自动发行，例如official-ETH
-	Name   string // 代币名字，例如以太坊
-	Symbol string // 代币代号，例如ETH
-	AppId  string // 发行方
+	ID         string // 代币ID，在发行时由layer2生成。生成规则时appId-symbol。例如0x12ef3-NOX。特别的，对于公链币，layer2会自动发行，例如official-ETH
+	Name       string // 代币名字，例如以太坊
+	Symbol     string // 代币代号，例如ETH
+	AppId      string // 发行方
+	Owner      string // 所有者
+	CreateTime int64  // 发行时间
 
 	TotalSupply *big.Int // 发行总数， -1表示无限量（对于公链币，也是如此）
 	Remain      *big.Int // 还剩下多少，-1表示无限（对于公链币，也是如此）

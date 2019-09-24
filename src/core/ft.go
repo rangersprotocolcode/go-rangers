@@ -21,11 +21,6 @@ func TransferFT(source string, ftId string, target string, supply string, accoun
 		return fmt.Sprintf("invalid ftId: %s", ftId), false
 	}
 
-	// 发行方
-	if source == ftInfo[0] {
-		return transferFTFromPublisher(source, ftInfo[1], target, supply, accountDB)
-	}
-
 	balance := FTManagerInstance.convert(supply)
 	if !accountDB.SubFT(common.HexToAddress(source), ftId, balance) {
 		return fmt.Sprintf("not enough ft. ftId: %s, supply: %s", ftId, supply), false
@@ -40,24 +35,23 @@ func TransferFT(source string, ftId string, target string, supply string, accoun
 }
 
 // 发行方转币给玩家
-func transferFTFromPublisher(appId string, symbol string, target string, supply string, accountDB *account.AccountDB) (string, bool) {
-	common.DefaultLogger.Debugf("transferFTFromPublisher appId%s,symbol:%s,target:%s,supply:%s",appId,symbol,target,supply)
-	if 0 == len(appId) || 0 == len(target) || 0 == len(symbol) || 0 == len(supply) {
+func MintFT(owner, ftId, target, supply string, accountDB *account.AccountDB) (string, bool) {
+	common.DefaultLogger.Debugf("MintFT ftId %s,target:%s,supply:%s", ftId, target, supply)
+	if 0 == len(target) || 0 == len(ftId) || 0 == len(supply) {
 		return "wrong params", false
 	}
 
 	balance := FTManagerInstance.convert(supply)
-	if !FTManagerInstance.SubFTSet(appId, symbol, balance, accountDB) {
+	if !FTManagerInstance.SubFTSet(owner, ftId, balance, accountDB) {
 		return "not enough FT", false
 	}
 
 	targetAddress := common.HexToAddress(target)
-	if accountDB.AddFT(targetAddress, FTManagerInstance.genID(appId, symbol), balance){
+	if accountDB.AddFT(targetAddress, ftId, balance) {
 		return "TransferFT successful", true
-	}else {
+	} else {
 		return "overflow", false
 	}
-
 
 }
 
@@ -100,7 +94,7 @@ func (self *FTManager) GetFTSet(id string, accountDB *account.AccountDB) *types.
 // TotalSupply int64 // 发行总数， -1表示无限量（对于公链币，也是如此）
 // Remain      int64 // 还剩下多少，-1表示无限（对于公链币，也是如此）
 // Type        byte  // 类型，0代表公链币，1代表游戏发行的FT
-func (self *FTManager) PublishFTSet(name, symbol, appId, total string, kind byte, accountDB *account.AccountDB) (string, bool) {
+func (self *FTManager) PublishFTSet(name, symbol, appId, total, owner string, createTime int64, kind byte, accountDB *account.AccountDB) (string, bool) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
@@ -121,6 +115,8 @@ func (self *FTManager) PublishFTSet(name, symbol, appId, total string, kind byte
 		TotalSupply: self.convert(total),
 		Remain:      self.convert(total),
 		Type:        kind,
+		Owner:       owner,
+		CreateTime:  createTime,
 	}
 
 	self.updateFTSet(id, ftSet, accountDB)
@@ -128,14 +124,12 @@ func (self *FTManager) PublishFTSet(name, symbol, appId, total string, kind byte
 }
 
 // 扣
-func (self *FTManager) SubFTSet(appId, symbol string, amount *big.Int, accountDB *account.AccountDB) bool {
+func (self *FTManager) SubFTSet(owner, ftId string, amount *big.Int, accountDB *account.AccountDB) bool {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	id := self.genID(appId, symbol)
 	var ftSet *types.FTSet
-
-	valueByte := accountDB.GetData(common.FTSetAddress, []byte(id))
+	valueByte := accountDB.GetData(common.FTSetAddress, []byte(ftId))
 	if nil == valueByte || 0 == len(valueByte) {
 		return false
 	}
@@ -143,18 +137,17 @@ func (self *FTManager) SubFTSet(appId, symbol string, amount *big.Int, accountDB
 	var ftSetData types.FTSet
 	err := json.Unmarshal(valueByte, &ftSetData)
 	if err != nil {
-		logger.Error("fail to get ftSet: %s, %s", id, err.Error())
+		logger.Error("fail to get ftSet: %s, %s", ftId, err.Error())
 		return false
 	}
 
 	ftSet = &ftSetData
-
-	if ftSet.Remain.Cmp(amount) == -1 {
+	if ftSet.Owner != owner || ftSet.Remain.Cmp(amount) == -1 {
 		return false
 	}
 
 	ftSet.Remain = ftSet.Remain.Sub(ftSet.Remain, amount)
-	self.updateFTSet(id, ftSet, accountDB)
+	self.updateFTSet(ftId, ftSet, accountDB)
 	return true
 }
 

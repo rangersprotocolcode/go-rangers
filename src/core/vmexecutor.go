@@ -81,7 +81,23 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 								for _, user := range data {
 									// 发币
 									if user.Address == "StartFT" {
-										_, flag := FTManagerInstance.PublishFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], 1, accountdb)
+										createTime, _ := strconv.ParseInt(user.Assets["createTime"], 10, 0)
+										_, flag := FTManagerInstance.PublishFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], createTime, 1, accountdb)
+										if !flag {
+											success = false
+											break
+										}
+
+										continue
+									}
+
+									if user.Address == "MintFT" {
+										owner := user.Assets["appId"]
+										ftId := user.Assets["ftId"]
+										target := user.Assets["target"]
+										supply := user.Assets["balance"]
+										_, flag := MintFT(owner, ftId, target, supply, accountdb)
+
 										if !flag {
 											success = false
 											break
@@ -257,7 +273,8 @@ func (self *VMExecutor) publishFT(accountdb *account.AccountDB, tx *types.Transa
 	}
 
 	appId := tx.Source
-	id, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["totalSupply"], 1, accountdb)
+	createTime, _ := strconv.ParseInt(ftSet["createTime"], 10, 0)
+	id, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["totalSupply"], appId, createTime, 1, accountdb)
 	txLogger.Debugf("Publish ft name:%s,symbol:%s,totalSupply:%s,appId:%s,id:%s,publish result:%t", ftSet["name"], ftSet["symbol"], ftSet["totalSupply"], appId, id, ok)
 
 	return ok

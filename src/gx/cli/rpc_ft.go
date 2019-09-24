@@ -6,6 +6,7 @@ import (
 	"x/src/middleware/types"
 	"encoding/json"
 	"fmt"
+	"strconv"
 )
 
 // 状态机转主链币给玩家
@@ -15,12 +16,12 @@ func (api *GtasAPI) TransferBNT(appId, target, chainType, balance string) (*Resu
 
 // todo: 经济模型，发币的费用问题
 // 状态机发币
-func (api *GtasAPI) PublishFT(gameId string, name string, symbol string, totalSupply string) (*Result, error) {
-	if 0 == len(gameId) {
+func (api *GtasAPI) PublishFT(appId, owner, name, symbol, totalSupply string, createTime int64) (*Result, error) {
+	if 0 == len(appId) {
 		return failResult("wrong params")
 	}
 
-	context := core.TxManagerInstance.GetContext(gameId)
+	context := core.TxManagerInstance.GetContext(appId)
 
 	// 不在事务里，不应该啊
 	if nil == context {
@@ -28,16 +29,18 @@ func (api *GtasAPI) PublishFT(gameId string, name string, symbol string, totalSu
 		return failResult("not in transaction")
 	}
 
-	result, flag := core.FTManagerInstance.PublishFTSet(name, symbol, gameId, totalSupply, 1, context.AccountDB)
+	result, flag := core.FTManagerInstance.PublishFTSet(name, symbol, appId, totalSupply, owner, createTime, 1, context.AccountDB)
 	if flag {
 		dataList := make([]types.UserData, 0)
 		data := types.UserData{}
 		data.Address = "StartFT"
 		data.Assets = make(map[string]string, 0)
-		data.Assets["gameId"] = gameId
+		data.Assets["gameId"] = appId
 		data.Assets["name"] = name
 		data.Assets["symbol"] = symbol
 		data.Assets["totalSupply"] = totalSupply
+		data.Assets["owner"] = owner
+		data.Assets["createTime"] = strconv.FormatInt(createTime, 10)
 
 		dataList = append(dataList, data)
 		rawJson, _ := json.Marshal(dataList)
@@ -51,15 +54,46 @@ func (api *GtasAPI) PublishFT(gameId string, name string, symbol string, totalSu
 
 }
 
-
 func (api *GtasAPI) MintFT(appId, ftId, target, balance string) (*Result, error) {
-	return api.TransferFT(appId, target, ftId, balance)
+	if 0 == len(appId) {
+		return failResult("wrong params")
+	}
+
+	context, tx, ok := api.checkTx(appId)
+	if !ok {
+		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
+		common.DefaultLogger.Debugf(msg)
+		return failResult(msg)
+	}
+
+	result, flag := core.MintFT(appId, ftId, target, balance, context.AccountDB)
+	if flag {
+		// 生成交易，上链 context.Tx.SubTransactions
+		dataList := make([]types.UserData, 0)
+		data := types.UserData{}
+		data.Address = "MintFT"
+		data.Assets = make(map[string]string, 0)
+		data.Assets["appId"] = appId
+		data.Assets["target"] = target
+		data.Assets["ftId"] = ftId
+		data.Assets["balance"] = balance
+
+		dataList = append(dataList, data)
+		rawJson, _ := json.Marshal(dataList)
+
+		// 生成交易，上链
+		context.Tx.SubTransactions = append(tx.SubTransactions, string(rawJson))
+
+		return successResult(result)
+	} else {
+		return failResult(result)
+	}
 }
 
 // todo: 经济模型，转币的费用问题
 // 状态机转币给玩家
 func (api *GtasAPI) TransferFT(appId string, target string, ftId string, supply string) (*Result, error) {
-	common.DefaultLogger.Debugf("Transfer FT appId:%s,target:%s,ftId:%s,supply:%s",appId,target,ftId,supply)
+	common.DefaultLogger.Debugf("Transfer FT appId:%s,target:%s,ftId:%s,supply:%s", appId, target, ftId, supply)
 	return api.transferFTOrCoin(appId, target, ftId, supply)
 }
 
@@ -76,7 +110,7 @@ func (api *GtasAPI) transferFTOrCoin(appId string, target string, ftId string, s
 	}
 
 	result, flag := core.TransferFT(appId, ftId, target, supply, context.AccountDB)
-	common.DefaultLogger.Debugf("Transfer FTOrCoin result:%t,message:%s",flag,result)
+	common.DefaultLogger.Debugf("Transfer FTOrCoin result:%t,message:%s", flag, result)
 	if flag {
 		// 生成交易，上链 context.Tx.SubTransactions
 		dataList := make([]types.UserData, 0)
