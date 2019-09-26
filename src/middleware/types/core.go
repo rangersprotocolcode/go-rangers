@@ -487,3 +487,69 @@ type DepositNFTData struct {
 	Value      string `json:"value,omitempty"`
 	TxId       string `json:"txId,omitempty"`
 }
+
+type JSONObject struct {
+	data map[string]interface{}
+}
+
+func NewJSONObject() JSONObject {
+	obj := JSONObject{}
+	obj.data = make(map[string]interface{})
+	return obj
+}
+
+func (object *JSONObject) IsEmpty() bool {
+	if 0 == len(object.data) {
+		return true
+	}
+
+	return false
+}
+
+func (object *JSONObject) Put(key string, value interface{}) {
+	object.data[key] = value
+}
+
+func (object *JSONObject) Remove(key string) interface{} {
+	value := object.data[key]
+	delete(object.data, key)
+
+	return value
+}
+
+func (object *JSONObject) Merge(target *JSONObject, merge func(one, other interface{}) interface{}) {
+	if target == nil {
+		return
+	}
+
+	for key, value := range target.data {
+		thisValue := object.data[key]
+		newValue := value
+		if nil != thisValue {
+			newValue = merge(thisValue, value)
+		}
+
+		if nil != newValue {
+			object.Put(key, newValue)
+		}
+	}
+}
+
+func (object *JSONObject) TOJSONString() string {
+	dataBytes, _ := json.Marshal(object.data)
+
+	return string(dataBytes)
+}
+
+func BigIntMerge(one, other interface{}) interface{} {
+	intOne, ok := one.(*big.Int)
+	if !ok {
+		return nil
+	}
+	intTwo, ok := other.(*big.Int)
+	if !ok {
+		return nil
+	}
+
+	return intOne.Add(intOne, intTwo)
+}

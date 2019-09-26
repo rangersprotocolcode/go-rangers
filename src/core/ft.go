@@ -108,24 +108,25 @@ func (self *FTManager) SubFTSet(owner, ftId string, amount *big.Int, accountDB *
 	return true
 }
 
-func (self *FTManager) TransferFT(source string, ftId string, target string, supply string, accountDB *account.AccountDB) (string, bool) {
+func (self *FTManager) TransferFT(source string, ftId string, target string, supply string, accountDB *account.AccountDB) (string, *big.Int, bool) {
 	if 0 == len(ftId) || 0 == len(supply) {
-		return "", true
+		return "", nil, true
 	}
 	ftInfo := strings.Split(ftId, "-")
 	if 2 != len(ftInfo) {
-		return fmt.Sprintf("invalid ftId: %s", ftId), false
+		return fmt.Sprintf("invalid ftId: %s", ftId), nil, false
 	}
 
 	balance := self.convert(supply)
-	if _, ok := accountDB.SubFT(common.HexToAddress(source), ftId, balance); !ok {
-		return fmt.Sprintf("not enough ft. ftId: %s, supply: %s", ftId, supply), false
+	left, ok := accountDB.SubFT(common.HexToAddress(source), ftId, balance)
+	if !ok {
+		return fmt.Sprintf("not enough ft. ftId: %s, supply: %s", ftId, supply), nil, false
 	}
 
 	if accountDB.AddFT(common.HexToAddress(target), ftId, balance) {
-		return "success", true
+		return "success", left, true
 	} else {
-		return "overflow", false
+		return "overflow", nil, false
 	}
 
 }

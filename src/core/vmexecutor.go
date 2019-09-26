@@ -55,7 +55,8 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 					success = false
 					break
 				}
-				if !changeAssets(transaction.Target, transaction.Source, mm, accountdb) {
+				_, ok := changeAssets(transaction.Target, transaction.Source, mm, accountdb)
+				if !ok {
 					success = false
 					break
 				}
@@ -107,7 +108,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 									// 给用户币
 									if user.Address == "TransferFT" {
-										_, flag := FTManagerInstance.TransferFT(user.Assets["gameId"], user.Assets["symbol"], user.Assets["target"], user.Assets["supply"], accountdb)
+										_, _, flag := FTManagerInstance.TransferFT(user.Assets["gameId"], user.Assets["symbol"], user.Assets["target"], user.Assets["supply"], accountdb)
 										if !flag {
 											success = false
 											break
