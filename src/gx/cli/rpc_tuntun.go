@@ -99,13 +99,12 @@ func (api *GtasAPI) UpdateAssets(appId, rawjson string, nonce uint64) (*Result, 
 		flag := core.UpdateAsset(user, appId, accountDb)
 		if !flag {
 			// 这里不应该回滚了
-			//accountDb.RevertToSnapshot(snapshot)
 			return failResult("not enough balance")
 		}
-	}
 
-	// 记录下，供上链用
-	context.Tx.AppendSubTransaction(data)
+		// 记录下，供上链用
+		context.Tx.AppendSubTransaction(user)
+	}
 
 	return successResult(data)
 }

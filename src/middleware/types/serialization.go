@@ -147,7 +147,7 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 
 	var source, target, data, socketRequestId string
 	var sign *common.Sign
-	var subTransactions []SubTransaction
+	var subTransactions []UserData
 	if t.Source != nil {
 		source = string(t.Source)
 	}

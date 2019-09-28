@@ -106,16 +106,6 @@ const (
 	TransactionTypeNFTDepositAck  = 203 // 充值
 )
 
-type SubTransaction []UserData
-
-func (sub *SubTransaction) Hash() []byte {
-	buffer := bytes.Buffer{}
-	data, _ := json.Marshal(sub)
-	buffer.Write(data)
-
-	return common.Sha256(buffer.Bytes())
-}
-
 type Transaction struct {
 	Source string // 用户id
 	Target string // 游戏id
@@ -125,7 +115,7 @@ type Transaction struct {
 	Data            string // 状态机入参
 	ExtraData       string // 在rocketProtocol里，用于转账。包括余额转账、FT转账、NFT转账
 	ExtraDataType   int32
-	SubTransactions []SubTransaction // 用于存储状态机rpc调用的交易数据
+	SubTransactions []UserData // 用于存储状态机rpc调用的交易数据
 	SubHash         common.Hash
 
 	Hash common.Hash
@@ -165,11 +155,7 @@ func (tx *Transaction) GenHash() common.Hash {
 	return common.BytesToHash(common.Sha256(buffer.Bytes()))
 }
 
-func (tx *Transaction) AppendSubTransaction(sub SubTransaction) {
-	if nil == sub {
-		return
-	}
-
+func (tx *Transaction) AppendSubTransaction(sub UserData) {
 	tx.SubTransactions = append(tx.SubTransactions, sub)
 	buffer := bytes.Buffer{}
 	buffer.Write(sub.Hash())
@@ -388,6 +374,14 @@ type UserData struct {
 	Address string `json:"address"`
 	TransferData
 	Assets  map[string]string
+}
+
+func (sub *UserData) Hash() []byte {
+	buffer := bytes.Buffer{}
+	data, _ := json.Marshal(sub)
+	buffer.Write(data)
+
+	return common.Sha256(buffer.Bytes())
 }
 
 // 转账时写在extraData里的复杂结构，用于转账NFT、FT以及余额

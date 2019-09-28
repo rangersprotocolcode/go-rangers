@@ -29,7 +29,6 @@ func (api *GtasAPI) PublishFT(appId, owner, name, symbol, totalSupply, createTim
 
 	result, flag := core.FTManagerInstance.PublishFTSet(name, symbol, appId, totalSupply, owner, createTime, 1, context.AccountDB)
 	if flag {
-		dataList := make([]types.UserData, 1)
 		data := types.UserData{}
 		data.Address = "StartFT"
 		data.Assets = make(map[string]string, 0)
@@ -39,10 +38,9 @@ func (api *GtasAPI) PublishFT(appId, owner, name, symbol, totalSupply, createTim
 		data.Assets["totalSupply"] = totalSupply
 		data.Assets["owner"] = owner
 		data.Assets["createTime"] = createTime
-		dataList[0] = data
-
 		// 生成交易，上链
-		context.Tx.AppendSubTransaction(dataList)
+		context.Tx.AppendSubTransaction(data)
+
 		return successResult(result)
 	} else {
 		return failResult(result)
@@ -65,7 +63,6 @@ func (api *GtasAPI) MintFT(appId, ftId, target, balance string) (*Result, error)
 	result, flag := core.FTManagerInstance.MintFT(appId, ftId, target, balance, context.AccountDB)
 	if flag {
 		// 生成交易，上链 context.Tx.SubTransactions
-		dataList := make([]types.UserData, 1)
 		data := types.UserData{}
 		data.Address = "MintFT"
 		data.Assets = make(map[string]string, 0)
@@ -73,10 +70,9 @@ func (api *GtasAPI) MintFT(appId, ftId, target, balance string) (*Result, error)
 		data.Assets["target"] = target
 		data.Assets["ftId"] = ftId
 		data.Assets["balance"] = balance
-		dataList[0] = data
 
 		// 生成交易，上链
-		context.Tx.AppendSubTransaction(dataList)
+		context.Tx.AppendSubTransaction(data)
 
 		return successResult(result)
 	} else {
@@ -107,7 +103,6 @@ func (api *GtasAPI) transferFTOrCoin(appId string, target string, ftId string, s
 	common.DefaultLogger.Debugf("Transfer FTOrCoin result:%t,message:%s", flag, result)
 	if flag {
 		// 生成交易，上链 context.Tx.SubTransactions
-		dataList := make([]types.UserData, 1)
 		data := types.UserData{}
 		data.Address = "TransferFT"
 		data.Assets = make(map[string]string, 0)
@@ -116,10 +111,8 @@ func (api *GtasAPI) transferFTOrCoin(appId string, target string, ftId string, s
 		data.Assets["symbol"] = ftId
 		data.Assets["supply"] = supply
 
-		dataList[0] = data
-
 		// 生成交易，上链
-		context.Tx.AppendSubTransaction(dataList)
+		context.Tx.AppendSubTransaction(data)
 
 		return successResult(result)
 	} else {

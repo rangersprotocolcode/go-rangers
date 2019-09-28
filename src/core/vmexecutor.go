@@ -69,129 +69,125 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 				success = true
 				if 0 != len(transaction.SubTransactions) {
 					logger.Debugf("Is not game data")
-					for _, sub := range transaction.SubTransactions {
-						logger.Debugf("Execute sub tx:%v", sub)
-						if nil != sub && 0 != len(sub) {
-							for _, user := range sub {
-								// 发币
-								if user.Address == "StartFT" {
-									createTime, _ := user.Assets["createTime"]
-									_, flag := FTManagerInstance.PublishFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], createTime, 1, accountdb)
-									if !flag {
-										success = false
-										break
-									}
+					for _, user := range transaction.SubTransactions {
+						logger.Debugf("Execute sub tx:%v", user)
 
-									continue
-								}
-
-								if user.Address == "MintFT" {
-									owner := user.Assets["appId"]
-									ftId := user.Assets["ftId"]
-									target := user.Assets["target"]
-									supply := user.Assets["balance"]
-									_, flag := FTManagerInstance.MintFT(owner, ftId, target, supply, accountdb)
-
-									if !flag {
-										success = false
-										break
-									}
-
-									continue
-								}
-
-								// 给用户币
-								if user.Address == "TransferFT" {
-									_, _, flag := FTManagerInstance.TransferFT(user.Assets["gameId"], user.Assets["symbol"], user.Assets["target"], user.Assets["supply"], accountdb)
-									if !flag {
-										success = false
-										break
-									}
-									continue
-								}
-
-								// 修改NFT属性
-								if user.Address == "UpdateNFT" {
-									addr := common.HexToAddress(user.Assets["addr"])
-									flag := NFTManagerInstance.UpdateNFT(addr, user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], accountdb)
-									if !flag {
-										success = false
-										break
-									}
-									continue
-								}
-
-								// NFT
-								if user.Address == "TransferNFT" {
-									appId := user.Assets["appId"]
-									_, ok := NFTManagerInstance.Transfer(appId, user.Assets["setId"], user.Assets["id"], common.HexToAddress(appId), common.HexToAddress(user.Assets["target"]), accountdb)
-									if !ok {
-										success = false
-										break
-									}
-									continue
-								}
-
-								// 将状态机持有的NFT的使用权授予某地址
-								if user.Address == "ApproveNFT" {
-									appId := user.Assets["appId"]
-									ok := accountdb.ApproveNFT(common.HexToAddress(appId), appId, user.Assets["setId"], user.Assets["id"], user.Assets["target"])
-									if !ok {
-										success = false
-										break
-									}
-									continue
-								}
-
-								if user.Address == "changeNFTStatus" {
-									appId := user.Assets["appId"]
-									status, _ := strconv.Atoi(user.Assets["status"])
-									ok := accountdb.ChangeNFTStatus(common.HexToAddress(appId), appId, user.Assets["setId"], user.Assets["id"], byte(status))
-									if !ok {
-										success = false
-										break
-									}
-									continue
-								}
-
-								if user.Address == "PublishNFTSet" {
-									maxSupply, _ := strconv.ParseInt(user.Assets["maxSupply"], 10, 0)
-									appId := user.Assets["appId"]
-
-									_, ok, _ := NFTManagerInstance.PublishNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, uint(maxSupply), user.Assets["createTime"], accountdb)
-									if !ok {
-										success = false
-										break
-									}
-									continue
-								}
-
-								if user.Address == "MintNFT" {
-									_, ok := NFTManagerInstance.MintNFT(user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], user.Assets["createTime"], common.HexToAddress(user.Assets["target"]), accountdb)
-									if !ok {
-										success = false
-										break
-									}
-									continue
-								}
-
-								// 用户之间转账
-								if !UpdateAsset(user, transaction.Target, accountdb) {
-									success = false
-									break
-								}
-
-								address := common.HexToAddress(user.Address)
-								accountdb.SetNonce(address, 1)
+						// 发币
+						if user.Address == "StartFT" {
+							createTime, _ := user.Assets["createTime"]
+							_, flag := FTManagerInstance.PublishFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], createTime, 1, accountdb)
+							if !flag {
+								success = false
+								break
 							}
 
+							continue
 						}
+
+						if user.Address == "MintFT" {
+							owner := user.Assets["appId"]
+							ftId := user.Assets["ftId"]
+							target := user.Assets["target"]
+							supply := user.Assets["balance"]
+							_, flag := FTManagerInstance.MintFT(owner, ftId, target, supply, accountdb)
+
+							if !flag {
+								success = false
+								break
+							}
+
+							continue
+						}
+
+						// 给用户币
+						if user.Address == "TransferFT" {
+							_, _, flag := FTManagerInstance.TransferFT(user.Assets["gameId"], user.Assets["symbol"], user.Assets["target"], user.Assets["supply"], accountdb)
+							if !flag {
+								success = false
+								break
+							}
+							continue
+						}
+
+						// 修改NFT属性
+						if user.Address == "UpdateNFT" {
+							addr := common.HexToAddress(user.Assets["addr"])
+							flag := NFTManagerInstance.UpdateNFT(addr, user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], accountdb)
+							if !flag {
+								success = false
+								break
+							}
+							continue
+						}
+
+						// NFT
+						if user.Address == "TransferNFT" {
+							appId := user.Assets["appId"]
+							_, ok := NFTManagerInstance.Transfer(appId, user.Assets["setId"], user.Assets["id"], common.HexToAddress(appId), common.HexToAddress(user.Assets["target"]), accountdb)
+							if !ok {
+								success = false
+								break
+							}
+							continue
+						}
+
+						// 将状态机持有的NFT的使用权授予某地址
+						if user.Address == "ApproveNFT" {
+							appId := user.Assets["appId"]
+							ok := accountdb.ApproveNFT(common.HexToAddress(appId), appId, user.Assets["setId"], user.Assets["id"], user.Assets["target"])
+							if !ok {
+								success = false
+								break
+							}
+							continue
+						}
+
+						if user.Address == "changeNFTStatus" {
+							appId := user.Assets["appId"]
+							status, _ := strconv.Atoi(user.Assets["status"])
+							ok := accountdb.ChangeNFTStatus(common.HexToAddress(appId), appId, user.Assets["setId"], user.Assets["id"], byte(status))
+							if !ok {
+								success = false
+								break
+							}
+							continue
+						}
+
+						if user.Address == "PublishNFTSet" {
+							maxSupply, _ := strconv.ParseInt(user.Assets["maxSupply"], 10, 0)
+							appId := user.Assets["appId"]
+
+							_, ok, _ := NFTManagerInstance.PublishNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, uint(maxSupply), user.Assets["createTime"], accountdb)
+							if !ok {
+								success = false
+								break
+							}
+							continue
+						}
+
+						if user.Address == "MintNFT" {
+							_, ok := NFTManagerInstance.MintNFT(user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], user.Assets["createTime"], common.HexToAddress(user.Assets["target"]), accountdb)
+							if !ok {
+								success = false
+								break
+							}
+							continue
+						}
+
+						// 用户之间转账
+						if !UpdateAsset(user, transaction.Target, accountdb) {
+							success = false
+							break
+						}
+
+						address := common.HexToAddress(user.Address)
+						accountdb.SetNonce(address, 1)
 
 					}
 				}
 			} else {
 				// 本地没有执行过状态机(game_executor还没有收到消息)，则需要调用状态机
-				transaction.SubTransactions = make([]types.SubTransaction, 0)
+				transaction.SubTransactions = make([]types.UserData, 0)
 				outputMessage := statemachine.Docker.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), transaction.Data)
 				GetBlockChain().GetTransactionPool().PutGameData(transaction.Hash)
 				result := ""
