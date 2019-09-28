@@ -118,7 +118,19 @@ func GetFTSet(id string) string {
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
 	ftSet := FTManagerInstance.GetFTSet(id, accountDB)
 
-	bytes, _ := json.Marshal(ftSet)
+	response := make(map[string]string)
+	if nil != ftSet {
+		response["createTime"] = ftSet.CreateTime
+		response["owner"] = ftSet.Owner
+		response["maxSupply"] = strconv.FormatFloat(float64(ftSet.MaxSupply.Int64())/1000000000, 'f', -1, 64)
+		response["symbol"] = ftSet.Symbol
+		response["name"] = ftSet.Name
+		response["setId"] = ftSet.ID
+		response["creator"] = ftSet.AppId
+		response["remain"] = strconv.FormatFloat(float64(ftSet.Remain.Int64())/1000000000, 'f', -1, 64)
+	}
+
+	bytes, _ := json.Marshal(response)
 	return string(bytes)
 }
 

@@ -65,15 +65,15 @@ func (self *FTManager) PublishFTSet(name, symbol, appId, total, owner, createTim
 
 	// 生成ftSet
 	ftSet := &types.FTSet{
-		ID:          id,
-		Name:        name,
-		Symbol:      symbol,
-		AppId:       appId,
-		TotalSupply: self.convert(total),
-		Remain:      self.convert(total),
-		Type:        kind,
-		Owner:       owner,
-		CreateTime:  createTime,
+		ID:         id,
+		Name:       name,
+		Symbol:     symbol,
+		AppId:      appId,
+		MaxSupply:  self.convert(total),
+		Remain:     self.convert(total),
+		Type:       kind,
+		Owner:      owner,
+		CreateTime: createTime,
 	}
 
 	self.updateFTSet(id, ftSet, accountDB)

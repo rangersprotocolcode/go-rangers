@@ -253,9 +253,9 @@ type FTSet struct {
 	Owner      string // 所有者
 	CreateTime string // 发行时间
 
-	TotalSupply *big.Int // 发行总数， -1表示无限量（对于公链币，也是如此）
-	Remain      *big.Int // 还剩下多少，-1表示无限（对于公链币，也是如此）
-	Type        byte     // 类型，0代表公链币，1代表游戏发行的FT
+	MaxSupply *big.Int // 发行总数， -1表示无限量（对于公链币，也是如此）
+	Remain    *big.Int // 还剩下多少，-1表示无限（对于公链币，也是如此）
+	Type      byte     // 类型，0代表公链币，1代表游戏发行的FT
 }
 
 // 用户ft数据结构
