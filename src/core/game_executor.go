@@ -194,7 +194,6 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 
 		gameId := txRaw.Target
 		accountDB := AccountDBManagerInstance.GetAccountDB(gameId, true)
-		logger.Infof("After get account db!")
 
 		// 已经执行过了（入块时），则不用再执行了
 		if nil != TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw) || GetBlockChain().GetTransactionPool().IsGameData(txRaw.Hash) {
