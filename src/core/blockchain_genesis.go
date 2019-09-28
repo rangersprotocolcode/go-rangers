@@ -50,7 +50,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	pv := big.NewInt(0)
 	block.Header = &types.BlockHeader{
 		Height:       0,
-		ExtraData:    common.Sha256([]byte("tas")),
+		ExtraData:    common.Sha256([]byte("rocket protocol")),
 		CurTime:      time.Date(2018, 6, 14, 10, 0, 0, 0, time.Local),
 		ProveValue:   pv,
 		TotalQN:      0,

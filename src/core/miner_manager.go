@@ -9,11 +9,11 @@ import (
 	"x/src/common"
 
 	"x/src/middleware/types"
-	"github.com/hashicorp/golang-lru"
 	"github.com/vmihailenco/msgpack"
-	"x/src/storage/trie"
 	"x/src/storage/account"
 	"x/src/consensus/groupsig"
+	"x/src/storage/trie"
+	"github.com/hashicorp/golang-lru"
 )
 
 const (
@@ -40,11 +40,6 @@ type MinerManager struct {
 
 type MinerCountOperation struct {
 	Code int
-}
-
-type MinerIterator struct {
-	iterator *trie.Iterator
-	cache    *lru.Cache
 }
 
 func initMinerManager() {
@@ -264,6 +259,11 @@ func (mm *MinerManager) updateMinerCount(minerType byte, operation MinerCountOpe
 		return
 	}
 	logger.Error("Unknown miner type:%d", minerType)
+}
+
+type MinerIterator struct {
+	iterator *trie.Iterator
+	cache    *lru.Cache
 }
 
 func (mi *MinerIterator) Current() (*types.Miner, error) {

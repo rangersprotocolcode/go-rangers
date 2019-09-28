@@ -174,7 +174,7 @@ func (chain *blockChain) saveBlockByHash(hash common.Hash, blockByte []byte) boo
 }
 
 func (chain *blockChain) saveBlockByHeight(height uint64, headerByte []byte) bool {
-	err := chain.heightDB.Put(utility.UInt64ToByte(height), headerByte)
+	err := chain.heightDB.Put(generateHeightKey(height), headerByte)
 	if err != nil {
 		logger.Errorf("Fail to put block height:%d  error:%s", height, err.Error())
 		return false

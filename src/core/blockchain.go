@@ -502,18 +502,14 @@ func (chain *blockChain) queryBlockHeaderByHash(hash common.Hash) *types.BlockHe
 }
 
 func (chain *blockChain) getAccountDBByHeight(height uint64) (*account.AccountDB, error) {
-	var header *types.BlockHeader
-	h := height
-	for {
-		header = chain.queryBlockHeaderByHeight(h, true)
-		if header != nil || h == 0 {
-			break
-		}
-		h--
-	}
+	chain.lock.RLock("getAccountDBByHeight")
+	defer chain.lock.RUnlock("getAccountDBByHeight")
+
+	header := chain.queryBlockHeaderByHeight(height, false)
 	if header == nil {
-		return nil, fmt.Errorf("no data at height %v-%v", h, height)
+		return nil, fmt.Errorf("no data at height %v", height)
 	}
+
 	return account.NewAccountDB(header.StateTree, chain.stateDB)
 }
 
