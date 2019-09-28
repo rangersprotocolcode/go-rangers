@@ -192,7 +192,7 @@ func (chain *blockChain) CastBlock(height uint64, proveValue *big.Int, proveRoot
 	for i, transaction := range transactions {
 		hashes := common.Hashes{}
 		hashes[0] = transaction.Hash
-		hashes[0] = transaction.SubHash
+		hashes[1] = transaction.SubHash
 		transactionHashes[i] = hashes
 
 	}
