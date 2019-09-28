@@ -4,7 +4,6 @@ import (
 	"x/src/core"
 	"x/src/common"
 	"x/src/middleware/types"
-	"encoding/json"
 	"fmt"
 )
 
@@ -30,7 +29,7 @@ func (api *GtasAPI) PublishFT(appId, owner, name, symbol, totalSupply, createTim
 
 	result, flag := core.FTManagerInstance.PublishFTSet(name, symbol, appId, totalSupply, owner, createTime, 1, context.AccountDB)
 	if flag {
-		dataList := make([]types.UserData, 0)
+		dataList := make([]types.UserData, 1)
 		data := types.UserData{}
 		data.Address = "StartFT"
 		data.Assets = make(map[string]string, 0)
@@ -40,12 +39,10 @@ func (api *GtasAPI) PublishFT(appId, owner, name, symbol, totalSupply, createTim
 		data.Assets["totalSupply"] = totalSupply
 		data.Assets["owner"] = owner
 		data.Assets["createTime"] = createTime
-
-		dataList = append(dataList, data)
-		rawJson, _ := json.Marshal(dataList)
+		dataList[0] = data
 
 		// 生成交易，上链
-		context.Tx.SubTransactions = append(context.Tx.SubTransactions, string(rawJson))
+		context.Tx.AppendSubTransaction(dataList)
 		return successResult(result)
 	} else {
 		return failResult(result)
@@ -58,7 +55,7 @@ func (api *GtasAPI) MintFT(appId, ftId, target, balance string) (*Result, error)
 		return failResult("wrong params")
 	}
 
-	context, tx, ok := api.checkTx(appId)
+	context, ok := api.checkTx(appId)
 	if !ok {
 		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
 		common.DefaultLogger.Debugf(msg)
@@ -68,7 +65,7 @@ func (api *GtasAPI) MintFT(appId, ftId, target, balance string) (*Result, error)
 	result, flag := core.FTManagerInstance.MintFT(appId, ftId, target, balance, context.AccountDB)
 	if flag {
 		// 生成交易，上链 context.Tx.SubTransactions
-		dataList := make([]types.UserData, 0)
+		dataList := make([]types.UserData, 1)
 		data := types.UserData{}
 		data.Address = "MintFT"
 		data.Assets = make(map[string]string, 0)
@@ -76,12 +73,10 @@ func (api *GtasAPI) MintFT(appId, ftId, target, balance string) (*Result, error)
 		data.Assets["target"] = target
 		data.Assets["ftId"] = ftId
 		data.Assets["balance"] = balance
-
-		dataList = append(dataList, data)
-		rawJson, _ := json.Marshal(dataList)
+		dataList[0] = data
 
 		// 生成交易，上链
-		context.Tx.SubTransactions = append(tx.SubTransactions, string(rawJson))
+		context.Tx.AppendSubTransaction(dataList)
 
 		return successResult(result)
 	} else {
@@ -101,7 +96,7 @@ func (api *GtasAPI) transferFTOrCoin(appId string, target string, ftId string, s
 		return failResult("wrong params")
 	}
 
-	context, tx, ok := api.checkTx(appId)
+	context, ok := api.checkTx(appId)
 	if !ok {
 		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
 		common.DefaultLogger.Debugf(msg)
@@ -112,7 +107,7 @@ func (api *GtasAPI) transferFTOrCoin(appId string, target string, ftId string, s
 	common.DefaultLogger.Debugf("Transfer FTOrCoin result:%t,message:%s", flag, result)
 	if flag {
 		// 生成交易，上链 context.Tx.SubTransactions
-		dataList := make([]types.UserData, 0)
+		dataList := make([]types.UserData, 1)
 		data := types.UserData{}
 		data.Address = "TransferFT"
 		data.Assets = make(map[string]string, 0)
@@ -121,11 +116,10 @@ func (api *GtasAPI) transferFTOrCoin(appId string, target string, ftId string, s
 		data.Assets["symbol"] = ftId
 		data.Assets["supply"] = supply
 
-		dataList = append(dataList, data)
-		rawJson, _ := json.Marshal(dataList)
+		dataList[0] = data
 
 		// 生成交易，上链
-		context.Tx.SubTransactions = append(tx.SubTransactions, string(rawJson))
+		context.Tx.AppendSubTransaction(dataList)
 
 		return successResult(result)
 	} else {
@@ -133,24 +127,24 @@ func (api *GtasAPI) transferFTOrCoin(appId string, target string, ftId string, s
 	}
 }
 
-func (api *GtasAPI) checkTx(appId string) (*core.TxContext, *types.Transaction, bool) {
+func (api *GtasAPI) checkTx(appId string) (*core.TxContext, bool) {
 	if 0 == len(appId) {
-		return nil, nil, false
+		return nil, false
 	}
 
 	context := core.TxManagerInstance.GetContext(appId)
 	// 不在事务里，不应该啊
 	if nil == context {
 		common.DefaultLogger.Debugf("transferFT is nil!")
-		return nil, nil, false
+		return nil, false
 	}
 
 	tx := context.Tx
 	if nil == tx || tx.Target != appId {
 		msg := fmt.Sprintf("wrong appId %s", appId)
 		common.DefaultLogger.Debugf(msg)
-		return context, nil, false
+		return context, false
 	}
 
-	return context, tx, true
+	return context, true
 }

@@ -105,7 +105,7 @@ func (api *GtasAPI) UpdateAssets(appId, rawjson string, nonce uint64) (*Result, 
 	}
 
 	// 记录下，供上链用
-	context.Tx.SubTransactions = append(tx.SubTransactions, rawjson)
+	context.Tx.AppendSubTransaction(data)
 
 	return successResult(data)
 }

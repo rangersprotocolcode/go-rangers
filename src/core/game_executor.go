@@ -245,7 +245,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 		// 转账成功，调用状态机
 		if result != "fail to transfer" && len(txRaw.Data) != 0 {
 			// 调用状态机
-			txRaw.SubTransactions = make([]string, 0)
+			txRaw.SubTransactions = make([]types.SubTransaction, 0)
 			outputMessage = statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
 			logger.Infof("invoke state machine result:%v", outputMessage)
 			if outputMessage != nil {
@@ -346,7 +346,6 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 }
 
 func (executor *GameExecutor) sendTransaction(trans *types.Transaction) error {
-	trans.SubHash = trans.GenSubHash()
 	if ok, err := executor.chain.GetTransactionPool().AddTransaction(trans); err != nil || !ok {
 		if nil != common.DefaultLogger {
 			common.DefaultLogger.Errorf("AddTransaction not ok or error:%s", err.Error())

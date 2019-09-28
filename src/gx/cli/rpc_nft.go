@@ -5,12 +5,11 @@ import (
 	"fmt"
 	"x/src/common"
 	"x/src/middleware/types"
-	"encoding/json"
 	"strconv"
 )
 
 func (api *GtasAPI) UpdateNFT(appId, setId, id, data string) (*Result, error) {
-	context, tx, ok := api.checkTx(appId)
+	context, ok := api.checkTx(appId)
 	if !ok {
 		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
 		common.DefaultLogger.Debugf(msg)
@@ -27,7 +26,7 @@ func (api *GtasAPI) UpdateNFT(appId, setId, id, data string) (*Result, error) {
 
 	if core.NFTManagerInstance.UpdateNFT(*addr, appId, setId, id, data, accountDB) {
 		// 生成交易，上链 context.Tx.SubTransactions
-		dataList := make([]types.UserData, 0)
+		dataList := make([]types.UserData, 1)
 		userData := types.UserData{}
 		userData.Address = "UpdateNFT"
 		userData.Assets = make(map[string]string, 0)
@@ -36,12 +35,11 @@ func (api *GtasAPI) UpdateNFT(appId, setId, id, data string) (*Result, error) {
 		userData.Assets["id"] = id
 		userData.Assets["data"] = data
 		userData.Assets["addr"] = addr.String()
-
-		dataList = append(dataList, userData)
-		rawJson, _ := json.Marshal(dataList)
+		dataList[0] = userData
 
 		// 生成交易，上链
-		context.Tx.SubTransactions = append(tx.SubTransactions, string(rawJson))
+		context.Tx.AppendSubTransaction(dataList)
+
 		return successResult("success update nft")
 	} else {
 		msg := fmt.Sprintf("fail to update setId %s or id %s", setId, id)
@@ -71,7 +69,7 @@ func (api *GtasAPI) BatchUpdateNFT(appId, setId string, id, data []string) (*Res
 
 // 将状态机持有的NFT转给指定地址
 func (api *GtasAPI) TransferNFT(appId, setId, id, target string) (*Result, error) {
-	context, tx, ok := api.checkTx(appId)
+	context, ok := api.checkTx(appId)
 	if !ok {
 		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
 		common.DefaultLogger.Debugf(msg)
@@ -82,7 +80,7 @@ func (api *GtasAPI) TransferNFT(appId, setId, id, target string) (*Result, error
 	_, ok = core.NFTManagerInstance.Transfer(appId, setId, id, common.HexToAddress(appId), common.HexToAddress(target), accountDB)
 	if ok {
 		// 生成交易，上链 context.Tx.SubTransactions
-		dataList := make([]types.UserData, 0)
+		dataList := make([]types.UserData, 1)
 		userData := types.UserData{}
 		userData.Address = "TransferNFT"
 		userData.Assets = make(map[string]string, 0)
@@ -90,12 +88,11 @@ func (api *GtasAPI) TransferNFT(appId, setId, id, target string) (*Result, error
 		userData.Assets["setId"] = setId
 		userData.Assets["id"] = id
 		userData.Assets["target"] = target
-
-		dataList = append(dataList, userData)
-		rawJson, _ := json.Marshal(dataList)
+		dataList[0] = userData
 
 		// 生成交易，上链
-		context.Tx.SubTransactions = append(tx.SubTransactions, string(rawJson))
+		context.Tx.AppendSubTransaction(dataList)
+
 		return successResult("success update nft")
 	} else {
 		msg := fmt.Sprintf("fail to TransferNFT setId %s or id %s from %s to %s", setId, id, appId, target)
@@ -106,7 +103,7 @@ func (api *GtasAPI) TransferNFT(appId, setId, id, target string) (*Result, error
 
 // 将状态机持有的NFT的使用权授予某地址
 func (api *GtasAPI) ApproveNFT(appId, setId, id, target string) (*Result, error) {
-	context, tx, ok := api.checkTx(appId)
+	context, ok := api.checkTx(appId)
 	if !ok {
 		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
 		common.DefaultLogger.Debugf(msg)
@@ -116,7 +113,7 @@ func (api *GtasAPI) ApproveNFT(appId, setId, id, target string) (*Result, error)
 	accountDB := context.AccountDB
 	if accountDB.ApproveNFT(common.HexToAddress(appId), appId, setId, id, target) {
 		// 生成交易，上链 context.Tx.SubTransactions
-		dataList := make([]types.UserData, 0)
+		dataList := make([]types.UserData, 1)
 		userData := types.UserData{}
 		userData.Address = "ApproveNFT"
 		userData.Assets = make(map[string]string, 0)
@@ -124,12 +121,11 @@ func (api *GtasAPI) ApproveNFT(appId, setId, id, target string) (*Result, error)
 		userData.Assets["setId"] = setId
 		userData.Assets["id"] = id
 		userData.Assets["target"] = target
-
-		dataList = append(dataList, userData)
-		rawJson, _ := json.Marshal(dataList)
+		dataList[0] = userData
 
 		// 生成交易，上链
-		context.Tx.SubTransactions = append(tx.SubTransactions, string(rawJson))
+		context.Tx.AppendSubTransaction(dataList)
+
 		return successResult("success approve nft")
 	} else {
 		msg := fmt.Sprintf("fail to ApproveNFT setId %s or id %s from %s to %s", setId, id, appId, target)
@@ -154,7 +150,7 @@ func (api *GtasAPI) UnLockNFT(appId, setId, id string) (*Result, error) {
 }
 
 func (api *GtasAPI) changeNFTStatus(appId, setId, id string, status int) (*Result, error) {
-	context, tx, ok := api.checkTx(appId)
+	context, ok := api.checkTx(appId)
 	if !ok {
 		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
 		common.DefaultLogger.Debugf(msg)
@@ -164,7 +160,7 @@ func (api *GtasAPI) changeNFTStatus(appId, setId, id string, status int) (*Resul
 	accountDB := context.AccountDB
 	if accountDB.ChangeNFTStatus(common.HexToAddress(appId), appId, setId, id, 1) {
 		// 生成交易，上链 context.Tx.SubTransactions
-		dataList := make([]types.UserData, 0)
+		dataList := make([]types.UserData, 1)
 		userData := types.UserData{}
 		userData.Address = "changeNFTStatus"
 		userData.Assets = make(map[string]string, 0)
@@ -172,12 +168,11 @@ func (api *GtasAPI) changeNFTStatus(appId, setId, id string, status int) (*Resul
 		userData.Assets["setId"] = setId
 		userData.Assets["id"] = id
 		userData.Assets["status"] = strconv.Itoa(status)
-
-		dataList = append(dataList, userData)
-		rawJson, _ := json.Marshal(dataList)
+		dataList[0] = userData
 
 		// 生成交易，上链
-		context.Tx.SubTransactions = append(tx.SubTransactions, string(rawJson))
+		context.Tx.AppendSubTransaction(dataList)
+
 		return successResult("success LockNFT nft")
 	} else {
 		msg := fmt.Sprintf("fail to LockNFT setId %s or id %s appId %s", setId, id, appId)
@@ -188,7 +183,7 @@ func (api *GtasAPI) changeNFTStatus(appId, setId, id string, status int) (*Resul
 
 // 发行NFTSet
 func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol, createTime string, maxSupply uint) (*Result, error) {
-	context, tx, ok := api.checkTx(appId)
+	context, ok := api.checkTx(appId)
 	if !ok {
 		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
 		common.DefaultLogger.Debugf(msg)
@@ -198,7 +193,7 @@ func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol, createTime string,
 	accountDB := context.AccountDB
 	if _, ok, _ := core.NFTManagerInstance.PublishNFTSet(setId, name, symbol, appId, appId, maxSupply, createTime, accountDB); ok {
 		// 生成交易，上链 context.Tx.SubTransactions
-		dataList := make([]types.UserData, 0)
+		dataList := make([]types.UserData, 1)
 		userData := types.UserData{}
 		userData.Address = "PublishNFTSet"
 		userData.Assets = make(map[string]string, 0)
@@ -208,12 +203,10 @@ func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol, createTime string,
 		userData.Assets["maxSupply"] = strconv.FormatInt(int64(maxSupply), 10)
 		userData.Assets["appId"] = appId
 		userData.Assets["createTime"] = createTime
-
-		dataList = append(dataList, userData)
-		rawJson, _ := json.Marshal(dataList)
+		dataList[0] = userData
 
 		// 生成交易，上链
-		context.Tx.SubTransactions = append(tx.SubTransactions, string(rawJson))
+		context.Tx.AppendSubTransaction(dataList)
 		return successResult("success PublishNFTSet")
 	} else {
 		msg := fmt.Sprintf("fail to PublishNFTSet setId %s  appId %s", setId, appId)
@@ -224,7 +217,7 @@ func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol, createTime string,
 
 // NFT铸币
 func (api *GtasAPI) MintNFT(appId, setId, id, target, data, createTime string) (*Result, error) {
-	context, tx, ok := api.checkTx(appId)
+	context, ok := api.checkTx(appId)
 	if !ok {
 		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
 		common.DefaultLogger.Debugf(msg)
@@ -234,7 +227,7 @@ func (api *GtasAPI) MintNFT(appId, setId, id, target, data, createTime string) (
 	accountDB := context.AccountDB
 	if _, ok := core.NFTManagerInstance.MintNFT(appId, setId, id, data, createTime, common.HexToAddress(target), accountDB); ok {
 		// 生成交易，上链 context.Tx.SubTransactions
-		dataList := make([]types.UserData, 0)
+		dataList := make([]types.UserData, 1)
 		userData := types.UserData{}
 		userData.Address = "MintNFT"
 		userData.Assets = make(map[string]string, 0)
@@ -243,12 +236,11 @@ func (api *GtasAPI) MintNFT(appId, setId, id, target, data, createTime string) (
 		userData.Assets["id"] = id
 		userData.Assets["target"] = target
 		userData.Assets["data"] = data
-
-		dataList = append(dataList, userData)
-		rawJson, _ := json.Marshal(dataList)
+		dataList[0] = userData
 
 		// 生成交易，上链
-		context.Tx.SubTransactions = append(tx.SubTransactions, string(rawJson))
+		context.Tx.AppendSubTransaction(dataList)
+
 		return successResult("success MintNFT")
 	} else {
 		msg := fmt.Sprintf("fail to MintNFT setId %s id %s appId %s", setId, id, appId)

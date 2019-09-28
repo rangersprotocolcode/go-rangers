@@ -147,7 +147,7 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 
 	var source, target, data, socketRequestId string
 	var sign *common.Sign
-	var subTransactions []string
+	var subTransactions []SubTransaction
 	if t.Source != nil {
 		source = string(t.Source)
 	}
@@ -165,7 +165,7 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 	}
 
 	if t.SubTransactions != nil {
-		subTransactions = t.SubTransactions
+		json.Unmarshal(t.SubTransactions, &subTransactions)
 	}
 
 	if t.Sign != nil && len(t.Sign) != 0 {
@@ -346,10 +346,11 @@ func transactionToPb(t *Transaction) *middleware_pb.Transaction {
 		}
 	}
 
+	subTx, _ := json.Marshal(t.SubTransactions)
 	transaction := middleware_pb.Transaction{Data: data, Nonce: &t.Nonce, RequestId: &t.RequestId, Source: source,
 		Target: target, Hash: t.Hash.Bytes(),
 		ExtraData: []byte(t.ExtraData), ExtraDataType: &t.ExtraDataType, Type: &t.Type, Sign: sign,
-		Time: &t.Time, SubTransactions: t.SubTransactions, SubHash: t.SubHash.Bytes()}
+		Time: &t.Time, SubTransactions: subTx, SubHash: t.SubHash.Bytes()}
 	return &transaction
 }
 

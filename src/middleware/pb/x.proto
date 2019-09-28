@@ -36,7 +36,7 @@ message Transaction{
 
     optional string SocketRequestId = 12;
 
-    repeated string SubTransactions = 13;
+    optional bytes SubTransactions = 13;
 
     optional bytes SubHash  = 14 ;
 }

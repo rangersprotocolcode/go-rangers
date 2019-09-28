@@ -106,6 +106,16 @@ const (
 	TransactionTypeNFTDepositAck  = 203 // 充值
 )
 
+type SubTransaction []UserData
+
+func (sub *SubTransaction) Hash() []byte {
+	buffer := bytes.Buffer{}
+	data, _ := json.Marshal(sub)
+	buffer.Write(data)
+
+	return common.Sha256(buffer.Bytes())
+}
+
 type Transaction struct {
 	Source string // 用户id
 	Target string // 游戏id
@@ -115,7 +125,7 @@ type Transaction struct {
 	Data            string // 状态机入参
 	ExtraData       string // 在rocketProtocol里，用于转账。包括余额转账、FT转账、NFT转账
 	ExtraDataType   int32
-	SubTransactions []string // 用于存储状态机rpc调用的交易数据
+	SubTransactions []SubTransaction // 用于存储状态机rpc调用的交易数据
 	SubHash         common.Hash
 
 	Hash common.Hash
@@ -151,19 +161,22 @@ func (tx *Transaction) GenHash() common.Hash {
 	if tx.Time != "" {
 		buffer.Write([]byte(tx.Time))
 	}
+
 	return common.BytesToHash(common.Sha256(buffer.Bytes()))
 }
 
-func (tx *Transaction) GenSubHash() common.Hash {
-	if nil == tx {
-		return common.Hash{}
+func (tx *Transaction) AppendSubTransaction(sub SubTransaction) {
+	if nil == sub {
+		return
 	}
 
+	tx.SubTransactions = append(tx.SubTransactions, sub)
 	buffer := bytes.Buffer{}
-	data, _ := json.Marshal(tx.SubTransactions)
-	buffer.Write(data)
+	buffer.Write(sub.Hash())
+	buffer.Write(tx.SubHash.Bytes())
 
-	return common.BytesToHash(common.Sha256(buffer.Bytes()))
+	//todo: 性能优化点
+	tx.SubHash = common.BytesToHash(common.Sha256(buffer.Bytes()))
 }
 
 func (tx *Transaction) GenHashes() common.Hashes {
@@ -173,12 +186,7 @@ func (tx *Transaction) GenHashes() common.Hashes {
 
 	result := common.Hashes{}
 	result[0] = tx.Hash
-
-	if common.EmptyHash(tx.SubHash) {
-		result[1] = tx.GenSubHash()
-	} else {
-		result[1] = tx.SubHash
-	}
+	result[1] = tx.SubHash
 
 	return result
 }
