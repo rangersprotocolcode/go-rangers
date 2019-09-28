@@ -115,9 +115,13 @@ func (p *Processor) onMissTxAddSucc(message notify.Message) {
 		return
 	}
 	transactions := tgam.Transactions
-	var txHashes []common.Hash
+	var txHashes []common.Hashes
 	for _, tx := range transactions {
-		txHashes = append(txHashes, tx.Hash)
+		hashes := common.Hashes{}
+		hashes[0] = tx.Hash
+		hashes[1] = tx.SubHash
+		txHashes = append(txHashes, hashes)
+
 	}
 	p.OnMessageNewTransactions(txHashes)
 }

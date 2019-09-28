@@ -28,7 +28,7 @@ type MessageProcessor interface {
 
 	OnMessageVerify(msg *model.ConsensusVerifyMessage)
 
-	OnMessageNewTransactions(txs []common.Hash)
+	OnMessageNewTransactions(txs []common.Hashes)
 
 	OnMessageBlock(msg *model.ConsensusBlockMessage)
 

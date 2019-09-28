@@ -73,10 +73,6 @@ func (sc *SlotContext) initIfNeeded() bool {
 		slog.endStage()
 		slog.log("height=%v, hash=%v, lost trans size %v , ret %v", bh.Height, bh.Hash.ShortS(), len(lostTxs), ccr)
 
-		lostTxsStrings := make([]string, len(lostTxs))
-		for idx, tx := range lostTxs {
-			lostTxsStrings[idx] = tx.ShortS()
-		}
 		sc.addLostTrans(lostTxs)
 		if ccr == -1 {
 			sc.setSlotStatus(SS_FAILED)
@@ -112,7 +108,7 @@ func (sc SlotContext) lostTransSize() int {
 	return sc.lostTxHash.Size()
 }
 
-func (sc *SlotContext) addLostTrans(txs []common.Hash) {
+func (sc *SlotContext) addLostTrans(txs []common.Hashes) {
 	if len(txs) == 0 {
 		return
 	}
@@ -123,7 +119,7 @@ func (sc *SlotContext) addLostTrans(txs []common.Hash) {
 
 //用接收到的新交易更新缺失的交易集
 //返回接收前以及接收后是否不在缺失交易
-func (sc *SlotContext) AcceptTrans(ths []common.Hash) bool {
+func (sc *SlotContext) AcceptTrans(ths []common.Hashes) bool {
 	l := sc.lostTransSize()
 	if l == 0 { //已经无缺失
 		return false

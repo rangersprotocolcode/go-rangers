@@ -9,7 +9,7 @@ import (
 	"x/src/storage/trie"
 )
 
-func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transaction) ([]common.Hash, int8) {
+func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transaction) ([]common.Hashes, int8) {
 	logger.Infof("verifyBlock hash:%v,height:%d,totalQn:%d,preHash:%v,len header tx:%d,len tx:%d", bh.Hash.String(), bh.Height, bh.TotalQN, bh.PreHash.String(), len(bh.Transactions), len(txs))
 	if bh.Hash != bh.GenHash() {
 		logger.Debugf("Validate block hash error!")
@@ -52,8 +52,8 @@ func (chain *blockChain) hasPreBlock(bh types.BlockHeader) bool {
 	return true
 }
 
-func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Transaction) (bool, []common.Hash, []*types.Transaction) {
-	var missing []common.Hash
+func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Transaction) (bool, []common.Hashes, []*types.Transaction) {
+	var missing []common.Hashes
 	var transactions []*types.Transaction
 	if nil == txs {
 		transactions, missing, _ = chain.queryTxsByBlockHash(bh.Hash, bh.Transactions)
@@ -68,7 +68,7 @@ func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Tran
 			panic("Groupsig id deserialize error:" + error.Error())
 		}
 		for _, tx := range missing {
-			logger.Debugf("miss tx:%s", tx.String())
+			logger.Debugf("miss tx:%s", tx.ShortS())
 		}
 		//向CASTOR索取交易
 		m := &transactionRequestMessage{TransactionHashes: missing, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue,}

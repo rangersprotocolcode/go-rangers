@@ -187,10 +187,14 @@ func (chain *blockChain) CastBlock(height uint64, proveValue *big.Int, proveRoot
 	}
 	stateRoot, evictedTxs, transactions, receipts, err, _ := chain.executor.Execute(state, block, height, "casting")
 
-	transactionHashes := make([]common.Hash, len(transactions))
+	transactionHashes := make([]common.Hashes, len(transactions))
 	block.Transactions = transactions
 	for i, transaction := range transactions {
-		transactionHashes[i] = transaction.Hash
+		hashes := common.Hashes{}
+		hashes[0] = transaction.Hash
+		hashes[0] = transaction.SubHash
+		transactionHashes[i] = hashes
+
 	}
 	block.Header.Transactions = transactionHashes
 	block.Header.TxTree = calcTxTree(block.Transactions)
@@ -250,7 +254,7 @@ func (chain *blockChain) GenerateBlock(bh types.BlockHeader) *types.Block {
 // -1，验证失败
 // 1 无法验证（缺少交易，已异步向网络模块请求）
 // 2 无法验证（前一块在链上不存存在）
-func (chain *blockChain) VerifyBlock(bh types.BlockHeader) ([]common.Hash, int8) {
+func (chain *blockChain) VerifyBlock(bh types.BlockHeader) ([]common.Hashes, int8) {
 	chain.lock.Lock("VerifyCastingBlock")
 	defer chain.lock.Unlock("VerifyCastingBlock")
 
@@ -513,7 +517,7 @@ func (chain *blockChain) getAccountDBByHeight(height uint64) (*account.AccountDB
 	return account.NewAccountDB(header.StateTree, chain.stateDB)
 }
 
-func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList []common.Hash) ([]*types.Transaction, []common.Hash, error) {
+func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList []common.Hashes) ([]*types.Transaction, []common.Hashes, error) {
 	if nil == txHashList || 0 == len(txHashList) {
 		return nil, nil, ErrNil
 	}
@@ -525,13 +529,13 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 	}
 
 	txs := make([]*types.Transaction, 0)
-	need := make([]common.Hash, 0)
+	need := make([]common.Hashes, 0)
 	var err error
 	for _, hash := range txHashList {
 		var tx *types.Transaction
 		if verifiedTxs != nil {
 			for _, verifiedTx := range verifiedTxs {
-				if verifiedTx.Hash == hash {
+				if verifiedTx.Hash == hash[0] && verifiedTx.SubHash == hash[1] {
 					tx = verifiedTx
 					break
 				}
@@ -539,10 +543,10 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 		}
 
 		if tx == nil {
-			tx, err = chain.transactionPool.GetTransaction(hash)
+			tx, err = chain.transactionPool.GetTransaction(hash[0])
 		}
 
-		if tx != nil {
+		if tx != nil && tx.SubHash == hash[1] {
 			txs = append(txs, tx)
 		} else {
 			need = append(need, hash)

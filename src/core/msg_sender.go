@@ -13,7 +13,7 @@ import (
 )
 
 type transactionRequestMessage struct {
-	TransactionHashes []common.Hash
+	TransactionHashes []common.Hashes
 	CurrentBlockHash  common.Hash
 	BlockHeight       uint64
 	BlockPv           *big.Int
@@ -92,9 +92,13 @@ func sendBlock(targetId string, block *types.Block, isLastBlock bool) {
 }
 
 func marshalTransactionRequestMessage(m *transactionRequestMessage) ([]byte, error) {
-	txHashes := make([][]byte, 0)
+	txHashes := make([]*middleware_pb.TransactionHash, 0)
 	for _, txHash := range m.TransactionHashes {
-		txHashes = append(txHashes, txHash.Bytes())
+		hashes := &middleware_pb.TransactionHash{}
+		hashes.Hash = txHash[0].Bytes()
+		hashes.SubHash = txHash[1].Bytes()
+		txHashes = append(txHashes, hashes)
+
 	}
 
 	currentBlockHash := m.CurrentBlockHash.Bytes()

@@ -514,7 +514,7 @@ func (api *GtasAPI) BlockReceipts(h string) (*Result, error) {
 	}
 	receipts := make([]*types.Receipt, len(bh.Transactions))
 	for i, tx := range bh.Transactions {
-		wrapper := chain.GetTransactionPool().GetExecuted(tx)
+		wrapper := chain.GetTransactionPool().GetExecuted(tx[0])
 		if wrapper != nil {
 			receipts[i] = wrapper.Receipt
 		}

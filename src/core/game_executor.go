@@ -346,7 +346,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 }
 
 func (executor *GameExecutor) sendTransaction(trans *types.Transaction) error {
-	//trans.SubHash = trans.GenSubHash()
+	trans.SubHash = trans.GenSubHash()
 	if ok, err := executor.chain.GetTransactionPool().AddTransaction(trans); err != nil || !ok {
 		if nil != common.DefaultLogger {
 			common.DefaultLogger.Errorf("AddTransaction not ok or error:%s", err.Error())

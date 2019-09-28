@@ -116,6 +116,7 @@ type Transaction struct {
 	ExtraData       string // 在rocketProtocol里，用于转账。包括余额转账、FT转账、NFT转账
 	ExtraDataType   int32
 	SubTransactions []string // 用于存储状态机rpc调用的交易数据
+	SubHash         common.Hash
 
 	Hash common.Hash
 	Sign *common.Sign
@@ -151,6 +152,35 @@ func (tx *Transaction) GenHash() common.Hash {
 		buffer.Write([]byte(tx.Time))
 	}
 	return common.BytesToHash(common.Sha256(buffer.Bytes()))
+}
+
+func (tx *Transaction) GenSubHash() common.Hash {
+	if nil == tx {
+		return common.Hash{}
+	}
+
+	buffer := bytes.Buffer{}
+	data, _ := json.Marshal(tx.SubTransactions)
+	buffer.Write(data)
+
+	return common.BytesToHash(common.Sha256(buffer.Bytes()))
+}
+
+func (tx *Transaction) GenHashes() common.Hashes {
+	if nil == tx {
+		return common.Hashes{}
+	}
+
+	result := common.Hashes{}
+	result[0] = tx.Hash
+
+	if common.EmptyHash(tx.SubHash) {
+		result[1] = tx.GenSubHash()
+	} else {
+		result[1] = tx.SubHash
+	}
+
+	return result
 }
 
 type Transactions []*Transaction
@@ -201,8 +231,8 @@ type BlockHeader struct {
 	Signature    []byte      // 组签名
 	Nonce        uint64      //盐
 	RequestIds   map[string]uint64
-	Transactions []common.Hash // 交易集哈希列表
-	TxTree       common.Hash   // 交易默克尔树根hash
+	Transactions []common.Hashes // 交易集哈希列表
+	TxTree       common.Hash     // 交易默克尔树根hash
 	ReceiptTree  common.Hash
 	StateTree    common.Hash
 	ExtraData    []byte
@@ -222,8 +252,8 @@ type header struct {
 	GroupId      []byte      //组ID，groupsig.ID的二进制表示
 	Nonce        uint64      //盐
 	RequestId    map[string]uint64
-	Transactions []common.Hash // 交易集哈希列表
-	TxTree       common.Hash   // 交易默克尔树根hash
+	Transactions []common.Hashes // 交易集哈希列表
+	TxTree       common.Hash     // 交易默克尔树根hash
 	ReceiptTree  common.Hash
 	StateTree    common.Hash
 	ExtraData    []byte

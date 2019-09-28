@@ -244,3 +244,10 @@ func (h UnprefixedHash) MarshalText() ([]byte, error) {
 
 type Hash256 Hash
 type StorageSize float64
+
+type Hashes [2]Hash
+func (h Hashes) ShortS() string {
+	str := fmt.Sprintf("%s:%s", h[0].Hex(), h[1].Hex())
+	return ShortHex12(str)
+}
+

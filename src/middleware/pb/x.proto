@@ -37,11 +37,13 @@ message Transaction{
     optional string SocketRequestId = 12;
 
     repeated string SubTransactions = 13;
+
+    optional bytes SubHash  = 14 ;
 }
 
 message TransactionRequestMessage{
 
-    repeated bytes TransactionHashes = 1;
+    repeated TransactionHash TransactionHashes = 1;
 
     required bytes CurrentBlockHash = 2;
 
@@ -92,7 +94,7 @@ message BlockHeader{
 
      optional uint64 Nonce = 11;
 
-     optional Hashes transactions = 12;
+     repeated TransactionHash transactions = 12;
 
      optional bytes TxTree  = 13 ;
 
@@ -109,6 +111,11 @@ message BlockHeader{
      optional Hashes EvictedTxs = 19;
 
      optional bytes RequestIds = 20;
+}
+
+message TransactionHash{
+    optional bytes hash = 1;
+    optional bytes subHash = 2;
 }
 
 message BlockBody{

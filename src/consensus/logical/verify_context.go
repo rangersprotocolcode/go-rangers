@@ -332,7 +332,7 @@ func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.Sig
 
 //（网络接收）新到交易集通知
 //返回不再缺失交易的QN槽列表
-func (vc *VerifyContext) AcceptTrans(slot *SlotContext, ths []common.Hash) int8 {
+func (vc *VerifyContext) AcceptTrans(slot *SlotContext, ths []common.Hashes) int8 {
 
 	if !slot.IsValid() {
 		return TRANS_INVALID_SLOT

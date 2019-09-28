@@ -163,9 +163,13 @@ func unMarshalTransactionRequestMessage(b []byte) (*transactionRequestMessage, e
 		return nil, e
 	}
 
-	txHashes := make([]common.Hash, 0)
+	txHashes := make([]common.Hashes, 0)
 	for _, txHash := range m.TransactionHashes {
-		txHashes = append(txHashes, common.BytesToHash(txHash))
+		hashes:=common.Hashes{}
+		hashes[0] = common.BytesToHash(txHash.Hash)
+		hashes[1] = common.BytesToHash(txHash.SubHash)
+
+		txHashes = append(txHashes, hashes)
 	}
 
 	currentBlockHash := common.BytesToHash(m.CurrentBlockHash)

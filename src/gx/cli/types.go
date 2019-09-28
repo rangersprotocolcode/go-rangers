@@ -119,31 +119,31 @@ type PageObjects struct {
 }
 
 type Block struct {
-	Height      uint64        `json:"height"`
-	Hash        common.Hash   `json:"hash"`
-	PreHash     common.Hash   `json:"pre_hash"`
-	CurTime     time.Time     `json:"cur_time"`
-	PreTime     time.Time     `json:"pre_time"`
-	Castor      groupsig.ID   `json:"castor"`
-	GroupID     groupsig.ID   `json:"group_id"`
-	Prove       *big.Int      `json:"prove"`
-	TotalQN     uint64        `json:"total_qn"`
-	Qn          uint64        `json:"qn"`
-	Txs         []common.Hash `json:"transactions"`
-	TxNum       uint64        `json:"txs"`
-	StateRoot   common.Hash   `json:"state_root"`
-	TxRoot      common.Hash   `json:"tx_root"`
-	ReceiptRoot common.Hash   `json:"receipt_root"`
-	ProveRoot   common.Hash   `json:"prove_root"`
-	Random      string        `json:"random"`
+	Height      uint64          `json:"height"`
+	Hash        common.Hash     `json:"hash"`
+	PreHash     common.Hash     `json:"pre_hash"`
+	CurTime     time.Time       `json:"cur_time"`
+	PreTime     time.Time       `json:"pre_time"`
+	Castor      groupsig.ID     `json:"castor"`
+	GroupID     groupsig.ID     `json:"group_id"`
+	Prove       *big.Int        `json:"prove"`
+	TotalQN     uint64          `json:"total_qn"`
+	Qn          uint64          `json:"qn"`
+	Txs         []common.Hashes `json:"transactions"`
+	TxNum       uint64          `json:"txs"`
+	StateRoot   common.Hash     `json:"state_root"`
+	TxRoot      common.Hash     `json:"tx_root"`
+	ReceiptRoot common.Hash     `json:"receipt_root"`
+	ProveRoot   common.Hash     `json:"prove_root"`
+	Random      string          `json:"random"`
 }
 
 type BlockDetail struct {
 	Block
 	//Signature groupsig.Signature `json:"signature"`
 	//Random 	groupsig.Signature `json:"random"`
-	Trans        []Transaction        `json:"trans"`
-	PreTotalQN   uint64               `json:"pre_total_qn"`
+	Trans      []Transaction `json:"trans"`
+	PreTotalQN uint64        `json:"pre_total_qn"`
 }
 
 type BlockReceipt struct {
@@ -167,14 +167,13 @@ type Group struct {
 	Members       []string    `json:"members"`
 }
 
-
 type Transaction struct {
 	Data string `json:"data"`
 
-	Nonce  uint64          `json:"nonce"`
+	Nonce  uint64 `json:"nonce"`
 	Source string `json:"source"`
-	Target string          `json:"target"`
-	Type   int32           `json:"type"`
+	Target string `json:"target"`
+	Type   int32  `json:"type"`
 
 	Hash common.Hash `json:"hash"`
 

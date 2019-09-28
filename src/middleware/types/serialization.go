@@ -178,7 +178,7 @@ func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 	transaction := Transaction{Data: data, Nonce: *t.Nonce, RequestId: *t.RequestId, Source: source,
 		Target: target, Hash: common.BytesToHash(t.Hash),
 		ExtraData: string(t.ExtraData), ExtraDataType: *t.ExtraDataType, Type: *t.Type, Sign: sign,
-		Time: *t.Time, SocketRequestId: socketRequestId, SubTransactions: subTransactions}
+		Time: *t.Time, SocketRequestId: socketRequestId, SubTransactions: subTransactions, SubHash: common.BytesToHash(t.SubHash)}
 
 	return transaction
 }
@@ -200,12 +200,15 @@ func PbToBlockHeader(h *middleware_pb.BlockHeader) *BlockHeader {
 		return nil
 	}
 	hashBytes := h.Transactions
-	hashes := make([]common.Hash, 0, len(hashBytes.Hashes))
+	hashes := make([]common.Hashes, 0, len(hashBytes))
 
 	if hashBytes != nil {
-		for _, hashByte := range hashBytes.Hashes {
-			hash := common.BytesToHash(hashByte)
+		for _, hashByte := range hashBytes {
+			hash := common.Hashes{}
+			hash[0] = common.BytesToHash(hashByte.Hash)
+			hash[1] = common.BytesToHash(hashByte.SubHash)
 			hashes = append(hashes, hash)
+
 		}
 	}
 
@@ -346,7 +349,7 @@ func transactionToPb(t *Transaction) *middleware_pb.Transaction {
 	transaction := middleware_pb.Transaction{Data: data, Nonce: &t.Nonce, RequestId: &t.RequestId, Source: source,
 		Target: target, Hash: t.Hash.Bytes(),
 		ExtraData: []byte(t.ExtraData), ExtraDataType: &t.ExtraDataType, Type: &t.Type, Sign: sign,
-		Time: &t.Time, SubTransactions: t.SubTransactions}
+		Time: &t.Time, SubTransactions: t.SubTransactions, SubHash: t.SubHash.Bytes()}
 	return &transaction
 }
 
@@ -364,14 +367,17 @@ func TransactionsToPb(txs []*Transaction) []*middleware_pb.Transaction {
 
 func BlockHeaderToPb(h *BlockHeader) *middleware_pb.BlockHeader {
 	hashes := h.Transactions
-	hashBytes := make([][]byte, 0)
+	txHashes := make([]*middleware_pb.TransactionHash, 0)
 
 	if hashes != nil {
 		for _, hash := range hashes {
-			hashBytes = append(hashBytes, hash.Bytes())
+			txHash := &middleware_pb.TransactionHash{}
+			txHash.Hash = hash[0].Bytes()
+			txHash.SubHash = hash[1].Bytes()
+			txHashes = append(txHashes, txHash)
 		}
 	}
-	txHashes := middleware_pb.Hashes{Hashes: hashBytes}
+
 	hashes2 := h.EvictedTxs
 	hashBytes2 := make([][]byte, 0)
 
@@ -402,7 +408,7 @@ func BlockHeaderToPb(h *BlockHeader) *middleware_pb.BlockHeader {
 
 	header := middleware_pb.BlockHeader{Hash: h.Hash.Bytes(), Height: &h.Height, PreHash: h.PreHash.Bytes(), PreTime: preTime,
 		ProveValue: proveValueByte, CurTime: curTime, Castor: h.Castor, GroupId: h.GroupId, Signature: h.Signature,
-		Nonce: &h.Nonce, Transactions: &txHashes, TxTree: h.TxTree.Bytes(), ReceiptTree: h.ReceiptTree.Bytes(), StateTree: h.StateTree.Bytes(),
+		Nonce: &h.Nonce, Transactions: txHashes, TxTree: h.TxTree.Bytes(), ReceiptTree: h.ReceiptTree.Bytes(), StateTree: h.StateTree.Bytes(),
 		ExtraData: h.ExtraData, TotalQN: &h.TotalQN, Random: h.Random, ProveRoot: h.ProveRoot.Bytes(), EvictedTxs: &evictedTxs}
 
 	header.RequestIds, _ = json.Marshal(h.RequestIds)

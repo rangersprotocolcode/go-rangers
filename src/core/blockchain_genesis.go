@@ -54,7 +54,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 		CurTime:      time.Date(2018, 6, 14, 10, 0, 0, 0, time.Local),
 		ProveValue:   pv,
 		TotalQN:      0,
-		Transactions: make([]common.Hash, 0), //important!!
+		Transactions: make([]common.Hashes, 0), //important!!
 		EvictedTxs:   make([]common.Hash, 0), //important!!
 		Nonce:        ChainDataVersion,
 	}
