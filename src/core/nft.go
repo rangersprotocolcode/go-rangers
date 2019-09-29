@@ -39,6 +39,13 @@ func (self *NFTManager) updateNFTSet(nftSet *types.NFTSet, accountDB *account.Ac
 // 获取NFTSet信息
 // 状态机&客户端(钱包)调用
 func (self *NFTManager) GetNFTSet(setId string, accountDB *account.AccountDB) *types.NFTSet {
+	self.lock.RLock()
+	defer self.lock.RUnlock()
+
+	return self.getNFTSet(setId, accountDB)
+}
+
+func (self *NFTManager) getNFTSet(setId string, accountDB *account.AccountDB) *types.NFTSet {
 	valueByte := accountDB.GetData(common.NFTSetAddress, []byte(setId))
 	if nil == valueByte || 0 == len(valueByte) {
 		return nil
@@ -74,7 +81,6 @@ func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string
 		MaxSupply:  maxSupply,
 		CreateTime: createTime,
 	}
-	nftSet.OccupiedID = make(map[string]common.Address, 0)
 
 	self.updateNFTSet(nftSet, accountDB)
 	return "nft publish successful", true, nftSet
@@ -83,12 +89,15 @@ func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string
 // L2创建NFT
 // 状态机调用
 func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner common.Address, accountDB *account.AccountDB) (string, bool) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
 	if 0 == len(setId) || 0 == len(id) {
 		return "setId and id cannot be null", false
 	}
 
 	// 检查setId是否存在
-	nftSet := self.GetNFTSet(setId, accountDB)
+	nftSet := self.getNFTSet(setId, accountDB)
 	if nil == nftSet || nftSet.Owner != appId {
 		return "wrong setId or not setOwner", false
 	}
@@ -140,7 +149,7 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 // 状态机&客户端(钱包)调用
 func (self *NFTManager) GetNFT(setId string, id string, accountDB *account.AccountDB) *types.NFT {
 	// 检查setId是否存在
-	nftSet := self.GetNFTSet(setId, accountDB)
+	nftSet := self.getNFTSet(setId, accountDB)
 	if nil == nftSet {
 		return nil
 	}
@@ -180,7 +189,7 @@ func (self *NFTManager) GetNFTListByAddress(address common.Address, appId string
 func (self *NFTManager) GetNFTOwner(setId, id string, accountDB *account.AccountDB) *common.Address {
 	// 检查setId是否存在
 	nftSet := self.GetNFTSet(setId, accountDB)
-	if nil == nftSet {
+	if nil == nftSet || nil == nftSet.OccupiedID {
 		return nil
 	}
 
@@ -226,12 +235,18 @@ func (self *NFTManager) Transfer(appId, setId, id string, owner, newOwner common
 
 	// 修改数据
 	nft.Owner = newOwner.GetHexString()
-	nftSet := self.GetNFTSet(setId, accountDB)
-	nftSet.ChangeOwner(id, newOwner)
-	self.updateNFTSet(nftSet, accountDB)
+	if accountDB.AddNFTByGameId(newOwner, appId, nft) && accountDB.RemoveNFTByGameId(owner, appId, nft.SetID, nft.ID) {
+		nftSet := self.GetNFTSet(setId, accountDB)
+		nftSet.ChangeOwner(id, newOwner)
+		self.updateNFTSet(nftSet, accountDB)
+
+		// 通知本状态机
+		return "nft transfer successful", true
+	}
 
 	// 通知本状态机
-	return "nft transfer successful", true
+	return "nft transfer fail", false
+
 }
 
 // NFT 穿梭
