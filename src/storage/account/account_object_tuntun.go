@@ -117,6 +117,7 @@ func (self *accountObject) AddNFTByGameId(gameId string, nft *types.NFT) bool {
 	if nil == nft {
 		return false
 	}
+
 	self.checkAndCreate(gameId)
 	nftMaps := self.data.GameData.GetNFTMaps(gameId)
 	if nftMaps.GetNFT(nft.SetID, nft.ID) != nil {
@@ -130,7 +131,12 @@ func (self *accountObject) AddNFTByGameId(gameId string, nft *types.NFT) bool {
 		setId:   nft.SetID,
 	}
 	self.db.transitions = append(self.db.transitions, change)
-	return nftMaps.SetNFT(nft)
+	ok := nftMaps.SetNFT(nft)
+	if ok {
+		self.callback()
+	}
+
+	return ok
 }
 
 func (self *accountObject) ApproveNFT(gameId, setId, id, renter string) bool {
@@ -148,6 +154,8 @@ func (self *accountObject) ApproveNFT(gameId, setId, id, renter string) bool {
 	}
 	self.db.transitions = append(self.db.transitions, change)
 	nft.Renter = renter
+
+	self.callback()
 	return true
 }
 
