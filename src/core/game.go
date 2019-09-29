@@ -93,12 +93,12 @@ func GetAllNFTBySetId(source string, setId string) string {
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
 	nftList := NFTManagerInstance.GetNFTListByAddress(common.HexToAddress(source), "", accountDB)
 
-	result := make([]types.NFT, 0)
+	result := make([]string, 0)
 
 	if 0 != len(nftList) {
 		for _, nft := range nftList {
 			if nft.SetID == setId {
-				result = append(result, *nft)
+				result = append(result, nft.ToJSONString())
 			}
 		}
 	}
