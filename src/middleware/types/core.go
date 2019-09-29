@@ -575,5 +575,6 @@ func (object *JSONObject) TOJSONString() string {
 }
 
 func ReplaceBigInt(one, other interface{}) interface{} {
-	return other
+	bigInt:= other.(*big.Int)
+	return strconv.FormatFloat(float64(bigInt.Int64())/1000000000, 'f', -1, 64)
 }
