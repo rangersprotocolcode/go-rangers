@@ -110,7 +110,10 @@ func GetAllNFTBySetId(source string, setId string) string {
 func GetNFTSet(setId string) string {
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
 	nftSet := NFTManagerInstance.GetNFTSet(setId, accountDB)
-	bytes, _ := json.Marshal(nftSet)
+	bytes, err := json.Marshal(nftSet)
+	if err != nil {
+		logger.Errorf("Json marshal nft set error:%s", err.Error())
+	}
 	return string(bytes)
 }
 
