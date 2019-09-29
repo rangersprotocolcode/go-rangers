@@ -557,14 +557,7 @@ func (object *JSONObject) Merge(target *JSONObject, merge func(one, other interf
 
 	for key, value := range target.data {
 		thisValue := object.data[key]
-		newValue := value
-		if nil != thisValue {
-			newValue = merge(thisValue, value)
-		}
-
-		if nil != newValue {
-			object.Put(key, newValue)
-		}
+		object.Put(key, merge(thisValue, value))
 	}
 }
 
@@ -575,6 +568,6 @@ func (object *JSONObject) TOJSONString() string {
 }
 
 func ReplaceBigInt(one, other interface{}) interface{} {
-	bigInt:= other.(*big.Int)
+	bigInt := other.(*big.Int)
 	return strconv.FormatFloat(float64(bigInt.Int64())/1000000000, 'f', -1, 64)
 }
