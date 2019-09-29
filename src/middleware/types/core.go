@@ -573,15 +573,6 @@ func (object *JSONObject) TOJSONString() string {
 	return string(dataBytes)
 }
 
-func BigIntMerge(one, other interface{}) interface{} {
-	intOne, ok := one.(*big.Int)
-	if !ok {
-		return nil
-	}
-	intTwo, ok := other.(*big.Int)
-	if !ok {
-		return nil
-	}
-
-	return intOne.Add(intOne, intTwo)
+func ReplaceBigInt(one, other interface{}) interface{} {
+	return other
 }

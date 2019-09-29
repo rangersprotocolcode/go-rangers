@@ -22,7 +22,18 @@ func TestJSONObject_Merge(t *testing.T) {
 	obj2.Put("1", big.NewInt(100))
 	fmt.Println(obj2.TOJSONString())
 
-	obj.Merge(&obj2, BigIntMerge)
+	obj.Merge(&obj2, ReplaceBigInt)
 	fmt.Println(obj.TOJSONString())
 	fmt.Println(obj2.TOJSONString())
+}
+
+func TestJSONObject_Put2(t *testing.T) {
+	obj := NewJSONObject()
+	obj.Put("1", big.NewInt(10))
+
+	mobj := NewJSONObject()
+	mobj.Put("ft",obj.TOJSONString())
+
+	fmt.Println(mobj.TOJSONString())
+	fmt.Println(mobj.Remove("ft"))
 }

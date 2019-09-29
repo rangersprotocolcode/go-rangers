@@ -209,7 +209,7 @@ func changeAssets(gameId string, source string, targets map[string]types.Transfe
 			logger.Debugf("Change coin failed!")
 			return "", false
 		} else {
-			responseCoin.Merge(left, types.BigIntMerge)
+			responseCoin.Merge(left, types.ReplaceBigInt)
 		}
 
 		// 转FT
@@ -220,7 +220,7 @@ func changeAssets(gameId string, source string, targets map[string]types.Transfe
 				logger.Debugf("Change ft failed!")
 				return "", false
 			} else {
-				responseFT.Merge(left, types.BigIntMerge)
+				responseFT.Merge(left, types.ReplaceBigInt)
 			}
 		}
 
@@ -237,10 +237,10 @@ func changeAssets(gameId string, source string, targets map[string]types.Transfe
 
 	response := types.NewJSONObject()
 	if !responseCoin.IsEmpty() {
-		response.Put("coin", responseCoin)
+		response.Put("coin", responseCoin.TOJSONString())
 	}
 	if !responseFT.IsEmpty() {
-		response.Put("ft", responseFT)
+		response.Put("ft", responseFT.TOJSONString())
 	}
 	if 0 != len(responseNFT) {
 		data, _ := json.Marshal(responseNFT)
