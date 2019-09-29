@@ -213,6 +213,9 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		case types.TransactionTypeMintFT:
 			success = MintFT(accountdb, transaction)
 			break
+		case types.TransactionTypeMintNFT:
+			success = MintNFT(accountdb, transaction)
+			break
 		case types.TransactionTypeWithdraw:
 			_, success = Withdraw(accountdb, transaction, true)
 			break

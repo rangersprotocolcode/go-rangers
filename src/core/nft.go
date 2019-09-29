@@ -89,8 +89,8 @@ func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner
 
 	// 检查setId是否存在
 	nftSet := self.GetNFTSet(setId, accountDB)
-	if nil == nftSet {
-		return "wrong setId", false
+	if nil == nftSet || nftSet.Owner != appId {
+		return "wrong setId or not setOwner", false
 	}
 
 	return self.GenerateNFT(nftSet, appId, setId, id, data, appId, createTime, owner, accountDB)

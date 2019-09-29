@@ -378,3 +378,12 @@ func ShuttleNFT(db *account.AccountDB, tx *types.Transaction) bool {
 
 	return ok
 }
+
+func MintNFT(accountdb *account.AccountDB, tx *types.Transaction) bool {
+	data := make(map[string]string)
+	json.Unmarshal([]byte(tx.Data), &data)
+
+	_, ok := NFTManagerInstance.MintNFT(tx.Source, data["setId"], data["id"], data["data"], data["createTime"], common.HexToAddress(data["target"]), accountdb)
+	return ok
+
+}

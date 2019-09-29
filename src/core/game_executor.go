@@ -322,6 +322,16 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 		}
 		break
 
+	case types.TransactionTypeMintNFT:
+		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
+		flag := MintNFT(accountDB, &txRaw)
+		if flag {
+			result = "success"
+		} else {
+			result = "fail"
+		}
+		break
+
 	case types.TransactionTypeShuttleNFT:
 		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
 		ok := ShuttleNFT(accountDB, &txRaw)

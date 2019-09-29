@@ -99,6 +99,7 @@ const (
 	TransactionTypePublishNFTSet = 111 // 用户发NFTSet
 	TransactionTypeShuttleNFT    = 112 // 用户穿梭NFT
 	TransactionTypeMintFT        = 116 // mintFT
+	TransactionTypeMintNFT       = 117 // mintFT
 
 	// 从rocket_connector来的消息
 	TransactionTypeCoinDepositAck = 201 // 充值
