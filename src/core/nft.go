@@ -124,6 +124,10 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 	//分配NFT
 	if accountDB.AddNFTByGameId(owner, appId, nft) {
 		// 修改NFTSet数据
+		if nil == nftSet.OccupiedID {
+			nftSet.OccupiedID = make(map[string]common.Address, 0)
+		}
+
 		nftSet.OccupiedID[id] = owner
 		self.updateNFTSet(nftSet, accountDB)
 		return "nft mint successful", true
