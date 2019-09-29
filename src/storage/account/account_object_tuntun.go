@@ -159,6 +159,23 @@ func (self *accountObject) ApproveNFT(gameId, setId, id, renter string) bool {
 	return true
 }
 
+func (self *accountObject) RemoveNFT(gameId, setId, id string) bool {
+	data := self.data.GameData.GetNFTMaps(gameId)
+	if nil == data {
+		return false
+	}
+
+	nft := data.Delete(setId, id)
+	change := tuntunRemoveNFTChange{
+		nft:     nft,
+		account: &self.address,
+		gameId:  gameId,
+	}
+	self.db.transitions = append(self.db.transitions, change)
+	self.callback()
+	return true
+}
+
 // 更新nft属性值
 func (self *accountObject) SetNFTValueByGameId(gameId, setId, id, value string) bool {
 	data := self.data.GameData.GetNFTMaps(gameId)
@@ -192,17 +209,12 @@ func (self *accountObject) setNFTByGameId(gameId, setId, id, value string) bool 
 		return false
 	}
 
-	if 0 == len(value) {
-		data.Delete(setId, id)
-	} else {
-		nftData := data.GetNFT(setId, id)
-		if nil != nftData {
-			nftData.SetData(value, gameId)
-		}
-
+	nftData := data.GetNFT(setId, id)
+	if nil != nftData {
+		nftData.SetData(value, gameId)
+		self.callback()
 	}
 
-	self.callback()
 	return true
 }
 

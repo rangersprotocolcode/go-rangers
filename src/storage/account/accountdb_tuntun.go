@@ -133,7 +133,7 @@ func (self *AccountDB) SetNFTValueByGameId(addr common.Address, appId, setId, id
 
 func (self *AccountDB) RemoveNFTByGameId(addr common.Address, appId, setId, id string) bool {
 	stateObject := self.getOrNewAccountObject(addr)
-	return stateObject.SetNFTValueByGameId(appId, setId, id, "")
+	return stateObject.RemoveNFT(appId, setId, id)
 }
 
 func (self *AccountDB) ApproveNFT(owner common.Address, appId, setId, id, renter string) bool {

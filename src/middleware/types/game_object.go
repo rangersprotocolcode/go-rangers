@@ -124,7 +124,7 @@ func (self *NFTMap) genID(setId, id string) string {
 	return fmt.Sprintf("%s-%s", setId, id)
 }
 
-func (self *NFTMap) Delete(setId, id string) {
+func (self *NFTMap) Delete(setId, id string) *NFT {
 	name := self.genID(setId, id)
 	index := -1
 	for i, key := range self.NFTIDList {
@@ -135,11 +135,14 @@ func (self *NFTMap) Delete(setId, id string) {
 	}
 
 	if -1 == index {
-		return
+		return nil
 	}
+	nft := self.NFTList[index]
 
 	self.NFTList = append(self.NFTList[:index], self.NFTList[index+1:]...)
 	self.NFTIDList = append(self.NFTIDList[:index], self.NFTIDList[index+1:]...)
+
+	return nft
 }
 
 func (self *NFTMap) GetNFT(setId, id string) *NFT {

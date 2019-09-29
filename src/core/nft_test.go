@@ -5,6 +5,7 @@ import (
 	"x/src/common"
 	"x/src/storage/account"
 	"x/src/middleware/db"
+	"fmt"
 )
 
 func TestNFTManager_MintNFT(t *testing.T) {
@@ -31,7 +32,8 @@ func TestNFTManager_MintNFT(t *testing.T) {
 	appId := "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"
 
 	// 发行
-	_, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, setId, id, "pppp", creator, "0", common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"), accountdb)
+	owner := common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54")
+	_, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, setId, id, "pppp", creator, "0", owner, accountdb)
 	if !ok {
 		t.Fatalf("fail to mint")
 	}
@@ -58,8 +60,31 @@ func TestNFTManager_MintNFT(t *testing.T) {
 	nft := NFTManagerInstance.GetNFT(setId, id, accountdb)
 	if nil == nft || nft.SetID != setId {
 		t.Fatalf("fail to get nft after mint")
-	} else {
-		t.Fatalf("result: %s", nft.ToJSONString())
 	}
 
+	fmt.Println(accountdb.RemoveNFTByGameId(owner, appId, setId, id))
+
+	root, err = accountdb.Commit(true)
+	if nil != err {
+		t.Fatalf("fail to commit accountdb after mint")
+	}
+	err = triedb.TrieDB().Commit(root, true)
+	if nil != err {
+		t.Fatalf("fail to commit TrieDB after mint")
+	}
+
+	nft = NFTManagerInstance.GetNFT(setId, id, accountdb)
+	if nil != nft {
+		t.Fatalf("fail to RemoveNFTByGameId commit")
+	}
+
+	accountdb, err = account.NewAccountDB(root, triedb)
+	if nil != err {
+		t.Fatalf("fail to find accountdb after RemoveNFTByGameId")
+	}
+
+	nft = NFTManagerInstance.GetNFT(setId, id, accountdb)
+	if nil != nft {
+		t.Fatalf("fail to RemoveNFTByGameId")
+	}
 }

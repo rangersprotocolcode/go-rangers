@@ -3,6 +3,7 @@ package account
 import (
 	"x/src/common"
 	"math/big"
+	"x/src/middleware/types"
 )
 
 type (
@@ -38,6 +39,11 @@ type (
 		id      string
 		setId   string
 	}
+	tuntunRemoveNFTChange struct {
+		account *common.Address
+		gameId  string
+		nft     *types.NFT
+	}
 	createGameDataChange struct {
 		account *common.Address
 		gameId  string
@@ -53,8 +59,13 @@ func (ch tuntunNFTChange) undo(s *AccountDB) {
 func (ch createGameDataChange) undo(s *AccountDB) {
 	s.getAccountObject(*ch.account).data.GameData.Delete(ch.gameId)
 }
+
 func (ch tuntunAddNFTChange) undo(s *AccountDB) {
 	s.getAccountObject(*ch.account).data.GameData.GetNFTMaps(ch.gameId).Delete(ch.setId, ch.id)
+}
+
+func (ch tuntunRemoveNFTChange) undo(s *AccountDB) {
+	s.getAccountObject(*ch.account).data.GameData.GetNFTMaps(ch.gameId).SetNFT(ch.nft)
 }
 
 func (ch tuntunNFTApproveChange) undo(s *AccountDB) {
