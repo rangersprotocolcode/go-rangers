@@ -155,7 +155,7 @@ func (s *server) handleClientMessage(data []byte, userId string, nonce uint64, e
 
 	Logger.Debugf("Receive message from client.TxJson:%v", txJson)
 	tx := txJson.ToTransaction()
-	Logger.Debugf("Receive message from client.Tx:%v", tx)
+	Logger.Debugf("Receive message from client.Tx hash:%s", tx.Hash.String())
 
 	msg := notify.ClientTransactionMessage{Tx: tx, UserId: userId, Nonce: nonce}
 	notify.BUS.Publish(event, &msg)
