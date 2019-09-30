@@ -3,6 +3,8 @@ package account
 import (
 	"math/big"
 	"x/src/middleware/types"
+	"x/src/common"
+	"encoding/json"
 )
 
 func (self *accountObject) checkAndCreate(gameId string) {
@@ -160,12 +162,20 @@ func (self *accountObject) ApproveNFT(gameId, setId, id, renter string) bool {
 }
 
 func (self *accountObject) RemoveNFT(gameId, setId, id string) bool {
+	common.DefaultLogger.Debugf("Remove nft.gameId:%s,setId:%s,id:%s", gameId, setId, id)
 	data := self.data.GameData.GetNFTMaps(gameId)
 	if nil == data {
+		common.DefaultLogger.Debugf("Remove nft.get nil data")
 		return false
 	}
+	jsonBefore, _ := json.Marshal(data)
+	common.DefaultLogger.Debugf("before delete.data:%s", jsonBefore)
 
 	nft := data.Delete(setId, id)
+	jsonAfter, _ := json.Marshal(data)
+	common.DefaultLogger.Debugf("after delete.data:%s", jsonAfter)
+	common.DefaultLogger.Debugf("after delete.deleted nft:%v", nft)
+
 	change := tuntunRemoveNFTChange{
 		nft:     nft,
 		account: &self.address,

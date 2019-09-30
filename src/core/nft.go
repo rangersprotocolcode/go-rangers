@@ -222,11 +222,13 @@ func (self *NFTManager) BatchUpdateNFT(addr common.Address, appId, setId string,
 // NFT 迁移
 // 状态机&玩家(钱包)调用
 func (self *NFTManager) Transfer(appId, setId, id string, owner, newOwner common.Address, accountDB *account.AccountDB) (string, bool) {
+	txLogger.Debugf("Transfer nft.Appid:%s,setId:%s,id:%s,owner:%s,newOwner:%s", appId, setId, id, owner.String(), newOwner.String())
 	// 根据setId+id 查找nft
 	nft := accountDB.GetNFTById(owner, setId, id)
 	if nil == nft {
 		return fmt.Sprintf("nft is not existed. setId: %s, id: %s, owner: %s", setId, id, owner.String()), false
 	}
+	txLogger.Debugf("Transfer nft.Got nft:%v", nft)
 
 	// 判断nft是否可以被transfer
 	if nft.Status != 0 {
