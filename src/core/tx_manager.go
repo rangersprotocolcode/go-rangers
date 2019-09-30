@@ -30,7 +30,10 @@ func initTxManager() {
 }
 
 func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.AccountDB, tx *types.Transaction) error {
-	if nil == accountDB || nil == tx || 0 == len(gameId) {
+	//if nil == accountDB || nil == tx || 0 == len(gameId) {
+	//	return fmt.Errorf("no value")
+	//}
+	if nil == accountDB || nil == tx {
 		return fmt.Errorf("no value")
 	}
 
