@@ -121,3 +121,24 @@ func TestJSONWithDepositData(t *testing.T) {
 	}
 	fmt.Printf("unmarshal result:%v\n", a)
 }
+
+func TestJSONNFTID(t *testing.T) {
+	a := []types.NFTID{}
+	id1 := types.NFTID{Id: "1", SetId: "s1"}
+	//id2 := types.NFTID{Id: "2", SetId: "s2"}
+	a = append(a, id1)
+	//a = append(a, id2)
+
+	transferData := types.TransferData{NFT: a}
+	mm := make(map[string]types.TransferData, 0)
+	mm["address1"] = transferData
+	data, _ := json.Marshal(mm)
+	fmt.Printf("data:%s\n", data)
+
+	m2 := make(map[string]types.TransferData, 0)
+	err := json.Unmarshal([]byte(data), &m2)
+	if err != nil{
+		fmt.Printf("Unmarshal error:%s\n",err.Error())
+	}
+	fmt.Printf("m2:%v\n",m2)
+}

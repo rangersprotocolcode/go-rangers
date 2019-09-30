@@ -303,7 +303,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 
 	case types.TransactionTypePublishNFTSet:
 		appId := txRaw.Source
-		accountDB := AccountDBManagerInstance.GetAccountDB(appId, false)
+		accountDB := AccountDBManagerInstance.GetAccountDB(appId, true)
 		flag := PublishNFTSet(accountDB, &txRaw)
 		if flag {
 			result = txRaw.Data
