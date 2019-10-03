@@ -193,6 +193,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 	case types.TransactionTypeOperatorEvent:
 
 		gameId := txRaw.Target
+		isTransferOnly := 0 == len(gameId)
 		accountDB := AccountDBManagerInstance.GetAccountDB(gameId, true)
 
 		// 已经执行过了（入块时），则不用再执行了
@@ -230,9 +231,16 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 				result = "fail to transfer"
 				logger.Debugf("Transfer data unmarshal error:%s", err.Error())
 			} else {
-				response, ok := changeAssets(txRaw.Target, txRaw.Source, mm, accountDB)
+				snapshot := 0
+				if isTransferOnly {
+					snapshot = accountDB.Snapshot()
+				}
+				response, ok := changeAssets(txRaw.Source, mm, accountDB)
 				if !ok {
 					result = "fail to transfer"
+					if isTransferOnly {
+						accountDB.RevertToSnapshot(snapshot)
+					}
 					logger.Debugf("change balances  failed")
 				} else {
 					result = response
@@ -242,7 +250,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 
 		var outputMessage *types.OutputMessage
 		// 转账成功，调用状态机
-		if result != "fail to transfer" && len(txRaw.Data) != 0 {
+		if result != "fail to transfer" && !isTransferOnly && len(txRaw.Data) != 0 {
 			// 调用状态机
 			txRaw.SubTransactions = make([]types.UserData, 0)
 			outputMessage = statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)

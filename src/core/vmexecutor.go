@@ -55,7 +55,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 					success = false
 					break
 				}
-				_, ok := changeAssets(transaction.Target, transaction.Source, mm, accountdb)
+				_, ok := changeAssets(transaction.Source, mm, accountdb)
 				if !ok {
 					success = false
 					break
@@ -123,7 +123,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						// NFT
 						if user.Address == "TransferNFT" {
 							appId := user.Assets["appId"]
-							_, ok := NFTManagerInstance.Transfer(appId, user.Assets["setId"], user.Assets["id"], common.HexToAddress(appId), common.HexToAddress(user.Assets["target"]), accountdb)
+							_, ok := NFTManagerInstance.Transfer(user.Assets["setId"], user.Assets["id"], common.HexToAddress(appId), common.HexToAddress(user.Assets["target"]), accountdb)
 							if !ok {
 								success = false
 								break
@@ -180,12 +180,12 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 							break
 						}
 
-						address := common.HexToAddress(user.Address)
-						accountdb.SetNonce(address, 1)
+						//address := common.HexToAddress(user.Address)
+						//accountdb.SetNonce(address, 1)
 
 					}
 				}
-			} else {
+			} else if 0 != len(transaction.Target) {
 				// 本地没有执行过状态机(game_executor还没有收到消息)，则需要调用状态机
 				transaction.SubTransactions = make([]types.UserData, 0)
 				outputMessage := statemachine.Docker.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), transaction.Data)

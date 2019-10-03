@@ -75,7 +75,7 @@ func (api *GtasAPI) TransferNFT(appId, setId, id, target string) (*Result, error
 	}
 
 	accountDB := context.AccountDB
-	_, ok = core.NFTManagerInstance.Transfer(appId, setId, id, common.HexToAddress(appId), common.HexToAddress(target), accountDB)
+	_, ok = core.NFTManagerInstance.Transfer(setId, id, common.HexToAddress(appId), common.HexToAddress(target), accountDB)
 	if ok {
 		// 生成交易，上链 context.Tx.SubTransactions
 		userData := types.UserData{}

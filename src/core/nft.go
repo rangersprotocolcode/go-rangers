@@ -221,8 +221,8 @@ func (self *NFTManager) BatchUpdateNFT(addr common.Address, appId, setId string,
 
 // NFT 迁移
 // 状态机&玩家(钱包)调用
-func (self *NFTManager) Transfer(appId, setId, id string, owner, newOwner common.Address, accountDB *account.AccountDB) (string, bool) {
-	txLogger.Debugf("Transfer nft.Appid:%s,setId:%s,id:%s,owner:%s,newOwner:%s", appId, setId, id, owner.String(), newOwner.String())
+func (self *NFTManager) Transfer(setId, id string, owner, newOwner common.Address, accountDB *account.AccountDB) (string, bool) {
+	txLogger.Debugf("Transfer nft.setId:%s,id:%s,owner:%s,newOwner:%s", setId, id, owner.String(), newOwner.String())
 	// 根据setId+id 查找nft
 	nft := accountDB.GetNFTById(owner, setId, id)
 	if nil == nft {
@@ -237,7 +237,7 @@ func (self *NFTManager) Transfer(appId, setId, id string, owner, newOwner common
 
 	// 修改数据
 	nft.Owner = newOwner.GetHexString()
-	if accountDB.AddNFTByGameId(newOwner, appId, nft) && accountDB.RemoveNFTByGameId(owner, appId, nft.SetID, nft.ID) {
+	if accountDB.AddNFTByGameId(newOwner, nft.AppId, nft) && accountDB.RemoveNFTByGameId(owner, nft.AppId, nft.SetID, nft.ID) {
 		nftSet := self.GetNFTSet(setId, accountDB)
 		nftSet.ChangeOwner(id, newOwner)
 		self.updateNFTSet(nftSet, accountDB)

@@ -14,10 +14,10 @@ type TxManager struct {
 }
 
 type TxContext struct {
-	AccountDB    *account.AccountDB
-	Tx           *types.Transaction
-	snapshot     int
-	lock         *sync.Mutex
+	AccountDB *account.AccountDB
+	Tx        *types.Transaction
+	snapshot  int
+	lock      *sync.Mutex
 }
 
 var TxManagerInstance *TxManager
@@ -30,9 +30,6 @@ func initTxManager() {
 }
 
 func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.AccountDB, tx *types.Transaction) error {
-	//if nil == accountDB || nil == tx || 0 == len(gameId) {
-	//	return fmt.Errorf("no value")
-	//}
 	if nil == accountDB || nil == tx {
 		return fmt.Errorf("no value")
 	}
@@ -40,6 +37,11 @@ func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.Acc
 	// 已经执行过了
 	if GetBlockChain().GetTransactionPool().IsExisted(tx.Hash) {
 		return fmt.Errorf("isExisted")
+	}
+
+	// 如果gameId为空，则为纯转账场景，无须在此开事务
+	if 0 == len(gameId) {
+		return nil
 	}
 
 	context := manager.context[gameId]
@@ -67,10 +69,16 @@ func (manager *TxManager) GetContext(gameId string) *TxContext {
 }
 
 func (manager *TxManager) Commit(gameId string) {
+	if 0==len(gameId){
+		return
+	}
 	manager.clean(false, gameId)
 }
 
 func (manager *TxManager) RollBack(gameId string) {
+	if 0==len(gameId){
+		return
+	}
 	manager.clean(true, gameId)
 }
 

@@ -190,7 +190,7 @@ func convert(s string) *big.Int {
 // false 表示转账失败
 // 这里的转账包括货币、FT、NFT
 // 这里不处理事务。调用本方法之前自行处理事务
-func changeAssets(gameId string, source string, targets map[string]types.TransferData, accountdb *account.AccountDB) (string, bool) {
+func changeAssets(source string, targets map[string]types.TransferData, accountdb *account.AccountDB) (string, bool) {
 	sourceAddr := common.HexToAddress(source)
 
 	responseCoin := types.NewJSONObject()
@@ -228,7 +228,7 @@ func changeAssets(gameId string, source string, targets map[string]types.Transfe
 		}
 
 		// 转NFT
-		nftList, ok := transferNFT(transferData.NFT, sourceAddr, targetAddr, gameId, accountdb)
+		nftList, ok := transferNFT(transferData.NFT, sourceAddr, targetAddr, accountdb)
 		if !ok {
 			logger.Debugf("Change nft failed!")
 			return "", false
@@ -253,7 +253,7 @@ func changeAssets(gameId string, source string, targets map[string]types.Transfe
 	return response.TOJSONString(), true
 }
 
-func transferNFT(nftIDList []types.NFTID, source common.Address, target common.Address, appId string, db *account.AccountDB) ([]string, bool) {
+func transferNFT(nftIDList []types.NFTID, source common.Address, target common.Address, db *account.AccountDB) ([]string, bool) {
 	length := len(nftIDList)
 	if 0 == length {
 		return nil, true
@@ -261,7 +261,7 @@ func transferNFT(nftIDList []types.NFTID, source common.Address, target common.A
 
 	response := make([]string, length)
 	for _, id := range nftIDList {
-		_, flag := NFTManagerInstance.Transfer(appId, id.SetId, id.Id, source, target, db)
+		_, flag := NFTManagerInstance.Transfer(id.SetId, id.Id, source, target, db)
 		if !flag {
 			return nil, false
 		}
