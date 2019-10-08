@@ -13,7 +13,9 @@ import (
 
 func GetCoinBalance(source common.Address, ft string) string {
 	ftName := fmt.Sprintf("official-%s", ft)
+	logger.Debugf("Get coin balance before get balance.source:%s,ft:%s",source,ft)
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
+	logger.Debugf("Get coin balance after get balance.")
 	balance := accountDB.GetFT(source, ftName)
 	floatdata := float64(balance.Int64()) / 1000000000
 	return strconv.FormatFloat(floatdata, 'f', -1, 64)
