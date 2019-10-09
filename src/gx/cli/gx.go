@@ -82,7 +82,7 @@ func (gx *GX) Run() {
 	env := mineCmd.Flag("env", "the environment application run in").String()
 
 	//自定义网关
-	gateAddr := consoleCmd.Flag("gateaddr", "the gate addr").String()
+	gateAddr := mineCmd.Flag("gateaddr", "the gate addr").String()
 	command, err := app.Parse(os.Args[1:])
 	if err != nil {
 		kingpin.Fatalf("%s, try --help", err)
