@@ -81,6 +81,9 @@ func (gx *GX) Run() {
 	apply := mineCmd.Flag("apply", "apply heavy or light miner").String()
 	env := mineCmd.Flag("env", "the environment application run in").String()
 
+	//自定义网关
+	gateAddr := mineCmd.Flag("gateaddr", "the gate addr").String()
+
 	command, err := app.Parse(os.Args[1:])
 	if err != nil {
 		kingpin.Fatalf("%s, try --help", err)
@@ -111,7 +114,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(*instanceIndex, *apply, *keystore, *portRpc, *env)
+		gx.initMiner(*instanceIndex, *apply, *keystore, *portRpc, *env, *gateAddr)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc)
 			if err != nil {
@@ -123,7 +126,7 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port uint, env string) {
+func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port uint, env string, gateAddr string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	databaseValue := "d" + strconv.Itoa(instanceIndex)
@@ -152,7 +155,7 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 		panic("Init miner core init error:" + err.Error())
 	}
 
-	network.InitNetwork("0x"+common.Bytes2Hex(gx.account.Miner.ID[:]), cnet.MessageHandler, env)
+	network.InitNetwork("0x"+common.Bytes2Hex(gx.account.Miner.ID[:]), cnet.MessageHandler, env, gateAddr)
 
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
 	if !ok {
