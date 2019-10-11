@@ -281,7 +281,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 
 	case types.TransactionTypeWithdraw:
 		gameId := txRaw.Target
-		accountDB := AccountDBManagerInstance.GetAccountDB(gameId, false)
+		accountDB := AccountDBManagerInstance.GetAccountDB(gameId, true)
 
 		response, ok := Withdraw(accountDB, &txRaw, false)
 		if ok {
