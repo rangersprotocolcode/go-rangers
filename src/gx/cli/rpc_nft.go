@@ -207,6 +207,7 @@ func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol, createTime string,
 
 // NFT铸币
 func (api *GtasAPI) MintNFT(appId, setId, id, target, data, createTime string) (*Result, error) {
+	common.DefaultLogger.Debugf("Mint nft!appId:%s,setId:%s,id:%s,target:%s,data:%s,createTime:%s", appId, setId, id, target, data, createTime)
 	context, ok := api.checkTx(appId)
 	if !ok {
 		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
