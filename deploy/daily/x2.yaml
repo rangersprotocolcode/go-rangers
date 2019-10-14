@@ -11,7 +11,7 @@ services:
     type: "ETH"
 
   - priority: 1
-    game: "0xf677e4051eeff7a60598cc6419b982cdeef60b01"
+    game: "0x362beb806ab6067a5344665e71f09e5cc221b2a3"
     name: "mixmarvel2"
     image: "mixmarvel_image:latest"
     ports:
