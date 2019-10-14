@@ -5,7 +5,7 @@ services:
     name: "genesis2"
     image: "genesis_image:latest"
     ports:
-      - host: 7771
+      - host: 7772
         target: 8080
     detached: true
     type: "ETH"
