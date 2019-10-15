@@ -226,6 +226,7 @@ func (api *GtasAPI) MintNFT(appId, setId, id, target, data, createTime string) (
 		userData.Assets["id"] = id
 		userData.Assets["target"] = target
 		userData.Assets["data"] = data
+		userData.Assets["createTime"] = createTime
 
 		// 生成交易，上链
 		context.Tx.AppendSubTransaction(userData)
