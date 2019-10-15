@@ -127,6 +127,7 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 		Status:     0,
 		AppId:      appId,
 	}
+	common.DefaultLogger.Debugf("Create NFT!%v", nft)
 	nft.DataKey = make([]string, 0)
 	nft.DataValue = make([]string, 0)
 	if 0 != len(data) {

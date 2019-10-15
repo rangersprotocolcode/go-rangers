@@ -77,6 +77,7 @@ func GetNFTInfo(setId, id, appId string) string {
 	accountDB := AccountDBManagerInstance.GetAccountDB(appId, true)
 	nft := NFTManagerInstance.GetNFT(setId, id, accountDB)
 	if nil != nft {
+		common.DefaultLogger.Debugf("Got nft info:%v,", nft)
 		common.DefaultLogger.Debugf("Got nft info:%s,", nft.ToJSONString())
 		return nft.ToJSONString()
 	}
