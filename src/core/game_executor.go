@@ -241,7 +241,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 					if isTransferOnly {
 						accountDB.RevertToSnapshot(snapshot)
 					}
-					logger.Debugf("change balances  failed")
+					logger.Debugf("change balances failed")
 				} else {
 					result = response
 				}
