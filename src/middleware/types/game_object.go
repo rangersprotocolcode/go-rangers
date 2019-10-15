@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"x/src/common"
 	"encoding/json"
+	"strconv"
 )
 
 // NFT 数据结构综述
@@ -12,14 +13,13 @@ import (
 // GameData = map[string]*NFTMap key为gameId
 // NFTMap = map[string]*NFT key为nftId
 type NFTSet struct {
-	SetID       string `json:"setId,omitempty"`
-	Name        string `json:"name,omitempty"`
-	Symbol      string `json:"symbol,omitempty"`
-	TotalSupply uint   `json:"totalSupply,omitempty"`
-	MaxSupply   uint   `json:"maxSupply,omitempty"`
-	Creator     string `json:"creator,omitempty"`
-	Owner       string `json:"owner,omitempty"`
-	CreateTime  string `json:"createTime,omitempty"`
+	SetID      string `json:"setId,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Symbol     string `json:"symbol,omitempty"`
+	MaxSupply  string `json:"maxSupply,omitempty"`
+	Creator    string `json:"creator,omitempty"`
+	Owner      string `json:"owner,omitempty"`
+	CreateTime string `json:"createTime,omitempty"`
 
 	// 已经发行的NFTID及其拥有者
 	OccupiedID map[string]common.Address `json:"occupied,omitempty"`
@@ -91,6 +91,20 @@ func (self *NFT) SetData(data string, gameId string) {
 		self.DataValue[index] = data
 	}
 
+}
+
+func (self *NFTSet) ToJSONString() string {
+	nftSetMap := make(map[string]interface{}, 12)
+	nftSetMap["setId"] = self.SetID
+	nftSetMap["name"] = self.Name
+	nftSetMap["symbol"] = self.Symbol
+	nftSetMap["totalSupply"] = strconv.Itoa(len(self.OccupiedID))
+	nftSetMap["maxSupply"] = self.MaxSupply
+	nftSetMap["creator"] = self.Creator
+	nftSetMap["owner"] = self.Owner
+	nftSetMap["createTime"] = self.CreateTime
+	bytes, _ := json.Marshal(nftSetMap)
+	return string(bytes)
 }
 
 func (self *NFT) ToJSONString() string {
