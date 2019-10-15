@@ -174,7 +174,7 @@ func (api *GtasAPI) changeNFTStatus(appId, setId, id string, status int) (*Resul
 }
 
 // 发行NFTSet
-func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol, createTime string, maxSupply uint) (*Result, error) {
+func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol, createTime string, maxSupply string) (*Result, error) {
 	context, ok := api.checkTx(appId)
 	if !ok {
 		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
@@ -191,7 +191,7 @@ func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol, createTime string,
 		userData.Assets["setId"] = setId
 		userData.Assets["name"] = name
 		userData.Assets["symbol"] = symbol
-		userData.Assets["maxSupply"] = strconv.FormatInt(int64(maxSupply), 10)
+		userData.Assets["maxSupply"] = maxSupply
 		userData.Assets["appId"] = appId
 		userData.Assets["createTime"] = createTime
 
