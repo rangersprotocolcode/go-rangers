@@ -25,7 +25,7 @@ services:
     name: "sdk_demo_1"
     image: "sdk_demo_image:latest"
     ports:
-      - host: 100001
+      - host: 10001
         target: 80
     detached: true
     type: "ETH"
