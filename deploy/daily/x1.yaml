@@ -19,3 +19,13 @@ services:
         target: 8080
     detached: true
     type: "ETH"
+
+  - priority: 2
+    game: "0x69564f3eccc4aedabde33bd5cb350b9829deced1"
+    name: "sdk_demo_1"
+    image: "sdk_demo_image:latest"
+    ports:
+      - host: 100001
+        target: 80
+    detached: true
+    type: "ETH"
