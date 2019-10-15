@@ -110,13 +110,14 @@ func GetAllNFTBySetId(source string, setId string) string {
 }
 
 func GetNFTSet(setId string) string {
+	common.DefaultLogger.Debugf("Get nft set id:%s,", setId)
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
 	nftSet := NFTManagerInstance.GetNFTSet(setId, accountDB)
 	if nil != nftSet {
 		common.DefaultLogger.Debugf("Got nft set info:%s,", nftSet.ToJSONString())
 		return nftSet.ToJSONString()
 	}
-	common.DefaultLogger.Debugf("Got nil nft set")
+	common.DefaultLogger.Debugf("Got nil nft set:%v", nftSet)
 	return ""
 }
 
