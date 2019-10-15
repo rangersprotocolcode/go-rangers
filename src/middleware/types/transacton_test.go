@@ -131,15 +131,27 @@ import (
 //	fmt.Printf("TX JSON:\n%s\n", string(j))
 //}
 
+
+func TestQueryBNTBalanceTx(t *testing.T) {
+	tx := Transaction{Source: "0x6ed3a2ea39e1774096de4d920b4fb5b32d37fa98", Target: "0x6ed3a2ea39e1774096de4d920b4fb5b32d37fa98", Type: TransactionTypeGetCoin, Time: "1556076659050692000", SocketRequestId: "12140"}
+	tx.Data = string("ETH.ETH")
+	fmt.Printf("data:\n%s\n", tx.Data)
+
+	tx.Hash = tx.GenHash()
+
+	j, _ := json.Marshal(tx.ToTxJson())
+	fmt.Printf("TX JSON:\n%s\n", string(j))
+}
+
 func TestMintNFTTx(t *testing.T) {
-	tx := Transaction{Source: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54", Target: "0xb0da465fbc3eab96e68151625d504ef1946b9446", Type: TransactionTypeMintNFT, Time: "1556076659050692000", SocketRequestId: "12140"}
+	tx := Transaction{Source: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54", Target: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54", Type: TransactionTypeMintNFT, Time: "1556076659050692000", SocketRequestId: "12140"}
 
 	mintNFTInfo:= make(map[string]string)
-	mintNFTInfo["setId"] = "23c4233d-5407-4ed1-a342-16a13cbb33a1"
-	mintNFTInfo["id"] = "123456"
+	mintNFTInfo["setId"] = "90da1060-3ae3-4483-b089-058e5136037d"
+	mintNFTInfo["id"] = "1234567"
 	mintNFTInfo["data"] = "5.99"
-	mintNFTInfo["createTime"] = "1569736452602"
-	mintNFTInfo["target"] = "0xb0da465fbc3eab96e68151625d504ef1946b9446"
+	mintNFTInfo["createTime"] = "1569736452603"
+	mintNFTInfo["target"] = "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"
 
 	b, _ := json.Marshal(mintNFTInfo)
 	tx.Data = string(b)

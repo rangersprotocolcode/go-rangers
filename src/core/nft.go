@@ -62,7 +62,7 @@ func (self *NFTManager) getNFTSet(setId string, accountDB *account.AccountDB) *t
 
 // L2发行NFTSet
 // 状态机调用
-func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string, maxSupply uint, createTime string, accountDB *account.AccountDB) (string, bool, *types.NFTSet) {
+func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string, maxSupply string, createTime string, accountDB *account.AccountDB) (string, bool, *types.NFTSet) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
@@ -93,12 +93,14 @@ func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner
 	defer self.lock.Unlock()
 
 	if 0 == len(setId) || 0 == len(id) {
+		common.DefaultLogger.Debug("Mint nft! setId and id cannot be null")
 		return "setId and id cannot be null", false
 	}
 
 	// 检查setId是否存在
 	nftSet := self.getNFTSet(setId, accountDB)
 	if nil == nftSet || nftSet.Owner != appId {
+		common.DefaultLogger.Debug("Mint nft! wrong setId or not setOwner")
 		return "wrong setId or not setOwner", false
 	}
 
@@ -109,6 +111,7 @@ func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner
 func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data, creator string, timeStamp string, owner common.Address, accountDB *account.AccountDB) (string, bool) {
 	// 检查id是否存在
 	if _, ok := nftSet.OccupiedID[id]; ok {
+		common.DefaultLogger.Debugf("Generate NFT! wrong id")
 		return "wrong id", false
 	}
 
@@ -124,6 +127,7 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 		Status:     0,
 		AppId:      appId,
 	}
+	common.DefaultLogger.Debugf("Create NFT!%v", nft)
 	nft.DataKey = make([]string, 0)
 	nft.DataValue = make([]string, 0)
 	if 0 != len(data) {
@@ -141,6 +145,7 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 		self.updateNFTSet(nftSet, accountDB)
 		return "nft mint successful", true
 	} else {
+		common.DefaultLogger.Debugf("Generate NFT! fail to nft mint")
 		return "fail to nft mint", false
 	}
 }

@@ -13,7 +13,7 @@ import (
 
 func GetCoinBalance(source common.Address, ft string) string {
 	ftName := fmt.Sprintf("official-%s", ft)
-	logger.Debugf("Get coin balance before get balance.source:%s,ft:%s",source,ft)
+	logger.Debugf("Get coin balance before get balance.source:%s,ft:%s", source, ft)
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
 	logger.Debugf("Get coin balance after get balance.")
 	balance := accountDB.GetFT(source, ftName)
@@ -110,13 +110,15 @@ func GetAllNFTBySetId(source string, setId string) string {
 }
 
 func GetNFTSet(setId string) string {
+	common.DefaultLogger.Debugf("Get nft set id:%s,", setId)
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
 	nftSet := NFTManagerInstance.GetNFTSet(setId, accountDB)
-	bytes, err := json.Marshal(nftSet)
-	if err != nil {
-		logger.Errorf("Json marshal nft set error:%s", err.Error())
+	if nil != nftSet {
+		common.DefaultLogger.Debugf("Got nft set info:%s,", nftSet.ToJSONString())
+		return nftSet.ToJSONString()
 	}
-	return string(bytes)
+	common.DefaultLogger.Debugf("Got nil nft set:%v", nftSet)
+	return ""
 }
 
 func GetFTSet(id string) string {

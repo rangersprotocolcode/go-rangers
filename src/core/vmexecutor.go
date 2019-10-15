@@ -154,10 +154,16 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						}
 
 						if user.Address == "PublishNFTSet" {
-							maxSupply, _ := strconv.ParseInt(user.Assets["maxSupply"], 10, 0)
+							maxSupply:= user.Assets["maxSupply"]
+							_, err := strconv.ParseInt(maxSupply, 10, 0)
+							if err!= nil{
+								logger.Errorf("Publish nft set!MaxSupply bad format:%s",maxSupply)
+								success = false
+								break
+							}
 							appId := user.Assets["appId"]
 
-							_, ok, _ := NFTManagerInstance.PublishNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, uint(maxSupply), user.Assets["createTime"], accountdb)
+							_, ok, _ := NFTManagerInstance.PublishNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"], accountdb)
 							if !ok {
 								success = false
 								break
@@ -323,7 +329,7 @@ func (executor *VMExecutor) executeNFTDepositNotify(accountdb *account.AccountDB
 	// 检查setId
 	nftSet := NFTManagerInstance.GetNFTSet(depositNFTData.SetId, accountdb)
 	if nil == nftSet {
-		_, _, nftSet = NFTManagerInstance.PublishNFTSet(depositNFTData.SetId, depositNFTData.Name, depositNFTData.Symbol, depositNFTData.Creator, depositNFTData.Owner, 0, depositNFTData.CreateTime, accountdb)
+		_, _, nftSet = NFTManagerInstance.PublishNFTSet(depositNFTData.SetId, depositNFTData.Name, depositNFTData.Symbol, depositNFTData.Creator, depositNFTData.Owner, "0", depositNFTData.CreateTime, accountdb)
 	}
 
 	appId := transaction.Target

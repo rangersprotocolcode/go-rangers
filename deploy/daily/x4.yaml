@@ -1,19 +1,17 @@
 title: x4
 services:
   - priority: 0
-    game: "0x5d6fd9f54085490457cd534d4bdf90289fae65a7"
-    name: "snake4"
-    image: "snake_image:latest"
+    game: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"
+    name: "genesis4"
+    image: "genesis_image:latest"
     ports:
-      - host: 6664
+      - host: 7774
         target: 8080
-      - host: 6604
-        target: 3306
     detached: true
-    type: "NEO"
+    type: "ETH"
 
   - priority: 1
-    game: "0xf677e4051eeff7a60598cc6419b982cdeef60b01"
+    game: "0x362beb806ab6067a5344665e71f09e5cc221b2a3"
     name: "mixmarvel4"
     image: "mixmarvel_image:latest"
     ports:
@@ -21,3 +19,14 @@ services:
         target: 8080
     detached: true
     type: "ETH"
+
+  - priority: 2
+    game: "0x69564f3eccc4aedabde33bd5cb350b9829deced1"
+    name: "sdk_demo_4"
+    image: "sdk_demo_image:latest"
+    ports:
+      - host: 10004
+        target: 80
+    detached: true
+    type: "ETH"
+    cmd: "/root/statemachine"

@@ -32,7 +32,7 @@ func TestFT_EncodeRLP(t *testing.T) {
 }
 
 func TestNFT_EncodeRLP(t *testing.T) {
-	ft := &NFT{ID: "sword1", Name: "yitai", Symbol: "yt"}
+	ft := &NFT{ID: "sword1", Name: "yitai", Symbol: "yt",CreateTime:"1571134085856098"}
 
 	data, err := rlp.EncodeToBytes(ft)
 	if err != nil {
@@ -43,6 +43,7 @@ func TestNFT_EncodeRLP(t *testing.T) {
 	nft := &NFT{}
 	err = rlp.DecodeBytes(data, nft)
 	fmt.Println(nft.Name)
+	fmt.Println(nft.CreateTime)
 }
 
 func TestGameData_SetNFT(t *testing.T) {

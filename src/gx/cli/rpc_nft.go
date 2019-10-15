@@ -174,7 +174,7 @@ func (api *GtasAPI) changeNFTStatus(appId, setId, id string, status int) (*Resul
 }
 
 // 发行NFTSet
-func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol, createTime string, maxSupply uint) (*Result, error) {
+func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol, createTime string, maxSupply string) (*Result, error) {
 	context, ok := api.checkTx(appId)
 	if !ok {
 		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
@@ -191,7 +191,7 @@ func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol, createTime string,
 		userData.Assets["setId"] = setId
 		userData.Assets["name"] = name
 		userData.Assets["symbol"] = symbol
-		userData.Assets["maxSupply"] = strconv.FormatInt(int64(maxSupply), 10)
+		userData.Assets["maxSupply"] = maxSupply
 		userData.Assets["appId"] = appId
 		userData.Assets["createTime"] = createTime
 
@@ -207,6 +207,7 @@ func (api *GtasAPI) PublishNFTSet(appId, setId, name, symbol, createTime string,
 
 // NFT铸币
 func (api *GtasAPI) MintNFT(appId, setId, id, target, data, createTime string) (*Result, error) {
+	common.DefaultLogger.Debugf("Mint nft!appId:%s,setId:%s,id:%s,target:%s,data:%s,createTime:%s", appId, setId, id, target, data, createTime)
 	context, ok := api.checkTx(appId)
 	if !ok {
 		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
@@ -225,6 +226,7 @@ func (api *GtasAPI) MintNFT(appId, setId, id, target, data, createTime string) (
 		userData.Assets["id"] = id
 		userData.Assets["target"] = target
 		userData.Assets["data"] = data
+		userData.Assets["createTime"] = createTime
 
 		// 生成交易，上链
 		context.Tx.AppendSubTransaction(userData)
