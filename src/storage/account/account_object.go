@@ -57,9 +57,6 @@ type accountObject struct {
 	// by StateDB.Commit.
 	dbErr error
 
-	owner     string
-	ownerLock *sync.Mutex
-
 	trie Trie // storage trie, which becomes non-nil on first access
 	code Code // contract code, which gets set when code is loaded
 
@@ -385,20 +382,3 @@ func (ao *accountObject) Value() *big.Int {
 	panic("Value on accountObject should never be called")
 }
 
-func (ao *accountObject) Lock(newOwner string) {
-	ao.ownerLock.Lock()
-	if 0 == len(ao.owner) {
-		ao.owner = newOwner
-	}
-}
-
-func (ao *accountObject) Unlock(owner string) {
-	if owner == ao.owner {
-		ao.owner = ""
-		ao.ownerLock.Unlock()
-	}
-}
-
-func (ao *accountObject) CheckLock(owner string) bool {
-	return ao.owner == owner
-}

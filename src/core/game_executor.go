@@ -208,9 +208,12 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) string {
 		// 支持source地址给多人转账，包含余额，ft，nft
 		// 数据格式{"address1":{"balance":"127","ft":{"name1":"189","name2":"1"},"nft":["id1","sword2"]}, "address2":{"balance":"1"}}
 
-		//	{
+		//{
 		//	"address1": {
-		//		"balance": "127",
+		//		"bnt": {
+		//          "ETH.ETH":"0.008",
+		//          "NEO.CGAS":"100"
+	    //      },
 		//		"ft": {
 		//			"name1": "189",
 		//			"name2": "1"
