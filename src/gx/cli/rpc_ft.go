@@ -8,13 +8,13 @@ import (
 )
 
 // 状态机转主链币给玩家
-func (api *GtasAPI) TransferBNT(appId, target, chainType, balance string) (*Result, error) {
+func (api *GtasAPI) TransferBNT(authCode, appId, target, chainType, balance string) (*Result, error) {
 	return api.transferFTOrCoin(appId, target, fmt.Sprintf("official-%s", chainType), balance)
 }
 
 // todo: 经济模型，发币的费用问题
 // 状态机发币
-func (api *GtasAPI) PublishFT(appId, owner, name, symbol, totalSupply, createTime string) (*Result, error) {
+func (api *GtasAPI) PublishFT(authCode, appId, owner, name, symbol, totalSupply, createTime string) (*Result, error) {
 	if 0 == len(appId) {
 		return failResult("wrong params")
 	}
@@ -48,7 +48,7 @@ func (api *GtasAPI) PublishFT(appId, owner, name, symbol, totalSupply, createTim
 
 }
 
-func (api *GtasAPI) MintFT(appId, ftId, target, balance string) (*Result, error) {
+func (api *GtasAPI) MintFT(authCode, appId, ftId, target, balance string) (*Result, error) {
 	if 0 == len(appId) {
 		return failResult("wrong params")
 	}
@@ -82,7 +82,7 @@ func (api *GtasAPI) MintFT(appId, ftId, target, balance string) (*Result, error)
 
 // todo: 经济模型，转币的费用问题
 // 状态机转币给玩家
-func (api *GtasAPI) TransferFT(appId string, target string, ftId string, supply string) (*Result, error) {
+func (api *GtasAPI) TransferFT(authCode, appId string, target string, ftId string, supply string) (*Result, error) {
 	common.DefaultLogger.Debugf("Transfer FT appId:%s,target:%s,ftId:%s,supply:%s", appId, target, ftId, supply)
 	return api.transferFTOrCoin(appId, target, ftId, supply)
 }

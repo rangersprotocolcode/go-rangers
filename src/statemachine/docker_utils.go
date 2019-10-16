@@ -64,6 +64,7 @@ func (d *DockerManager) init(port uint) {
 	d.Mapping = d.Config.InitFromFile(d.Filename, port)
 }
 
+//todo 这里入参需要改，改为payload,transfer,authCode
 func (d *DockerManager) Process(name string, kind string, nonce string, payload string) *types.OutputMessage {
 	prefix := d.getUrlPrefix(name)
 	if 0 == len(prefix) {
@@ -72,9 +73,9 @@ func (d *DockerManager) Process(name string, kind string, nonce string, payload 
 
 	path := fmt.Sprintf("%sprocess", prefix)
 	values := url.Values{}
-	values["type"] = []string{kind}
-	values["nonce"] = []string{nonce}
 	values["payload"] = []string{payload}
+	values["transfer"] = []string{"transfer info"}
+	values["authCode"] = []string{"authCode"}
 
 	resp, err := d.httpClient.PostForm(path, values)
 	if err != nil {
