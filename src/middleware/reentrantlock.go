@@ -25,7 +25,7 @@ func (self *ReentrantLock) Lock(newOwner string) {
 	defer self.ownerLock.Unlock()
 
 	if self.owner == newOwner {
-		self.holdCount = 1
+		self.holdCount++
 		return
 	}
 	for self.holdCount != 0 {
@@ -49,4 +49,17 @@ func (self *ReentrantLock) Unlock(owner string) {
 	if self.holdCount == 0 {
 		self.cond.Signal()
 	}
+}
+
+// owner释放资源
+func (self *ReentrantLock) Release(owner string) {
+	self.ownerLock.Lock()
+	defer self.ownerLock.Unlock()
+
+	if self.holdCount == 0 || self.owner != owner {
+		panic("illegalMonitorStateError")
+	}
+
+	self.holdCount = 0
+	self.cond.Signal()
 }

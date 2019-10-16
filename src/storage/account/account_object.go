@@ -9,6 +9,7 @@ import (
 	"x/src/storage/trie"
 	"golang.org/x/crypto/sha3"
 	"x/src/middleware/types"
+	"x/src/middleware"
 )
 
 var emptyCodeHash = sha3.Sum256(nil)
@@ -49,6 +50,9 @@ type accountObject struct {
 	addrHash common.Hash // hash of address of the account
 	data     Account
 	db       *AccountDB
+
+	// 锁
+	lock *middleware.ReentrantLock
 
 	// DB error.
 	// State objects are used by the consensus core and VM which are
@@ -102,7 +106,8 @@ func newAccountObject(db *AccountDB, address common.Address, data Account, onDir
 	if data.CodeHash == nil {
 		data.CodeHash = emptyCodeHash[:]
 	}
-	return &accountObject{
+
+	ao := &accountObject{
 		db:            db,
 		address:       address,
 		addrHash:      sha3.Sum256(address[:]),
@@ -110,8 +115,10 @@ func newAccountObject(db *AccountDB, address common.Address, data Account, onDir
 		cachedStorage: make(Storage),
 		dirtyStorage:  make(Storage),
 		onDirty:       onDirty,
-		ownerLock:     new(sync.Mutex),
 	}
+	ao.lock = middleware.NewReentrantLock()
+
+	return ao
 }
 
 // setError remembers the first non-nil error it is called with.
@@ -381,4 +388,3 @@ func (ao *accountObject) Nonce() uint64 {
 func (ao *accountObject) Value() *big.Int {
 	panic("Value on accountObject should never be called")
 }
-
