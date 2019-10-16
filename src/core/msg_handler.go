@@ -59,7 +59,7 @@ func (ch ChainHandler) transactionReqHandler(msg notify.Message) {
 	}
 
 	source := trm.Peer
-	logger.Debugf("receive transaction req from %s,block height:%d,block hash:%s,tx_len%D", source, m.BlockHeight, m.CurrentBlockHash.String(), len(m.TransactionHashes))
+	logger.Debugf("receive transaction req from %s,block height:%d,block hash:%s,tx_len%d", source, m.BlockHeight, m.CurrentBlockHash.String(), len(m.TransactionHashes))
 	if nil == blockChainImpl {
 		return
 	}
@@ -69,7 +69,7 @@ func (ch ChainHandler) transactionReqHandler(msg notify.Message) {
 	}
 
 	for _, tx := range transactions {
-		logger.Debugf("local find tx :%s,%s", tx.Hash.String())
+		logger.Debugf("local find tx :%s,%v", tx.Hash.String(),tx)
 	}
 	if nil != transactions && 0 != len(transactions) {
 		sendTransactions(transactions, source)
