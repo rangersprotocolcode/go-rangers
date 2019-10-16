@@ -188,6 +188,11 @@ func (pool *TxPool) IsExisted(hash common.Hash) bool {
 }
 
 func (pool *TxPool) GetTransaction(hash common.Hash) (*types.Transaction, error) {
+	missTx, existInMissTxs := pool.missTxs.Get(hash)
+	if existInMissTxs {
+		return missTx.(*types.Transaction), nil
+	}
+
 	minerTx, existInMinerTxs := pool.minerTxs.Get(hash)
 	if existInMinerTxs {
 		return minerTx.(*types.Transaction), nil
@@ -196,11 +201,6 @@ func (pool *TxPool) GetTransaction(hash common.Hash) (*types.Transaction, error)
 	receivedTx := pool.received.get(hash)
 	if nil != receivedTx {
 		return receivedTx, nil
-	}
-
-	missTx, existInMissTxs := pool.missTxs.Get(hash)
-	if existInMissTxs {
-		return missTx.(*types.Transaction), nil
 	}
 
 	executedTx := pool.GetExecuted(hash)
