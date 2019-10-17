@@ -89,6 +89,7 @@ func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string
 // L2创建NFT
 // 状态机调用
 func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner common.Address, accountDB *account.AccountDB) (string, bool) {
+	common.DefaultLogger.Debugf("Mint NFT! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, createTime, owner.String())
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
@@ -109,6 +110,7 @@ func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner
 }
 
 func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data, creator string, timeStamp string, owner common.Address, accountDB *account.AccountDB) (string, bool) {
+	common.DefaultLogger.Debugf("Generate NFT! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, timeStamp, owner.String())
 	// 检查id是否存在
 	if _, ok := nftSet.OccupiedID[id]; ok {
 		common.DefaultLogger.Debugf("Generate NFT! wrong id")

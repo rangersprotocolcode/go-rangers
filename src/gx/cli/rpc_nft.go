@@ -9,6 +9,7 @@ import (
 )
 
 func (api *GtasAPI) UpdateNFT(authCode, appId, setId, id, data string) (*Result, error) {
+	common.DefaultLogger.Debugf("Update NFT! appId:%s,setId:%s,id:%s,data:%s")
 	context, ok := api.checkTx(appId)
 	if !ok {
 		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)

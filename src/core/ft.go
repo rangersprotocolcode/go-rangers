@@ -141,7 +141,7 @@ func (self *FTManager) MintFT(owner, ftId, target, supply string, accountDB *acc
 
 	balance := self.convert(supply)
 	if !self.SubFTSet(owner, ftId, balance, accountDB) {
-		logger.Debugf("not enough FT")
+		common.DefaultLogger.Debugf("not enough FT")
 		return "Not Enough FT", false
 	}
 
