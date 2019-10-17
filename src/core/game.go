@@ -307,8 +307,9 @@ func transferFT(ft map[string]string, source string, target string, accountDB *a
 	response := types.NewJSONObject()
 
 	for ftName, valueString := range ft {
-		_, left, ok := FTManagerInstance.TransferFT(source, ftName, target, valueString, accountDB)
+		message, left, ok := FTManagerInstance.TransferFT(source, ftName, target, valueString, accountDB)
 		if !ok {
+			logger.Debugf("Transfer FT Failed:%s", message)
 			return nil, false
 		}
 

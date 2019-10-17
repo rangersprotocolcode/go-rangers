@@ -10,10 +10,7 @@ import (
 	"math"
 	"x/src/consensus"
 	"sync"
-	"errors"
 )
-
-var errResult = errors.New("fail")
 
 func successResult(data interface{}) (*Result, error) {
 	return &Result{
@@ -27,7 +24,7 @@ func failResult(err string) (*Result, error) {
 		Message: err,
 		Data:    nil,
 		Status:  -1,
-	}, errResult
+	}, nil
 }
 
 // GtasAPI is a single-method API handler to be returned by test services.
