@@ -68,7 +68,7 @@ func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string
 
 	// 检查setId是否存在
 	if 0 == len(setId) || self.contains(setId, accountDB) {
-		return "setId wrong", false, nil
+		return "SetId Wrong", false, nil
 	}
 
 	// 创建NFTSet
@@ -83,7 +83,7 @@ func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string
 	}
 
 	self.updateNFTSet(nftSet, accountDB)
-	return "nft publish successful", true, nftSet
+	return "Nft Publish Successful", true, nftSet
 }
 
 // L2创建NFT

@@ -206,15 +206,15 @@ func changeAssets(source string, targets map[string]types.TransferData, accountd
 
 		// 转钱
 		if !transferBalance(transferData.Balance, sourceAddr, targetAddr, accountdb) {
-			logger.Debugf("Change balance failed!")
-			return "", false
+			logger.Debugf("Transfer balance failed!")
+			return "Transfer Balance Failed", false
 		}
 
 		// 转coin
 		left, ok := transferCoin(transferData.Coin, source, address, accountdb)
 		if !ok {
-			logger.Debugf("Change coin failed!")
-			return "", false
+			logger.Debugf("Transfer coin failed!")
+			return "Transfer BNT Failed", false
 		} else {
 			responseCoin.Merge(left, types.ReplaceBigInt)
 		}
@@ -224,8 +224,8 @@ func changeAssets(source string, targets map[string]types.TransferData, accountd
 		if 0 != len(ftList) {
 			left, ok := transferFT(ftList, source, address, accountdb)
 			if !ok {
-				logger.Debugf("Change ft failed!")
-				return "", false
+				logger.Debugf("Transfer ft failed!")
+				return "Transfer FT Filed", false
 			} else {
 				responseFT.Merge(left, types.ReplaceBigInt)
 			}
@@ -234,8 +234,8 @@ func changeAssets(source string, targets map[string]types.TransferData, accountd
 		// 转NFT
 		nftList, ok := transferNFT(transferData.NFT, sourceAddr, targetAddr, accountdb)
 		if !ok {
-			logger.Debugf("Change nft failed!")
-			return "", false
+			logger.Debugf("Transfer nft failed!")
+			return "Transfer NFT Failed", false
 		} else if 0 != len(nftList) {
 			responseNFT = append(responseNFT, nftList...)
 		}
@@ -341,7 +341,7 @@ func PublishFT(accountdb *account.AccountDB, tx *types.Transaction) (string, boo
 	var ftSet map[string]string
 	if err := json.Unmarshal([]byte(tx.Data), &ftSet); nil != err {
 		txLogger.Debugf("Unmarshal data error:%s", err.Error())
-		return "", false
+		return "Publish FT Bad Format", false
 	}
 
 	appId := tx.Source
@@ -352,43 +352,42 @@ func PublishFT(accountdb *account.AccountDB, tx *types.Transaction) (string, boo
 	return id, ok
 }
 
-func PublishNFTSet(accountdb *account.AccountDB, tx *types.Transaction) bool {
+func PublishNFTSet(accountdb *account.AccountDB, tx *types.Transaction) (bool, string) {
 	txLogger.Debugf("Execute publish nft tx:%v", tx)
 
 	var nftSet types.NFTSet
 	if err := json.Unmarshal([]byte(tx.Data), &nftSet); nil != err {
 		txLogger.Debugf("Unmarshal data error:%s", err.Error())
-		return false
+		return false, "Publish NFT Set Bad Format"
 	}
 
 	appId := tx.Source
 
-	_, flag, _ := NFTManagerInstance.PublishNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime, accountdb)
-	return flag
+	message, flag, _ := NFTManagerInstance.PublishNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime, accountdb)
+	return flag, message
 }
 
-func MintFT(accountdb *account.AccountDB, tx *types.Transaction) bool {
+func MintFT(accountdb *account.AccountDB, tx *types.Transaction) (bool, string) {
 	data := make(map[string]string)
 	json.Unmarshal([]byte(tx.Data), &data)
 
-	_, result := FTManagerInstance.MintFT(tx.Source, data["ftId"], tx.Target, data["supply"], accountdb)
-	return result
+	message, result := FTManagerInstance.MintFT(tx.Source, data["ftId"], tx.Target, data["supply"], accountdb)
+	return result, message
 }
 
-func ShuttleNFT(db *account.AccountDB, tx *types.Transaction) bool {
+func ShuttleNFT(db *account.AccountDB, tx *types.Transaction) (bool, string) {
 	data := make(map[string]string)
 	json.Unmarshal([]byte(tx.Data), &data)
 
-	_, ok := NFTManagerInstance.Shuttle(data["setId"], data["id"], data["newAppId"], db)
+	message, ok := NFTManagerInstance.Shuttle(data["setId"], data["id"], data["newAppId"], db)
 
-	return ok
+	return ok, message
 }
 
-func MintNFT(accountdb *account.AccountDB, tx *types.Transaction) bool {
+func MintNFT(accountdb *account.AccountDB, tx *types.Transaction) (bool, string) {
 	data := make(map[string]string)
 	json.Unmarshal([]byte(tx.Data), &data)
 
-	_, ok := NFTManagerInstance.MintNFT(tx.Source, data["setId"], data["id"], data["data"], data["createTime"], common.HexToAddress(data["target"]), accountdb)
-	return ok
-
+	message, ok := NFTManagerInstance.MintNFT(tx.Source, data["setId"], data["id"], data["data"], data["createTime"], common.HexToAddress(data["target"]), accountdb)
+	return ok, message
 }

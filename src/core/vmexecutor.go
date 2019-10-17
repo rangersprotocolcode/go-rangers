@@ -154,10 +154,10 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						}
 
 						if user.Address == "PublishNFTSet" {
-							maxSupply:= user.Assets["maxSupply"]
+							maxSupply := user.Assets["maxSupply"]
 							_, err := strconv.ParseInt(maxSupply, 10, 0)
-							if err!= nil{
-								logger.Errorf("Publish nft set!MaxSupply bad format:%s",maxSupply)
+							if err != nil {
+								logger.Errorf("Publish nft set!MaxSupply bad format:%s", maxSupply)
 								success = false
 								break
 							}
@@ -214,13 +214,13 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			_, success = PublishFT(accountdb, transaction)
 			break
 		case types.TransactionTypePublishNFTSet:
-			success = PublishNFTSet(accountdb, transaction)
+			success, _ = PublishNFTSet(accountdb, transaction)
 			break
 		case types.TransactionTypeMintFT:
-			success = MintFT(accountdb, transaction)
+			success, _ = MintFT(accountdb, transaction)
 			break
 		case types.TransactionTypeMintNFT:
-			success = MintNFT(accountdb, transaction)
+			success, _ = MintNFT(accountdb, transaction)
 			break
 		case types.TransactionTypeWithdraw:
 			_, success = Withdraw(accountdb, transaction, true)
@@ -235,7 +235,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			success = executor.executeNFTDepositNotify(accountdb, transaction)
 			break
 		case types.TransactionTypeShuttleNFT:
-			success = ShuttleNFT(accountdb, transaction)
+			success,_ = ShuttleNFT(accountdb, transaction)
 			break
 		}
 

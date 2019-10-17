@@ -135,19 +135,22 @@ func (self *FTManager) TransferFT(source string, ftId string, target string, sup
 func (self *FTManager) MintFT(owner, ftId, target, supply string, accountDB *account.AccountDB) (string, bool) {
 	common.DefaultLogger.Debugf("MintFT ftId %s,target:%s,supply:%s", ftId, target, supply)
 	if 0 == len(target) || 0 == len(ftId) || 0 == len(supply) {
-		return "wrong params", false
+		logger.Debugf("wrong params")
+		return "Wrong Params", false
 	}
 
 	balance := self.convert(supply)
 	if !self.SubFTSet(owner, ftId, balance, accountDB) {
-		return "not enough FT", false
+		logger.Debugf("not enough FT")
+		return "Not Enough FT", false
 	}
 
 	targetAddress := common.HexToAddress(target)
 	if accountDB.AddFT(targetAddress, ftId, balance) {
 		return "TransferFT successful", true
 	} else {
-		return "overflow", false
+		logger.Debugf("overflow")
+		return "Overflow", false
 	}
 
 }
