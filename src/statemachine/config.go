@@ -371,9 +371,9 @@ func (t *YAMLConfig) runContainers(port uint) map[string]PortInt {
 func (config *YAMLConfig) setUrl(portInt PortInt, layer2Port uint) {
 	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", portInt, "init")
 	values := url.Values{}
-	// todo : refactor statemachine sdk
 	values["url"] = []string{fmt.Sprintf("http://%s:%d", "172.17.0.1", layer2Port)}
-	//values["port"] = []string{strconv.FormatUint(uint64(layer2Port), 10)}
+	//todo authCode 生成
+	values["authCode"] = []string{"test authCode"}
 	if nil != common.DefaultLogger {
 		common.DefaultLogger.Errorf("Send post req:path:%s,values:%v", path, values)
 	}

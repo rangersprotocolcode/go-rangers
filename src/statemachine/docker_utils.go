@@ -74,8 +74,7 @@ func (d *DockerManager) Process(name string, kind string, nonce string, payload 
 	path := fmt.Sprintf("%sprocess", prefix)
 	values := url.Values{}
 	values["payload"] = []string{payload}
-	values["transfer"] = []string{"transfer info"}
-	values["authCode"] = []string{"authCode"}
+	values["transfer"] = []string{"Test transfer info"}
 
 	resp, err := d.httpClient.PostForm(path, values)
 	if err != nil {
