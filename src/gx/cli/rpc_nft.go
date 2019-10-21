@@ -166,16 +166,24 @@ func (api *GtasAPI) changeNFTStatus(appId, setId, id string, status int) (*Resul
 		// 生成交易，上链
 		context.Tx.AppendSubTransaction(userData)
 
+		if status == 0 {
+			return successResult("success UnLockNFT nft")
+		}
 		return successResult("success LockNFT nft")
 	} else {
-		msg := fmt.Sprintf("fail to LockNFT setId %s or id %s appId %s", setId, id, appId)
+		msg := ""
+		if status == 0 {
+			msg = fmt.Sprintf("fail to UnLockNFT setId %s or id %s appId %s", setId, id, appId)
+		} else {
+			msg = fmt.Sprintf("fail to LockNFT setId %s or id %s appId %s", setId, id, appId)
+		}
 		common.DefaultLogger.Debugf(msg)
 		return failResult(msg)
 	}
 }
 
 // 发行NFTSet
-func (api *GtasAPI) PublishNFTSet(authCode, appId, setId, name, symbol, createTime string, maxSupply string) (*Result, error) {
+func (api *GtasAPI) PublishNFTSet(authCode, appId, setId, name, symbol, createTime string, maxSupply int) (*Result, error) {
 	context, ok := api.checkTx(appId)
 	if !ok {
 		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
@@ -192,7 +200,7 @@ func (api *GtasAPI) PublishNFTSet(authCode, appId, setId, name, symbol, createTi
 		userData.Assets["setId"] = setId
 		userData.Assets["name"] = name
 		userData.Assets["symbol"] = symbol
-		userData.Assets["maxSupply"] = maxSupply
+		userData.Assets["maxSupply"] = strconv.Itoa(maxSupply)
 		userData.Assets["appId"] = appId
 		userData.Assets["createTime"] = createTime
 
