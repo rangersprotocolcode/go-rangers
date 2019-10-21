@@ -243,7 +243,9 @@ func (self *NFTManager) Transfer(setId, id string, owner, newOwner common.Addres
 	}
 
 	// 修改数据
-	nft.Owner = newOwner.GetHexString()
+	newOwnerString := newOwner.GetHexString()
+	nft.Owner = newOwnerString
+	nft.Renter = newOwnerString
 	if accountDB.AddNFTByGameId(newOwner, nft.AppId, nft) && accountDB.RemoveNFTByGameId(owner, nft.AppId, nft.SetID, nft.ID) {
 		nftSet := self.GetNFTSet(setId, accountDB)
 		nftSet.ChangeOwner(id, newOwner)
