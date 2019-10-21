@@ -116,7 +116,7 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 		common.DefaultLogger.Debugf("Generate NFT! wrong id")
 		return "wrong id", false
 	}
-
+	ownerString := owner.GetHexString()
 	// 创建NFT对象
 	nft := &types.NFT{
 		SetID:      setId,
@@ -125,7 +125,8 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 		ID:         id,
 		Creator:    creator,
 		CreateTime: timeStamp,
-		Owner:      owner.GetHexString(),
+		Owner:      ownerString,
+		Renter:     ownerString,
 		Status:     0,
 		AppId:      appId,
 	}
