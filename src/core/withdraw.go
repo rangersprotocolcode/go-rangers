@@ -14,16 +14,16 @@ import (
 func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSendToConnector bool) (string, bool) {
 	txLogger.Debugf("Execute withdraw tx:%v", transaction)
 	if transaction.Data == "" {
-		return "", false
+		return "Withdraw Data Bad Format", false
 	}
 	var withDrawReq types.WithDrawReq
 	err := json.Unmarshal([]byte(transaction.Data), &withDrawReq)
 	if err != nil {
 		txLogger.Debugf("Unmarshal data error:%s", err.Error())
-		return "", false
+		return "Withdraw Data Bad Format", false
 	}
 	if withDrawReq.ChainType == "" || withDrawReq.Address == "" {
-		return "", false
+		return "Withdraw Data Bad Format", false
 	}
 
 	source := common.HexToAddress(transaction.Source)
@@ -36,7 +36,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 		withdrawAmount, err := utility.StrToBigInt(withDrawReq.Balance)
 		if err != nil {
 			txLogger.Error("Execute withdraw bad amount!Hash:%s, err:%s", transaction.Hash.String(), err.Error())
-			return "", false
+			return "Withdraw Data BNT Bad Format", false
 		}
 
 		coinId := fmt.Sprintf("official-%s", withDrawReq.ChainType)
@@ -44,7 +44,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 		if !ok {
 			subAccountBalance := accountdb.GetFT(source, coinId)
 			txLogger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", subAccountBalance.Uint64(), withdrawAmount.Uint64())
-			return "", false
+			return "BNT Not Enough", false
 		} else {
 			result["token"] = withDrawReq.ChainType
 			result["balance"] = left.String()
@@ -58,7 +58,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 			subValue := accountdb.GetFT(source, k)
 			compareResult, sub := canWithDraw(v, subValue)
 			if !compareResult {
-				return "", false
+				return "FT Not Enough", false
 			}
 
 			// 扣ft
@@ -72,7 +72,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 		for _, k := range withDrawReq.NFT {
 			subValue := accountdb.GetNFTByGameId(source, gameId, k.SetId, k.Id)
 			if 0 == len(subValue) {
-				return "", false
+				return "NFT Not Exist In This Game", false
 			}
 
 			nftInfo = append(nftInfo, types.NFTID{SetId: k.SetId, Id: k.Id, Data: subValue})
@@ -88,7 +88,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 	}
 
 	if isSendToConnector && !sendWithdrawToConnector(withDrawReq, transaction, nftInfo) {
-		return "", false
+		return "Send To Connector Error", false
 	}
 
 	resultString, _ := json.Marshal(result)
