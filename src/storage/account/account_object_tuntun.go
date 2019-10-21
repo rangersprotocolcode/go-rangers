@@ -143,7 +143,7 @@ func (self *accountObject) AddNFTByGameId(gameId string, nft *types.NFT) bool {
 
 func (self *accountObject) ApproveNFT(gameId, setId, id, renter string) bool {
 	nft := self.getNFT(gameId, setId, id)
-	if nft == nil {
+	if nft == nil || nft.Status != 0 {
 		return false
 	}
 
