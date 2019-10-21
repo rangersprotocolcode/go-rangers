@@ -260,28 +260,32 @@ func (self *NFTManager) Transfer(setId, id string, owner, newOwner common.Addres
 
 // NFT 穿梭
 // 状态机&玩家(钱包)调用
-func (self *NFTManager) Shuttle(setId, id, newAppId string, accountDB *account.AccountDB) (string, bool) {
-	return self.shuttle(setId, id, newAppId, accountDB, false)
+func (self *NFTManager) Shuttle(owner, setId, id, newAppId string, accountDB *account.AccountDB) (string, bool) {
+	return self.shuttle(owner, setId, id, newAppId, accountDB, false)
 }
 
 // NFT 穿梭
 // 玩家（钱包）调用
 // appId若为空，则穿梭到默认appId（库存）
-func (self *NFTManager) ForceShuttle(setId, id, newAppId string, accountDB *account.AccountDB) (string, bool) {
+func (self *NFTManager) ForceShuttle(owner, setId, id, newAppId string, accountDB *account.AccountDB) (string, bool) {
 	// 根据setId+id 查找nft
 	// 修改数据
 	// 通知当前状态机
 	// 通知目标状态机（如果appId不为空）
-	return self.shuttle(setId, id, newAppId, accountDB, true)
+	return self.shuttle(owner, setId, id, newAppId, accountDB, true)
 }
 
-func (self *NFTManager) shuttle(setId, id, newAppId string, accountDB *account.AccountDB, isForce bool) (string, bool) {
+func (self *NFTManager) shuttle(owner, setId, id, newAppId string, accountDB *account.AccountDB, isForce bool) (string, bool) {
 	// 根据setId+id 查找nft
 	nft := self.GetNFT(setId, id, accountDB)
 	if nil == nft {
 		return fmt.Sprintf("nft is not existed. setId: %s, id: %s", setId, id), false
 	}
 
+	// owner 判断
+	if nft.Owner != owner {
+		return fmt.Sprintf("nft cannot be shuttled by owner. setId: %s, id: %s, owner: %s", setId, id, owner), false
+	}
 	// 判断nft是否可以被shuttle
 	if !isForce && (nft.Status != 0 || nft.AppId == newAppId) {
 		return fmt.Sprintf("nft cannot be shuttled. setId: %s, id: %s", setId, id), false

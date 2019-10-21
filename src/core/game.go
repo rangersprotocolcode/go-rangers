@@ -379,7 +379,7 @@ func ShuttleNFT(db *account.AccountDB, tx *types.Transaction) (bool, string) {
 	data := make(map[string]string)
 	json.Unmarshal([]byte(tx.Data), &data)
 
-	message, ok := NFTManagerInstance.Shuttle(data["setId"], data["id"], data["newAppId"], db)
+	message, ok := NFTManagerInstance.Shuttle(tx.Source, data["setId"], data["id"], data["newAppId"], db)
 
 	return ok, message
 }
