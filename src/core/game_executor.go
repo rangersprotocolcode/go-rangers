@@ -296,9 +296,9 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 			}
 		} else {
 			TxManagerInstance.Commit(gameId)
-			if 0 == len(message) {
-				message = "Tx Execute Success"
-			}
+			//if 0 == len(message) {
+			//	message = "Tx Execute Success"
+			//}
 		}
 
 	case types.TransactionTypeWithdraw:

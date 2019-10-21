@@ -162,3 +162,9 @@ func TestMintNFTTx(t *testing.T) {
 	j, _ := json.Marshal(tx.ToTxJson())
 	fmt.Printf("TX JSON:\n%s\n", string(j))
 }
+
+func TestOutputMessage(t *testing.T) {
+	output := OutputMessage{}
+	fmt.Printf("%v\n", output)
+}
+
