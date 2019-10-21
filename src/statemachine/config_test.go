@@ -7,6 +7,8 @@ import (
 	"encoding/json"
 	"runtime"
 	"strings"
+	"math/rand"
+	"time"
 )
 
 func TestConfig(t *testing.T) {
@@ -29,7 +31,7 @@ func TestDocker(t *testing.T) {
 
 	//fmt.Println(tom.Validate("j1", "0x1fc2119a6255817f8fe01f9200d0afbc3490fece0d1788901806cd6c7bf3e03b", "111"))
 	output := tom.Process("j", "operator", strconv.Itoa(nonce+1),
-		"{\"timestamp\": 1537056003, \"msg_name\": \"arena_init\", \"msg_data\": {\"match_level\": 1, \"match_type\": 3, \"spec_type\": 0}}")
+		"{\"timestamp\": 1537056003, \"msg_name\": \"arena_init\", \"msg_data\": {\"match_level\": 1, \"match_type\": 3, \"spec_type\": 0}}", nil)
 
 	data, _ := json.Marshal(output)
 	fmt.Println(string(data))
@@ -43,10 +45,17 @@ func assertEqual(t *testing.T, a, b interface{}) {
 	}
 }
 
-func TestString(t *testing.T){
+func TestString(t *testing.T) {
 	str := "Up"
 
-	fmt.Println(strings.EqualFold("up",str[0:2]))
+	fmt.Println(strings.EqualFold("up", str[0:2]))
 
 	fmt.Println(strings.HasPrefix(strings.ToLower(str), "exited"))
+}
+
+func TestRand64(t *testing.T) {
+	rand.Seed(int64(time.Now().Unix()))
+	i := rand.Int()
+
+	fmt.Printf("%s", strconv.Itoa(i))
 }
