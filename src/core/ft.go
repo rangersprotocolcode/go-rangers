@@ -55,6 +55,11 @@ func (self *FTManager) PublishFTSet(name, symbol, appId, total, owner, createTim
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
+	// checkId
+	if 0 == len(appId) || 0 == len(symbol) || strings.Contains(appId, "-") || strings.Contains(symbol, "-") {
+		return "appId symbol wrong", false
+	}
+
 	// 生成id
 	id := self.genID(appId, symbol)
 
