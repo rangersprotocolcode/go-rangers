@@ -18,6 +18,9 @@ import (
 	"net/url"
 	"x/src/common"
 	"sort"
+	"math/rand"
+	"time"
+	"strconv"
 )
 
 //PortInt: 端口号类型
@@ -322,7 +325,7 @@ type YAMLConfig struct {
 
 // Init toml from *.yaml
 //filename: 文件名信息
-func (t *YAMLConfig) InitFromFile(filename string, port uint) map[string]PortInt {
+func (t *YAMLConfig) InitFromFile(filename string, port uint) (map[string]PortInt, map[string]string) {
 	yamlFile, err := ioutil.ReadFile(filename)
 	if err != nil {
 		log.Fatal(err)
@@ -346,34 +349,41 @@ func (t *YAMLConfig) InitFromFile(filename string, port uint) map[string]PortInt
 //RunContainers: 从配置运行容器
 //cli:  用于访问 docker 守护进程
 //ctx:  传递本次操作的上下文信息
-func (t *YAMLConfig) runContainers(port uint) map[string]PortInt {
+func (t *YAMLConfig) runContainers(port uint) (map[string]PortInt, map[string]string) {
 	if 0 == len(t.Services) {
-		return nil
+		return nil, nil
 	}
 
 	containerList, _ := t.cli.ContainerList(t.ctx, types.ContainerListOptions{All: true})
 
 	mapping := make(map[string]PortInt)
+	authCodeMapping := make(map[string]string)
+
 	//todo : 根据Priority排序
 	for _, service := range t.Services {
 		name, ports := service.RunContainer(t.cli, t.ctx, containerList)
 		if name == "" || ports == nil {
 			continue
 		}
+
 		mapping[name] = ports[0].Host
+		authCode := t.generateAuthcode()
+		authCodeMapping[name] = authCode
+
 		//需要等到docker镜像启动完成
 		//time.Sleep(time.Second * 10)
-		t.setUrl(ports[0].Host, port)
+		t.setUrl(ports[0].Host, port, authCode)
 	}
 
-	return mapping
+	return mapping, authCodeMapping
 }
-func (config *YAMLConfig) setUrl(portInt PortInt, layer2Port uint) {
+
+func (config *YAMLConfig) setUrl(portInt PortInt, layer2Port uint, authcode string) {
 	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", portInt, "init")
 	values := url.Values{}
 	values["url"] = []string{fmt.Sprintf("http://%s:%d", "172.17.0.1", layer2Port)}
-	//todo authCode 生成
-	values["authCode"] = []string{"test authCode"}
+
+	values["authCode"] = []string{authcode}
 	if nil != common.DefaultLogger {
 		common.DefaultLogger.Errorf("Send post req:path:%s,values:%v", path, values)
 	}
@@ -397,4 +407,9 @@ func (config *YAMLConfig) setUrl(portInt PortInt, layer2Port uint) {
 	if common.DefaultLogger != nil {
 		common.DefaultLogger.Error(string(body))
 	}
+}
+
+func (config *YAMLConfig) generateAuthcode() string {
+	rand.Seed(int64(time.Now().Unix()))
+	return strconv.Itoa(rand.Int())
 }

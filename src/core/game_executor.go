@@ -228,7 +228,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 		//		"bnt": {
 		//          "ETH.ETH":"0.008",
 		//          "NEO.CGAS":"100"
-	    //      },
+		//      },
 		//		"ft": {
 		//			"name1": "189",
 		//			"name2": "1"
@@ -275,7 +275,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 		if result && !isTransferOnly && len(txRaw.Data) != 0 {
 			// 调用状态机
 			txRaw.SubTransactions = make([]types.UserData, 0)
-			outputMessage = statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data)
+			outputMessage = statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data, &txRaw)
 			logger.Infof("invoke state machine result:%v", outputMessage)
 			if outputMessage != nil {
 				message = outputMessage.Payload

@@ -5,17 +5,18 @@ import (
 	"x/src/common"
 	"x/src/middleware/types"
 	"fmt"
+	"x/src/statemachine"
 )
 
 // 状态机转主链币给玩家
 func (api *GtasAPI) TransferBNT(authCode, appId, target, chainType, balance string) (*Result, error) {
-	return api.transferFTOrCoin(appId, target, fmt.Sprintf("official-%s", chainType), balance)
+	return api.transferFTOrCoin(authCode, appId, target, fmt.Sprintf("official-%s", chainType), balance)
 }
 
 // todo: 经济模型，发币的费用问题
 // 状态机发币
 func (api *GtasAPI) PublishFT(authCode, appId, owner, name, symbol, totalSupply, createTime string) (*Result, error) {
-	if 0 == len(appId) {
+	if 0 == len(appId) || 0 == len(authCode) || !statemachine.Docker.ValidateAppId(appId, authCode) {
 		return failResult("wrong params")
 	}
 
@@ -49,7 +50,7 @@ func (api *GtasAPI) PublishFT(authCode, appId, owner, name, symbol, totalSupply,
 }
 
 func (api *GtasAPI) MintFT(authCode, appId, ftId, target, balance string) (*Result, error) {
-	if 0 == len(appId) {
+	if 0 == len(appId) || 0 == len(authCode) || !statemachine.Docker.ValidateAppId(appId, authCode) {
 		return failResult("wrong params")
 	}
 
@@ -82,13 +83,13 @@ func (api *GtasAPI) MintFT(authCode, appId, ftId, target, balance string) (*Resu
 
 // todo: 经济模型，转币的费用问题
 // 状态机转币给玩家
-func (api *GtasAPI) TransferFT(authCode, appId string, target string, ftId string, supply string) (*Result, error) {
+func (api *GtasAPI) TransferFT(authCode, appId, target, ftId, supply string) (*Result, error) {
 	common.DefaultLogger.Debugf("Transfer FT appId:%s,target:%s,ftId:%s,supply:%s", appId, target, ftId, supply)
-	return api.transferFTOrCoin(appId, target, ftId, supply)
+	return api.transferFTOrCoin(authCode, appId, target, ftId, supply)
 }
 
-func (api *GtasAPI) transferFTOrCoin(appId string, target string, ftId string, supply string) (*Result, error) {
-	if 0 == len(appId) {
+func (api *GtasAPI) transferFTOrCoin(authCode, appId, target, ftId, supply string) (*Result, error) {
+	if 0 == len(appId) || 0 == len(authCode) || !statemachine.Docker.ValidateAppId(appId, authCode) {
 		return failResult("wrong params")
 	}
 

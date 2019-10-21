@@ -16,10 +16,11 @@ import (
 var Docker *DockerManager
 
 type DockerManager struct {
-	Mapping    map[string]PortInt
-	Config     YAMLConfig
-	Filename   string
-	httpClient *http.Client
+	Mapping     map[string]PortInt // key 为appId， value为端口号
+	AuthMapping map[string]string  // key 为appId， value为authCode
+	Config      YAMLConfig
+	Filename    string
+	httpClient  *http.Client
 }
 
 func DockerInit(filename string, port uint) {
@@ -60,12 +61,12 @@ func createHTTPClient() *http.Client {
 	return client
 }
 
-func (d *DockerManager) init(port uint) {
-	d.Mapping = d.Config.InitFromFile(d.Filename, port)
+func (d *DockerManager) init(layer2Port uint) {
+	d.Mapping, d.AuthMapping = d.Config.InitFromFile(d.Filename, layer2Port)
 }
 
-//todo 这里入参需要改，改为payload,transfer,authCode
-func (d *DockerManager) Process(name string, kind string, nonce string, payload string) *types.OutputMessage {
+//todo 这里入参需要改，改为payload,transfer
+func (d *DockerManager) Process(name string, kind string, nonce string, payload string, tx *types.Transaction) *types.OutputMessage {
 	prefix := d.getUrlPrefix(name)
 	if 0 == len(prefix) {
 		return nil
@@ -96,29 +97,6 @@ func (d *DockerManager) Process(name string, kind string, nonce string, payload 
 	}
 
 	return &output
-}
-
-func (d *DockerManager) Validate(name string, key string, value string) string {
-	prefix := d.getUrlPrefix(name)
-	if 0 == len(prefix) {
-		return ""
-	}
-
-	path := fmt.Sprintf("%svalidate", prefix)
-	resp, err := d.httpClient.PostForm(path, url.Values{"key": {key}, "value": {value}})
-	if err != nil {
-		// handle error
-		return ""
-	}
-
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		// handle error
-		return ""
-	}
-
-	return string(body)
 }
 
 func (d *DockerManager) Nonce(name string) int {
@@ -189,4 +167,18 @@ func (d *DockerManager) IsGame(address string) bool {
 	}
 
 	return false
+}
+
+// 检查authCode是否合法
+func (d *DockerManager) ValidateAppId(appId, authCode string) bool {
+	if 0 == len(appId) || 0 == len(authCode) {
+		return false
+	}
+
+	expect := d.AuthMapping[appId]
+	if 0 == len(expect) {
+		return false
+	}
+
+	return expect == authCode
 }
