@@ -27,8 +27,6 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 	}
 
 	source := common.HexToAddress(transaction.Source)
-	gameId := transaction.Target
-
 	result := make(map[string]string)
 
 	//主链币检查
@@ -70,16 +68,15 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 	nftInfo := make([]types.NFTID, 0)
 	if withDrawReq.NFT != nil && len(withDrawReq.NFT) != 0 {
 		for _, k := range withDrawReq.NFT {
-			subValue := accountdb.GetNFTByGameId(source, gameId, k.SetId, k.Id)
-			if 0 == len(subValue) {
+			nft := accountdb.GetNFTById(source, k.SetId, k.Id)
+			if nil == nft {
 				return "NFT Not Exist In This Game", false
 			}
 
-			nftInfo = append(nftInfo, types.NFTID{SetId: k.SetId, Id: k.Id, Data: subValue})
-
 			//删除要提现的NFT
-			accountdb.RemoveNFTByGameId(source, gameId, k.SetId, k.Id)
+			accountdb.RemoveNFT(source, nft)
 
+			nftInfo = append(nftInfo, types.NFTID{SetId: k.SetId, Id: k.Id, Data: nft.ToJSONString()})
 			result["chainType"] = withDrawReq.ChainType
 			result["setId"] = k.SetId
 			result["tokenId"] = k.Id

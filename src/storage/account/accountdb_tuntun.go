@@ -75,22 +75,6 @@ func (self *AccountDB) GetNFTById(addr common.Address, setId, id string) *types.
 	return nil
 }
 
-// 在某个gameId下根据setId/id 查找NFT
-func (self *AccountDB) GetNFTByGameId(addr common.Address, gameId, setId, id string) string {
-	accountObject := self.getOrNewAccountObject(addr)
-	data := accountObject.data
-	nftList := data.GameData.GetNFTMaps(gameId)
-	if nil == nftList {
-		return ""
-	}
-
-	nft := nftList.GetNFT(setId, id)
-	if nil != nft {
-		return nft.GetData(gameId)
-	}
-	return ""
-}
-
 func (self *AccountDB) GetAllNFTByGameId(addr common.Address, gameId string) []*types.NFT {
 	accountObject := self.getOrNewAccountObject(addr)
 	data := accountObject.data
@@ -134,6 +118,11 @@ func (self *AccountDB) SetNFTValueByGameId(addr common.Address, appId, setId, id
 func (self *AccountDB) RemoveNFTByGameId(addr common.Address, appId, setId, id string) bool {
 	stateObject := self.getOrNewAccountObject(addr)
 	return stateObject.RemoveNFT(appId, setId, id)
+}
+
+func (self *AccountDB) RemoveNFT(addr common.Address, nft *types.NFT) bool {
+	stateObject := self.getOrNewAccountObject(addr)
+	return stateObject.RemoveNFT(nft.AppId, nft.SetID, nft.ID)
 }
 
 func (self *AccountDB) ApproveNFT(owner common.Address, appId, setId, id, renter string) bool {
