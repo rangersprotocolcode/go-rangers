@@ -108,7 +108,11 @@ func (self *FTManager) SubFTSet(owner, ftId string, amount *big.Int, accountDB *
 		return false
 	}
 
-	total := amount.Add(ftSet.TotalSupply, amount)
+	total := amount
+	if ftSet.TotalSupply != nil {
+		total = amount.Add(ftSet.TotalSupply, amount)
+	}
+
 	if ftSet.MaxSupply.Sign() != 0 && total.Cmp(ftSet.MaxSupply) > 0 {
 		return false
 	}
