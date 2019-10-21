@@ -421,7 +421,6 @@ type DepositData struct {
 	ChainType string `json:"chainType,omitempty"`
 	Amount    string `json:"amount,omitempty"`
 	TxId      string `json:"txId,omitempty"`
-	//todo 这里为了方便测试加入FT和NFT 上线时要去掉
 	FT  map[string]string `json:"ft,omitempty"`
 	NFT map[string]string `json:"nft,omitempty"`
 }

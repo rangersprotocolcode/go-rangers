@@ -137,8 +137,26 @@ func TestJSONNFTID(t *testing.T) {
 
 	m2 := make(map[string]types.TransferData, 0)
 	err := json.Unmarshal([]byte(data), &m2)
-	if err != nil{
-		fmt.Printf("Unmarshal error:%s\n",err.Error())
+	if err != nil {
+		fmt.Printf("Unmarshal error:%s\n", err.Error())
 	}
-	fmt.Printf("m2:%v\n",m2)
+	fmt.Printf("m2:%v\n", m2)
+}
+
+func TestWithdrawData(t *testing.T) {
+	w := types.WithDrawData{ChainType: "ETH", Address: "address1", Balance: "2.33"}
+	ftInfo := make(map[string]string)
+	ftInfo ["setId1"] = "ft-balance1"
+	ftInfo ["setId2"] = "ft-balance2"
+	w.FT = ftInfo
+
+	nftInfo := make([]types.NFTID, 0)
+	nftId1 := types.NFTID{SetId: "nft set a", Id: "token id 1", Data: "data1"}
+	nftId2 := types.NFTID{SetId: "nft set b", Id: "token id 2", Data: "data2"}
+	nftInfo = append(nftInfo, nftId1)
+	nftInfo = append(nftInfo, nftId2)
+	w.NFT = nftInfo
+
+	b, _ := json.Marshal(w)
+	fmt.Printf("%s\n", b)
 }
