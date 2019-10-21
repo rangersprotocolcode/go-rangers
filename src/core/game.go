@@ -134,7 +134,7 @@ func GetFTSet(id string) string {
 		response["name"] = ftSet.Name
 		response["setId"] = ftSet.ID
 		response["creator"] = ftSet.AppId
-		response["remain"] = strconv.FormatFloat(float64(ftSet.Remain.Int64())/1000000000, 'f', -1, 64)
+		response["totalSupply"] = strconv.FormatFloat(float64(ftSet.TotalSupply.Int64())/1000000000, 'f', -1, 64)
 	}
 
 	bytes, _ := json.Marshal(response)

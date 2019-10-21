@@ -70,15 +70,15 @@ func (self *FTManager) PublishFTSet(name, symbol, appId, total, owner, createTim
 
 	// 生成ftSet
 	ftSet := &types.FTSet{
-		ID:         id,
-		Name:       name,
-		Symbol:     symbol,
-		AppId:      appId,
-		MaxSupply:  self.convert(total),
-		Remain:     self.convert(total),
-		Type:       kind,
-		Owner:      owner,
-		CreateTime: createTime,
+		ID:          id,
+		Name:        name,
+		Symbol:      symbol,
+		AppId:       appId,
+		MaxSupply:   self.convert(total),
+		TotalSupply: big.NewInt(0),
+		Type:        kind,
+		Owner:       owner,
+		CreateTime:  createTime,
 	}
 
 	self.updateFTSet(id, ftSet, accountDB)
@@ -104,11 +104,16 @@ func (self *FTManager) SubFTSet(owner, ftId string, amount *big.Int, accountDB *
 	}
 
 	ftSet = &ftSetData
-	if ftSet.Owner != owner || ftSet.Remain.Cmp(amount) == -1 {
+	if ftSet.Owner != owner {
 		return false
 	}
 
-	ftSet.Remain = ftSet.Remain.Sub(ftSet.Remain, amount)
+	total := amount.Add(ftSet.TotalSupply, amount)
+	if ftSet.MaxSupply.Sign() != 0 && total.Cmp(ftSet.MaxSupply) > 0 {
+		return false
+	}
+
+	ftSet.TotalSupply = total
 	self.updateFTSet(ftId, ftSet, accountDB)
 	return true
 }
