@@ -68,13 +68,10 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 	nftInfo := make([]types.NFTID, 0)
 	if withDrawReq.NFT != nil && len(withDrawReq.NFT) != 0 {
 		for _, k := range withDrawReq.NFT {
-			nft := accountdb.GetNFTById(source, k.SetId, k.Id)
+			nft := NFTManagerInstance.DeleteNFT(source, k.SetId, k.Id, accountdb)
 			if nil == nft {
 				return "NFT Not Exist In This Game", false
 			}
-
-			//删除要提现的NFT
-			accountdb.RemoveNFT(source, nft)
 
 			nftInfo = append(nftInfo, types.NFTID{SetId: k.SetId, Id: k.Id, Data: nft.ToJSONString()})
 			result["chainType"] = withDrawReq.ChainType

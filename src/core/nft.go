@@ -60,6 +60,27 @@ func (self *NFTManager) getNFTSet(setId string, accountDB *account.AccountDB) *t
 	return &nftSet
 }
 
+// 从layer2 层面删除
+func (self *NFTManager) DeleteNFT(owner common.Address, setId, id string, accountDB *account.AccountDB) *types.NFT {
+	self.lock.RLock()
+	defer self.lock.RUnlock()
+
+	nft := accountDB.GetNFTById(owner, setId, id)
+	if nil == nft {
+		return nil
+	}
+
+	//删除要提现的NFT
+	accountDB.RemoveNFT(owner, nft)
+
+	// 更新nftSet
+	nftSet := self.getNFTSet(setId, accountDB)
+	nftSet.RemoveOwner(id)
+	self.updateNFTSet(nftSet, accountDB)
+
+	return nft
+}
+
 // L2发行NFTSet
 // 状态机调用
 func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string, maxSupply int, createTime string, accountDB *account.AccountDB) (string, bool, *types.NFTSet) {

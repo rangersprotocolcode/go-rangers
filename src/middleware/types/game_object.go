@@ -29,6 +29,10 @@ func (self *NFTSet) ChangeOwner(id string, newOwner common.Address) {
 	self.OccupiedID[id] = newOwner
 }
 
+func (self *NFTSet) RemoveOwner(id string) {
+	delete(self.OccupiedID, id)
+}
+
 type NFT struct {
 	//
 	SetID  string `json:"setId,omitempty"`
