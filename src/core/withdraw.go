@@ -8,6 +8,7 @@ import (
 	"x/src/utility"
 	"fmt"
 	"x/src/network"
+	"strconv"
 )
 
 // 提现
@@ -45,7 +46,8 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 			return "BNT Not Enough", false
 		} else {
 			result["token"] = withDrawReq.ChainType
-			result["balance"] = left.String()
+			floatdata := float64(left.Int64()) / 1000000000
+			result["balance"] = strconv.FormatFloat(floatdata, 'f', -1, 64)
 			result["lockedBalance"] = withDrawReq.Balance
 		}
 	}
