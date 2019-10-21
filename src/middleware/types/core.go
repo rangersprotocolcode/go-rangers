@@ -418,11 +418,11 @@ type WithDrawData struct {
 
 //提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链
 type DepositData struct {
-	ChainType string `json:"chainType,omitempty"`
-	Amount    string `json:"amount,omitempty"`
-	TxId      string `json:"txId,omitempty"`
-	FT  map[string]string `json:"ft,omitempty"`
-	NFT map[string]string `json:"nft,omitempty"`
+	ChainType string            `json:"chainType,omitempty"`
+	Amount    string            `json:"amount,omitempty"`
+	TxId      string            `json:"txId,omitempty"`
+	FT        map[string]string `json:"ft,omitempty"`
+	NFT       map[string]string `json:"nft,omitempty"`
 }
 
 type TxJson struct {
@@ -467,6 +467,15 @@ func (txJson TxJson) ToTransaction() Transaction {
 	tx.SocketRequestId = txJson.SocketRequestId
 	tx.Time = txJson.Time
 	return tx
+}
+
+func (txJson TxJson) ToString() string {
+	byte, err := json.Marshal(txJson)
+	if err != nil {
+		logger.Errorf("Json marshal tx error:%s", err.Error())
+		return ""
+	}
+	return string(byte)
 }
 
 func (tx Transaction) ToTxJson() TxJson {

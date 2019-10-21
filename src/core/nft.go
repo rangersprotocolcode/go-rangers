@@ -110,19 +110,19 @@ func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string
 // L2创建NFT
 // 状态机调用
 func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner common.Address, accountDB *account.AccountDB) (string, bool) {
-	common.DefaultLogger.Debugf("Mint NFT! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, createTime, owner.String())
+	txLogger.Tracef("Mint NFT! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, createTime, owner.String())
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
 	if 0 == len(setId) || 0 == len(id) {
-		common.DefaultLogger.Debug("Mint nft! setId and id cannot be null")
+		txLogger.Tracef("Mint nft! setId and id cannot be null")
 		return "setId and id cannot be null", false
 	}
 
 	// 检查setId是否存在
 	nftSet := self.getNFTSet(setId, accountDB)
 	if nil == nftSet || nftSet.Owner != appId {
-		common.DefaultLogger.Debug("Mint nft! wrong setId or not setOwner")
+		txLogger.Debugf("Mint nft! wrong setId or not setOwner! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, createTime, owner.String())
 		return "wrong setId or not setOwner", false
 	}
 
@@ -134,10 +134,10 @@ func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner
 }
 
 func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data, creator string, timeStamp string, owner common.Address, accountDB *account.AccountDB) (string, bool) {
-	common.DefaultLogger.Debugf("Generate NFT! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, timeStamp, owner.String())
+	txLogger.Tracef("Generate NFT! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, timeStamp, owner.String())
 	// 检查id是否存在
 	if _, ok := nftSet.OccupiedID[id]; ok {
-		common.DefaultLogger.Debugf("Generate NFT! wrong id")
+		txLogger.Debugf("Generate NFT wrong id! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, timeStamp, owner.String())
 		return "wrong id", false
 	}
 	ownerString := owner.GetHexString()
@@ -154,7 +154,6 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 		Status:     0,
 		AppId:      appId,
 	}
-	common.DefaultLogger.Debugf("Create NFT!%v", nft)
 	nft.DataKey = make([]string, 0)
 	nft.DataValue = make([]string, 0)
 	if 0 != len(data) {
@@ -172,7 +171,7 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 		self.updateNFTSet(nftSet, accountDB)
 		return "nft mint successful", true
 	} else {
-		common.DefaultLogger.Debugf("Generate NFT! fail to nft mint")
+		txLogger.Debugf("Generate NFT! fail to nft mint appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, timeStamp, owner.String())
 		return "fail to nft mint", false
 	}
 }
@@ -254,13 +253,13 @@ func (self *NFTManager) BatchUpdateNFT(addr common.Address, appId, setId string,
 // NFT 迁移
 // 状态机&玩家(钱包)调用
 func (self *NFTManager) Transfer(setId, id string, owner, newOwner common.Address, accountDB *account.AccountDB) (string, bool) {
-	txLogger.Debugf("Transfer nft.setId:%s,id:%s,owner:%s,newOwner:%s", setId, id, owner.String(), newOwner.String())
+	txLogger.Tracef("Transfer nft.setId:%s,id:%s,owner:%s,newOwner:%s", setId, id, owner.String(), newOwner.String())
 	// 根据setId+id 查找nft
 	nft := accountDB.GetNFTById(owner, setId, id)
 	if nil == nft {
 		return fmt.Sprintf("nft is not existed. setId: %s, id: %s, owner: %s", setId, id, owner.String()), false
 	}
-	txLogger.Debugf("Transfer nft.Got nft:%v", nft)
+	txLogger.Tracef("Transfer nft.Got nft:%v", nft)
 
 	// 判断nft是否可以被transfer
 	if nft.Status != 0 {

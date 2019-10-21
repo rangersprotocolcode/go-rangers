@@ -76,10 +76,10 @@ func (s *server) Notify(isunicast bool, gameId string, userid string, msg string
 func (s *server) handleMinerMessage(data []byte, from string) {
 	message, error := unMarshalMessage(data)
 	if error != nil {
-		Logger.Errorf("Proto unmarshal error:%s", error.Error())
+		Logger.Errorf("Proto unmarshal node message error:%s", error.Error())
 		return
 	}
-	Logger.Debugf("Receive message from %s,code:%d,msg size:%d,hash:%s", from, message.Code, len(data), message.Hash())
+	Logger.Debugf("Rcv from node: %s,code:%d,msg size:%d,hash:%s", from, message.Code, len(data), message.Hash())
 
 	code := message.Code
 	switch code {
@@ -116,11 +116,9 @@ func (s *server) handleMinerMessage(data []byte, from string) {
 		msg := notify.NewBlockMessage{BlockByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.NewBlock, &msg)
 	case ChainPieceInfoReq:
-		Logger.Debugf("Rcv ChainPieceInfoReq from %s", from)
 		msg := notify.ChainPieceInfoReqMessage{HeightByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.ChainPieceInfoReq, &msg)
 	case ChainPieceInfo:
-		Logger.Debugf("Rcv ChainPieceInfo from %s", from)
 		msg := notify.ChainPieceInfoMessage{ChainPieceInfoByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.ChainPieceInfo, &msg)
 	case ReqChainPieceBlock:
@@ -149,30 +147,26 @@ func (s *server) handleClientMessage(data []byte, userId string, nonce uint64, e
 	var txJson types.TxJson
 	err := json.Unmarshal(data, &txJson)
 	if nil != err {
-		Logger.Errorf("handleClientMessage json error:%s", err.Error())
+		Logger.Errorf("Json unmarshal client message error:%s", err.Error())
 		return
 	}
-
-	Logger.Debugf("Receive message from client.TxJson:%v", txJson)
 	tx := txJson.ToTransaction()
-	Logger.Debugf("Receive message from client.Tx hash:%s", tx.Hash.String())
+	Logger.Debugf("Rcv from client.Tx info:%s", txJson.ToString())
 
 	msg := notify.ClientTransactionMessage{Tx: tx, UserId: userId, Nonce: nonce}
 	notify.BUS.Publish(event, &msg)
-
 }
 
 func (s *server) handleCoinConnectorMessage(data []byte, nonce uint64) {
 	var txJson types.TxJson
 	err := json.Unmarshal(data, &txJson)
 	if err != nil {
-		Logger.Errorf("Coin connector msg unmarshal err:", err.Error())
+		Logger.Errorf("Json unmarshal coin connector msg err:", err.Error())
 		return
 	}
-	Logger.Debugf("Receive message from coin connector.Tx:%v", txJson)
+	Logger.Debugf("Rcv message from coin connector.Tx info:%s", txJson.ToString())
 	tx := txJson.ToTransaction()
 	tx.RequestId = nonce
-	Logger.Debugf("Tx hash:%s", tx.Hash.String())
 
 	if tx.Type == types.TransactionTypeCoinDepositAck || tx.Type == types.TransactionTypeFTDepositAck || tx.Type == types.TransactionTypeNFTDepositAck {
 		msg := notify.CoinProxyNotifyMessage{Tx: tx}

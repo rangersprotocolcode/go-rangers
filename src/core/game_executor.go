@@ -382,9 +382,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 
 func (executor *GameExecutor) sendTransaction(trans *types.Transaction) error {
 	if ok, err := executor.chain.GetTransactionPool().AddTransaction(trans); err != nil || !ok {
-		if nil != common.DefaultLogger {
-			common.DefaultLogger.Errorf("AddTransaction not ok or error:%s", err.Error())
-		}
+		txLogger.Errorf("Add tx error:%s", err.Error())
 		return err
 	}
 

@@ -24,7 +24,7 @@ func UnMarshalTransaction(b []byte) (Transaction, error) {
 	t := new(middleware_pb.Transaction)
 	error := proto.Unmarshal(b, t)
 	if error != nil {
-		logger.Errorf("[handler]Unmarshal transaction error:%s", error.Error())
+		logger.Errorf("Unmarshal transaction error:%s", error.Error())
 		return Transaction{}, error
 	}
 	transaction := pbToTransaction(t)
@@ -36,7 +36,7 @@ func UnMarshalTransactions(b []byte) ([]*Transaction, error) {
 	ts := new(middleware_pb.TransactionSlice)
 	error := proto.Unmarshal(b, ts)
 	if error != nil {
-		logger.Errorf("[handler]Unmarshal transactions error:%s", error.Error())
+		logger.Errorf("Unmarshal transactions error:%s", error.Error())
 		return nil, error
 	}
 
@@ -49,7 +49,7 @@ func UnMarshalBlock(bytes []byte) (*Block, error) {
 	b := new(middleware_pb.Block)
 	error := proto.Unmarshal(bytes, b)
 	if error != nil {
-		logger.Errorf("[handler]Unmarshal Block error:%s", error.Error())
+		logger.Errorf("Unmarshal Block error:%s", error.Error())
 		return nil, error
 	}
 	block := PbToBlock(b)
@@ -61,7 +61,7 @@ func UnMarshalBlockHeader(bytes []byte) (*BlockHeader, error) {
 	b := new(middleware_pb.BlockHeader)
 	error := proto.Unmarshal(bytes, b)
 	if error != nil {
-		logger.Errorf("[handler]Unmarshal Block error:%s", error.Error())
+		logger.Errorf("Unmarshal Block error:%s", error.Error())
 		return nil, error
 	}
 	header := PbToBlockHeader(b)
@@ -225,7 +225,7 @@ func PbToBlockHeader(h *middleware_pb.BlockHeader) *BlockHeader {
 	var preTime time.Time
 	e1 := preTime.UnmarshalBinary(h.PreTime)
 	if e1 != nil {
-		logger.Errorf("[handler]pbToBlockHeader preTime UnmarshalBinary error:%s", e1.Error())
+		logger.Errorf("pbToBlockHeader preTime UnmarshalBinary error:%s", e1.Error())
 		return nil
 	}
 
@@ -233,7 +233,7 @@ func PbToBlockHeader(h *middleware_pb.BlockHeader) *BlockHeader {
 	curTime.UnmarshalBinary(h.CurTime)
 	e2 := curTime.UnmarshalBinary(h.CurTime)
 	if e2 != nil {
-		logger.Errorf("[handler]pbToBlockHeader curTime UnmarshalBinary error:%s", e2.Error())
+		logger.Errorf("pbToBlockHeader curTime UnmarshalBinary error:%s", e2.Error())
 		return nil
 	}
 

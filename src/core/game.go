@@ -73,14 +73,14 @@ func GetNFTCount(addr, setId, appId string) int {
 	return count
 }
 func GetNFTInfo(setId, id, appId string) string {
-	common.DefaultLogger.Debugf("Get nft nfo.setId:%s,id:%s,appid:%s,", setId, id, appId)
+	txLogger.Tracef("Get nft nfo.setId:%s,id:%s,appid:%s,", setId, id, appId)
 	accountDB := AccountDBManagerInstance.GetAccountDB(appId, true)
 	nft := NFTManagerInstance.GetNFT(setId, id, accountDB)
 	if nil != nft {
-		common.DefaultLogger.Debugf("Got nft info:%s,", nft.ToJSONString())
+		txLogger.Tracef("Got nft info:%s,", nft.ToJSONString())
 		return nft.ToJSONString()
 	}
-	common.DefaultLogger.Debugf("Got nil nft ")
+	txLogger.Tracef("Got nil nft ")
 	return ""
 }
 
@@ -110,14 +110,14 @@ func GetAllNFTBySetId(source string, setId string) string {
 }
 
 func GetNFTSet(setId string) string {
-	common.DefaultLogger.Debugf("Get nft set id:%s,", setId)
+	txLogger.Tracef("Get nft set id:%s,", setId)
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
 	nftSet := NFTManagerInstance.GetNFTSet(setId, accountDB)
 	if nil != nftSet {
-		common.DefaultLogger.Debugf("Got nft set info:%s,", nftSet.ToJSONString())
+		txLogger.Tracef("Got nft set info:%s,", nftSet.ToJSONString())
 		return nftSet.ToJSONString()
 	}
-	common.DefaultLogger.Debugf("Got nil nft set:%v", nftSet)
+	txLogger.Tracef("Got nil nft set:%v", nftSet)
 	return ""
 }
 
@@ -341,27 +341,27 @@ func transferCoin(coin map[string]string, source string, target string, accountD
 // tx.data 发行参数，map jsonString
 // {"symbol":"","name":"","totalSupply":"12345678"}
 func PublishFT(accountdb *account.AccountDB, tx *types.Transaction) (string, bool) {
-	txLogger.Debugf("Execute publish ft tx:%v", tx)
+	txLogger.Tracef("Execute publish ft tx:%s", tx.ToTxJson().ToString())
 	var ftSet map[string]string
 	if err := json.Unmarshal([]byte(tx.Data), &ftSet); nil != err {
-		txLogger.Debugf("Unmarshal data error:%s", err.Error())
+		txLogger.Errorf("Unmarshal data error:%s", err.Error())
 		return "Publish FT Bad Format", false
 	}
 
 	appId := tx.Source
 	createTime := ftSet["createTime"]
 	id, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, createTime, 1, accountdb)
-	txLogger.Debugf("Publish ft name:%s,symbol:%s,totalSupply:%s,appId:%s,id:%s,publish result:%t", ftSet["name"], ftSet["symbol"], ftSet["totalSupply"], appId, id, ok)
+	txLogger.Tracef("Publish ft name:%s,symbol:%s,totalSupply:%s,appId:%s,id:%s,publish result:%t", ftSet["name"], ftSet["symbol"], ftSet["totalSupply"], appId, id, ok)
 
 	return id, ok
 }
 
 func PublishNFTSet(accountdb *account.AccountDB, tx *types.Transaction) (bool, string) {
-	txLogger.Debugf("Execute publish nft tx:%v", tx)
+	txLogger.Tracef("Execute publish nft tx:%s", tx.ToTxJson().ToString())
 
 	var nftSet types.NFTSet
 	if err := json.Unmarshal([]byte(tx.Data), &nftSet); nil != err {
-		txLogger.Debugf("Unmarshal data error:%s", err.Error())
+		txLogger.Errorf("Unmarshal data error:%s", err.Error())
 		return false, "Publish NFT Set Bad Format"
 	}
 
