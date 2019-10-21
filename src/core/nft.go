@@ -62,13 +62,13 @@ func (self *NFTManager) getNFTSet(setId string, accountDB *account.AccountDB) *t
 
 // L2发行NFTSet
 // 状态机调用
-func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string, maxSupply string, createTime string, accountDB *account.AccountDB) (string, bool, *types.NFTSet) {
+func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string, maxSupply int, createTime string, accountDB *account.AccountDB) (string, bool, *types.NFTSet) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
 	// 检查setId是否存在
-	if 0 == len(setId) || self.contains(setId, accountDB) {
-		return "SetId Wrong", false, nil
+	if maxSupply < 0 && 0 == len(setId) || self.contains(setId, accountDB) {
+		return "SetId or maxSupply Wrong", false, nil
 	}
 
 	// 创建NFTSet
@@ -105,8 +105,11 @@ func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner
 		return "wrong setId or not setOwner", false
 	}
 
-	return self.GenerateNFT(nftSet, appId, setId, id, data, appId, createTime, owner, accountDB)
+	if nftSet.MaxSupply != 0 && len(nftSet.OccupiedID) == nftSet.MaxSupply {
+		return "not enough nftSet", false
+	}
 
+	return self.GenerateNFT(nftSet, appId, setId, id, data, appId, createTime, owner, accountDB)
 }
 
 func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data, creator string, timeStamp string, owner common.Address, accountDB *account.AccountDB) (string, bool) {

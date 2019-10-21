@@ -16,7 +16,7 @@ type NFTSet struct {
 	SetID      string `json:"setId,omitempty"`
 	Name       string `json:"name,omitempty"`
 	Symbol     string `json:"symbol,omitempty"`
-	MaxSupply  string `json:"maxSupply,omitempty"`
+	MaxSupply  int    `json:"maxSupply,omitempty"`
 	Creator    string `json:"creator,omitempty"`
 	Owner      string `json:"owner,omitempty"`
 	CreateTime string `json:"createTime,omitempty"`
