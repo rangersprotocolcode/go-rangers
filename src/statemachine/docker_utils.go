@@ -41,9 +41,9 @@ func createHTTPClient() *http.Client {
 	return client
 }
 
-var Docker *DockerManager
+var Docker *StateMachineManager
 
-type DockerManager struct {
+type StateMachineManager struct {
 	// stm config
 	Config   YAMLConfig
 	Filename string
@@ -61,12 +61,12 @@ type DockerManager struct {
 	ctx context.Context
 }
 
-func DockerInit(filename string, port uint) *DockerManager {
+func DockerInit(filename string, port uint) *StateMachineManager {
 	if nil != Docker {
 		return Docker
 	}
 
-	Docker = &DockerManager{
+	Docker = &StateMachineManager{
 		Filename:      filename,
 		StateMachines: make(map[string]StateMachine),
 	}
@@ -80,15 +80,15 @@ func DockerInit(filename string, port uint) *DockerManager {
 	return Docker
 }
 
-func (d *DockerManager) init(layer2Port uint) {
+func (d *StateMachineManager) init(layer2Port uint) {
 	d.Config.InitFromFile(d.Filename)
-	d.Mapping, d.AuthMapping = d.runContainers(layer2Port)
+	d.Mapping, d.AuthMapping = d.runStateMachines(layer2Port)
 }
 
 //RunContainers: 从配置运行容器
 //cli:  用于访问 docker 守护进程
 //ctx:  传递本次操作的上下文信息
-func (d *DockerManager) runContainers(port uint) (map[string]PortInt, map[string]string) {
+func (d *StateMachineManager) runStateMachines(port uint) (map[string]PortInt, map[string]string) {
 	if 0 == len(d.Config.Services) {
 		return nil, nil
 	}
@@ -117,7 +117,7 @@ func (d *DockerManager) runContainers(port uint) (map[string]PortInt, map[string
 	return mapping, authCodeMapping
 }
 
-func (d *DockerManager) callInit(dockerPortInt PortInt, layer2Port uint, authCode string) {
+func (d *StateMachineManager) callInit(dockerPortInt PortInt, layer2Port uint, authCode string) {
 	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", dockerPortInt, "init")
 	values := url.Values{}
 	values["url"] = []string{fmt.Sprintf("http://%s:%d", "172.17.0.1", layer2Port)}
@@ -146,12 +146,12 @@ func (d *DockerManager) callInit(dockerPortInt PortInt, layer2Port uint, authCod
 	}
 }
 
-func (d *DockerManager) generateAuthcode() string {
+func (d *StateMachineManager) generateAuthcode() string {
 	rand.Seed(int64(time.Now().Unix()))
 	return strconv.Itoa(rand.Int())
 }
 
-func (d *DockerManager) Nonce(name string) int {
+func (d *StateMachineManager) Nonce(name string) int {
 	prefix := d.getUrlPrefix(name)
 	if 0 == len(prefix) {
 		return -1
@@ -179,7 +179,7 @@ func (d *DockerManager) Nonce(name string) int {
 	return nonce.Nonce
 }
 
-func (d *DockerManager) getUrlPrefix(name string) string {
+func (d *StateMachineManager) getUrlPrefix(name string) string {
 	port := d.Mapping[name]
 	if 0 == port {
 		return ""
@@ -189,7 +189,7 @@ func (d *DockerManager) getUrlPrefix(name string) string {
 	return fmt.Sprintf("http://0.0.0.0:%d/api/v1/", port)
 }
 
-func (d *DockerManager) GetType(gameId string) string {
+func (d *StateMachineManager) GetType(gameId string) string {
 	configs := d.Config.Services
 	if 0 == len(configs) {
 		return ""
@@ -206,7 +206,7 @@ func (d *DockerManager) GetType(gameId string) string {
 
 // 判断是否是游戏地址
 // todo: 这里只判断了本地运行的statemachine，会有漏洞
-func (d *DockerManager) IsGame(address string) bool {
+func (d *StateMachineManager) IsGame(address string) bool {
 	configs := d.Config.Services
 	if 0 == len(configs) {
 		return false
@@ -222,7 +222,7 @@ func (d *DockerManager) IsGame(address string) bool {
 }
 
 // 检查authCode是否合法
-func (d *DockerManager) ValidateAppId(appId, authCode string) bool {
+func (d *StateMachineManager) ValidateAppId(appId, authCode string) bool {
 	if 0 == len(appId) || 0 == len(authCode) {
 		return false
 	}
