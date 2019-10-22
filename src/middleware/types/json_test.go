@@ -37,3 +37,15 @@ func TestJSONObject_Put2(t *testing.T) {
 	fmt.Println(mobj.TOJSONString())
 	fmt.Println(mobj.Remove("ft"))
 }
+
+
+func TestJSONObject_Put3(t *testing.T) {
+	obj := NewJSONObject()
+	obj.Put("1", big.NewInt(10))
+
+	mobj := NewJSONObject()
+	mobj.Put("ft",obj)
+
+	fmt.Println(mobj.TOJSONString())
+	fmt.Println(mobj.Remove("ft"))
+}

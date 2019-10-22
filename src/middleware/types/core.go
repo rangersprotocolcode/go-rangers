@@ -575,6 +575,21 @@ func (object *JSONObject) TOJSONString() string {
 	return string(dataBytes)
 }
 
+//func (object *JSONObject) MarshalJSON() ([]byte, error) {
+//	data := bytes.Buffer{}
+//	for k, v := range object.Data {
+//		value, err := json.Marshal(v)
+//		if err != nil {
+//			return nil, err
+//		}
+//
+//		data.Write([]byte(k))
+//		data.Write(value)
+//	}
+//
+//	return data.Bytes(), nil
+//}
+
 func ReplaceBigInt(one, other interface{}) interface{} {
 	bigInt := other.(*big.Int)
 	return strconv.FormatFloat(float64(bigInt.Int64())/1000000000, 'f', -1, 64)
