@@ -356,6 +356,7 @@ func (chain *blockChain) Clear() error {
 func (chain *blockChain) GetVerifyHash(height uint64) (common.Hash, error) {
 	key := utility.UInt64ToByte(height)
 	raw, err := chain.verifyHashDB.Get(key)
+	logger.Debugf("Get verify hash.Height:%d,hash:%s", height, common.BytesToHash(raw).String())
 	return common.BytesToHash(raw), err
 }
 

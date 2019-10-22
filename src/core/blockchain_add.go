@@ -233,6 +233,7 @@ func (chain *blockChain) updateLastBlock(state *account.AccountDB, header *types
 func (chain *blockChain) updateVerifyHash(block *types.Block) {
 	verifyHash := consensusHelper.VerifyHash(block)
 	chain.verifyHashDB.Put(utility.UInt64ToByte(block.Header.Height), verifyHash.Bytes())
+	logger.Debugf("Update verify hash.Height:%d,verifyHash:%s", utility.UInt64ToByte(block.Header.Height), verifyHash.String())
 }
 
 func (chain *blockChain) updateTxPool(block *types.Block, receipts types.Receipts) {

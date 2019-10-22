@@ -174,7 +174,7 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 			}
 			vHash := msg.ProveHash[p.getMinerPos(gid, p.GetMinerID())]
 			if vHash != existHash {
-				err = fmt.Errorf("check p rove hash fail, sampleHeight=%v, realHeight=%v, receive hash=%v, exist hash=%v", sampleHeight, realHeight, vHash.ShortS(), existHash.ShortS())
+				err = fmt.Errorf("check p rove hash fail, sampleHeight=%v, realHeight=%v, receive hash=%v, exist hash=%v", sampleHeight, realHeight, vHash.String(), existHash.String())
 				return
 			}
 		}
