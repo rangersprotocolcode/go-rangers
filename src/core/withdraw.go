@@ -13,14 +13,14 @@ import (
 
 // 提现
 func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSendToConnector bool) (string, bool) {
-	txLogger.Debugf("Execute withdraw tx:%v", transaction)
+	txLogger.Tracef("Execute withdraw tx:%s", transaction.ToTxJson().ToString())
 	if transaction.Data == "" {
 		return "Withdraw Data Bad Format", false
 	}
 	var withDrawReq types.WithDrawReq
 	err := json.Unmarshal([]byte(transaction.Data), &withDrawReq)
 	if err != nil {
-		txLogger.Debugf("Unmarshal data error:%s", err.Error())
+		txLogger.Errorf("Unmarshal data error:%s", err.Error())
 		return "Withdraw Data Bad Format", false
 	}
 	if withDrawReq.ChainType == "" || withDrawReq.Address == "" {
@@ -111,7 +111,7 @@ func sendWithdrawToConnector(withDrawReq types.WithDrawReq, transaction *types.T
 		return false
 	}
 
-	txLogger.Debugf("After execute withdraw.Send msg to coin proxy:%s", msg)
+	txLogger.Tracef("After execute withdraw.Send msg to coin proxy:%s", msg)
 	network.GetNetInstance().SendToCoinConnector(msg)
 	return true
 }

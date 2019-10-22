@@ -1,6 +1,8 @@
 package log
 
 type Logger interface {
+	Tracef(format string, params ...interface{})
+
 	Debugf(format string, params ...interface{})
 
 	Infof(format string, params ...interface{})

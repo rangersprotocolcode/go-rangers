@@ -269,17 +269,17 @@ func (executor *VMExecutor) validateNonce(accountdb *account.AccountDB, transact
 
 //主链币充值确认
 func (executor *VMExecutor) executeCoinDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	txLogger.Debugf("Execute coin deposit ack tx:%v", transaction)
+	txLogger.Tracef("Execute coin deposit ack tx:%s", transaction.ToTxJson().ToString())
 	if transaction.Data == "" {
 		return false
 	}
 	var depositCoinData types.DepositCoinData
 	err := json.Unmarshal([]byte(transaction.Data), &depositCoinData)
 	if err != nil {
-		txLogger.Debugf("Deposit coin data unmarshal error:%s", err.Error())
+		txLogger.Errorf("Deposit coin data unmarshal error:%s", err.Error())
 		return false
 	}
-	txLogger.Debugf("deposit coin data:%v,target address:%s", depositCoinData, transaction.Source)
+	txLogger.Tracef("deposit coin data:%v,target address:%s", depositCoinData, transaction.Source)
 	if depositCoinData.Amount == "" || depositCoinData.ChainType == "" {
 		return false
 	}
@@ -290,17 +290,17 @@ func (executor *VMExecutor) executeCoinDepositNotify(accountdb *account.AccountD
 
 //FT充值确认
 func (executor *VMExecutor) executeFTDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	txLogger.Debugf("Execute ft deposit ack tx:%v", transaction)
+	txLogger.Tracef("Execute ft deposit ack tx:%s", transaction.ToTxJson().ToString())
 	if transaction.Data == "" {
 		return false
 	}
 	var depositFTData types.DepositFTData
 	err := json.Unmarshal([]byte(transaction.Data), &depositFTData)
 	if err != nil {
-		txLogger.Debugf("Deposit ft data unmarshal error:%s", err.Error())
+		txLogger.Errorf("Deposit ft data unmarshal error:%s", err.Error())
 		return false
 	}
-	txLogger.Debugf("deposit ft data:%v, address:%s", depositFTData, transaction.Source)
+	txLogger.Tracef("deposit ft data:%v, address:%s", depositFTData, transaction.Source)
 	if depositFTData.Amount == "" || depositFTData.FTId == "" {
 		return false
 	}
@@ -311,17 +311,17 @@ func (executor *VMExecutor) executeFTDepositNotify(accountdb *account.AccountDB,
 
 //NFT充值确认
 func (executor *VMExecutor) executeNFTDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	txLogger.Debugf("Execute nft deposit ack tx:%v", transaction)
+	txLogger.Tracef("Execute nft deposit ack tx:%s", transaction.ToTxJson().ToString())
 	if transaction.Data == "" {
 		return false
 	}
 	var depositNFTData types.DepositNFTData
 	err := json.Unmarshal([]byte(transaction.Data), &depositNFTData)
 	if err != nil {
-		txLogger.Debugf("Deposit nft data unmarshal error:%s", err.Error())
+		txLogger.Errorf("Deposit nft data unmarshal error:%s", err.Error())
 		return false
 	}
-	txLogger.Debugf("deposit nft data:%v,target address:%s", depositNFTData, transaction.Source)
+	txLogger.Tracef("deposit nft data:%v,target address:%s", depositNFTData, transaction.Source)
 	if depositNFTData.SetId == "" || depositNFTData.ID == "" || depositNFTData.Value == "" {
 		return false
 	}

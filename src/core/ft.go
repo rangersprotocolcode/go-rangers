@@ -147,7 +147,7 @@ func (self *FTManager) TransferFT(source string, ftId string, target string, sup
 
 // 发行方转币给玩家
 func (self *FTManager) MintFT(owner, ftId, target, supply string, accountDB *account.AccountDB) (string, bool) {
-	common.DefaultLogger.Debugf("MintFT ftId %s,target:%s,supply:%s", ftId, target, supply)
+	txLogger.Tracef("MintFT ftId %s,target:%s,supply:%s", ftId, target, supply)
 	if 0 == len(target) || 0 == len(ftId) || 0 == len(supply) {
 		logger.Debugf("wrong params")
 		return "Wrong Params", false
@@ -155,7 +155,7 @@ func (self *FTManager) MintFT(owner, ftId, target, supply string, accountDB *acc
 
 	balance := self.convert(supply)
 	if !self.SubFTSet(owner, ftId, balance, accountDB) {
-		common.DefaultLogger.Debugf("not enough FT")
+		txLogger.Tracef("Mint ft not enough FT!ftId %s,target:%s,supply:%s", ftId, target, supply)
 		return "Not Enough FT", false
 	}
 
@@ -163,7 +163,7 @@ func (self *FTManager) MintFT(owner, ftId, target, supply string, accountDB *acc
 	if accountDB.AddFT(targetAddress, ftId, balance) {
 		return "TransferFT successful", true
 	} else {
-		logger.Debugf("overflow")
+		txLogger.Tracef("Mint ft overflow!ftId %s,target:%s,supply:%s", ftId, target, supply)
 		return "Overflow", false
 	}
 

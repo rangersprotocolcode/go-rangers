@@ -321,7 +321,8 @@ func dumpTxs(txs []*types.Transaction, blockHeight uint64) {
 		return
 	}
 
+	txLogger.Tracef("Tx on chain dump! Block height:%d", blockHeight)
 	for _, tx := range txs {
-		common.DefaultLogger.Debugf("Tx on chain dump:%v,block height:%d", tx, blockHeight)
+		txLogger.Tracef("Tx info;%s", tx.ToTxJson().ToString())
 	}
 }

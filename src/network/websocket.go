@@ -51,7 +51,7 @@ func (s *server) send(method []byte, targetId string, msg []byte, nonce uint64) 
 	header.targetId = target
 	message := loadWebSocketMsg(header, msg)
 
-	Logger.Debugf("Send msg:%v", message)
+	Logger.Tracef("Send msg:%v", message)
 	s.sendChan <- message
 }
 
@@ -104,13 +104,7 @@ func (s *server) loop() {
 				continue
 			}
 		case message := <-s.sendChan:
-			Logger.Debugf("WS send:%v", message)
-			if len(message) == 0 {
-				Logger.Debugf("send 0 byte message")
-			}
-			if len(message) == 28 {
-				Logger.Debugf("send 28 byte message:%v", message)
-			}
+			Logger.Tracef("WS send:%v", message)
 			err := s.conn.WriteMessage(websocket.BinaryMessage, message)
 			if err != nil {
 				Logger.Errorf("Send binary msg error:%s", err.Error())
@@ -135,7 +129,7 @@ func unloadWebSocketMsg(m []byte) (header header, body []byte) {
 
 	header = byteToHeader(m[:protocolHeaderSize])
 	body = m[protocolHeaderSize:]
-	Logger.Debugf("Rcv msg header:%v,body:%v", header, body)
+	Logger.Tracef("Rcv msg header:%v,body:%v", header, body)
 	return
 }
 
