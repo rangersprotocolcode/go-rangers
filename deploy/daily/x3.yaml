@@ -9,7 +9,6 @@ services:
         target: 8080
     detached: true
     type: "ETH"
-    cmd: ["/usr/share/filebeat/bin/filebeat","-e","-c","/etc/filebeat/filebeat.yml"]
 
 
   - priority: 1
