@@ -154,18 +154,18 @@ func (p *Processor) CalcBlockHeaderQN(bh *types.BlockHeader) uint64 {
 	return qn
 }
 
-func marshalBlock(b types.Block) ([]byte, error) {
-	if b.Transactions != nil && len(b.Transactions) == 0 {
-		b.Transactions = nil
-	}
-	if b.Header.Transactions != nil && len(b.Header.Transactions) == 0 {
-		b.Header.Transactions = nil
-	}
-	return msgpack.Marshal(&b)
-}
+//func marshalBlock(b types.Block) ([]byte, error) {
+//	if b.Transactions != nil && len(b.Transactions) == 0 {
+//		b.Transactions = nil
+//	}
+//	if b.Header.Transactions != nil && len(b.Header.Transactions) == 0 {
+//		b.Header.Transactions = nil
+//	}
+//	return msgpack.Marshal(&b)
+//}
 
 func (p *Processor) GenVerifyHash(b *types.Block, id groupsig.ID) common.Hash {
-	buf, err := marshalBlock(*b)
+	buf, err := types.MarshalBlock(b)
 	if err != nil {
 		panic(fmt.Sprintf("marshal block error, hash=%v, err=%v", b.Header.Hash.ShortS(), err))
 	}
