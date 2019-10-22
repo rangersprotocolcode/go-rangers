@@ -6,7 +6,6 @@ import (
 	"x/src/consensus/model"
 	"x/src/middleware/types"
 	"x/src/consensus/vrf"
-	"github.com/vmihailenco/msgpack"
 	"fmt"
 	"time"
 	"encoding/json"
