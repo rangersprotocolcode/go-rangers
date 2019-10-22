@@ -15,16 +15,14 @@ func TestConfig(t *testing.T) {
 	fmt.Println(runtime.GOOS)
 
 	var tom = new(YAMLConfig)
-	tom.InitFromFile("test.yaml", 10)
+	tom.InitFromFile("test.yaml")
 
 	assertEqual(t, len(tom.Services), 2)
 
 }
 
 func TestDocker(t *testing.T) {
-	var tom = new(DockerManager)
-	tom.Filename = "test.yaml"
-	tom.init(8080)
+	var tom = DockerInit("test.yaml",8080)
 
 	nonce := tom.Nonce("j")
 	fmt.Println(nonce)
