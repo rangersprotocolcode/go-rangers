@@ -9,7 +9,7 @@ import (
 	"encoding/json"
 )
 
-func (d *DockerManager) Process(name string, kind string, nonce string, payload string, tx *types.Transaction) *types.OutputMessage {
+func (d *StateMachineManager) Process(name string, kind string, nonce string, payload string, tx *types.Transaction) *types.OutputMessage {
 	prefix := d.getUrlPrefix(name)
 	if 0 == len(prefix) {
 		return nil
@@ -42,7 +42,7 @@ func (d *DockerManager) Process(name string, kind string, nonce string, payload 
 	return &output
 }
 
-func (d *DockerManager) generateTransfer(tx *types.Transaction) string {
+func (d *StateMachineManager) generateTransfer(tx *types.Transaction) string {
 	result := transferdata{}
 	if nil != tx && 0 != len(tx.ExtraData) {
 		result.Source = tx.Source
