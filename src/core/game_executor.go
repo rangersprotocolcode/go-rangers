@@ -250,6 +250,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 				message = "Transfer Bad Format"
 				result = false
 			} else {
+				// todo: mm条目数校验：调用状态机的，mm条目数只能有一个；纯转账，允许多个
 				snapshot := 0
 				if isTransferOnly {
 					snapshot = accountDB.Snapshot()
