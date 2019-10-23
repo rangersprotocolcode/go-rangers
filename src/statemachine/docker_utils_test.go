@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"x/src/middleware/types"
+	"strings"
 )
 
 func TestTransferData(t *testing.T) {
@@ -34,14 +35,21 @@ func TestTransferData(t *testing.T) {
 	//nft2["set_id_1"] = nft2list
 
 	nftlist := make([]types.NFTID, 5)
-	nftlist[0] = types.NFTID{SetId:"set_id_1",Id:"1"}
-	nftlist[1] = types.NFTID{SetId:"set_id_1",Id:"1002"}
-	nftlist[2] = types.NFTID{SetId:"set_id_2",Id:"2"}
-	nftlist[3] = types.NFTID{SetId:"set_id_1",Id:"20938"}
-	nftlist[4] = types.NFTID{SetId:"set_id_2",Id:"222"}
+	nftlist[0] = types.NFTID{SetId: "set_id_1", Id: "1"}
+	nftlist[1] = types.NFTID{SetId: "set_id_1", Id: "1002"}
+	nftlist[2] = types.NFTID{SetId: "set_id_2", Id: "2"}
+	nftlist[3] = types.NFTID{SetId: "set_id_1", Id: "20938"}
+	nftlist[4] = types.NFTID{SetId: "set_id_2", Id: "222"}
 	data.transfer(nftlist)
 
 	dataBytes, _ := json.Marshal(data)
 
 	fmt.Println(string(dataBytes))
+}
+
+func TestStringPrefix(t *testing.T) {
+	s := "official-asd"
+	fmt.Println(strings.TrimPrefix(s, "official-"))
+
+	fmt.Println(strings.TrimPrefix("eth.Eth", "official-"))
 }
