@@ -9,6 +9,7 @@ services:
         target: 8080
     detached: true
     type: "ETH"
+    hostname: "genesis_4_daily"
 
   - priority: 1
     game: "0x362beb806ab6067a5344665e71f09e5cc221b2a3"
