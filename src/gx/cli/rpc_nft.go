@@ -61,8 +61,8 @@ func (api *GtasAPI) BatchUpdateNFT(authCode, appId, setId string, id, data []str
 	}
 
 	for i := range id {
-		_, err := api.UpdateNFT(authCode, appId, setId, id[i], data[i])
-		if nil != err {
+		result, _ := api.UpdateNFT(authCode, appId, setId, id[i], data[i])
+		if result.Status != 0 {
 			msg := fmt.Sprintf("fail to BatchUpdateNFT setId %s", setId)
 			common.DefaultLogger.Debugf(msg)
 			return failResult(msg)
