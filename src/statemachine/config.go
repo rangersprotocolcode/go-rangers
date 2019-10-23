@@ -136,4 +136,5 @@ type ContainerConfig struct {
 	AutoRemove bool   `yaml:"auto_remove"`
 	Import     string `yaml:"import"`
 	Type       string `yaml:"type"`
+	Hostname   string `yaml:"hostname"`
 }
