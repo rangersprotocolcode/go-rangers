@@ -64,13 +64,13 @@ func (gx *GX) Run() {
 	pprofPort := app.Flag("pprof", "enable pprof").Default("23333").Uint()
 	keystore := app.Flag("keystore", "the keystore path, default is current path").Default("keystore").Short('k').String()
 	//控制台
-	consoleCmd := app.Command("console", "start gtas console")
+	consoleCmd := app.Command("console", "start RocketProtocol console")
 	showRequest := consoleCmd.Flag("show", "show the request json").Short('v').Bool()
 	remoteHost := consoleCmd.Flag("host", "the node host address to connect").Short('i').String()
 	remotePort := consoleCmd.Flag("port", "the node host port to connect").Short('p').Default("8101").Int()
-	rpcPort := consoleCmd.Flag("rpcport", "gtas console will listen at the port for wallet service").Short('r').Default("0").Int()
+	rpcPort := consoleCmd.Flag("rpcport", "RocketProtocol console will listen at the port for wallet service").Short('r').Default("0").Int()
 	//版本号
-	versionCmd := app.Command("version", "show gtas version")
+	versionCmd := app.Command("version", "show RocketProtocol version")
 	// mine
 	mineCmd := app.Command("miner", "miner start")
 	// rpc解析

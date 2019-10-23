@@ -50,7 +50,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	pv := big.NewInt(0)
 	block.Header = &types.BlockHeader{
 		Height:       0,
-		ExtraData:    common.Sha256([]byte("rocket protocol")),
+		ExtraData:    common.Sha256([]byte("Rocket Protocol")),
 		CurTime:      time.Date(2018, 6, 14, 10, 0, 0, 0, time.Local),
 		ProveValue:   pv,
 		TotalQN:      0,
@@ -60,8 +60,8 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	}
 
 	block.Header.RequestIds = make(map[string]uint64)
-	block.Header.Signature = common.Sha256([]byte("tas"))
-	block.Header.Random = common.Sha256([]byte("tas_initial_random"))
+	block.Header.Signature = common.Sha256([]byte("tuntunhz"))
+	block.Header.Random = common.Sha256([]byte("RocketProtocolVRF"))
 
 	tenThousandGxCoin := big.NewInt(0).SetUint64(1000000000 * 10000)
 
@@ -77,9 +77,6 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 		stateDB.SetBalance(common.BytesToAddress(proposer.Id), tenThousandGxCoin)
 	}
 
-	stage := stateDB.IntermediateRoot(false)
-	logger.Debugf("GenesisBlock Stage1 Root:%s", stage.Hex())
-
 	verifyMiners := make([]*types.Miner, 0)
 	for _, genesis := range genesisInfo {
 		for i, member := range genesis.Group.Members {
@@ -90,19 +87,16 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	MinerManagerImpl.addGenesesVerifier(verifyMiners, stateDB)
 	MinerManagerImpl.addGenesesProposer(genesisProposers, stateDB)
 
-	stage = stateDB.IntermediateRoot(false)
-	logger.Debugf("GenesisBlock Stage2 Root:%s", stage.Hex())
 	stateDB.SetNonce(common.BonusStorageAddress, 1)
 	stateDB.SetNonce(common.HeavyDBAddress, 1)
 	stateDB.SetNonce(common.LightDBAddress, 1)
 
 	root, _ := stateDB.Commit(true)
-	logger.Debugf("GenesisBlock final Root:%s", root.Hex())
+
 	triedb.Commit(root, false)
 	block.Header.StateTree = common.BytesToHash(root.Bytes())
 	block.Header.Hash = block.Header.GenHash()
 
-	logger.Debugf("GenesisBlock %+v", block.Header)
 	return block
 }
 
