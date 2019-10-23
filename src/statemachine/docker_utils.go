@@ -234,5 +234,6 @@ func (d *StateMachineManager) ValidateAppId(appId, authCode string) bool {
 		return false
 	}
 
+	common.DefaultLogger.Debugf("Expect:%s,validate result:%t", expect, expect == authCode)
 	return expect == authCode
 }
