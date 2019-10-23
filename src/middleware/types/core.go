@@ -356,20 +356,6 @@ type Group struct {
 	GroupHeight uint64
 }
 
-// 游戏的子账户
-type SubAccount struct {
-	Balance *big.Int
-	Nonce   uint64
-	Ft      map[string]string // key: 货币名 value：字符串1000000000(乘以10的9次方)
-	Assets  map[string]string
-}
-
-type SubAccountData struct {
-	Balance string            `json:"balance,omitempty"`
-	Ft      map[string]string `json:"ft,omitempty"`
-	Nft     map[string]string `json:"nft,omitempty"`
-}
-
 // 用于状态机内通过SDK调用layer2的数据结构
 type UserData struct {
 	Address string `json:"address"`
@@ -488,19 +474,6 @@ func (tx Transaction) ToTxJson() TxJson {
 	}
 	txJson.SocketRequestId = tx.SocketRequestId
 	return txJson
-}
-
-func (sub SubAccount) ToSubAccountData() SubAccountData {
-	subAccountData := SubAccountData{Ft: sub.Ft, Nft: sub.Assets}
-	subAccountData.Ft = make(map[string]string, 0)
-	if sub.Ft != nil {
-		for k, v := range sub.Ft {
-			bigInt, _ := new(big.Int).SetString(v, 10)
-			subAccountData.Ft[k] = strconv.FormatFloat(float64(bigInt.Int64())/1000000000, 'f', -1, 64)
-		}
-	}
-	subAccountData.Balance = strconv.FormatFloat(float64(sub.Balance.Int64())/1000000000, 'f', -1, 64)
-	return subAccountData
 }
 
 type DepositCoinData struct {
