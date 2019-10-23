@@ -12,7 +12,6 @@ import (
 	"x/src/common"
 
 	"x/src/storage/rlp"
-	"x/src/middleware/types"
 )
 
 type revision struct {
@@ -536,22 +535,4 @@ func (adb *AccountDB) Commit(deleteEmptyObjects bool) (root common.Hash, err err
 		return nil
 	})
 	return root, err
-}
-
-func (accountDB *AccountDB) GetSubAccount(address common.Address, gameId string) *types.SubAccount {
-	subAccountByte := accountDB.GetData(address, []byte(gameId))
-	subAccount, err := types.UnMarshalSubAccount(subAccountByte)
-	if err != nil {
-		return nil
-	}
-	return subAccount
-}
-
-func (accountDB *AccountDB) UpdateSubAccount(address common.Address, gameId string, subAccount types.SubAccount) {
-	data, err := types.MarshalSubAccount(subAccount)
-	if err != nil {
-		return
-	}
-
-	accountDB.SetData(address, []byte(gameId), data)
 }
