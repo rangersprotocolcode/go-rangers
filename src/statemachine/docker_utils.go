@@ -222,12 +222,14 @@ func (d *StateMachineManager) IsGame(address string) bool {
 
 // 检查authCode是否合法
 func (d *StateMachineManager) ValidateAppId(appId, authCode string) bool {
+	common.DefaultLogger.Debugf("Validate app id! Appid:%s,authCode:%s", appId, authCode)
 	if 0 == len(appId) || 0 == len(authCode) {
 		return false
 	}
 
 	expect := d.AuthMapping[appId]
 	if 0 == len(expect) {
+		common.DefaultLogger.Debugf("Validate wrong")
 		return false
 	}
 
