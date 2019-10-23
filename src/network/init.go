@@ -12,8 +12,8 @@ const (
 	channelSize        = 100
 	bufferSize         = 1024 * 1024 * 32
 
-	gateAddrProduction = "47.110.143.114"
-	gateAddrDaily      = "101.37.67.214"
+	gateAddrProduction = "47.96.99.105:8848"
+	gateAddrDaily      = "47.96.99.105:8848"
 )
 
 var gateAddr string
