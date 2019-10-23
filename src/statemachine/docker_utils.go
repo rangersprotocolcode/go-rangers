@@ -126,28 +126,28 @@ func (d *StateMachineManager) callInit(dockerPortInt PortInt, layer2Port uint, a
 		common.DefaultLogger.Errorf("Send post req:path:%s,values:%v", path, values)
 	}
 
-	resp, err := http.PostForm(path, values)
-	if err != nil {
-		if nil != common.DefaultLogger {
-			common.DefaultLogger.Errorf(err.Error())
+	for {
+		resp, err := http.PostForm(path, values)
+		if err != nil {
+			if nil != common.DefaultLogger {
+				common.DefaultLogger.Infof(err.Error())
+			}
+
+			time.Sleep(200 * time.Millisecond)
+		} else {
+			body, _ := ioutil.ReadAll(resp.Body)
+			resp.Body.Close()
+			if common.DefaultLogger != nil {
+				common.DefaultLogger.Error(fmt.Sprintf("start success: %s", string(body)))
+			}
+
+			return
 		}
-		return
-	}
-
-	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		// handle error
-		return
-	}
-
-	if common.DefaultLogger != nil {
-		common.DefaultLogger.Error(string(body))
 	}
 }
 
 func (d *StateMachineManager) generateAuthcode() string {
-	rand.Seed(int64(time.Now().Unix()))
+	rand.Seed(int64(time.Now().UnixNano()))
 	return strconv.Itoa(rand.Int())
 }
 
