@@ -317,7 +317,7 @@ func transferFT(ft map[string]string, source string, target string, accountDB *a
 			return nil, false
 		}
 
-		response.Put(ftName, left)
+		response.Put(strings.TrimPrefix(ftName, "official-"), left)
 	}
 
 	return &response, true

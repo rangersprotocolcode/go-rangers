@@ -130,14 +130,15 @@ func (d *StateMachineManager) callInit(dockerPortInt PortInt, layer2Port uint, a
 		resp, err := http.PostForm(path, values)
 		if err != nil {
 			if nil != common.DefaultLogger {
-				common.DefaultLogger.Errorf(err.Error())
+				common.DefaultLogger.Infof(err.Error())
 			}
+
 			time.Sleep(200 * time.Millisecond)
 		} else {
 			body, _ := ioutil.ReadAll(resp.Body)
 			resp.Body.Close()
 			if common.DefaultLogger != nil {
-				common.DefaultLogger.Error(string(body))
+				common.DefaultLogger.Error(fmt.Sprintf("start success: %s", string(body)))
 			}
 
 			return
@@ -146,7 +147,7 @@ func (d *StateMachineManager) callInit(dockerPortInt PortInt, layer2Port uint, a
 }
 
 func (d *StateMachineManager) generateAuthcode() string {
-	rand.Seed(int64(time.Now().Unix()))
+	rand.Seed(int64(time.Now().UnixNano()))
 	return strconv.Itoa(rand.Int())
 }
 
