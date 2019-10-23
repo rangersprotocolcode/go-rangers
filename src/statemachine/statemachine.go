@@ -207,6 +207,7 @@ func (c *StateMachine) runContainer() (string, Ports) {
 		ExposedPorts: exports,
 		Cmd:          strings.Split(c.CMD, " "),
 		WorkingDir:   c.WorkDir,
+		Hostname:     c.Hostname,
 	}, &container.HostConfig{
 		Binds:        vols,
 		PortBindings: pts,
