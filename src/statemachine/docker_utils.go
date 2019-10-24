@@ -229,8 +229,11 @@ func (d *StateMachineManager) ValidateAppId(appId, authCode string) bool {
 
 	expect := d.AuthMapping[appId]
 	if 0 == len(expect) {
+		common.DefaultLogger.Debugf("Validate wrong")
 		return false
 	}
-
+	if expect != authCode {
+		common.DefaultLogger.Debugf("Validate authCode error! appid:%s,authCode:%s,expect:%s", appId, authCode, expect)
+	}
 	return expect == authCode
 }
