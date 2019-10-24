@@ -223,7 +223,6 @@ func (d *StateMachineManager) IsGame(address string) bool {
 
 // 检查authCode是否合法
 func (d *StateMachineManager) ValidateAppId(appId, authCode string) bool {
-	common.DefaultLogger.Debugf("Validate app id! Appid:%s,authCode:%s", appId, authCode)
 	if 0 == len(appId) || 0 == len(authCode) {
 		return false
 	}
@@ -233,7 +232,8 @@ func (d *StateMachineManager) ValidateAppId(appId, authCode string) bool {
 		common.DefaultLogger.Debugf("Validate wrong")
 		return false
 	}
-
-	common.DefaultLogger.Debugf("Expect:%s,validate result:%t", expect, expect == authCode)
+	if expect != authCode {
+		common.DefaultLogger.Debugf("Validate authCode error! appid:%s,authCode:%s,expect:%s", appId, authCode, expect)
+	}
 	return expect == authCode
 }
