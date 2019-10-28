@@ -79,7 +79,7 @@ func (s *server) handleMinerMessage(data []byte, from string) {
 		Logger.Errorf("Proto unmarshal node message error:%s", error.Error())
 		return
 	}
-	Logger.Debugf("Rcv from node: %s,code:%d,msg size:%d,hash:%s", from, message.Code, len(data), message.Hash())
+	//Logger.Debugf("Rcv from node: %s,code:%d,msg size:%d,hash:%s", from, message.Code, len(data), message.Hash())
 
 	code := message.Code
 	switch code {

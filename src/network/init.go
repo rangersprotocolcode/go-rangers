@@ -9,7 +9,7 @@ import (
 
 const (
 	protocolHeaderSize = 28
-	channelSize        = 100
+	channelSize        = 10000
 	bufferSize         = 1024 * 1024 * 32
 
 	gateAddrProduction = "47.96.99.105:8848"
