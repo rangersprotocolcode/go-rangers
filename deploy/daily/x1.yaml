@@ -1,13 +1,3 @@
 title: x1
 services:
-  - priority: 0
-    game: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"
-    name: "genesis1"
-    image: "genesis_image:latest"
-    ports:
-      - host: 7771
-        target: 8080
-    detached: true
-    type: "ETH"
-    hostname: "genesis_1_daily"
 
