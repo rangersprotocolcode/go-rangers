@@ -387,19 +387,27 @@ type NFTID struct {
 
 //提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链
 type WithDrawReq struct {
-	ChainType string            `json:"chainType,omitempty"`
 	Address   string            `json:"address,omitempty"`
 	Balance   string            `json:"balance,omitempty"`
+	BNT       BNTWithdrawInfo   `json:"bnt,omitempty"`
+
+	ChainType string            `json:"chainType,omitempty"`
 	FT        map[string]string `json:"ft,omitempty"`
 	NFT       []NFTID           `json:"nft,omitempty"`
 }
 
 type WithDrawData struct {
 	Address   string            `json:"address,omitempty"`
+	BNT       BNTWithdrawInfo   `json:"bnt,omitempty"`
+
 	ChainType string            `json:"chainType,omitempty"`
-	Balance   string            `json:"balance,omitempty"`
 	FT        map[string]string `json:"ft,omitempty"`
 	NFT       []NFTID           `json:"nft,omitempty"`
+}
+
+type BNTWithdrawInfo struct {
+	TokenType string `json:"tokenType,omitempty"`
+	Value     string `json:"value,omitempty"`
 }
 
 //提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链
