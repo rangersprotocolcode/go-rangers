@@ -20,7 +20,7 @@ const (
 	minerTxCacheSize = 1000
 	missTxCacheSize  = 60000
 
-	txCountPerBlock = 3000
+	txCountPerBlock = 5000
 )
 
 var (
