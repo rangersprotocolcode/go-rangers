@@ -69,6 +69,7 @@ type castingBlock struct {
 
 func initBlockChain() error {
 	chain := &blockChain{lock: middleware.NewLoglock("chain")}
+	chain.transactionPool = NewTransactionPool()
 
 	var err error
 	chain.futureBlocks, err = lru.New(topBlocksCacheSize)
@@ -146,7 +147,6 @@ func initBlockChain() error {
 	chain.init = true
 	blockChainImpl = chain
 
-	chain.transactionPool = NewTransactionPool()
 	return nil
 }
 
