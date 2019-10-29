@@ -145,7 +145,7 @@ func (ch ChainHandler) newBlockHandler(msg notify.Message) {
 	logger.Debugf("Rcv new block from %s,hash:%v,height:%d,totalQn:%d,tx len:%d", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions))
 
 	// 上链成功，检查交易池，如果有交易则立即触发铸块
-	if types.AddBlockSucc == blockChainImpl.AddBlockOnChain(source, block, types.NewBlock) && blockChainImpl.transactionPool.TxNum() > 0 {
+	if types.AddBlockSucc == blockChainImpl.AddBlockOnChain(source, block, types.NewBlock) && blockChainImpl.transactionPool.TxNum() > 500 {
 		notify.BUS.Publish(notify.AfterNewBlock, nil)
 	}
 
