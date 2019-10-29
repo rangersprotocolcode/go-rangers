@@ -7,6 +7,8 @@ const (
 
 	NewBlock = "new_block"
 
+	AfterNewBlock = "after_new_block"
+
 	NewBlockHeader = "new_block_header"
 
 	BlockBodyReq = "block_body_req"

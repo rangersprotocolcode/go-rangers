@@ -103,7 +103,7 @@ type TransactionPool interface {
 
 	GetReceived() []*types.Transaction
 
-	TxNum() uint64
+	TxNum() int
 
 	MarkExecuted(receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash)
 

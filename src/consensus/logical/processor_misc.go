@@ -10,10 +10,12 @@ import (
 	"time"
 	"encoding/json"
 	"x/src/consensus/base"
+	"x/src/middleware/notify"
 )
 
 //后续如有全局定时器，从这个函数启动
 func (p *Processor) Start() bool {
+	notify.BUS.Subscribe(notify.AfterNewBlock, p.afterNewBlock)
 	p.Ticker.RegisterRoutine(p.getCastCheckRoutineName(), p.checkSelfCastRoutine, 1)
 	p.Ticker.RegisterRoutine(p.getReleaseRoutineName(), p.releaseRoutine, 2)
 	p.Ticker.RegisterRoutine(p.getBroadcastRoutineName(), p.broadcastRoutine, 1)
@@ -30,6 +32,10 @@ func (p *Processor) Start() bool {
 	p.prepareMiner()
 	p.ready = true
 	return true
+}
+
+func (p *Processor) afterNewBlock(msg notify.Message) {
+	p.checkSelfCastRoutine()
 }
 
 //预留接口
@@ -115,7 +121,7 @@ func (p *Processor) GetSelfMinerDO() *model.SelfMinerDO {
 func (p *Processor) canProposalAt(h uint64) bool {
 	miner := p.minerReader.getProposeMiner(p.GetMinerID())
 	if miner == nil {
-//		stdLogger.Errorf("get nil proposeMiner:%s", p.GetMinerID().String())
+		//		stdLogger.Errorf("get nil proposeMiner:%s", p.GetMinerID().String())
 		return false
 	}
 	return miner.CanCastAt(h)

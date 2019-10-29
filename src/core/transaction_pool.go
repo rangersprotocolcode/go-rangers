@@ -260,8 +260,8 @@ func (pool *TxPool) GetExecuted(hash common.Hash) *ExecutedTransaction {
 	return executedTx
 }
 
-func (p *TxPool) TxNum() uint64 {
-	return p.txCount
+func (p *TxPool) TxNum() int {
+	return p.received.Len()
 }
 
 func (pool *TxPool) PackForCast() []*types.Transaction {
@@ -308,7 +308,6 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 	if pool.isTransactionExisted(hash) {
 		return false, ErrExist
 	}
-	pool.txCount++
 
 	if tx.Type == types.TransactionTypeMinerApply || tx.Type == types.TransactionTypeMinerAbort ||
 		tx.Type == types.TransactionTypeBonus || tx.Type == types.TransactionTypeMinerRefund {
