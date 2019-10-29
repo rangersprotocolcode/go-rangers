@@ -32,7 +32,7 @@ const (
 	stateDBPrefix      = "state"
 	verifyHashDBPrefix = "verifyHash"
 
-	topBlocksCacheSize = 10
+	topBlocksCacheSize = 1000
 )
 
 var blockChainImpl *blockChain
@@ -71,12 +71,12 @@ func initBlockChain() error {
 	chain := &blockChain{lock: middleware.NewLoglock("chain")}
 
 	var err error
-	chain.futureBlocks, err = lru.New(10)
+	chain.futureBlocks, err = lru.New(topBlocksCacheSize)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
 	}
-	chain.verifiedBlocks, err = lru.New(10)
+	chain.verifiedBlocks, err = lru.New(topBlocksCacheSize)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
@@ -86,12 +86,12 @@ func initBlockChain() error {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
 	}
-	chain.castedBlock, err = lru.New(10)
+	chain.castedBlock, err = lru.New(topBlocksCacheSize)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
 	}
-	chain.verifiedBodyCache, err = lru.New(50)
+	chain.verifiedBodyCache, err = lru.New(topBlocksCacheSize)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
