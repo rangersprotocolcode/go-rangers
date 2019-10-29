@@ -103,8 +103,8 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 			return e
 		}
 
-		cost := (time.Now().Nanosecond() - m.BH.CurTime.Nanosecond()) / 1000
-		logger.Errorf("received castVerify msg, cast: %.3f ms, msg size: %d", cost, len(body))
+		cost := (time.Now().Nanosecond() - m.BH.CurTime.Nanosecond()) / 1000.0
+		logger.Errorf("received castVerify msg, cast: %f ms, msg size: %d", cost, len(body))
 		c.processor.OnMessageCast(m)
 	case network.VerifiedCastMsg2:
 		m, e := unMarshalConsensusVerifyMessage(body)
