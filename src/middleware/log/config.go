@@ -3,7 +3,7 @@ package log
 const (
 	DefaultConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/defaultLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/defaultLOG_INDEX.log" maxsize="100000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line] %Msg%n" />
@@ -12,7 +12,7 @@ const (
 
 	CoreLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/coreLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/coreLOG_INDEX.log" maxsize="100000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
@@ -21,7 +21,7 @@ const (
 
 	BlockSyncLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/block_syncLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/block_syncLOG_INDEX.log" maxsize="100000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
@@ -30,7 +30,7 @@ const (
 
 	GroupSyncLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/group_syncLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/group_syncLOG_INDEX.log" maxsize="100000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
@@ -39,7 +39,7 @@ const (
 
 	LockLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/lockLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/lockLOG_INDEX.log" maxsize="100000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
@@ -48,7 +48,7 @@ const (
 
 	P2PLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/p2pLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/p2pLOG_INDEX.log" maxsize="100000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
@@ -57,7 +57,7 @@ const (
 
 	ConsensusLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/consensusLOG_INDEX.log" maxsize="200000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/consensusLOG_INDEX.log" maxsize="200000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
@@ -66,7 +66,7 @@ const (
 
 	StdConsensusLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/std_consensusLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/std_consensusLOG_INDEX.log" maxsize="100000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
@@ -74,7 +74,7 @@ const (
 					</seelog>`
 	GroupLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/groupLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/groupLOG_INDEX.log" maxsize="100000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
@@ -82,7 +82,7 @@ const (
 					</seelog>`
 	StatisticsLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/statisticsLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/statisticsLOG_INDEX.log" maxsize="100000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
@@ -90,7 +90,7 @@ const (
 					</seelog>`
 	VRFDebugLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/vrf_debugLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/vrf_debugLOG_INDEX.log" maxsize="100000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
@@ -98,7 +98,7 @@ const (
 					</seelog>`
 	StateMachineLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/state_machineLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/state_machineLOG_INDEX.log" maxsize="100000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
@@ -106,7 +106,7 @@ const (
 					</seelog>`
 	MiddlewareLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/middlewareLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/middlewareLOG_INDEX.log" maxsize="100000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
@@ -114,7 +114,7 @@ const (
 					</seelog>`
 	ForkLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/forkLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/forkLOG_INDEX.log" maxsize="100000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
@@ -122,7 +122,7 @@ const (
 					</seelog>`
 	SlowLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/slow_logLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/slow_logLOG_INDEX.log" maxsize="100000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)|%Msg%n" />
@@ -130,7 +130,7 @@ const (
 					</seelog>`
 	TxLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/txLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/txLOG_INDEX.log" maxsize="100000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
@@ -138,7 +138,7 @@ const (
 					</seelog>`
 	PerformanceLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/performanceLOG_INDEX.log" maxsize="200000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/performanceLOG_INDEX.log" maxsize="200000000" maxrolls="0"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
