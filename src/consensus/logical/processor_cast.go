@@ -183,8 +183,6 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 	}()
 
 	bh := slot.BH
-	cost := float32(time.Now().Nanosecond()-bh.CurTime.Nanosecond()) / 1000 / 1000
-	stdLogger.Errorf("successNewBlock, cast: %f ms", cost)
 
 	blog := newBizLog("successNewBlock")
 

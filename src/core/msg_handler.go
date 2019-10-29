@@ -11,6 +11,7 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"x/src/middleware/pb"
+	"time"
 )
 
 const blockResponseSize = 1
@@ -69,7 +70,7 @@ func (ch ChainHandler) transactionReqHandler(msg notify.Message) {
 	}
 
 	for _, tx := range transactions {
-		logger.Debugf("local find tx :%s,%v", tx.Hash.String(),tx)
+		logger.Debugf("local find tx :%s,%v", tx.Hash.String(), tx)
 	}
 	if nil != transactions && 0 != len(transactions) {
 		sendTransactions(transactions, source)
@@ -140,11 +141,12 @@ func (ch ChainHandler) newBlockHandler(msg notify.Message) {
 		return
 	}
 
+	logger.Errorf("cost: %v\n", time.Since(block.Header.CurTime))
 	logger.Debugf("Rcv new block from %s,hash:%v,height:%d,totalQn:%d,tx len:%d", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions))
 	blockChainImpl.AddBlockOnChain(source, block, types.NewBlock)
 }
 
-func (ch ChainHandler) coinProxyHandler(msg notify.Message){
+func (ch ChainHandler) coinProxyHandler(msg notify.Message) {
 	cpn, ok := msg.(*notify.CoinProxyNotifyMessage)
 	if !ok {
 		logger.Debugf("coinProxyHandler:Message assert not ok!")
@@ -165,7 +167,7 @@ func unMarshalTransactionRequestMessage(b []byte) (*transactionRequestMessage, e
 
 	txHashes := make([]common.Hashes, 0)
 	for _, txHash := range m.TransactionHashes {
-		hashes:=common.Hashes{}
+		hashes := common.Hashes{}
 		hashes[0] = common.BytesToHash(txHash.Hash)
 		hashes[1] = common.BytesToHash(txHash.SubHash)
 
