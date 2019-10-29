@@ -115,7 +115,7 @@ func (p *Processor) GetSelfMinerDO() *model.SelfMinerDO {
 func (p *Processor) canProposalAt(h uint64) bool {
 	miner := p.minerReader.getProposeMiner(p.GetMinerID())
 	if miner == nil {
-		stdLogger.Errorf("get nil proposeMiner:%s", p.GetMinerID().String())
+//		stdLogger.Errorf("get nil proposeMiner:%s", p.GetMinerID().String())
 		return false
 	}
 	return miner.CanCastAt(h)
