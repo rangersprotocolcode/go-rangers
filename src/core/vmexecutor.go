@@ -32,6 +32,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 	transactions := make([]*types.Transaction, 0)
 	evictedTxs := make([]common.Hash, 0)
 	errs := make([]*types.TransactionError, len(block.Transactions))
+	start := time.Now().Unix()
 
 	for _, transaction := range block.Transactions {
 		executeTime := time.Now()
@@ -257,9 +258,9 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 	}
 	accountdb.AddBalance(common.BytesToAddress(block.Header.Castor), consensusHelper.ProposalBonus())
-
 	state := accountdb.IntermediateRoot(true)
-	logger.Debugf("VMExecutor End Execute State %s", state.Hex())
+	cost := time.Now().Unix() - start
+	logger.Errorf("VMExecutor End Execute. %s height: %d, hash: %s, cost: %d", situation, block.Header.Height, block.Header.Hash.Hex(), cost)
 	return state, evictedTxs, transactions, receipts, nil, errs
 }
 
