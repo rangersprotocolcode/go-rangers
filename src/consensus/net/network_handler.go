@@ -102,7 +102,7 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 			logger.Errorf("[handler]Discard ConsensusCastMessage because of unmarshal error%s", e.Error())
 			return e
 		}
-		logger.Errorf("received castVerify msg, cast: %d ns, msg size: %d", time.Now().Nanosecond()-m.BH.CurTime.Nanosecond(), len(body))
+		logger.Errorf("received castVerify msg, cast: %d ms, msg size: %d", time.Now().Unix()-m.BH.CurTime.Unix(), len(body))
 		c.processor.OnMessageCast(m)
 	case network.VerifiedCastMsg2:
 		m, e := unMarshalConsensusVerifyMessage(body)
