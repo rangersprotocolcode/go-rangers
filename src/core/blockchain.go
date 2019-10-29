@@ -32,7 +32,7 @@ const (
 	stateDBPrefix      = "state"
 	verifyHashDBPrefix = "verifyHash"
 
-	topBlocksCacheSize = 1000
+	topBlocksCacheSize = 10
 )
 
 var blockChainImpl *blockChain
