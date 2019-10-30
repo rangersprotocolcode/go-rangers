@@ -70,7 +70,6 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	if vrf != nil && vrf.baseBH.Hash == bh.PreHash && vrf.castHeight == bh.Height {
 		vrf.markSuccess()
 	}
-	//p.triggerCastCheck()
 
 	//p.triggerFutureBlockMsg(bh)
 	p.triggerFutureVerifyMsg(bh.Hash)
@@ -78,6 +77,10 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	p.groupManager.CreateNextGroupRoutine()
 
 	p.cleanVerifyContext(bh.Height)
+
+	if p.MainChain.GetTransactionPool().TxNum() > 500 {
+		p.triggerCastCheck()
+	}
 }
 
 func (p *Processor) onGroupAddSuccess(message notify.Message) {

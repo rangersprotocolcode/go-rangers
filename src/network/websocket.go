@@ -51,7 +51,6 @@ func (s *server) send(method []byte, targetId string, msg []byte, nonce uint64) 
 	header.targetId = target
 	message := loadWebSocketMsg(header, msg)
 
-	Logger.Tracef("Send msg:%v", message)
 	s.sendChan <- message
 }
 
@@ -82,34 +81,37 @@ func (s *server) loop() {
 	for {
 		select {
 		case message := <-s.rcvChan:
-			header, data := unloadWebSocketMsg(message)
-
-			if bytes.Equal(header.method, methodCodeSend) || bytes.Equal(header.method, methodCodeBroadcast) || bytes.Equal(header.method, methodCodeSendToGroup) {
-				s.handleMinerMessage(data, strconv.FormatUint(header.sourceId, 10))
-				continue
-			}
-
-			if bytes.Equal(header.method, methodCodeClientReader) {
-				s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce, notify.ClientTransactionRead)
-				continue
-			}
-
-			if bytes.Equal(header.method, methodCodeClientWriter) {
-				s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce, notify.ClientTransaction)
-				continue
-			}
-
-			if bytes.Equal(header.method, methodRcvFromCoinConnector) {
-				s.handleCoinConnectorMessage(data, header.nonce)
-				continue
-			}
+			go s.doRcv(message)
 		case message := <-s.sendChan:
-			Logger.Tracef("WS send:%v", message)
 			err := s.conn.WriteMessage(websocket.BinaryMessage, message)
 			if err != nil {
 				Logger.Errorf("Send binary msg error:%s", err.Error())
 			}
 		}
+	}
+}
+
+func (s *server) doRcv(message []byte) {
+	header, data := unloadWebSocketMsg(message)
+
+	if bytes.Equal(header.method, methodCodeSend) || bytes.Equal(header.method, methodCodeBroadcast) || bytes.Equal(header.method, methodCodeSendToGroup) {
+		s.handleMinerMessage(data, strconv.FormatUint(header.sourceId, 10))
+		return
+	}
+
+	if bytes.Equal(header.method, methodCodeClientReader) {
+		s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce, notify.ClientTransactionRead)
+		return
+	}
+
+	if bytes.Equal(header.method, methodCodeClientWriter) {
+		s.handleClientMessage(data, strconv.FormatUint(header.sourceId, 10), header.nonce, notify.ClientTransaction)
+		return
+	}
+
+	if bytes.Equal(header.method, methodRcvFromCoinConnector) {
+		s.handleCoinConnectorMessage(data, header.nonce)
+		return
 	}
 }
 
@@ -129,7 +131,7 @@ func unloadWebSocketMsg(m []byte) (header header, body []byte) {
 
 	header = byteToHeader(m[:protocolHeaderSize])
 	body = m[protocolHeaderSize:]
-	Logger.Tracef("Rcv msg header:%v,body:%v", header, body)
+
 	return
 }
 
