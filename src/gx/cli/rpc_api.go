@@ -10,6 +10,7 @@ import (
 	"math"
 	"x/src/consensus"
 	"sync"
+	"x/src/middleware/log"
 )
 
 func successResult(data interface{}) (*Result, error) {
@@ -29,6 +30,7 @@ func failResult(err string) (*Result, error) {
 
 // GtasAPI is a single-method API handler to be returned by test services.
 type GtasAPI struct {
+	logger log.Logger
 }
 
 var gxLock *sync.RWMutex

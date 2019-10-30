@@ -30,7 +30,7 @@ func (executor *GameExecutor) makeSuccessResponse(data string, id string) []byte
 
 	result, err := json.Marshal(res)
 	if err != nil {
-		logger.Debugf("json make success response err:%s", err.Error())
+		executor.logger.Debugf("json make success response err:%s", err.Error())
 	}
 	return result
 }
@@ -44,7 +44,7 @@ func (executor *GameExecutor) makeFailedResponse(message string, id string) []by
 
 	result, err := json.Marshal(res)
 	if err != nil {
-		logger.Debugf("json make failed response err:%s", err.Error())
+		executor.logger.Debugf("json make failed response err:%s", err.Error())
 	}
 	return result
 }
@@ -193,12 +193,14 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 }
 
 func (executor *GameExecutor) Write(msg notify.Message) {
-	executor.logger.Debugf("Game executor write rcv message :%v", msg)
+	executor.logger.Debugf("write rcv message :%v", msg)
 	executor.writeChan <- msg
 }
 
 func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, string) {
-	executor.logger.Debugf("run tx: %v", txRaw)
+	txhash := txRaw.Hash.String()
+	executor.logger.Debugf("run tx. hash: %s", txhash)
+
 	if executor.isExisted(txRaw) {
 		executor.logger.Errorf("tx is existed:%v", txRaw)
 		return false, "Tx Is Existed"
@@ -215,6 +217,8 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 
 		gameId := txRaw.Target
 		isTransferOnly := 0 == len(gameId)
+		executor.logger.Debugf("begin callstm. txhash: %s, appId: %s, transferInfo: %s, payload: %s", txhash, gameId, txRaw.ExtraData, txRaw.Data)
+
 		accountDB := AccountDBManagerInstance.GetAccountDB(gameId, true)
 
 		// 已经执行过了（入块时），则不用再执行了
@@ -282,7 +286,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 			// 调用状态机
 			txRaw.SubTransactions = make([]types.UserData, 0)
 			outputMessage = statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data, &txRaw)
-			executor.logger.Debugf("invoke state machine result:%v", outputMessage)
+			executor.logger.Debugf("txhash %s invoke state machine. result:%v", txhash, outputMessage)
 			if outputMessage != nil {
 				message = outputMessage.Payload
 			}
@@ -306,6 +310,8 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 			//	message = "Tx Execute Success"
 			//}
 		}
+
+		executor.logger.Debugf("end callstm. txhash: %s", txhash)
 
 	case types.TransactionTypeWithdraw:
 		gameId := txRaw.Target
@@ -384,7 +390,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 	// bingo
 	executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
 
-	executor.logger.Infof("run tx. result: %s cost time : %v, tx: %v", result, time.Since(start), txRaw)
+	executor.logger.Infof("run tx. result: %t cost time : %v, txhash: %s", result, time.Since(start), txhash)
 	return result, message
 }
 
@@ -409,7 +415,6 @@ func (executor *GameExecutor) loop() {
 	for {
 		select {
 		case msg := <-executor.writeChan:
-			executor.logger.Infof("Game executor write chan rcv message :%v", msg)
 			message, ok := msg.(*notify.ClientTransactionMessage)
 			if !ok {
 				executor.logger.Errorf("GameExecutor:Write assert not ok!")
