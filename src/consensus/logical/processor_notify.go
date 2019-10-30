@@ -78,9 +78,14 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 
 	p.cleanVerifyContext(bh.Height)
 
-	if p.MainChain.GetTransactionPool().TxNum() > 500 {
+	if p.isTriggerCastImmediately() {
 		p.triggerCastCheck()
 	}
+}
+
+// todo: 触发条件可以更丰富，更动态
+func (p *Processor) isTriggerCastImmediately() bool {
+	return p.MainChain.GetTransactionPool().TxNum() > 500
 }
 
 func (p *Processor) onGroupAddSuccess(message notify.Message) {

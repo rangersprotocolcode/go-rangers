@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"runtime/debug"
 	"time"
+	"x/src/middleware"
 )
 
 type ConsensusHandler struct {
@@ -103,8 +104,7 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 			return e
 		}
 
-		cost := float32(time.Now().Nanosecond()-m.BH.CurTime.Nanosecond()) / 1000 / 1000
-		logger.Errorf("received castVerify msg, cast: %f ms, msg size: %d", cost, len(body))
+		middleware.PerfLogger.Debugf("received castVerify msg, cost: %v, msg size: %d", time.Since(m.BH.CurTime), len(body))
 		c.processor.OnMessageCast(m)
 	case network.VerifiedCastMsg2:
 		m, e := unMarshalConsensusVerifyMessage(body)

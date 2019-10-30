@@ -81,6 +81,7 @@ func (s *server) loop() {
 	for {
 		select {
 		case message := <-s.rcvChan:
+			// goroutine read process
 			go s.doRcv(message)
 		case message := <-s.sendChan:
 			err := s.conn.WriteMessage(websocket.BinaryMessage, message)

@@ -11,6 +11,8 @@ import (
 
 	"github.com/gogo/protobuf/proto"
 	"x/src/middleware/pb"
+	"x/src/middleware"
+	"time"
 )
 
 const blockResponseSize = 1
@@ -140,10 +142,8 @@ func (ch ChainHandler) newBlockHandler(msg notify.Message) {
 		return
 	}
 
-	//	logger.Errorf("cost: %v\n", time.Since(block.Header.CurTime))
-	logger.Debugf("Rcv new block from %s,hash:%v,height:%d,totalQn:%d,tx len:%d", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions))
-
 	blockChainImpl.AddBlockOnChain(source, block, types.NewBlock)
+	middleware.PerfLogger.Debugf("Rcv new block from %s,hash:%v,height:%d,totalQn:%d,tx len:%d, total cost: %v", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions), time.Since(block.Header.CurTime))
 }
 
 func (ch ChainHandler) coinProxyHandler(msg notify.Message) {
