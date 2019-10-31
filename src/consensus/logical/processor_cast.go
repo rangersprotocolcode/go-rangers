@@ -317,6 +317,7 @@ func (p *Processor) blockProposal() {
 		blog.log("vrf worker timeout")
 		return
 	}
+	middleware.PerfLogger.Infof("after genProve, last: %v, height: %v", time.Since(start), height)
 
 	gb := p.spreadGroupBrief(top, height)
 	if gb == nil {
@@ -327,14 +328,15 @@ func (p *Processor) blockProposal() {
 
 	//随机抽取n个块，生成proveHash
 	proveHash, root := p.GenProveHashs(height, worker.getBaseBH().Random, gb.MemIds)
-	middleware.PerfLogger.Infof("start cast block, cost: %v, height: %v", time.Since(start), height)
+
+	middleware.PerfLogger.Infof("start cast block, last: %v, height: %v", time.Since(start), height)
 	block := p.MainChain.CastBlock(start, uint64(height), pi.Big(), root, qn, p.GetMinerID().Serialize(), gid.Serialize())
 	if block == nil {
 		blog.log("MainChain::CastingBlock failed, height=%v", height)
 		return
 	}
 	bh := block.Header
-	middleware.PerfLogger.Infof("fin block, cost: %v, hash: %v, height: %v", time.Since(start), bh.Hash.String(), bh.Height)
+	middleware.PerfLogger.Infof("fin cast block, last: %v, hash: %v, height: %v", time.Since(start), bh.Hash.String(), bh.Height)
 
 	tlog := newHashTraceLog("CASTBLOCK", bh.Hash, p.GetMinerID())
 	blog.log("begin proposal, hash=%v, height=%v, qn=%v,, verifyGroup=%v, pi=%v...", bh.Hash.ShortS(), height, qn, gid.ShortS(), pi.ShortS())
@@ -370,7 +372,7 @@ func (p *Processor) blockProposal() {
 
 		worker.markProposed()
 
-		middleware.PerfLogger.Infof("fin block, cost: %v, hash: %v, height: %v", time.Since(start), bh.Hash.String(), bh.Height)
+		middleware.PerfLogger.Infof("fin block, last: %v, hash: %v, height: %v", time.Since(start), bh.Hash.String(), bh.Height)
 		//statistics.AddBlockLog(common.BootId, statistics.SendCast, ccm.BH.Height, ccm.BH.ProveValue.Uint64(), -1, -1,
 		//	time.Now().UnixNano(), p.GetMinerID().ShortS(), gid.ShortS(), common.InstanceIndex, ccm.BH.CurTime.UnixNano())
 	} else {

@@ -80,7 +80,7 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 
 	p.cleanVerifyContext(bh.Height)
 
-	middleware.PerfLogger.Infof("OnBlockAddSuccess. cost: %v, Hash=%v, height=%v", time.Since(bh.CurTime), bh.Hash.String(), bh.Height)
+	middleware.PerfLogger.Infof("OnBlockAddSuccess. cost: %v, Hash: %v, height: %v", time.Since(bh.CurTime), bh.Hash.String(), bh.Height)
 	if p.isTriggerCastImmediately() {
 		p.triggerCastCheck()
 	}
