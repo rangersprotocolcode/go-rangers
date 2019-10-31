@@ -14,6 +14,7 @@ import (
 	"sync/atomic"
 	"strings"
 	"github.com/hashicorp/golang-lru"
+	"sync"
 )
 
 //见证人处理器
@@ -25,7 +26,7 @@ type Processor struct {
 	blockContexts    *CastBlockContexts   //组ID->组铸块上下文
 	futureVerifyMsgs *FutureMessageHolder //存储缺失前一块的验证消息
 
-	verifyMsgCaches  *lru.Cache           //缓存验证消息
+	verifyMsgCaches *lru.Cache //缓存验证消息
 
 	joiningGroups *JoiningGroups //已加入未完成初始化的组(组初始化完成上链后，不再需要)。组内成员数据过程数据。
 	belongGroups  *BelongGroups  //当前ID参与了哪些(已上链，可铸块的)组, 组id_str->组内私密数据（组外不可见或加速缓存）
@@ -40,6 +41,8 @@ type Processor struct {
 	MainChain  core.BlockChain
 	GroupChain core.GroupChain
 	NetServer  net.NetworkServer
+
+	lock sync.Mutex
 }
 
 func (p Processor) getPrefix() string {
@@ -58,6 +61,7 @@ func (p Processor) GetPubkeyInfo() model.PubKeyInfo {
 //初始化矿工数据（和组无关）
 func (p *Processor) Init(mi model.SelfMinerDO, conf common.ConfManager) bool {
 	p.ready = false
+	p.lock = sync.Mutex{}
 	p.conf = conf
 	//p.futureBlockMsgs = NewFutureMessageHolder()
 	p.futureVerifyMsgs = NewFutureMessageHolder()
