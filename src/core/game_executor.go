@@ -84,7 +84,7 @@ func initGameExecutor(blockChainImpl *blockChain) {
 
 	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.Read)
 	go gameExecutor.loop()
-	notify.BUS.Subscribe(notify.BlockAddSucc, gameExecutor.onBlockAddSuccess)
+	//notify.BUS.Subscribe(notify.BlockAddSucc, gameExecutor.onBlockAddSuccess)
 
 	log.GetLoggerByIndex(log.CoreLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 }
