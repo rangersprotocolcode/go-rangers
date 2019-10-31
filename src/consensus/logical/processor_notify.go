@@ -6,6 +6,8 @@ import (
 	"x/src/consensus/model"
 	"x/src/middleware/notify"
 	"x/src/middleware/types"
+	"x/src/middleware"
+	"time"
 )
 
 func (p *Processor) triggerFutureVerifyMsg(hash common.Hash) {
@@ -78,6 +80,7 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 
 	p.cleanVerifyContext(bh.Height)
 
+	middleware.PerfLogger.Infof("OnBlockAddSuccess. cost: %v, Hash=%v, height=%v", time.Since(bh.CurTime), bh.Hash.String(), bh.Height)
 	if p.isTriggerCastImmediately() {
 		p.triggerCastCheck()
 	}
