@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"x/src/middleware/types"
 	"x/src/storage/account"
+	"time"
 )
 
 type ExecutedTransaction struct {
@@ -25,7 +26,7 @@ func GetGroupChain() GroupChain {
 }
 
 type BlockChain interface {
-	CastBlock(height uint64, proveValue *big.Int, proveRoot common.Hash, qn uint64, castor []byte, groupId []byte) *types.Block
+	CastBlock(timestamp time.Time, height uint64, proveValue *big.Int, proveRoot common.Hash, qn uint64, castor []byte, groupId []byte) *types.Block
 
 	GenerateBlock(bh types.BlockHeader) *types.Block
 

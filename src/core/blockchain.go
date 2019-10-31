@@ -56,7 +56,7 @@ type blockChain struct {
 	stateDB      account.AccountDatabase
 
 	executor        *VMExecutor
-	forkProcessor  *forkProcessor
+	forkProcessor   *forkProcessor
 	transactionPool TransactionPool
 
 	lock middleware.Loglock
@@ -150,7 +150,7 @@ func initBlockChain() error {
 	return nil
 }
 
-func (chain *blockChain) CastBlock(height uint64, proveValue *big.Int, proveRoot common.Hash, qn uint64, castor []byte, groupid []byte) *types.Block {
+func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValue *big.Int, proveRoot common.Hash, qn uint64, castor []byte, groupid []byte) *types.Block {
 	chain.lock.Lock("CastBlock")
 	defer chain.lock.Unlock("CastBlock")
 
@@ -167,7 +167,7 @@ func (chain *blockChain) CastBlock(height uint64, proveValue *big.Int, proveRoot
 	block := new(types.Block)
 	block.Transactions = chain.transactionPool.PackForCast()
 	block.Header = &types.BlockHeader{
-		CurTime:    time.Now(),
+		CurTime:    timestamp,
 		Height:     height,
 		ProveValue: proveValue, Castor: castor,
 		GroupId:    groupid,

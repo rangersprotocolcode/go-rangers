@@ -142,10 +142,9 @@ func (ch ChainHandler) newBlockHandler(msg notify.Message) {
 		return
 	}
 
-	if blockChainImpl.AddBlockOnChain(source, block, types.NewBlock) == types.AddBlockSucc {
-		middleware.PerfLogger.Debugf("Rcv new block from %s,hash:%v,height:%d,totalQn:%d,tx len:%d, total cost: %v", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions), time.Since(block.Header.CurTime))
-	}
+	middleware.PerfLogger.Debugf("Rcv new block from %s,hash:%v,height:%d,totalQn:%d,tx len:%d, total cost: %v", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions), time.Since(block.Header.CurTime))
 
+	blockChainImpl.AddBlockOnChain(source, block, types.NewBlock)
 }
 
 func (ch ChainHandler) coinProxyHandler(msg notify.Message) {

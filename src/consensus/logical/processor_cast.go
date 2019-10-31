@@ -14,6 +14,7 @@ import (
 	"runtime/debug"
 
 	"x/src/consensus/vrf"
+	"x/src/middleware"
 )
 
 type CastBlockContexts struct {
@@ -289,6 +290,7 @@ func (p *Processor) GenProveHashs(heightLimit uint64, rand []byte, ids []groupsi
 }
 
 func (p *Processor) blockProposal() {
+	start := time.Now()
 	blog := newBizLog("blockProposal")
 	top := p.MainChain.TopBlock()
 	worker := p.GetVrfWorker()
@@ -326,7 +328,7 @@ func (p *Processor) blockProposal() {
 	//随机抽取n个块，生成proveHash
 	proveHash, root := p.GenProveHashs(height, worker.getBaseBH().Random, gb.MemIds)
 
-	block := p.MainChain.CastBlock(uint64(height), pi.Big(), root, qn, p.GetMinerID().Serialize(), gid.Serialize())
+	block := p.MainChain.CastBlock(start, uint64(height), pi.Big(), root, qn, p.GetMinerID().Serialize(), gid.Serialize())
 	if block == nil {
 		blog.log("MainChain::CastingBlock failed, height=%v", height)
 		return
@@ -366,6 +368,7 @@ func (p *Processor) blockProposal() {
 
 		worker.markProposed()
 
+		middleware.PerfLogger.Infof("fin cast block, cost: %v, hash: %v, height: %v", time.Since(start), bh.Hash.String(), bh.Height)
 		//statistics.AddBlockLog(common.BootId, statistics.SendCast, ccm.BH.Height, ccm.BH.ProveValue.Uint64(), -1, -1,
 		//	time.Now().UnixNano(), p.GetMinerID().ShortS(), gid.ShortS(), common.InstanceIndex, ccm.BH.CurTime.UnixNano())
 	} else {
