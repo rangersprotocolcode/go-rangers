@@ -50,11 +50,7 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 }
 
 func (chain *blockChain) hasPreBlock(bh types.BlockHeader) bool {
-	pre := chain.queryBlockHeaderByHash(bh.PreHash)
-	if pre == nil {
-		return false
-	}
-	return true
+	return chain.hasBlockByHash(bh.PreHash)
 }
 
 func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Transaction) (bool, []common.Hashes, []*types.Transaction) {

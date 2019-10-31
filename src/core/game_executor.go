@@ -390,7 +390,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 	// bingo
 	executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
 
-	executor.logger.Infof("run tx. result: %t cost time : %v, txhash: %s", result, time.Since(start), txhash)
+	executor.logger.Infof("run tx. result: %t, cost time : %v, txhash: %s", result, time.Since(start), txhash)
 	return result, message
 }
 

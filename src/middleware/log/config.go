@@ -10,7 +10,7 @@ const (
 						</formats>
 					</seelog>`
 
-	CoreLogConfig = `<seelog minlevel="error">
+	CoreLogConfig = `<seelog minlevel="info">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/coreLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
@@ -145,7 +145,7 @@ const (
 						</formats>
 					</seelog>`
 
-	GameExecutorLogConfig = `<seelog minlevel="debug">
+	GameExecutorLogConfig = `<seelog minlevel="error">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/gameExecutorLOG_INDEX.log" maxsize="200000000" maxrolls="1"/>
 						</outputs>
@@ -161,4 +161,5 @@ const (
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
 						</formats>
 					</seelog>`
+
 )

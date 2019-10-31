@@ -56,7 +56,7 @@ type blockChain struct {
 	stateDB      account.AccountDatabase
 
 	executor        *VMExecutor
-	forkProcessor   *forkProcessor
+	forkProcessor  *forkProcessor
 	transactionPool TransactionPool
 
 	lock middleware.Loglock
@@ -122,7 +122,7 @@ func initBlockChain() error {
 	chain.stateDB = account.NewDatabase(db)
 
 	chain.executor = NewVMExecutor(chain)
-	chain.forkProcessor = initForkProcessor()
+	chain.forkProcessor = initForkProcessor(chain)
 
 	initMinerManager()
 	initFTManager()
@@ -477,6 +477,15 @@ func (chain *blockChain) remove(block *types.Block) bool {
 	chain.transactionPool.UnMarkExecuted(block.Transactions)
 	chain.eraseRemoveBlockMark()
 	return true
+}
+
+func (chain *blockChain) hasBlockByHash(hash common.Hash) bool {
+	result, err := chain.hashDB.Has(hash.Bytes())
+	if err != nil {
+		result = false
+	}
+
+	return result
 }
 
 func (chain *blockChain) queryBlockByHash(hash common.Hash) *types.Block {

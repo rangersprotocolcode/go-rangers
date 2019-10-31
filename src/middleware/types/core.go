@@ -31,6 +31,7 @@ const (
 	Forking                   AddBlockResult = 3
 	ValidateBlockOk           AddBlockResult = 100
 )
+
 const (
 	SUCCESS                             = 0
 	TxErrorCode_BalanceNotEnough        = 1
