@@ -5,7 +5,7 @@ import (
 	"x/src/common"
 	"bytes"
 	"x/src/consensus/groupsig"
-	"x/src/middleware/serialize"
+	"encoding/json"
 )
 
 func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transaction) ([]common.Hashes, int8) {
@@ -123,7 +123,7 @@ func calcReceiptsTree(receipts types.Receipts) common.Hash {
 			continue
 		}
 
-		encode, err := serialize.EncodeToBytes(receipt)
+		encode, err := json.Marshal(receipt)
 		if err == nil {
 			buf.Write(encode)
 		}
