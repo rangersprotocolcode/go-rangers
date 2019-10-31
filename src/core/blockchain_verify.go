@@ -100,6 +100,7 @@ func calcTxTree(txs []*types.Transaction) common.Hash {
 	return common.BytesToHash(common.Sha256(buf.Bytes()))
 }
 
+//todo: performance. this function costs too much
 func calcReceiptsTree(receipts types.Receipts) common.Hash {
 	if nil == receipts || 0 == len(receipts) {
 		return emptyHash

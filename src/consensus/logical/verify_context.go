@@ -37,8 +37,8 @@ const (
 	CBMR_VERIFY_TIMEOUT                                     //已超时
 	CBMR_SLOT_INIT_FAIL                                     //slot初始化失败
 	CBMR_SLOT_REPLACE_FAIL                                  //slot初始化失败
-	CBMR_SIGNED_MAX_QN										//签过更高的qn
-	CBMR_SIGN_VERIFY_FAIL										//签名错误
+	CBMR_SIGNED_MAX_QN                                      //签过更高的qn
+	CBMR_SIGN_VERIFY_FAIL                                   //签名错误
 )
 
 func CBMR_RESULT_DESC(ret CAST_BLOCK_MESSAGE_RESULT) string {
@@ -101,18 +101,18 @@ func TRANS_ACCEPT_RESULT_DESC(ret int8) string {
 type QN_QUERY_SLOT_RESULT int //根据QN查找插槽结果枚举
 
 type VerifyContext struct {
-	prevBH     *types.BlockHeader
-	castHeight uint64
-	signedMaxQN uint64
+	prevBH          *types.BlockHeader
+	castHeight      uint64
+	signedMaxQN     uint64
 	createTime      time.Time
 	expireTime      time.Time //铸块超时时间
 	consensusStatus int32     //铸块状态
 	slots           map[common.Hash]*SlotContext
-	broadcastSlot 	*SlotContext
+	broadcastSlot   *SlotContext
 	//castedQNs []int64 //自己铸过的qn
-	blockCtx *BlockContext
-	signedNum 	int32
-	lock     sync.RWMutex
+	blockCtx  *BlockContext
+	signedNum int32
+	lock      sync.RWMutex
 }
 
 func newVerifyContext(bc *BlockContext, castHeight uint64, expire time.Time, preBH *types.BlockHeader) *VerifyContext {
@@ -123,15 +123,15 @@ func newVerifyContext(bc *BlockContext, castHeight uint64, expire time.Time, pre
 		expireTime:      expire,
 		createTime:      time.Now(),
 		consensusStatus: CBCS_CASTING,
-		signedMaxQN: 	0,
+		signedMaxQN:     0,
 		slots:           make(map[common.Hash]*SlotContext),
 		//castedQNs:       make([]int64, 0),
 	}
 	return ctx
 }
 
-func (vc *VerifyContext) increaseSignedNum()  {
-    atomic.AddInt32(&vc.signedNum, 1)
+func (vc *VerifyContext) increaseSignedNum() {
+	atomic.AddInt32(&vc.signedNum, 1)
 }
 
 func (vc *VerifyContext) isCasting() bool {
@@ -167,7 +167,7 @@ func (vc *VerifyContext) castExpire() bool {
 
 //分红交易签名是否过期
 func (vc *VerifyContext) castRewardSignExpire() bool {
-	return time.Now().After(vc.expireTime.Add(time.Duration(30*model.Param.MaxGroupCastTime)*time.Second))
+	return time.Now().After(vc.expireTime.Add(time.Duration(30*model.Param.MaxGroupCastTime) * time.Second))
 }
 
 func (vc *VerifyContext) findSlot(hash common.Hash) *SlotContext {
@@ -178,7 +178,7 @@ func (vc *VerifyContext) findSlot(hash common.Hash) *SlotContext {
 }
 
 func (vc *VerifyContext) getSignedMaxQN() uint64 {
- 	return atomic.LoadUint64(&vc.signedMaxQN)
+	return atomic.LoadUint64(&vc.signedMaxQN)
 }
 
 func (vc *VerifyContext) hasSignedBiggerQN(totalQN uint64) bool {
@@ -353,16 +353,16 @@ func (vc *VerifyContext) AcceptTrans(slot *SlotContext, ths []common.Hashes) int
 	}
 }
 
-func (vc *VerifyContext) Clear()  {
+func (vc *VerifyContext) Clear() {
 	vc.lock.Lock()
 	defer vc.lock.Unlock()
 
-    vc.slots = nil
-    vc.broadcastSlot = nil
+	vc.slots = nil
+	vc.broadcastSlot = nil
 }
 
 //判断该context是否可以删除，主要考虑是否发送了分红交易
-func (vc *VerifyContext)shouldRemove(topHeight uint64) bool {
+func (vc *VerifyContext) shouldRemove(topHeight uint64) bool {
 	//交易签名超时, 可以删除
 	if vc.castRewardSignExpire() {
 		return true
