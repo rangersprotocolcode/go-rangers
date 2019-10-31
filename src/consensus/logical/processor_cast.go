@@ -325,6 +325,7 @@ func (p *Processor) blockProposal() {
 		return
 	}
 	gid := gb.Gid
+	middleware.PerfLogger.Infof("after spreadGroupBrief, last: %v, height: %v", time.Since(start), height)
 
 	//随机抽取n个块，生成proveHash
 	proveHash, root := p.GenProveHashs(height, worker.getBaseBH().Random, gb.MemIds)
