@@ -8,6 +8,7 @@ import (
 	"x/src/middleware/types"
 	"time"
 
+	"x/src/middleware"
 )
 
 func (p *Processor) genCastGroupSummary(bh *types.BlockHeader) *model.CastGroupSummary {
@@ -310,15 +311,20 @@ func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 	//}
 	slog.endStage()
 
+	middleware.PerfLogger.Infof("verify msg1, cost: %v, height: %v, hash: %v", time.Since(bh.CurTime), bh.Height, bh.Hash.String())
+
 	slog.addStage("addtoCache")
 	p.addCastMsgToCache(ccm)
 	cache := p.getVerifyMsgCache(ccm.BH.Hash)
 	slog.endStage()
 
+	middleware.PerfLogger.Infof("verify msg2, cost: %v, height: %v, hash: %v", time.Since(bh.CurTime), bh.Height, bh.Hash.String())
+
 	slog.addStage("OMC")
 	p.verifyCastMessage("OMC", ccm)
 	slog.endStage()
 
+	middleware.PerfLogger.Infof("verify msg3, cost: %v, height: %v, hash: %v", time.Since(bh.CurTime), bh.Height, bh.Hash.String())
 
 	verifys := cache.getVerifyMsgs()
 	if len(verifys) > 0 {
