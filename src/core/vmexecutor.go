@@ -261,7 +261,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 	accountdb.AddBalance(common.BytesToAddress(block.Header.Castor), consensusHelper.ProposalBonus())
 	state := accountdb.IntermediateRoot(true)
 
-	middleware.PerfLogger.Infof("VMExecutor End. %s height: %d, cost: %v, txs: %d", situation, block.Header.Height, time.Since(beginTime), len(block.Transactions))
+	middleware.PerfLogger.Debugf("VMExecutor End. %s height: %d, cost: %v, txs: %d", situation, block.Header.Height, time.Since(beginTime), len(block.Transactions))
 	return state, evictedTxs, transactions, receipts, nil, errs
 }
 

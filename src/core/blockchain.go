@@ -179,7 +179,7 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	}
 	block.Header.RequestIds = getRequestIdFromTransactions(block.Transactions, latestBlock.RequestIds)
 
-	middleware.PerfLogger.Infof("cast1. last: %v height: %v", time.Since(timestamp), height)
+	middleware.PerfLogger.Infof("fin cast object. last: %v height: %v", time.Since(timestamp), height)
 
 	preStateRoot := common.BytesToHash(latestBlock.StateTree.Bytes())
 	state, err := account.NewAccountDB(preStateRoot, chain.stateDB)
@@ -188,7 +188,7 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		return nil
 	}
 	stateRoot, evictedTxs, transactions, receipts, err, _ := chain.executor.Execute(state, block, height, "casting")
-	middleware.PerfLogger.Infof("cast2. last: %v height: %v", time.Since(timestamp), height)
+	middleware.PerfLogger.Infof("fin execute txs. last: %v height: %v", time.Since(timestamp), height)
 
 	transactionHashes := make([]common.Hashes, len(transactions))
 	block.Transactions = transactions
@@ -202,12 +202,12 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	block.Header.Transactions = transactionHashes
 	block.Header.TxTree = calcTxTree(block.Transactions)
 	block.Header.EvictedTxs = evictedTxs
-	middleware.PerfLogger.Infof("cast3. last: %v height: %v", time.Since(timestamp), height)
+	middleware.PerfLogger.Infof("fin calcTxTree. last: %v height: %v", time.Since(timestamp), height)
 
 	block.Header.StateTree = common.BytesToHash(stateRoot.Bytes())
 	block.Header.ReceiptTree = calcReceiptsTree(receipts)
 	block.Header.Hash = block.Header.GenHash()
-	middleware.PerfLogger.Infof("cast4. last: %v height: %v", time.Since(timestamp), height)
+	middleware.PerfLogger.Infof("fin calcReceiptsTree. last: %v height: %v", time.Since(timestamp), height)
 
 	chain.verifiedBlocks.Add(block.Header.Hash, &castingBlock{state: state, receipts: receipts,})
 	chain.castedBlock.Add(block.Header.Hash, block)

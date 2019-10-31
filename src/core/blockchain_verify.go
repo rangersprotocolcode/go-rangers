@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"x/src/consensus/groupsig"
 	"x/src/middleware/serialize"
-	"x/src/storage/trie"
 )
 
 func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transaction) ([]common.Hashes, int8) {
@@ -106,17 +105,30 @@ func calcReceiptsTree(receipts types.Receipts) common.Hash {
 		return emptyHash
 	}
 
-	keybuf := new(bytes.Buffer)
-	trie := new(trie.Trie)
-	for i := 0; i < len(receipts); i++ {
-		if receipts[i] != nil {
-			keybuf.Reset()
-			serialize.Encode(keybuf, uint(i))
-			encode, _ := serialize.EncodeToBytes(receipts[i])
-			trie.Update(keybuf.Bytes(), encode)
+	//keybuf := new(bytes.Buffer)
+	//trie := new(trie.Trie)
+	//for i := 0; i < len(receipts); i++ {
+	//	if receipts[i] != nil {
+	//		keybuf.Reset()
+	//		serialize.Encode(keybuf, uint(i))
+	//		encode, _ := serialize.EncodeToBytes(receipts[i])
+	//		trie.Update(keybuf.Bytes(), encode)
+	//	}
+	//}
+	//hash := trie.Hash()
+
+	buf := new(bytes.Buffer)
+	for _, receipt := range receipts {
+		if nil == receipt {
+			continue
+		}
+
+		encode, err := serialize.EncodeToBytes(receipt)
+		if err == nil {
+			buf.Write(encode)
 		}
 	}
-	hash := trie.Hash()
+	return common.BytesToHash(common.Sha256(buf.Bytes()))
 
 	return common.BytesToHash(hash.Bytes())
 }
