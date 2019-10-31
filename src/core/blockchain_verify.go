@@ -129,6 +129,4 @@ func calcReceiptsTree(receipts types.Receipts) common.Hash {
 		}
 	}
 	return common.BytesToHash(common.Sha256(buf.Bytes()))
-
-	return common.BytesToHash(hash.Bytes())
 }
