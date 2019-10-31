@@ -265,11 +265,14 @@ func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMess
 			return
 		}
 	}
+	middleware.PerfLogger.Infof("verify msg2, cost: %v, height: %v, hash: %v", time.Since(bh.CurTime), bh.Height, bh.Hash.String())
 
 	err := p.doVerify(mtype, msg, traceLog, blog, slog)
 	if err != nil {
 		result = err.Error()
 	}
+
+	middleware.PerfLogger.Infof("verify msg3, cost: %v, height: %v, hash: %v", time.Since(bh.CurTime), bh.Height, bh.Hash.String())
 	return
 }
 
@@ -311,20 +314,16 @@ func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 	//}
 	slog.endStage()
 
-	middleware.PerfLogger.Infof("verify msg1, cost: %v, height: %v, hash: %v", time.Since(bh.CurTime), bh.Height, bh.Hash.String())
-
 	slog.addStage("addtoCache")
 	p.addCastMsgToCache(ccm)
 	cache := p.getVerifyMsgCache(ccm.BH.Hash)
 	slog.endStage()
 
-	middleware.PerfLogger.Infof("verify msg2, cost: %v, height: %v, hash: %v", time.Since(bh.CurTime), bh.Height, bh.Hash.String())
-
 	slog.addStage("OMC")
+	// 主要耗时点
+	middleware.PerfLogger.Infof("verify msg1, cost: %v, height: %v, hash: %v", time.Since(bh.CurTime), bh.Height, bh.Hash.String())
 	p.verifyCastMessage("OMC", ccm)
 	slog.endStage()
-
-	middleware.PerfLogger.Infof("verify msg3, cost: %v, height: %v, hash: %v", time.Since(bh.CurTime), bh.Height, bh.Hash.String())
 
 	verifys := cache.getVerifyMsgs()
 	if len(verifys) > 0 {
