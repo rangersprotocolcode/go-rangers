@@ -85,7 +85,7 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 
 // todo: 触发条件可以更丰富，更动态
 func (p *Processor) isTriggerCastImmediately() bool {
-	return p.MainChain.GetTransactionPool().TxNum() > 500
+	return p.MainChain.GetTransactionPool().TxNum() > 200
 }
 
 func (p *Processor) onGroupAddSuccess(message notify.Message) {
