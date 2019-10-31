@@ -248,7 +248,7 @@ func PbToBlockHeader(h *middleware_pb.BlockHeader) *BlockHeader {
 	header := BlockHeader{Hash: common.BytesToHash(h.Hash), Height: *h.Height, PreHash: common.BytesToHash(h.PreHash), PreTime: preTime,
 		ProveValue: proveValue, CurTime: curTime, Castor: h.Castor, GroupId: h.GroupId, Signature: h.Signature,
 		Nonce: *h.Nonce, Transactions: hashes, TxTree: common.BytesToHash(h.TxTree), ReceiptTree: common.BytesToHash(h.ReceiptTree), StateTree: common.BytesToHash(h.StateTree),
-		ExtraData: h.ExtraData, TotalQN: *h.TotalQN, Random: h.Random, ProveRoot: common.BytesToHash(h.ProveRoot), EvictedTxs: hashes2}
+		ExtraData: h.ExtraData, TotalQN: *h.TotalQN, Random: h.Random, EvictedTxs: hashes2}
 
 	if nil != h.RequestIds {
 		json.Unmarshal(h.RequestIds, &header.RequestIds)
@@ -410,7 +410,7 @@ func BlockHeaderToPb(h *BlockHeader) *middleware_pb.BlockHeader {
 	header := middleware_pb.BlockHeader{Hash: h.Hash.Bytes(), Height: &h.Height, PreHash: h.PreHash.Bytes(), PreTime: preTime,
 		ProveValue: proveValueByte, CurTime: curTime, Castor: h.Castor, GroupId: h.GroupId, Signature: h.Signature,
 		Nonce: &h.Nonce, Transactions: txHashes, TxTree: h.TxTree.Bytes(), ReceiptTree: h.ReceiptTree.Bytes(), StateTree: h.StateTree.Bytes(),
-		ExtraData: h.ExtraData, TotalQN: &h.TotalQN, Random: h.Random, ProveRoot: h.ProveRoot.Bytes(), EvictedTxs: &evictedTxs}
+		ExtraData: h.ExtraData, TotalQN: &h.TotalQN, Random: h.Random, EvictedTxs: &evictedTxs}
 
 	header.RequestIds, _ = json.Marshal(h.RequestIds)
 	return &header

@@ -173,7 +173,7 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		GroupId:    groupid,
 		TotalQN:    latestBlock.TotalQN + qn,
 		StateTree:  common.BytesToHash(latestBlock.StateTree.Bytes()),
-		ProveRoot:  proveRoot,
+		//ProveRoot:  proveRoot,
 		PreHash:    latestBlock.Hash,
 		PreTime:    latestBlock.CurTime,
 	}

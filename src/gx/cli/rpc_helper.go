@@ -37,7 +37,7 @@ func convertBlockHeader(bh *types.BlockHeader) *Block {
 		StateRoot:   bh.StateTree,
 		TxRoot:      bh.TxTree,
 		ReceiptRoot: bh.ReceiptTree,
-		ProveRoot:   bh.ProveRoot,
+		//ProveRoot:   bh.ProveRoot,
 		Random:      common.ToHex(bh.Random),
 		TxNum:       uint64(len(bh.Transactions)),
 	}
