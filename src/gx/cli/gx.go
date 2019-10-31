@@ -203,7 +203,7 @@ func (gx *GX) getAccountInfo(keystore, address string) error {
 }
 
 func syncChainInfo() {
-	fmt.Println("Syncing block and group info from tas net.Waiting...")
+	fmt.Println("Syncing block and group info from RocketProtocol net.Waiting...")
 	core.InitGroupSyncer()
 	core.InitBlockSyncer()
 	go func() {
