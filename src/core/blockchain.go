@@ -32,7 +32,7 @@ const (
 	stateDBPrefix      = "state"
 	verifyHashDBPrefix = "verifyHash"
 
-	topBlocksCacheSize = 10
+	topBlocksCacheSize = 20
 )
 
 var blockChainImpl *blockChain
@@ -44,11 +44,10 @@ type blockChain struct {
 	latestStateDB *account.AccountDB
 	requestIds    map[string]uint64
 
-	topBlocks         *lru.Cache
-	futureBlocks      *lru.Cache
-	verifiedBlocks    *lru.Cache
-	castedBlock       *lru.Cache
-	verifiedBodyCache *lru.Cache
+	topBlocks         *lru.Cache // key：块高，value：header
+	futureBlocks      *lru.Cache // key：块hash，value：block（体积很大）
+	verifiedBlocks    *lru.Cache // key：块hash，value：receipts(体积大) &stateroot
+	verifiedBodyCache *lru.Cache // key：块hash，value：块对应的transaction(体积大)
 
 	hashDB       db.Database
 	heightDB     db.Database
@@ -72,26 +71,24 @@ func initBlockChain() error {
 	chain.transactionPool = NewTransactionPool()
 
 	var err error
+	chain.topBlocks, err = lru.New(topBlocksCacheSize * 10)
+	if err != nil {
+		logger.Errorf("Init cache error:%s", err.Error())
+		return err
+	}
+
 	chain.futureBlocks, err = lru.New(topBlocksCacheSize)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
 	}
+
 	chain.verifiedBlocks, err = lru.New(topBlocksCacheSize)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
 	}
-	chain.topBlocks, err = lru.New(topBlocksCacheSize)
-	if err != nil {
-		logger.Errorf("Init cache error:%s", err.Error())
-		return err
-	}
-	chain.castedBlock, err = lru.New(topBlocksCacheSize)
-	if err != nil {
-		logger.Errorf("Init cache error:%s", err.Error())
-		return err
-	}
+
 	chain.verifiedBodyCache, err = lru.New(topBlocksCacheSize)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
@@ -210,7 +207,6 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	middleware.PerfLogger.Infof("fin calcReceiptsTree. last: %v height: %v", time.Since(timestamp), height)
 
 	chain.verifiedBlocks.Add(block.Header.Hash, &castingBlock{state: state, receipts: receipts,})
-	chain.castedBlock.Add(block.Header.Hash, block)
 	if len(block.Transactions) != 0 {
 		chain.verifiedBodyCache.Add(block.Header.Hash, block.Transactions)
 	}

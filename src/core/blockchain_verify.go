@@ -27,6 +27,9 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 		return nil, 2
 	}
 
+
+
+
 	miss, missingTx, transactions := chain.missTransaction(bh, txs)
 	if miss {
 		return missingTx, 1

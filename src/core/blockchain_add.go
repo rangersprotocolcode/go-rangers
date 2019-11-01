@@ -51,7 +51,7 @@ func (chain *blockChain) addBlockOnChain(source string, coming *types.Block, sit
 	logger.Debugf("Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d", topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN)
 
 	// 已经存在
-	if comingHeader.Hash == topBlock.Hash || chain.queryBlockHeaderByHash(comingHeader.Hash) != nil {
+	if comingHeader.Hash == topBlock.Hash || chain.hasBlockByHash(comingHeader.Hash) {
 		return types.BlockExisted
 	}
 
