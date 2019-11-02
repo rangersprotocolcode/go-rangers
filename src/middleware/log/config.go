@@ -1,7 +1,7 @@
 package log
 
 const (
-	DefaultConfig = `<seelog minlevel="error">
+	DefaultConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/defaultLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
@@ -10,7 +10,7 @@ const (
 						</formats>
 					</seelog>`
 
-	CoreLogConfig = `<seelog minlevel="info">
+	CoreLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/coreLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
@@ -112,7 +112,7 @@ const (
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
 						</formats>
 					</seelog>`
-	ForkLogConfig = `<seelog minlevel="error">
+	ForkLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/forkLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>

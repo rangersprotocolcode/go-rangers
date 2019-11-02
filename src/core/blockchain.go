@@ -32,7 +32,7 @@ const (
 	stateDBPrefix      = "state"
 	verifyHashDBPrefix = "verifyHash"
 
-	topBlocksCacheSize = 10
+	topBlocksCacheSize = 100
 )
 
 var blockChainImpl *blockChain
@@ -71,7 +71,7 @@ func initBlockChain() error {
 	chain.transactionPool = NewTransactionPool()
 
 	var err error
-	chain.topBlocks, err = lru.New(topBlocksCacheSize * 10)
+	chain.topBlocks, err = lru.New(100)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
@@ -83,13 +83,13 @@ func initBlockChain() error {
 		return err
 	}
 
-	chain.verifiedBlocks, err = lru.New(topBlocksCacheSize)
+	chain.verifiedBlocks, err = lru.New(10)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
 	}
 
-	chain.verifiedBodyCache, err = lru.New(topBlocksCacheSize)
+	chain.verifiedBodyCache, err = lru.New(10)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
