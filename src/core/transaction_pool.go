@@ -84,7 +84,7 @@ func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 	pool.lock.Lock("AddTransaction")
 	defer pool.lock.Unlock("AddTransaction")
 	b, err := pool.add(tx)
-	logger.Debugf("Add tx %s to pool result:%t", tx.Hash.String(), b)
+//	logger.Debugf("Add tx %s to pool result:%t", tx.Hash.String(), b)
 	return b, err
 }
 
