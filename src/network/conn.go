@@ -52,6 +52,8 @@ type baseConn struct {
 	// 收到消息后的回调
 	doRcv func(wsHeader wsHeader, msg []byte)
 
+	rcv func(msg []byte)
+
 	logger log.Logger
 }
 
@@ -111,7 +113,12 @@ func (base *baseConn) receiveMessage() {
 			continue
 		}
 
-		base.rcvChan <- message
+		if base.rcv == nil {
+			base.rcvChan <- message
+		} else {
+			base.rcv(message)
+		}
+
 	}
 }
 
@@ -201,6 +208,14 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 		}
 
 		clientConn.handleClientMessage(body, strconv.FormatUint(wsHeader.sourceId, 10), wsHeader.nonce, event)
+	}
+	clientConn.rcv = func(msg []byte) {
+		if len(clientConn.rcvChan) == channelSize {
+			clientConn.logger.Errorf("client rcvChan full, remove it, msg size:", len(msg))
+			return
+		}
+
+		clientConn.rcvChan <- msg
 	}
 
 	clientConn.init(ipPort, path, logger)
