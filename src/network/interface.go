@@ -1,5 +1,7 @@
 package network
 
+import "x/src/middleware/log"
+
 const (
 	//-----------组初始化---------------------------------
 
@@ -89,10 +91,12 @@ type Network interface {
 	SendToCoinConnector(msg []byte)
 
 	Notify(isunicast bool, gameId string, userid string, msg string)
+
+	Init(logger log.Logger, selfMinerId string, consensusHandler MsgHandler)
 }
 
 func GetNetInstance() Network {
-	return &Server
+	return &instance
 }
 
 type MsgHandler interface {

@@ -46,7 +46,7 @@ const (
 						</formats>
 					</seelog>`
 
-	P2PLogConfig = `<seelog minlevel="error">
+	P2PLogConfig = `<seelog minlevel="warn">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/p2pLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>

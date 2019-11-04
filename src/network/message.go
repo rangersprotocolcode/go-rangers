@@ -8,6 +8,7 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
+// rocket Protocol 消息
 type Message struct {
 	Code uint32
 
