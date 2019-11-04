@@ -10,7 +10,7 @@ const (
 						</formats>
 					</seelog>`
 
-	CoreLogConfig = `<seelog minlevel="debug">
+	CoreLogConfig = `<seelog minlevel="info">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/coreLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>

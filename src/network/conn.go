@@ -211,7 +211,7 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 	}
 	clientConn.rcv = func(msg []byte) {
 		if len(clientConn.rcvChan) == channelSize {
-			clientConn.logger.Errorf("client rcvChan full, remove it, msg size:", len(msg))
+			clientConn.logger.Errorf("client rcvChan full, remove it, msg size: %d", len(msg))
 			return
 		}
 
