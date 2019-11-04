@@ -92,7 +92,7 @@ type Network interface {
 
 	Notify(isunicast bool, gameId string, userid string, msg string)
 
-	Init(logger log.Logger, selfMinerId string, consensusHandler MsgHandler)
+	Init(logger log.Logger, gateAddr, selfMinerId string, consensusHandler MsgHandler)
 }
 
 func GetNetInstance() Network {

@@ -5,20 +5,18 @@ import (
 	"x/src/common"
 )
 
+//默认
 const (
 	gateAddrProduction = "47.96.99.105:8848"
 	gateAddrDaily      = "47.96.99.105:8848"
 )
 
-var gateAddr string
 var Logger log.Logger
 
-func InitNetwork(selfMinerId string, consensusHandler MsgHandler, env string, gate string) {
+func InitNetwork(consensusHandler MsgHandler, selfMinerId, env, gate string) {
 	Logger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-
-	if len(gate) != 0 {
-		gateAddr = gate
-	} else {
+	gateAddr := gate
+	if len(gateAddr) == 0 {
 		if env == "production" {
 			gateAddr = gateAddrProduction
 		} else {
@@ -29,7 +27,7 @@ func InitNetwork(selfMinerId string, consensusHandler MsgHandler, env string, ga
 	getNetMemberInfo("")
 
 	var s server
-	s.Init(Logger, selfMinerId, consensusHandler)
+	s.Init(Logger, gateAddr, selfMinerId, consensusHandler)
 
 	instance = s
 }

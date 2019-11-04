@@ -19,7 +19,7 @@ type server struct {
 	coiner CoinerConn
 }
 
-func (s *server) Init(logger log.Logger, selfMinerId string, consensusHandler MsgHandler) {
+func (s *server) Init(logger log.Logger, gateAddr, selfMinerId string, consensusHandler MsgHandler) {
 	s.reader.Init(gateAddr, "/srv/worker_reader", notify.ClientTransactionRead, methodCodeClientReader, Logger)
 	s.writer.Init(gateAddr, "/srv/worker_writer", notify.ClientTransaction, methodCodeClientWriter, Logger)
 	s.worker.Init(gateAddr, selfMinerId, consensusHandler, Logger)
