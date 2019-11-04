@@ -14,6 +14,7 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"x/src/middleware/log"
+	"time"
 )
 
 const (
@@ -46,6 +47,7 @@ type baseConn struct {
 	path string
 	conn *websocket.Conn
 
+	// 读写缓冲区
 	sendChan chan []byte
 	rcvChan  chan []byte
 
@@ -82,6 +84,14 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 func (base *baseConn) start() {
 	go base.receiveMessage()
 	go base.loop()
+	go base.logChannel()
+}
+
+// 定时输出channel堆积情况
+func (base *baseConn) logChannel() {
+	for range time.Tick(time.Second * 1) {
+		base.logger.Errorf("%s channel size. receive: %d, send: %d", base.path, len(base.rcvChan), len(base.sendChan))
+	}
 }
 
 // 调度器
