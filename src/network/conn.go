@@ -66,7 +66,9 @@ type baseConn struct {
 func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 	base.logger = logger
 	base.path = path
-	base.url = url.URL{Scheme: "ws", Host: ipPort, Path: path}.String()
+
+	url := url.URL{Scheme: "ws", Host: ipPort, Path: path}
+	base.url = url.String()
 
 	// 获取链接
 	base.conn = base.getWSConn()
