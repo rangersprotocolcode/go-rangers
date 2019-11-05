@@ -136,23 +136,11 @@ func (tx *Transaction) GenHash() common.Hash {
 	buffer := bytes.Buffer{}
 
 	buffer.Write([]byte(tx.Data))
-
-	buffer.Write(common.Uint64ToByte(tx.Nonce))
-
-	if tx.Source != "" {
-		buffer.Write([]byte(tx.Source))
-	}
-
-	if tx.Target != "" {
-		buffer.Write([]byte(tx.Target))
-	}
-
-	buffer.Write(common.UInt32ToByte(tx.Type))
-
-	if tx.Time != "" {
-		buffer.Write([]byte(tx.Time))
-	}
-
+	buffer.Write([]byte(strconv.FormatUint(tx.Nonce, 10)))
+	buffer.Write([]byte(tx.Source))
+	buffer.Write([]byte(tx.Target))
+	buffer.Write([]byte( strconv.Itoa(int(tx.Type))))
+	buffer.Write([]byte(tx.Time))
 	return common.BytesToHash(common.Sha256(buffer.Bytes()))
 }
 
@@ -387,9 +375,9 @@ type NFTID struct {
 
 //提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链
 type WithDrawReq struct {
-	Address   string            `json:"address,omitempty"`
-	Balance   string            `json:"balance,omitempty"`
-	BNT       BNTWithdrawInfo   `json:"bnt,omitempty"`
+	Address string          `json:"address,omitempty"`
+	Balance string          `json:"balance,omitempty"`
+	BNT     BNTWithdrawInfo `json:"bnt,omitempty"`
 
 	ChainType string            `json:"chainType,omitempty"`
 	FT        map[string]string `json:"ft,omitempty"`
@@ -397,8 +385,8 @@ type WithDrawReq struct {
 }
 
 type WithDrawData struct {
-	Address   string            `json:"address,omitempty"`
-	BNT       BNTWithdrawInfo   `json:"bnt,omitempty"`
+	Address string          `json:"address,omitempty"`
+	BNT     BNTWithdrawInfo `json:"bnt,omitempty"`
 
 	ChainType string            `json:"chainType,omitempty"`
 	FT        map[string]string `json:"ft,omitempty"`
@@ -441,9 +429,9 @@ type TxJson struct {
 }
 
 func (txJson TxJson) ToTransaction() Transaction {
-	tx := Transaction{Source: txJson.Source, Target: txJson.Target,
-		Type: txJson.Type, Data: txJson.Data, Nonce: txJson.Nonce,
-		RequestId: txJson.RequestId, ExtraData: txJson.ExtraData}
+	tx := Transaction{Source: txJson.Source, Target: txJson.Target, Type: txJson.Type, Time: txJson.Time,
+		Data: txJson.Data, ExtraData: txJson.ExtraData, Nonce: txJson.Nonce,
+		RequestId: txJson.RequestId, SocketRequestId: txJson.SocketRequestId}
 
 	if txJson.Hash != "" {
 		s := txJson.Hash
@@ -451,15 +439,11 @@ func (txJson TxJson) ToTransaction() Transaction {
 			s = s[2:]
 		}
 		tx.Hash = common.HexToHash(txJson.Hash)
-	} else {
-		tx.Hash = tx.GenHash()
 	}
 
 	if txJson.Sign != "" {
 		tx.Sign = common.HexStringToSign(txJson.Sign)
 	}
-	tx.SocketRequestId = txJson.SocketRequestId
-	tx.Time = txJson.Time
 	return tx
 }
 

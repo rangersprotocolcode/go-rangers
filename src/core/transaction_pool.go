@@ -77,7 +77,7 @@ func NewTransactionPool() TransactionPool {
 
 func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 	if err := pool.verifyTransaction(tx); err != nil {
-		logger.Debugf("Tx %s verify sig error:%s, tx type:%d", tx.Hash.String(), err.Error(), tx.Type)
+		logger.Infof("Tx verify error! Hash:%s, tx type:%d", tx.Hash.String(), err.Error(), tx.Type)
 		return false, err
 	}
 
@@ -98,7 +98,7 @@ func (pool *TxPool) AddBroadcastTransactions(txs []*types.Transaction) {
 
 	for _, tx := range txs {
 		if err := pool.verifyTransaction(tx); err != nil {
-			logger.Debugf("Tx %s verify sig error:%s, tx type:%d", tx.Hash.String(), err.Error(), tx.Type)
+			logger.Infof("Tx verify error! Hash:%s, tx type:%d", tx.Hash.String(), err.Error(), tx.Type)
 			continue
 		}
 		pool.add(tx)
@@ -279,11 +279,12 @@ func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
 	if pool.evictedTxs.Contains(tx.Hash) {
 		return ErrEvicted
 	}
-	//if tx.Hash != tx.GenHash() {
-	//	logger.Debugf("Bad tx: hash not illegal,hash:%s,", tx.Hash.String())
-	//	return ErrHash
-	//}
 
+	expectHash := tx.GenHash()
+	if tx.Hash != expectHash {
+		logger.Infof("Illegal tx hash! Hash:%s,except hash:%s", tx.Hash.String(), expectHash.String())
+		return ErrHash
+	}
 	return nil
 }
 
