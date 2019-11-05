@@ -20,10 +20,10 @@ type server struct {
 }
 
 func (s *server) Init(logger log.Logger, gateAddr, selfMinerId string, consensusHandler MsgHandler) {
-	s.reader.Init(gateAddr, "/srv/worker_reader", notify.ClientTransactionRead, methodCodeClientReader, Logger)
-	s.writer.Init(gateAddr, "/srv/worker_writer", notify.ClientTransaction, methodCodeClientWriter, Logger)
-	s.worker.Init(gateAddr, selfMinerId, consensusHandler, Logger)
-	s.coiner.Init(gateAddr, Logger)
+	s.reader.Init(gateAddr, "/srv/worker_reader", notify.ClientTransactionRead, methodCodeClientReader, logger)
+	s.writer.Init(gateAddr, "/srv/worker_writer", notify.ClientTransaction, methodCodeClientWriter, logger)
+	s.worker.Init(gateAddr, selfMinerId, consensusHandler, logger)
+	s.coiner.Init(gateAddr, logger)
 }
 
 func (s *server) Send(id string, msg Message) {
@@ -50,6 +50,6 @@ func (s *server) SendToCoinConnector(msg []byte) {
 	s.coiner.Send(msg)
 }
 
-func (s *server) Notify(isunicast bool, gameId string, userid string, msg string) {
-	s.reader.Notify(isunicast, gameId, userid, msg)
+func (s *server) Notify(isUniCast bool, gameId string, userid string, msg string) {
+	s.reader.Notify(isUniCast, gameId, userid, msg)
 }
