@@ -20,8 +20,11 @@ import (
 const (
 	// ws协议头大小
 	protocolHeaderSize = 28
+
 	// 读写channel数量
-	channelSize = 1000
+	channelSize       = 1000
+	writerChannelSize = 100
+
 	// ws读写缓存
 	bufferSize = 1024 * 1024 * 32
 )
@@ -56,6 +59,8 @@ type baseConn struct {
 
 	rcv func(msg []byte)
 
+	isSend func(method []byte, target uint64, msg []byte, nonce uint64) bool
+
 	logger log.Logger
 }
 
@@ -75,7 +80,7 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 	base.path = path
 	base.conn = conn
 	base.sendChan = make(chan []byte, channelSize)
-	base.rcvChan = make(chan []byte, channelSize)
+	base.rcvChan = make(chan []byte, writerChannelSize)
 
 	base.start()
 }
@@ -135,6 +140,11 @@ func (base *baseConn) receiveMessage() {
 // 发送消息
 func (base *baseConn) send(method []byte, target uint64, msg []byte, nonce uint64) {
 	header := wsHeader{method: method, nonce: nonce, targetId: target}
+
+	if base.isSend != nil && !base.isSend(method, target, msg, nonce) {
+		base.logger.Errorf("%s did not accept sendmsg, wsHeader: %v, length: %d", base.path, header, len(msg))
+	}
+
 	base.sendChan <- base.loadMsg(header, msg)
 	base.logger.Debugf("send message. wsHeader: %v, length: %d", header, len(msg))
 }
@@ -226,6 +236,10 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 		}
 
 		clientConn.rcvChan <- msg
+	}
+
+	clientConn.isSend = func(method []byte, target uint64, msg []byte, nonce uint64) bool {
+		return len(clientConn.sendChan) < writerChannelSize
 	}
 
 	clientConn.init(ipPort, path, logger)
