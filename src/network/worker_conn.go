@@ -9,11 +9,13 @@ import (
 	"x/src/middleware/log"
 )
 
-var methodCodeSend, _ = hex.DecodeString("80000001")
-var methodCodeBroadcast, _ = hex.DecodeString("80000002")
-var methodCodeSendToGroup, _ = hex.DecodeString("80000003")
-var methodCodeJoinGroup, _ = hex.DecodeString("80000004")
-var methodCodeQuitGroup, _ = hex.DecodeString("80000005")
+var (
+	methodCodeSend, _        = hex.DecodeString("80000001")
+	methodCodeBroadcast, _   = hex.DecodeString("80000002")
+	methodCodeSendToGroup, _ = hex.DecodeString("80000003")
+	methodCodeJoinGroup, _   = hex.DecodeString("80000004")
+	methodCodeQuitGroup, _   = hex.DecodeString("80000005")
+)
 
 type WorkerConn struct {
 	baseConn
@@ -29,7 +31,7 @@ func (workerConn *WorkerConn) Init(ipPort, selfId string, consensusHandler MsgHa
 	workerConn.doRcv = func(wsHeader wsHeader, body []byte) {
 		method := wsHeader.method
 		if !bytes.Equal(method, methodCodeSend) && !bytes.Equal(method, methodCodeBroadcast) && !bytes.Equal(method, methodCodeSendToGroup) {
-			workerConn.logger.Error("received wrong method: %v", method)
+			workerConn.logger.Error("received wrong method, wsHeader: %v", wsHeader)
 			return
 		}
 
@@ -43,11 +45,11 @@ func (workerConn *WorkerConn) Init(ipPort, selfId string, consensusHandler MsgHa
 func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 	message, error := unMarshalMessage(data)
 	if error != nil {
-		workerConn.logger.Errorf("Proto unmarshal node message error:%s", error.Error())
+		workerConn.logger.Errorf("Proto unmarshal node message error: %s", error.Error())
 		return
 	}
 
-	workerConn.logger.Debugf("Rcv from node: %s,code:%d,msg size:%d,hash:%s", from, message.Code, len(data), message.Hash())
+	workerConn.logger.Debugf("Rcv from node: %s,code: %d,msg size: %d,hash: %s", from, message.Code, len(data), message.Hash())
 
 	code := message.Code
 	switch code {
@@ -119,7 +121,6 @@ func (workerConn *WorkerConn) joinGroup() {
 func (workerConn *WorkerConn) generateTargetForGroup(groupId string) uint64 {
 	hash64 := fnv.New64()
 	hash64.Write([]byte(groupId))
-
 	return hash64.Sum64()
 }
 
