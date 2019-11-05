@@ -21,23 +21,13 @@ const (
 	// ws协议头大小
 	protocolHeaderSize = 28
 
-	// 读写channel数量
-	channelSize       = 1000
-	writerChannelSize = 100
+	// 默认等待队列大小
+	defaultRcvSize  = 1000
+	defaultSendSize = 100
 
 	// ws读写缓存
-	bufferSize = 1024 * 1024 * 32
+	defaultBufferSize = 1024 * 1024 * 16
 )
-
-var methodCodeClientReader, _ = hex.DecodeString("60000000")
-var methodCodeClientWriter, _ = hex.DecodeString("60000001")
-
-var methodSendToCoinConnector, _ = hex.DecodeString("30000003")
-var methodRcvFromCoinConnector, _ = hex.DecodeString("30000002")
-
-var methodNotify, _ = hex.DecodeString("20000000")
-var methodNotifyBroadcast, _ = hex.DecodeString("20000001")
-var methodNotifyGroup, _ = hex.DecodeString("20000002")
 
 type wsHeader struct {
 	method   []byte
@@ -51,8 +41,12 @@ type baseConn struct {
 	conn *websocket.Conn
 
 	// 读写缓冲区
-	sendChan chan []byte
 	rcvChan  chan []byte
+	sendChan chan []byte
+
+	// 读写channel数量
+	rcvSize  int
+	sendSize int
 
 	// 收到消息后的回调
 	doRcv func(wsHeader wsHeader, msg []byte)
@@ -67,20 +61,27 @@ type baseConn struct {
 // 根据url初始化
 func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 	base.logger = logger
-
-	url := url.URL{Scheme: "ws", Host: ipPort, Path: path}
-	base.logger.Debugf("connecting to %s", url.String())
-
-	d := websocket.Dialer{ReadBufferSize: bufferSize, WriteBufferSize: bufferSize,}
-	conn, _, err := d.Dial(url.String(), nil)
-	if err != nil {
-		panic("Dial to" + url.String() + " err:" + err.Error())
-	}
-
 	base.path = path
+
+	// 建立ws连接
+	url := url.URL{Scheme: "ws", Host: ipPort, Path: path}.String()
+	base.logger.Debugf("connecting to %s", url)
+	d := websocket.Dialer{ReadBufferSize: defaultBufferSize, WriteBufferSize: defaultBufferSize,}
+	conn, _, err := d.Dial(url, nil)
+	if err != nil {
+		panic("Dial to" + url + " err:" + err.Error())
+	}
 	base.conn = conn
-	base.sendChan = make(chan []byte, channelSize)
-	base.rcvChan = make(chan []byte, writerChannelSize)
+
+	// 初始化读写缓存
+	if 0 == base.rcvSize {
+		base.rcvSize = defaultRcvSize
+	}
+	if 0 == base.sendSize {
+		base.sendSize = defaultSendSize
+	}
+	base.rcvChan = make(chan []byte, base.rcvSize)
+	base.sendChan = make(chan []byte, base.sendSize)
 
 	base.start()
 }
@@ -92,10 +93,13 @@ func (base *baseConn) start() {
 	go base.logChannel()
 }
 
-// 定时输出channel堆积情况
+// 定时检查channel堆积情况
 func (base *baseConn) logChannel() {
-	for range time.Tick(time.Second * 1) {
-		base.logger.Errorf("%s channel size. receive: %d, send: %d", base.path, len(base.rcvChan), len(base.sendChan))
+	for range time.Tick(time.Millisecond * 300) {
+		rcv, send := len(base.rcvChan), len(base.sendChan)
+		if rcv > 0 || send > 0 {
+			base.logger.Errorf("%s channel size. receive: %d, send: %d", base.path, rcv, send)
+		}
 	}
 }
 
@@ -198,6 +202,13 @@ func (base *baseConn) generateTarget(targetId string) (uint64, error) {
 }
 
 // 处理客户端的read/write请求
+var methodCodeClientReader, _ = hex.DecodeString("60000000")
+var methodCodeClientWriter, _ = hex.DecodeString("60000001")
+
+var methodNotify, _ = hex.DecodeString("20000000")
+var methodNotifyBroadcast, _ = hex.DecodeString("20000001")
+var methodNotifyGroup, _ = hex.DecodeString("20000002")
+
 type ClientConn struct {
 	baseConn
 	method []byte
@@ -230,7 +241,7 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 		clientConn.handleClientMessage(body, strconv.FormatUint(wsHeader.sourceId, 10), wsHeader.nonce, event)
 	}
 	clientConn.rcv = func(msg []byte) {
-		if len(clientConn.rcvChan) == channelSize {
+		if len(clientConn.rcvChan) == clientConn.rcvSize {
 			clientConn.logger.Errorf("client rcvChan full, remove it, msg size: %d", len(msg))
 			return
 		}
@@ -239,7 +250,7 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 	}
 
 	clientConn.isSend = func(method []byte, target uint64, msg []byte, nonce uint64) bool {
-		return len(clientConn.sendChan) < writerChannelSize
+		return len(clientConn.sendChan) < clientConn.sendSize
 	}
 
 	clientConn.init(ipPort, path, logger)
@@ -294,6 +305,9 @@ func (clientConn *ClientConn) generateNotifyId(gameId string, userId string) uin
 }
 
 // 处理coiner的请求
+var methodSendToCoinConnector, _ = hex.DecodeString("30000003")
+var methodRcvFromCoinConnector, _ = hex.DecodeString("30000002")
+
 type CoinerConn struct {
 	baseConn
 }

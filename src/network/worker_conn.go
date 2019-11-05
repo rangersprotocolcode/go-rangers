@@ -22,6 +22,8 @@ type WorkerConn struct {
 }
 
 func (workerConn *WorkerConn) Init(ipPort, selfId string, consensusHandler MsgHandler, logger log.Logger) {
+	// worker 链接加大发送队列长度
+	workerConn.sendSize = 1000
 	workerConn.consensusHandler = consensusHandler
 	workerConn.selfId = selfId
 	workerConn.doRcv = func(wsHeader wsHeader, body []byte) {
@@ -124,7 +126,7 @@ func (workerConn *WorkerConn) generateTargetForGroup(groupId string) uint64 {
 func (workerConn *WorkerConn) sendMessage(method []byte, target uint64, message Message, nonce uint64) {
 	msg, err := marshalMessage(message)
 	if err != nil {
-		Logger.Errorf("worker sendMessage error. invalid message: %v", message)
+		workerConn.logger.Errorf("worker sendMessage error. invalid message: %v", message)
 		return
 	}
 
