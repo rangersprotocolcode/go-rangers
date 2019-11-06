@@ -109,11 +109,7 @@ func (p *Processor) doAddOnChain(block *types.Block) (result int8) {
 }
 
 func (p *Processor) blockOnChain(h common.Hash) bool {
-	exist := p.getBlockHeaderByHash(h)
-	if exist != nil { //已经上链
-		return true
-	}
-	return false
+	return p.MainChain.HasBlockByHash(h)
 }
 
 func (p *Processor) getBlockHeaderByHash(hash common.Hash) *types.BlockHeader {

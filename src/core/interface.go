@@ -66,6 +66,8 @@ type BlockChain interface {
 	GetVerifyHash(height uint64) (common.Hash, error)
 
 	GetAccountDB() *account.AccountDB
+
+	HasBlockByHash(hash common.Hash) bool
 }
 
 type GroupChain interface {

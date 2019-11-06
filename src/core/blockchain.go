@@ -480,7 +480,7 @@ func (chain *blockChain) remove(block *types.Block) bool {
 	return true
 }
 
-func (chain *blockChain) hasBlockByHash(hash common.Hash) bool {
+func (chain *blockChain) HasBlockByHash(hash common.Hash) bool {
 	result, err := chain.hashDB.Has(hash.Bytes())
 	if err != nil {
 		result = false

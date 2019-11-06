@@ -43,7 +43,7 @@ func (p *Processor) thresholdPieceVerify(mtype string, sender string, gid groups
 
 }
 
-func (p *Processor) normalPieceVerify(mtype string, sender string, gid groupsig.ID, vctx *VerifyContext, slot *SlotContext, traceLog *msgTraceLog)  {
+func (p *Processor) normalPieceVerify(mtype string, sender string, gid groupsig.ID, vctx *VerifyContext, slot *SlotContext, traceLog *msgTraceLog) {
 	bh := slot.BH
 	castor := groupsig.DeserializeId(bh.Castor)
 	if slot.StatusTransform(SS_WAITING, SS_SIGNED) && !castor.IsEqual(p.GetMinerID()) {
@@ -96,7 +96,7 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 		return fmt.Errorf("cast verify expire, gid=%v, preTime %v, expire %v", gid.ShortS(), preBH.CurTime, expireTime)
 	} else if bh.Height > 1 {
 		//设置为2倍的最大时间，防止由于时间不同步导致的跳块
-		beginTime := expireTime.Add(-2*time.Second*time.Duration(model.Param.MaxGroupCastTime))
+		beginTime := expireTime.Add(-2 * time.Second * time.Duration(model.Param.MaxGroupCastTime))
 		if !time.Now().After(beginTime) {
 			return fmt.Errorf("cast begin time illegal, expectBegin at %v, expire at %v", beginTime, expireTime)
 		}
@@ -184,6 +184,9 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 
 	slog.addStage("UVCheck")
 	blog.debug("%v start UserVerified, height=%v, hash=%v", mtype, bh.Height, bh.Hash.ShortS())
+
+	middleware.PerfLogger.Infof("verify before UserVerified %s, cost: %v, height: %v, hash: %v", mtype, time.Since(bh.CurTime), bh.Height, bh.Hash.String())
+
 	verifyResult, err := vctx.UserVerified(bh, si, pk, slog)
 	slog.endStage()
 	blog.log("proc(%v) UserVerified height=%v, hash=%v, result=%v.%v", p.getPrefix(), bh.Height, bh.Hash.ShortS(), CBMR_RESULT_DESC(verifyResult), err)
@@ -231,7 +234,7 @@ func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMess
 	result := ""
 
 	defer func() {
-		traceLog.logEnd("height=%v, hash=%v, preHash=%v,groupId=%v, result=%v", bh.Height, bh.Hash.ShortS(), bh.PreHash.ShortS(),groupId.ShortS(), result)
+		traceLog.logEnd("height=%v, hash=%v, preHash=%v,groupId=%v, result=%v", bh.Height, bh.Hash.ShortS(), bh.PreHash.ShortS(), groupId.ShortS(), result)
 		blog.debug("height=%v, hash=%v, preHash=%v, groupId=%v, result=%v", bh.Height, bh.Hash.ShortS(), bh.PreHash.ShortS(), groupId.ShortS(), result)
 		slog.log("sender=%v, hash=%v, gid=%v, height=%v", si.GetID().ShortS(), bh.Hash.ShortS(), groupId.ShortS(), bh.Height)
 	}()
@@ -272,14 +275,14 @@ func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMess
 		result = err.Error()
 	}
 
-	middleware.PerfLogger.Infof("verify msg3, cost: %v, height: %v, hash: %v", time.Since(bh.CurTime), bh.Height, bh.Hash.String())
+	middleware.PerfLogger.Infof("verified %s, cost: %v, height: %v, hash: %v", mtype, time.Since(bh.CurTime), bh.Height, bh.Hash.String())
 	return
 }
 
-func (p *Processor) verifyWithCache(cache *verifyMsgCache, vmsg *model.ConsensusVerifyMessage)  {
+func (p *Processor) verifyWithCache(cache *verifyMsgCache, vmsg *model.ConsensusVerifyMessage) {
 	msg := &model.ConsensusCastMessage{
-		BH: cache.castMsg.BH,
-		ProveHash: cache.castMsg.ProveHash,
+		BH:                cache.castMsg.BH,
+		ProveHash:         cache.castMsg.ProveHash,
 		BaseSignedMessage: vmsg.BaseSignedMessage,
 	}
 	msg.BH.Random = vmsg.RandomSign.Serialize()
@@ -321,7 +324,6 @@ func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 
 	slog.addStage("OMC")
 	// 主要耗时点
-	middleware.PerfLogger.Infof("start verifyCastMessage, cost: %v, height: %v, hash: %v", time.Since(bh.CurTime), bh.Height, bh.Hash.String())
 	p.verifyCastMessage("OMC", ccm)
 	slog.endStage()
 
@@ -434,7 +436,7 @@ func (p *Processor) OnMessageNewTransactions(ths []common.Hashes) {
 		txstrings[idx] = tx.ShortS()
 	}
 
-	blog.debug("proc(%v) begin %v, trans count=%v %v...", p.getPrefix(),mtype, len(ths), txstrings)
+	blog.debug("proc(%v) begin %v, trans count=%v %v...", p.getPrefix(), mtype, len(ths), txstrings)
 
 	p.blockContexts.forEachBlockContext(func(bc *BlockContext) bool {
 		for _, vctx := range bc.SafeGetVerifyContexts() {

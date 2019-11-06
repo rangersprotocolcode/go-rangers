@@ -52,7 +52,7 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 }
 
 func (chain *blockChain) hasPreBlock(bh types.BlockHeader) bool {
-	return chain.hasBlockByHash(bh.PreHash)
+	return chain.HasBlockByHash(bh.PreHash)
 }
 
 func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Transaction) (bool, []common.Hashes, []*types.Transaction) {
