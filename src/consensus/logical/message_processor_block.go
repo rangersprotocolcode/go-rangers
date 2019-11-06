@@ -187,7 +187,7 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 	blog.debug("%v start UserVerified, height=%v, hash=%v", mtype, bh.Height, bh.Hash.ShortS())
 
 	id := utility.GetGoroutineId()
-	middleware.PerfLogger.Infof("verify before UserVerified %s, id: %s, cost: %v, height: %v, hash: %v", mtype, id, time.Since(bh.CurTime), bh.Height, bh.Hash.String())
+	middleware.PerfLogger.Infof("verify before UserVerified %s, id: %d, cost: %v, height: %v, hash: %v", mtype, id, time.Since(bh.CurTime), bh.Height, bh.Hash.String())
 
 	verifyResult, err := vctx.UserVerified(bh, si, pk, slog)
 	slog.endStage()
@@ -278,7 +278,7 @@ func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMess
 	}
 
 	id := utility.GetGoroutineId()
-	middleware.PerfLogger.Infof("verified %s, id: %s, cost: %v, height: %v, hash: %v", mtype, id, time.Since(bh.CurTime), bh.Height, bh.Hash.String())
+	middleware.PerfLogger.Infof("verified %s, id: %d, cost: %v, height: %v, hash: %v", mtype, id, time.Since(bh.CurTime), bh.Height, bh.Hash.String())
 	return
 }
 

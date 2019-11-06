@@ -117,9 +117,9 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 		}
 
 		id := utility.GetGoroutineId()
-		middleware.PerfLogger.Infof("start Verified msg, id: %s, hash: %v, msg size: %d", id, m.BlockHash.String(), len(body))
+		middleware.PerfLogger.Infof("start Verified msg, id: %d, hash: %v, msg size: %d", id, m.BlockHash.String(), len(body))
 		c.processor.OnMessageVerify(m)
-		middleware.PerfLogger.Infof("fin Verified msg, id: %s, hash: %v, msg size: %d", id, m.BlockHash.String(), len(body))
+		middleware.PerfLogger.Infof("fin Verified msg, id: %d, hash: %v, msg size: %d", id, m.BlockHash.String(), len(body))
 
 	case network.CreateGroupaRaw:
 		m, e := unMarshalConsensusCreateGroupRawMessage(body)
