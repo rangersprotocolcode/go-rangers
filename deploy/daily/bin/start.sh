@@ -31,11 +31,11 @@ do
 	fi
 
 	if [ $instance_index -eq 1 ];then
-		nohup ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port   --apply light --keystore keystore$instance_index --env daily > $stdout_log 2>&1 & echo $! > $pid_file
+		nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port   --apply light --keystore keystore$instance_index --env daily > $stdout_log 2>&1 & echo $! > $pid_file
     elif [ $instance_index -le 3 ];then
-		nohup ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port   --apply light --keystore keystore$instance_index --env daily > $stdout_log 2>&1 & echo $! > $pid_file
+		nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port   --apply light --keystore keystore$instance_index --env daily > $stdout_log 2>&1 & echo $! > $pid_file
 	else
-		nohup ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --apply heavy --keystore keystore$instance_index --env daily > $stdout_log 2>&1 & echo $! > $pid_file
+		nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --apply heavy --keystore keystore$instance_index --env daily > $stdout_log 2>&1 & echo $! > $pid_file
 	fi
 	sleep 1
 done
