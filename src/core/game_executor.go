@@ -49,6 +49,8 @@ func (executor *GameExecutor) makeFailedResponse(message string, id string) []by
 	return result
 }
 
+const maxWriteSize = 100000
+
 // 用于处理client websocket请求
 type GameExecutor struct {
 	chain *blockChain
@@ -79,7 +81,7 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	} else {
 		gameExecutor.debug = true
 	}
-	gameExecutor.writeChan = make(chan notify.Message, 100000)
+	gameExecutor.writeChan = make(chan notify.Message, maxWriteSize)
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.Write)
 
 	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.Read)
@@ -194,6 +196,10 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 
 func (executor *GameExecutor) Write(msg notify.Message) {
 	executor.logger.Debugf("write rcv message :%v", msg)
+	if len(executor.writeChan) == maxWriteSize {
+		executor.logger.Errorf("write rcv message error: %v", msg)
+		return
+	}
 	executor.writeChan <- msg
 }
 
