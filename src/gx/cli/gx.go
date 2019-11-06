@@ -7,7 +7,6 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"runtime"
-	"runtime/debug"
 	"strconv"
 	"time"
 	"x/src/common"
@@ -91,7 +90,6 @@ func (gx *GX) Run() {
 	common.InitConf(*configFile)
 	walletManager = newWallets()
 	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString("instance", "index", ""))
-	gx.initSysParam()
 
 	if *apply == "heavy" {
 		fmt.Println("Welcom to be a tas propose miner!")
@@ -240,12 +238,6 @@ func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerDO) {
 		common.DefaultLogger.Infof("Miner ID: %s", minerDO.ID.GetHexString())
 	}
 
-}
-
-func (gx *GX) initSysParam() {
-	debug.SetGCPercent(100)
-	debug.SetMaxStack(2 * 1000000000)
-	common.DefaultLogger.Debug("Setting gc 100%, max memory 2g")
 }
 
 func (gx *GX) handleExit(ctrlC <-chan bool, quit chan<- bool) {
