@@ -115,7 +115,9 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 			return e
 		}
 
+		middleware.PerfLogger.Infof("start Verified msg, hash: %v, msg size: %d", m.BlockHash.String(), len(body))
 		c.processor.OnMessageVerify(m)
+		middleware.PerfLogger.Infof("fin Verified msg, hash: %v, msg size: %d", m.BlockHash.String(), len(body))
 
 	case network.CreateGroupaRaw:
 		m, e := unMarshalConsensusCreateGroupRawMessage(body)
