@@ -8,6 +8,7 @@ import (
 	"runtime/debug"
 	"time"
 	"x/src/middleware"
+	"x/src/utility"
 )
 
 type ConsensusHandler struct {
@@ -115,9 +116,10 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 			return e
 		}
 
-		middleware.PerfLogger.Infof("start Verified msg, hash: %v, msg size: %d", m.BlockHash.String(), len(body))
+		id := utility.GetGoroutineId()
+		middleware.PerfLogger.Infof("start Verified msg, id: %s, hash: %v, msg size: %d", id, m.BlockHash.String(), len(body))
 		c.processor.OnMessageVerify(m)
-		middleware.PerfLogger.Infof("fin Verified msg, hash: %v, msg size: %d", m.BlockHash.String(), len(body))
+		middleware.PerfLogger.Infof("fin Verified msg, id: %s, hash: %v, msg size: %d", id, m.BlockHash.String(), len(body))
 
 	case network.CreateGroupaRaw:
 		m, e := unMarshalConsensusCreateGroupRawMessage(body)

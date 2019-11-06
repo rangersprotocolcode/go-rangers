@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"x/src/middleware"
+	"x/src/utility"
 )
 
 func (p *Processor) genCastGroupSummary(bh *types.BlockHeader) *model.CastGroupSummary {
@@ -185,7 +186,8 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 	slog.addStage("UVCheck")
 	blog.debug("%v start UserVerified, height=%v, hash=%v", mtype, bh.Height, bh.Hash.ShortS())
 
-	middleware.PerfLogger.Infof("verify before UserVerified %s, cost: %v, height: %v, hash: %v", mtype, time.Since(bh.CurTime), bh.Height, bh.Hash.String())
+	id := utility.GetGoroutineId()
+	middleware.PerfLogger.Infof("verify before UserVerified %s, id: %s, cost: %v, height: %v, hash: %v", mtype, id, time.Since(bh.CurTime), bh.Height, bh.Hash.String())
 
 	verifyResult, err := vctx.UserVerified(bh, si, pk, slog)
 	slog.endStage()
@@ -275,7 +277,8 @@ func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMess
 		result = err.Error()
 	}
 
-	middleware.PerfLogger.Infof("verified %s, cost: %v, height: %v, hash: %v", mtype, time.Since(bh.CurTime), bh.Height, bh.Hash.String())
+	id := utility.GetGoroutineId()
+	middleware.PerfLogger.Infof("verified %s, id: %s, cost: %v, height: %v, hash: %v", mtype, id, time.Since(bh.CurTime), bh.Height, bh.Hash.String())
 	return
 }
 
