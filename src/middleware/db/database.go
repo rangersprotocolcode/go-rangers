@@ -64,7 +64,7 @@ func getInstance() (*LDBDatabase, error) {
 
 	defaultConfig := &databaseConfig{
 		database: DEFAULT_FILE,
-		cache:    1024,
+		cache:    512,
 		handler:  2048,
 	}
 
