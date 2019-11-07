@@ -8,6 +8,7 @@ import (
 	"hash/fnv"
 	"x/src/middleware/log"
 	"x/src/middleware"
+	"x/src/utility"
 )
 
 var (
@@ -133,7 +134,8 @@ func (workerConn *WorkerConn) sendMessage(method []byte, target uint64, message 
 	}
 
 	if bytes.Equal(method, methodCodeBroadcast) {
-		middleware.PerfLogger.Infof("Broadcast, length: %d", len(msg))
+		id := utility.GetGoroutineId()
+		middleware.PerfLogger.Infof("Broadcast, id: %d, length: %d", id, len(msg))
 	}
 
 	workerConn.send(method, target, msg, nonce)
