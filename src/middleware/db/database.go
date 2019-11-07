@@ -64,7 +64,7 @@ func getInstance() (*LDBDatabase, error) {
 
 	defaultConfig := &databaseConfig{
 		database: DEFAULT_FILE,
-		cache:    128,
+		cache:    640,
 		handler:  1024,
 	}
 
@@ -202,7 +202,7 @@ func newLevelDBInstance(file string, cache int, handles int) (*leveldb.DB, error
 		OpenFilesCacheCapacity: handles,
 		BlockCacheCapacity:     cache / 2 * opt.MiB,
 		WriteBuffer:            cache / 4 * opt.MiB, // Two of these are used internally
-		Filter:                 filter.NewBloomFilter(10),
+		Filter:                 filter.NewBloomFilter(15),
 	})
 
 	if _, corrupted := err.(*errors.ErrCorrupted); corrupted {
