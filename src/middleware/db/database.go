@@ -64,8 +64,8 @@ func getInstance() (*LDBDatabase, error) {
 
 	defaultConfig := &databaseConfig{
 		database: DEFAULT_FILE,
-		cache:    640,
-		handler:  1024,
+		cache:    1024,
+		handler:  2048,
 	}
 
 	if nil == common.GlobalConf {
@@ -200,8 +200,8 @@ func NewLDBDatabase(file string, cache int, handles int) (*LDBDatabase, error) {
 func newLevelDBInstance(file string, cache int, handles int) (*leveldb.DB, error) {
 	db, err := leveldb.OpenFile(file, &opt.Options{
 		OpenFilesCacheCapacity: handles,
-		BlockCacheCapacity:     cache / 2 * opt.MiB,
-		WriteBuffer:            cache / 4 * opt.MiB, // Two of these are used internally
+		BlockCacheCapacity:     200 * opt.MiB,
+		WriteBuffer:            cache * opt.MiB, // Two of these are used internally
 		Filter:                 filter.NewBloomFilter(15),
 	})
 
