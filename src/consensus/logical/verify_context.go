@@ -290,7 +290,7 @@ func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.Sig
 	}
 	isProposal := slot.castor.IsEqual(signData.GetID())
 
-	if isProposal { //提案者
+	if isProposal { //提案者 // 不可能是提案者了
 		slog.addStage("vCastorSign")
 		b := signData.VerifySign(pk)
 		slog.endStage()

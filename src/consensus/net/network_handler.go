@@ -105,9 +105,10 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 			return e
 		}
 
-		middleware.PerfLogger.Infof("start Verify msg, cost: %v, height: %v, hash: %v, msg size: %d", time.Since(m.BH.CurTime), m.BH.Height, m.BH.Hash.String(), len(body))
+		id := utility.GetGoroutineId()
+		middleware.PerfLogger.Infof("start Verify msg, id: %d, cost: %v, height: %v, hash: %v, msg size: %d", id, time.Since(m.BH.CurTime), m.BH.Height, m.BH.Hash.String(), len(body))
 		c.processor.OnMessageCast(m)
-		middleware.PerfLogger.Infof("fin Verify msg, cost: %v, height: %v, hash: %v, msg size: %d", time.Since(m.BH.CurTime), m.BH.Height, m.BH.Hash.String(), len(body))
+		middleware.PerfLogger.Infof("fin Verify msg, id: %d, cost: %v, height: %v, hash: %v, msg size: %d", id, time.Since(m.BH.CurTime), m.BH.Height, m.BH.Hash.String(), len(body))
 
 	case network.VerifiedCastMsg2:
 		m, e := unMarshalConsensusVerifyMessage(body)

@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"hash/fnv"
 	"x/src/middleware/log"
+	"x/src/middleware"
 )
 
 var (
@@ -129,6 +130,10 @@ func (workerConn *WorkerConn) sendMessage(method []byte, target uint64, message 
 	if err != nil {
 		workerConn.logger.Errorf("worker sendMessage error. invalid message: %v", message)
 		return
+	}
+
+	if bytes.Equal(method, methodCodeBroadcast) {
+		middleware.PerfLogger.Infof("Broadcast, length: %d", len(msg))
 	}
 
 	workerConn.send(method, target, msg, nonce)

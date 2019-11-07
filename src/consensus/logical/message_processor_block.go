@@ -32,6 +32,8 @@ func (p *Processor) genCastGroupSummary(bh *types.BlockHeader) *model.CastGroupS
 	return cgs
 }
 
+// 已经恢复出组签名
+// 出块
 func (p *Processor) thresholdPieceVerify(mtype string, sender string, gid groupsig.ID, vctx *VerifyContext, slot *SlotContext, traceLog *msgTraceLog) {
 	blog := newBizLog("thresholdPieceVerify")
 	bh := slot.BH
@@ -59,7 +61,7 @@ func (p *Processor) normalPieceVerify(mtype string, sender string, gid groupsig.
 			cvm.GenRandomSign(skey, vctx.prevBH.Random)
 			blog.debug("call network service SendVerifiedCast hash=%v, height=%v", bh.Hash.ShortS(), bh.Height)
 			traceLog.log("SendVerifiedCast height=%v, castor=%v", bh.Height, slot.castor.ShortS())
-			//验证消息需要给自己也发一份，否则自己的分片中将不包含自己的签名，导致分红没有
+			//验证消息需要给自己也发一份，否则自己的分片中将不包含自己的签名，导致分红没有???
 			p.NetServer.SendVerifiedCast(&cvm, gid)
 		} else {
 			blog.log("genSign fail, id=%v, sk=%v %v", p.GetMinerID().ShortS(), skey.ShortS(), p.IsMinerGroup(gid))
@@ -103,9 +105,11 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 		}
 
 	}
+
 	if !p.IsMinerGroup(gid) {
 		return fmt.Errorf("%v is not in group %v", p.GetMinerID().ShortS(), gid.ShortS())
 	}
+
 	bc := p.GetBlockContext(gid)
 	if bc == nil {
 		err = fmt.Errorf("未获取到blockcontext, gid=" + gid.ShortS())
@@ -220,6 +224,9 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 	return
 }
 
+// 这个方法会被调用多次：
+// 1：收到candidate块，验证 OMC
+// 2：收到别的验证者的消息，要验证 OMV
 func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMessage) {
 	bh := &msg.BH
 	si := &msg.SI
@@ -241,22 +248,27 @@ func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMess
 		slog.log("sender=%v, hash=%v, gid=%v, height=%v", si.GetID().ShortS(), bh.Hash.ShortS(), groupId.ShortS(), bh.Height)
 	}()
 
+	// 不要重复验证
 	if !p.IsMinerGroup(groupId) { //检测当前节点是否在该铸块组
 		result = fmt.Sprintf("don't belong to group, gid=%v, hash=%v, id=%v", groupId.ShortS(), bh.Hash.ShortS(), p.GetMinerID().ShortS())
 		return
 	}
 
 	//castor要忽略自己的消息
+	// 不要重复验证
 	if castor.IsEqual(p.GetMinerID()) && si.GetID().IsEqual(p.GetMinerID()) {
 		result = "ignore self message"
 		return
 	}
 
+	// 要重复验证
 	if msg.GenHash() != si.DataHash {
 		blog.debug("msg proveHash=%v", msg.ProveHash)
 		result = fmt.Sprintf("msg genHash %v diff from si.DataHash %v", msg.GenHash().ShortS(), si.DataHash.ShortS())
 		return
 	}
+
+
 	bc := p.GetBlockContext(groupId)
 	if bc == nil {
 		result = fmt.Sprintf("未获取到blockcontext, gid=" + groupId.ShortS())

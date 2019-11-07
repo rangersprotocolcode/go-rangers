@@ -168,12 +168,6 @@ func (p *Processor) prepareForCast(sgi *StaticGroupInfo) {
 	//p.triggerCastCheck()
 }
 
-func (p *Processor) verifyBlock(bh *types.BlockHeader) ([]common.Hashes, int8) {
-	lostTransHash, ret := p.MainChain.VerifyBlock(*bh)
-	stdLogger.Infof("BlockChainImpl.VerifyCastingBlock result=%v.", ret)
-	return lostTransHash, ret
-}
-
 func (p *Processor) getNearestBlockByHeight(h uint64) *types.Block {
 	for {
 		b := p.MainChain.QueryBlock(h)
