@@ -5,9 +5,9 @@ import (
 	"x/src/middleware/types"
 	"encoding/json"
 	"x/src/common"
+	"x/src/network"
 	"x/src/utility"
 	"fmt"
-	"x/src/network"
 	"strconv"
 )
 
@@ -23,7 +23,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 		txLogger.Errorf("Unmarshal data error:%s", err.Error())
 		return "Withdraw Data Bad Format", false
 	}
-	if withDrawReq.ChainType == "" || withDrawReq.Address == "" {
+	if withDrawReq.Address == "" {
 		return "Withdraw Data Bad Format", false
 	}
 
@@ -31,29 +31,53 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 	result := make(map[string]string)
 
 	//主链币检查
-	if withDrawReq.Balance != "" {
-		withdrawAmount, err := utility.StrToBigInt(withDrawReq.Balance)
+	//if withDrawReq.Balance != "" {
+	//	withdrawAmount, err := utility.StrToBigInt(withDrawReq.Balance)
+	//	if err != nil {
+	//		txLogger.Error("Execute withdraw bad amount!Hash:%s, err:%s", transaction.Hash.String(), err.Error())
+	//		return "Withdraw Data BNT Bad Format", false
+	//	}
+	//
+	//	coinId := fmt.Sprintf("official-%s", withDrawReq.ChainType)
+	//	left, ok := accountdb.SubFT(source, coinId, withdrawAmount)
+	//	if !ok {
+	//		subAccountBalance := accountdb.GetFT(source, coinId)
+	//		txLogger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", subAccountBalance.Uint64(), withdrawAmount.Uint64())
+	//		return "BNT Not Enough", false
+	//	} else {
+	//		result["token"] = withDrawReq.ChainType
+	//		floatdata := float64(left.Int64()) / 1000000000
+	//		result["balance"] = strconv.FormatFloat(floatdata, 'f', -1, 64)
+	//		result["lockedBalance"] = withDrawReq.Balance
+	//	}
+	//}
+	if withDrawReq.BNT.TokenType != "" {
+		withdrawAmount, err := utility.StrToBigInt(withDrawReq.BNT.Value)
 		if err != nil {
 			txLogger.Error("Execute withdraw bad amount!Hash:%s, err:%s", transaction.Hash.String(), err.Error())
 			return "Withdraw Data BNT Bad Format", false
 		}
 
-		coinId := fmt.Sprintf("official-%s", withDrawReq.ChainType)
+		coinId := fmt.Sprintf("official-%s", withDrawReq.BNT.TokenType)
 		left, ok := accountdb.SubFT(source, coinId, withdrawAmount)
 		if !ok {
 			subAccountBalance := accountdb.GetFT(source, coinId)
 			txLogger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", subAccountBalance.Uint64(), withdrawAmount.Uint64())
 			return "BNT Not Enough", false
 		} else {
-			result["token"] = withDrawReq.ChainType
+			result["token"] = withDrawReq.BNT.TokenType
 			floatdata := float64(left.Int64()) / 1000000000
 			result["balance"] = strconv.FormatFloat(floatdata, 'f', -1, 64)
-			result["lockedBalance"] = withDrawReq.Balance
+			result["lockedBalance"] = withDrawReq.BNT.Value
 		}
 	}
 
 	//ft
 	if withDrawReq.FT != nil && len(withDrawReq.FT) != 0 {
+		if withDrawReq.ChainType == "" {
+			return "Withdraw Data Bad Format", false
+		}
+
 		for k, v := range withDrawReq.FT {
 			subValue := accountdb.GetFT(source, k)
 			compareResult, sub := canWithDraw(v, subValue)
@@ -69,6 +93,10 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 	//nft
 	nftInfo := make([]types.NFTID, 0)
 	if withDrawReq.NFT != nil && len(withDrawReq.NFT) != 0 {
+		if withDrawReq.ChainType == "" {
+			return "Withdraw Data Bad Format", false
+		}
+
 		for _, k := range withDrawReq.NFT {
 			nft := NFTManagerInstance.DeleteNFT(source, k.SetId, k.Id, accountdb)
 			if nil == nft {
@@ -93,7 +121,8 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 
 func sendWithdrawToConnector(withDrawReq types.WithDrawReq, transaction *types.Transaction, nftInfo []types.NFTID) bool {
 	//发送给Coin Connector
-	withdrawData := types.WithDrawData{ChainType: withDrawReq.ChainType, Balance: withDrawReq.Balance, Address: withDrawReq.Address}
+	withdrawData := types.WithDrawData{ChainType: withDrawReq.ChainType, Address: withDrawReq.Address}
+	withdrawData.BNT = withDrawReq.BNT
 	withdrawData.FT = withDrawReq.FT
 	withdrawData.NFT = nftInfo
 	b, err := json.Marshal(withdrawData)
@@ -102,7 +131,7 @@ func sendWithdrawToConnector(withDrawReq types.WithDrawReq, transaction *types.T
 		return false
 	}
 
-	t := types.Transaction{Source: transaction.Source, Target: transaction.Target, Data: string(b), Type: transaction.Type}
+	t := types.Transaction{Source: transaction.Source, Target: transaction.Target, Data: string(b), Type: transaction.Type, Time: transaction.Time, Nonce: transaction.Nonce}
 	t.Hash = t.GenHash()
 
 	msg, err := json.Marshal(t.ToTxJson())

@@ -8,6 +8,7 @@ import (
 
 	"crypto/sha256"
 	"go-ethereum/common"
+	"strconv"
 )
 
 func TestPrivateKey(test *testing.T) {
@@ -225,4 +226,15 @@ func TestAddress(t *testing.T) {
 
 	addr := common.HexToAddress(s)
 	fmt.Printf("addr %v", addr)
+}
+
+func TestStrToBigInt(t *testing.T) {
+	s := "5200000000000000000000000000000000000000000000000000000.32242"
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		fmt.Printf("error:%s", err.Error())
+	}
+	fmt.Printf("%v\n", f)
+	i := int64(f * 1000000000)
+	fmt.Printf("%v\n", i)
 }
