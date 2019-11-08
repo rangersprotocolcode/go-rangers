@@ -6,14 +6,11 @@ import (
 	"x/src/network"
 	"x/src/consensus/model"
 	"time"
-
 )
 
 type NetworkServerImpl struct {
 	net network.Network
 }
-
-
 
 func NewNetworkServer() NetworkServer {
 	return &NetworkServerImpl{
@@ -157,7 +154,7 @@ func (ns *NetworkServerImpl) SendCastVerify(ccm *model.ConsensusCastMessage, gro
 
 	//mems := id2String(group.MemIds)
 	//go ns.net.SpreadToGroup(groupId.GetHexString(), mems, m, ccm.BH.Hash.Bytes())
-	logger.Debugf("send CAST_VERIFY_MSG,%d-%d to group:%s,invoke SpreadToGroup cost time:%v,time from cast:%v,hash:%s", ccm.BH.Height, ccm.BH.TotalQN, groupId.GetHexString(), time.Since(begin), timeFromCast,  ccm.BH.Hash.String())
+	logger.Debugf("send CAST_VERIFY_MSG,%d-%d to group:%s,invoke SpreadToGroup cost time:%v,time from cast:%v,hash:%s", ccm.BH.Height, ccm.BH.TotalQN, groupId.GetHexString(), time.Since(begin), timeFromCast, ccm.BH.Hash.String())
 }
 
 //组内节点  验证通过后 自身签名 广播验证块 组内广播  验证不通过 保持静默
@@ -169,8 +166,9 @@ func (ns *NetworkServerImpl) SendVerifiedCast(cvm *model.ConsensusVerifyMessage,
 	}
 	m := network.Message{Code: network.VerifiedCastMsg2, Body: body}
 
-	//验证消息需要给自己也发一份，否则自己的分片中将不包含自己的签名，导致分红没有
-	go ns.send2Self(cvm.SI.GetID(), m)
+	// 验证消息需要给自己也发一份，否则自己的分片中将不包含自己的签名，导致分红没有
+	// 深井冰
+	//go ns.send2Self(cvm.SI.GetID(), m)
 
 	go ns.net.SpreadToGroup(receiver.GetHexString(), m)
 	logger.Debugf("[peer]send VARIFIED_CAST_MSG,hash:%s", cvm.BlockHash.String())
@@ -194,7 +192,6 @@ func (ns *NetworkServerImpl) BroadcastNewBlock(cbm *model.ConsensusBlockMessage,
 	//statistics.AddBlockLog(common.BootId, statistics.BroadBlock, cbm.Block.Header.Height, cbm.Block.Header.ProveValue.Uint64(), len(cbm.Block.Transactions), len(body),
 	//	time.Now().UnixNano(), "", "", common.InstanceIndex, cbm.Block.Header.CurTime.UnixNano())
 }
-
 
 func (ns *NetworkServerImpl) AnswerSignPkMessage(msg *model.ConsensusSignPubKeyMessage, receiver groupsig.ID) {
 	body, e := marshalConsensusSignPubKeyMessage(msg)

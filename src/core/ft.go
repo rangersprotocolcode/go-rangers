@@ -161,7 +161,7 @@ func (self *FTManager) MintFT(owner, ftId, target, supply string, accountDB *acc
 
 	targetAddress := common.HexToAddress(target)
 	if accountDB.AddFT(targetAddress, ftId, balance) {
-		return "TransferFT successful", true
+		return "MintFT successful", true
 	} else {
 		txLogger.Tracef("Mint ft overflow!ftId %s,target:%s,supply:%s", ftId, target, supply)
 		return "Overflow", false

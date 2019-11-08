@@ -23,6 +23,8 @@ type forkProcessor struct {
 
 	lock   sync.Mutex
 	logger log.Logger
+
+	chain *blockChain
 }
 
 type ChainPieceBlockMsg struct {
@@ -30,9 +32,10 @@ type ChainPieceBlockMsg struct {
 	TopHeader *types.BlockHeader
 }
 
-func initForkProcessor() *forkProcessor {
-	fh := forkProcessor{lock: sync.Mutex{}, reqTimer: time.NewTimer(forkTimeOut),}
+func initForkProcessor(chain *blockChain) *forkProcessor {
+	fh := forkProcessor{lock: sync.Mutex{}, reqTimer: time.NewTimer(forkTimeOut), chain: chain}
 	fh.logger = log.GetLoggerByIndex(log.ForkLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+
 	notify.BUS.Subscribe(notify.ChainPieceInfoReq, fh.chainPieceInfoReqHandler)
 	notify.BUS.Subscribe(notify.ChainPieceInfo, fh.chainPieceInfoHandler)
 	notify.BUS.Subscribe(notify.ChainPieceBlockReq, fh.chainPieceBlockReqHandler)
@@ -78,7 +81,7 @@ func (fh *forkProcessor) chainPieceInfoReqHandler(msg notify.Message) {
 	id := chainPieceReqMessage.Peer
 
 	fh.logger.Debugf("Rcv chain piece info req from:%s,req height:%d", id, reqHeight)
-	chainPiece := blockChainImpl.getChainPieceInfo(reqHeight)
+	chainPiece := fh.chain.getChainPieceInfo(reqHeight)
 	fh.sendChainPieceInfo(id, chainPieceInfo{ChainPiece: chainPiece, TopHeader: blockChainImpl.TopBlock()})
 }
 
@@ -118,7 +121,7 @@ func (fh *forkProcessor) chainPieceInfoHandler(msg notify.Message) {
 		PeerManager.markEvil(source)
 		return
 	}
-	status, reqHeight := blockChainImpl.processChainPieceInfo(chainPieceInfo.ChainPiece, chainPieceInfo.TopHeader)
+	status, reqHeight := fh.chain.processChainPieceInfo(chainPieceInfo.ChainPiece, chainPieceInfo.TopHeader)
 	if status == 0 {
 		fh.reset()
 		return
@@ -151,7 +154,7 @@ func (fh *forkProcessor) chainPieceBlockReqHandler(msg notify.Message) {
 	reqHeight := utility.ByteToUInt64(m.ReqHeightByte)
 	fh.logger.Debugf("Rcv chain piece block req from:%s,req height:%d", source, reqHeight)
 
-	blocks := blockChainImpl.getChainPieceBlocks(reqHeight)
+	blocks := fh.chain.getChainPieceBlocks(reqHeight)
 	topHeader := blockChainImpl.TopBlock()
 	fh.sendChainPieceBlock(source, blocks, topHeader)
 }
@@ -198,7 +201,7 @@ func (fh *forkProcessor) chainPieceBlockHandler(msg notify.Message) {
 		PeerManager.markEvil(source)
 		return
 	}
-	blockChainImpl.mergeFork(blocks, topHeader)
+	fh.chain.mergeFork(blocks, topHeader)
 	fh.reset()
 
 }

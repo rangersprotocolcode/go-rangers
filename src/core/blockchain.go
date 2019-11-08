@@ -32,7 +32,7 @@ const (
 	stateDBPrefix      = "state"
 	verifyHashDBPrefix = "verifyHash"
 
-	topBlocksCacheSize = 10
+	topBlocksCacheSize = 100
 )
 
 var blockChainImpl *blockChain
@@ -44,11 +44,10 @@ type blockChain struct {
 	latestStateDB *account.AccountDB
 	requestIds    map[string]uint64
 
-	topBlocks         *lru.Cache
-	futureBlocks      *lru.Cache
-	verifiedBlocks    *lru.Cache
-	castedBlock       *lru.Cache
-	verifiedBodyCache *lru.Cache
+	topBlocks         *lru.Cache // key：块高，value：header
+	futureBlocks      *lru.Cache // key：块hash，value：block（体积很大）
+	verifiedBlocks    *lru.Cache // key：块hash，value：receipts(体积大) &stateroot
+	verifiedBodyCache *lru.Cache // key：块hash，value：块对应的transaction(体积大)
 
 	hashDB       db.Database
 	heightDB     db.Database
@@ -69,29 +68,28 @@ type castingBlock struct {
 
 func initBlockChain() error {
 	chain := &blockChain{lock: middleware.NewLoglock("chain")}
+	chain.transactionPool = NewTransactionPool()
 
 	var err error
-	chain.futureBlocks, err = lru.New(10)
+	chain.topBlocks, err = lru.New(100)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
 	}
+
+	chain.futureBlocks, err = lru.New(topBlocksCacheSize)
+	if err != nil {
+		logger.Errorf("Init cache error:%s", err.Error())
+		return err
+	}
+
 	chain.verifiedBlocks, err = lru.New(10)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
 	}
-	chain.topBlocks, err = lru.New(topBlocksCacheSize)
-	if err != nil {
-		logger.Errorf("Init cache error:%s", err.Error())
-		return err
-	}
-	chain.castedBlock, err = lru.New(10)
-	if err != nil {
-		logger.Errorf("Init cache error:%s", err.Error())
-		return err
-	}
-	chain.verifiedBodyCache, err = lru.New(50)
+
+	chain.verifiedBodyCache, err = lru.New(10)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
@@ -121,7 +119,7 @@ func initBlockChain() error {
 	chain.stateDB = account.NewDatabase(db)
 
 	chain.executor = NewVMExecutor(chain)
-	chain.forkProcessor = initForkProcessor()
+	chain.forkProcessor = initForkProcessor(chain)
 
 	initMinerManager()
 	initFTManager()
@@ -146,11 +144,10 @@ func initBlockChain() error {
 	chain.init = true
 	blockChainImpl = chain
 
-	chain.transactionPool = NewTransactionPool()
 	return nil
 }
 
-func (chain *blockChain) CastBlock(height uint64, proveValue *big.Int, proveRoot common.Hash, qn uint64, castor []byte, groupid []byte) *types.Block {
+func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValue *big.Int, proveRoot common.Hash, qn uint64, castor []byte, groupid []byte) *types.Block {
 	chain.lock.Lock("CastBlock")
 	defer chain.lock.Unlock("CastBlock")
 
@@ -167,17 +164,19 @@ func (chain *blockChain) CastBlock(height uint64, proveValue *big.Int, proveRoot
 	block := new(types.Block)
 	block.Transactions = chain.transactionPool.PackForCast()
 	block.Header = &types.BlockHeader{
-		CurTime:    time.Now(),
+		CurTime:    timestamp,
 		Height:     height,
 		ProveValue: proveValue, Castor: castor,
 		GroupId:    groupid,
 		TotalQN:    latestBlock.TotalQN + qn,
 		StateTree:  common.BytesToHash(latestBlock.StateTree.Bytes()),
-		ProveRoot:  proveRoot,
-		PreHash:    latestBlock.Hash,
-		PreTime:    latestBlock.CurTime,
+		//ProveRoot:  proveRoot,
+		PreHash: latestBlock.Hash,
+		PreTime: latestBlock.CurTime,
 	}
 	block.Header.RequestIds = getRequestIdFromTransactions(block.Transactions, latestBlock.RequestIds)
+
+	middleware.PerfLogger.Infof("fin cast object. last: %v height: %v", time.Since(timestamp), height)
 
 	preStateRoot := common.BytesToHash(latestBlock.StateTree.Bytes())
 	state, err := account.NewAccountDB(preStateRoot, chain.stateDB)
@@ -186,6 +185,7 @@ func (chain *blockChain) CastBlock(height uint64, proveValue *big.Int, proveRoot
 		return nil
 	}
 	stateRoot, evictedTxs, transactions, receipts, err, _ := chain.executor.Execute(state, block, height, "casting")
+	middleware.PerfLogger.Infof("fin execute txs. last: %v height: %v", time.Since(timestamp), height)
 
 	transactionHashes := make([]common.Hashes, len(transactions))
 	block.Transactions = transactions
@@ -199,13 +199,14 @@ func (chain *blockChain) CastBlock(height uint64, proveValue *big.Int, proveRoot
 	block.Header.Transactions = transactionHashes
 	block.Header.TxTree = calcTxTree(block.Transactions)
 	block.Header.EvictedTxs = evictedTxs
+	middleware.PerfLogger.Infof("fin calcTxTree. last: %v height: %v", time.Since(timestamp), height)
 
 	block.Header.StateTree = common.BytesToHash(stateRoot.Bytes())
 	block.Header.ReceiptTree = calcReceiptsTree(receipts)
 	block.Header.Hash = block.Header.GenHash()
+	middleware.PerfLogger.Infof("fin calcReceiptsTree. last: %v height: %v", time.Since(timestamp), height)
 
 	chain.verifiedBlocks.Add(block.Header.Hash, &castingBlock{state: state, receipts: receipts,})
-	chain.castedBlock.Add(block.Header.Hash, block)
 	if len(block.Transactions) != 0 {
 		chain.verifiedBodyCache.Add(block.Header.Hash, block.Transactions)
 	}
@@ -477,6 +478,15 @@ func (chain *blockChain) remove(block *types.Block) bool {
 	chain.transactionPool.UnMarkExecuted(block.Transactions)
 	chain.eraseRemoveBlockMark()
 	return true
+}
+
+func (chain *blockChain) HasBlockByHash(hash common.Hash) bool {
+	result, err := chain.hashDB.Has(hash.Bytes())
+	if err != nil {
+		result = false
+	}
+
+	return result
 }
 
 func (chain *blockChain) queryBlockByHash(hash common.Hash) *types.Block {

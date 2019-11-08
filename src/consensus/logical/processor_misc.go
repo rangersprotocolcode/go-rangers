@@ -14,16 +14,22 @@ import (
 
 //后续如有全局定时器，从这个函数启动
 func (p *Processor) Start() bool {
-	p.Ticker.RegisterRoutine(p.getCastCheckRoutineName(), p.checkSelfCastRoutine, 1)
-	p.Ticker.RegisterRoutine(p.getReleaseRoutineName(), p.releaseRoutine, 2)
-	p.Ticker.RegisterRoutine(p.getBroadcastRoutineName(), p.broadcastRoutine, 1)
-	p.Ticker.StartTickerRoutine(p.getReleaseRoutineName(), false)
+	// 检查是否要出块
+	p.Ticker.RegisterRoutine(p.getCastCheckRoutineName(), p.checkSelfCastRoutine, 300)
+
+	// 出块后的广播
+	p.Ticker.RegisterRoutine(p.getBroadcastRoutineName(), p.broadcastRoutine, 300)
 	p.Ticker.StartTickerRoutine(p.getBroadcastRoutineName(), false)
 
-	p.Ticker.RegisterRoutine(p.getUpdateGlobalGroupsRoutineName(), p.updateGlobalGroups, 60)
+	// 组解散
+	p.Ticker.RegisterRoutine(p.getReleaseRoutineName(), p.releaseRoutine, 600)
+	p.Ticker.StartTickerRoutine(p.getReleaseRoutineName(), false)
+
+
+	p.Ticker.RegisterRoutine(p.getUpdateGlobalGroupsRoutineName(), p.updateGlobalGroups, 60*1000)
 	p.Ticker.StartTickerRoutine(p.getUpdateGlobalGroupsRoutineName(), false)
 
-	p.Ticker.RegisterRoutine(p.getUpdateMonitorNodeInfoRoutine(), p.updateMonitorInfo, 3)
+	p.Ticker.RegisterRoutine(p.getUpdateMonitorNodeInfoRoutine(), p.updateMonitorInfo, 3*1000)
 	p.Ticker.StartTickerRoutine(p.getUpdateMonitorNodeInfoRoutine(), false)
 
 	p.triggerCastCheck()
@@ -115,7 +121,7 @@ func (p *Processor) GetSelfMinerDO() *model.SelfMinerDO {
 func (p *Processor) canProposalAt(h uint64) bool {
 	miner := p.minerReader.getProposeMiner(p.GetMinerID())
 	if miner == nil {
-		stdLogger.Errorf("get nil proposeMiner:%s", p.GetMinerID().String())
+		//		stdLogger.Errorf("get nil proposeMiner:%s", p.GetMinerID().String())
 		return false
 	}
 	return miner.CanCastAt(h)

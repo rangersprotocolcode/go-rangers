@@ -31,6 +31,7 @@ const (
 	Forking                   AddBlockResult = 3
 	ValidateBlockOk           AddBlockResult = 100
 )
+
 const (
 	SUCCESS                             = 0
 	TxErrorCode_BalanceNotEnough        = 1
@@ -232,7 +233,7 @@ type BlockHeader struct {
 	StateTree    common.Hash
 	ExtraData    []byte
 	Random       []byte
-	ProveRoot    common.Hash
+	//ProveRoot    common.Hash
 	EvictedTxs   []common.Hash
 }
 
@@ -272,7 +273,7 @@ func (bh *BlockHeader) GenHash() common.Hash {
 		ReceiptTree:  bh.ReceiptTree,
 		StateTree:    bh.StateTree,
 		ExtraData:    bh.ExtraData,
-		ProveRoot:    bh.ProveRoot,
+		//ProveRoot:    bh.ProveRoot,
 		EvictedTxs:   bh.EvictedTxs,
 	}
 	blockByte, _ := json.Marshal(header)
@@ -296,7 +297,7 @@ func (bh *BlockHeader) ToString() string {
 		ReceiptTree:  bh.ReceiptTree,
 		StateTree:    bh.StateTree,
 		ExtraData:    bh.ExtraData,
-		ProveRoot:    bh.ProveRoot,
+		//ProveRoot:    bh.ProveRoot,
 		EvictedTxs:   bh.EvictedTxs,
 	}
 	blockByte, _ := json.Marshal(header)

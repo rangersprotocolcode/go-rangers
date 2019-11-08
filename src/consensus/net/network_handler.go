@@ -6,6 +6,9 @@ import (
 	"log"
 	"fmt"
 	"runtime/debug"
+	"time"
+	"x/src/middleware"
+	"x/src/utility"
 )
 
 type ConsensusHandler struct {
@@ -101,7 +104,12 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 			logger.Errorf("[handler]Discard ConsensusCastMessage because of unmarshal error%s", e.Error())
 			return e
 		}
+
+		id := utility.GetGoroutineId()
+		middleware.PerfLogger.Infof("start Verify msg, id: %d, cost: %v, height: %v, hash: %v, msg size: %d", id, time.Since(m.BH.CurTime), m.BH.Height, m.BH.Hash.String(), len(body))
 		c.processor.OnMessageCast(m)
+		middleware.PerfLogger.Infof("fin Verify msg, id: %d, cost: %v, height: %v, hash: %v, msg size: %d", id, time.Since(m.BH.CurTime), m.BH.Height, m.BH.Hash.String(), len(body))
+
 	case network.VerifiedCastMsg2:
 		m, e := unMarshalConsensusVerifyMessage(body)
 		if e != nil {
@@ -109,7 +117,10 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 			return e
 		}
 
+		id := utility.GetGoroutineId()
+		middleware.PerfLogger.Infof("start Verified msg, id: %d, hash: %v, msg size: %d", id, m.BlockHash.String(), len(body))
 		c.processor.OnMessageVerify(m)
+		middleware.PerfLogger.Infof("fin Verified msg, id: %d, hash: %v, msg size: %d", id, m.BlockHash.String(), len(body))
 
 	case network.CreateGroupaRaw:
 		m, e := unMarshalConsensusCreateGroupRawMessage(body)

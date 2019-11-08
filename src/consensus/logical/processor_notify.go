@@ -6,6 +6,8 @@ import (
 	"x/src/consensus/model"
 	"x/src/middleware/notify"
 	"x/src/middleware/types"
+	"x/src/middleware"
+	"time"
 )
 
 func (p *Processor) triggerFutureVerifyMsg(hash common.Hash) {
@@ -70,7 +72,6 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	if vrf != nil && vrf.baseBH.Hash == bh.PreHash && vrf.castHeight == bh.Height {
 		vrf.markSuccess()
 	}
-	//p.triggerCastCheck()
 
 	//p.triggerFutureBlockMsg(bh)
 	p.triggerFutureVerifyMsg(bh.Hash)
@@ -78,6 +79,17 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	p.groupManager.CreateNextGroupRoutine()
 
 	p.cleanVerifyContext(bh.Height)
+
+	middleware.PerfLogger.Infof("OnBlockAddSuccess. cost: %v, Hash: %v, height: %v", time.Since(bh.CurTime), bh.Hash.String(), bh.Height)
+	if p.isTriggerCastImmediately() {
+		p.triggerCastCheck()
+	}
+}
+
+// todo: 触发条件可以更丰富，更动态
+func (p *Processor) isTriggerCastImmediately() bool {
+	return false
+	//return p.MainChain.GetTransactionPool().TxNum() > 200
 }
 
 func (p *Processor) onGroupAddSuccess(message notify.Message) {
