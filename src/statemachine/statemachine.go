@@ -4,7 +4,6 @@ import (
 	"github.com/docker/docker/api/types/container"
 	"strings"
 	"encoding/json"
-	"x/src/common"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/api/types"
 	"fmt"
@@ -12,6 +11,7 @@ import (
 	"sort"
 	"context"
 	"time"
+	"x/src/middleware/log"
 )
 
 type StateMachine struct {
@@ -23,10 +23,12 @@ type StateMachine struct {
 	// docker client
 	cli *client.Client
 	ctx context.Context
+
+	logger log.Logger
 }
 
-func buildStateMachine(c ContainerConfig, cli *client.Client, ctx context.Context) StateMachine {
-	return StateMachine{c, "", cli, ctx}
+func buildStateMachine(c ContainerConfig, cli *client.Client, ctx context.Context, logger log.Logger) StateMachine {
+	return StateMachine{c, "", cli, ctx, logger}
 }
 
 //将配置信息转换为 json 数据用于输出
@@ -38,12 +40,6 @@ func (c *StateMachine) JSONStr() string {
 		return ""
 	} else {
 		return string(res)
-	}
-}
-
-func (c *StateMachine) log(msg string) {
-	if nil != common.DefaultLogger {
-		common.DefaultLogger.Info(msg)
 	}
 }
 
@@ -61,14 +57,13 @@ func (c *StateMachine) Run() (string, Ports) {
 	ctx := c.ctx
 	resp := c.getContainer()
 	if nil == resp {
-		c.log("Contain is nil.Create container!")
+		c.logger.Warnf("Contain is nil.Create container!")
 		return c.runContainer()
 	}
 
-	c.log(fmt.Sprintf("Contain id:%s,state:%s", resp.ID, resp.Status))
+	c.logger.Warnf("Contain id: %s,state: %s, image: %s, game: %s", resp.ID, resp.Status, c.Image, c.Game)
 
 	state := strings.ToLower(resp.State)
-
 	if strings.HasPrefix(state, "running") || strings.HasPrefix(state, "up") {
 		return c.after(resp)
 	}
@@ -80,7 +75,8 @@ func (c *StateMachine) Run() (string, Ports) {
 
 	if strings.Contains(state, "exited") {
 		if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); nil != err {
-			panic(err)
+			c.logger.Errorf("fail to start container. image: %s, error: %s", c.Image, err.Error())
+			return "", nil
 		}
 
 		return c.after(nil)
@@ -88,7 +84,8 @@ func (c *StateMachine) Run() (string, Ports) {
 
 	if strings.Contains(state, "paused") {
 		if err := cli.ContainerUnpause(ctx, resp.ID); nil != err {
-			panic(err)
+			c.logger.Errorf("fail to unpause container. image: %s, error: %s", c.Image, err.Error())
+			return "", nil
 		}
 
 		return c.after(nil)
@@ -106,7 +103,13 @@ func (c *StateMachine) getContainer() *types.Container {
 
 	for _, container := range containers {
 		if container.Names[0] == fmt.Sprintf("/%s", c.Name) {
-			return &container
+			if container.Image == c.Image {
+				return &container
+			}
+
+			c.cli.ContainerStop(c.ctx, container.ID, nil)
+			c.cli.ContainerRemove(c.ctx, container.ID, types.ContainerRemoveOptions{Force: true})
+			return nil
 		}
 	}
 
@@ -132,16 +135,6 @@ func (c *StateMachine) after(existed *types.Container) (string, Ports) {
 	return c.Game, c.makePorts(p)
 }
 
-func (c *StateMachine) waitUntilRun() {
-	for {
-		if c.checkIfRunning() {
-			break
-		}
-
-		time.Sleep(100 * time.Millisecond)
-	}
-}
-
 func (c *StateMachine) checkIfRunning() bool {
 	container := c.getContainer()
 	state := strings.ToLower(container.State)
@@ -156,18 +149,15 @@ func (c *StateMachine) makePorts(port uint16) Ports {
 }
 
 func (c *StateMachine) runContainer() (string, Ports) {
-	//todo: load image if necessary
-	//if 0 != len(c.Import) {
-	//	file, err := os.Open(c.Import)
-	//	if nil != err {
-	//		readerCloser, _ := cli.ImageImport(ctx, types.ImageImportSource{Source: file, SourceName: c.Import}, "", types.ImageImportOptions{})
-	//		readerCloser.Close()
-	//	}
-	//	//todo set image to ContainerConfig
-	//}
-
 	if 0 == len(c.Image) || 0 == len(c.Name) {
-		c.log("skip to start image")
+		c.logger.Errorf("skip to start image")
+		return "", nil
+	}
+
+	// 本地没镜像，需要下载并加载镜像
+	// 下载失败，启动失败
+	if !c.checkImageExisted() && !c.download() {
+		c.logger.Errorf("cannot get image, %s, downloadProtocol: %s, downloadUrl: %s", c.Image, c.DownloadProtocol, c.DownloadUrl)
 		return "", nil
 	}
 
@@ -220,15 +210,85 @@ func (c *StateMachine) runContainer() (string, Ports) {
 
 	//遇到容器创建错误时发起 panic
 	if err := c.cli.ContainerStart(c.ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		c.log(err.Error())
-		panic(err)
+		c.logger.Errorf("fail to start container. image: %s, error: %s", c.Image, err.Error())
+		return "", nil
 	}
 
 	c.id = resp.ID
 	c.waitUntilRun()
 
-	c.log(fmt.Sprintf("Container %s is created and started.\n", resp.ID))
+	c.logger.Warnf("Container %s is created and started. image: %s, game: %s", c.id, c.Image, c.Game)
 
 	// 创建成功 记录端口号与name的关联关系
 	return c.Game, c.Ports
+}
+
+// 检查本机是否有对应的docker镜像
+func (s *StateMachine) checkImageExisted() bool {
+	images, _ := s.cli.ImageList(s.ctx, types.ImageListOptions{})
+	for _, image := range images {
+		for _, repo := range image.RepoTags {
+			if repo == s.Image {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func (s *StateMachine) download() bool {
+	switch strings.ToLower(s.DownloadProtocol) {
+	case "pull":
+		return s.downloadByPull()
+	case "http":
+		return s.downloadByHTTP()
+	case "ipfs":
+		return s.downloadByIPFS()
+	}
+
+	return false
+}
+
+func (s *StateMachine) downloadByIPFS() bool {
+	return true
+}
+
+func (s *StateMachine) downloadByHTTP() bool {
+	return true
+}
+
+func (s *StateMachine) downloadByPull() bool {
+	s.logger.Errorf("start pull image: %s, downloadUrl: %s", s.Image, s.DownloadUrl)
+
+	_, err := s.cli.ImagePull(s.ctx, s.Image, types.ImagePullOptions{})
+	if err != nil {
+		s.logger.Errorf("fail to pull image: %s, downloadUrl: %s. error: %s", s.Image, s.DownloadUrl, err.Error())
+		return false
+	}
+
+	s.waitUntilImageExisted()
+	s.logger.Errorf("end pull image: %s, downloadUrl: %s", s.Image, s.DownloadUrl)
+
+	return true
+}
+
+func (s *StateMachine) waitUntilImageExisted() {
+	s.waitUntilCondition(s.checkImageExisted)
+}
+
+func (s *StateMachine) waitUntilRun() {
+	s.logger.Errorf("wait image until run. image: %s, appId: %s", s.Image, s.Game)
+	s.waitUntilCondition(s.checkIfRunning)
+	s.logger.Errorf("image running. image: %s, appId: %s", s.Image, s.Game)
+}
+
+func (s *StateMachine) waitUntilCondition(condition func() bool) {
+	for {
+		if condition() {
+			break
+		}
+
+		time.Sleep(100 * time.Millisecond)
+	}
 }

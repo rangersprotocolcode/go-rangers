@@ -15,6 +15,8 @@ import (
 	"x/src/common"
 	"math/rand"
 	"strconv"
+	"x/src/middleware/log"
+	"sync"
 )
 
 const (
@@ -55,10 +57,13 @@ type StateMachineManager struct {
 	httpClient  *http.Client
 	Mapping     map[string]PortInt // key 为appId， value为端口号
 	AuthMapping map[string]string  // key 为appId， value为authCode
+	lock        sync.RWMutex
 
 	// docker client
 	cli *client.Client
 	ctx context.Context
+
+	logger log.Logger
 }
 
 func DockerInit(filename string, port uint) *StateMachineManager {
@@ -74,6 +79,9 @@ func DockerInit(filename string, port uint) *StateMachineManager {
 	Docker.ctx = context.Background()
 	Docker.cli, _ = client.NewClientWithOpts(client.FromEnv)
 	Docker.cli.NegotiateAPIVersion(Docker.ctx)
+	Docker.logger = log.GetLoggerByIndex(log.DockerLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	Docker.Mapping = make(map[string]PortInt)
+	Docker.AuthMapping = make(map[string]string)
 
 	Docker.init(port)
 
@@ -82,39 +90,42 @@ func DockerInit(filename string, port uint) *StateMachineManager {
 
 func (d *StateMachineManager) init(layer2Port uint) {
 	d.Config.InitFromFile(d.Filename)
-	d.Mapping, d.AuthMapping = d.runStateMachines(layer2Port)
+	d.runStateMachines(layer2Port)
 }
 
 //RunContainers: 从配置运行容器
 //cli:  用于访问 docker 守护进程
 //ctx:  传递本次操作的上下文信息
-func (d *StateMachineManager) runStateMachines(port uint) (map[string]PortInt, map[string]string) {
+func (d *StateMachineManager) runStateMachines(layer2Port uint) {
 	if 0 == len(d.Config.Services) {
-		return nil, nil
+		return
 	}
-
-	mapping := make(map[string]PortInt)
-	authCodeMapping := make(map[string]string)
 
 	//todo : 根据Priority排序
 	for _, service := range d.Config.Services {
-		stateMachine := buildStateMachine(service, d.cli, d.ctx)
+		// 异步启动
+		go d.runStateMachine(service, layer2Port)
 
-		name, ports := stateMachine.Run()
-		if name == "" || ports == nil {
-			continue
-		}
+	}
+}
 
-		d.StateMachines[name] = stateMachine
-		mapping[name] = ports[0].Host
-		authCode := d.generateAuthcode()
-		authCodeMapping[name] = authCode
-
-		//需要等到docker镜像启动完成
-		d.callInit(ports[0].Host, port, authCode)
+// 通过配置文件，加载
+func (d *StateMachineManager) runStateMachine(service ContainerConfig, layer2Port uint) {
+	stateMachine := buildStateMachine(service, d.cli, d.ctx, d.logger)
+	name, ports := stateMachine.Run()
+	if name == "" || ports == nil {
+		return
 	}
 
-	return mapping, authCodeMapping
+	d.lock.Lock()
+	d.StateMachines[name] = stateMachine
+	d.Mapping[name] = ports[0].Host
+	authCode := d.generateAuthcode()
+	d.AuthMapping[name] = authCode
+	d.lock.Unlock()
+
+	//需要等到docker镜像启动完成
+	d.callInit(ports[0].Host, layer2Port, authCode)
 }
 
 func (d *StateMachineManager) callInit(dockerPortInt PortInt, layer2Port uint, authCode string) {
@@ -122,24 +133,17 @@ func (d *StateMachineManager) callInit(dockerPortInt PortInt, layer2Port uint, a
 	values := url.Values{}
 	values["url"] = []string{fmt.Sprintf("http://%s:%d", "172.17.0.1", layer2Port)}
 	values["authCode"] = []string{authCode}
-	if nil != common.DefaultLogger {
-		common.DefaultLogger.Errorf("Send post req:path:%s,values:%v", path, values)
-	}
+	d.logger.Infof("Send post req:path:%s,values:%v", path, values)
 
 	for {
 		resp, err := http.PostForm(path, values)
 		if err != nil {
-			if nil != common.DefaultLogger {
-				common.DefaultLogger.Infof(err.Error())
-			}
-
+			d.logger.Infof(err.Error())
 			time.Sleep(200 * time.Millisecond)
 		} else {
 			body, _ := ioutil.ReadAll(resp.Body)
 			resp.Body.Close()
-			if common.DefaultLogger != nil {
-				common.DefaultLogger.Error(fmt.Sprintf("start success: %s", string(body)))
-			}
+			d.logger.Error(fmt.Sprintf("start success: %s", string(body)))
 
 			return
 		}
@@ -180,8 +184,12 @@ func (d *StateMachineManager) Nonce(name string) int {
 }
 
 func (d *StateMachineManager) getUrlPrefix(name string) string {
-	port := d.Mapping[name]
-	if 0 == port {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+
+	port, ok := d.Mapping[name]
+	if !ok {
+		d.logger.Errorf("fail to find appId: %s", name)
 		return ""
 	}
 
@@ -227,13 +235,17 @@ func (d *StateMachineManager) ValidateAppId(appId, authCode string) bool {
 		return false
 	}
 
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+
 	expect := d.AuthMapping[appId]
 	if 0 == len(expect) {
-		common.DefaultLogger.Debugf("Validate wrong")
+		d.logger.Debugf("Validate wrong")
 		return false
 	}
 	if expect != authCode {
-		common.DefaultLogger.Debugf("Validate authCode error! appid:%s,authCode:%s,expect:%s", appId, authCode, expect)
+		d.logger.Errorf("Validate authCode error! appid:%s,authCode:%s,expect:%s", appId, authCode, expect)
 	}
 	return expect == authCode
 }
+

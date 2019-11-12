@@ -85,7 +85,7 @@ func (vs *Vols) ReplacePWD() {
 //Title: 配置名称
 //Service: 服务(对应于容器)
 type YAMLConfig struct {
-	Title    string           `yaml:"title"`
+	Title    string            `yaml:"title"`
 	Services []ContainerConfig `yaml:"services"`
 }
 
@@ -123,18 +123,20 @@ func (t *YAMLConfig) InitFromFile(filename string) error {
 //                  false 表示不删除
 //    Type          公链类型
 type ContainerConfig struct {
-	Priority   uint   `yaml:"priority"`
-	Game       string `yaml:"game"`
-	Name       string `yaml:"name"`
-	Image      string `yaml:"image"`
-	Detached   bool   `yaml:"detached"`
-	WorkDir    string `yaml:"work_dir"`
-	CMD        string `yaml:"cmd"`
-	Net        string `yaml:"net"`
-	Ports      Ports  `yaml:"ports"`
-	Volumes    Vols   `yaml:"volumes"`
-	AutoRemove bool   `yaml:"auto_remove"`
-	Import     string `yaml:"import"`
-	Type       string `yaml:"type"`
-	Hostname   string `yaml:"hostname"`
+	Priority         uint   `yaml:"priority"`
+	Game             string `yaml:"game"`
+	Name             string `yaml:"name"`
+	Image            string `yaml:"image"`
+	Detached         bool   `yaml:"detached"`
+	WorkDir          string `yaml:"work_dir"`
+	CMD              string `yaml:"cmd"`
+	Net              string `yaml:"net"`
+	Ports            Ports  `yaml:"ports"`
+	Volumes          Vols   `yaml:"volumes"`
+	AutoRemove       bool   `yaml:"auto_remove"`
+	Import           string `yaml:"import"`
+	Type             string `yaml:"type"`
+	Hostname         string `yaml:"hostname"`
+	DownloadUrl      string `yaml:"downloadUrl"`      // 如果本地没有，去哪儿下载镜像
+	DownloadProtocol string `yaml:"downloadProtocol"` // 下载协议，例如http/pull/ipfs
 }

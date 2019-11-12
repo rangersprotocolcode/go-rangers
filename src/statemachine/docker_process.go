@@ -4,7 +4,6 @@ import (
 	"x/src/middleware/types"
 	"fmt"
 	"net/url"
-	"x/src/common"
 	"io/ioutil"
 	"encoding/json"
 )
@@ -22,20 +21,20 @@ func (d *StateMachineManager) Process(name string, kind string, nonce string, pa
 
 	resp, err := d.httpClient.PostForm(path, values)
 	if err != nil {
-		common.DefaultLogger.Debugf("Docker process post error.Path:%s,values:%v,error:%s", path, values, values, err.Error())
+		d.logger.Errorf("stateMachine process post error.Path:%s,values:%v,error:%s", path, values, values, err.Error())
 		return nil
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		common.DefaultLogger.Debugf("Docker process read response error:%s", err.Error())
+		d.logger.Errorf("stateMachine process read response error:%s", err.Error())
 		return nil
 	}
 
 	output := types.OutputMessage{}
 	if err = json.Unmarshal(body, &output); nil != err {
-		common.DefaultLogger.Debugf("Docker process result unmarshal error:%s", err.Error())
+		d.logger.Errorf("stateMachine process result unmarshal error:%s", err.Error())
 		return nil
 	}
 
