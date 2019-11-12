@@ -22,7 +22,7 @@ const (
 	protocolHeaderSize = 28
 
 	// 默认等待队列大小
-	defaultRcvSize  = 1000
+	defaultRcvSize  = 10000
 	defaultSendSize = 100
 
 	// ws读写缓存
@@ -141,7 +141,7 @@ func (base *baseConn) receiveMessage() {
 	for {
 		_, message, err := base.conn.ReadMessage()
 		if err != nil {
-			base.logger.Errorf("Rcv msg error:%s", err.Error())
+			base.logger.Errorf("%s Rcv msg error:%s", base.url, err.Error())
 			continue
 		}
 
