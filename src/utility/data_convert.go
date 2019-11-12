@@ -49,7 +49,7 @@ func ByteToUInt64(b []byte) uint64 {
 
 //"11.22"->11220000000
 func StrToBigInt(s string) (*big.Int, error) {
-	target, _, err := big.ParseFloat(s, 10, 128, big.ToNearestEven)
+	target, _, err := big.ParseFloat(s, 10, 256, big.ToNearestEven)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +70,7 @@ func BigIntToStr(number *big.Int) string {
 	base.SetInt(big.NewInt(1000000000))
 
 	target := new(big.Float)
-	target.SetPrec(128)
+	target.SetPrec(256)
 	target.SetMode(big.ToNearestEven)
 	target.SetInt(number)
 
