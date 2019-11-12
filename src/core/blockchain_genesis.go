@@ -91,8 +91,8 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	stateDB.SetNonce(common.HeavyDBAddress, 1)
 	stateDB.SetNonce(common.LightDBAddress, 1)
 
-	FTManagerInstance.PublishFTSet("tuntun", "pig", "hz", "0", "hz", "10086", 0, stateDB)
-	NFTManagerInstance.PublishNFTSet("tuntunhz", "tuntun", "t", "hz", "hz", 0, "10000", stateDB)
+	FTManagerInstance.PublishFTSet("tuntun", "pig", "hz", "0", "hz", "10086", 0, stateDB, true)
+	NFTManagerInstance.PublishNFTSet("tuntunhz", "tuntun", "t", "hz", "hz", 0, "10000", stateDB, true)
 
 	root, _ := stateDB.Commit(true)
 	triedb.Commit(root, false)

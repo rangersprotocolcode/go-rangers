@@ -222,7 +222,7 @@ func (api *GtasAPI) PublishNFTSet(authCode, appId, setId, name, symbol, createTi
 	}
 
 	accountDB := context.AccountDB
-	if _, ok, _ := core.NFTManagerInstance.PublishNFTSet(setId, name, symbol, appId, appId, maxSupply, createTime, accountDB); ok {
+	if _, ok, _ := core.NFTManagerInstance.PublishNFTSet(setId, name, symbol, appId, appId, maxSupply, createTime, accountDB, true); ok {
 		// 生成交易，上链 context.Tx.SubTransactions
 		userData := types.UserData{}
 		userData.Address = "PublishNFTSet"

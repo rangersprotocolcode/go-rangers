@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"strings"
 	"x/src/utility"
+	"x/src/network"
 )
 
 type FTManager struct {
@@ -51,7 +52,7 @@ func (self *FTManager) GetFTSet(id string, accountDB *account.AccountDB) *types.
 // TotalSupply int64 // 发行总数， -1表示无限量（对于公链币，也是如此）
 // Remain      int64 // 还剩下多少，-1表示无限（对于公链币，也是如此）
 // Type        byte  // 类型，0代表公链币，1代表游戏发行的FT
-func (self *FTManager) PublishFTSet(name, symbol, appId, total, owner, createTime string, kind byte, accountDB *account.AccountDB) (string, bool) {
+func (self *FTManager) PublishFTSet(name, symbol, appId, total, owner, createTime string, kind byte, accountDB *account.AccountDB, isSendToCoiner bool) (string, bool) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
@@ -82,6 +83,9 @@ func (self *FTManager) PublishFTSet(name, symbol, appId, total, owner, createTim
 	}
 
 	self.updateFTSet(id, ftSet, accountDB)
+	if isSendToCoiner {
+		sendPublishFTSetToCoiner(*ftSet)
+	}
 	return id, true
 }
 
@@ -195,4 +199,33 @@ func (self *FTManager) convert(value string) *big.Int {
 	}
 
 	return supply
+}
+
+func sendPublishFTSetToCoiner(ftSet types.FTSet) {
+	data := make(map[string]string, 0)
+	data["setId"] = ftSet.ID
+	data["name"] = ftSet.Name
+	data["symbol"] = ftSet.Symbol
+	data["maxSupply"] = utility.BigIntToStr(ftSet.MaxSupply)
+	data["creator"] = ftSet.AppId
+	data["owner"] = ftSet.Owner
+	data["createTime"] = ftSet.CreateTime
+
+	b, err := json.Marshal(data)
+	if err != nil {
+		txLogger.Error("json marshal err, err:%s", err.Error())
+		return
+	}
+
+	t := types.Transaction{Source: ftSet.AppId, Target: nil, Data: string(b), Type: types.TransactionTypePublishFT, Time: ftSet.CreateTime}
+	t.Hash = t.GenHash()
+
+	msg, err := json.Marshal(t.ToTxJson())
+	if err != nil {
+		txLogger.Debugf("Json marshal tx json error:%s", err.Error())
+		return
+	}
+
+	txLogger.Tracef("After publish ft.Send msg to coiner:%s", t.ToTxJson().ToString())
+	network.GetNetInstance().SendToCoinConnector(msg)
 }

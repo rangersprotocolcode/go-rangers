@@ -492,15 +492,19 @@ type DepositFTData struct {
 
 //NFT充值确认数据结构
 type DepositNFTData struct {
-	SetId      string `json:"setId,omitempty"`
-	Name       string `json:"name,omitempty"`
-	Symbol     string `json:"symbol,omitempty"`
-	ID         string `json:"id,omitempty"`
-	Creator    string `json:"creator,omitempty"`
-	CreateTime string `json:"createTime,omitempty"`
-	Owner      string `json:"owner,omitempty"`
-	Value      string `json:"value,omitempty"`
-	TxId       string `json:"txId,omitempty"`
+	SetId      string            `json:"setId,omitempty"`
+	Name       string            `json:"name,omitempty"`
+	Symbol     string            `json:"symbol,omitempty"`
+	ID         string            `json:"id,omitempty"`
+	Creator    string            `json:"creator,omitempty"`
+	CreateTime string            `json:"createTime,omitempty"`
+	Owner      string            `json:"owner,omitempty"`
+	Renter     string            `json:"renter,omitempty"`
+	Status     byte              `json:"status,omitempty"`
+	Condition  byte              `json:"condition,omitempty"`
+	AppId      string            `json:"appId,omitempty"`
+	Data       map[string]string `json:"data,omitempty"`
+	TxId       string            `json:"txId,omitempty"`
 }
 
 type JSONObject struct {

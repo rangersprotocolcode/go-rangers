@@ -337,7 +337,7 @@ func transferCoin(coin map[string]string, source string, target string, accountD
 // tx.type = 110
 // tx.data 发行参数，map jsonString
 // {"symbol":"","name":"","totalSupply":"12345678"}
-func PublishFT(accountdb *account.AccountDB, tx *types.Transaction) (string, bool) {
+func PublishFT(accountdb *account.AccountDB, tx *types.Transaction, isSendToCoiner bool) (string, bool) {
 	txLogger.Tracef("Execute publish ft tx:%s", tx.ToTxJson().ToString())
 	var ftSet map[string]string
 	if err := json.Unmarshal([]byte(tx.Data), &ftSet); nil != err {
@@ -347,13 +347,13 @@ func PublishFT(accountdb *account.AccountDB, tx *types.Transaction) (string, boo
 
 	appId := tx.Source
 	createTime := ftSet["createTime"]
-	id, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, createTime, 1, accountdb)
+	id, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, createTime, 1, accountdb, isSendToCoiner)
 	txLogger.Tracef("Publish ft name:%s,symbol:%s,totalSupply:%s,appId:%s,id:%s,publish result:%t", ftSet["name"], ftSet["symbol"], ftSet["totalSupply"], appId, id, ok)
 
 	return id, ok
 }
 
-func PublishNFTSet(accountdb *account.AccountDB, tx *types.Transaction) (bool, string) {
+func PublishNFTSet(accountdb *account.AccountDB, tx *types.Transaction, isSendToCoiner bool) (bool, string) {
 	txLogger.Tracef("Execute publish nft tx:%s", tx.ToTxJson().ToString())
 
 	var nftSet types.NFTSet
@@ -364,7 +364,7 @@ func PublishNFTSet(accountdb *account.AccountDB, tx *types.Transaction) (bool, s
 
 	appId := tx.Source
 
-	message, flag, _ := NFTManagerInstance.PublishNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime, accountdb)
+	message, flag, _ := NFTManagerInstance.PublishNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime, accountdb, isSendToCoiner)
 	return flag, message
 }
 

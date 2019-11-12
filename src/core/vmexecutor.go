@@ -76,7 +76,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						// 发币
 						if user.Address == "StartFT" {
 							createTime, _ := user.Assets["createTime"]
-							_, flag := FTManagerInstance.PublishFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], createTime, 1, accountdb)
+							_, flag := FTManagerInstance.PublishFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], createTime, 1, accountdb, true)
 							if !flag {
 								success = false
 								break
@@ -164,7 +164,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 							}
 							appId := user.Assets["appId"]
 
-							_, ok, _ := NFTManagerInstance.PublishNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"], accountdb)
+							_, ok, _ := NFTManagerInstance.PublishNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"], accountdb, true)
 							if !ok {
 								success = false
 								break
@@ -212,10 +212,10 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			}
 			break
 		case types.TransactionTypePublishFT:
-			_, success = PublishFT(accountdb, transaction)
+			_, success = PublishFT(accountdb, transaction, true)
 			break
 		case types.TransactionTypePublishNFTSet:
-			success, _ = PublishNFTSet(accountdb, transaction)
+			success, _ = PublishNFTSet(accountdb, transaction, true)
 			break
 		case types.TransactionTypeMintFT:
 			success, _ = MintFT(accountdb, transaction)
@@ -323,19 +323,20 @@ func (executor *VMExecutor) executeNFTDepositNotify(accountdb *account.AccountDB
 		txLogger.Errorf("Deposit nft data unmarshal error:%s", err.Error())
 		return false
 	}
+	//todo 这里需要重写
 	txLogger.Tracef("deposit nft data:%v,target address:%s", depositNFTData, transaction.Source)
-	if depositNFTData.SetId == "" || depositNFTData.ID == "" || depositNFTData.Value == "" {
+	if depositNFTData.SetId == "" || depositNFTData.ID == "" {
 		return false
 	}
 
 	// 检查setId
 	nftSet := NFTManagerInstance.GetNFTSet(depositNFTData.SetId, accountdb)
 	if nil == nftSet {
-		_, _, nftSet = NFTManagerInstance.PublishNFTSet(depositNFTData.SetId, depositNFTData.Name, depositNFTData.Symbol, depositNFTData.Creator, depositNFTData.Owner, 0, depositNFTData.CreateTime, accountdb)
+		_, _, nftSet = NFTManagerInstance.PublishNFTSet(depositNFTData.SetId, depositNFTData.Name, depositNFTData.Symbol, depositNFTData.Creator, depositNFTData.Owner, 0, depositNFTData.CreateTime, accountdb, true)
 	}
 
 	appId := transaction.Target
-	str, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, depositNFTData.Value, depositNFTData.Creator, depositNFTData.CreateTime, common.HexToAddress(transaction.Source), accountdb)
+	str, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, "", depositNFTData.Creator, depositNFTData.CreateTime, common.HexToAddress(transaction.Source), accountdb)
 	txLogger.Debugf("GenerateNFT result:%s,%t", str, ok)
 	return ok
 }

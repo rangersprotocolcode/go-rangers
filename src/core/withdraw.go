@@ -30,26 +30,6 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 	result := make(map[string]string)
 
 	//主链币检查
-	//if withDrawReq.Balance != "" {
-	//	withdrawAmount, err := utility.StrToBigInt(withDrawReq.Balance)
-	//	if err != nil {
-	//		txLogger.Error("Execute withdraw bad amount!Hash:%s, err:%s", transaction.Hash.String(), err.Error())
-	//		return "Withdraw Data BNT Bad Format", false
-	//	}
-	//
-	//	coinId := fmt.Sprintf("official-%s", withDrawReq.ChainType)
-	//	left, ok := accountdb.SubFT(source, coinId, withdrawAmount)
-	//	if !ok {
-	//		subAccountBalance := accountdb.GetFT(source, coinId)
-	//		txLogger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", subAccountBalance.Uint64(), withdrawAmount.Uint64())
-	//		return "BNT Not Enough", false
-	//	} else {
-	//		result["token"] = withDrawReq.ChainType
-	//		floatdata := float64(left.Int64()) / 1000000000
-	//		result["balance"] = strconv.FormatFloat(floatdata, 'f', -1, 64)
-	//		result["lockedBalance"] = withDrawReq.Balance
-	//	}
-	//}
 	if withDrawReq.BNT.TokenType != "" {
 		withdrawAmount, err := utility.StrToBigInt(withDrawReq.BNT.Value)
 		if err != nil {
@@ -109,7 +89,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 		}
 	}
 
-	if isSendToConnector && !sendWithdrawToConnector(withDrawReq, transaction, nftInfo) {
+	if isSendToConnector && !sendWithdrawToCoiner(withDrawReq, transaction, nftInfo) {
 		return "Send To Connector Error", false
 	}
 
@@ -117,8 +97,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 	return string(resultString), true
 }
 
-func sendWithdrawToConnector(withDrawReq types.WithDrawReq, transaction *types.Transaction, nftInfo []types.NFTID) bool {
-	//发送给Coin Connector
+func sendWithdrawToCoiner(withDrawReq types.WithDrawReq, transaction *types.Transaction, nftInfo []types.NFTID) bool {
 	withdrawData := types.WithDrawData{ChainType: withDrawReq.ChainType, Address: withDrawReq.Address}
 	withdrawData.BNT = withDrawReq.BNT
 	withdrawData.FT = withDrawReq.FT
@@ -138,7 +117,7 @@ func sendWithdrawToConnector(withDrawReq types.WithDrawReq, transaction *types.T
 		return false
 	}
 
-	txLogger.Tracef("After execute withdraw.Send msg to coin proxy:%s", msg)
+	txLogger.Tracef("After execute withdraw.Send msg to coin proxy:%s", t.ToTxJson().ToString())
 	network.GetNetInstance().SendToCoinConnector(msg)
 	return true
 }

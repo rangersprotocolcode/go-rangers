@@ -7,6 +7,8 @@ import (
 	"x/src/storage/account"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"x/src/network"
 )
 
 var NFTManagerInstance *NFTManager
@@ -83,7 +85,7 @@ func (self *NFTManager) DeleteNFT(owner common.Address, setId, id string, accoun
 
 // L2发行NFTSet
 // 状态机调用
-func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string, maxSupply int, createTime string, accountDB *account.AccountDB) (string, bool, *types.NFTSet) {
+func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string, maxSupply int, createTime string, accountDB *account.AccountDB, isSendToCoiner bool) (string, bool, *types.NFTSet) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
@@ -104,6 +106,9 @@ func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string
 	}
 
 	self.updateNFTSet(nftSet, accountDB)
+	if isSendToCoiner {
+		sendPublishNFTSetToCoiner(*nftSet)
+	}
 	return "Nft Publish Successful", true, nftSet
 }
 
@@ -327,4 +332,33 @@ func (self *NFTManager) shuttle(owner, setId, id, newAppId string, accountDB *ac
 	// 通知当前状态机
 	// 通知接收状态机
 	return "nft shuttle successful", true
+}
+
+func sendPublishNFTSetToCoiner(nftSet types.NFTSet) {
+	data := make(map[string]string, 0)
+	data["setId"] = nftSet.SetID
+	data["name"] = nftSet.Name
+	data["symbol"] = nftSet.Symbol
+	data["maxSupply"] = strconv.Itoa(nftSet.MaxSupply)
+	data["creator"] = nftSet.Creator
+	data["owner"] = nftSet.Owner
+	data["createTime"] = nftSet.CreateTime
+
+	b, err := json.Marshal(data)
+	if err != nil {
+		txLogger.Error("json marshal err, err:%s", err.Error())
+		return
+	}
+
+	t := types.Transaction{Source: nftSet.Creator, Target: nil, Data: string(b), Type: types.TransactionTypePublishNFTSet, Time: nftSet.CreateTime}
+	t.Hash = t.GenHash()
+
+	msg, err := json.Marshal(t.ToTxJson())
+	if err != nil {
+		txLogger.Debugf("Json marshal tx json error:%s", err.Error())
+		return
+	}
+
+	txLogger.Tracef("After publish nft.Send msg to coiner:%s", t.ToTxJson().ToString())
+	network.GetNetInstance().SendToCoinConnector(msg)
 }
