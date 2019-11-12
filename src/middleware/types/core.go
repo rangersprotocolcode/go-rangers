@@ -8,6 +8,7 @@ import (
 
 	"x/src/common"
 	"x/src/utility"
+	"strconv"
 )
 
 type AddBlockOnChainSituation string
@@ -433,6 +434,13 @@ func (txJson TxJson) ToTransaction() Transaction {
 	tx := Transaction{Source: txJson.Source, Target: txJson.Target, Type: txJson.Type, Time: txJson.Time,
 		Data: txJson.Data, ExtraData: txJson.ExtraData, Nonce: txJson.Nonce,
 		RequestId: txJson.RequestId, SocketRequestId: txJson.SocketRequestId}
+
+	//tx from coiner cal hash by layer2
+	//tx from coiner sign make sign nil
+	if tx.Type == TransactionTypeCoinDepositAck || tx.Type == TransactionTypeFTDepositAck || tx.Type == TransactionTypeNFTDepositAck {
+		tx.Hash = tx.GenHash()
+		return tx
+	}
 
 	if txJson.Hash != "" {
 		s := txJson.Hash

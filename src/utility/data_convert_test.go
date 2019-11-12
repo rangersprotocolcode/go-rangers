@@ -32,16 +32,11 @@ func TestStrconv(t *testing.T) {
 	fmt.Printf("s:%s\n", s)
 }
 
-func TestStateMachineManager_GetType(t *testing.T) {
-	str := "1.23456"
-	fmt.Println(formatNumberString(str, 1))
-
-	str = "123456.0123"
-	fmt.Println(formatNumberString(str, 30))
-
-	str = "1234560"
-	fmt.Println(formatNumberString(str, 30))
-
-	str = "123456.123456789"
-	fmt.Println(formatNumberString(str, 9))
+func TestStrToBigInt(t *testing.T) {
+	s := "100000000000000000000"
+	b, _ := StrToBigInt(s)
+	floatData := float64(b.Int64()) / 1000000000
+	fmt.Printf("float:%v\n", floatData)
+	str := strconv.FormatFloat(floatData, 'f', -1, 64)
+	fmt.Printf("float str:%s\n", str)
 }

@@ -24,16 +24,15 @@ func TestPbToBlockHeader(t *testing.T) {
 
 }
 
-func TestTxHash(t *testing.T) {
-	tx := Transaction{}
-	tx.Source = "aaa"
-	tx.Target = "bbb"
-	tx.Type = 0
-	tx.Time = "1572940024276"
-	tx.Data = "dafadfa"
-	tx.Nonce = 1234
+func TestNFT(t *testing.T) {
+	nft := NFT{SetID: "111", ID: "fdd", Name: "nftName", Symbol: "nftSymbol", Creator: "testman", CreateTime: "4644646546464", Owner: "abc",
+		Renter: "dbd", Status: 0, Condition: 0, AppId: "0xdafawe"}
 
-	hash := tx.GenHash()
-	fmt.Printf("Tx Hash:%x\n", hash)
-	fmt.Printf("Tx Hash:%s\n", hash.String())
+	dataValue := []string{"data1", "data2"}
+	dataKey := []string{"key1", "key2"}
+	nft.DataKey = dataKey
+	nft.DataValue = dataValue
+
+	fmt.Printf("%s\n", nft.ToJSONString())
+
 }
