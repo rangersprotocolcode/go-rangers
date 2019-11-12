@@ -7,7 +7,7 @@ import (
 	"bytes"
 
 	"x/src/common"
-	"strconv"
+	"x/src/utility"
 )
 
 type AddBlockOnChainSituation string
@@ -234,7 +234,7 @@ type BlockHeader struct {
 	ExtraData    []byte
 	Random       []byte
 	//ProveRoot    common.Hash
-	EvictedTxs   []common.Hash
+	EvictedTxs []common.Hash
 }
 
 type header struct {
@@ -274,7 +274,7 @@ func (bh *BlockHeader) GenHash() common.Hash {
 		StateTree:    bh.StateTree,
 		ExtraData:    bh.ExtraData,
 		//ProveRoot:    bh.ProveRoot,
-		EvictedTxs:   bh.EvictedTxs,
+		EvictedTxs: bh.EvictedTxs,
 	}
 	blockByte, _ := json.Marshal(header)
 	result := common.BytesToHash(common.Sha256(blockByte))
@@ -298,7 +298,7 @@ func (bh *BlockHeader) ToString() string {
 		StateTree:    bh.StateTree,
 		ExtraData:    bh.ExtraData,
 		//ProveRoot:    bh.ProveRoot,
-		EvictedTxs:   bh.EvictedTxs,
+		EvictedTxs: bh.EvictedTxs,
 	}
 	blockByte, _ := json.Marshal(header)
 	return string(blockByte)
@@ -388,9 +388,9 @@ type NFTID struct {
 
 //提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链
 type WithDrawReq struct {
-	Address   string            `json:"address,omitempty"`
-	Balance   string            `json:"balance,omitempty"`
-	BNT       BNTWithdrawInfo   `json:"bnt,omitempty"`
+	Address string          `json:"address,omitempty"`
+	Balance string          `json:"balance,omitempty"`
+	BNT     BNTWithdrawInfo `json:"bnt,omitempty"`
 
 	ChainType string            `json:"chainType,omitempty"`
 	FT        map[string]string `json:"ft,omitempty"`
@@ -398,8 +398,8 @@ type WithDrawReq struct {
 }
 
 type WithDrawData struct {
-	Address   string            `json:"address,omitempty"`
-	BNT       BNTWithdrawInfo   `json:"bnt,omitempty"`
+	Address string          `json:"address,omitempty"`
+	BNT     BNTWithdrawInfo `json:"bnt,omitempty"`
 
 	ChainType string            `json:"chainType,omitempty"`
 	FT        map[string]string `json:"ft,omitempty"`
@@ -574,5 +574,5 @@ func (object *JSONObject) TOJSONString() string {
 
 func ReplaceBigInt(one, other interface{}) interface{} {
 	bigInt := other.(*big.Int)
-	return strconv.FormatFloat(float64(bigInt.Int64())/1000000000, 'f', -1, 64)
+	return utility.BigIntToStr(bigInt)
 }

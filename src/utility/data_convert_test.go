@@ -31,3 +31,17 @@ func TestStrconv(t *testing.T) {
 	s := strconv.FormatFloat(f, 'f', -1, 64)
 	fmt.Printf("s:%s\n", s)
 }
+
+func TestStateMachineManager_GetType(t *testing.T) {
+	str := "1.23456"
+	fmt.Println(formatNumberString(str, 1))
+
+	str = "123456.0123"
+	fmt.Println(formatNumberString(str, 30))
+
+	str = "1234560"
+	fmt.Println(formatNumberString(str, 30))
+
+	str = "123456.123456789"
+	fmt.Println(formatNumberString(str, 9))
+}

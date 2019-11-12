@@ -4,11 +4,10 @@ import (
 	"x/src/middleware/types"
 	"x/src/common"
 	"x/src/storage/account"
-	"math/big"
-	"strconv"
 	"strings"
 	"fmt"
 	"encoding/json"
+	"x/src/utility"
 )
 
 func GetCoinBalance(source common.Address, ft string) string {
@@ -17,8 +16,8 @@ func GetCoinBalance(source common.Address, ft string) string {
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
 	logger.Debugf("Get coin balance after get balance.")
 	balance := accountDB.GetFT(source, ftName)
-	floatdata := float64(balance.Int64()) / 1000000000
-	return strconv.FormatFloat(floatdata, 'f', -1, 64)
+
+	return utility.BigIntToStr(balance)
 }
 
 func GetAllCoinInfo(source common.Address) string {
@@ -28,7 +27,7 @@ func GetAllCoinInfo(source common.Address) string {
 	for key, value := range ftMap {
 		keyItems := strings.Split(key, "-")
 		if "official" == keyItems[0] {
-			data[keyItems[1]] = strconv.FormatFloat(float64(value.Int64())/1000000000, 'f', -1, 64)
+			data[keyItems[1]] = utility.BigIntToStr(value)
 		}
 	}
 	bytes, _ := json.Marshal(data)
@@ -38,8 +37,8 @@ func GetAllCoinInfo(source common.Address) string {
 func GetFTInfo(source common.Address, ft string) string {
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
 	balance := accountDB.GetFT(source, ft)
-	floatData := float64(balance.Int64()) / 1000000000
-	return strconv.FormatFloat(floatData, 'f', -1, 64)
+
+	return utility.BigIntToStr(balance)
 }
 
 func GetAllFT(source common.Address) string {
@@ -49,7 +48,7 @@ func GetAllFT(source common.Address) string {
 	for key, value := range ftMap {
 		keyItems := strings.Split(key, "-")
 		if "official" != keyItems[0] {
-			data[key] = strconv.FormatFloat(float64(value.Int64())/1000000000, 'f', -1, 64)
+			data[key] = utility.BigIntToStr(value)
 		}
 	}
 	bytes, _ := json.Marshal(data)
@@ -129,13 +128,13 @@ func GetFTSet(id string) string {
 	if nil != ftSet {
 		response["createTime"] = ftSet.CreateTime
 		response["owner"] = ftSet.Owner
-		response["maxSupply"] = strconv.FormatFloat(float64(ftSet.MaxSupply.Int64())/1000000000, 'f', -1, 64)
+		response["maxSupply"] = utility.BigIntToStr(ftSet.MaxSupply)
 		response["symbol"] = ftSet.Symbol
 		response["name"] = ftSet.Name
 		response["setId"] = ftSet.ID
 		response["creator"] = ftSet.AppId
 		if ftSet.TotalSupply != nil {
-			response["totalSupply"] = strconv.FormatFloat(float64(ftSet.TotalSupply.Int64())/1000000000, 'f', -1, 64)
+			response["totalSupply"] = utility.BigIntToStr(ftSet.TotalSupply)
 		} else {
 			response["totalSupply"] = "0"
 		}
@@ -188,11 +187,6 @@ func UpdateAsset(user types.UserData, appId string, accountDB *account.AccountDB
 	}
 
 	return true
-}
-
-func convert(s string) *big.Int {
-	f, _ := strconv.ParseFloat(s, 64)
-	return big.NewInt(int64(f * 1000000000))
 }
 
 // false 表示转账失败
@@ -282,7 +276,10 @@ func transferNFT(nftIDList []types.NFTID, source common.Address, target common.A
 }
 
 func transferBalance(value string, source common.Address, target common.Address, accountDB *account.AccountDB) bool {
-	balance := convert(value)
+	balance, err := utility.StrToBigInt(value)
+	if err != nil {
+		return false
+	}
 	// 不能扣钱
 	if balance.Sign() == -1 {
 		return false
