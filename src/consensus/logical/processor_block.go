@@ -109,11 +109,7 @@ func (p *Processor) doAddOnChain(block *types.Block) (result int8) {
 }
 
 func (p *Processor) blockOnChain(h common.Hash) bool {
-	exist := p.getBlockHeaderByHash(h)
-	if exist != nil { //已经上链
-		return true
-	}
-	return false
+	return p.MainChain.HasBlockByHash(h)
 }
 
 func (p *Processor) getBlockHeaderByHash(hash common.Hash) *types.BlockHeader {
@@ -170,12 +166,6 @@ func (p *Processor) prepareForCast(sgi *StaticGroupInfo) {
 
 	//bc.registerTicker()
 	//p.triggerCastCheck()
-}
-
-func (p *Processor) verifyBlock(bh *types.BlockHeader) ([]common.Hashes, int8) {
-	lostTransHash, ret := p.MainChain.VerifyBlock(*bh)
-	stdLogger.Infof("BlockChainImpl.VerifyCastingBlock result=%v.", ret)
-	return lostTransHash, ret
 }
 
 func (p *Processor) getNearestBlockByHeight(h uint64) *types.Block {

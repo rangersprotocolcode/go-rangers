@@ -188,7 +188,7 @@ func (gt *GlobalTicker) trigger(routine *TickerRoutine, chanVal int32) bool {
 }
 
 func (gt *GlobalTicker) routine() {
-	gt.timer = time.NewTicker(1 * time.Second)
+	gt.timer = time.NewTicker(1 * time.Millisecond)
 	for range gt.timer.C {
 		gt.ticker++
 		gt.routines.Range(func(key, value interface{}) bool {

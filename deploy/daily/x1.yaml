@@ -1,33 +1,3 @@
 title: x1
 services:
-  - priority: 0
-    game: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"
-    name: "genesis1"
-    image: "genesis_image:latest"
-    ports:
-      - host: 7771
-        target: 8080
-    detached: true
-    type: "ETH"
-    hostname: "genesis_1_daily"
 
-  - priority: 1
-    game: "0x362beb806ab6067a5344665e71f09e5cc221b2a3"
-    name: "mixmarvel1"
-    image: "mixmarvel_image:latest"
-    ports:
-      - host: 5551
-        target: 8080
-    detached: true
-    type: "ETH"
-
-  - priority: 2
-    game: "0x69564f3eccc4aedabde33bd5cb350b9829deced1"
-    name: "sdk_demo_1"
-    image: "sdk_demo_image:latest"
-    ports:
-      - host: 10001
-        target: 80
-    detached: true
-    type: "ETH"
-    cmd: "/root/statemachine"

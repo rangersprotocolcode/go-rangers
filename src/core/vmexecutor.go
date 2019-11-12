@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"math/big"
 	"fmt"
+	"x/src/middleware"
 )
 
 const MaxCastBlockTime = time.Second * 3
@@ -256,10 +257,11 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		}
 
 	}
-	accountdb.AddBalance(common.BytesToAddress(block.Header.Castor), consensusHelper.ProposalBonus())
 
+	accountdb.AddBalance(common.BytesToAddress(block.Header.Castor), consensusHelper.ProposalBonus())
 	state := accountdb.IntermediateRoot(true)
-	logger.Debugf("VMExecutor End Execute State %s", state.Hex())
+
+	middleware.PerfLogger.Debugf("VMExecutor End. %s height: %d, cost: %v, txs: %d", situation, block.Header.Height, time.Since(beginTime), len(block.Transactions))
 	return state, evictedTxs, transactions, receipts, nil, errs
 }
 

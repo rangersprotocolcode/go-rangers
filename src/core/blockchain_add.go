@@ -6,7 +6,6 @@ import (
 	"x/src/common"
 	"x/src/utility"
 	"x/src/middleware/notify"
-	"math/big"
 	"errors"
 )
 
@@ -16,7 +15,7 @@ func (chain *blockChain) consensusVerify(source string, b *types.Block) (types.A
 	}
 
 	if !chain.hasPreBlock(*b.Header) {
-		logger.Debugf("coming block %s,%d has no pre on local chain.Forking...", b.Header.Hash.String(), b.Header.Height)
+		logger.Warnf("coming block %s,%d has no pre on local chain.Forking...", b.Header.Hash.String(), b.Header.Height)
 		chain.futureBlocks.Add(b.Header.PreHash, b)
 		go chain.forkProcessor.requestChainPieceInfo(source, chain.latestBlock.Height)
 		return types.Forking, false
@@ -43,50 +42,74 @@ func (chain *blockChain) consensusVerify(source string, b *types.Block) (types.A
 	return types.ValidateBlockOk, true
 }
 
-func (chain *blockChain) addBlockOnChain(source string, b *types.Block, situation types.AddBlockOnChainSituation) types.AddBlockResult {
+// 这里判断处理分叉
+func (chain *blockChain) addBlockOnChain(source string, coming *types.Block, situation types.AddBlockOnChainSituation) types.AddBlockResult {
 	topBlock := chain.latestBlock
-	logger.Debugf("coming block:hash=%v, preH=%v, height=%v,totalQn:%d", b.Header.Hash.Hex(), b.Header.PreHash.Hex(), b.Header.Height, b.Header.TotalQN)
+	comingHeader := coming.Header
+
+	logger.Debugf("coming block:hash=%v, preH=%v, height=%v,totalQn:%d", comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN)
 	logger.Debugf("Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d", topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN)
 
-	if _, verifyResult := chain.verifyBlock(*b.Header, b.Transactions); verifyResult != 0 {
+	// 已经存在
+	if comingHeader.Hash == topBlock.Hash || chain.HasBlockByHash(comingHeader.Hash) {
+		return types.BlockExisted
+	}
+
+	// 校验块
+	if _, verifyResult := chain.verifyBlock(*comingHeader, coming.Transactions); verifyResult != 0 {
 		logger.Errorf("Fail to VerifyCastingBlock, reason code:%d \n", verifyResult)
 		if verifyResult == 2 {
-			logger.Debugf("coming block  has no pre on local chain.Forking...", )
+			logger.Warnf("coming block has no pre on local chain.Forking...", )
 			go chain.forkProcessor.requestChainPieceInfo(source, chain.latestBlock.Height)
 		}
 		return types.AddBlockFailed
 	}
 
-	if b.Header.PreHash == topBlock.Hash {
-		result, _ := chain.insertBlock(b)
+	// 正好是下一块
+	if comingHeader.PreHash == topBlock.Hash {
+		result, _ := chain.insertBlock(coming)
 		return result
 	}
-	if b.Header.Hash == topBlock.Hash || chain.queryBlockHeaderByHash(b.Header.Hash) != nil {
-		return types.BlockExisted
-	}
 
-	if b.Header.TotalQN < topBlock.TotalQN {
+	// 比本地链要差，丢掉
+	if comingHeader.TotalQN < topBlock.TotalQN {
 		if situation == types.Sync {
+			logger.Warnf("coming less than local.Forking...coming block:hash=%v, preH=%v, height=%v,totalQn:%d Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d", comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN)
 			go chain.forkProcessor.requestChainPieceInfo(source, chain.latestBlock.Height)
 		}
+
 		return types.BlockTotalQnLessThanLocal
 	}
-	commonAncestor := chain.queryBlockHeaderByHash(b.Header.PreHash)
-	logger.Debugf("commonAncestor hash:%s height:%d", commonAncestor.Hash.Hex(), commonAncestor.Height)
-	if b.Header.TotalQN > topBlock.TotalQN {
+
+	// 比本地链好，要
+	if comingHeader.TotalQN > topBlock.TotalQN {
+		commonAncestor := chain.queryBlockHeaderByHash(comingHeader.PreHash)
+		logger.Warnf("coming greater than local. Removing and Forking...coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
+			comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
+
 		chain.removeFromCommonAncestor(commonAncestor)
-		return chain.addBlockOnChain(source, b, situation)
+		return chain.addBlockOnChain(source, coming, situation)
 	}
-	if b.Header.TotalQN == topBlock.TotalQN {
-		if chain.compareValue(commonAncestor, b.Header) {
+
+	// 不是同一块，但是QN与本地链相同，需要二次判断
+	if comingHeader.TotalQN == topBlock.TotalQN {
+		commonAncestor := chain.queryBlockHeaderByHash(comingHeader.PreHash)
+		if chain.compareValue(commonAncestor, comingHeader) {
 			if situation == types.Sync {
+				logger.Warnf("coming equal to local. but sync. coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
+					comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
 				go chain.forkProcessor.requestChainPieceInfo(source, chain.latestBlock.Height)
 			}
 			return types.BlockTotalQnLessThanLocal
 		}
+
+		// 要了
+		logger.Warnf("coming equal to local. Still Removing and Forking...coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
+			comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
 		chain.removeFromCommonAncestor(commonAncestor)
-		return chain.addBlockOnChain(source, b, situation)
+		return chain.addBlockOnChain(source, coming, situation)
 	}
+
 	go chain.forkProcessor.requestChainPieceInfo(source, chain.latestBlock.Height)
 	return types.Forking
 }
@@ -280,7 +303,7 @@ func (chain *blockChain) removeFromCommonAncestor(commonAncestor *types.BlockHea
 	for height := chain.latestBlock.Height; height > commonAncestor.Height; height-- {
 		header := chain.queryBlockHeaderByHeight(height, true)
 		if header == nil {
-			//logger.Debugf("removeFromCommonAncestor nil height:%d", height)
+			logger.Debugf("removeFromCommonAncestor nil height:%d", height)
 			continue
 		}
 		block := chain.queryBlockByHash(header.Hash)
@@ -292,29 +315,41 @@ func (chain *blockChain) removeFromCommonAncestor(commonAncestor *types.BlockHea
 	}
 }
 
+// 找到commonAncestor在本地链的下一块，然后与remoteHeader比较
 func (chain *blockChain) compareValue(commonAncestor *types.BlockHeader, remoteHeader *types.BlockHeader) bool {
 	if commonAncestor.Height == chain.latestBlock.Height {
 		return false
 	}
-	var localValue *big.Int
+
 	remoteValue := consensusHelper.VRFProve2Value(remoteHeader.ProveValue)
 	logger.Debugf("coming hash:%s,coming value is:%v", remoteHeader.Hash.String(), remoteValue)
-	logger.Debugf("compareValue hash:%s height:%d latestheight:%d", commonAncestor.Hash.Hex(), commonAncestor.Height, chain.latestBlock.Height)
+	logger.Debugf("compareValue hash:%s height:%d latestHeight:%d", commonAncestor.Hash.Hex(), commonAncestor.Height, chain.latestBlock.Height)
+
+	var target *types.BlockHeader
 	for height := commonAncestor.Height + 1; height <= chain.latestBlock.Height; height++ {
 		logger.Debugf("compareValue queryBlockHeaderByHeight height:%d ", height)
 		header := chain.queryBlockHeaderByHeight(height, true)
+		// 跳块时，高度会不连续
 		if header == nil {
 			logger.Debugf("compareValue queryBlockHeaderByHeight nil !height:%d ", height)
 			continue
 		}
-		localValue = consensusHelper.VRFProve2Value(header.ProveValue)
-		logger.Debugf("local hash:%s,local value is:%v", header.Hash.String(), localValue)
+
+		target = header
 		break
 	}
-	if localValue.Cmp(remoteValue) >= 0 {
-		return true
+
+	localValue := consensusHelper.VRFProve2Value(target.ProveValue)
+	logger.Debugf("local hash:%s,local value is:%v", target.Hash.String(), localValue)
+
+	result := localValue.Cmp(remoteValue)
+
+	// 又相等了，说明同一个人在同一个高度出了多块，可能有问题
+	if result == 0 {
+		return target.CurTime.After(remoteHeader.CurTime)
 	}
-	return false
+
+	return result > 0
 }
 
 func dumpTxs(txs []*types.Transaction, blockHeight uint64) {

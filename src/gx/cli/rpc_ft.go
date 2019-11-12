@@ -50,18 +50,23 @@ func (api *GtasAPI) PublishFT(authCode, appId, owner, name, symbol, totalSupply,
 }
 
 func (api *GtasAPI) MintFT(authCode, appId, ftId, target, balance string) (*Result, error) {
+	api.logger.Debugf("mintFT start. authCode: %s, appId: %s, ftId: %s, target: %s, balance: %s", authCode, appId, ftId, target, balance)
+
 	if 0 == len(appId) || 0 == len(authCode) || !statemachine.Docker.ValidateAppId(appId, authCode) {
+		api.logger.Errorf("appId/authCode wrong")
 		return failResult("wrong params")
 	}
 
 	context, ok := api.checkTx(appId)
 	if !ok {
 		msg := fmt.Sprintf("wrong appId %s or not in transaction", appId)
-		common.DefaultLogger.Debugf(msg)
+		api.logger.Errorf(msg)
 		return failResult(msg)
 	}
 
 	result, flag := core.FTManagerInstance.MintFT(appId, ftId, target, balance, context.AccountDB)
+	api.logger.Debugf("mintFT end. result: %s, flag: %t", result, flag)
+
 	if flag {
 		// 生成交易，上链 context.Tx.SubTransactions
 		data := types.UserData{}

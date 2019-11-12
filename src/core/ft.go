@@ -3,13 +3,13 @@ package core
 import (
 	"x/src/common"
 	"x/src/middleware/types"
-	"strconv"
 	"math/big"
 	"encoding/json"
 	"x/src/storage/account"
 	"sync"
 	"fmt"
 	"strings"
+	"x/src/utility"
 )
 
 type FTManager struct {
@@ -161,7 +161,7 @@ func (self *FTManager) MintFT(owner, ftId, target, supply string, accountDB *acc
 
 	targetAddress := common.HexToAddress(target)
 	if accountDB.AddFT(targetAddress, ftId, balance) {
-		return "TransferFT successful", true
+		return "MintFT successful", true
 	} else {
 		txLogger.Tracef("Mint ft overflow!ftId %s,target:%s,supply:%s", ftId, target, supply)
 		return "Overflow", false
@@ -189,6 +189,10 @@ func (self *FTManager) contains(id string, accountDB *account.AccountDB) bool {
 }
 
 func (self *FTManager) convert(value string) *big.Int {
-	supply, _ := strconv.ParseFloat(value, 64)
-	return big.NewInt(int64(supply * 1000000000))
+	supply, err := utility.StrToBigInt(value)
+	if err != nil {
+		return nil
+	}
+
+	return supply
 }

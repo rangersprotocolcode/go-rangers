@@ -1,6 +1,6 @@
 #!/bin/bash
 
-cd /home/x/run
+cd /home/testx/run
 for file in pid/pid_gx*
 do
     kill -9 `cat $file`

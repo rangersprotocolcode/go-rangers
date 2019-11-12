@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"x/src/middleware/log"
 )
 
 // startHTTP initializes and starts the HTTP RPC endpoint.
@@ -49,6 +50,8 @@ var GtasAPIImpl *GtasAPI
 func StartRPC(host string, port uint) error {
 	var err error
 	GtasAPIImpl = &GtasAPI{}
+	GtasAPIImpl.logger = log.GetLoggerByIndex(log.RPCLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+
 	gxLock = &sync.RWMutex{}
 	apis := []rpc.API{
 		{Namespace: "Rocket", Version: "1", Service: GtasAPIImpl, Public: true},

@@ -7,7 +7,6 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"runtime"
-	"runtime/debug"
 	"strconv"
 	"time"
 	"x/src/common"
@@ -91,7 +90,6 @@ func (gx *GX) Run() {
 	common.InitConf(*configFile)
 	walletManager = newWallets()
 	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString("instance", "index", ""))
-	gx.initSysParam()
 
 	if *apply == "heavy" {
 		fmt.Println("Welcom to be a tas propose miner!")
@@ -154,7 +152,7 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 		panic("Init miner core init error:" + err.Error())
 	}
 
-	network.InitNetwork("0x"+common.Bytes2Hex(gx.account.Miner.ID[:]), cnet.MessageHandler, env, gateAddr)
+	network.InitNetwork(cnet.MessageHandler, "0x"+common.Bytes2Hex(gx.account.Miner.ID[:]), env, gateAddr)
 
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
 	if !ok {
@@ -203,7 +201,7 @@ func (gx *GX) getAccountInfo(keystore, address string) error {
 }
 
 func syncChainInfo() {
-	fmt.Println("Syncing block and group info from tas net.Waiting...")
+	fmt.Println("Syncing block and group info from RocketProtocol net.Waiting...")
 	core.InitGroupSyncer()
 	core.InitBlockSyncer()
 	go func() {
@@ -240,12 +238,6 @@ func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerDO) {
 		common.DefaultLogger.Infof("Miner ID: %s", minerDO.ID.GetHexString())
 	}
 
-}
-
-func (gx *GX) initSysParam() {
-	debug.SetGCPercent(100)
-	debug.SetMaxStack(2 * 1000000000)
-	common.DefaultLogger.Debug("Setting gc 100%, max memory 2g")
 }
 
 func (gx *GX) handleExit(ctrlC <-chan bool, quit chan<- bool) {

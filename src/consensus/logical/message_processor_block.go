@@ -8,6 +8,8 @@ import (
 	"x/src/middleware/types"
 	"time"
 
+	"x/src/middleware"
+	"x/src/utility"
 )
 
 func (p *Processor) genCastGroupSummary(bh *types.BlockHeader) *model.CastGroupSummary {
@@ -30,6 +32,8 @@ func (p *Processor) genCastGroupSummary(bh *types.BlockHeader) *model.CastGroupS
 	return cgs
 }
 
+// 已经恢复出组签名
+// 出块
 func (p *Processor) thresholdPieceVerify(mtype string, sender string, gid groupsig.ID, vctx *VerifyContext, slot *SlotContext, traceLog *msgTraceLog) {
 	blog := newBizLog("thresholdPieceVerify")
 	bh := slot.BH
@@ -42,7 +46,7 @@ func (p *Processor) thresholdPieceVerify(mtype string, sender string, gid groups
 
 }
 
-func (p *Processor) normalPieceVerify(mtype string, sender string, gid groupsig.ID, vctx *VerifyContext, slot *SlotContext, traceLog *msgTraceLog)  {
+func (p *Processor) normalPieceVerify(mtype string, sender string, gid groupsig.ID, vctx *VerifyContext, slot *SlotContext, traceLog *msgTraceLog) {
 	bh := slot.BH
 	castor := groupsig.DeserializeId(bh.Castor)
 	if slot.StatusTransform(SS_WAITING, SS_SIGNED) && !castor.IsEqual(p.GetMinerID()) {
@@ -57,7 +61,7 @@ func (p *Processor) normalPieceVerify(mtype string, sender string, gid groupsig.
 			cvm.GenRandomSign(skey, vctx.prevBH.Random)
 			blog.debug("call network service SendVerifiedCast hash=%v, height=%v", bh.Hash.ShortS(), bh.Height)
 			traceLog.log("SendVerifiedCast height=%v, castor=%v", bh.Height, slot.castor.ShortS())
-			//验证消息需要给自己也发一份，否则自己的分片中将不包含自己的签名，导致分红没有
+			//验证消息需要给自己也发一份，否则自己的分片中将不包含自己的签名，导致分红没有???
 			p.NetServer.SendVerifiedCast(&cvm, gid)
 		} else {
 			blog.log("genSign fail, id=%v, sk=%v %v", p.GetMinerID().ShortS(), skey.ShortS(), p.IsMinerGroup(gid))
@@ -95,15 +99,17 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 		return fmt.Errorf("cast verify expire, gid=%v, preTime %v, expire %v", gid.ShortS(), preBH.CurTime, expireTime)
 	} else if bh.Height > 1 {
 		//设置为2倍的最大时间，防止由于时间不同步导致的跳块
-		beginTime := expireTime.Add(-2*time.Second*time.Duration(model.Param.MaxGroupCastTime))
+		beginTime := expireTime.Add(-2 * time.Second * time.Duration(model.Param.MaxGroupCastTime))
 		if !time.Now().After(beginTime) {
 			return fmt.Errorf("cast begin time illegal, expectBegin at %v, expire at %v", beginTime, expireTime)
 		}
 
 	}
+
 	if !p.IsMinerGroup(gid) {
 		return fmt.Errorf("%v is not in group %v", p.GetMinerID().ShortS(), gid.ShortS())
 	}
+
 	bc := p.GetBlockContext(gid)
 	if bc == nil {
 		err = fmt.Errorf("未获取到blockcontext, gid=" + gid.ShortS())
@@ -163,26 +169,30 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 			return
 		}
 
-		slog.addStage("sampleCheck")
 		//校验提案者是否有全量账本
-		sampleHeight := p.sampleBlockHeight(bh.Height, preBH.Random, p.GetMinerID())
-		realHeight, existHash := p.getNearestVerifyHashByHeight(sampleHeight)
-		if realHeight > 0 {
-			if !existHash.IsValid() {
-				err = fmt.Errorf("MainChain GetCheckValue error, height=%v, err=%v", sampleHeight, err)
-				return
-			}
-			vHash := msg.ProveHash[p.getMinerPos(gid, p.GetMinerID())]
-			if vHash != existHash {
-				err = fmt.Errorf("check p rove hash fail, sampleHeight=%v, realHeight=%v, receive hash=%v, exist hash=%v", sampleHeight, realHeight, vHash.String(), existHash.String())
-				return
-			}
-		}
+		//slog.addStage("sampleCheck")
+		//sampleHeight := p.sampleBlockHeight(bh.Height, preBH.Random, p.GetMinerID())
+		//realHeight, existHash := p.getNearestVerifyHashByHeight(sampleHeight)
+		//if realHeight > 0 {
+		//	if !existHash.IsValid() {
+		//		err = fmt.Errorf("MainChain GetCheckValue error, height=%v, err=%v", sampleHeight, err)
+		//		return
+		//	}
+		//	vHash := msg.ProveHash[p.getMinerPos(gid, p.GetMinerID())]
+		//	if vHash != existHash {
+		//		err = fmt.Errorf("check p rove hash fail, sampleHeight=%v, realHeight=%v, receive hash=%v, exist hash=%v", sampleHeight, realHeight, vHash.String(), existHash.String())
+		//		return
+		//	}
+		//}
 		slog.endStage()
 	}
 
 	slog.addStage("UVCheck")
 	blog.debug("%v start UserVerified, height=%v, hash=%v", mtype, bh.Height, bh.Hash.ShortS())
+
+	id := utility.GetGoroutineId()
+	middleware.PerfLogger.Infof("verify before UserVerified %s, id: %d, cost: %v, height: %v, hash: %v", mtype, id, time.Since(bh.CurTime), bh.Height, bh.Hash.String())
+
 	verifyResult, err := vctx.UserVerified(bh, si, pk, slog)
 	slog.endStage()
 	blog.log("proc(%v) UserVerified height=%v, hash=%v, result=%v.%v", p.getPrefix(), bh.Height, bh.Hash.ShortS(), CBMR_RESULT_DESC(verifyResult), err)
@@ -214,6 +224,9 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 	return
 }
 
+// 这个方法会被调用多次：
+// 1：收到candidate块，验证 OMC
+// 2：收到别的验证者的消息，要验证 OMV
 func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMessage) {
 	bh := &msg.BH
 	si := &msg.SI
@@ -230,27 +243,32 @@ func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMess
 	result := ""
 
 	defer func() {
-		traceLog.logEnd("height=%v, hash=%v, preHash=%v,groupId=%v, result=%v", bh.Height, bh.Hash.ShortS(), bh.PreHash.ShortS(),groupId.ShortS(), result)
+		traceLog.logEnd("height=%v, hash=%v, preHash=%v,groupId=%v, result=%v", bh.Height, bh.Hash.ShortS(), bh.PreHash.ShortS(), groupId.ShortS(), result)
 		blog.debug("height=%v, hash=%v, preHash=%v, groupId=%v, result=%v", bh.Height, bh.Hash.ShortS(), bh.PreHash.ShortS(), groupId.ShortS(), result)
 		slog.log("sender=%v, hash=%v, gid=%v, height=%v", si.GetID().ShortS(), bh.Hash.ShortS(), groupId.ShortS(), bh.Height)
 	}()
 
+	// 不要重复验证
 	if !p.IsMinerGroup(groupId) { //检测当前节点是否在该铸块组
 		result = fmt.Sprintf("don't belong to group, gid=%v, hash=%v, id=%v", groupId.ShortS(), bh.Hash.ShortS(), p.GetMinerID().ShortS())
 		return
 	}
 
 	//castor要忽略自己的消息
+	// 不要重复验证
 	if castor.IsEqual(p.GetMinerID()) && si.GetID().IsEqual(p.GetMinerID()) {
 		result = "ignore self message"
 		return
 	}
 
+	// 要重复验证
 	if msg.GenHash() != si.DataHash {
 		blog.debug("msg proveHash=%v", msg.ProveHash)
 		result = fmt.Sprintf("msg genHash %v diff from si.DataHash %v", msg.GenHash().ShortS(), si.DataHash.ShortS())
 		return
 	}
+
+
 	bc := p.GetBlockContext(groupId)
 	if bc == nil {
 		result = fmt.Sprintf("未获取到blockcontext, gid=" + groupId.ShortS())
@@ -265,17 +283,21 @@ func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMess
 		}
 	}
 
+	// 主要耗时点
 	err := p.doVerify(mtype, msg, traceLog, blog, slog)
 	if err != nil {
 		result = err.Error()
 	}
+
+	id := utility.GetGoroutineId()
+	middleware.PerfLogger.Infof("verified %s, id: %d, cost: %v, height: %v, hash: %v", mtype, id, time.Since(bh.CurTime), bh.Height, bh.Hash.String())
 	return
 }
 
-func (p *Processor) verifyWithCache(cache *verifyMsgCache, vmsg *model.ConsensusVerifyMessage)  {
+func (p *Processor) verifyWithCache(cache *verifyMsgCache, vmsg *model.ConsensusVerifyMessage) {
 	msg := &model.ConsensusCastMessage{
-		BH: cache.castMsg.BH,
-		ProveHash: cache.castMsg.ProveHash,
+		BH:                cache.castMsg.BH,
+		ProveHash:         cache.castMsg.ProveHash,
 		BaseSignedMessage: vmsg.BaseSignedMessage,
 	}
 	msg.BH.Random = vmsg.RandomSign.Serialize()
@@ -285,8 +307,6 @@ func (p *Processor) verifyWithCache(cache *verifyMsgCache, vmsg *model.Consensus
 //收到组内成员的出块消息，出块人（KING）用组分片密钥进行了签名
 //有可能没有收到OnMessageCurrent就提前接收了该消息（网络时序问题）
 func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
-	//statistics.AddBlockLog(common.BootId, statistics.RcvCast, ccm.BH.Height, ccm.BH.ProveValue.Uint64(), -1, -1,
-	//	time.Now().UnixNano(), "", "", common.InstanceIndex, ccm.BH.CurTime.UnixNano())
 	slog := newSlowLog("OnMessageCast", 0.5)
 	bh := &ccm.BH
 	defer func() {
@@ -318,9 +338,9 @@ func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 	slog.endStage()
 
 	slog.addStage("OMC")
+	// 主要耗时点
 	p.verifyCastMessage("OMC", ccm)
 	slog.endStage()
-
 
 	verifys := cache.getVerifyMsgs()
 	if len(verifys) > 0 {
@@ -431,7 +451,7 @@ func (p *Processor) OnMessageNewTransactions(ths []common.Hashes) {
 		txstrings[idx] = tx.ShortS()
 	}
 
-	blog.debug("proc(%v) begin %v, trans count=%v %v...", p.getPrefix(),mtype, len(ths), txstrings)
+	blog.debug("proc(%v) begin %v, trans count=%v %v...", p.getPrefix(), mtype, len(ths), txstrings)
 
 	p.blockContexts.forEachBlockContext(func(bc *BlockContext) bool {
 		for _, vctx := range bc.SafeGetVerifyContexts() {

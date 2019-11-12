@@ -4,10 +4,10 @@ import (
 	"x/src/statemachine"
 	"x/src/core"
 	"x/src/common"
-	"strconv"
 	"x/src/middleware/types"
 	"encoding/json"
 	"x/src/network"
+	"x/src/utility"
 )
 
 func (api *GtasAPI) GetBNTBalance(addr, coin string) (*Result, error) {
@@ -56,8 +56,7 @@ func (api *GtasAPI) GetBalance(address string) (*Result, error) {
 
 	accountDB := core.AccountDBManagerInstance.GetAccountDB("", true)
 	balance := accountDB.GetBalance(common.HexToAddress(address))
-	floatdata := float64(balance.Int64()) / 1000000000
-	return successResult(strconv.FormatFloat(floatdata, 'f', -1, 64))
+	return successResult(utility.BigIntToStr(balance))
 }
 
 // 通过rpc的方式，让本地的docker镜像调用

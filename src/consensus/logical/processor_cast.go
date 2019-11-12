@@ -13,7 +13,7 @@ import (
 	"time"
 	"runtime/debug"
 
-	"x/src/consensus/vrf"
+	"x/src/middleware"
 )
 
 type CastBlockContexts struct {
@@ -289,6 +289,7 @@ func (p *Processor) GenProveHashs(heightLimit uint64, rand []byte, ids []groupsi
 }
 
 func (p *Processor) blockProposal() {
+	start := time.Now()
 	blog := newBizLog("blockProposal")
 	top := p.MainChain.TopBlock()
 	worker := p.GetVrfWorker()
@@ -315,6 +316,7 @@ func (p *Processor) blockProposal() {
 		blog.log("vrf worker timeout")
 		return
 	}
+	middleware.PerfLogger.Debugf("after genProve, last: %v, height: %v", time.Since(start), height)
 
 	gb := p.spreadGroupBrief(top, height)
 	if gb == nil {
@@ -322,16 +324,20 @@ func (p *Processor) blockProposal() {
 		return
 	}
 	gid := gb.Gid
+	middleware.PerfLogger.Debugf("after spreadGroupBrief, last: %v, height: %v", time.Since(start), height)
 
 	//随机抽取n个块，生成proveHash
-	proveHash, root := p.GenProveHashs(height, worker.getBaseBH().Random, gb.MemIds)
+	//proveHash, root := p.GenProveHashs(height, worker.getBaseBH().Random, gb.MemIds)
 
-	block := p.MainChain.CastBlock(uint64(height), pi.Big(), root, qn, p.GetMinerID().Serialize(), gid.Serialize())
+	middleware.PerfLogger.Infof("start cast block, last: %v, height: %v", time.Since(start), height)
+	block := p.MainChain.CastBlock(start, uint64(height), pi.Big(), common.Hash{}, qn, p.GetMinerID().Serialize(), gid.Serialize())
 	if block == nil {
 		blog.log("MainChain::CastingBlock failed, height=%v", height)
 		return
 	}
 	bh := block.Header
+	middleware.PerfLogger.Infof("fin cast block, last: %v, hash: %v, height: %v", time.Since(start), bh.Hash.String(), bh.Height)
+
 	tlog := newHashTraceLog("CASTBLOCK", bh.Hash, p.GetMinerID())
 	blog.log("begin proposal, hash=%v, height=%v, qn=%v,, verifyGroup=%v, pi=%v...", bh.Hash.ShortS(), height, qn, gid.ShortS(), pi.ShortS())
 	tlog.logStart("height=%v,qn=%v, preHash=%v, verifyGroup=%v", bh.Height, qn, bh.PreHash.ShortS(), gid.ShortS())
@@ -341,13 +347,13 @@ func (p *Processor) blockProposal() {
 		//发送该出块消息
 		var ccm model.ConsensusCastMessage
 		ccm.BH = *bh
-		ccm.ProveHash = proveHash
+		ccm.ProveHash = []common.Hash{}
 		//ccm.GroupID = gid
 		if !ccm.GenSign(model.NewSecKeyInfo(p.GetMinerID(), skey), &ccm) {
 			blog.log("sign fail, id=%v, sk=%v", p.GetMinerID().ShortS(), skey.ShortS())
 			return
 		}
-		blog.log("hash=%v, proveRoot=%v, pi=%v, piHash=%v", bh.Hash.ShortS(), root.ShortS(), pi.ShortS(), common.Bytes2Hex(vrf.VRFProof2Hash(pi)))
+		//blog.log("hash=%v, proveRoot=%v, pi=%v, piHash=%v", bh.Hash.ShortS(), root.ShortS(), pi.ShortS(), common.Bytes2Hex(vrf.VRFProof2Hash(pi)))
 		//ccm.GenRandomSign(skey, worker.baseBH.Random)//castor不能对随机数签名
 		tlog.log("铸块成功, SendVerifiedCast, 时间间隔 %v, castor=%v, hash=%v, genHash=%v", bh.CurTime.Sub(bh.PreTime).Seconds(), ccm.SI.GetID().ShortS(), bh.Hash.ShortS(), ccm.SI.DataHash.ShortS())
 		p.NetServer.SendCastVerify(&ccm, gb, block.Transactions)
@@ -366,6 +372,7 @@ func (p *Processor) blockProposal() {
 
 		worker.markProposed()
 
+		middleware.PerfLogger.Infof("fin block, last: %v, hash: %v, height: %v", time.Since(start), bh.Hash.String(), bh.Height)
 		//statistics.AddBlockLog(common.BootId, statistics.SendCast, ccm.BH.Height, ccm.BH.ProveValue.Uint64(), -1, -1,
 		//	time.Now().UnixNano(), p.GetMinerID().ShortS(), gid.ShortS(), common.InstanceIndex, ccm.BH.CurTime.UnixNano())
 	} else {

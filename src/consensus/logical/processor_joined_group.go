@@ -181,7 +181,7 @@ func (bg *BelongGroups) loadJoinedGroup(gid groupsig.ID) *JoinedGroup {
 	//加载签名私钥
 	bs, err := bg.store.Get(signKeySuffix(gid))
 	if err != nil {
-		stdLogger.Errorf("get signKey fail, gid=%v, err=%v", gid.ShortS(), err.Error())
+		//		stdLogger.Errorf("get signKey fail, gid=%v, err=%v", gid.ShortS(), err.Error())
 		return nil
 	}
 	m, err := bg.priKey.Decrypt(rand.Reader, bs)

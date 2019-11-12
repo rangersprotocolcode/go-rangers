@@ -7,7 +7,7 @@ import (
 	"bytes"
 
 	"x/src/common"
-	"strconv"
+	"x/src/utility"
 )
 
 type AddBlockOnChainSituation string
@@ -31,6 +31,7 @@ const (
 	Forking                   AddBlockResult = 3
 	ValidateBlockOk           AddBlockResult = 100
 )
+
 const (
 	SUCCESS                             = 0
 	TxErrorCode_BalanceNotEnough        = 1
@@ -220,8 +221,8 @@ type BlockHeader struct {
 	StateTree    common.Hash
 	ExtraData    []byte
 	Random       []byte
-	ProveRoot    common.Hash
-	EvictedTxs   []common.Hash
+	//ProveRoot    common.Hash
+	EvictedTxs []common.Hash
 }
 
 type header struct {
@@ -260,8 +261,8 @@ func (bh *BlockHeader) GenHash() common.Hash {
 		ReceiptTree:  bh.ReceiptTree,
 		StateTree:    bh.StateTree,
 		ExtraData:    bh.ExtraData,
-		ProveRoot:    bh.ProveRoot,
-		EvictedTxs:   bh.EvictedTxs,
+		//ProveRoot:    bh.ProveRoot,
+		EvictedTxs: bh.EvictedTxs,
 	}
 	blockByte, _ := json.Marshal(header)
 	result := common.BytesToHash(common.Sha256(blockByte))
@@ -284,8 +285,8 @@ func (bh *BlockHeader) ToString() string {
 		ReceiptTree:  bh.ReceiptTree,
 		StateTree:    bh.StateTree,
 		ExtraData:    bh.ExtraData,
-		ProveRoot:    bh.ProveRoot,
-		EvictedTxs:   bh.EvictedTxs,
+		//ProveRoot:    bh.ProveRoot,
+		EvictedTxs: bh.EvictedTxs,
 	}
 	blockByte, _ := json.Marshal(header)
 	return string(blockByte)
@@ -557,5 +558,5 @@ func (object *JSONObject) TOJSONString() string {
 
 func ReplaceBigInt(one, other interface{}) interface{} {
 	bigInt := other.(*big.Int)
-	return strconv.FormatFloat(float64(bigInt.Int64())/1000000000, 'f', -1, 64)
+	return utility.BigIntToStr(bigInt)
 }
