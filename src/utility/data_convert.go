@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"math/big"
-	"strings"
 	"fmt"
+	"strings"
 )
+
+const zeroString = "0"
 
 func UInt32ToByte(i uint32) []byte {
 	buf := bytes.NewBuffer([]byte{})
@@ -64,34 +66,40 @@ func StrToBigInt(s string) (*big.Int, error) {
 	return result, nil
 }
 
-// 11220000000->"11.22"
+// 11220000000->"11.220000000"
 func BigIntToStr(number *big.Int) string {
-	base := new(big.Float)
-	base.SetInt(big.NewInt(1000000000))
 
-	target := new(big.Float)
-	target.SetPrec(256)
-	target.SetMode(big.ToNearestEven)
-	target.SetInt(number)
-
-	target.Quo(target, base)
-
-	return formatNumberString(target.Text('f', 128), 9)
+	// 默认保留小数点9位
+	return bigIntToStr(number, 9)
 }
 
-func formatNumberString(x string, precision int) string {
-	lastIndex := strings.Index(x, ".")
-	if lastIndex < 0 {
-		return x
+func bigIntToStr(n *big.Int, precision int) string {
+	if nil == n || precision < 0 {
+		return zeroString
 	}
 
-	first := x[:lastIndex]
+	// 绝对值字符串
+	number := n.Abs(n).String()
 
-	length := lastIndex + precision + 1
-	if length > len(x) {
-		length = len(x)
+	var starter, first, last string
+
+	// 负数
+	if n.Sign() < 0 {
+		starter = "-"
 	}
-	last := x[lastIndex+1 : length]
 
-	return fmt.Sprintf("%s.%s", first, last)
+	length := len(number)
+	// 小于1的数
+	if length <= precision {
+		first = zeroString
+		last = fmt.Sprintf("%s%s", strings.Repeat(zeroString, precision-length), number)
+	} else {
+		first = number[:length-precision]
+		last = number[length-precision : length]
+	}
+
+	if 0 == precision {
+		return fmt.Sprintf("%s%s", starter, first)
+	}
+	return fmt.Sprintf("%s%s.%s", starter, first, last)
 }

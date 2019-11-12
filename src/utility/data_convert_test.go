@@ -32,20 +32,6 @@ func TestStrconv(t *testing.T) {
 	fmt.Printf("s:%s\n", s)
 }
 
-func TestFormatNumberString(t *testing.T) {
-	str := "1.23000"
-	fmt.Println(formatNumberString(str, 9))
-
-	str = "123456.0123"
-	fmt.Println(formatNumberString(str, 30))
-
-	str = "1234560"
-	fmt.Println(formatNumberString(str, 30))
-
-	str = "123456.123456789"
-	fmt.Println(formatNumberString(str, 9))
-}
-
 func TestStrToBigInt(t *testing.T) {
 	str := "1.23000"
 	fmt.Println(str)
@@ -60,4 +46,56 @@ func TestStrToBigInt2(t *testing.T) {
 	bigInt, _ := StrToBigInt(str)
 	fmt.Println(bigInt.String())
 	fmt.Println(BigIntToStr(bigInt))
+}
+
+func TestStrToBigInt3(t *testing.T) {
+	str := "1000000000000000000000000001000000000.1234567891"
+	value, err := StrToBigInt(str)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(str)
+	fmt.Println(value.String())
+
+	fmt.Println(BigIntToStr(value))
+}
+
+func TestStrToBigInt4(t *testing.T) {
+	str := "0.1234567891"
+	value, err := StrToBigInt(str)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(str)
+	fmt.Println(value.String())
+
+	fmt.Println(BigIntToStr(value))
+}
+
+func TestStrToBigInt5(t *testing.T) {
+	str := "-0.0092"
+	value, err := StrToBigInt(str)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(str)
+	fmt.Println(value.String())
+
+	fmt.Println(BigIntToStr(value))
+}
+
+func TestStrToBigInt6(t *testing.T) {
+	str := "0.0"
+	value, err := StrToBigInt(str)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(str)
+	fmt.Println(value.String())
+
+	fmt.Println(bigIntToStr(value,0))
 }
