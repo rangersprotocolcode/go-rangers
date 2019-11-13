@@ -147,7 +147,7 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 	} else if apply == "heavy" {
 		minerInfo.NType = types.MinerTypeHeavy
 	}
-	err = core.InitCore(consensus.NewConsensusHelper(minerInfo.ID))
+	err = core.InitCore(minerInfo.NType, consensus.NewConsensusHelper(minerInfo.ID))
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
 	}

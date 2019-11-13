@@ -46,11 +46,14 @@ type TxPool struct {
 
 	txCount uint64
 	lock    middleware.Loglock
+
+	nodeType byte
 }
 
-func NewTransactionPool() TransactionPool {
+func NewTransactionPool(nodeType byte) TransactionPool {
 	pool := &TxPool{
-		lock: middleware.NewLoglock("txPool"),
+		lock:     middleware.NewLoglock("txPool"),
+		nodeType: nodeType,
 	}
 	pool.received = newSimpleContainer(rcvTxPoolSize)
 	pool.minerTxs, _ = lru.New(minerTxCacheSize)
@@ -84,7 +87,7 @@ func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 	pool.lock.Lock("AddTransaction")
 	defer pool.lock.Unlock("AddTransaction")
 	b, err := pool.add(tx)
-//	logger.Debugf("Add tx %s to pool result:%t", tx.Hash.String(), b)
+	//	logger.Debugf("Add tx %s to pool result:%t", tx.Hash.String(), b)
 	return b, err
 }
 
@@ -317,7 +320,7 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 		}
 		pool.minerTxs.Add(tx.Hash, tx)
 	} else {
-		pool.received.push(tx)
+		pool.received.push(tx, pool.nodeType)
 	}
 
 	return true, nil
