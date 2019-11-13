@@ -2,8 +2,6 @@ package core
 
 import (
 	"sync"
-	"time"
-
 	"x/src/common"
 	"x/src/middleware/types"
 )
@@ -13,17 +11,15 @@ type simpleContainer struct {
 	txs    types.Transactions
 	txsMap map[common.Hash]*types.Transaction
 
-	sortTicker *time.Ticker
-	lock       sync.RWMutex
+	lock sync.RWMutex
 }
 
 func newSimpleContainer(l int) *simpleContainer {
 	c := &simpleContainer{
-		lock:       sync.RWMutex{},
-		limit:      l,
-		txsMap:     map[common.Hash]*types.Transaction{},
-		txs:        types.Transactions{},
-		sortTicker: time.NewTicker(time.Millisecond * 500),
+		lock:   sync.RWMutex{},
+		limit:  l,
+		txsMap: map[common.Hash]*types.Transaction{},
+		txs:    types.Transactions{},
 	}
 
 	return c
@@ -65,6 +61,10 @@ func (c *simpleContainer) push(tx *types.Transaction) {
 		c.txs = append(c.txs, tx)
 		c.txsMap[tx.Hash] = tx
 		return
+	} else {
+		c.txs = types.Transactions{}
+		c.txsMap = map[common.Hash]*types.Transaction{}
+		txLogger.Errorf("overflow txs,remove all")
 	}
 
 }
