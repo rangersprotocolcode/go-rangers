@@ -18,13 +18,13 @@ type StateMachine struct {
 	ContainerConfig
 
 	// docker containerId
-	id string
+	id string `json:"containerId"`
 
 	// docker client
-	cli *client.Client
-	ctx context.Context
+	cli *client.Client  `json:"-"`
+	ctx context.Context `json:"-"`
 
-	logger log.Logger
+	logger log.Logger `json:"-"`
 }
 
 func buildStateMachine(c ContainerConfig, cli *client.Client, ctx context.Context, logger log.Logger) StateMachine {
@@ -34,7 +34,7 @@ func buildStateMachine(c ContainerConfig, cli *client.Client, ctx context.Contex
 //将配置信息转换为 json 数据用于输出
 //返回值: JSON 格式数据
 //用于排查问题
-func (c *StateMachine) JSONStr() string {
+func (c *StateMachine) TOJSONString() string {
 	res, e := json.Marshal(c)
 	if e != nil {
 		return ""

@@ -238,6 +238,10 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		case types.TransactionTypeShuttleNFT:
 			success, _ = ShuttleNFT(accountdb, transaction)
 			break
+		case types.TransactionTypeAddStateMachine:
+			// todo: 经济模型，新增状态机应该要付费
+			success = statemachine.Docker.AddStatemachine(transaction.Source, transaction.Data)
+			break
 		}
 
 		if !success {

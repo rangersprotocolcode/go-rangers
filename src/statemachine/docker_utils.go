@@ -64,9 +64,11 @@ type StateMachineManager struct {
 	ctx context.Context
 
 	logger log.Logger
+
+	layer2Port uint
 }
 
-func DockerInit(filename string, port uint) *StateMachineManager {
+func DockerInit(filename string, layer2Port uint) *StateMachineManager {
 	if nil != Docker {
 		return Docker
 	}
@@ -82,21 +84,21 @@ func DockerInit(filename string, port uint) *StateMachineManager {
 	Docker.logger = log.GetLoggerByIndex(log.DockerLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	Docker.Mapping = make(map[string]PortInt)
 	Docker.AuthMapping = make(map[string]string)
-
-	Docker.init(port)
+	Docker.layer2Port = layer2Port
+	Docker.init()
 
 	return Docker
 }
 
-func (d *StateMachineManager) init(layer2Port uint) {
+func (d *StateMachineManager) init() {
 	d.Config.InitFromFile(d.Filename)
-	d.runStateMachines(layer2Port)
+	d.runStateMachines()
 }
 
 //RunContainers: 从配置运行容器
 //cli:  用于访问 docker 守护进程
 //ctx:  传递本次操作的上下文信息
-func (d *StateMachineManager) runStateMachines(layer2Port uint) {
+func (d *StateMachineManager) runStateMachines() {
 	if 0 == len(d.Config.Services) {
 		return
 	}
@@ -104,13 +106,13 @@ func (d *StateMachineManager) runStateMachines(layer2Port uint) {
 	//todo : 根据Priority排序
 	for _, service := range d.Config.Services {
 		// 异步启动
-		go d.runStateMachine(service, layer2Port)
+		go d.runStateMachine(service)
 
 	}
 }
 
 // 通过配置文件，加载
-func (d *StateMachineManager) runStateMachine(service ContainerConfig, layer2Port uint) {
+func (d *StateMachineManager) runStateMachine(service ContainerConfig) {
 	stateMachine := buildStateMachine(service, d.cli, d.ctx, d.logger)
 	name, ports := stateMachine.Run()
 	if name == "" || ports == nil {
@@ -125,13 +127,13 @@ func (d *StateMachineManager) runStateMachine(service ContainerConfig, layer2Por
 	d.lock.Unlock()
 
 	//需要等到docker镜像启动完成
-	d.callInit(ports[0].Host, layer2Port, authCode)
+	d.callInit(ports[0].Host, authCode)
 }
 
-func (d *StateMachineManager) callInit(dockerPortInt PortInt, layer2Port uint, authCode string) {
+func (d *StateMachineManager) callInit(dockerPortInt PortInt, authCode string) {
 	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", dockerPortInt, "init")
 	values := url.Values{}
-	values["url"] = []string{fmt.Sprintf("http://%s:%d", "172.17.0.1", layer2Port)}
+	values["url"] = []string{fmt.Sprintf("http://%s:%d", "172.17.0.1", d.layer2Port)}
 	values["authCode"] = []string{authCode}
 	d.logger.Infof("Send post req:path:%s,values:%v", path, values)
 
@@ -212,23 +214,6 @@ func (d *StateMachineManager) GetType(gameId string) string {
 	return ""
 }
 
-// 判断是否是游戏地址
-// todo: 这里只判断了本地运行的statemachine，会有漏洞
-func (d *StateMachineManager) IsGame(address string) bool {
-	configs := d.Config.Services
-	if 0 == len(configs) {
-		return false
-	}
-
-	for _, value := range configs {
-		if 0 == strings.Compare(value.Game, address) {
-			return true
-		}
-	}
-
-	return false
-}
-
 // 检查authCode是否合法
 func (d *StateMachineManager) ValidateAppId(appId, authCode string) bool {
 	if 0 == len(appId) || 0 == len(authCode) {
@@ -248,4 +233,3 @@ func (d *StateMachineManager) ValidateAppId(appId, authCode string) bool {
 	}
 	return expect == authCode
 }
-
