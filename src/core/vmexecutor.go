@@ -336,7 +336,7 @@ func (executor *VMExecutor) executeNFTDepositNotify(accountdb *account.AccountDB
 	}
 
 	appId := transaction.Target
-	str, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, "", depositNFTData.Creator, depositNFTData.CreateTime, common.HexToAddress(transaction.Source), accountdb)
+	str, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, "", depositNFTData.Creator, depositNFTData.CreateTime, common.HexToAddress(transaction.Source), depositNFTData.Data, accountdb)
 	txLogger.Debugf("GenerateNFT result:%s,%t", str, ok)
 	return ok
 }
