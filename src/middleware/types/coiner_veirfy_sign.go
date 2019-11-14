@@ -37,15 +37,19 @@ type C2wDeposit struct {
 }
 
 type C2wDepositNft struct {
-	SetID      string `json:"SetId"`
-	Name       string `json:"Name"`
-	Symbol     string `json:"Symbol"`
-	ID         string `json:"ID"`
-	Creator    string `json:"Creator"`
-	CreateTime string `json:"CreateTime"`
-	Owner      string `json:"Owner"`
-	Value      string `json:"Value"`
-	TxID       string `json:"TxId"`
+	SetID      string            `json:"setId"`
+	Name       string            `json:"name"`
+	Symbol     string            `json:"symbol"`
+	ID         string            `json:"id"`
+	Creator    string            `json:"creator"`
+	CreateTime string            `json:"createTime"`
+	Owner      string            `json:"owner"`
+	Renter     string            `json:"renter"`
+	Status     byte              `json:"status"`
+	Condition  byte              `json:"condition"`
+	AppID      string            `json:"appId"`
+	Data       map[string]string `json:"data"`
+	TxID       string            `json:"TxId"`
 }
 
 type C2wDepositFt struct {
@@ -83,7 +87,10 @@ type IncomingNft struct {
 	Name       string
 	Creator    string
 	CreateTime string
-	Info       string
+	Info       map[string]string
+	Renter     string
+	Status     byte
+	Condition  byte
 	Txid       string
 }
 
@@ -117,6 +124,7 @@ func (self *Ecc) Verify(info []byte, signed []byte) bool {
 }
 
 func (self *Ecc) VerifyDeposit(msg TxJson) bool {
+	fmt.Printf("msg:%s\n", msg.ToString())
 	if msg.Type == 201 {
 		var de C2wDeposit
 		err := json.Unmarshal([]byte(msg.Data), &de)
@@ -126,6 +134,7 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 		}
 
 		var info Incoming = Incoming{de.ChainType, msg.Source, de.Amount, de.TxID}
+		fmt.Printf("info:%v\n", info)
 		signstrs := strings.Split(msg.Sign, "|")
 		if len(signstrs) < self.SignLimit {
 			return false
@@ -137,6 +146,7 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 				signstrs[i] = signstrs[i][2:]
 			}
 			sign := common.Hex2Bytes(signstrs[i])
+			fmt.Printf("sign:%v,size:%d\n", sign, len(sign))
 			//sign,err := hexutil.Decode(signstrs[i])
 			//if err != nil{
 			//	continue
@@ -187,7 +197,7 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 			return false
 		}
 
-		var info IncomingNft = IncomingNft{de.ID, msg.Target, msg.Source, de.SetID, de.Symbol, de.Name, de.Creator, de.CreateTime, de.Value, de.TxID}
+		var info IncomingNft = IncomingNft{de.ID, msg.Target, msg.Source, de.SetID, de.Symbol, de.Name, de.Creator, de.CreateTime, de.Data, de.Renter, de.Status, de.Condition, de.TxID}
 		signstrs := strings.Split(msg.Sign, "|")
 		if len(signstrs) < self.SignLimit {
 			return false
@@ -199,10 +209,6 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 				signstrs[i] = signstrs[i][2:]
 			}
 			sign := common.Hex2Bytes(signstrs[i])
-			//sign,err := hexutil.Decode(signstrs[i])
-			//if err != nil{
-			//	continue
-			//}
 			if (self.Verify(info.ToJson(), sign) == true) {
 				iCount++
 			}

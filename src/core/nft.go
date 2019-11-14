@@ -350,7 +350,7 @@ func sendPublishNFTSetToCoiner(nftSet types.NFTSet) {
 		return
 	}
 
-	t := types.Transaction{Source: nftSet.Creator, Target: nil, Data: string(b), Type: types.TransactionTypePublishNFTSet, Time: nftSet.CreateTime}
+	t := types.Transaction{Source: nftSet.Creator, Target: "", Data: string(b), Type: types.TransactionTypePublishNFTSet, Time: nftSet.CreateTime}
 	t.Hash = t.GenHash()
 
 	msg, err := json.Marshal(t.ToTxJson())

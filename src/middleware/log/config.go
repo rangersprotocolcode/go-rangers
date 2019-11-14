@@ -46,7 +46,7 @@ const (
 						</formats>
 					</seelog>`
 
-	P2PLogConfig = `<seelog minlevel="warn">
+	P2PLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/p2pLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
@@ -128,7 +128,7 @@ const (
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)|%Msg%n" />
 						</formats>
 					</seelog>`
-	TxLogConfig = `<seelog minlevel="error">
+	TxLogConfig = `<seelog minlevel="trace">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/txLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
@@ -161,5 +161,4 @@ const (
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
 						</formats>
 					</seelog>`
-
 )

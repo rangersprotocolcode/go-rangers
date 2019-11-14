@@ -217,7 +217,7 @@ func sendPublishFTSetToCoiner(ftSet types.FTSet) {
 		return
 	}
 
-	t := types.Transaction{Source: ftSet.AppId, Target: nil, Data: string(b), Type: types.TransactionTypePublishFT, Time: ftSet.CreateTime}
+	t := types.Transaction{Source: ftSet.AppId, Target: "", Data: string(b), Type: types.TransactionTypePublishFT, Time: ftSet.CreateTime}
 	t.Hash = t.GenHash()
 
 	msg, err := json.Marshal(t.ToTxJson())
