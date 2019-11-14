@@ -135,10 +135,10 @@ func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner
 		return "not enough nftSet", false
 	}
 
-	return self.GenerateNFT(nftSet, appId, setId, id, data, appId, createTime, owner, accountDB)
+	return self.GenerateNFT(nftSet, appId, setId, id, data, appId, createTime, owner, nil, accountDB)
 }
 
-func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data, creator string, timeStamp string, owner common.Address, accountDB *account.AccountDB) (string, bool) {
+func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data, creator string, timeStamp string, owner common.Address, fullData map[string]string, accountDB *account.AccountDB) (string, bool) {
 	txLogger.Tracef("Generate NFT! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, timeStamp, owner.String())
 	// 检查id是否存在
 	if _, ok := nftSet.OccupiedID[id]; ok {
@@ -163,6 +163,11 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 	nft.DataValue = make([]string, 0)
 	if 0 != len(data) {
 		nft.SetData(data, appId)
+	} else if nil != fullData && 0 != len(fullData) {
+		for key, value := range fullData {
+			nft.DataKey = append(nft.DataKey, key)
+			nft.DataValue = append(nft.DataValue, value)
+		}
 	}
 
 	//分配NFT
