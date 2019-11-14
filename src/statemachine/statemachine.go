@@ -14,21 +14,32 @@ import (
 	"x/src/middleware/log"
 )
 
+const (
+	preparing    = "preparing"
+	failToCreate = "failToCreate"
+	prepared     = "prepared"
+	ready        = "ready"
+)
+
 type StateMachine struct {
 	ContainerConfig
 
 	// docker containerId
-	id string `json:"containerId"`
+	Id string `json:"containerId"`
 
 	// docker client
 	cli *client.Client  `json:"-"`
 	ctx context.Context `json:"-"`
 
 	logger log.Logger `json:"-"`
+
+	// 工作状态
+	// todo: 心跳检测
+	Status string
 }
 
 func buildStateMachine(c ContainerConfig, cli *client.Client, ctx context.Context, logger log.Logger) StateMachine {
-	return StateMachine{c, "", cli, ctx, logger}
+	return StateMachine{c, "", cli, ctx, logger, preparing}
 }
 
 //将配置信息转换为 json 数据用于输出
@@ -76,6 +87,7 @@ func (c *StateMachine) Run() (string, Ports) {
 	if strings.Contains(state, "exited") {
 		if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); nil != err {
 			c.logger.Errorf("fail to start container. image: %s, error: %s", c.Image, err.Error())
+			c.Status = "fail to start"
 			return "", nil
 		}
 
@@ -85,12 +97,14 @@ func (c *StateMachine) Run() (string, Ports) {
 	if strings.Contains(state, "paused") {
 		if err := cli.ContainerUnpause(ctx, resp.ID); nil != err {
 			c.logger.Errorf("fail to unpause container. image: %s, error: %s", c.Image, err.Error())
+			c.Status = "fail to start"
 			return "", nil
 		}
 
 		return c.after(nil)
 	}
 
+	c.Status = failToCreate
 	return "", nil
 }
 
@@ -122,7 +136,7 @@ func (c *StateMachine) after(existed *types.Container) (string, Ports) {
 		resp = c.getContainer()
 	}
 
-	c.id = resp.ID
+	c.Id = resp.ID
 	c.waitUntilRun()
 
 	var p uint16 = 0
@@ -132,6 +146,7 @@ func (c *StateMachine) after(existed *types.Container) (string, Ports) {
 		}
 	}
 
+	c.Status = prepared
 	return c.Game, c.makePorts(p)
 }
 
@@ -151,6 +166,7 @@ func (c *StateMachine) makePorts(port uint16) Ports {
 func (c *StateMachine) runContainer() (string, Ports) {
 	if 0 == len(c.Image) || 0 == len(c.Name) {
 		c.logger.Errorf("skip to start image")
+		c.Status = failToCreate
 		return "", nil
 	}
 
@@ -158,6 +174,7 @@ func (c *StateMachine) runContainer() (string, Ports) {
 	// 下载失败，启动失败
 	if !c.checkImageExisted() && !c.download() {
 		c.logger.Errorf("cannot get image, %s, downloadProtocol: %s, downloadUrl: %s", c.Image, c.DownloadProtocol, c.DownloadUrl)
+		c.Status = failToCreate
 		return "", nil
 	}
 
@@ -211,15 +228,16 @@ func (c *StateMachine) runContainer() (string, Ports) {
 	//遇到容器创建错误时发起 panic
 	if err := c.cli.ContainerStart(c.ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		c.logger.Errorf("fail to start container. image: %s, error: %s", c.Image, err.Error())
+		c.Status = failToCreate
 		return "", nil
 	}
 
-	c.id = resp.ID
+	c.Id = resp.ID
 	c.waitUntilRun()
 
-	c.logger.Warnf("Container %s is created and started. image: %s, game: %s", c.id, c.Image, c.Game)
+	c.logger.Warnf("Container %s is created and started. image: %s, game: %s", c.Id, c.Image, c.Game)
 
-	// 创建成功 记录端口号与name的关联关系
+	c.Status = prepared
 	return c.Game, c.Ports
 }
 
@@ -291,4 +309,8 @@ func (s *StateMachine) waitUntilCondition(condition func() bool) {
 
 		time.Sleep(100 * time.Millisecond)
 	}
+}
+
+func (s *StateMachine) ready() {
+	s.Status = ready
 }

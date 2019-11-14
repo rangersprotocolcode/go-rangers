@@ -11,10 +11,7 @@ import (
 	"strings"
 	"github.com/docker/docker/client"
 	"context"
-	"net/url"
 	"x/src/common"
-	"math/rand"
-	"strconv"
 	"x/src/middleware/log"
 	"sync"
 )
@@ -43,15 +40,15 @@ func createHTTPClient() *http.Client {
 	return client
 }
 
-var Docker *StateMachineManager
+var STMManger *StateMachineManager
 
 type StateMachineManager struct {
 	// stm config
 	Config   YAMLConfig
-	Filename string
+	Filename string // 配置文件名称
 
 	// stm entities
-	StateMachines map[string]StateMachine
+	StateMachines map[string]*StateMachine
 
 	// tool for connecting stm
 	httpClient  *http.Client
@@ -60,34 +57,37 @@ type StateMachineManager struct {
 	lock        sync.RWMutex
 
 	// docker client
-	cli *client.Client
-	ctx context.Context
+	cli *client.Client  //cli:  用于访问 docker 守护进程
+	ctx context.Context //ctx:  传递本次操作的上下文信息
+
+	layer2Port uint // layer2 节点本机端口，用于给状态机提供服务
 
 	logger log.Logger
-
-	layer2Port uint
 }
 
-func DockerInit(filename string, layer2Port uint) *StateMachineManager {
-	if nil != Docker {
-		return Docker
+// docker
+func InitSTMManager(filename string, layer2Port uint) *StateMachineManager {
+	if nil != STMManger {
+		return STMManger
 	}
 
-	Docker = &StateMachineManager{
+	STMManger = &StateMachineManager{
 		Filename:      filename,
-		StateMachines: make(map[string]StateMachine),
+		StateMachines: make(map[string]*StateMachine),
 	}
-	Docker.httpClient = createHTTPClient()
-	Docker.ctx = context.Background()
-	Docker.cli, _ = client.NewClientWithOpts(client.FromEnv)
-	Docker.cli.NegotiateAPIVersion(Docker.ctx)
-	Docker.logger = log.GetLoggerByIndex(log.DockerLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	Docker.Mapping = make(map[string]PortInt)
-	Docker.AuthMapping = make(map[string]string)
-	Docker.layer2Port = layer2Port
-	Docker.init()
+	STMManger.httpClient = createHTTPClient()
+	STMManger.ctx = context.Background()
+	STMManger.cli, _ = client.NewClientWithOpts(client.FromEnv)
+	STMManger.cli.NegotiateAPIVersion(STMManger.ctx)
 
-	return Docker
+	STMManger.logger = log.GetLoggerByIndex(log.DockerLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	STMManger.Mapping = make(map[string]PortInt)
+	STMManger.AuthMapping = make(map[string]string)
+	STMManger.layer2Port = layer2Port
+
+	STMManger.init()
+
+	return STMManger
 }
 
 func (d *StateMachineManager) init() {
@@ -95,9 +95,6 @@ func (d *StateMachineManager) init() {
 	d.runStateMachines()
 }
 
-//RunContainers: 从配置运行容器
-//cli:  用于访问 docker 守护进程
-//ctx:  传递本次操作的上下文信息
 func (d *StateMachineManager) runStateMachines() {
 	if 0 == len(d.Config.Services) {
 		return
@@ -109,52 +106,6 @@ func (d *StateMachineManager) runStateMachines() {
 		go d.runStateMachine(service)
 
 	}
-}
-
-// 通过配置文件，加载
-func (d *StateMachineManager) runStateMachine(service ContainerConfig) {
-	stateMachine := buildStateMachine(service, d.cli, d.ctx, d.logger)
-	name, ports := stateMachine.Run()
-	if name == "" || ports == nil {
-		return
-	}
-
-	d.lock.Lock()
-	d.StateMachines[name] = stateMachine
-	d.Mapping[name] = ports[0].Host
-	authCode := d.generateAuthcode()
-	d.AuthMapping[name] = authCode
-	d.lock.Unlock()
-
-	//需要等到docker镜像启动完成
-	d.callInit(ports[0].Host, authCode)
-}
-
-func (d *StateMachineManager) callInit(dockerPortInt PortInt, authCode string) {
-	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", dockerPortInt, "init")
-	values := url.Values{}
-	values["url"] = []string{fmt.Sprintf("http://%s:%d", "172.17.0.1", d.layer2Port)}
-	values["authCode"] = []string{authCode}
-	d.logger.Infof("Send post req:path:%s,values:%v", path, values)
-
-	for {
-		resp, err := http.PostForm(path, values)
-		if err != nil {
-			d.logger.Infof(err.Error())
-			time.Sleep(200 * time.Millisecond)
-		} else {
-			body, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
-			d.logger.Error(fmt.Sprintf("start success: %s", string(body)))
-
-			return
-		}
-	}
-}
-
-func (d *StateMachineManager) generateAuthcode() string {
-	rand.Seed(int64(time.Now().UnixNano()))
-	return strconv.Itoa(rand.Int())
 }
 
 func (d *StateMachineManager) Nonce(name string) int {
@@ -232,4 +183,17 @@ func (d *StateMachineManager) ValidateAppId(appId, authCode string) bool {
 		d.logger.Errorf("Validate authCode error! appid:%s,authCode:%s,expect:%s", appId, authCode, expect)
 	}
 	return expect == authCode
+}
+
+// 获取当前STM状态
+func (s *StateMachineManager) GetStmStatus() map[string]string {
+	s.lock.RLock()
+	defer s.lock.Unlock()
+
+	result := make(map[string]string, len(s.StateMachines))
+	for appId, stm := range s.StateMachines {
+		result[appId] = stm.Status
+	}
+
+	return result
 }

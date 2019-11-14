@@ -16,7 +16,7 @@ func (api *GtasAPI) TransferBNT(authCode, appId, target, chainType, balance stri
 // todo: 经济模型，发币的费用问题
 // 状态机发币
 func (api *GtasAPI) PublishFT(authCode, appId, owner, name, symbol, totalSupply, createTime string) (*Result, error) {
-	if 0 == len(appId) || 0 == len(authCode) || !statemachine.Docker.ValidateAppId(appId, authCode) {
+	if 0 == len(appId) || 0 == len(authCode) || !statemachine.STMManger.ValidateAppId(appId, authCode) {
 		return failResult("wrong params")
 	}
 
@@ -52,7 +52,7 @@ func (api *GtasAPI) PublishFT(authCode, appId, owner, name, symbol, totalSupply,
 func (api *GtasAPI) MintFT(authCode, appId, ftId, target, balance string) (*Result, error) {
 	api.logger.Debugf("mintFT start. authCode: %s, appId: %s, ftId: %s, target: %s, balance: %s", authCode, appId, ftId, target, balance)
 
-	if 0 == len(appId) || 0 == len(authCode) || !statemachine.Docker.ValidateAppId(appId, authCode) {
+	if 0 == len(appId) || 0 == len(authCode) || !statemachine.STMManger.ValidateAppId(appId, authCode) {
 		api.logger.Errorf("appId/authCode wrong")
 		return failResult("wrong params")
 	}
@@ -94,7 +94,7 @@ func (api *GtasAPI) TransferFT(authCode, appId, target, ftId, supply string) (*R
 }
 
 func (api *GtasAPI) transferFTOrCoin(authCode, appId, target, ftId, supply string) (*Result, error) {
-	if 0 == len(appId) || 0 == len(authCode) || !statemachine.Docker.ValidateAppId(appId, authCode) {
+	if 0 == len(appId) || 0 == len(authCode) || !statemachine.STMManger.ValidateAppId(appId, authCode) {
 		return failResult("wrong params")
 	}
 

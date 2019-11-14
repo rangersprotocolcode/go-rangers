@@ -46,7 +46,7 @@ func (api *GtasAPI) GetNFTSet(setId string) (*Result, error) {
 }
 
 func (api *GtasAPI) GetGameType(gameId string) (*Result, error) {
-	gameType := statemachine.Docker.GetType(gameId)
+	gameType := statemachine.STMManger.GetType(gameId)
 	return successResult(gameType)
 }
 
