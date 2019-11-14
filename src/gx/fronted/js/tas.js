@@ -1,5 +1,4 @@
-
-layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
+layui.use(['form', 'jquery', 'element', 'layer', 'table'], function () {
     var element = layui.element;
     var form = layui.form;
     var layer = layui.layer;
@@ -7,7 +6,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     var HOST = "/";
     var ref;
     var host_ele = $("#host");
-    var online=false;
+    var online = false;
     var current_block_height = -1;
     var last_sync_block = -1;
 
@@ -29,77 +28,122 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
 
     var block_table = table.render({
         elem: '#block_detail' //指定原始表格元素选择器（推荐id选择器）
-        ,initSort: {
+        , initSort: {
             field: 'height',
             type: 'desc'
         }
-        ,cols: [[{field:'height',title: '块高', sort:true},
-            {field:'hash', title: 'hash', templet: '<div><a href="javascript:void(0);" class="layui-table-link" name="block_table_hash_row">{{d.hash}}</a></div>'},
-            {field:'pre_hash', title: 'pre_hash'},{field:'pre_time', title: 'pre_time', width: 189},{field:'cur_time', title: 'cur_time', width: 189},
-            {field:'castor', title: 'castor'},{field:'group_id', title: 'group_id'}, {field:'txs', title: 'tx_count'}, {field:'qn', title: 'qn'}
-            , {field:'total_qn', title: 'totalQN'}]] //设置表头
-        ,data: blocks
-        ,page: false
-        ,limit:200
+        , cols: [[{field: 'height', title: '块高', sort: true},
+            {
+                field: 'hash',
+                title: 'hash',
+                templet: '<div><a href="javascript:void(0);" class="layui-table-link" name="block_table_hash_row">{{d.hash}}</a></div>'
+            },
+            {field: 'pre_hash', title: 'pre_hash'}, {
+                field: 'pre_time',
+                title: 'pre_time',
+                width: 189
+            }, {field: 'cur_time', title: 'cur_time', width: 189},
+            {field: 'castor', title: 'castor'}, {field: 'group_id', title: 'group_id'}, {
+                field: 'txs',
+                title: 'tx_count'
+            }, {field: 'qn', title: 'qn'}
+            , {field: 'total_qn', title: 'totalQN'}]] //设置表头
+        , data: blocks
+        , page: false
+        , limit: 200
     });
 
     var group_table = table.render({
         elem: '#group_detail' //指定原始表格元素选择器（推荐id选择器）
-        ,initSort: {
+        ,
+        initSort: {
             field: 'begin_height',
             type: 'desc'
         }
-        ,cols: [[{field:'height',title: '高度', sort: true, width:140}, {field:'group_id',title: '组id', width:140}, {field:'g_hash', title: '组hash', width:140},
-            {field:'parent', title: '父亲组', width:140},{field:'pre', title: '上一组', width:140},{field:'create_height', title: '创建高度', width: 100},
-            {field:'begin_height', title: '生效高度', width: 100},{field:'dismiss_height', title: '解散高度', width:100},{field:'mem_size', title: '成员数量', width:100},
-            {field:'members', title: '成员列表'}]] //设置表头
-        ,data: groups
-        ,page: false
-        ,limit:200
+        ,
+        cols: [[{field: 'height', title: '高度', sort: true, width: 140}, {
+            field: 'group_id',
+            title: '组id',
+            width: 140
+        }, {field: 'g_hash', title: '组hash', width: 140},
+            {field: 'parent', title: '父亲组', width: 140}, {
+                field: 'pre',
+                title: '上一组',
+                width: 140
+            }, {field: 'create_height', title: '创建高度', width: 100},
+            {field: 'begin_height', title: '生效高度', width: 100}, {
+                field: 'dismiss_height',
+                title: '解散高度',
+                width: 100
+            }, {field: 'mem_size', title: '成员数量', width: 100},
+            {field: 'members', title: '成员列表'}]] //设置表头
+        ,
+        data: groups
+        ,
+        page: false
+        ,
+        limit: 200
     });
 
     var work_group_table = table.render({
         elem: '#work_group_detail' //指定原始表格元素选择器（推荐id选择器）
-        ,initSort: {
+        ,
+        initSort: {
             field: 'begin_height',
             type: 'desc'
         }
-        ,cols: [[{field:'height',title: '高度', sort: true, width:140}, {field:'group_id',title: '组id', width:140}, {field:'g_hash', title: '组hash', width:140},
-            {field:'parent', title: '父亲组', width:140},{field:'pre', title: '上一组', width:140},{field:'create_height', title: '创建高度', width: 100},
-            {field:'begin_height', title: '生效高度', width: 100},{field:'dismiss_height', title: '解散高度', width:100},{field:'mem_size', title: '成员数量', width:100},
-            {field:'members', title: '成员列表'}]] //设置表头
-        ,data: groups
-        ,page: false
-        ,limit:200
+        ,
+        cols: [[{field: 'height', title: '高度', sort: true, width: 140}, {
+            field: 'group_id',
+            title: '组id',
+            width: 140
+        }, {field: 'g_hash', title: '组hash', width: 140},
+            {field: 'parent', title: '父亲组', width: 140}, {
+                field: 'pre',
+                title: '上一组',
+                width: 140
+            }, {field: 'create_height', title: '创建高度', width: 100},
+            {field: 'begin_height', title: '生效高度', width: 100}, {
+                field: 'dismiss_height',
+                title: '解散高度',
+                width: 100
+            }, {field: 'mem_size', title: '成员数量', width: 100},
+            {field: 'members', title: '成员列表'}]] //设置表头
+        ,
+        data: groups
+        ,
+        page: false
+        ,
+        limit: 200
     });
 
-    let bonus_info_table =  table.render({
-        elem : '#bonus_transaction_detail',
-        cols : [[
-            {field:'block_height', title:'块高'},
-            {field:'block_hash', title:'块Hash'},
-            {field:'bonus_tx_hash', title:'分红交易Hash'},
-            {field:'group_id', title:'验证组ID'},
-            {field:'caster_id', title:'出块人ID'},
-            {field:'members', title:'分红者列表'},
-            {field:'bonus_value', title:'每人分红金额'}
+    let bonus_info_table = table.render({
+        elem: '#bonus_transaction_detail',
+        cols: [[
+            {field: 'block_height', title: '块高'},
+            {field: 'block_hash', title: '块Hash'},
+            {field: 'bonus_tx_hash', title: '分红交易Hash'},
+            {field: 'group_id', title: '验证组ID'},
+            {field: 'caster_id', title: '出块人ID'},
+            {field: 'members', title: '分红者列表'},
+            {field: 'bonus_value', title: '每人分红金额'}
         ]],
-        page : true,
-        limit : 15
+        page: true,
+        limit: 15
     });
 
-    let bonus_stat_table =  table.render({
-        elem : '#bonus_transaction_total_detail',
-        cols : [[
-            {field:'member_id', title:'轻节点ID'},
-            {field:'bonus_num', title:'验证次数'},
-            {field:'total_bonus_value', title:'分红总额'}
+    let bonus_stat_table = table.render({
+        elem: '#bonus_transaction_total_detail',
+        cols: [[
+            {field: 'member_id', title: '轻节点ID'},
+            {field: 'bonus_num', title: '验证次数'},
+            {field: 'total_bonus_value', title: '分红总额'}
         ]],
-        page : true,
-        limit : 15
+        page: true,
+        limit: 15
     });
 
-    let cast_block_stat_table =  table.render({
+    let cast_block_stat_table = table.render({
         elem: '#cast_block_total_detail',
         cols: [[
             {field: 'caster_id', title: '重节点ID'},
@@ -112,7 +156,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
 
     $("#dashboard_update_div").click(function () {
         console.log('dashboard_update_switch click')
-        if ($("#dashboard_update_switch").is(':checked')){
+        if ($("#dashboard_update_switch").is(':checked')) {
             dashboard_update_switch = true
             updateDashboardUpdate()
         } else {
@@ -126,7 +170,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
             formType: 0,
             value: HOST,
             title: '请输入新的host',
-        }, function(value, index, elem){
+        }, function (value, index, elem) {
             HOST = value;
             host_ele.text(HOST);
             layer.close(index);
@@ -146,7 +190,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
         $("#balance_error").text("");
         let params = {
             "method": "Rocket_balance",
-            "params": [$("#query_input_"+count).val()],
+            "params": [$("#query_input_" + count).val()],
             "jsonrpc": "2.0",
             "id": "1"
         };
@@ -158,11 +202,11 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
             },
             data: JSON.stringify(params),
             success: function (rdata) {
-                if (rdata.result !== undefined){
+                if (rdata.result !== undefined) {
                     $("#balance_message").text(rdata.result.message);
-                    $("#query_balance_"+count).text(rdata.result.data)
+                    $("#query_balance_" + count).text(rdata.result.data)
                 }
-                if (rdata.error !== undefined){
+                if (rdata.error !== undefined) {
                     $("#balance_error").text(rdata.error.message);
                 }
             },
@@ -185,8 +229,8 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
             },
             data: JSON.stringify(params),
             success: function (rdata) {
-                if (rdata.result !== undefined){
-                    $.each(rdata.result.data, function (i,val) {
+                if (rdata.result !== undefined) {
+                    $.each(rdata.result.data, function (i, val) {
                         let tr = "<tr class='wallet_tr'><td>" + val.private_key + "</td><td>" + val.address
                             + '</td><td ><button class="layui-btn wallet_del">删除</button></td></tr>';
                         $("#create_chart").append(tr);
@@ -288,10 +332,10 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
             },
             data: JSON.stringify(params),
             success: function (rdata) {
-                if (rdata.result !== undefined){
+                if (rdata.result !== undefined) {
                     $("#vote_message").text(rdata.result.message)
                 }
-                if (rdata.error !== undefined){
+                if (rdata.error !== undefined) {
                     $("#vote_error").text(rdata.error.message)
                 }
             },
@@ -301,7 +345,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
 
 
     // 交易表单提交
-    form.on('submit(t_form)', function(data){
+    form.on('submit(t_form)', function (data) {
         $("#t_message").text("");
         $("#t_error").text("");
         let private_key = data.field.private_key;
@@ -324,7 +368,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
 
         let params = {
             "method": "Rocket_txUnSafe",
-            "params": [private_key, to, parseFloat(value), parseInt(gas),parseInt(gas_price), parseInt(nonce), parseInt(t),txdata],
+            "params": [private_key, to, parseFloat(value), parseInt(gas), parseInt(gas_price), parseInt(nonce), parseInt(t), txdata],
             "jsonrpc": "2.0",
             "id": "1"
         };
@@ -337,10 +381,10 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
             },
             data: JSON.stringify(params),
             success: function (rdata) {
-                if (rdata.result !== undefined){
+                if (rdata.result !== undefined) {
                     $("#t_message").text(rdata.result.message)
                 }
-                if (rdata.error !== undefined){
+                if (rdata.error !== undefined) {
                     $("#t_error").text(rdata.error.message)
                 }
             },
@@ -350,7 +394,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
 
     // 同步块信息
     function syncBlock(from, to) {
-        if(from < 0)
+        if (from < 0)
             from = 0
         if (to < 0) {
             to = 0
@@ -370,15 +414,15 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
             beforeSend: function (xhr) {
                 xhr.setRequestHeader("Content-Type", "application/json");
             },
-            async:false,
+            async: false,
             data: JSON.stringify(params),
             success: function (rdata) {
                 if (rdata.result != undefined && rdata.result != null) {
                     last_sync_block = to
                 }
-                if (rdata.result !== undefined && rdata.result.message == "success"){
+                if (rdata.result !== undefined && rdata.result.message == "success") {
                     retarr = rdata.result.data
-                    for(i = 0; i < retarr.length;i++) {
+                    for (i = 0; i < retarr.length; i++) {
                         blocks.push(retarr[i]);
                         if (blocks.length > 100) {
                             blocks.shift()
@@ -410,9 +454,9 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
             data: JSON.stringify(params),
             async: false,
             success: function (rdata) {
-                if (rdata.result !== undefined && rdata.result != null && rdata.result.message == 'success'){
+                if (rdata.result !== undefined && rdata.result != null && rdata.result.message == 'success') {
                     retArr = rdata.result.data
-                    for(i = 0; i < retArr.length; i++) {
+                    for (i = 0; i < retArr.length; i++) {
                         if (!groupIds.has(retArr[i]["group_id"])) {
                             groups.push(retArr[i])
                             if (groups.length > 100) {
@@ -430,7 +474,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
                         }
                     )
                 }
-                if (rdata.error !== undefined){
+                if (rdata.error !== undefined) {
                     // $("#t_error").text(rdata.error.message)
                 }
             },
@@ -448,6 +492,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
         }
         queryWorkGroup(parseInt(h))
     })
+
     //查询工作组
     function queryWorkGroup(height) {
         let params = {
@@ -464,14 +509,14 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
             },
             data: JSON.stringify(params),
             success: function (rdata) {
-                if (rdata.result !== undefined && rdata.result != null && rdata.result.message == 'success'){
+                if (rdata.result !== undefined && rdata.result != null && rdata.result.message == 'success') {
                     retArr = rdata.result.data
                     work_group_table.reload({
                             data: retArr
                         }
                     )
                 }
-                if (rdata.error !== undefined){
+                if (rdata.error !== undefined) {
                     // $("#t_error").text(rdata.error.message)
                 }
             },
@@ -500,7 +545,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
             data: JSON.stringify(params),
             success: function (rdata) {
                 if (rdata.result.message == "success") {
-                    $(this).text("已申请"+text)
+                    $(this).text("已申请" + text)
                 } else {
                     alert(rdata.result.message)
                 }
@@ -513,10 +558,10 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
 
     $("#apply_a").click(function () {
         f = $("#apply_miner_div")
-        if(f.is(":hidden")){
+        if (f.is(":hidden")) {
             $(this).text("取消申请")
             f.show()
-        }else{
+        } else {
             $(this).text("申请成为矿工")
             f.hide()
         }
@@ -550,14 +595,55 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     })
 
     function reloadBlocksTable() {
-        if (last_sync_block+1 <= current_block_height) {
-            syncBlock(last_sync_block+1, current_block_height)
+        if (last_sync_block + 1 <= current_block_height) {
+            syncBlock(last_sync_block + 1, current_block_height)
         }
     }
+
     function reloadGroupsTable() {
-        if (last_sync_group+1 <= current_group_height) {
-            syncGroup(last_sync_group+1)
+        if (last_sync_group + 1 <= current_group_height) {
+            syncGroup(last_sync_group + 1)
         }
+    }
+
+    function stmStatus() {
+        let params = {
+            "method": "Rocket_stmStatus",
+            "params": [],
+            "jsonrpc": "2.0",
+            "id": "1"
+        };
+        $.ajax({
+            type: 'POST',
+            url: HOST,
+            beforeSend: function (xhr) {
+                xhr.setRequestHeader("Content-Type", "application/json");
+            },
+            data: JSON.stringify(params),
+            success: function (rdata) {
+                if (rdata.result !== undefined) {
+                    d = rdata.result.data
+                    console.log(d)
+
+                    let stms_table = $("#stms_table");
+                    stms_table.empty();
+
+                    $.each(d, function (i, val) {
+                        stms_table.append(
+                            " <tr><td>appId</td><td>status</td></tr>"
+                                .replace("appId", i)
+                                .replace("status", val)
+                        )
+                    })
+                }
+            },
+            error: function (err) {
+                console.log(err)
+                $("#tb_node_status").text("已停止")
+                $("#stm_table").empty();
+
+            }
+        });
     }
 
     function dashboardLoad() {
@@ -646,19 +732,21 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
                 //链接节点
                 let nodes_table = $("#nodes_table");
                 nodes_table.empty();
-                d.conns.sort(function (a, b) {
-                    return parseInt(a.ip.split(".")[3]) - parseInt(b.ip.split(".")[3])
-                });
-                $.each(d.conns, function (i,val) {
-                    nodes_table.append(
-                        " <tr><td>id</td><td>ip</td><td>port</td></tr>".replace("ip", val.ip).replace("id", val.id).replace("port", val.tcp_port)
-                    )
-                })
+                if (d.conns != null) {
+                    d.conns.sort(function (a, b) {
+                        return parseInt(a.ip.split(".")[3]) - parseInt(b.ip.split(".")[3])
+                    });
+                    $.each(d.conns, function (i, val) {
+                        nodes_table.append(
+                            " <tr><td>id</td><td>ip</td><td>port</td></tr>".replace("ip", val.ip).replace("id", val.id).replace("port", val.tcp_port)
+                        )
+                    })
+                }
             },
             error: function (err) {
                 console.log(err)
                 $("#tb_node_status").text("已停止")
-                $("#trans_table").empty();
+                $("#stm_table").empty();
                 $("#nodes_table").empty();
             }
         });
@@ -707,7 +795,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
         });
 
         var bonusStat = [];
-        for (i=0,len=data.bonuses.length; i < len; i++) {
+        for (i = 0, len = data.bonuses.length; i < len; i++) {
             bonusStat.push(data.bonuses[i]);
         }
         bonus_stat_table.reload({
@@ -715,11 +803,11 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
         });
 
         var castBlockStat = [];
-        for (i=0,len=data.cast_blocks.length; i < len; i++) {
+        for (i = 0, len = data.cast_blocks.length; i < len; i++) {
             castBlockStat.push(data.cast_blocks[i]);
         }
         cast_block_stat_table.reload({
-            data:castBlockStat
+            data: castBlockStat
         });
     }
 
@@ -730,17 +818,19 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     // syncGroupHeight();
     // syncGroup(0)
     dashboardLoad()
+    stmStatus()
 
-    dashboard = setInterval(function(){
+    dashboard = setInterval(function () {
         dashboardLoad();
-    },2000);
+        stmStatus()
+    }, 2000);
 
-    function updateDashboardUpdate(){
-        if (dashboard_update_switch){
-            dashboard = setInterval(function(){
+    function updateDashboardUpdate() {
+        if (dashboard_update_switch) {
+            dashboard = setInterval(function () {
                 dashboardLoad();
-            },2000);
-        } else{
+            }, 2000);
+        } else {
             clearInterval(dashboard)
         }
     }
@@ -748,9 +838,9 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     function syncBlockLater() {
         begin = 0
         if (blocks.length == 0) {
-            syncBlock(current_block_height-20, current_block_height)
+            syncBlock(current_block_height - 20, current_block_height)
         } else if (current_block_height - last_sync_block > 100) {
-            syncBlock(current_block_height-100, current_block_height)
+            syncBlock(current_block_height - 100, current_block_height)
         } else {
             reloadBlocksTable()
         }
@@ -760,7 +850,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
         begin = 0
         if (groups.length == 0) {
             if (current_group_height > 100) {
-                begin = current_group_height-100
+                begin = current_group_height - 100
             }
             syncGroup(begin)
         } else {
@@ -771,7 +861,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
     blocktable_inter = 0
     grouptable_inter = 0
 
-    element.on('tab(demo)', function(data){
+    element.on('tab(demo)', function (data) {
         // if(data.index === 0) {
         //     clearInterval(dashboard)
         //     dashboard = setInterval(function(){

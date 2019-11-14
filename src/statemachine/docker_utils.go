@@ -188,9 +188,9 @@ func (d *StateMachineManager) ValidateAppId(appId, authCode string) bool {
 // 获取当前STM状态
 func (s *StateMachineManager) GetStmStatus() map[string]string {
 	s.lock.RLock()
-	defer s.lock.Unlock()
+	defer s.lock.RUnlock()
 
-	result := make(map[string]string, len(s.StateMachines))
+	result := make(map[string]string)
 	for appId, stm := range s.StateMachines {
 		result[appId] = stm.Status
 	}

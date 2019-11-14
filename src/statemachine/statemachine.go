@@ -15,10 +15,10 @@ import (
 )
 
 const (
-	preparing    = "preparing"
-	failToCreate = "failToCreate"
-	prepared     = "prepared"
-	ready        = "ready"
+	preparing    = "preparing(开始创建)"
+	failToCreate = "failToCreate(创建失败，请检查配置文件)"
+	prepared     = "prepared(创建成功，初始化中)"
+	ready        = "ready(正常服务)"
 )
 
 type StateMachine struct {
@@ -68,7 +68,7 @@ func (c *StateMachine) Run() (string, Ports) {
 	ctx := c.ctx
 	resp := c.getContainer()
 	if nil == resp {
-		c.logger.Warnf("Contain is nil.Create container!")
+		c.logger.Warnf("Contain is nil, start to create. stm image: %s, game: %s", c.Image, c.Game)
 		return c.runContainer()
 	}
 
@@ -173,8 +173,8 @@ func (c *StateMachine) runContainer() (string, Ports) {
 	// 本地没镜像，需要下载并加载镜像
 	// 下载失败，启动失败
 	if !c.checkImageExisted() && !c.download() {
-		c.logger.Errorf("cannot get image, %s, downloadProtocol: %s, downloadUrl: %s", c.Image, c.DownloadProtocol, c.DownloadUrl)
 		c.Status = failToCreate
+		c.logger.Errorf("cannot get image, stm config: %s", c.TOJSONString())
 		return "", nil
 	}
 
