@@ -124,7 +124,6 @@ func (self *Ecc) Verify(info []byte, signed []byte) bool {
 }
 
 func (self *Ecc) VerifyDeposit(msg TxJson) bool {
-	fmt.Printf("msg:%s\n", msg.ToString())
 	if msg.Type == 201 {
 		var de C2wDeposit
 		err := json.Unmarshal([]byte(msg.Data), &de)
@@ -134,23 +133,32 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 		}
 
 		var info Incoming = Incoming{de.ChainType, msg.Source, de.Amount, de.TxID}
-		fmt.Printf("info:%v\n", info)
 		signstrs := strings.Split(msg.Sign, "|")
 		if len(signstrs) < self.SignLimit {
 			return false
 		}
 
+		var signeds []string
 		var iCount = 0
 		for i := 0; i < len(signstrs); i++ {
 			if signstrs[i][0:2] == "0x" || signstrs[i][0:2] == "0X" {
 				signstrs[i] = signstrs[i][2:]
 			}
+
+			finded := false
+			for j := 0; j < len(signeds); j++ {
+				if signstrs[i] == signeds[j] {
+					finded = true
+					break
+				}
+			}
+			if finded == true {
+				continue
+			} else {
+				signeds = append(signeds, signstrs[i])
+			}
+
 			sign := common.Hex2Bytes(signstrs[i])
-			fmt.Printf("sign:%v,size:%d\n", sign, len(sign))
-			//sign,err := hexutil.Decode(signstrs[i])
-			//if err != nil{
-			//	continue
-			//}
 			if (self.Verify(info.ToJson(), sign) == true) {
 				iCount++
 			}
@@ -172,16 +180,27 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 			return false
 		}
 
+		var signeds []string
 		var iCount = 0
 		for i := 0; i < len(signstrs); i++ {
 			if signstrs[i][0:2] == "0x" || signstrs[i][0:2] == "0X" {
 				signstrs[i] = signstrs[i][2:]
 			}
+
+			finded := false
+			for j := 0; j < len(signeds); j++ {
+				if signstrs[i] == signeds[j] {
+					finded = true
+					break
+				}
+			}
+			if finded == true {
+				continue
+			} else {
+				signeds = append(signeds, signstrs[i])
+			}
+
 			sign := common.Hex2Bytes(signstrs[i])
-			//sign,err := hexutil.Decode(signstrs[i])
-			//if err != nil{
-			//	continue
-			//}
 			if (self.Verify(info.ToJson(), sign) == true) {
 				iCount++
 			}
@@ -203,11 +222,26 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 			return false
 		}
 
+		var signeds []string
 		var iCount = 0
 		for i := 0; i < len(signstrs); i++ {
 			if signstrs[i][0:2] == "0x" || signstrs[i][0:2] == "0X" {
 				signstrs[i] = signstrs[i][2:]
 			}
+
+			finded := false
+			for j := 0; j < len(signeds); j++ {
+				if signstrs[i] == signeds[j] {
+					finded = true
+					break
+				}
+			}
+			if finded == true {
+				continue
+			} else {
+				signeds = append(signeds, signstrs[i])
+			}
+
 			sign := common.Hex2Bytes(signstrs[i])
 			if (self.Verify(info.ToJson(), sign) == true) {
 				iCount++
