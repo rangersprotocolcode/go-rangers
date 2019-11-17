@@ -279,15 +279,15 @@ func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
 		return ErrEvicted
 	}
 
-	expectHash := tx.GenHash()
-	if tx.Hash != expectHash {
-		logger.Infof("Illegal tx hash! Hash:%s,except hash:%s", tx.Hash.String(), expectHash.String())
-		return ErrHash
-	}
-	err := pool.verifySign(tx)
-	if err != nil {
-		return err
-	}
+	//expectHash := tx.GenHash()
+	//if tx.Hash != expectHash {
+	//	logger.Infof("Illegal tx hash! Hash:%s,except hash:%s", tx.Hash.String(), expectHash.String())
+	//	return ErrHash
+	//}
+	//err := pool.verifySign(tx)
+	//if err != nil {
+	//	return err
+	//}
 	return nil
 }
 
