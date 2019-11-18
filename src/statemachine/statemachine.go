@@ -304,13 +304,13 @@ func (s *StateMachine) downloadByFile(isImage bool) bool {
 			s.logger.Errorf("fail to download stm by file, err: %s", err.Error())
 			return false
 		}
+		defer response.Body.Close()
 
 		err = s.loadOrImport(isImage, response.Body)
 		if err != nil {
 			s.logger.Errorf("fail to download stm by file, err: %s", err.Error())
 			return false
 		}
-		defer response.Body.Close()
 	} else {
 		file, err := os.Open(url)
 		if nil != err {
@@ -318,19 +318,21 @@ func (s *StateMachine) downloadByFile(isImage bool) bool {
 			return false
 		}
 		r := bufio.NewReader(file)
+		defer file.Close()
 
 		err = s.loadOrImport(isImage, r)
 		if err != nil {
 			s.logger.Errorf("fail to download stm by file, err: %s", err.Error())
 			return false
 		}
-		defer file.Close()
 	}
 
 	return true
 }
 
+// 从reader里load/import docker image
 func (s *StateMachine) loadOrImport(isImage bool, reader io.Reader) error {
+	var result string
 	if isImage {
 		response, err := s.cli.ImageLoad(s.ctx, reader, true)
 		if nil != err {
@@ -339,13 +341,8 @@ func (s *StateMachine) loadOrImport(isImage bool, reader io.Reader) error {
 		defer response.Body.Close()
 
 		body, _ := ioutil.ReadAll(response.Body)
-		result := string(body)
+		result = string(body)
 		s.logger.Warnf("ImageLoaded, result: %s", result)
-
-		if !s.checkImageExisted() {
-			s.cli.ImageTag(s.ctx, s.parse(result), s.Image)
-		}
-
 	} else {
 		response, err := s.cli.ImageImport(s.ctx, types.ImageImportSource{Source: reader, SourceName: "-"}, "", types.ImageImportOptions{})
 		if nil != err {
@@ -354,12 +351,14 @@ func (s *StateMachine) loadOrImport(isImage bool, reader io.Reader) error {
 		defer response.Close()
 
 		body, _ := ioutil.ReadAll(response)
-		result := string(body)
+		result = string(body)
 		s.logger.Warnf("ImageImported, result: %s", result)
+	}
 
-		if !s.checkImageExisted() {
-			s.cli.ImageTag(s.ctx, s.parse(result), s.Image)
-		}
+	if !s.checkImageExisted() {
+		imageId := s.parse(result)
+		s.cli.ImageTag(s.ctx, imageId, s.Image)
+		s.logger.Warnf("change image tag, imageId: %s, image: %s", imageId, s.Image)
 	}
 
 	return nil
@@ -400,6 +399,9 @@ func (s *StateMachine) ready() {
 	s.Status = ready
 }
 
+// docker load/import 之后的返回
+// {"stream":"Loaded image ID: sha256:00f6ec4b97ae644112f18a51927911bc06afbd4b395bb3771719883cfa64451e\n"}
+// 需要从里面提取image ID
 func (machine *StateMachine) parse(s string) string {
 	index := strings.Index(s, "sha256:")
 	return s[index+7 : index+64+7]
