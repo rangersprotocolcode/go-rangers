@@ -51,3 +51,7 @@ func TestContainerConfig(t *testing.T) {
 	data, _ = json.Marshal(config2)
 	fmt.Println(string(data))
 }
+
+func TestDownload(t *testing.T){
+
+}

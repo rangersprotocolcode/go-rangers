@@ -124,22 +124,24 @@ func (t *YAMLConfig) InitFromFile(filename string) error {
 //                  false 表示不删除
 //    Type          公链类型
 type ContainerConfig struct {
-	Priority         uint   `yaml:"priority" json:"priority"`
-	Game             string `yaml:"game" json:"game"`
-	Name             string `yaml:"name" json:"name"`
-	Image            string `yaml:"image" json:"image"`
-	Detached         bool   `yaml:"detached" json:"detached"`
-	WorkDir          string `yaml:"work_dir" json:"work_dir"`
-	CMD              string `yaml:"cmd" json:"cmd"`
-	Net              string `yaml:"net" json:"net"`
-	Ports            Ports  `yaml:"ports" json:"ports"`
-	Volumes          Vols   `yaml:"volumes" json:"volumes"`
-	AutoRemove       bool   `yaml:"auto_remove" json:"auto_remove"`
-	Import           string `yaml:"import" json:"import"` // 导入本地镜像
-	Type             string `yaml:"type" json:"type"`
-	Hostname         string `yaml:"hostname" json:"hostname"`
+	Priority uint `yaml:"priority" json:"priority"` // 启动优先级
+
+	Game  string `yaml:"game" json:"game"`   // appId
+	Name  string `yaml:"name" json:"name"`   // containerName 可以不指定
+	Image string `yaml:"image" json:"image"` // 镜像名
+
+	Hostname   string `yaml:"hostname" json:"hostname"`
+	Detached   bool   `yaml:"detached" json:"detached"` // 是否后台运行，一般为true
+	WorkDir    string `yaml:"work_dir" json:"work_dir"`
+	CMD        string `yaml:"cmd" json:"cmd"`
+	Net        string `yaml:"net" json:"net"`
+	Ports      Ports  `yaml:"ports" json:"ports"`
+	Volumes    Vols   `yaml:"volumes" json:"volumes"`
+	AutoRemove bool   `yaml:"auto_remove" json:"auto_remove"`
+
 	DownloadUrl      string `yaml:"downloadUrl" json:"download_url"`           // 如果本地没有，去哪儿下载镜像
 	DownloadProtocol string `yaml:"downloadProtocol" json:"download_protocol"` // 下载协议，例如http/pull/ipfs
+	IsImage          bool   `yaml:"isImage" json:"isImage"`                    // docker的导出，可以使用save/export，分别对应镜像以及container
 }
 
 func (c ContainerConfig) TOJSONString() string {

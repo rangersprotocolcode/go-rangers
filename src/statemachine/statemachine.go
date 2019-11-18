@@ -273,20 +273,27 @@ func (s *StateMachine) downloadByIPFS() bool {
 }
 
 func (s *StateMachine) downloadByHTTP() bool {
+	if s.IsImage {
+		// todo: 安全问题
+		//s.cli.ImageLoad(s.ctx,)
+	} else {
+		//s.cli.ImageImport(s.ctx,)
+	}
+
 	return true
 }
 
 func (s *StateMachine) downloadByPull() bool {
-	s.logger.Errorf("start pull image: %s, downloadUrl: %s", s.Image, s.DownloadUrl)
+	s.logger.Warnf("start pull image: %s, downloadUrl: %s", s.Image, s.DownloadUrl)
 
 	_, err := s.cli.ImagePull(s.ctx, s.Image, types.ImagePullOptions{})
 	if err != nil {
-		s.logger.Errorf("fail to pull image: %s, downloadUrl: %s. error: %s", s.Image, s.DownloadUrl, err.Error())
+		s.logger.Warnf("fail to pull image: %s, downloadUrl: %s. error: %s", s.Image, s.DownloadUrl, err.Error())
 		return false
 	}
 
 	s.waitUntilImageExisted()
-	s.logger.Errorf("end pull image: %s, downloadUrl: %s", s.Image, s.DownloadUrl)
+	s.logger.Warnf("end pull image: %s, downloadUrl: %s", s.Image, s.DownloadUrl)
 
 	return true
 }

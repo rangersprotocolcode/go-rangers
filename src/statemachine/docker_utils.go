@@ -8,7 +8,6 @@ import (
 	"x/src/middleware/types"
 	"time"
 	"net"
-	"strings"
 	"github.com/docker/docker/client"
 	"context"
 	"x/src/common"
@@ -148,21 +147,6 @@ func (d *StateMachineManager) getUrlPrefix(name string) string {
 
 	//call local container
 	return fmt.Sprintf("http://0.0.0.0:%d/api/v1/", port)
-}
-
-func (d *StateMachineManager) GetType(gameId string) string {
-	configs := d.Config.Services
-	if 0 == len(configs) {
-		return ""
-	}
-
-	for _, value := range configs {
-		if 0 == strings.Compare(value.Game, gameId) {
-			return value.Type
-		}
-	}
-
-	return ""
 }
 
 // 检查authCode是否合法
