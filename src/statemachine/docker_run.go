@@ -16,7 +16,7 @@ func (s *StateMachineManager) runStateMachine(service ContainerConfig) {
 		s.logger.Errorf("fail to create stm with nil game. config: %s", service.TOJSONString())
 		return
 	}
-	stateMachine := buildStateMachine(service, s.cli, s.ctx, s.logger)
+	stateMachine := buildStateMachine(service, s.cli, s.ctx, s.logger, s.httpClient)
 
 	s.lock.Lock()
 	s.StateMachines[service.Game] = &stateMachine

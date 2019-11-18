@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"encoding/json"
 	"gopkg.in/yaml.v2"
+	"strings"
 )
 
 func TestDockerInit(t *testing.T) {
@@ -52,6 +53,21 @@ func TestContainerConfig(t *testing.T) {
 	fmt.Println(string(data))
 }
 
-func TestDownload(t *testing.T){
+func TestDownloadByFile(t *testing.T) {
+	common.InitConf("/Users/daijia/go/src/x/deploy/daily/x1.ini")
+	InitSTMManager("test1.yaml", 8080)
+	time.Sleep(1000 * time.Minute)
+}
 
+func TestDownloadByContainer(t *testing.T) {
+	common.InitConf("/Users/daijia/go/src/x/deploy/daily/x1.ini")
+	InitSTMManager("test2.yaml", 8080)
+	time.Sleep(1000 * time.Minute)
+}
+
+func TestParse(t *testing.T) {
+	str := `{"stream":"Loaded image ID: sha256:00f6ec4b97ae644112f18a51927911bc06afbd4b395bb3771719883cfa64451e\n"}`
+	index := strings.Index(str, "sha256:")
+
+	fmt.Println(str[index+7 : index+64+7])
 }

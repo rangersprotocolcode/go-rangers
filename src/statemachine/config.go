@@ -139,9 +139,8 @@ type ContainerConfig struct {
 	Volumes    Vols   `yaml:"volumes" json:"volumes"`
 	AutoRemove bool   `yaml:"auto_remove" json:"auto_remove"`
 
-	DownloadUrl      string `yaml:"downloadUrl" json:"download_url"`           // 如果本地没有，去哪儿下载镜像
-	DownloadProtocol string `yaml:"downloadProtocol" json:"download_protocol"` // 下载协议，例如http/pull/ipfs
-	IsImage          bool   `yaml:"isImage" json:"isImage"`                    // docker的导出，可以使用save/export，分别对应镜像以及container
+	DownloadUrl      string `yaml:"downloadUrl" json:"download_url"`           // 如果本地没有，去哪儿下载
+	DownloadProtocol string `yaml:"downloadProtocol" json:"download_protocol"` // 下载协议，例如 file/fileContainer/pull/ipfs/ipfsContainer
 }
 
 func (c ContainerConfig) TOJSONString() string {
