@@ -99,3 +99,16 @@ func TestStrToBigInt6(t *testing.T) {
 
 	fmt.Println(bigIntToStr(value,0))
 }
+
+func TestStrToBigInt7(t *testing.T) {
+	str := ""
+	value, err := StrToBigInt(str)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(str)
+	fmt.Println(value.String())
+
+	fmt.Println(BigIntToStr(value))
+}
