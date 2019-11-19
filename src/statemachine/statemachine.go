@@ -1,6 +1,5 @@
 // 本文件包含statemachine结构定义
 // statemachine的启动相关方法
-// 状态管理
 package statemachine
 
 import (
@@ -18,12 +17,6 @@ import (
 	"encoding/json"
 )
 
-const (
-	preparing    = "preparing(开始创建)"
-	failToCreate = "failToCreate(创建失败，请检查配置文件)"
-	prepared     = "prepared(创建成功，初始化中)"
-	ready        = "ready(正常服务)"
-)
 
 type StateMachine struct {
 	ContainerConfig
@@ -280,21 +273,4 @@ func (s *StateMachine) waitUntilCondition(condition func() bool) {
 
 		time.Sleep(100 * time.Millisecond)
 	}
-}
-
-// 设置statemacine的状态
-func (s *StateMachine) setStatus(status string) {
-	s.Status = status
-}
-
-func (s *StateMachine) ready() {
-	s.setStatus(ready)
-}
-
-func (s *StateMachine) prepared() {
-	s.setStatus(prepared)
-}
-
-func (s *StateMachine) failed() {
-	s.setStatus(failToCreate)
 }
