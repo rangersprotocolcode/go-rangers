@@ -1,9 +1,11 @@
+// 本文件包含statemachine结构定义
+// statemachine的启动相关方法
+// 状态管理
 package statemachine
 
 import (
 	"github.com/docker/docker/api/types/container"
 	"strings"
-	"encoding/json"
 	"github.com/docker/docker/client"
 	"github.com/docker/docker/api/types"
 	"fmt"
@@ -13,10 +15,7 @@ import (
 	"time"
 	"x/src/middleware/log"
 	"net/http"
-	"os"
-	"bufio"
-	"io"
-	"io/ioutil"
+	"encoding/json"
 )
 
 const (
@@ -42,11 +41,8 @@ type StateMachine struct {
 	// todo: 心跳检测
 	Status string
 
+	// 下载image用
 	httpClient *http.Client `json:"-"`
-}
-
-func buildStateMachine(c ContainerConfig, cli *client.Client, ctx context.Context, logger log.Logger, httpClient *http.Client) StateMachine {
-	return StateMachine{c, "", cli, ctx, logger, preparing, httpClient}
 }
 
 //将配置信息转换为 json 数据用于输出
@@ -61,10 +57,13 @@ func (c *StateMachine) TOJSONString() string {
 	}
 }
 
+func buildStateMachine(c ContainerConfig, cli *client.Client, ctx context.Context, logger log.Logger, httpClient *http.Client) StateMachine {
+	return StateMachine{c, "", cli, ctx, logger, preparing, httpClient}
+}
+
 //ContainerConfig.RunContainer: 从配置运行容器
 //cli:  用于访问 docker 守护进程
 //ctx:  传递本次操作的上下文信息
-//net:  网络配置
 func (c *StateMachine) Run() (string, Ports) {
 	// c.name 如果不申明，则默认为c.game
 	if 0 == len(c.Name) {
@@ -111,7 +110,7 @@ func (c *StateMachine) Run() (string, Ports) {
 		return c.after(nil)
 	}
 
-	c.Status = failToCreate
+	c.failed()
 	return "", nil
 }
 
@@ -137,14 +136,14 @@ func (c *StateMachine) getContainer() *types.Container {
 	return nil
 }
 
-func (c *StateMachine) after(existed *types.Container) (string, Ports) {
+func (s *StateMachine) after(existed *types.Container) (string, Ports) {
 	resp := existed
 	if nil == resp {
-		resp = c.getContainer()
+		resp = s.getContainer()
 	}
 
-	c.Id = resp.ID
-	c.waitUntilRun()
+	s.Id = resp.ID
+	s.waitUntilRun()
 
 	var p uint16 = 0
 	for _, port := range resp.Ports {
@@ -153,14 +152,8 @@ func (c *StateMachine) after(existed *types.Container) (string, Ports) {
 		}
 	}
 
-	c.Status = prepared
-	return c.Game, c.makePorts(p)
-}
-
-func (c *StateMachine) checkIfRunning() bool {
-	container := c.getContainer()
-	state := strings.ToLower(container.State)
-	return strings.HasPrefix(state, "running") || strings.HasPrefix(state, "up")
+	s.prepared()
+	return s.Game, s.makePorts(p)
 }
 
 func (c *StateMachine) makePorts(port uint16) Ports {
@@ -172,15 +165,15 @@ func (c *StateMachine) makePorts(port uint16) Ports {
 
 func (c *StateMachine) runContainer() (string, Ports) {
 	if 0 == len(c.Image) || 0 == len(c.Name) {
-		c.logger.Errorf("skip to start image")
-		c.Status = failToCreate
+		c.failed()
+		c.logger.Errorf("skip to start image, stm config: %s", c.TOJSONString())
 		return "", nil
 	}
 
 	// 本地没镜像，需要下载并加载镜像
 	// 下载失败，启动失败
 	if !c.checkImageExisted() && !c.download() {
-		c.Status = failToCreate
+		c.failed()
 		c.logger.Errorf("cannot get image, stm config: %s", c.TOJSONString())
 		return "", nil
 	}
@@ -234,8 +227,8 @@ func (c *StateMachine) runContainer() (string, Ports) {
 
 	//遇到容器创建错误时发起 panic
 	if err := c.cli.ContainerStart(c.ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
-		c.logger.Errorf("fail to start container. image: %s, error: %s", c.Image, err.Error())
-		c.Status = failToCreate
+		c.failed()
+		c.logger.Errorf("fail to start container. config: %s, error: %s", c.TOJSONString(), err.Error())
 		return "", nil
 	}
 
@@ -244,8 +237,15 @@ func (c *StateMachine) runContainer() (string, Ports) {
 
 	c.logger.Warnf("Container %s is created and started. image: %s, game: %s", c.Id, c.Image, c.Game)
 
-	c.Status = prepared
+	c.prepared()
 	return c.Game, c.Ports
+}
+
+// 检查container运行状态
+func (c *StateMachine) checkIfRunning() bool {
+	container := c.getContainer()
+	state := strings.ToLower(container.State)
+	return strings.HasPrefix(state, "running") || strings.HasPrefix(state, "up")
 }
 
 // 检查本机是否有对应的docker镜像
@@ -260,119 +260,6 @@ func (s *StateMachine) checkImageExisted() bool {
 	}
 
 	return false
-}
-
-func (s *StateMachine) download() bool {
-	s.logger.Warnf("start download stm: %s, downloadUrl: %s, downloadProtocol: %s", s.Image, s.DownloadUrl, s.DownloadProtocol)
-	result := false
-	switch strings.ToLower(s.DownloadProtocol) {
-	case "pull":
-		result = s.downloadByPull()
-		break
-	case "file":
-		result = s.downloadByFile(true)
-		break
-	case "filecontainer":
-		result = s.downloadByFile(false)
-		break
-	case "ipfs":
-		result = s.downloadByIPFS(true)
-		break
-	case "ipfscontainer":
-		result = s.downloadByIPFS(false)
-		break
-	}
-
-	s.logger.Warnf("end download stm: %s, downloadUrl: %s, downloadProtocol: %s, result: %t", s.Image, s.DownloadUrl, s.DownloadProtocol, result)
-	return result
-}
-
-func (s *StateMachine) downloadByIPFS(isImage bool) bool {
-	return true
-}
-
-func (s *StateMachine) downloadByFile(isImage bool) bool {
-	url := s.DownloadUrl
-	if 0 == len(url) {
-		return false
-	}
-
-	isHttp := strings.HasPrefix(url, "http")
-	if isHttp {
-		response, err := s.httpClient.Get(url)
-		if nil != err {
-			s.logger.Errorf("fail to download stm by file, err: %s", err.Error())
-			return false
-		}
-		defer response.Body.Close()
-
-		err = s.loadOrImport(isImage, response.Body)
-		if err != nil {
-			s.logger.Errorf("fail to download stm by file, err: %s", err.Error())
-			return false
-		}
-	} else {
-		file, err := os.Open(url)
-		if nil != err {
-			s.logger.Errorf("fail to download stm by file, err: %s", err.Error())
-			return false
-		}
-		r := bufio.NewReader(file)
-		defer file.Close()
-
-		err = s.loadOrImport(isImage, r)
-		if err != nil {
-			s.logger.Errorf("fail to download stm by file, err: %s", err.Error())
-			return false
-		}
-	}
-
-	return true
-}
-
-// 从reader里load/import docker image
-func (s *StateMachine) loadOrImport(isImage bool, reader io.Reader) error {
-	var result string
-	if isImage {
-		response, err := s.cli.ImageLoad(s.ctx, reader, true)
-		if nil != err {
-			return err
-		}
-		defer response.Body.Close()
-
-		body, _ := ioutil.ReadAll(response.Body)
-		result = string(body)
-		s.logger.Warnf("ImageLoaded, result: %s", result)
-	} else {
-		response, err := s.cli.ImageImport(s.ctx, types.ImageImportSource{Source: reader, SourceName: "-"}, "", types.ImageImportOptions{})
-		if nil != err {
-			return err
-		}
-		defer response.Close()
-
-		body, _ := ioutil.ReadAll(response)
-		result = string(body)
-		s.logger.Warnf("ImageImported, result: %s", result)
-	}
-
-	if !s.checkImageExisted() {
-		imageId := s.parse(result)
-		s.cli.ImageTag(s.ctx, imageId, s.Image)
-		s.logger.Warnf("change image tag, imageId: %s, image: %s", imageId, s.Image)
-	}
-
-	return nil
-}
-
-func (s *StateMachine) downloadByPull() bool {
-	_, err := s.cli.ImagePull(s.ctx, s.Image, types.ImagePullOptions{})
-	if err != nil {
-		s.logger.Warnf("fail to pull image: %s, downloadUrl: %s. error: %s", s.Image, s.DownloadUrl, err.Error())
-		return false
-	}
-
-	s.waitUntilImageExisted()
-	return true
 }
 
 func (s *StateMachine) waitUntilImageExisted() {
@@ -395,14 +282,19 @@ func (s *StateMachine) waitUntilCondition(condition func() bool) {
 	}
 }
 
-func (s *StateMachine) ready() {
-	s.Status = ready
+// 设置statemacine的状态
+func (s *StateMachine) setStatus(status string) {
+	s.Status = status
 }
 
-// docker load/import 之后的返回
-// {"stream":"Loaded image ID: sha256:00f6ec4b97ae644112f18a51927911bc06afbd4b395bb3771719883cfa64451e\n"}
-// 需要从里面提取image ID
-func (machine *StateMachine) parse(s string) string {
-	index := strings.Index(s, "sha256:")
-	return s[index+7 : index+64+7]
+func (s *StateMachine) ready() {
+	s.setStatus(ready)
+}
+
+func (s *StateMachine) prepared() {
+	s.setStatus(prepared)
+}
+
+func (s *StateMachine) failed() {
+	s.setStatus(failToCreate)
 }
