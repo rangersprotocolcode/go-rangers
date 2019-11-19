@@ -90,14 +90,14 @@ func TestQueryBNTBalanceTx(t *testing.T) {
 }
 
 func TestMintNFTTx(t *testing.T) {
-	tx := Transaction{Source: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54", Target: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54", Type: TransactionTypeMintNFT, Time: "1556076659050692000", SocketRequestId: "12140"}
+	tx := Transaction{Source: "0x945dbcff35562688388c74ad5084746abc9c8341", Target: "0x945dbcff35562688388c74ad5084746abc9c8341", Type: TransactionTypeMintNFT, Time: "1556076659050692000", SocketRequestId: "12140"}
 
 	mintNFTInfo:= make(map[string]string)
-	mintNFTInfo["setId"] = "c2b6c775-ad6c-4017-b064-ea1c385bd1c5"
-	mintNFTInfo["id"] = "12346"
+	mintNFTInfo["setId"] = "75d8b6d6-6763-49b5-a5fc-b9a22ca5be5a"
+	mintNFTInfo["id"] = "12347"
 	mintNFTInfo["data"] = "5.99"
 	mintNFTInfo["createTime"] = "1569736452603"
-	mintNFTInfo["target"] = "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"
+	mintNFTInfo["target"] = "0x945dbcff35562688388c74ad5084746abc9c8341"
 
 	b, _ := json.Marshal(mintNFTInfo)
 	tx.Data = string(b)

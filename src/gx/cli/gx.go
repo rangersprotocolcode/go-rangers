@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	GXVersion = "0.0.3"
+	GXVersion = "0.0.3.1"
 	// Section 默认section配置
 	Section = "gx"
 	// RemoteHost 默认host
@@ -218,6 +218,10 @@ func syncChainInfo() {
 					core.BlockSyncer.Lock.Unlock("trySync")
 				}
 				localBlockHeight := core.GetBlockChain().Height()
+				jsonObject := types.NewJSONObject()
+				jsonObject.Put("candidateHeight",candicateHeight)
+				jsonObject.Put("localHeight",localBlockHeight)
+				middleware.HeightLogger.Debugf(jsonObject.TOJSONString())
 				fmt.Printf("Sync candidate block height:%d,local block height:%d\n", candicateHeight, localBlockHeight)
 				timer.Reset(time.Second * 5)
 			}
