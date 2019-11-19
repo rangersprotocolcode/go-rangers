@@ -57,6 +57,11 @@ func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.Acc
 	}
 
 	context.lock.Lock()
+	if GetBlockChain().GetTransactionPool().IsGameData(tx.Hash) {
+		context.lock.Unlock()
+		return fmt.Errorf("gameData is Existed")
+	}
+
 	context.snapshot = accountDB.Snapshot()
 	context.AccountDB = accountDB
 	context.Tx = tx
@@ -69,14 +74,14 @@ func (manager *TxManager) GetContext(gameId string) *TxContext {
 }
 
 func (manager *TxManager) Commit(gameId string) {
-	if 0==len(gameId){
+	if 0 == len(gameId) {
 		return
 	}
 	manager.clean(false, gameId)
 }
 
 func (manager *TxManager) RollBack(gameId string) {
-	if 0==len(gameId){
+	if 0 == len(gameId) {
 		return
 	}
 	manager.clean(true, gameId)

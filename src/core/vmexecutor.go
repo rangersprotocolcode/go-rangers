@@ -47,6 +47,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		switch transaction.Type {
 		case types.TransactionTypeOperatorEvent:
 			logger.Debugf("Begin transaction is not nil!")
+
 			// 处理转账
 			// 支持多人转账{"address1":"value1", "address2":"value2"}
 			// 理论上这里不应该失败，nonce保证了这一点
@@ -62,14 +63,20 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 					break
 				}
 
+				success = true
+			}
+
+			// 纯转账的场景，不用执行状态机
+			if 0 == len(transaction.Target) {
+				break
 			}
 
 			// 在交易池里，表示game_executor已经执行过状态机了
 			// 只要处理交易里的subTransaction即可
 			if nil != TxManagerInstance.BeginTransaction(transaction.Target, accountdb, transaction) {
 				success = true
+				logger.Debugf("Is not game data")
 				if 0 != len(transaction.SubTransactions) {
-					logger.Debugf("Is not game data")
 					for _, user := range transaction.SubTransactions {
 						logger.Debugf("Execute sub tx:%v", user)
 
