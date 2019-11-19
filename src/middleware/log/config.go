@@ -166,7 +166,7 @@ const (
 							<rollingfile type="size" filename="./logs/heightLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
 						<formats>
-							<format id="default" format="%Date(2006-01-02 15:04:05.000)|%Msg%n" />
+							<format id="default" format="%Date(2006-01-02 15:04:05.000)|height|%Msg%n" />
 						</formats>
 					</seelog>`
 )
