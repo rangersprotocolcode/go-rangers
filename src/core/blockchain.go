@@ -66,9 +66,9 @@ type castingBlock struct {
 	receipts types.Receipts
 }
 
-func initBlockChain() error {
+func initBlockChain(nodeType byte) error {
 	chain := &blockChain{lock: middleware.NewLoglock("chain")}
-	chain.transactionPool = NewTransactionPool()
+	chain.transactionPool = NewTransactionPool(nodeType)
 
 	var err error
 	chain.topBlocks, err = lru.New(100)

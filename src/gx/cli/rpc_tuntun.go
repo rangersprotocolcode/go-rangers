@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"x/src/statemachine"
 	"x/src/core"
 	"x/src/common"
 	"x/src/middleware/types"
@@ -43,11 +42,6 @@ func (api *GtasAPI) GetAllNFT(addr, appId string) (*Result, error) {
 
 func (api *GtasAPI) GetNFTSet(setId string) (*Result, error) {
 	return successResult(core.GetNFTSet(setId))
-}
-
-func (api *GtasAPI) GetGameType(gameId string) (*Result, error) {
-	gameType := statemachine.Docker.GetType(gameId)
-	return successResult(gameType)
 }
 
 func (api *GtasAPI) GetBalance(address string) (*Result, error) {

@@ -12,7 +12,7 @@ import (
 func (api *GtasAPI) UpdateNFT(authCode, appId, setId, id, data string) (*Result, error) {
 	common.DefaultLogger.Debugf("Update NFT! appId:%s,setId:%s,id:%s,data:%s", appId, setId, id, data)
 
-	if 0 == len(appId) || 0 == len(authCode) || !statemachine.Docker.ValidateAppId(appId, authCode) {
+	if 0 == len(appId) || 0 == len(authCode) || !statemachine.STMManger.ValidateAppId(appId, authCode) {
 		return failResult("param error")
 	}
 
@@ -74,7 +74,7 @@ func (api *GtasAPI) BatchUpdateNFT(authCode, appId, setId string, id, data []str
 
 // 将状态机持有的NFT转给指定地址
 func (api *GtasAPI) TransferNFT(authCode, appId, setId, id, target string) (*Result, error) {
-	if 0 == len(appId) || 0 == len(authCode) || !statemachine.Docker.ValidateAppId(appId, authCode) {
+	if 0 == len(appId) || 0 == len(authCode) || !statemachine.STMManger.ValidateAppId(appId, authCode) {
 		return failResult("param error")
 	}
 
@@ -110,7 +110,7 @@ func (api *GtasAPI) TransferNFT(authCode, appId, setId, id, target string) (*Res
 
 // 将状态机持有的NFT的使用权授予某地址
 func (api *GtasAPI) ApproveNFT(authCode, appId, setId, id, target string) (*Result, error) {
-	if 0 == len(appId) || 0 == len(authCode) || !statemachine.Docker.ValidateAppId(appId, authCode) {
+	if 0 == len(appId) || 0 == len(authCode) || !statemachine.STMManger.ValidateAppId(appId, authCode) {
 		return failResult("param error")
 	}
 
@@ -145,7 +145,7 @@ func (api *GtasAPI) ApproveNFT(authCode, appId, setId, id, target string) (*Resu
 
 // 将状态机持有的NFT的使用权回收
 func (api *GtasAPI) RevokeNFT(authCode, appId, setId, id string) (*Result, error) {
-	if 0 == len(appId) || 0 == len(authCode) || !statemachine.Docker.ValidateAppId(appId, authCode) {
+	if 0 == len(appId) || 0 == len(authCode) || !statemachine.STMManger.ValidateAppId(appId, authCode) {
 		return failResult("param error")
 	}
 
@@ -154,7 +154,7 @@ func (api *GtasAPI) RevokeNFT(authCode, appId, setId, id string) (*Result, error
 
 // 锁定游戏持有的nft
 func (api *GtasAPI) LockNFT(authCode, appId, setId, id string) (*Result, error) {
-	if 0 == len(appId) || 0 == len(authCode) || !statemachine.Docker.ValidateAppId(appId, authCode) {
+	if 0 == len(appId) || 0 == len(authCode) || !statemachine.STMManger.ValidateAppId(appId, authCode) {
 		return failResult("param error")
 	}
 
@@ -163,7 +163,7 @@ func (api *GtasAPI) LockNFT(authCode, appId, setId, id string) (*Result, error) 
 
 // 解锁游戏持有的nft
 func (api *GtasAPI) UnLockNFT(authCode, appId, setId, id string) (*Result, error) {
-	if 0 == len(appId) || 0 == len(authCode) || !statemachine.Docker.ValidateAppId(appId, authCode) {
+	if 0 == len(appId) || 0 == len(authCode) || !statemachine.STMManger.ValidateAppId(appId, authCode) {
 		return failResult("param error")
 	}
 
@@ -210,7 +210,7 @@ func (api *GtasAPI) changeNFTStatus(appId, setId, id string, status int) (*Resul
 
 // 发行NFTSet
 func (api *GtasAPI) PublishNFTSet(authCode, appId, setId, name, symbol, createTime string, maxSupply int) (*Result, error) {
-	if 0 == len(appId) || 0 == len(authCode) || !statemachine.Docker.ValidateAppId(appId, authCode) {
+	if 0 == len(appId) || 0 == len(authCode) || !statemachine.STMManger.ValidateAppId(appId, authCode) {
 		return failResult("param error")
 	}
 
@@ -247,7 +247,7 @@ func (api *GtasAPI) PublishNFTSet(authCode, appId, setId, name, symbol, createTi
 // NFT铸币
 func (api *GtasAPI) MintNFT(authCode, appId, setId, id, target, data, createTime string) (*Result, error) {
 	common.DefaultLogger.Debugf("Mint nft!appId:%s,setId:%s,id:%s,target:%s,data:%s,createTime:%s", appId, setId, id, target, data, createTime)
-	if 0 == len(appId) || 0 == len(authCode) || !statemachine.Docker.ValidateAppId(appId, authCode) {
+	if 0 == len(appId) || 0 == len(authCode) || !statemachine.STMManger.ValidateAppId(appId, authCode) {
 		return failResult("param error")
 	}
 

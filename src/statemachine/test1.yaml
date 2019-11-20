@@ -8,5 +8,5 @@ services:
       - host: 8888
         target: 80
     detached: true
-    downloadUrl: "tequiladj/stm:v1.0"
-    downloadProtocol: "pUlL"
+    downloadUrl: "/Users/daijia/code/teqq.tar"
+    downloadProtocol: "file"

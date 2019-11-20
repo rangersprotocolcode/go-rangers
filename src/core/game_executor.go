@@ -291,7 +291,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 		if result && !isTransferOnly && len(txRaw.Data) != 0 {
 			// 调用状态机
 			txRaw.SubTransactions = make([]types.UserData, 0)
-			outputMessage = statemachine.Docker.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data, &txRaw)
+			outputMessage = statemachine.STMManger.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data, &txRaw)
 			executor.logger.Debugf("txhash %s invoke state machine. result:%v", txhash, outputMessage)
 			if outputMessage != nil {
 				message = outputMessage.Payload

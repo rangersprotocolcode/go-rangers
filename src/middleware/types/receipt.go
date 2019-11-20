@@ -25,11 +25,8 @@ type Receipt struct {
 	PostState         []byte `json:"-"`
 	Status            uint   `json:"status"`
 	CumulativeGasUsed uint64 `json:"cumulativeGasUsed"`
-	Bloom             Bloom  `json:"-"`
-	Logs              []*Log `json:"logs"`
 
-	TxHash          common.Hash    `json:"transactionHash" gencodec:"required"`
-	ContractAddress common.Address `json:"contractAddress"`
+	TxHash common.Hash `json:"transactionHash" gencodec:"required"`
 }
 
 func NewReceipt(root []byte, failed bool, cumulativeGasUsed uint64) *Receipt {
@@ -68,9 +65,9 @@ func (r *Receipt) Size() common.StorageSize {
 
 func (r *Receipt) String() string {
 	if len(r.PostState) == 0 {
-		return fmt.Sprintf("receipt{status=%d cgas=%v bloom=%x}", r.Status, r.CumulativeGasUsed, r.Bloom)
+		return fmt.Sprintf("receipt{status=%d cgas=%v}", r.Status, r.CumulativeGasUsed)
 	}
-	return fmt.Sprintf("receipt{med=%x cgas=%v bloom=%x}", r.PostState, r.CumulativeGasUsed, r.Bloom)
+	return fmt.Sprintf("receipt{med=%x cgas=%v}", r.PostState, r.CumulativeGasUsed)
 }
 
 type Receipts []*Receipt

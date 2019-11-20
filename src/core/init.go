@@ -13,7 +13,7 @@ var (
 	consensusHelper types.ConsensusHelper
 )
 
-func InitCore(helper types.ConsensusHelper) error {
+func InitCore(nodeType byte, helper types.ConsensusHelper) error {
 	logger = log.GetLoggerByIndex(log.CoreLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	txLogger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	consensusLogger = log.GetLoggerByIndex(log.ConsensusLogConfig, common.GlobalConf.GetString("instance", "index", ""))
@@ -21,7 +21,7 @@ func InitCore(helper types.ConsensusHelper) error {
 
 	initPeerManager()
 	if nil == blockChainImpl {
-		err := initBlockChain()
+		err := initBlockChain(nodeType)
 		if err != nil {
 			return err
 		}
