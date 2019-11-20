@@ -79,7 +79,7 @@ func InitSTMManager(filename string, layer2Port uint) *StateMachineManager {
 	STMManger.cli, _ = client.NewClientWithOpts(client.FromEnv)
 	STMManger.cli.NegotiateAPIVersion(STMManger.ctx)
 
-	STMManger.logger = log.GetLoggerByIndex(log.DockerLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	STMManger.logger = log.GetLoggerByIndex(log.STMLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	STMManger.Mapping = make(map[string]PortInt)
 	STMManger.AuthMapping = make(map[string]string)
 	STMManger.layer2Port = layer2Port
