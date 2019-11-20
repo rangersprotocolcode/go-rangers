@@ -2,7 +2,6 @@ package core
 
 import (
 	"errors"
-	"fmt"
 	"sort"
 	"x/src/common"
 	"x/src/middleware"
@@ -80,7 +79,7 @@ func NewTransactionPool(nodeType byte) TransactionPool {
 
 func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 	if err := pool.verifyTransaction(tx); err != nil {
-		logger.Debugf("Tx %s verify sig error:%s, tx type:%d", tx.Hash.String(), err.Error(), tx.Type)
+		logger.Infof("Tx verify error:%s. Hash:%s, tx type:%d", err.Error(), tx.Hash.String(), tx.Type)
 		return false, err
 	}
 
@@ -101,7 +100,7 @@ func (pool *TxPool) AddBroadcastTransactions(txs []*types.Transaction) {
 
 	for _, tx := range txs {
 		if err := pool.verifyTransaction(tx); err != nil {
-			logger.Debugf("Tx %s verify sig error:%s, tx type:%d", tx.Hash.String(), err.Error(), tx.Type)
+			logger.Infof("Tx verify error:%s. Hash:%s, tx type:%d", err.Error(), tx.Hash.String(), tx.Type)
 			continue
 		}
 		pool.add(tx)
@@ -282,23 +281,33 @@ func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
 	if pool.evictedTxs.Contains(tx.Hash) {
 		return ErrEvicted
 	}
-	//if tx.Hash != tx.GenHash() {
-	//	logger.Debugf("Bad tx: hash not illegal,hash:%s,", tx.Hash.String())
+
+	//expectHash := tx.GenHash()
+	//if tx.Hash != expectHash {
+	//	logger.Infof("Illegal tx hash! Hash:%s,except hash:%s", tx.Hash.String(), expectHash.String())
 	//	return ErrHash
 	//}
-
+	//err := pool.verifySign(tx)
+	//if err != nil {
+	//	return err
+	//}
 	return nil
 }
 
 func (pool *TxPool) verifySign(tx *types.Transaction) error {
-	hashByte := tx.Hash.Bytes()
-	pk, err := tx.Sign.RecoverPubkey(hashByte)
-	if err != nil {
-		return err
+	//coiner 发送过来的充值消息不需要验证签名，因为在收到消息的时候验证过了
+	if tx.Type == types.TransactionTypeCoinDepositAck || tx.Type == types.TransactionTypeFTDepositAck || tx.Type == types.TransactionTypeNFTDepositAck {
+		return nil
 	}
-	if !pk.Verify(hashByte, tx.Sign) {
-		return fmt.Errorf("verify sign fail, hash=%v", tx.Hash.Hex())
-	}
+	//其他交易签名校验
+	//hashByte := tx.Hash.Bytes()
+	//pk, err := tx.Sign.RecoverPubkey(hashByte)
+	//if err != nil {
+	//	return err
+	//}
+	//if !pk.Verify(hashByte, tx.Sign) {
+	//	return fmt.Errorf("verify sign fail, hash=%v", tx.Hash.Hex())
+	//}
 	return nil
 }
 

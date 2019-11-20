@@ -336,7 +336,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 	case types.TransactionTypePublishFT:
 		appId := txRaw.Source
 		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-		id, ok := PublishFT(accountDB, &txRaw)
+		id, ok := PublishFT(accountDB, &txRaw, false)
 		if ok {
 			var ftSet map[string]string
 			json.Unmarshal([]byte(txRaw.Data), &ftSet)
@@ -356,7 +356,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 	case types.TransactionTypePublishNFTSet:
 		appId := txRaw.Source
 		accountDB := AccountDBManagerInstance.GetAccountDB(appId, true)
-		flag, response := PublishNFTSet(accountDB, &txRaw)
+		flag, response := PublishNFTSet(accountDB, &txRaw, false)
 		if flag {
 			message = txRaw.Data
 			result = true

@@ -26,14 +26,14 @@ func TestNFTManager_MintNFT(t *testing.T) {
 	// 检查setId
 	nftSet := NFTManagerInstance.GetNFTSet(setId, accountdb)
 	if nil == nftSet {
-		_, _, nftSet = NFTManagerInstance.PublishNFTSet(setId, name, symbol, creator, creator, 0, "0", accountdb)
+		_, _, nftSet = NFTManagerInstance.PublishNFTSet(setId, name, symbol, creator, creator, 0, "0", accountdb, false)
 	}
 
 	appId := "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"
 
 	// 发行
 	owner := common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54")
-	_, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, setId, id, "pppp", creator, "0", owner, accountdb)
+	_, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, setId, id, "pppp", creator, "0", owner, nil, accountdb)
 	if !ok {
 		t.Fatalf("fail to mint")
 	}

@@ -10,7 +10,7 @@ const (
 						</formats>
 					</seelog>`
 
-	CoreLogConfig = `<seelog minlevel="info">
+	CoreLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/coreLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
@@ -19,7 +19,7 @@ const (
 						</formats>
 					</seelog>`
 
-	BlockSyncLogConfig = `<seelog minlevel="error">
+	BlockSyncLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/block_syncLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
@@ -46,7 +46,7 @@ const (
 						</formats>
 					</seelog>`
 
-	P2PLogConfig = `<seelog minlevel="warn">
+	P2PLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/p2pLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
@@ -55,7 +55,7 @@ const (
 						</formats>
 					</seelog>`
 
-	ConsensusLogConfig = `<seelog minlevel="error">
+	ConsensusLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/consensusLOG_INDEX.log" maxsize="50000000" maxrolls="1"/>
 						</outputs>
@@ -64,7 +64,7 @@ const (
 						</formats>
 					</seelog>`
 
-	StdConsensusLogConfig = `<seelog minlevel="error">
+	StdConsensusLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/std_consensusLOG_INDEX.log" maxsize="50000000" maxrolls="1"/>
 						</outputs>
@@ -96,7 +96,7 @@ const (
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
 						</formats>
 					</seelog>`
-	StateMachineLogConfig = `<seelog minlevel="error">
+	StateMachineLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/state_machineLOG_INDEX.log" maxsize="50000000" maxrolls="1"/>
 						</outputs>
@@ -128,7 +128,7 @@ const (
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)|%Msg%n" />
 						</formats>
 					</seelog>`
-	TxLogConfig = `<seelog minlevel="error">
+	TxLogConfig = `<seelog minlevel="trace">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/txLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
@@ -145,16 +145,7 @@ const (
 						</formats>
 					</seelog>`
 
-	DockerLogConfig = `<seelog minlevel="info">
-						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/dockerLOG_INDEX.log" maxsize="200000000" maxrolls="1"/>
-						</outputs>
-						<formats>
-							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
-						</formats>
-					</seelog>`
-
-	GameExecutorLogConfig = `<seelog minlevel="error">
+	GameExecutorLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/gameExecutorLOG_INDEX.log" maxsize="200000000" maxrolls="1"/>
 						</outputs>
@@ -170,5 +161,12 @@ const (
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
 						</formats>
 					</seelog>`
-
+	HeightLogConfig = `<seelog minlevel="debug">
+						<outputs formatid="default">
+							<rollingfile type="size" filename="./logs/heightLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+						</outputs>
+						<formats>
+							<format id="default" format="%Date(2006-01-02 15:04:05.000)|height|%Msg%n" />
+						</formats>
+					</seelog>`
 )
