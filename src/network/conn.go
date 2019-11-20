@@ -348,16 +348,21 @@ func (coinerConn *CoinerConn) handleCoinConnectorMessage(data []byte, nonce uint
 	var txJson types.TxJson
 	err := json.Unmarshal(data, &txJson)
 	if err != nil {
-		Logger.Errorf("Json unmarshal coin connector msg err:", err.Error())
+		Logger.Errorf("Json unmarshal coiner msg err:", err.Error())
 		return
 	}
-	Logger.Debugf("Rcv message from coin connector.Tx info:%s", txJson.ToString())
+	Logger.Debugf("Rcv message from coiner.Tx info:%s", txJson.ToString())
+	if !types.CoinerSignVerifier.VerifyDeposit(txJson) {
+		Logger.Infof("Tx from coiner verify sign error!Tx Info:%s", txJson.ToString())
+		return
+	}
 	tx := txJson.ToTransaction()
 	tx.RequestId = nonce
 
 	if tx.Type == types.TransactionTypeCoinDepositAck || tx.Type == types.TransactionTypeFTDepositAck || tx.Type == types.TransactionTypeNFTDepositAck {
 		msg := notify.CoinProxyNotifyMessage{Tx: tx}
 		notify.BUS.Publish(notify.CoinProxyNotify, &msg)
+		return
 	}
-
+	Logger.Infof("Unknown type from coiner:%d", txJson.Type)
 }

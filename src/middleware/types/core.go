@@ -8,6 +8,7 @@ import (
 
 	"x/src/common"
 	"x/src/utility"
+	"strconv"
 )
 
 type AddBlockOnChainSituation string
@@ -140,23 +141,11 @@ func (tx *Transaction) GenHash() common.Hash {
 	buffer := bytes.Buffer{}
 
 	buffer.Write([]byte(tx.Data))
-
-	buffer.Write(common.Uint64ToByte(tx.Nonce))
-
-	if tx.Source != "" {
-		buffer.Write([]byte(tx.Source))
-	}
-
-	if tx.Target != "" {
-		buffer.Write([]byte(tx.Target))
-	}
-
-	buffer.Write(common.UInt32ToByte(tx.Type))
-
-	if tx.Time != "" {
-		buffer.Write([]byte(tx.Time))
-	}
-
+	buffer.Write([]byte(strconv.FormatUint(tx.Nonce, 10)))
+	buffer.Write([]byte(tx.Source))
+	buffer.Write([]byte(tx.Target))
+	buffer.Write([]byte( strconv.Itoa(int(tx.Type))))
+	buffer.Write([]byte(tx.Time))
 	return common.BytesToHash(common.Sha256(buffer.Bytes()))
 }
 
@@ -445,9 +434,16 @@ type TxJson struct {
 }
 
 func (txJson TxJson) ToTransaction() Transaction {
-	tx := Transaction{Source: txJson.Source, Target: txJson.Target,
-		Type: txJson.Type, Data: txJson.Data, Nonce: txJson.Nonce,
-		RequestId: txJson.RequestId, ExtraData: txJson.ExtraData}
+	tx := Transaction{Source: txJson.Source, Target: txJson.Target, Type: txJson.Type, Time: txJson.Time,
+		Data: txJson.Data, ExtraData: txJson.ExtraData, Nonce: txJson.Nonce,
+		RequestId: txJson.RequestId, SocketRequestId: txJson.SocketRequestId}
+
+	//tx from coiner cal hash by layer2
+	//tx from coiner sign make sign nil
+	if tx.Type == TransactionTypeCoinDepositAck || tx.Type == TransactionTypeFTDepositAck || tx.Type == TransactionTypeNFTDepositAck {
+		tx.Hash = tx.GenHash()
+		return tx
+	}
 
 	if txJson.Hash != "" {
 		s := txJson.Hash
@@ -455,15 +451,11 @@ func (txJson TxJson) ToTransaction() Transaction {
 			s = s[2:]
 		}
 		tx.Hash = common.HexToHash(txJson.Hash)
-	} else {
-		tx.Hash = tx.GenHash()
 	}
 
 	if txJson.Sign != "" {
 		tx.Sign = common.HexStringToSign(txJson.Sign)
 	}
-	tx.SocketRequestId = txJson.SocketRequestId
-	tx.Time = txJson.Time
 	return tx
 }
 
@@ -503,15 +495,19 @@ type DepositFTData struct {
 
 //NFT充值确认数据结构
 type DepositNFTData struct {
-	SetId      string `json:"setId,omitempty"`
-	Name       string `json:"name,omitempty"`
-	Symbol     string `json:"symbol,omitempty"`
-	ID         string `json:"id,omitempty"`
-	Creator    string `json:"creator,omitempty"`
-	CreateTime string `json:"createTime,omitempty"`
-	Owner      string `json:"owner,omitempty"`
-	Value      string `json:"value,omitempty"`
-	TxId       string `json:"txId,omitempty"`
+	SetId      string            `json:"setId,omitempty"`
+	Name       string            `json:"name,omitempty"`
+	Symbol     string            `json:"symbol,omitempty"`
+	ID         string            `json:"id,omitempty"`
+	Creator    string            `json:"creator,omitempty"`
+	CreateTime string            `json:"createTime,omitempty"`
+	Owner      string            `json:"owner,omitempty"`
+	Renter     string            `json:"renter,omitempty"`
+	Status     byte              `json:"status,omitempty"`
+	Condition  byte              `json:"condition,omitempty"`
+	AppId      string            `json:"appId,omitempty"`
+	Data       map[string]string `json:"data,omitempty"`
+	TxId       string            `json:"txId,omitempty"`
 }
 
 type JSONObject struct {

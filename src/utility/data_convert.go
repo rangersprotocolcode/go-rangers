@@ -51,6 +51,11 @@ func ByteToUInt64(b []byte) uint64 {
 
 //"11.22"->11220000000
 func StrToBigInt(s string) (*big.Int, error) {
+	// 空字符串，默认返回0
+	if 0 == len(s) {
+		return big.NewInt(0), nil
+	}
+
 	target, _, err := big.ParseFloat(s, 10, 256, big.ToNearestEven)
 	if err != nil {
 		return nil, err
@@ -68,6 +73,9 @@ func StrToBigInt(s string) (*big.Int, error) {
 
 // 11220000000->"11.220000000"
 func BigIntToStr(number *big.Int) string {
+	if nil == number || 0 == number.Sign() {
+		return zeroString
+	}
 
 	// 默认保留小数点9位
 	return bigIntToStr(number, 9)

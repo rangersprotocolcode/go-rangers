@@ -107,14 +107,18 @@ func TestEncryptDecrypt(t *testing.T) {
 	fmt.Printf("end TestEncryptDecrypt.\n")
 }
 func TestSignBytes(test *testing.T) {
-	plain_txt := "Sign bytes convert."
+	plain_txt := "dafaefaewfef"
 	buf := []byte(plain_txt)
 
 	pri_k := GenerateKey("")
 
-	sha3_hash := sha256.Sum256(buf)
+	sha3_hash := Sha256(buf)
+	s := BytesToHash(sha3_hash).Hex()
+	fmt.Printf("hash:%s\n", s)
 	sign := pri_k.Sign(sha3_hash[:]) //私钥签名
 
+	address := pri_k.GetPubKey().GetAddress()
+	fmt.Printf("Address:%s\n", address.GetHexString())
 	//测试签名十六进制转换
 	h := sign.GetHexString() //签名十六进制表示
 	fmt.Println(h)
