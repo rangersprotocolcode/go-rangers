@@ -17,6 +17,8 @@ import (
 	"x/src/consensus/model"
 	"x/src/middleware/log"
 	"x/src/statemachine"
+	"x/src/network"
+	cnet "x/src/consensus/net"
 )
 
 const (
@@ -145,6 +147,8 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 	} else if apply == "heavy" {
 		minerInfo.NType = types.MinerTypeHeavy
 	}
+
+	network.InitNetwork(cnet.MessageHandler, "0x"+common.Bytes2Hex(gx.account.Miner.ID[:]), env, gateAddr)
 	err = core.InitCore(minerInfo.NType, consensus.NewConsensusHelper(minerInfo.ID))
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
