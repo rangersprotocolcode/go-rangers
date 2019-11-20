@@ -11,12 +11,10 @@ import (
 	"time"
 	"x/src/common"
 	"x/src/middleware/types"
-	"x/src/network"
 	"x/src/core"
 	"x/src/middleware"
 	"x/src/consensus"
 	"x/src/consensus/model"
-	cnet "x/src/consensus/net"
 	"x/src/middleware/log"
 	"x/src/statemachine"
 )
@@ -217,8 +215,8 @@ func syncChainInfo() {
 				}
 				localBlockHeight := core.GetBlockChain().Height()
 				jsonObject := types.NewJSONObject()
-				jsonObject.Put("candidateHeight",candicateHeight)
-				jsonObject.Put("localHeight",localBlockHeight)
+				jsonObject.Put("candidateHeight", candicateHeight)
+				jsonObject.Put("localHeight", localBlockHeight)
 				middleware.HeightLogger.Debugf(jsonObject.TOJSONString())
 				fmt.Printf("Sync candidate block height:%d,local block height:%d\n", candicateHeight, localBlockHeight)
 				timer.Reset(time.Second * 5)
