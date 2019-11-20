@@ -174,7 +174,7 @@ const (
 							<rollingfile type="size" filename="./logs/stmLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
 						<formats>
-							<format id="default" format="%Date(2006-01-02 15:04:05.000)|height|%Msg%n" />
+							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
 						</formats>
 					</seelog>`
 )
