@@ -11,6 +11,7 @@ import (
 	"x/src/statemachine"
 	"time"
 	"x/src/middleware/log"
+	"x/src/storage/account"
 )
 
 // 客户端web socket 请求的返回数据结构
@@ -220,76 +221,43 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 	switch txRaw.Type {
 	// execute state machine transaction
 	case types.TransactionTypeOperatorEvent:
+		executor.logger.Debugf("begin TransactionTypeOperatorEvent. txhash: %s, appId: %s, transferInfo: %s, payload: %s", txhash, txRaw.Target, txRaw.ExtraData, txRaw.Data)
 
 		gameId := txRaw.Target
-		isTransferOnly := 0 == len(gameId)
-		executor.logger.Debugf("begin callstm. txhash: %s, appId: %s, transferInfo: %s, payload: %s", txhash, gameId, txRaw.ExtraData, txRaw.Data)
-
 		accountDB := AccountDBManagerInstance.GetAccountDB(gameId, true)
+		isTransferOnly := 0 == len(gameId)
+
+		// 只是转账
+		if isTransferOnly {
+			// 交易已经执行过了
+			if executor.isExisted(txRaw) {
+				return true, ""
+			}
+
+			snapshot := accountDB.Snapshot()
+			result, ok := executor.doTransfer(txRaw, accountDB)
+			if !ok {
+				accountDB.RevertToSnapshot(snapshot)
+			}
+
+			return ok, result
+		}
 
 		// 已经执行过了（入块时），则不用再执行了
-		if nil != TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw) || GetBlockChain().GetTransactionPool().IsGameData(txRaw.Hash) {
+		if nil != TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw) {
 			// bingo
 			executor.logger.Infof("Tx is executed!")
 			executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
 			return false, "Tx Is Executed"
 		}
 
-		// 处理转账
-		// 支持source地址给多人转账，包含余额，ft，nft
-		// 数据格式{"address1":{"balance":"127","ft":{"name1":"189","name2":"1"},"nft":["id1","sword2"]}, "address2":{"balance":"1"}}
+		// 调用状态机
+		// 1. 先转账
+		message, result = executor.doTransfer(txRaw, accountDB)
 
-		//{
-		//	"address1": {
-		//		"bnt": {
-		//          "ETH.ETH":"0.008",
-		//          "NEO.CGAS":"100"
-		//      },
-		//		"ft": {
-		//			"name1": "189",
-		//			"name2": "1"
-		//		},
-		//		"nft": [{"setId":"suit1","id":"xizhuang"},
-		//              {"setId":"gun","id":"rifle"}
-		// 				]
-		//	},
-		//	"address2": {
-		//		"balance": "1"
-		//	}
-		//}
-
-		if 0 != len(txRaw.ExtraData) {
-			mm := make(map[string]types.TransferData, 0)
-			if err := json.Unmarshal([]byte(txRaw.ExtraData), &mm); nil != err {
-				executor.logger.Errorf("Transfer data unmarshal error:%s", err.Error())
-				message = "Transfer Bad Format"
-				result = false
-			} else {
-				// todo: mm条目数校验：调用状态机的，mm条目数只能有一个；纯转账，允许多个
-				snapshot := 0
-				if isTransferOnly {
-					snapshot = accountDB.Snapshot()
-				}
-				response, ok := changeAssets(txRaw.Source, mm, accountDB)
-				if !ok {
-					message = response
-					result = false
-
-					if isTransferOnly {
-						accountDB.RevertToSnapshot(snapshot)
-					}
-					executor.logger.Errorf("change balances failed")
-				} else {
-					result = true
-					message = response
-				}
-			}
-		}
-
+		// 2. 转账成功，调用状态机
 		var outputMessage *types.OutputMessage
-		// 转账成功，调用状态机
-		if result && !isTransferOnly && len(txRaw.Data) != 0 {
-			// 调用状态机
+		if result && len(txRaw.Data) != 0 {
 			txRaw.SubTransactions = make([]types.UserData, 0)
 			outputMessage = statemachine.STMManger.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data, &txRaw)
 			executor.logger.Debugf("txhash %s invoke state machine. result:%v", txhash, outputMessage)
@@ -312,12 +280,9 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 			}
 		} else {
 			TxManagerInstance.Commit(gameId)
-			//if 0 == len(message) {
-			//	message = "Tx Execute Success"
-			//}
 		}
 
-		executor.logger.Debugf("end callstm. txhash: %s", txhash)
+		executor.logger.Debugf("end TransactionTypeOperatorEvent. txhash: %s", txhash)
 
 	case types.TransactionTypeWithdraw:
 		gameId := txRaw.Target
@@ -398,6 +363,48 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 
 	executor.logger.Infof("run tx. result: %t, cost time : %v, txhash: %s", result, time.Since(start), txhash)
 	return result, message
+}
+
+// 处理转账
+// 支持source地址给多人转账，包含余额，ft，nft
+// 数据格式{"address1":{"balance":"127","ft":{"name1":"189","name2":"1"},"nft":["id1","sword2"]}, "address2":{"balance":"1"}}
+//{
+//	"address1": {
+//		"bnt": {
+//          "ETH.ETH":"0.008",
+//          "NEO.CGAS":"100"
+//      },
+//		"ft": {
+//			"name1": "189",
+//			"name2": "1"
+//		},
+//		"nft": [{"setId":"suit1","id":"xizhuang"},
+//              {"setId":"gun","id":"rifle"}
+// 				]
+//	},
+//	"address2": {
+//		"balance": "1"
+//	}
+//}
+func (executor *GameExecutor) doTransfer(txRaw types.Transaction, accountDB *account.AccountDB) (string, bool) {
+	if 0 == len(txRaw.ExtraData) {
+		return "", true
+	}
+
+	mm := make(map[string]types.TransferData, 0)
+	if err := json.Unmarshal([]byte(txRaw.ExtraData), &mm); nil != err {
+		executor.logger.Errorf("Transfer data unmarshal error:%s", err.Error())
+		return "Transfer Bad Format", false
+	}
+
+	// todo: mm条目数校验：调用状态机的，mm条目数只能有一个；纯转账，允许多个
+	response, ok := changeAssets(txRaw.Source, mm, accountDB)
+	if !ok {
+		executor.logger.Errorf("change balances failed")
+	}
+
+	return response, ok
+
 }
 
 func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {

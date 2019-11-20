@@ -29,19 +29,16 @@ func initTxManager() {
 	TxManagerInstance.lock = &sync.Mutex{}
 }
 
+// 只有执行状态机时，才会开启事务
+// 此处的gameId不能为空
 func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.AccountDB, tx *types.Transaction) error {
-	if nil == accountDB || nil == tx {
+	if nil == accountDB || nil == tx || 0 == len(gameId) {
 		return fmt.Errorf("no value")
 	}
 
 	// 已经执行过了
-	if GetBlockChain().GetTransactionPool().IsExisted(tx.Hash) {
+	if GetBlockChain().GetTransactionPool().IsGameData(tx.Hash) {
 		return fmt.Errorf("isExisted")
-	}
-
-	// 如果gameId为空，则为纯转账场景，无须在此开事务
-	if 0 == len(gameId) {
-		return nil
 	}
 
 	context := manager.context[gameId]
