@@ -8,5 +8,4 @@ services:
       - host: 7772
         target: 8080
     detached: true
-    type: "ETH"
     hostname: "genesis_2_daily"
