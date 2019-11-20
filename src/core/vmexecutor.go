@@ -210,6 +210,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 				}
 
 				if 0 == len(result) || result == "fail to transfer" || outputMessage == nil || outputMessage.Status == 1 {
+					success = false
 					TxManagerInstance.RollBack(transaction.Target)
 				} else {
 					TxManagerInstance.Commit(transaction.Target)
