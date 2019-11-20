@@ -71,24 +71,18 @@ func (manager *TxManager) GetContext(gameId string) *TxContext {
 }
 
 func (manager *TxManager) Commit(gameId string) {
-	if 0 == len(gameId) {
-		return
-	}
 	manager.clean(false, gameId)
 }
 
 func (manager *TxManager) RollBack(gameId string) {
-	if 0 == len(gameId) {
-		return
-	}
 	manager.clean(true, gameId)
 }
 
 func (manager *TxManager) clean(isRollback bool, gameId string) {
-	logger.Debugf("is rollback %t,game id:%s", isRollback, gameId)
+	logger.Debugf("is rollback %t, game id:%s", isRollback, gameId)
 	context := manager.GetContext(gameId)
 	if nil == context {
-		logger.Debugf("clean context is nil")
+		logger.Error("clean context is nil")
 		return
 	}
 
