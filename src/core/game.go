@@ -276,28 +276,28 @@ func transferNFT(nftIDList []types.NFTID, source common.Address, target common.A
 }
 
 func transferBalance(value string, source common.Address, target common.Address, accountDB *account.AccountDB) bool {
-	//balance, err := utility.StrToBigInt(value)
-	//if err != nil {
-	//	return false
-	//}
-	//// 不能扣钱
-	//if balance.Sign() == -1 {
-	//	return false
-	//}
-	//
-	//sourceBalance := accountDB.GetBalance(source)
-	//
-	//// 钱不够转账，再见
-	//if sourceBalance.Cmp(balance) == -1 {
-	//	logger.Debugf("transfer bnt:bnt not enough!")
-	//	return false
-	//}
-	//
-	//// 目标加钱
-	//accountDB.AddBalance(target, balance)
-	//
-	//// 自己减钱
-	//accountDB.SubBalance(source, balance)
+	balance, err := utility.StrToBigInt(value)
+	if err != nil {
+		return false
+	}
+	// 不能扣钱
+	if balance.Sign() == -1 {
+		return false
+	}
+
+	sourceBalance := accountDB.GetBalance(source)
+
+	// 钱不够转账，再见
+	if sourceBalance.Cmp(balance) == -1 {
+		logger.Debugf("transfer bnt:bnt not enough!")
+		return false
+	}
+
+	// 目标加钱
+	accountDB.AddBalance(target, balance)
+
+	// 自己减钱
+	accountDB.SubBalance(source, balance)
 
 	return true
 }

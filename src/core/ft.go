@@ -84,7 +84,7 @@ func (self *FTManager) PublishFTSet(name, symbol, appId, total, owner, createTim
 
 	self.updateFTSet(id, ftSet, accountDB)
 	if isSendToCoiner {
-		sendPublishFTSetToCoiner(*ftSet)
+		go sendPublishFTSetToConnector(*ftSet)
 	}
 	return id, true
 }
@@ -201,7 +201,7 @@ func (self *FTManager) convert(value string) *big.Int {
 	return supply
 }
 
-func sendPublishFTSetToCoiner(ftSet types.FTSet) {
+func sendPublishFTSetToConnector(ftSet types.FTSet) {
 	data := make(map[string]string, 0)
 	data["setId"] = ftSet.ID
 	data["name"] = ftSet.Name

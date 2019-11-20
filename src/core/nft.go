@@ -107,7 +107,7 @@ func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string
 
 	self.updateNFTSet(nftSet, accountDB)
 	if isSendToCoiner {
-		sendPublishNFTSetToCoiner(*nftSet)
+		go sendPublishNFTSetToConnector(*nftSet)
 	}
 	return "Nft Publish Successful", true, nftSet
 }
@@ -339,7 +339,7 @@ func (self *NFTManager) shuttle(owner, setId, id, newAppId string, accountDB *ac
 	return "nft shuttle successful", true
 }
 
-func sendPublishNFTSetToCoiner(nftSet types.NFTSet) {
+func sendPublishNFTSetToConnector(nftSet types.NFTSet) {
 	data := make(map[string]string, 0)
 	data["setId"] = nftSet.SetID
 	data["name"] = nftSet.Name
