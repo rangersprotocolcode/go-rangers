@@ -7,6 +7,8 @@ import (
 	"x/src/utility"
 	"x/src/middleware/notify"
 	"errors"
+	"encoding/json"
+	"strconv"
 )
 
 func (chain *blockChain) consensusVerify(source string, b *types.Block) (types.AddBlockResult, bool) {
@@ -276,6 +278,53 @@ func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block, header
 	if BlockSyncer != nil {
 		topBlockInfo := TopBlockInfo{Hash: chain.latestBlock.Hash, TotalQn: chain.latestBlock.TotalQN, Height: chain.latestBlock.Height, PreHash: chain.latestBlock.PreHash}
 		go BlockSyncer.sendTopBlockInfoToNeighbor(topBlockInfo)
+	}
+
+	//check txs
+	go chain.publishSet(remoteBlock.Transactions)
+}
+
+// 块上链成功之后，调用Connector
+func (chain *blockChain) publishSet(txs []*types.Transaction) {
+	if 0 == len(txs) {
+		return
+	}
+
+	for _, tx := range txs {
+		// 直接发交易的nftSet publish
+		if tx.Type == types.TransactionTypePublishNFTSet {
+			var nftSet types.NFTSet
+			if err := json.Unmarshal([]byte(tx.Data), &nftSet); nil != err {
+				logger.Errorf("Unmarshal data error:%s", err.Error())
+				break
+			}
+
+			NFTManagerInstance.SendPublishNFTSetToConnector(&nftSet)
+			break
+		}
+
+		// 状态机内调用
+		if 0 != len(tx.SubTransactions) {
+			for _, user := range tx.SubTransactions {
+				if user.Address == "StartFT" {
+					ftSet := FTManagerInstance.GenerateFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], user.Assets["createTime"], 1)
+					FTManagerInstance.SendPublishFTSetToConnector(ftSet)
+					continue
+				}
+
+				if user.Address == "PublishNFTSet" {
+					maxSupplyString := user.Assets["maxSupply"]
+					maxSupply, err := strconv.Atoi(maxSupplyString)
+					if err != nil {
+						logger.Errorf("Publish nft set! MaxSupply bad format:%s", maxSupplyString)
+						continue
+					}
+					appId := user.Assets["appId"]
+					nftSet := NFTManagerInstance.GenerateNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"])
+					NFTManagerInstance.SendPublishNFTSetToConnector(nftSet)
+				}
+			}
+		}
 	}
 }
 

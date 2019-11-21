@@ -28,7 +28,7 @@ func (api *GtasAPI) PublishFT(authCode, appId, owner, name, symbol, totalSupply,
 		return failResult("not in transaction")
 	}
 
-	result, flag := core.FTManagerInstance.PublishFTSet(name, symbol, appId, totalSupply, owner, createTime, 1, context.AccountDB, true)
+	result, flag := core.FTManagerInstance.PublishFTSet(core.FTManagerInstance.GenerateFTSet(name, symbol, appId, totalSupply, owner, createTime, 1), context.AccountDB)
 	if flag {
 		data := types.UserData{}
 		data.Address = "StartFT"

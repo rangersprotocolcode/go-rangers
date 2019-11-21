@@ -26,7 +26,8 @@ func TestNFTManager_MintNFT(t *testing.T) {
 	// 检查setId
 	nftSet := NFTManagerInstance.GetNFTSet(setId, accountdb)
 	if nil == nftSet {
-		_, _, nftSet = NFTManagerInstance.PublishNFTSet(setId, name, symbol, creator, creator, 0, "0", accountdb, false)
+		nftSet = NFTManagerInstance.GenerateNFTSet(setId, name, symbol, creator, creator, 0, "0")
+		NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
 	}
 
 	appId := "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"

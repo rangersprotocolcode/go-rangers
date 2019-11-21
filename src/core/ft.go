@@ -44,30 +44,9 @@ func (self *FTManager) GetFTSet(id string, accountDB *account.AccountDB) *types.
 	return &ftSet
 }
 
-//
-// ID     string // 代币ID，在发行时由layer2生成。生成规则时appId-symbol。例如0x12ef3-NOX。特别的，对于公链币，layer2会自动发行，例如official-ETH
-// Name   string // 代币名字，例如以太坊
-// Symbol string // 代币代号，例如ETH
-// AppId  string // 发行方
-// TotalSupply int64 // 发行总数， -1表示无限量（对于公链币，也是如此）
-// Remain      int64 // 还剩下多少，-1表示无限（对于公链币，也是如此）
-// Type        byte  // 类型，0代表公链币，1代表游戏发行的FT
-func (self *FTManager) PublishFTSet(name, symbol, appId, total, owner, createTime string, kind byte, accountDB *account.AccountDB, isSendToCoiner bool) (string, bool) {
-	self.lock.Lock()
-	defer self.lock.Unlock()
-
-	// checkId
-	if 0 == len(appId) || 0 == len(symbol) || strings.Contains(appId, "-") || strings.Contains(symbol, "-") || appId == "official" {
-		return "appId or symbol wrong", false
-	}
-
+func (self *FTManager) GenerateFTSet(name, symbol, appId, total, owner, createTime string, kind byte) *types.FTSet {
 	// 生成id
 	id := self.genID(appId, symbol)
-
-	// 检查id是否已存在
-	if self.contains(id, accountDB) {
-		return id, false
-	}
 
 	// 生成ftSet
 	ftSet := &types.FTSet{
@@ -82,10 +61,41 @@ func (self *FTManager) PublishFTSet(name, symbol, appId, total, owner, createTim
 		CreateTime:  createTime,
 	}
 
-	self.updateFTSet(id, ftSet, accountDB)
-	if isSendToCoiner {
-		go sendPublishFTSetToConnector(*ftSet)
+	return ftSet
+}
+
+//
+// ID     string // 代币ID，在发行时由layer2生成。生成规则时appId-symbol。例如0x12ef3-NOX。特别的，对于公链币，layer2会自动发行，例如official-ETH
+// Name   string // 代币名字，例如以太坊
+// Symbol string // 代币代号，例如ETH
+// AppId  string // 发行方
+// TotalSupply int64 // 发行总数， -1表示无限量（对于公链币，也是如此）
+// Remain      int64 // 还剩下多少，-1表示无限（对于公链币，也是如此）
+// Type        byte  // 类型，0代表公链币，1代表游戏发行的FT
+func (self *FTManager) PublishFTSet(ftSet *types.FTSet, accountDB *account.AccountDB) (string, bool) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
+	if nil == ftSet {
+		return "", false
 	}
+
+	appId := ftSet.AppId
+	id := ftSet.ID
+	symbol := ftSet.Symbol
+
+	// checkId
+	if 0 == len(appId) || 0 == len(symbol) || strings.Contains(appId, "-") || strings.Contains(symbol, "-") || appId == "official" {
+		return "appId or symbol wrong", false
+	}
+
+	// 检查id是否已存在
+	if self.contains(id, accountDB) {
+		return id, false
+	}
+
+	self.updateFTSet(id, ftSet, accountDB)
+
 	return id, true
 }
 
@@ -201,8 +211,8 @@ func (self *FTManager) convert(value string) *big.Int {
 	return supply
 }
 
-func sendPublishFTSetToConnector(ftSet types.FTSet) {
-	data := make(map[string]string, 0)
+func (self *FTManager) SendPublishFTSetToConnector(ftSet *types.FTSet) {
+	data := make(map[string]string, 7)
 	data["setId"] = ftSet.ID
 	data["name"] = ftSet.Name
 	data["symbol"] = ftSet.Symbol
@@ -227,5 +237,5 @@ func sendPublishFTSetToConnector(ftSet types.FTSet) {
 	}
 
 	txLogger.Tracef("After publish ft.Send msg to coiner:%s", t.ToTxJson().ToString())
-	network.GetNetInstance().SendToCoinConnector(msg)
+	go network.GetNetInstance().SendToCoinConnector(msg)
 }

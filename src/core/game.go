@@ -338,7 +338,7 @@ func transferCoin(coin map[string]string, source string, target string, accountD
 // tx.type = 110
 // tx.data 发行参数，map jsonString
 // {"symbol":"","name":"","totalSupply":"12345678"}
-func PublishFT(accountdb *account.AccountDB, tx *types.Transaction, isSendToCoiner bool) (string, bool) {
+func PublishFT(accountdb *account.AccountDB, tx *types.Transaction) (string, bool) {
 	txLogger.Tracef("Execute publish ft tx:%s", tx.ToTxJson().ToString())
 	var ftSet map[string]string
 	if err := json.Unmarshal([]byte(tx.Data), &ftSet); nil != err {
@@ -348,13 +348,13 @@ func PublishFT(accountdb *account.AccountDB, tx *types.Transaction, isSendToCoin
 
 	appId := tx.Source
 	createTime := ftSet["createTime"]
-	id, ok := FTManagerInstance.PublishFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, createTime, 1, accountdb, isSendToCoiner)
+	id, ok := FTManagerInstance.PublishFTSet(FTManagerInstance.GenerateFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, createTime, 1), accountdb)
 	txLogger.Tracef("Publish ft name:%s,symbol:%s,totalSupply:%s,appId:%s,id:%s,publish result:%t", ftSet["name"], ftSet["symbol"], ftSet["totalSupply"], appId, id, ok)
 
 	return id, ok
 }
 
-func PublishNFTSet(accountdb *account.AccountDB, tx *types.Transaction, isSendToCoiner bool) (bool, string) {
+func PublishNFTSet(accountdb *account.AccountDB, tx *types.Transaction) (bool, string) {
 	txLogger.Tracef("Execute publish nft tx:%s", tx.ToTxJson().ToString())
 
 	var nftSet types.NFTSet
@@ -364,8 +364,7 @@ func PublishNFTSet(accountdb *account.AccountDB, tx *types.Transaction, isSendTo
 	}
 
 	appId := tx.Source
-
-	message, flag, _ := NFTManagerInstance.PublishNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime, accountdb, isSendToCoiner)
+	message, flag := NFTManagerInstance.PublishNFTSet(NFTManagerInstance.GenerateNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime), accountdb)
 	return flag, message
 }
 

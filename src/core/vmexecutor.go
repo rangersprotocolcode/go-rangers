@@ -83,7 +83,8 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						// 发币
 						if user.Address == "StartFT" {
 							createTime, _ := user.Assets["createTime"]
-							_, flag := FTManagerInstance.PublishFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], createTime, 1, accountdb, true)
+							ftSet := FTManagerInstance.GenerateFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], createTime, 1)
+							_, flag := FTManagerInstance.PublishFTSet(ftSet, accountdb)
 							if !flag {
 								success = false
 								break
@@ -165,13 +166,13 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 							maxSupplyString := user.Assets["maxSupply"]
 							maxSupply, err := strconv.Atoi(maxSupplyString)
 							if err != nil {
-								logger.Errorf("Publish nft set!MaxSupply bad format:%s", maxSupplyString)
+								logger.Errorf("Publish nft set! MaxSupply bad format:%s", maxSupplyString)
 								success = false
 								break
 							}
 							appId := user.Assets["appId"]
-
-							_, ok, _ := NFTManagerInstance.PublishNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"], accountdb, true)
+							nftSet := NFTManagerInstance.GenerateNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"])
+							_, ok := NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
 							if !ok {
 								success = false
 								break
@@ -220,10 +221,10 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			}
 			break
 		case types.TransactionTypePublishFT:
-			_, success = PublishFT(accountdb, transaction, true)
+			_, success = PublishFT(accountdb, transaction)
 			break
 		case types.TransactionTypePublishNFTSet:
-			success, _ = PublishNFTSet(accountdb, transaction, true)
+			success, _ = PublishNFTSet(accountdb, transaction)
 			break
 		case types.TransactionTypeMintFT:
 			success, _ = MintFT(accountdb, transaction)
@@ -344,7 +345,8 @@ func (executor *VMExecutor) executeNFTDepositNotify(accountdb *account.AccountDB
 	// 检查setId
 	nftSet := NFTManagerInstance.GetNFTSet(depositNFTData.SetId, accountdb)
 	if nil == nftSet {
-		_, _, nftSet = NFTManagerInstance.PublishNFTSet(depositNFTData.SetId, depositNFTData.Name, depositNFTData.Symbol, depositNFTData.Creator, depositNFTData.Owner, 0, depositNFTData.CreateTime, accountdb, true)
+		nftSet = NFTManagerInstance.GenerateNFTSet(depositNFTData.SetId, depositNFTData.Name, depositNFTData.Symbol, depositNFTData.Creator, depositNFTData.Owner, 0, depositNFTData.CreateTime, )
+		NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
 	}
 
 	appId := transaction.Target

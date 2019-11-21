@@ -83,17 +83,7 @@ func (self *NFTManager) DeleteNFT(owner common.Address, setId, id string, accoun
 	return nft
 }
 
-// L2发行NFTSet
-// 状态机调用
-func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string, maxSupply int, createTime string, accountDB *account.AccountDB, isSendToCoiner bool) (string, bool, *types.NFTSet) {
-	self.lock.Lock()
-	defer self.lock.Unlock()
-
-	// 检查setId是否存在
-	if maxSupply < 0 && 0 == len(setId) || self.contains(setId, accountDB) {
-		return "SetId or maxSupply Wrong", false, nil
-	}
-
+func (self *NFTManager) GenerateNFTSet(setId, name, symbol, creator, owner string, maxSupply int, createTime string) *types.NFTSet {
 	// 创建NFTSet
 	nftSet := &types.NFTSet{
 		SetID:      setId,
@@ -105,11 +95,26 @@ func (self *NFTManager) PublishNFTSet(setId, name, symbol, creator, owner string
 		CreateTime: createTime,
 	}
 
-	self.updateNFTSet(nftSet, accountDB)
-	if isSendToCoiner {
-		go sendPublishNFTSetToConnector(*nftSet)
+	return nftSet
+}
+
+// L2发行NFTSet
+// 状态机调用
+func (self *NFTManager) PublishNFTSet(nftSet *types.NFTSet, accountDB *account.AccountDB) (string, bool) {
+	self.lock.Lock()
+	defer self.lock.Unlock()
+
+	if nil == nftSet {
+		return "nil nftSet", false
 	}
-	return "Nft Publish Successful", true, nftSet
+
+	// 检查setId是否存在
+	if nftSet.MaxSupply < 0 && 0 == len(nftSet.SetID) || self.contains(nftSet.SetID, accountDB) {
+		return "SetId or maxSupply Wrong", false
+	}
+
+	self.updateNFTSet(nftSet, accountDB)
+	return "Nft Publish Successful", true
 }
 
 // L2创建NFT
@@ -339,8 +344,8 @@ func (self *NFTManager) shuttle(owner, setId, id, newAppId string, accountDB *ac
 	return "nft shuttle successful", true
 }
 
-func sendPublishNFTSetToConnector(nftSet types.NFTSet) {
-	data := make(map[string]string, 0)
+func (self *NFTManager) SendPublishNFTSetToConnector(nftSet *types.NFTSet) {
+	data := make(map[string]string, 7)
 	data["setId"] = nftSet.SetID
 	data["name"] = nftSet.Name
 	data["symbol"] = nftSet.Symbol
@@ -365,5 +370,5 @@ func sendPublishNFTSetToConnector(nftSet types.NFTSet) {
 	}
 
 	txLogger.Tracef("After publish nft.Send msg to coiner:%s", t.ToTxJson().ToString())
-	network.GetNetInstance().SendToCoinConnector(msg)
+	go network.GetNetInstance().SendToCoinConnector(msg)
 }
