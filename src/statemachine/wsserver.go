@@ -122,7 +122,17 @@ func (self *wsServer) connHandle(conn *websocket.Conn) {
 			case types.TransactionTypeMintFT:
 				answer, flag = self.mintFT(msg.Data)
 				break
+			case types.TransactionTypeTransferBNT:
+				answer, flag = self.transferBNT(msg.Data)
+				break
+			case types.TransactionTypeTransferFT:
+				answer, flag = self.transferFT(msg.Data)
+				break
+			case types.TransactionTypePublishFT:
+				answer, flag = self.publishFTSet(msg.Data)
+				break
 			}
+
 		}
 
 		reply = self.buildResponse(flag, answer)
