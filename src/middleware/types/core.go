@@ -97,13 +97,20 @@ const (
 
 	TransactionTypeWithdraw = 109
 
-	TransactionTypePublishFT     = 110 // 用户发FT
-	TransactionTypePublishNFTSet = 111 // 用户发NFTSet
-	TransactionTypeShuttleNFT    = 112 // 用户穿梭NFT
-	TransactionTypeMintFT        = 116 // mintFT
-	TransactionTypeMintNFT       = 117 // mintNFT
-	TransactionTypeTransferBNT   = 118 // 状态机给用户转主链币
-	TransactionTypeTransferFT    = 119 // 状态机给用户转FT
+	TransactionTypePublishFT      = 110 // 用户发FTSet
+	TransactionTypePublishNFTSet  = 111 // 用户发NFTSet
+	TransactionTypeShuttleNFT     = 112 // 用户穿梭NFT
+	TransactionTypeMintFT         = 116 // mintFT
+	TransactionTypeMintNFT        = 117 // mintNFT
+	TransactionTypeTransferBNT    = 118 // 状态机给用户转主链币
+	TransactionTypeTransferFT     = 119 // 状态机给用户转FT
+	TransactionTypeLockNFT        = 120 // 锁定NFT
+	TransactionTypeUnLockNFT      = 121 // 解锁NFT
+	TransactionTypeApproveNFT     = 122 // 授权NFT
+	TransactionTypeRevokeNFT      = 123 // 回收NFT
+	TransactionTypeTransferNFT    = 124 // 状态机给用户转NFT
+	TransactionTypeUpdateNFT      = 125 // 更新NFT数据
+	TransactionTypeBatchUpdateNFT = 126 // 批量更新NFT数据
 
 	// 从rocket_connector来的消息
 	TransactionTypeCoinDepositAck = 201 // 充值

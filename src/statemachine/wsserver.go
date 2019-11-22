@@ -119,6 +119,7 @@ func (self *wsServer) connHandle(conn *websocket.Conn) {
 			reply = self.buildResponse(false, err.Error())
 		} else {
 			switch msg.Type {
+			// FT 部分
 			case types.TransactionTypeMintFT:
 				answer, flag = self.mintFT(msg.Data)
 				break
@@ -130,6 +131,35 @@ func (self *wsServer) connHandle(conn *websocket.Conn) {
 				break
 			case types.TransactionTypePublishFT:
 				answer, flag = self.publishFTSet(msg.Data)
+				break
+
+				// NFT部分
+			case types.TransactionTypeMintNFT:
+				answer, flag = self.mintNFT(msg.Data)
+				break
+			case types.TransactionTypePublishNFTSet:
+				answer, flag = self.publishNFTSet(msg.Data)
+				break
+			case types.TransactionTypeLockNFT:
+				answer, flag = self.lockNFT(msg.Data)
+				break
+			case types.TransactionTypeUnLockNFT:
+				answer, flag = self.unLockNFT(msg.Data)
+				break
+			case types.TransactionTypeApproveNFT:
+				answer, flag = self.approveNFT(msg.Data)
+				break
+			case types.TransactionTypeRevokeNFT:
+				answer, flag = self.revokeNFT(msg.Data)
+				break
+			case types.TransactionTypeTransferNFT:
+				answer, flag = self.transferNFT(msg.Data)
+				break
+			case types.TransactionTypeUpdateNFT:
+				answer, flag = self.updateNFT(msg.Data)
+				break
+			case types.TransactionTypeBatchUpdateNFT:
+				answer, flag = self.batchUpdateNFT(msg.Data)
 				break
 			}
 
