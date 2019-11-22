@@ -1,4 +1,4 @@
-package core
+package service
 
 import (
 	"x/src/storage/account"
@@ -37,7 +37,7 @@ func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.Acc
 	}
 
 	// 已经执行过了
-	if GetBlockChain().GetTransactionPool().IsGameData(tx.Hash) {
+	if GetTransactionPool().IsGameData(tx.Hash) {
 		return fmt.Errorf("isExisted")
 	}
 
@@ -54,7 +54,7 @@ func (manager *TxManager) BeginTransaction(gameId string, accountDB *account.Acc
 	}
 
 	context.lock.Lock()
-	if GetBlockChain().GetTransactionPool().IsGameData(tx.Hash) {
+	if GetTransactionPool().IsGameData(tx.Hash) {
 		context.lock.Unlock()
 		return fmt.Errorf("gameData is Existed")
 	}

@@ -11,6 +11,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"x/src/consensus/groupsig"
 	"x/src/consensus/vrf"
+	"x/src/service"
 )
 
 const ChainDataVersion = 2
@@ -91,8 +92,8 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	stateDB.SetNonce(common.HeavyDBAddress, 1)
 	stateDB.SetNonce(common.LightDBAddress, 1)
 
-	FTManagerInstance.PublishFTSet(FTManagerInstance.GenerateFTSet("tuntun", "pig", "hz", "0", "hz", "10086", 0), stateDB)
-	NFTManagerInstance.PublishNFTSet(NFTManagerInstance.GenerateNFTSet("tuntunhz", "tuntun", "t", "hz", "hz", 0, "10000"), stateDB)
+	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("tuntun", "pig", "hz", "0", "hz", "10086", 0), stateDB)
+	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("tuntunhz", "tuntun", "t", "hz", "hz", 0, "10000"), stateDB)
 
 	root, _ := stateDB.Commit(true)
 	triedb.Commit(root, false)

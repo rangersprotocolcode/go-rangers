@@ -1,4 +1,4 @@
-package core
+package service
 
 import (
 	"errors"
@@ -32,6 +32,48 @@ var (
 	ErrEvicted = errors.New("error transaction already exist in pool")
 )
 
+type ExecutedTransaction struct {
+	Receipt     *types.Receipt
+	Transaction *types.Transaction
+}
+
+type TransactionPool interface {
+	PackForCast() []*types.Transaction
+
+	//add new transaction to the transaction pool
+	AddTransaction(tx *types.Transaction) (bool, error)
+
+	//rcv transactions broadcast from other nodes
+	AddBroadcastTransactions(txs []*types.Transaction)
+
+	//add  local miss transactions while verifying blocks to the transaction pool
+	AddMissTransactions(txs []*types.Transaction)
+
+	GetTransaction(hash common.Hash) (*types.Transaction, error)
+
+	GetTransactionStatus(hash common.Hash) (uint, error)
+
+	GetExecuted(hash common.Hash) *ExecutedTransaction
+
+	GetReceived() []*types.Transaction
+
+	TxNum() int
+
+	MarkExecuted(receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash)
+
+	UnMarkExecuted(txs []*types.Transaction)
+
+	AddExecuted(tx *types.Transaction) error
+
+	Clear()
+
+	IsExisted(hash common.Hash) bool
+
+	IsGameData(hash common.Hash) bool
+
+	PutGameData(hash common.Hash)
+}
+
 type TxPool struct {
 	minerTxs   *lru.Cache // miner and bonus tx
 	missTxs    *lru.Cache
@@ -49,7 +91,19 @@ type TxPool struct {
 	nodeType byte
 }
 
-func NewTransactionPool(nodeType byte) TransactionPool {
+var txpoolInstance TransactionPool
+
+func initTransactionPool(nodeType byte) {
+	if nil == txpoolInstance {
+		txpoolInstance = newTransactionPool(nodeType)
+	}
+}
+
+func GetTransactionPool() TransactionPool {
+	return txpoolInstance
+}
+
+func newTransactionPool(nodeType byte) TransactionPool {
 	pool := &TxPool{
 		lock:     middleware.NewLoglock("txPool"),
 		nodeType: nodeType,

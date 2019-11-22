@@ -1,12 +1,12 @@
 package cli
 
 import (
-	"x/src/core"
 	"fmt"
 	"x/src/common"
 	"x/src/middleware/types"
 	"strconv"
 	"x/src/statemachine"
+	"x/src/service"
 )
 
 func (api *GtasAPI) UpdateNFT(authCode, appId, setId, id, data string) (*Result, error) {
@@ -24,14 +24,14 @@ func (api *GtasAPI) UpdateNFT(authCode, appId, setId, id, data string) (*Result,
 	}
 
 	accountDB := context.AccountDB
-	addr := core.NFTManagerInstance.GetNFTOwner(setId, id, accountDB)
+	addr := service.NFTManagerInstance.GetNFTOwner(setId, id, accountDB)
 	if nil == addr {
 		msg := fmt.Sprintf("wrong setId %s or id %s", setId, id)
 		common.DefaultLogger.Debugf(msg)
 		return failResult(msg)
 	}
 
-	if core.NFTManagerInstance.UpdateNFT(*addr, appId, setId, id, data, accountDB) {
+	if service.NFTManagerInstance.UpdateNFT(*addr, appId, setId, id, data, accountDB) {
 		// 生成交易，上链 context.Tx.SubTransactions
 		userData := types.UserData{}
 		userData.Address = "UpdateNFT"
@@ -86,7 +86,7 @@ func (api *GtasAPI) TransferNFT(authCode, appId, setId, id, target string) (*Res
 	}
 
 	accountDB := context.AccountDB
-	_, ok = core.NFTManagerInstance.Transfer(setId, id, common.HexToAddress(appId), common.HexToAddress(target), accountDB)
+	_, ok = service.NFTManagerInstance.Transfer(setId, id, common.HexToAddress(appId), common.HexToAddress(target), accountDB)
 	if ok {
 		// 生成交易，上链 context.Tx.SubTransactions
 		userData := types.UserData{}
@@ -222,8 +222,8 @@ func (api *GtasAPI) PublishNFTSet(authCode, appId, setId, name, symbol, createTi
 	}
 
 	accountDB := context.AccountDB
-	nftSet := core.NFTManagerInstance.GenerateNFTSet(setId, name, symbol, appId, appId, maxSupply, createTime)
-	if _, ok := core.NFTManagerInstance.PublishNFTSet(nftSet, accountDB); ok {
+	nftSet := service.NFTManagerInstance.GenerateNFTSet(setId, name, symbol, appId, appId, maxSupply, createTime)
+	if _, ok := service.NFTManagerInstance.PublishNFTSet(nftSet, accountDB); ok {
 		// 生成交易，上链 context.Tx.SubTransactions
 		userData := types.UserData{}
 		userData.Address = "PublishNFTSet"
@@ -260,7 +260,7 @@ func (api *GtasAPI) MintNFT(authCode, appId, setId, id, target, data, createTime
 	}
 
 	accountDB := context.AccountDB
-	if _, ok := core.NFTManagerInstance.MintNFT(appId, setId, id, data, createTime, common.HexToAddress(target), accountDB); ok {
+	if _, ok := service.NFTManagerInstance.MintNFT(appId, setId, id, data, createTime, common.HexToAddress(target), accountDB); ok {
 		// 生成交易，上链 context.Tx.SubTransactions
 		userData := types.UserData{}
 		userData.Address = "MintNFT"

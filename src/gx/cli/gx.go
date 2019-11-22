@@ -16,9 +16,10 @@ import (
 	"x/src/consensus"
 	"x/src/consensus/model"
 	"x/src/middleware/log"
-	"x/src/statemachine"
 	"x/src/network"
 	cnet "x/src/consensus/net"
+	"x/src/statemachine"
+	"x/src/service"
 )
 
 const (
@@ -130,7 +131,6 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 	common.GlobalConf.SetString(chainSection, databaseKey, databaseValue)
 
 	middleware.InitMiddleware()
-	statemachine.InitSTMManager(common.GlobalConf.GetString("docker", "config", ""), port)
 
 	minerAddr := common.GlobalConf.GetString(Section, "miner", "")
 	err := gx.getAccountInfo(keystore, minerAddr)
@@ -141,7 +141,6 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 
 	minerInfo := model.NewSelfMinerDO(gx.account.Miner.ID[:])
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
-
 	if apply == "light" {
 		minerInfo.NType = types.MinerTypeLight
 	} else if apply == "heavy" {
@@ -149,10 +148,14 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 	}
 
 	network.InitNetwork(cnet.MessageHandler, "0x"+common.Bytes2Hex(gx.account.Miner.ID[:]), env, gateAddr)
-	err = core.InitCore(minerInfo.NType, consensus.NewConsensusHelper(minerInfo.ID))
+	service.InitService(minerInfo.NType)
+
+	err = core.InitCore(consensus.NewConsensusHelper(minerInfo.ID))
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
 	}
+
+	statemachine.InitSTMManager(common.GlobalConf.GetString("docker", "config", ""), port)
 
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
 	if !ok {

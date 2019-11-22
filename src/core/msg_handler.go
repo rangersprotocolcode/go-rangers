@@ -13,6 +13,7 @@ import (
 	"x/src/middleware/pb"
 	"x/src/middleware"
 	"time"
+	"x/src/service"
 )
 
 const blockResponseSize = 1
@@ -45,7 +46,7 @@ func (ch ChainHandler) transactionBroadcastHandler(msg notify.Message) {
 		logger.Errorf("Unmarshal transactions error:%s", e.Error())
 		return
 	}
-	blockChainImpl.GetTransactionPool().AddBroadcastTransactions(txs)
+	service.GetTransactionPool().AddBroadcastTransactions(txs)
 }
 
 func (ch ChainHandler) transactionReqHandler(msg notify.Message) {
@@ -66,7 +67,7 @@ func (ch ChainHandler) transactionReqHandler(msg notify.Message) {
 		return
 	}
 	transactions, need, e := blockChainImpl.queryTxsByBlockHash(m.CurrentBlockHash, m.TransactionHashes)
-	if e == ErrNil {
+	if e == service.ErrNil {
 		m.TransactionHashes = need
 	}
 
@@ -91,7 +92,7 @@ func (ch ChainHandler) transactionGotHandler(msg notify.Message) {
 		logger.Errorf("Unmarshal got transactions error:%s", e.Error())
 		return
 	}
-	blockChainImpl.GetTransactionPool().AddMissTransactions(txs)
+	service.GetTransactionPool().AddMissTransactions(txs)
 
 	m := notify.TransactionGotAddSuccMessage{Transactions: txs, Peer: tgm.Peer}
 	notify.BUS.Publish(notify.TransactionGotAddSucc, &m)

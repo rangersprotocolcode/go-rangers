@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"x/src/network"
 	"x/src/utility"
+	"x/src/service"
 )
 
 func (api *GtasAPI) GetBNTBalance(addr, coin string) (*Result, error) {
@@ -72,7 +73,7 @@ func (api *GtasAPI) UpdateAssets(appId, rawjson string, nonce uint64) (*Result, 
 	}
 
 	// 立即执行
-	context := core.TxManagerInstance.GetContext(appId)
+	context := service.TxManagerInstance.GetContext(appId)
 
 	// 不在事务里，不应该啊
 	if nil == context {

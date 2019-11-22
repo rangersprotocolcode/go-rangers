@@ -16,6 +16,7 @@ import (
 	"encoding/binary"
 	"math"
 	"errors"
+	"x/src/service"
 )
 
 const (
@@ -56,7 +57,7 @@ type blockChain struct {
 
 	executor        *VMExecutor
 	forkProcessor   *forkProcessor
-	transactionPool TransactionPool
+	transactionPool service.TransactionPool
 
 	lock middleware.Loglock
 }
@@ -66,9 +67,9 @@ type castingBlock struct {
 	receipts types.Receipts
 }
 
-func initBlockChain(nodeType byte) error {
+func initBlockChain() error {
 	chain := &blockChain{lock: middleware.NewLoglock("chain")}
-	chain.transactionPool = NewTransactionPool(nodeType)
+	chain.transactionPool = service.GetTransactionPool()
 
 	var err error
 	chain.topBlocks, err = lru.New(100)
@@ -122,8 +123,6 @@ func initBlockChain(nodeType byte) error {
 	chain.forkProcessor = initForkProcessor(chain)
 
 	initMinerManager()
-	initFTManager()
-	initNFTManager()
 
 	chain.latestBlock = chain.queryBlockHeaderByHeight([]byte(latestBlockKey), false)
 	if chain.latestBlock == nil {
@@ -378,10 +377,6 @@ func (chain *blockChain) GetTransaction(txHash common.Hash) (*types.Transaction,
 	return chain.transactionPool.GetTransaction(txHash)
 }
 
-func (chain *blockChain) GetTransactionPool() TransactionPool {
-	return chain.transactionPool
-}
-
 func (chain *blockChain) GetBalance(address common.Address) *big.Int {
 	if nil == chain.latestStateDB {
 		return nil
@@ -526,7 +521,7 @@ func (chain *blockChain) getAccountDBByHeight(height uint64) (*account.AccountDB
 
 func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList []common.Hashes) ([]*types.Transaction, []common.Hashes, error) {
 	if nil == txHashList || 0 == len(txHashList) {
-		return nil, nil, ErrNil
+		return nil, nil, service.ErrNil
 	}
 
 	verifiedBody, _ := chain.verifiedBodyCache.Get(blockHash)

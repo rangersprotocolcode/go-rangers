@@ -8,6 +8,7 @@ import (
 	"x/src/network"
 	"x/src/utility"
 	"fmt"
+	"x/src/service"
 )
 
 // 提现
@@ -76,7 +77,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 		}
 
 		for _, k := range withDrawReq.NFT {
-			nft := NFTManagerInstance.DeleteNFT(source, k.SetId, k.Id, accountdb)
+			nft := service.NFTManagerInstance.DeleteNFT(source, k.SetId, k.Id, accountdb)
 			if nil == nft {
 				return "NFT Not Exist In This Game", false
 			}
@@ -118,6 +119,6 @@ func sendWithdrawToCoiner(withDrawReq types.WithDrawReq, transaction *types.Tran
 	}
 
 	txLogger.Tracef("After execute withdraw.Send msg to coin proxy:%s", t.ToTxJson().ToString())
-	network.GetNetInstance().SendToCoinConnector(msg)
+	go network.GetNetInstance().SendToCoinConnector(msg)
 	return true
 }

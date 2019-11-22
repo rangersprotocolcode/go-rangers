@@ -12,6 +12,7 @@ import (
 	"time"
 	"x/src/middleware/log"
 	"x/src/storage/account"
+	"x/src/service"
 )
 
 // 客户端web socket 请求的返回数据结构
@@ -244,7 +245,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 		}
 
 		// 已经执行过了（入块时），则不用再执行了
-		if nil != TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw) {
+		if nil != service.TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw) {
 			// bingo
 			executor.logger.Infof("Tx is executed!")
 			executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
@@ -265,13 +266,13 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 				message = outputMessage.Payload
 			}
 
-			GetBlockChain().GetTransactionPool().PutGameData(txRaw.Hash)
+			service.GetTransactionPool().PutGameData(txRaw.Hash)
 		}
 
 		// 没有结果返回，默认出错，回滚
 		if !result || len(txRaw.Data) != 0 && (outputMessage == nil || outputMessage.Status == 1) {
 			executor.logger.Infof("Roll back tx.")
-			TxManagerInstance.RollBack(gameId)
+			service.TxManagerInstance.RollBack(gameId)
 
 			// 加入到已执行过的交易池，打包入块不会再执行这笔交易
 			executor.markExecuted(&txRaw)
@@ -279,7 +280,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 				message = "Tx Execute Failed"
 			}
 		} else {
-			TxManagerInstance.Commit(gameId)
+			service.TxManagerInstance.Commit(gameId)
 		}
 
 		executor.logger.Debugf("end TransactionTypeOperatorEvent. txhash: %s", txhash)
@@ -408,7 +409,7 @@ func (executor *GameExecutor) doTransfer(txRaw types.Transaction, accountDB *acc
 }
 
 func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {
-	if ok, err := executor.chain.GetTransactionPool().AddTransaction(tx); err != nil || !ok {
+	if ok, err := service.GetTransactionPool().AddTransaction(tx); err != nil || !ok {
 		executor.logger.Errorf("Add tx error:%s", err.Error())
 		return
 	}
@@ -417,11 +418,11 @@ func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {
 }
 
 func (executor *GameExecutor) markExecuted(trans *types.Transaction) {
-	executor.chain.GetTransactionPool().AddExecuted(trans)
+	service.GetTransactionPool().AddExecuted(trans)
 }
 
 func (executor *GameExecutor) isExisted(tx types.Transaction) bool {
-	return executor.chain.GetTransactionPool().IsExisted(tx.Hash)
+	return service.GetTransactionPool().IsExisted(tx.Hash)
 }
 
 func (executor *GameExecutor) loop() {

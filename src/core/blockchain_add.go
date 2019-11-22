@@ -9,6 +9,7 @@ import (
 	"errors"
 	"encoding/json"
 	"strconv"
+	"x/src/service"
 )
 
 func (chain *blockChain) consensusVerify(source string, b *types.Block) (types.AddBlockResult, bool) {
@@ -299,7 +300,7 @@ func (chain *blockChain) publishSet(txs []*types.Transaction) {
 				break
 			}
 
-			NFTManagerInstance.SendPublishNFTSetToConnector(&nftSet)
+			service.NFTManagerInstance.SendPublishNFTSetToConnector(&nftSet)
 			break
 		}
 
@@ -307,8 +308,8 @@ func (chain *blockChain) publishSet(txs []*types.Transaction) {
 		if 0 != len(tx.SubTransactions) {
 			for _, user := range tx.SubTransactions {
 				if user.Address == "StartFT" {
-					ftSet := FTManagerInstance.GenerateFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], user.Assets["createTime"], 1)
-					FTManagerInstance.SendPublishFTSetToConnector(ftSet)
+					ftSet := service.FTManagerInstance.GenerateFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], user.Assets["createTime"], 1)
+					service.FTManagerInstance.SendPublishFTSetToConnector(ftSet)
 					continue
 				}
 
@@ -320,8 +321,8 @@ func (chain *blockChain) publishSet(txs []*types.Transaction) {
 						continue
 					}
 					appId := user.Assets["appId"]
-					nftSet := NFTManagerInstance.GenerateNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"])
-					NFTManagerInstance.SendPublishNFTSetToConnector(nftSet)
+					nftSet := service.NFTManagerInstance.GenerateNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"])
+					service.NFTManagerInstance.SendPublishNFTSetToConnector(nftSet)
 				}
 			}
 		}

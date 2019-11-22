@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"encoding/json"
 	"x/src/utility"
+	"x/src/service"
 )
 
 func GetCoinBalance(source common.Address, ft string) string {
@@ -57,7 +58,7 @@ func GetAllFT(source common.Address) string {
 
 func GetNFTCount(addr, setId, appId string) int {
 	accountDB := AccountDBManagerInstance.GetAccountDB(appId, true)
-	nftSet := NFTManagerInstance.GetNFTSet(setId, accountDB)
+	nftSet := service.NFTManagerInstance.GetNFTSet(setId, accountDB)
 	if nil == nftSet {
 		return 0
 	}
@@ -74,7 +75,7 @@ func GetNFTCount(addr, setId, appId string) int {
 func GetNFTInfo(setId, id, appId string) string {
 	txLogger.Tracef("Get nft nfo.setId:%s,id:%s,appid:%s,", setId, id, appId)
 	accountDB := AccountDBManagerInstance.GetAccountDB(appId, true)
-	nft := NFTManagerInstance.GetNFT(setId, id, accountDB)
+	nft := service.NFTManagerInstance.GetNFT(setId, id, accountDB)
 	if nil != nft {
 		txLogger.Tracef("Got nft info:%s,", nft.ToJSONString())
 		return nft.ToJSONString()
@@ -85,14 +86,14 @@ func GetNFTInfo(setId, id, appId string) string {
 
 func GetAllNFT(source common.Address, appId string) string {
 	accountDB := AccountDBManagerInstance.GetAccountDB(appId, true)
-	nftList := NFTManagerInstance.GetNFTListByAddress(source, appId, accountDB)
+	nftList := service.NFTManagerInstance.GetNFTListByAddress(source, appId, accountDB)
 	bytes, _ := json.Marshal(nftList)
 	return string(bytes)
 }
 
 func GetAllNFTBySetId(source string, setId string) string {
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	nftList := NFTManagerInstance.GetNFTListByAddress(common.HexToAddress(source), "", accountDB)
+	nftList := service.NFTManagerInstance.GetNFTListByAddress(common.HexToAddress(source), "", accountDB)
 
 	result := make([]string, 0)
 
@@ -111,7 +112,7 @@ func GetAllNFTBySetId(source string, setId string) string {
 func GetNFTSet(setId string) string {
 	txLogger.Tracef("Get nft set id:%s,", setId)
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	nftSet := NFTManagerInstance.GetNFTSet(setId, accountDB)
+	nftSet := service.NFTManagerInstance.GetNFTSet(setId, accountDB)
 	if nil != nftSet {
 		txLogger.Tracef("Got nft set info:%s,", nftSet.ToJSONString())
 		return nftSet.ToJSONString()
@@ -122,7 +123,7 @@ func GetNFTSet(setId string) string {
 
 func GetFTSet(id string) string {
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	ftSet := FTManagerInstance.GetFTSet(id, accountDB)
+	ftSet := service.FTManagerInstance.GetFTSet(id, accountDB)
 
 	response := make(map[string]string)
 	if nil != ftSet {
@@ -167,7 +168,7 @@ func UpdateAsset(user types.UserData, appId string, accountDB *account.AccountDB
 	ftList := user.FT
 	if 0 != len(ftList) {
 		for ftName, valueString := range ftList {
-			_, _, flag := FTManagerInstance.TransferFT(appId, ftName, user.Address, valueString, accountDB)
+			_, _, flag := service.FTManagerInstance.TransferFT(appId, ftName, user.Address, valueString, accountDB)
 			if !flag {
 				logger.Debugf("Game Change ft failed!")
 				return false
@@ -180,7 +181,7 @@ func UpdateAsset(user types.UserData, appId string, accountDB *account.AccountDB
 	nftList := user.NFT
 	if 0 != len(nftList) {
 		for _, nft := range nftList {
-			if !NFTManagerInstance.UpdateNFT(userAddr, appId, nft.SetId, nft.Id, nft.Data, accountDB) {
+			if !service.NFTManagerInstance.UpdateNFT(userAddr, appId, nft.SetId, nft.Id, nft.Data, accountDB) {
 				return false
 			}
 		}
@@ -263,7 +264,7 @@ func transferNFT(nftIDList []types.NFTID, source common.Address, target common.A
 
 	response := make([]string, length)
 	for _, id := range nftIDList {
-		_, flag := NFTManagerInstance.Transfer(id.SetId, id.Id, source, target, db)
+		_, flag := service.NFTManagerInstance.Transfer(id.SetId, id.Id, source, target, db)
 		if !flag {
 			return nil, false
 		}
@@ -309,7 +310,7 @@ func transferFT(ft map[string]string, source string, target string, accountDB *a
 	response := types.NewJSONObject()
 
 	for ftName, valueString := range ft {
-		message, left, ok := FTManagerInstance.TransferFT(source, ftName, target, valueString, accountDB)
+		message, left, ok := service.FTManagerInstance.TransferFT(source, ftName, target, valueString, accountDB)
 		if !ok {
 			logger.Debugf("Transfer FT Failed:%s", message)
 			return nil, false
@@ -348,7 +349,7 @@ func PublishFT(accountdb *account.AccountDB, tx *types.Transaction) (string, boo
 
 	appId := tx.Source
 	createTime := ftSet["createTime"]
-	id, ok := FTManagerInstance.PublishFTSet(FTManagerInstance.GenerateFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, createTime, 1), accountdb)
+	id, ok := service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, createTime, 1), accountdb)
 	txLogger.Tracef("Publish ft name:%s,symbol:%s,totalSupply:%s,appId:%s,id:%s,publish result:%t", ftSet["name"], ftSet["symbol"], ftSet["totalSupply"], appId, id, ok)
 
 	return id, ok
@@ -364,7 +365,7 @@ func PublishNFTSet(accountdb *account.AccountDB, tx *types.Transaction) (bool, s
 	}
 
 	appId := tx.Source
-	message, flag := NFTManagerInstance.PublishNFTSet(NFTManagerInstance.GenerateNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime), accountdb)
+	message, flag := service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime), accountdb)
 	return flag, message
 }
 
@@ -372,7 +373,7 @@ func MintFT(accountdb *account.AccountDB, tx *types.Transaction) (bool, string) 
 	data := make(map[string]string)
 	json.Unmarshal([]byte(tx.Data), &data)
 
-	message, result := FTManagerInstance.MintFT(tx.Source, data["ftId"], tx.Target, data["supply"], accountdb)
+	message, result := service.FTManagerInstance.MintFT(tx.Source, data["ftId"], tx.Target, data["supply"], accountdb)
 	return result, message
 }
 
@@ -380,7 +381,7 @@ func ShuttleNFT(db *account.AccountDB, tx *types.Transaction) (bool, string) {
 	data := make(map[string]string)
 	json.Unmarshal([]byte(tx.Data), &data)
 
-	message, ok := NFTManagerInstance.Shuttle(tx.Source, data["setId"], data["id"], data["newAppId"], db)
+	message, ok := service.NFTManagerInstance.Shuttle(tx.Source, data["setId"], data["id"], data["newAppId"], db)
 
 	return ok, message
 }
@@ -389,6 +390,6 @@ func MintNFT(accountdb *account.AccountDB, tx *types.Transaction) (bool, string)
 	data := make(map[string]string)
 	json.Unmarshal([]byte(tx.Data), &data)
 
-	message, ok := NFTManagerInstance.MintNFT(tx.Source, data["setId"], data["id"], data["data"], data["createTime"], common.HexToAddress(data["target"]), accountdb)
+	message, ok := service.NFTManagerInstance.MintNFT(tx.Source, data["setId"], data["id"], data["data"], data["createTime"], common.HexToAddress(data["target"]), accountdb)
 	return ok, message
 }

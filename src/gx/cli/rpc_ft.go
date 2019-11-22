@@ -1,11 +1,11 @@
 package cli
 
 import (
-	"x/src/core"
 	"x/src/common"
 	"x/src/middleware/types"
 	"fmt"
 	"x/src/statemachine"
+	"x/src/service"
 )
 
 // 状态机转主链币给玩家
@@ -20,7 +20,7 @@ func (api *GtasAPI) PublishFT(authCode, appId, owner, name, symbol, totalSupply,
 		return failResult("wrong params")
 	}
 
-	context := core.TxManagerInstance.GetContext(appId)
+	context := service.TxManagerInstance.GetContext(appId)
 
 	// 不在事务里，不应该啊
 	if nil == context {
@@ -28,7 +28,7 @@ func (api *GtasAPI) PublishFT(authCode, appId, owner, name, symbol, totalSupply,
 		return failResult("not in transaction")
 	}
 
-	result, flag := core.FTManagerInstance.PublishFTSet(core.FTManagerInstance.GenerateFTSet(name, symbol, appId, totalSupply, owner, createTime, 1), context.AccountDB)
+	result, flag := service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet(name, symbol, appId, totalSupply, owner, createTime, 1), context.AccountDB)
 	if flag {
 		data := types.UserData{}
 		data.Address = "StartFT"
@@ -64,7 +64,7 @@ func (api *GtasAPI) MintFT(authCode, appId, ftId, target, balance string) (*Resu
 		return failResult(msg)
 	}
 
-	result, flag := core.FTManagerInstance.MintFT(appId, ftId, target, balance, context.AccountDB)
+	result, flag := service.FTManagerInstance.MintFT(appId, ftId, target, balance, context.AccountDB)
 	api.logger.Debugf("mintFT end. result: %s, flag: %t", result, flag)
 
 	if flag {
@@ -105,7 +105,7 @@ func (api *GtasAPI) transferFTOrCoin(authCode, appId, target, ftId, supply strin
 		return failResult(msg)
 	}
 
-	result, _, flag := core.FTManagerInstance.TransferFT(appId, ftId, target, supply, context.AccountDB)
+	result, _, flag := service.FTManagerInstance.TransferFT(appId, ftId, target, supply, context.AccountDB)
 	common.DefaultLogger.Debugf("Transfer FTOrCoin result:%t,message:%s", flag, result)
 	if flag {
 		// 生成交易，上链 context.Tx.SubTransactions
@@ -126,12 +126,12 @@ func (api *GtasAPI) transferFTOrCoin(authCode, appId, target, ftId, supply strin
 	}
 }
 
-func (api *GtasAPI) checkTx(appId string) (*core.TxContext, bool) {
+func (api *GtasAPI) checkTx(appId string) (*service.TxContext, bool) {
 	if 0 == len(appId) {
 		return nil, false
 	}
 
-	context := core.TxManagerInstance.GetContext(appId)
+	context := service.TxManagerInstance.GetContext(appId)
 	// 不在事务里，不应该啊
 	if nil == context {
 		common.DefaultLogger.Debugf("transferFT is nil!")

@@ -13,6 +13,7 @@ import (
 	"math/big"
 	"fmt"
 	"x/src/middleware"
+	"x/src/service"
 )
 
 const MaxCastBlockTime = time.Second * 3
@@ -73,7 +74,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 			// 在交易池里，表示game_executor已经执行过状态机了
 			// 只要处理交易里的subTransaction即可
-			if nil != TxManagerInstance.BeginTransaction(transaction.Target, accountdb, transaction) {
+			if nil != service.TxManagerInstance.BeginTransaction(transaction.Target, accountdb, transaction) {
 				success = true
 				logger.Debugf("Is not game data")
 				if 0 != len(transaction.SubTransactions) {
@@ -83,8 +84,8 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						// 发币
 						if user.Address == "StartFT" {
 							createTime, _ := user.Assets["createTime"]
-							ftSet := FTManagerInstance.GenerateFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], createTime, 1)
-							_, flag := FTManagerInstance.PublishFTSet(ftSet, accountdb)
+							ftSet := service.FTManagerInstance.GenerateFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], createTime, 1)
+							_, flag := service.FTManagerInstance.PublishFTSet(ftSet, accountdb)
 							if !flag {
 								success = false
 								break
@@ -98,7 +99,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 							ftId := user.Assets["ftId"]
 							target := user.Assets["target"]
 							supply := user.Assets["balance"]
-							_, flag := FTManagerInstance.MintFT(owner, ftId, target, supply, accountdb)
+							_, flag := service.FTManagerInstance.MintFT(owner, ftId, target, supply, accountdb)
 
 							if !flag {
 								success = false
@@ -110,7 +111,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 						// 给用户币
 						if user.Address == "TransferFT" {
-							_, _, flag := FTManagerInstance.TransferFT(user.Assets["gameId"], user.Assets["symbol"], user.Assets["target"], user.Assets["supply"], accountdb)
+							_, _, flag := service.FTManagerInstance.TransferFT(user.Assets["gameId"], user.Assets["symbol"], user.Assets["target"], user.Assets["supply"], accountdb)
 							if !flag {
 								success = false
 								break
@@ -121,7 +122,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						// 修改NFT属性
 						if user.Address == "UpdateNFT" {
 							addr := common.HexToAddress(user.Assets["addr"])
-							flag := NFTManagerInstance.UpdateNFT(addr, user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], accountdb)
+							flag := service.NFTManagerInstance.UpdateNFT(addr, user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], accountdb)
 							if !flag {
 								success = false
 								break
@@ -132,7 +133,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						// NFT
 						if user.Address == "TransferNFT" {
 							appId := user.Assets["appId"]
-							_, ok := NFTManagerInstance.Transfer(user.Assets["setId"], user.Assets["id"], common.HexToAddress(appId), common.HexToAddress(user.Assets["target"]), accountdb)
+							_, ok := service.NFTManagerInstance.Transfer(user.Assets["setId"], user.Assets["id"], common.HexToAddress(appId), common.HexToAddress(user.Assets["target"]), accountdb)
 							if !ok {
 								success = false
 								break
@@ -171,8 +172,8 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 								break
 							}
 							appId := user.Assets["appId"]
-							nftSet := NFTManagerInstance.GenerateNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"])
-							_, ok := NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
+							nftSet := service.NFTManagerInstance.GenerateNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"])
+							_, ok := service.NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
 							if !ok {
 								success = false
 								break
@@ -181,7 +182,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						}
 
 						if user.Address == "MintNFT" {
-							_, ok := NFTManagerInstance.MintNFT(user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], user.Assets["createTime"], common.HexToAddress(user.Assets["target"]), accountdb)
+							_, ok := service.NFTManagerInstance.MintNFT(user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], user.Assets["createTime"], common.HexToAddress(user.Assets["target"]), accountdb)
 							if !ok {
 								success = false
 								break
@@ -204,7 +205,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 				// 本地没有执行过状态机(game_executor还没有收到消息)，则需要调用状态机
 				transaction.SubTransactions = make([]types.UserData, 0)
 				outputMessage := statemachine.STMManger.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), transaction.Data, transaction)
-				GetBlockChain().GetTransactionPool().PutGameData(transaction.Hash)
+				service.GetTransactionPool().PutGameData(transaction.Hash)
 				result := ""
 				if outputMessage != nil {
 					result = outputMessage.Payload
@@ -212,9 +213,9 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 				if 0 == len(result) || result == "fail to transfer" || outputMessage == nil || outputMessage.Status == 1 {
 					success = false
-					TxManagerInstance.RollBack(transaction.Target)
+					service.TxManagerInstance.RollBack(transaction.Target)
 				} else {
-					TxManagerInstance.Commit(transaction.Target)
+					service.TxManagerInstance.Commit(transaction.Target)
 					success = true
 				}
 
@@ -343,14 +344,14 @@ func (executor *VMExecutor) executeNFTDepositNotify(accountdb *account.AccountDB
 	}
 
 	// 检查setId
-	nftSet := NFTManagerInstance.GetNFTSet(depositNFTData.SetId, accountdb)
+	nftSet := service.NFTManagerInstance.GetNFTSet(depositNFTData.SetId, accountdb)
 	if nil == nftSet {
-		nftSet = NFTManagerInstance.GenerateNFTSet(depositNFTData.SetId, depositNFTData.Name, depositNFTData.Symbol, depositNFTData.Creator, depositNFTData.Owner, 0, depositNFTData.CreateTime, )
-		NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
+		nftSet = service.NFTManagerInstance.GenerateNFTSet(depositNFTData.SetId, depositNFTData.Name, depositNFTData.Symbol, depositNFTData.Creator, depositNFTData.Owner, 0, depositNFTData.CreateTime, )
+		service.NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
 	}
 
 	appId := transaction.Target
-	str, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, "", depositNFTData.Creator, depositNFTData.CreateTime, common.HexToAddress(transaction.Source), depositNFTData.Data, accountdb)
+	str, ok := service.NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, "", depositNFTData.Creator, depositNFTData.CreateTime, common.HexToAddress(transaction.Source), depositNFTData.Data, accountdb)
 	txLogger.Debugf("GenerateNFT result:%s,%t", str, ok)
 	return ok
 }
