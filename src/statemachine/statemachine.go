@@ -17,7 +17,6 @@ import (
 	"encoding/json"
 )
 
-
 type StateMachine struct {
 	ContainerConfig
 
@@ -36,6 +35,9 @@ type StateMachine struct {
 
 	// 下载image用
 	httpClient *http.Client `json:"-"`
+
+	// 与stm 通信用
+	wsServer *wsServer `json:"-"`
 }
 
 //将配置信息转换为 json 数据用于输出
@@ -51,7 +53,8 @@ func (c *StateMachine) TOJSONString() string {
 }
 
 func buildStateMachine(c ContainerConfig, cli *client.Client, ctx context.Context, logger log.Logger, httpClient *http.Client) StateMachine {
-	return StateMachine{c, "", cli, ctx, logger, preparing, httpClient}
+	stm := StateMachine{c, "", cli, ctx, logger, preparing, httpClient, nil}
+	return stm
 }
 
 //ContainerConfig.RunContainer: 从配置运行容器
@@ -146,6 +149,12 @@ func (s *StateMachine) after(existed *types.Container) (string, Ports) {
 	}
 
 	s.prepared()
+
+	// 启动ws服务器，供stm调用
+	if s.wsServer == nil {
+		s.wsServer = newWSServer(s.Game)
+		go s.wsServer.Start()
+	}
 	return s.Game, s.makePorts(p)
 }
 

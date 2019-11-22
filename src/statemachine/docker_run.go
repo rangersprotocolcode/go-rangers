@@ -12,13 +12,18 @@ import (
 
 // 通过配置文件，加载STM
 func (s *StateMachineManager) runStateMachine(service ContainerConfig) {
+	s.lock.Lock()
 	if 0 == len(service.Game) {
 		s.logger.Errorf("fail to create stm with nil game. config: %s", service.TOJSONString())
+		s.lock.Unlock()
+		return
+	}
+	if _, ok := s.StateMachines[service.Game]; ok {
+		s.logger.Errorf("fail to create stm with nil game. config: %s", service.TOJSONString())
+		s.lock.Unlock()
 		return
 	}
 	stateMachine := buildStateMachine(service, s.cli, s.ctx, s.logger, s.httpClient)
-
-	s.lock.Lock()
 	s.StateMachines[service.Game] = &stateMachine
 	s.lock.Unlock()
 
@@ -29,7 +34,7 @@ func (s *StateMachineManager) runStateMachine(service ContainerConfig) {
 
 	// 调用stm init接口
 	authCode := s.generateAuthcode()
-	s.callInit(ports[0].Host, authCode)
+	s.callInit(ports[0].Host, stateMachine.wsServer.GetURL(), authCode)
 	stateMachine.ready()
 
 	s.lock.Lock()
@@ -38,10 +43,10 @@ func (s *StateMachineManager) runStateMachine(service ContainerConfig) {
 	s.lock.Unlock()
 }
 
-func (s *StateMachineManager) callInit(dockerPortInt PortInt, authCode string) {
+func (s *StateMachineManager) callInit(dockerPortInt PortInt, wsUrl, authCode string) {
 	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", dockerPortInt, "init")
 	values := url.Values{}
-	values["url"] = []string{fmt.Sprintf("http://%s:%d", "172.17.0.1", s.layer2Port)}
+	values["url"] = []string{wsUrl}
 	values["authCode"] = []string{authCode}
 	s.logger.Infof("Send post req:path:%s,values:%v", path, values)
 
