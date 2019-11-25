@@ -202,7 +202,7 @@ func newLevelDBInstance(file string, cache int, handles int) (*leveldb.DB, error
 		OpenFilesCacheCapacity: handles,
 		BlockCacheCapacity:     200 * opt.MiB,
 		WriteBuffer:            cache * opt.MiB, // Two of these are used internally
-		Filter:                 filter.NewBloomFilter(15),
+		Filter:                 filter.NewBloomFilter(20),
 	})
 
 	if _, corrupted := err.(*errors.ErrCorrupted); corrupted {

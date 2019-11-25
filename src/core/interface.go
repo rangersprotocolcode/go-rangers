@@ -4,7 +4,6 @@ import (
 	"x/src/common"
 	"math/big"
 	"x/src/middleware/types"
-	"x/src/storage/account"
 	"time"
 )
 
@@ -44,21 +43,13 @@ type BlockChain interface {
 
 	GetBalance(address common.Address) *big.Int
 
-	GetNonce(address common.Address, gameId string) uint64
-
 	GetTransaction(txHash common.Hash) (*types.Transaction, error)
 
 	Remove(block *types.Block) bool
 
-	Clear() error
-
 	Close()
 
-	GetAccountDBByHash(hash common.Hash) (*account.AccountDB, error)
-
 	GetVerifyHash(height uint64) (common.Hash, error)
-
-	GetAccountDB() *account.AccountDB
 
 	HasBlockByHash(hash common.Hash) bool
 }

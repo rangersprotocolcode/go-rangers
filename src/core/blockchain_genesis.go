@@ -26,9 +26,9 @@ type GenesisProposer struct {
 }
 
 func (chain *blockChain) insertGenesisBlock() {
-	state, err := account.NewAccountDB(common.Hash{}, chain.stateDB)
+	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	if nil == err {
-		genesisBlock := genGenesisBlock(state, chain.stateDB.TrieDB(), consensusHelper.GenerateGenesisInfo())
+		genesisBlock := genGenesisBlock(state, service.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
 		logger.Debugf("GenesisBlock Hash:%s,StateTree:%s", genesisBlock.Header.Hash.String(), genesisBlock.Header.StateTree.Hex())
 		blockByte, _ := types.MarshalBlock(genesisBlock)
 		chain.saveBlockByHash(genesisBlock.Header.Hash, blockByte)

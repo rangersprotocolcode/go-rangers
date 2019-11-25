@@ -15,4 +15,5 @@ func InitService(nodeType byte) {
 	initTxManager()
 	initFTManager()
 	initNFTManager()
+	initAccountDBManager()
 }

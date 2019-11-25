@@ -33,7 +33,6 @@ func InitCore(helper types.ConsensusHelper) error {
 	initChainHandler()
 
 	initGameExecutor(blockChainImpl)
-	initAccountDBManager()
 
 	return nil
 }

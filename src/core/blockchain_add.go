@@ -126,7 +126,7 @@ func (chain *blockChain) executeTransaction(block *types.Block) (bool, *account.
 	if len(block.Transactions) > 0 {
 		logger.Debugf("NewAccountDB height:%d StateTree:%s preHash:%s preRoot:%s", block.Header.Height, block.Header.StateTree.Hex(), preBlock.Hash.Hex(), preRoot.Hex())
 	}
-	state, err := account.NewAccountDB(preRoot, chain.stateDB)
+	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(preRoot)
 	if err != nil {
 		logger.Errorf("Fail to new statedb, error:%s", err)
 		return false, state, nil
@@ -232,7 +232,7 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 		return false, state, receipts
 	}
 
-	trieDB := chain.stateDB.TrieDB()
+	trieDB := service.AccountDBManagerInstance.GetTrieDB()
 	err = trieDB.Commit(root, false)
 	if err != nil {
 		logger.Errorf("Trie commit error:%s", err.Error())
@@ -247,9 +247,10 @@ func (chain *blockChain) updateLastBlock(state *account.AccountDB, header *types
 		logger.Errorf("Fail to put %s, error:%s", latestBlockKey, err.Error())
 		return false
 	}
-	chain.latestStateDB = state
+
 	chain.latestBlock = header
 	chain.requestIds = header.RequestIds
+	service.AccountDBManagerInstance.SetLatestStateDB(state)
 
 	logger.Debugf("Update latestStateDB:%s height:%d", header.StateTree.Hex(), header.Height)
 

@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"x/src/core"
 	"x/src/common"
 	"x/src/middleware/types"
 	"encoding/json"
@@ -11,45 +10,45 @@ import (
 )
 
 func (api *GtasAPI) GetBNTBalance(addr, coin string) (*Result, error) {
-	return successResult(core.GetCoinBalance(common.HexToAddress(addr), coin))
+	return successResult(service.GetCoinBalance(common.HexToAddress(addr), coin))
 }
 
 func (api *GtasAPI) GetAllCoinInfo(addr string) (*Result, error) {
-	return successResult(core.GetAllCoinInfo(common.HexToAddress(addr)))
+	return successResult(service.GetAllCoinInfo(common.HexToAddress(addr)))
 }
 
 func (api *GtasAPI) GetFTBalance(addr, ft string) (*Result, error) {
-	return successResult(core.GetFTInfo(common.HexToAddress(addr), ft))
+	return successResult(service.GetFTInfo(common.HexToAddress(addr), ft))
 }
 
 func (api *GtasAPI) GetFTSet(id string) (*Result, error) {
-	return successResult(core.GetFTSet(id))
+	return successResult(service.GetFTSet(id))
 }
 
 func (api *GtasAPI) GetAllFT(addr string) (*Result, error) {
-	return successResult(core.GetAllFT(common.HexToAddress(addr)))
+	return successResult(service.GetAllFT(common.HexToAddress(addr)))
 }
 
 func (api *GtasAPI) GetNFTCount(addr, setId, appId string) (*Result, error) {
-	return successResult(core.GetNFTCount(addr, setId, appId))
+	return successResult(service.GetNFTCount(addr, setId, appId))
 }
 func (api *GtasAPI) GetNFT(setId, id, appId string) (*Result, error) {
-	return successResult(core.GetNFTInfo(setId, id, appId))
+	return successResult(service.GetNFTInfo(setId, id, appId))
 }
 
 func (api *GtasAPI) GetAllNFT(addr, appId string) (*Result, error) {
-	return successResult(core.GetAllNFT(common.HexToAddress(addr), appId))
+	return successResult(service.GetAllNFT(common.HexToAddress(addr), appId))
 }
 
 func (api *GtasAPI) GetNFTSet(setId string) (*Result, error) {
-	return successResult(core.GetNFTSet(setId))
+	return successResult(service.GetNFTSet(setId))
 }
 
 func (api *GtasAPI) GetBalance(address string) (*Result, error) {
 	gxLock.RLock()
 	defer gxLock.RUnlock()
 
-	accountDB := core.AccountDBManagerInstance.GetAccountDB("", true)
+	accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
 	balance := accountDB.GetBalance(common.HexToAddress(address))
 	return successResult(utility.BigIntToStr(balance))
 }
@@ -90,7 +89,7 @@ func (api *GtasAPI) UpdateAssets(appId, rawjson string, nonce uint64) (*Result, 
 
 	accountDb := context.AccountDB
 	for _, user := range data {
-		flag := core.UpdateAsset(user, appId, accountDb)
+		flag := service.UpdateAsset(user, appId, accountDb)
 		if !flag {
 			// 这里不应该回滚了
 			return failResult("not enough balance")

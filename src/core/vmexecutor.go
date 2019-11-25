@@ -58,7 +58,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 					success = false
 					break
 				}
-				_, ok := changeAssets(transaction.Source, mm, accountdb)
+				_, ok := service.ChangeAssets(transaction.Source, mm, accountdb)
 				if !ok {
 					success = false
 					break
@@ -191,7 +191,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						}
 
 						// 用户之间转账
-						if !UpdateAsset(user, transaction.Target, accountdb) {
+						if !service.UpdateAsset(user, transaction.Target, accountdb) {
 							success = false
 							break
 						}
@@ -222,16 +222,16 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			}
 			break
 		case types.TransactionTypePublishFT:
-			_, success = PublishFT(accountdb, transaction)
+			_, success = service.PublishFT(accountdb, transaction)
 			break
 		case types.TransactionTypePublishNFTSet:
-			success, _ = PublishNFTSet(accountdb, transaction)
+			success, _ = service.PublishNFTSet(accountdb, transaction)
 			break
 		case types.TransactionTypeMintFT:
-			success, _ = MintFT(accountdb, transaction)
+			success, _ = service.MintFT(accountdb, transaction)
 			break
 		case types.TransactionTypeMintNFT:
-			success, _ = MintNFT(accountdb, transaction)
+			success, _ = service.MintNFT(accountdb, transaction)
 			break
 		case types.TransactionTypeWithdraw:
 			_, success = Withdraw(accountdb, transaction, true)
@@ -246,7 +246,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			success = executor.executeNFTDepositNotify(accountdb, transaction)
 			break
 		case types.TransactionTypeShuttleNFT:
-			success, _ = ShuttleNFT(accountdb, transaction)
+			success, _ = service.ShuttleNFT(accountdb, transaction)
 			break
 		case types.TransactionTypeAddStateMachine:
 			// todo: 经济模型，新增状态机应该要付费

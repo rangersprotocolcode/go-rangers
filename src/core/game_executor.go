@@ -133,22 +133,22 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 
 	// 查询主链币
 	case types.TransactionTypeGetCoin:
-		result = GetCoinBalance(source, txRaw.Data)
+		result = service.GetCoinBalance(source, txRaw.Data)
 		break
 
 		// 查询所有主链币
 	case types.TransactionTypeGetAllCoin:
-		result = GetAllCoinInfo(source)
+		result = service.GetAllCoinInfo(source)
 		break
 
 		// 查询FT
 	case types.TransactionTypeFT:
-		result = GetFTInfo(source, txRaw.Data)
+		result = service.GetFTInfo(source, txRaw.Data)
 		break
 
 		// 查询用户所有FT
 	case types.TransactionTypeAllFT:
-		result = GetAllFT(source)
+		result = service.GetAllFT(source)
 		break
 
 		//查询特定NFT
@@ -156,35 +156,35 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 		var id types.NFTID
 		err := json.Unmarshal([]byte(txRaw.Data), &id)
 		if nil == err {
-			result = GetNFTInfo(id.SetId, id.Id, gameId)
+			result = service.GetNFTInfo(id.SetId, id.Id, gameId)
 		}
 		break
 
 		// 查询账户下某个游戏的所有NFT
 	case types.TransactionTypeNFTListByAddress:
-		result = GetAllNFT(source, gameId)
+		result = service.GetAllNFT(source, gameId)
 		break
 
 		// 查询NFTSet信息
 	case types.TransactionTypeNFTSet:
-		result = GetNFTSet(txRaw.Data)
+		result = service.GetNFTSet(txRaw.Data)
 		break
 
 	case types.TransactionTypeFTSet:
-		result = GetFTSet(txRaw.Data)
+		result = service.GetFTSet(txRaw.Data)
 		break
 
 	case types.TransactionTypeNFTCount:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
 
-		result = strconv.Itoa(GetNFTCount(param["address"], param["setId"], ""))
+		result = strconv.Itoa(service.GetNFTCount(param["address"], param["setId"], ""))
 		break
 
 	case types.TransactionTypeNFTList:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
-		result = GetAllNFTBySetId(param["address"], param["setId"])
+		result = service.GetAllNFTBySetId(param["address"], param["setId"])
 		break
 	}
 
@@ -225,7 +225,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 		executor.logger.Debugf("begin TransactionTypeOperatorEvent. txhash: %s, appId: %s, transferInfo: %s, payload: %s", txhash, txRaw.Target, txRaw.ExtraData, txRaw.Data)
 
 		gameId := txRaw.Target
-		accountDB := AccountDBManagerInstance.GetAccountDB(gameId, true)
+		accountDB := service.AccountDBManagerInstance.GetAccountDB(gameId, true)
 		isTransferOnly := 0 == len(gameId)
 
 		// 只是转账
@@ -287,7 +287,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 
 	case types.TransactionTypeWithdraw:
 		gameId := txRaw.Target
-		accountDB := AccountDBManagerInstance.GetAccountDB(gameId, true)
+		accountDB := service.AccountDBManagerInstance.GetAccountDB(gameId, true)
 
 		response, ok := Withdraw(accountDB, &txRaw, false)
 		if ok {
@@ -301,8 +301,8 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 
 	case types.TransactionTypePublishFT:
 		appId := txRaw.Source
-		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-		id, ok := PublishFT(accountDB, &txRaw)
+		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
+		id, ok := service.PublishFT(accountDB, &txRaw)
 		if ok {
 			var ftSet map[string]string
 			json.Unmarshal([]byte(txRaw.Data), &ftSet)
@@ -321,8 +321,8 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 
 	case types.TransactionTypePublishNFTSet:
 		appId := txRaw.Source
-		accountDB := AccountDBManagerInstance.GetAccountDB(appId, true)
-		flag, response := PublishNFTSet(accountDB, &txRaw)
+		accountDB := service.AccountDBManagerInstance.GetAccountDB(appId, true)
+		flag, response := service.PublishNFTSet(accountDB, &txRaw)
 		if flag {
 			message = txRaw.Data
 			result = true
@@ -333,23 +333,23 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 		break
 
 	case types.TransactionTypeMintFT:
-		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-		flag, response := MintFT(accountDB, &txRaw)
+		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
+		flag, response := service.MintFT(accountDB, &txRaw)
 
 		result = flag
 		message = response
 		break
 
 	case types.TransactionTypeMintNFT:
-		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-		flag, response := MintNFT(accountDB, &txRaw)
+		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
+		flag, response := service.MintNFT(accountDB, &txRaw)
 		message = response
 		result = flag
 		break
 
 	case types.TransactionTypeShuttleNFT:
-		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-		ok, response := ShuttleNFT(accountDB, &txRaw)
+		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
+		ok, response := service.ShuttleNFT(accountDB, &txRaw)
 		message = response
 		result = ok
 		break
@@ -399,7 +399,7 @@ func (executor *GameExecutor) doTransfer(txRaw types.Transaction, accountDB *acc
 	}
 
 	// todo: mm条目数校验：调用状态机的，mm条目数只能有一个；纯转账，允许多个
-	response, ok := changeAssets(txRaw.Source, mm, accountDB)
+	response, ok := service.ChangeAssets(txRaw.Source, mm, accountDB)
 	if !ok {
 		executor.logger.Errorf("change balances failed")
 	}
