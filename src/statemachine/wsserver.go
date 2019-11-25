@@ -119,6 +119,7 @@ func (self *wsServer) connHandle(conn *websocket.Conn) {
 			reply = self.buildResponse(false, err.Error())
 		} else {
 			switch msg.Type {
+
 			// FT 部分
 			case types.TransactionTypeMintFT:
 				answer, flag = self.mintFT(msg.Data)
@@ -161,6 +162,47 @@ func (self *wsServer) connHandle(conn *websocket.Conn) {
 			case types.TransactionTypeBatchUpdateNFT:
 				answer, flag = self.batchUpdateNFT(msg.Data)
 				break
+
+				// 查询部分
+			case types.TransactionTypeGetCoin:
+				answer, flag = self.getBNTBalance(msg.Data)
+				break
+			case types.TransactionTypeGetAllCoin:
+				answer, flag = self.getAllCoinInfo(msg.Data)
+				break
+			case types.TransactionTypeFT:
+				answer, flag = self.getFTBalance(msg.Data)
+				break
+			case types.TransactionTypeFTSet:
+				answer, flag = self.getFTSet(msg.Data)
+				break
+			case types.TransactionTypeAllFT:
+				answer, flag = self.getAllFT(msg.Data)
+				break
+			case types.TransactionTypeNFTCount:
+				answer, flag = self.getNFTCount(msg.Data)
+				break
+			case types.TransactionTypeNFT:
+				answer, flag = self.getNFT(msg.Data)
+				break
+			case types.TransactionTypeNFTListByAddress:
+				answer, flag = self.getAllNFT(msg.Data)
+				break
+			case types.TransactionTypeNFTSet:
+				answer, flag = self.getNFTSet(msg.Data)
+				break
+			case types.TransactionTypeNotify:
+				answer, flag = self.notify(msg.Data)
+				break
+			case types.TransactionTypeNotifyGroup:
+				answer, flag = self.notifyGroup(msg.Data)
+				break
+			case types.TransactionTypeNotifyBroadcast:
+				answer, flag = self.notifyBroadcast(msg.Data)
+				break
+			default:
+				answer = "wrong msg type"
+				flag = false
 			}
 
 		}

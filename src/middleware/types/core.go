@@ -82,7 +82,7 @@ const (
 	TransactionTypeMinerRefund = 4
 
 	//以下交易类型会被外部使用 禁止更改
-	TransactionTypeOperatorEvent     = 100
+	TransactionTypeOperatorEvent     = 100 // 调用状态机/转账
 	TransactionTypeGetCoin           = 101 // 查询主链币
 	TransactionTypeGetAllCoin        = 102 // 查询所有主链币
 	TransactionTypeFT                = 103 // 查询特定FT
@@ -93,7 +93,7 @@ const (
 	TransactionTypeStateMachineNonce = 108 // 调用状态机nonce(预留接口）
 	TransactionTypeFTSet             = 113 // 根据ftId, 查询ftSet信息
 	TransactionTypeNFTCount          = 114 // 查询用户Rocket上的指定NFT的拥有数量
-	TransactionTypeNFTList           = 115 // 查询用户Rocket上的指定NFT的拥有数量
+	TransactionTypeNFTList           = 115 // 查询用户Rocket上的指定NFT的列表
 
 	TransactionTypeWithdraw = 109
 
@@ -111,6 +111,11 @@ const (
 	TransactionTypeTransferNFT    = 124 // 状态机给用户转NFT
 	TransactionTypeUpdateNFT      = 125 // 更新NFT数据
 	TransactionTypeBatchUpdateNFT = 126 // 批量更新NFT数据
+
+	// 状态机通知客户端
+	TransactionTypeNotify          = 301 // 通知某个用户
+	TransactionTypeNotifyGroup     = 302 // 通知某个组
+	TransactionTypeNotifyBroadcast = 303 // 通知所有人
 
 	// 从rocket_connector来的消息
 	TransactionTypeCoinDepositAck = 201 // 充值

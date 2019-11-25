@@ -54,6 +54,7 @@ func (api *GtasAPI) GetBalance(address string) (*Result, error) {
 }
 
 // 通过rpc的方式，让本地的docker镜像调用
+// deprecated
 func (api *GtasAPI) UpdateAssets(appId, rawjson string, nonce uint64) (*Result, error) {
 	common.DefaultLogger.Debugf("UpdateAssets Rcv gameId:%s,rawJson:%s,nonce:%d\n", appId, rawjson, nonce)
 	//todo 并发问题 临时加锁控制

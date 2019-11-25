@@ -11,17 +11,16 @@ import (
 const stateDBPrefix = "state"
 
 type AccountDBManager struct {
-	accountDB *account.AccountDB
-	lock      *sync.RWMutex //用于锁定BASE
+	lock *sync.RWMutex //用于锁定BASE
 
 	stateDB       account.AccountDatabase
 	latestStateDB *account.AccountDB
 }
 
-var AccountDBManagerInstance *AccountDBManager
+var AccountDBManagerInstance AccountDBManager
 
 func initAccountDBManager() {
-	AccountDBManagerInstance = &AccountDBManager{}
+	AccountDBManagerInstance = AccountDBManager{}
 	AccountDBManagerInstance.lock = &sync.RWMutex{}
 
 	db, err := db.NewDatabase(stateDBPrefix)
@@ -32,11 +31,13 @@ func initAccountDBManager() {
 	AccountDBManagerInstance.stateDB = account.NewDatabase(db)
 }
 
+//todo: 功能增强
 func (manager *AccountDBManager) GetAccountDB(gameId string, isBase bool) *account.AccountDB {
 	return manager.latestStateDB
 }
 
 func (manager *AccountDBManager) GetAccountDBByHash(hash common.Hash) (*account.AccountDB, error) {
+	//todo: cache
 	return account.NewAccountDB(hash, manager.stateDB)
 }
 
