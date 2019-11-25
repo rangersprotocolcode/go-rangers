@@ -226,11 +226,7 @@ func (self *wsServer) Start() (err error) {
 		self.logger.Infof("net listen error:", err)
 	}
 
-	err = http.Serve(self.listener, self)
-	if err != nil {
-		self.logger.Errorf("http serve error:", err)
-		return
-	}
+	go http.Serve(self.listener, self)
 
 	self.logger.Errorf("wsserver started, url: %s%s", self.addr, self.uri)
 	return nil
