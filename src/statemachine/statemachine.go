@@ -153,7 +153,7 @@ func (s *StateMachine) after(existed *types.Container) (string, Ports) {
 	// 启动ws服务器，供stm调用
 	if s.wsServer == nil {
 		s.wsServer = newWSServer(s.Game)
-		go s.wsServer.Start()
+		s.wsServer.Start()
 	}
 	return s.Game, s.makePorts(p)
 }
