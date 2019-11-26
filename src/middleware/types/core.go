@@ -403,15 +403,6 @@ type BNTWithdrawInfo struct {
 	Value     string `json:"value,omitempty"`
 }
 
-//提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链
-type DepositData struct {
-	ChainType string            `json:"chainType,omitempty"`
-	Amount    string            `json:"amount,omitempty"`
-	TxId      string            `json:"txId,omitempty"`
-	FT        map[string]string `json:"ft,omitempty"`
-	NFT       map[string]string `json:"nft,omitempty"`
-}
-
 type TxJson struct {
 	// 用户id
 	Source string `json:"source"`

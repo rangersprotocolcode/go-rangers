@@ -88,33 +88,6 @@ func TestJSONTransferData(t *testing.T) {
 	fmt.Printf("length: %s", mm)
 }
 
-func TestJSONWithDepositData(t *testing.T) {
-	w := types.DepositData{ChainType: "ETH", Amount: "12.56", TxId: "1213r43qr"}
-	ft := make(map[string]string, 0)
-	ft["ft1"] = "23.55"
-	ft["ft2"] = "125.68"
-	w.FT = ft
-
-	nft := make(map[string]string, 0)
-	nft["nft1"] = "dafjls;djfa"
-	nft["nft2"] = "{'key':'v'}"
-	w.NFT = nft
-
-	b, err := json.Marshal(w)
-	if err != nil {
-		fmt.Printf("json marshal err: %s\n", err.Error())
-	}
-	fmt.Printf("marshal result:%s\n", b)
-
-	s := "{\"chainType\":\"ETH\",\"amount\":\"12.56\",\"txId\":\"1213r43qr\",\"ft\":{\"ft1\":\"23.55\",\"ft2\":\"125.68\"},\"nft\":{\"nft1\":\"dafjls;djfa\",\"nft2\":\"{'key':'v'}\"}}"
-	a := types.DepositData{}
-	err1 := json.Unmarshal([]byte(s), &a)
-	if err1 != nil {
-		fmt.Printf("json unmarshal err: %s\n", err.Error())
-	}
-	fmt.Printf("unmarshal result:%v\n", a)
-}
-
 func TestJSONNFTID(t *testing.T) {
 	a := []types.NFTID{}
 	id1 := types.NFTID{Id: "1", SetId: "s1"}
