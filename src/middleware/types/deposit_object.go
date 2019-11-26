@@ -5,14 +5,14 @@ type DepositCoinData struct {
 	ChainType        string `json:"chainType,omitempty"`
 	Amount           string `json:"amount,omitempty"`
 	TxId             string `json:"txId,omitempty"`
-	MainChainAddress string `json:"Addr,omitempty"`
+	MainChainAddress string `json:"addr,omitempty"`
 }
 
 //FT充值确认数据结构
 type DepositFTData struct {
 	FTId             string `json:"ftId,omitempty"`
 	Amount           string `json:"amount,omitempty"`
-	MainChainAddress string `json:"Addr,omitempty"`
+	MainChainAddress string `json:"addr,omitempty"`
 	ContractAddress  string `json:"ContractAddr,omitempty"`
 	TxId             string `json:"txId,omitempty"`
 }
@@ -32,12 +32,12 @@ type DepositNFTData struct {
 	AppId      string            `json:"appId,omitempty"`
 	Data       map[string]string `json:"data,omitempty"`
 
-	MainChainAddress string `json:"Addr,omitempty"`
+	MainChainAddress string `json:"addr,omitempty"`
 	ContractAddress  string `json:"ContractAddr,omitempty"`
 	TxId             string `json:"txId,omitempty"`
 }
 
-type Deposit struct {
-	Method string            `json:"type,omitempty"`
-	Data   map[string]string `json:"data,omitempty"`
+type DepositNotify struct {
+	Method string                 `json:"type"`
+	Data   map[string]interface{} `json:"data"`
 }

@@ -183,7 +183,7 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 
 	dumpTxs(remoteBlock.Transactions, remoteBlock.Header.Height)
 	chain.eraseAddBlockMark()
-	chain.successOnChainCallBack(remoteBlock, headerByte)
+	chain.successOnChainCallBack(remoteBlock)
 	return types.AddBlockSucc, headerByte
 }
 
@@ -263,7 +263,7 @@ func (chain *blockChain) updateTxPool(block *types.Block, receipts types.Receipt
 	chain.transactionPool.MarkExecuted(receipts, block.Transactions, block.Header.EvictedTxs)
 }
 
-func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block, headerJson []byte) {
+func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block) {
 	logger.Infof("ON chain succ! height=%d,hash=%s", remoteBlock.Header.Height, remoteBlock.Header.Hash.Hex())
 	notify.BUS.Publish(notify.BlockAddSucc, &notify.BlockOnChainSuccMessage{Block: *remoteBlock,})
 	if value, _ := chain.futureBlocks.Get(remoteBlock.Header.Hash); value != nil {
@@ -277,7 +277,10 @@ func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block, header
 		topBlockInfo := TopBlockInfo{Hash: chain.latestBlock.Hash, TotalQn: chain.latestBlock.TotalQN, Height: chain.latestBlock.Height, PreHash: chain.latestBlock.PreHash}
 		go BlockSyncer.sendTopBlockInfoToNeighbor(topBlockInfo)
 	}
+
+	go chain.notifyWallet(remoteBlock)
 }
+
 
 func (chain *blockChain) validateGroupSig(bh *types.BlockHeader) (bool, error) {
 	if chain.Height() == 0 {
