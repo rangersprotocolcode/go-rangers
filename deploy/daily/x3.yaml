@@ -8,5 +8,4 @@ services:
       - host: 7773
         target: 8080
     detached: true
-    type: "ETH"
     hostname: "genesis_3_daily"
