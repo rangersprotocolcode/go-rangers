@@ -29,7 +29,6 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 
 			chain.doNotify("deposit_bnt", data)
 			break
-
 		case types.TransactionTypeFTDepositAck:
 			var depositFTData types.DepositFTData
 			json.Unmarshal([]byte(tx.Data), &depositFTData)
@@ -59,6 +58,25 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 
 			chain.doNotify("deposit_nft", data)
 			break
+		case types.TransactionTypeOperatorEvent:
+			if nil != tx.SubTransactions && 0 != len(tx.SubTransactions) {
+				for _, sub := range tx.SubTransactions {
+					if sub.Address != "UpdateNFT" {
+						continue
+					}
+
+					data := make(map[string]interface{})
+					data["appId"] = sub.Assets["appId"]
+					data["owner"] = sub.Assets["addr"]
+					data["setId"] = sub.Assets["setId"]
+					data["tokenId"] = sub.Assets["id"]
+					data["data"] = sub.Assets["data"]
+
+					chain.doNotify("nft_update", data)
+				}
+			}
+			break
+
 		}
 
 	}
