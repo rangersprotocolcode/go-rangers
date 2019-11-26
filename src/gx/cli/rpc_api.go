@@ -11,6 +11,7 @@ import (
 	"x/src/consensus"
 	"sync"
 	"x/src/middleware/log"
+	"x/src/statemachine"
 )
 
 func successResult(data interface{}) (*Result, error) {
@@ -67,18 +68,6 @@ func (api *GtasAPI) GroupHeight() (*Result, error) {
 	return successResult(height)
 }
 
-// ConnectedNodes 查询已链接的node的信息
-func (api *GtasAPI) ConnectedNodes() (*Result, error) {
-
-	//nodes := network.GetNetInstance().ConnInfo()
-	//conns := make([]ConnInfo, 0)
-	//for _, n := range nodes {
-	//	conns = append(conns, ConnInfo{Id: n.Id, Ip: n.Ip, TcpPort: n.Port})
-	//}
-	//return successResult(conns)
-	return nil, nil
-}
-
 // TransPool 查询缓冲区的交易信息。
 func (api *GtasAPI) TransPool() (*Result, error) {
 	transactions := core.GetBlockChain().GetTransactionPool().GetReceived()
@@ -92,6 +81,12 @@ func (api *GtasAPI) TransPool() (*Result, error) {
 	}
 
 	return successResult(transList)
+}
+
+// STMStatus 查询STM状态
+func (api *GtasAPI) StmStatus() (*Result, error) {
+	result := statemachine.STMManger.GetStmStatus()
+	return successResult(result)
 }
 
 func (api *GtasAPI) GetTransaction(hash string) (*Result, error) {
@@ -539,13 +534,12 @@ func (api *GtasAPI) Dashboard() (*Result, error) {
 	groupHeight := core.GetGroupChain().Count()
 	workNum := len(consensus.Proc.GetCastQualifiedGroups(blockHeight))
 	nodeResult, _ := api.NodeInfo()
-	//consResult, _ := api.ConnectedNodes()
+
 	dash := &Dashboard{
 		BlockHeight: blockHeight,
 		GroupHeight: groupHeight,
 		WorkGNum:    workNum,
 		NodeInfo:    nodeResult.Data.(*NodeInfo),
-		//Conns:       consResult.Data.([]ConnInfo),
 	}
 	return successResult(dash)
 }

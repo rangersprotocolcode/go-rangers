@@ -202,7 +202,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			} else if 0 != len(transaction.Target) {
 				// 本地没有执行过状态机(game_executor还没有收到消息)，则需要调用状态机
 				transaction.SubTransactions = make([]types.UserData, 0)
-				outputMessage := statemachine.Docker.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), transaction.Data, transaction)
+				outputMessage := statemachine.STMManger.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), transaction.Data, transaction)
 				GetBlockChain().GetTransactionPool().PutGameData(transaction.Hash)
 				result := ""
 				if outputMessage != nil {
@@ -244,6 +244,10 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			break
 		case types.TransactionTypeShuttleNFT:
 			success, _ = ShuttleNFT(accountdb, transaction)
+			break
+		case types.TransactionTypeAddStateMachine:
+			// todo: 经济模型，新增状态机应该要付费
+			success = statemachine.STMManger.AddStatemachine(transaction.Source, transaction.Data)
 			break
 		}
 

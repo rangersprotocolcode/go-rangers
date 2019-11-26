@@ -8,13 +8,11 @@ import (
 	"x/src/middleware/types"
 	"time"
 	"net"
-	"strings"
 	"github.com/docker/docker/client"
 	"context"
-	"net/url"
 	"x/src/common"
-	"math/rand"
-	"strconv"
+	"x/src/middleware/log"
+	"sync"
 )
 
 const (
@@ -41,114 +39,72 @@ func createHTTPClient() *http.Client {
 	return client
 }
 
-var Docker *StateMachineManager
+var STMManger *StateMachineManager
 
 type StateMachineManager struct {
 	// stm config
 	Config   YAMLConfig
-	Filename string
+	Filename string // 配置文件名称
 
 	// stm entities
-	StateMachines map[string]StateMachine
+	StateMachines map[string]*StateMachine
 
 	// tool for connecting stm
 	httpClient  *http.Client
 	Mapping     map[string]PortInt // key 为appId， value为端口号
 	AuthMapping map[string]string  // key 为appId， value为authCode
+	lock        sync.RWMutex
 
 	// docker client
-	cli *client.Client
-	ctx context.Context
+	cli *client.Client  //cli:  用于访问 docker 守护进程
+	ctx context.Context //ctx:  传递本次操作的上下文信息
+
+	layer2Port uint // layer2 节点本机端口，用于给状态机提供服务
+
+	logger log.Logger
 }
 
-func DockerInit(filename string, port uint) *StateMachineManager {
-	if nil != Docker {
-		return Docker
+// docker
+func InitSTMManager(filename string, layer2Port uint) *StateMachineManager {
+	if nil != STMManger {
+		return STMManger
 	}
 
-	Docker = &StateMachineManager{
+	STMManger = &StateMachineManager{
 		Filename:      filename,
-		StateMachines: make(map[string]StateMachine),
+		StateMachines: make(map[string]*StateMachine),
 	}
-	Docker.httpClient = createHTTPClient()
-	Docker.ctx = context.Background()
-	Docker.cli, _ = client.NewClientWithOpts(client.FromEnv)
-	Docker.cli.NegotiateAPIVersion(Docker.ctx)
+	STMManger.httpClient = createHTTPClient()
+	STMManger.ctx = context.Background()
+	STMManger.cli, _ = client.NewClientWithOpts(client.FromEnv)
+	STMManger.cli.NegotiateAPIVersion(STMManger.ctx)
 
-	Docker.init(port)
+	STMManger.logger = log.GetLoggerByIndex(log.DockerLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	STMManger.Mapping = make(map[string]PortInt)
+	STMManger.AuthMapping = make(map[string]string)
+	STMManger.layer2Port = layer2Port
 
-	return Docker
+	STMManger.init()
+
+	return STMManger
 }
 
-func (d *StateMachineManager) init(layer2Port uint) {
+func (d *StateMachineManager) init() {
 	d.Config.InitFromFile(d.Filename)
-	d.Mapping, d.AuthMapping = d.runStateMachines(layer2Port)
+	d.runStateMachines()
 }
 
-//RunContainers: 从配置运行容器
-//cli:  用于访问 docker 守护进程
-//ctx:  传递本次操作的上下文信息
-func (d *StateMachineManager) runStateMachines(port uint) (map[string]PortInt, map[string]string) {
+func (d *StateMachineManager) runStateMachines() {
 	if 0 == len(d.Config.Services) {
-		return nil, nil
+		return
 	}
-
-	mapping := make(map[string]PortInt)
-	authCodeMapping := make(map[string]string)
 
 	//todo : 根据Priority排序
 	for _, service := range d.Config.Services {
-		stateMachine := buildStateMachine(service, d.cli, d.ctx)
+		// 异步启动
+		go d.runStateMachine(service)
 
-		name, ports := stateMachine.Run()
-		if name == "" || ports == nil {
-			continue
-		}
-
-		d.StateMachines[name] = stateMachine
-		mapping[name] = ports[0].Host
-		authCode := d.generateAuthcode()
-		authCodeMapping[name] = authCode
-
-		//需要等到docker镜像启动完成
-		d.callInit(ports[0].Host, port, authCode)
 	}
-
-	return mapping, authCodeMapping
-}
-
-func (d *StateMachineManager) callInit(dockerPortInt PortInt, layer2Port uint, authCode string) {
-	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", dockerPortInt, "init")
-	values := url.Values{}
-	values["url"] = []string{fmt.Sprintf("http://%s:%d", "172.17.0.1", layer2Port)}
-	values["authCode"] = []string{authCode}
-	if nil != common.DefaultLogger {
-		common.DefaultLogger.Errorf("Send post req:path:%s,values:%v", path, values)
-	}
-
-	for {
-		resp, err := http.PostForm(path, values)
-		if err != nil {
-			if nil != common.DefaultLogger {
-				common.DefaultLogger.Infof(err.Error())
-			}
-
-			time.Sleep(200 * time.Millisecond)
-		} else {
-			body, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
-			if common.DefaultLogger != nil {
-				common.DefaultLogger.Error(fmt.Sprintf("start success: %s", string(body)))
-			}
-
-			return
-		}
-	}
-}
-
-func (d *StateMachineManager) generateAuthcode() string {
-	rand.Seed(int64(time.Now().UnixNano()))
-	return strconv.Itoa(rand.Int())
 }
 
 func (d *StateMachineManager) Nonce(name string) int {
@@ -180,45 +136,17 @@ func (d *StateMachineManager) Nonce(name string) int {
 }
 
 func (d *StateMachineManager) getUrlPrefix(name string) string {
-	port := d.Mapping[name]
-	if 0 == port {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+
+	port, ok := d.Mapping[name]
+	if !ok {
+		d.logger.Errorf("fail to find appId: %s", name)
 		return ""
 	}
 
 	//call local container
 	return fmt.Sprintf("http://0.0.0.0:%d/api/v1/", port)
-}
-
-func (d *StateMachineManager) GetType(gameId string) string {
-	configs := d.Config.Services
-	if 0 == len(configs) {
-		return ""
-	}
-
-	for _, value := range configs {
-		if 0 == strings.Compare(value.Game, gameId) {
-			return value.Type
-		}
-	}
-
-	return ""
-}
-
-// 判断是否是游戏地址
-// todo: 这里只判断了本地运行的statemachine，会有漏洞
-func (d *StateMachineManager) IsGame(address string) bool {
-	configs := d.Config.Services
-	if 0 == len(configs) {
-		return false
-	}
-
-	for _, value := range configs {
-		if 0 == strings.Compare(value.Game, address) {
-			return true
-		}
-	}
-
-	return false
 }
 
 // 检查authCode是否合法
@@ -227,13 +155,29 @@ func (d *StateMachineManager) ValidateAppId(appId, authCode string) bool {
 		return false
 	}
 
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+
 	expect := d.AuthMapping[appId]
 	if 0 == len(expect) {
-		common.DefaultLogger.Debugf("Validate wrong")
+		d.logger.Debugf("Validate wrong")
 		return false
 	}
 	if expect != authCode {
-		common.DefaultLogger.Debugf("Validate authCode error! appid:%s,authCode:%s,expect:%s", appId, authCode, expect)
+		d.logger.Errorf("Validate authCode error! appid:%s,authCode:%s,expect:%s", appId, authCode, expect)
 	}
 	return expect == authCode
+}
+
+// 获取当前STM状态
+func (s *StateMachineManager) GetStmStatus() map[string]string {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	result := make(map[string]string)
+	for appId, stm := range s.StateMachines {
+		result[appId] = stm.Status
+	}
+
+	return result
 }

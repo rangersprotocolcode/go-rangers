@@ -101,7 +101,7 @@ func TestStrToBigInt6(t *testing.T) {
 }
 
 func TestStrToBigInt7(t *testing.T) {
-	str := ""
+	str := "0"
 	value, err := StrToBigInt(str)
 	if err != nil {
 		panic(err)
@@ -110,5 +110,5 @@ func TestStrToBigInt7(t *testing.T) {
 	fmt.Println(str)
 	fmt.Println(value.String())
 
-	fmt.Println(BigIntToStr(value))
+	fmt.Println(bigIntToStr(value,9))
 }

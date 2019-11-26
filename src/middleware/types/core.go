@@ -107,6 +107,9 @@ const (
 	TransactionTypeCoinDepositAck = 201 // 充值
 	TransactionTypeFTDepositAck   = 202 // 充值
 	TransactionTypeNFTDepositAck  = 203 // 充值
+
+	// 状态机管理
+	TransactionTypeAddStateMachine = 901
 )
 
 type Transaction struct {

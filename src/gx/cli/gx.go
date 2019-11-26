@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	GXVersion = "0.0.3"
+	GXVersion = "0.0.3.1"
 	// Section 默认section配置
 	Section = "gx"
 	// RemoteHost 默认host
@@ -130,7 +130,7 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 	common.GlobalConf.SetString(chainSection, databaseKey, databaseValue)
 
 	middleware.InitMiddleware()
-	statemachine.DockerInit(common.GlobalConf.GetString("docker", "config", ""), port)
+	statemachine.InitSTMManager(common.GlobalConf.GetString("docker", "config", ""), port)
 
 	minerAddr := common.GlobalConf.GetString(Section, "miner", "")
 	err := gx.getAccountInfo(keystore, minerAddr)
@@ -147,9 +147,7 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 	} else if apply == "heavy" {
 		minerInfo.NType = types.MinerTypeHeavy
 	}
-
-	network.InitNetwork(cnet.MessageHandler, "0x"+common.Bytes2Hex(gx.account.Miner.ID[:]), env, gateAddr)
-	err = core.InitCore(consensus.NewConsensusHelper(minerInfo.ID))
+	err = core.InitCore(minerInfo.NType, consensus.NewConsensusHelper(minerInfo.ID))
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
 	}
@@ -218,6 +216,10 @@ func syncChainInfo() {
 					core.BlockSyncer.Lock.Unlock("trySync")
 				}
 				localBlockHeight := core.GetBlockChain().Height()
+				jsonObject := types.NewJSONObject()
+				jsonObject.Put("candidateHeight",candicateHeight)
+				jsonObject.Put("localHeight",localBlockHeight)
+				middleware.HeightLogger.Debugf(jsonObject.TOJSONString())
 				fmt.Printf("Sync candidate block height:%d,local block height:%d\n", candicateHeight, localBlockHeight)
 				timer.Reset(time.Second * 5)
 			}
