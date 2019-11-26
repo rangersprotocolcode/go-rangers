@@ -5,6 +5,7 @@ import (
 	"x/src/network"
 	"encoding/json"
 	"strconv"
+	"strings"
 )
 
 func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
@@ -61,21 +62,61 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 
 			events = append(events, chain.generateDepositNotify("deposit_nft", data))
 			break
+		case types.TransactionTypeWithdraw:
+			chain.notifyWithDrawInfo(tx, events)
+
+		case types.TransactionTypeShuttleNFT:
+			chain.notifyShuttleNFT(tx, events)
+
 		case types.TransactionTypeOperatorEvent:
+			if 0 != len(tx.ExtraData) {
+				chain.notifyTransferInfo(tx, events)
+			}
+
 			if nil != tx.SubTransactions && 0 != len(tx.SubTransactions) {
 				for _, sub := range tx.SubTransactions {
-					if sub.Address != "UpdateNFT" {
+					if sub.Address == "UpdateNFT" {
+						data := make(map[string]interface{})
+						data["appId"] = sub.Assets["appId"]
+						data["owner"] = sub.Assets["addr"]
+						data["setId"] = sub.Assets["setId"]
+						data["tokenId"] = sub.Assets["id"]
+						data["data"] = sub.Assets["data"]
+
+						events = append(events, chain.generateDepositNotify("nft_update", data))
 						continue
 					}
 
-					data := make(map[string]interface{})
-					data["appId"] = sub.Assets["appId"]
-					data["owner"] = sub.Assets["addr"]
-					data["setId"] = sub.Assets["setId"]
-					data["tokenId"] = sub.Assets["id"]
-					data["data"] = sub.Assets["data"]
+					if sub.Address == "TransferNFT" {
+						data := make(map[string]interface{})
+						//todo 这里对吧？
+						data["from"] = sub.Assets["appId"]
+						data["to"] = sub.Assets["target"]
+						data["setId"] = sub.Assets["setId"]
+						data["tokenId"] = sub.Assets["id"]
+						events = append(events, chain.generateDepositNotify("transfer_nft", data))
+						continue
+					}
 
-					events = append(events, chain.generateDepositNotify("nft_update", data))
+					if sub.Address == "TransferFT" && sub.Assets["symbol"] != "" {
+						if strings.HasPrefix(sub.Assets["symbol"], "official-") {
+							data := make(map[string]interface{})
+							data["from"] = sub.Assets["gameId"]
+							data["to"] = sub.Assets["target"]
+							data["token"] = strings.Split(sub.Assets["symbol"], "-")[1]
+							data["value"], _ = strconv.ParseFloat(sub.Assets["supply"], 64)
+							events = append(events, chain.generateDepositNotify("transfer_bnt", data))
+						} else {
+							data := make(map[string]interface{})
+							data["from"] = sub.Assets["gameId"]
+							data["to"] = sub.Assets["target"]
+							data["setId"] = sub.Assets["symbol"]
+							data["value"], _ = strconv.ParseFloat(sub.Assets["supply"], 64)
+							events = append(events, chain.generateDepositNotify("transfer_ft", data))
+						}
+						continue
+					}
+
 				}
 			}
 			break
@@ -90,7 +131,6 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 		notify["events"] = events
 		result, _ := json.Marshal(notify)
 		network.GetNetInstance().Notify(false, "wallet", "wallet", string(result))
-
 	}
 }
 
@@ -101,4 +141,113 @@ func (chain *blockChain) generateDepositNotify(method string, data map[string]in
 
 	return notify
 
+}
+
+func (chain *blockChain) notifyTransferInfo(tx *types.Transaction, events []types.DepositNotify) {
+	transferDataMap := make(map[string]types.TransferData, 0)
+	if err := json.Unmarshal([]byte(tx.ExtraData), &transferDataMap); nil != err {
+		return
+	}
+
+	for targetAddress, transferData := range transferDataMap {
+		//BNT
+		if transferData.Coin != nil && len(transferData.Coin) > 0 {
+			for bntType, bntValue := range transferData.Coin {
+				data := make(map[string]interface{})
+				data["from"] = tx.Source
+				data["to"] = targetAddress
+				data["token"] = bntType
+				data["value"], _ = strconv.ParseFloat(bntValue, 64)
+				events = append(events, chain.generateDepositNotify("transfer_bnt", data))
+			}
+		}
+
+		//FT
+		if transferData.FT != nil && len(transferData.FT) > 0 {
+			for ftSetId, ftValue := range transferData.FT {
+				data := make(map[string]interface{})
+				data["from"] = tx.Source
+				data["to"] = targetAddress
+				data["setId"] = ftSetId
+				data["value"], _ = strconv.ParseFloat(ftValue, 64)
+				events = append(events, chain.generateDepositNotify("transfer_ft", data))
+			}
+		}
+
+		//NFT
+		if transferData.NFT != nil && len(transferData.NFT) > 0 {
+			for _, nft := range transferData.NFT {
+				data := make(map[string]interface{})
+				data["from"] = tx.Source
+				data["to"] = targetAddress
+				data["setId"] = nft.SetId
+				data["tokenId"] = nft.Id
+				events = append(events, chain.generateDepositNotify("transfer_nft", data))
+			}
+		}
+	}
+
+}
+
+func (chain *blockChain) notifyWithDrawInfo(tx *types.Transaction, events []types.DepositNotify) {
+	var withDrawReq types.WithDrawReq
+	err := json.Unmarshal([]byte(tx.Data), &withDrawReq)
+	if err != nil {
+		return
+	}
+
+	//BNT
+	if withDrawReq.BNT.TokenType != "" {
+		data := make(map[string]interface{})
+		data["from"] = tx.Source
+		data["to"] = withDrawReq.Address
+		data["token"] = withDrawReq.BNT.TokenType
+		data["value"], _ = strconv.ParseFloat(withDrawReq.BNT.Value, 64)
+		data["status"] = 0
+		events = append(events, chain.generateDepositNotify("withdraw_bnt", data))
+	}
+
+	//ft
+	if withDrawReq.FT != nil && len(withDrawReq.FT) != 0 {
+		for k, v := range withDrawReq.FT {
+			data := make(map[string]interface{})
+			data["from"] = tx.Source
+			data["to"] = withDrawReq.Address
+			data["chainType"] = withDrawReq.ChainType
+			data["setId"] = k
+			data["value"], _ = strconv.ParseFloat(v, 64)
+			data["status"] = 0
+			events = append(events, chain.generateDepositNotify("withdraw_ft", data))
+		}
+	}
+
+	//nft
+	if withDrawReq.NFT != nil && len(withDrawReq.NFT) != 0 {
+		for _, k := range withDrawReq.NFT {
+			data := make(map[string]interface{})
+			data["from"] = tx.Source
+			data["to"] = withDrawReq.Address
+			data["chainType"] = withDrawReq.ChainType
+			data["setId"] = k.SetId
+			data["tokenId"] = k.Id
+			data["status"] = 0
+			events = append(events, chain.generateDepositNotify("withdraw_nft", data))
+		}
+	}
+}
+
+func (chain *blockChain) notifyShuttleNFT(tx *types.Transaction, events []types.DepositNotify) {
+	shuttleData := make(map[string]string)
+	json.Unmarshal([]byte(tx.Data), &shuttleData)
+
+	data := make(map[string]interface{})
+	data["setId"] = shuttleData["setId"]
+	data["tokenId"] = shuttleData["id"]
+	data["toAppId"] = shuttleData["newAppId"]
+
+	//todo
+	data["fromAppId"] = ""
+	data["owner"] = ""
+	data["data"] = ""
+	events = append(events, chain.generateDepositNotify("shuttle", data))
 }
