@@ -16,7 +16,7 @@ type server struct {
 	writer ClientConn
 
 	// coiner消息
-	coiner CoinerConn
+	coiner ConnectorConn
 }
 
 func (s *server) Init(logger log.Logger, gateAddr, selfMinerId string, consensusHandler MsgHandler) {
