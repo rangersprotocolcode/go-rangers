@@ -13,6 +13,9 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 		return
 	}
 
+	block := remoteBlock.Header.Height
+	events := make([]types.DepositNotify, 0)
+
 	for _, tx := range txs {
 		switch tx.Type {
 		case types.TransactionTypeCoinDepositAck:
@@ -27,7 +30,7 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 			data["value"] = value
 			data["hash"] = depositCoinData.TxId
 
-			chain.doNotify("deposit_bnt", data)
+			events = append(events, chain.generateDepositNotify("deposit_bnt", data))
 			break
 		case types.TransactionTypeFTDepositAck:
 			var depositFTData types.DepositFTData
@@ -42,7 +45,7 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 			data["contract"] = depositFTData.ContractAddress
 			data["hash"] = depositFTData.TxId
 
-			chain.doNotify("deposit_ft", data)
+			events = append(events, chain.generateDepositNotify("deposit_ft", data))
 			break
 		case types.TransactionTypeNFTDepositAck:
 			var depositNFTData types.DepositNFTData
@@ -56,7 +59,7 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 			data["contract"] = depositNFTData.ContractAddress
 			data["hash"] = depositNFTData.TxId
 
-			chain.doNotify("deposit_nft", data)
+			events = append(events, chain.generateDepositNotify("deposit_nft", data))
 			break
 		case types.TransactionTypeOperatorEvent:
 			if nil != tx.SubTransactions && 0 != len(tx.SubTransactions) {
@@ -72,7 +75,7 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 					data["tokenId"] = sub.Assets["id"]
 					data["data"] = sub.Assets["data"]
 
-					chain.doNotify("nft_update", data)
+					events = append(events, chain.generateDepositNotify("nft_update", data))
 				}
 			}
 			break
@@ -80,13 +83,22 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 		}
 
 	}
+
+	if 0 != len(events) {
+		notify := make(map[string]interface{})
+		notify["block"] = block
+		notify["events"] = events
+		result, _ := json.Marshal(notify)
+		network.GetNetInstance().Notify(false, "wallet", "wallet", string(result))
+
+	}
 }
 
-func (chain *blockChain) doNotify(method string, data map[string]interface{}) {
+func (chain *blockChain) generateDepositNotify(method string, data map[string]interface{}) types.DepositNotify {
 	var notify types.DepositNotify
 	notify.Method = method
 	notify.Data = data
 
-	result, _ := json.Marshal(notify)
-	network.GetNetInstance().Notify(false, "wallet", "wallet", string(result))
+	return notify
+
 }
