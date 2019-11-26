@@ -324,27 +324,27 @@ var (
 	methodRcvFromCoinConnector, _ = hex.DecodeString("30000002")
 )
 
-type CoinerConn struct {
+type ConnectorConn struct {
 	baseConn
 }
 
-func (coinerConn *CoinerConn) Send(msg []byte) {
-	coinerConn.send(methodSendToCoinConnector, 0, msg, 0)
+func (connectorConn *ConnectorConn) Send(msg []byte) {
+	connectorConn.send(methodSendToCoinConnector, 0, msg, 0)
 }
 
-func (coinerConn *CoinerConn) Init(ipPort string, logger log.Logger) {
-	coinerConn.doRcv = func(wsHeader wsHeader, body []byte) {
+func (connectorConn *ConnectorConn) Init(ipPort string, logger log.Logger) {
+	connectorConn.doRcv = func(wsHeader wsHeader, body []byte) {
 		if !bytes.Equal(wsHeader.method, methodRcvFromCoinConnector) {
-			coinerConn.logger.Error("%s received wrong method. wsHeader: %v", coinerConn.path, wsHeader)
+			connectorConn.logger.Error("%s received wrong method. wsHeader: %v", connectorConn.path, wsHeader)
 			return
 		}
-		coinerConn.handleCoinConnectorMessage(body, wsHeader.nonce)
+		connectorConn.handleConnectorMessage(body, wsHeader.nonce)
 	}
 
-	coinerConn.init(ipPort, "/srv/worker_coiner", logger)
+	connectorConn.init(ipPort, "/srv/worker_coiner", logger)
 }
 
-func (coinerConn *CoinerConn) handleCoinConnectorMessage(data []byte, nonce uint64) {
+func (connectorConn *ConnectorConn) handleConnectorMessage(data []byte, nonce uint64) {
 	var txJson types.TxJson
 	err := json.Unmarshal(data, &txJson)
 	if err != nil {
