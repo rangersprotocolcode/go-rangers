@@ -221,6 +221,7 @@ var (
 	methodNotify, _           = hex.DecodeString("20000000")
 	methodNotifyBroadcast, _  = hex.DecodeString("20000001")
 	methodNotifyGroup, _      = hex.DecodeString("20000002")
+	methodNotifyInit, _       = hex.DecodeString("20000003")
 )
 
 type ClientConn struct {
@@ -241,12 +242,18 @@ func (clientConn *ClientConn) Send(targetId string, msg []byte, nonce uint64) {
 	clientConn.send(clientConn.method, target, msg, nonce)
 }
 
-func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, logger log.Logger) {
+func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, logger log.Logger, isNotify bool) {
 	clientConn.method = method
 	clientConn.nonceLock = sync.Mutex{}
 	clientConn.notifyNonce = 0
 
 	clientConn.doRcv = func(wsHeader wsHeader, body []byte) {
+		if bytes.Equal(wsHeader.method, methodNotifyInit) {
+			clientConn.logger.Errorf("refresh notify nonce: %d", wsHeader.nonce)
+			clientConn.notifyNonce = wsHeader.nonce
+			return
+		}
+
 		if !bytes.Equal(wsHeader.method, clientConn.method) {
 			clientConn.logger.Error("%s received wrong method. wsHeader: %v", clientConn.path, wsHeader)
 			return
@@ -254,6 +261,7 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 
 		clientConn.handleClientMessage(body, strconv.FormatUint(wsHeader.sourceId, 10), wsHeader.nonce, event)
 	}
+	//流控方法
 	clientConn.rcv = func(msg []byte) {
 		if len(clientConn.rcvChan) == clientConn.rcvSize {
 			clientConn.logger.Errorf("client rcvChan full, remove it, msg size: %d", len(msg))
@@ -262,12 +270,21 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 
 		clientConn.rcvChan <- msg
 	}
-
+	// 流控方法
 	clientConn.isSend = func(method []byte, target uint64, msg []byte, nonce uint64) bool {
 		return len(clientConn.sendChan) < clientConn.sendSize
 	}
 
 	clientConn.init(ipPort, path, logger)
+
+	if isNotify {
+		clientConn.initNotify()
+	}
+}
+
+func (clientConn *ClientConn) initNotify() {
+	clientConn.logger.Errorf("initNotify")
+	clientConn.send(methodNotifyInit, 0, []byte{}, 0)
 }
 
 func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, nonce uint64, event string) {
