@@ -33,29 +33,34 @@ type W2cBasic struct {
 type C2wDeposit struct {
 	ChainType string `json:"ChainType"`
 	Amount    string `json:"Amount"`
+	Addr      string `json:"Addr"`
 	TxID      string `json:"TxId"`
 }
 
 type C2wDepositNft struct {
-	SetID      string            `json:"setId"`
-	Name       string            `json:"name"`
-	Symbol     string            `json:"symbol"`
-	ID         string            `json:"id"`
-	Creator    string            `json:"creator"`
-	CreateTime string            `json:"createTime"`
-	Owner      string            `json:"owner"`
-	Renter     string            `json:"renter"`
-	Status     byte              `json:"status"`
-	Condition  byte              `json:"condition"`
-	AppID      string            `json:"appId"`
-	Data       map[string]string `json:"data"`
-	TxID       string            `json:"TxId"`
+	SetID        string            `json:"setId"`
+	Name         string            `json:"name"`
+	Symbol       string            `json:"symbol"`
+	ID           string            `json:"id"`
+	Creator      string            `json:"creator"`
+	CreateTime   string            `json:"createTime"`
+	Owner        string            `json:"owner"`
+	Renter       string            `json:"renter"`
+	Status       byte              `json:"status"`
+	Condition    byte              `json:"condition"`
+	AppID        string            `json:"appId"`
+	Data         map[string]string `json:"data"`
+	Addr         string            `json:"addr"`
+	ContractAddr string            `json:"contractaddr"`
+	TxID         string            `json:"TxId"`
 }
 
 type C2wDepositFt struct {
-	FtID   string `json:"FtId"`
-	Amount string `json:"Amount"`
-	TxID   string `json:"TxId"`
+	FtID         string `json:"FtId"`
+	Amount       string `json:"Amount"`
+	Addr         string `json:"Addr"`
+	ContractAddr string `json:"Contractaddr"`
+	TxID         string `json:"TxId"`
 }
 
 type Incoming struct {
@@ -63,15 +68,18 @@ type Incoming struct {
 	//Gid		string
 	Uid    string
 	Amount string
+	Addr   string
 	Txid   string
 }
 type IncomingFt struct {
 	//Tp		string
 
-	Userid string
-	Amount string
-	Name   string
-	Txid   string
+	Userid       string
+	Amount       string
+	Name         string
+	Addr         string
+	ContractAddr string
+	Txid         string
 }
 type IncomingNft struct {
 	//Tp		string
@@ -79,19 +87,21 @@ type IncomingNft struct {
 	//From	string
 	//To		string
 	//TokenId *big.Int
-	TokenId    string
-	Gameid     string
-	Userid     string
-	Setid      string
-	Symbol     string
-	Name       string
-	Creator    string
-	CreateTime string
-	Info       map[string]string
-	Renter     string
-	Status     byte
-	Condition  byte
-	Txid       string
+	TokenId      string
+	Gameid       string
+	Userid       string
+	Setid        string
+	Symbol       string
+	Name         string
+	Creator      string
+	CreateTime   string
+	Info         map[string]string
+	Renter       string
+	Status       byte
+	Condition    byte
+	Addr         string
+	ContractAddr string
+	Txid         string
 }
 
 func (self *Ecc) Verify(info []byte, signed []byte) bool {
@@ -132,7 +142,7 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 			return false
 		}
 
-		var info Incoming = Incoming{de.ChainType, msg.Source, de.Amount, de.TxID}
+		var info Incoming = Incoming{de.ChainType, msg.Source, de.Amount, de.Addr, de.TxID}
 		signstrs := strings.Split(msg.Sign, "|")
 		if len(signstrs) < self.SignLimit {
 			return false
@@ -174,7 +184,7 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 			return false
 		}
 
-		var info IncomingFt = IncomingFt{msg.Source, de.Amount, de.FtID, de.TxID}
+		var info IncomingFt = IncomingFt{msg.Source, de.Amount, de.FtID, de.Addr, de.ContractAddr, de.TxID}
 		signstrs := strings.Split(msg.Sign, "|")
 		if len(signstrs) < self.SignLimit {
 			return false
@@ -216,7 +226,7 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 			return false
 		}
 
-		var info IncomingNft = IncomingNft{de.ID, msg.Target, msg.Source, de.SetID, de.Symbol, de.Name, de.Creator, de.CreateTime, de.Data, de.Renter, de.Status, de.Condition, de.TxID}
+		var info IncomingNft = IncomingNft{de.ID, msg.Target, msg.Source, de.SetID, de.Symbol, de.Name, de.Creator, de.CreateTime, de.Data, de.Renter, de.Status, de.Condition, de.Addr, de.ContractAddr, de.TxID}
 		signstrs := strings.Split(msg.Sign, "|")
 		if len(signstrs) < self.SignLimit {
 			return false
@@ -263,12 +273,9 @@ func (self *Ecc) Sign(info []byte) (ret []byte) {
 
 	privateKey.GetPubKey().GetAddress()
 	return
-
-	return
 }
 
 func (self *Ecc) privKeyFromHex(hexstr string) (ret common.PrivateKey) {
-
 	c := secp256k1.S256()
 	var k *big.Int
 
