@@ -18,7 +18,6 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 	events := make([]types.DepositNotify, 0)
 
 	for _, tx := range txs {
-		logger.Debugf("Notify tx:%v", tx)
 		switch tx.Type {
 		case types.TransactionTypeCoinDepositAck:
 			var depositCoinData types.DepositCoinData
