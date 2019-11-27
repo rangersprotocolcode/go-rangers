@@ -18,7 +18,7 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 	events := make([]types.DepositNotify, 0)
 
 	for _, tx := range txs {
-		logger.Debugf("Notify tx:%v", tx.ToTxJson().ToString())
+		logger.Debugf("Notify tx:%v", tx)
 		switch tx.Type {
 		case types.TransactionTypeCoinDepositAck:
 			var depositCoinData types.DepositCoinData
@@ -64,14 +64,14 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 			events = append(events, chain.generateWalletNotify("deposit_nft", data))
 			break
 		case types.TransactionTypeWithdraw:
-			chain.notifyWithDrawInfo(tx, events)
+			chain.notifyWithDrawInfo(tx, &events)
 
 		case types.TransactionTypeShuttleNFT:
-			chain.notifyShuttleNFT(tx, events)
+			chain.notifyShuttleNFT(tx, &events)
 
 		case types.TransactionTypeOperatorEvent:
 			if 0 != len(tx.ExtraData) {
-				chain.notifyTransferInfo(tx, events)
+				chain.notifyTransferInfo(tx, &events)
 			}
 
 			if nil != tx.SubTransactions && 0 != len(tx.SubTransactions) {
@@ -139,26 +139,23 @@ func (chain *blockChain) generateWalletNotify(method string, data map[string]int
 
 }
 
-func (chain *blockChain) notifyTransferInfo(tx *types.Transaction, events []types.DepositNotify) {
-	logger.Debugf("into notify transfer")
+func (chain *blockChain) notifyTransferInfo(tx *types.Transaction, events *[]types.DepositNotify) {
 	transferDataMap := make(map[string]types.TransferData, 0)
 	if err := json.Unmarshal([]byte(tx.ExtraData), &transferDataMap); nil != err {
-		logger.Debugf("json unmarshal transfer data map error:%s",err.Error())
+		logger.Debugf("json unmarshal transfer data map error:%s", err.Error())
 		return
 	}
 
 	for targetAddress, transferData := range transferDataMap {
-		logger.Debugf("target address:%s,transfer data:%v",targetAddress,transferData)
 		//BNT
 		if transferData.Coin != nil && len(transferData.Coin) > 0 {
 			for bntType, bntValue := range transferData.Coin {
-				logger.Debugf("bntType:%s,bntValue:%v",bntType,bntValue)
 				data := make(map[string]interface{})
 				data["from"] = tx.Source
 				data["to"] = targetAddress
 				data["token"] = bntType
 				data["value"], _ = strconv.ParseFloat(bntValue, 64)
-				events = append(events, chain.generateWalletNotify("transfer_bnt", data))
+				*events = append(*events, chain.generateWalletNotify("transfer_bnt", data))
 			}
 		}
 
@@ -170,7 +167,7 @@ func (chain *blockChain) notifyTransferInfo(tx *types.Transaction, events []type
 				data["to"] = targetAddress
 				data["setId"] = ftSetId
 				data["value"], _ = strconv.ParseFloat(ftValue, 64)
-				events = append(events, chain.generateWalletNotify("transfer_ft", data))
+				*events = append(*events, chain.generateWalletNotify("transfer_ft", data))
 			}
 		}
 
@@ -182,14 +179,14 @@ func (chain *blockChain) notifyTransferInfo(tx *types.Transaction, events []type
 				data["to"] = targetAddress
 				data["setId"] = nft.SetId
 				data["tokenId"] = nft.Id
-				events = append(events, chain.generateWalletNotify("transfer_nft", data))
+				*events = append(*events, chain.generateWalletNotify("transfer_nft", data))
 			}
 		}
 	}
 
 }
 
-func (chain *blockChain) notifyWithDrawInfo(tx *types.Transaction, events []types.DepositNotify) {
+func (chain *blockChain) notifyWithDrawInfo(tx *types.Transaction, events *[]types.DepositNotify) {
 	var withDrawReq types.WithDrawReq
 	err := json.Unmarshal([]byte(tx.Data), &withDrawReq)
 	if err != nil {
@@ -204,7 +201,7 @@ func (chain *blockChain) notifyWithDrawInfo(tx *types.Transaction, events []type
 		data["token"] = withDrawReq.BNT.TokenType
 		data["value"], _ = strconv.ParseFloat(withDrawReq.BNT.Value, 64)
 		data["status"] = 0
-		events = append(events, chain.generateWalletNotify("withdraw_bnt", data))
+		*events = append(*events, chain.generateWalletNotify("withdraw_bnt", data))
 	}
 
 	//ft
@@ -217,7 +214,7 @@ func (chain *blockChain) notifyWithDrawInfo(tx *types.Transaction, events []type
 			data["setId"] = k
 			data["value"], _ = strconv.ParseFloat(v, 64)
 			data["status"] = 0
-			events = append(events, chain.generateWalletNotify("withdraw_ft", data))
+			*events = append(*events, chain.generateWalletNotify("withdraw_ft", data))
 		}
 	}
 
@@ -231,12 +228,12 @@ func (chain *blockChain) notifyWithDrawInfo(tx *types.Transaction, events []type
 			data["setId"] = k.SetId
 			data["tokenId"] = k.Id
 			data["status"] = 0
-			events = append(events, chain.generateWalletNotify("withdraw_nft", data))
+			*events = append(*events, chain.generateWalletNotify("withdraw_nft", data))
 		}
 	}
 }
 
-func (chain *blockChain) notifyShuttleNFT(tx *types.Transaction, events []types.DepositNotify) {
+func (chain *blockChain) notifyShuttleNFT(tx *types.Transaction, events *[]types.DepositNotify) {
 	shuttleData := make(map[string]string)
 	json.Unmarshal([]byte(tx.Data), &shuttleData)
 
@@ -249,5 +246,5 @@ func (chain *blockChain) notifyShuttleNFT(tx *types.Transaction, events []types.
 	//这两个字段没有
 	data["fromAppId"] = ""
 	data["data"] = ""
-	events = append(events, chain.generateWalletNotify("shuttle", data))
+	*events = append(*events, chain.generateWalletNotify("shuttle", data))
 }
