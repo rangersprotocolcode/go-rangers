@@ -18,6 +18,7 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 	events := make([]types.DepositNotify, 0)
 
 	for _, tx := range txs {
+		logger.Debugf("Notify tx:%v", tx.ToTxJson().ToString())
 		switch tx.Type {
 		case types.TransactionTypeCoinDepositAck:
 			var depositCoinData types.DepositCoinData
@@ -139,15 +140,19 @@ func (chain *blockChain) generateWalletNotify(method string, data map[string]int
 }
 
 func (chain *blockChain) notifyTransferInfo(tx *types.Transaction, events []types.DepositNotify) {
+	logger.Debugf("into notify transfer")
 	transferDataMap := make(map[string]types.TransferData, 0)
 	if err := json.Unmarshal([]byte(tx.ExtraData), &transferDataMap); nil != err {
+		logger.Debugf("json unmarshal transfer data map error:%s",err.Error())
 		return
 	}
 
 	for targetAddress, transferData := range transferDataMap {
+		logger.Debugf("target address:%s,transfer data:%v",targetAddress,transferData)
 		//BNT
 		if transferData.Coin != nil && len(transferData.Coin) > 0 {
 			for bntType, bntValue := range transferData.Coin {
+				logger.Debugf("bntType:%s,bntValue:%v",bntType,bntValue)
 				data := make(map[string]interface{})
 				data["from"] = tx.Source
 				data["to"] = targetAddress
