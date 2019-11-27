@@ -31,7 +31,7 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 			data["value"] = value
 			data["hash"] = depositCoinData.TxId
 
-			events = append(events, chain.generateDepositNotify("deposit_bnt", data))
+			events = append(events, chain.generateWalletNotify("deposit_bnt", data))
 			break
 		case types.TransactionTypeFTDepositAck:
 			var depositFTData types.DepositFTData
@@ -46,7 +46,7 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 			data["contract"] = depositFTData.ContractAddress
 			data["hash"] = depositFTData.TxId
 
-			events = append(events, chain.generateDepositNotify("deposit_ft", data))
+			events = append(events, chain.generateWalletNotify("deposit_ft", data))
 			break
 		case types.TransactionTypeNFTDepositAck:
 			var depositNFTData types.DepositNFTData
@@ -60,7 +60,7 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 			data["contract"] = depositNFTData.ContractAddress
 			data["hash"] = depositNFTData.TxId
 
-			events = append(events, chain.generateDepositNotify("deposit_nft", data))
+			events = append(events, chain.generateWalletNotify("deposit_nft", data))
 			break
 		case types.TransactionTypeWithdraw:
 			chain.notifyWithDrawInfo(tx, events)
@@ -83,7 +83,7 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 						data["tokenId"] = sub.Assets["id"]
 						data["data"] = sub.Assets["data"]
 
-						events = append(events, chain.generateDepositNotify("nft_update", data))
+						events = append(events, chain.generateWalletNotify("nft_update", data))
 						continue
 					}
 
@@ -93,25 +93,21 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 						data["to"] = sub.Assets["target"]
 						data["setId"] = sub.Assets["setId"]
 						data["tokenId"] = sub.Assets["id"]
-						events = append(events, chain.generateDepositNotify("transfer_nft", data))
+						events = append(events, chain.generateWalletNotify("transfer_nft", data))
 						continue
 					}
 
 					if sub.Address == "TransferFT" && sub.Assets["symbol"] != "" {
+						data := make(map[string]interface{})
+						data["from"] = sub.Assets["gameId"]
+						data["to"] = sub.Assets["target"]
+						data["value"], _ = strconv.ParseFloat(sub.Assets["supply"], 64)
 						if strings.HasPrefix(sub.Assets["symbol"], "official-") {
-							data := make(map[string]interface{})
-							data["from"] = sub.Assets["gameId"]
-							data["to"] = sub.Assets["target"]
 							data["token"] = strings.Split(sub.Assets["symbol"], "-")[1]
-							data["value"], _ = strconv.ParseFloat(sub.Assets["supply"], 64)
-							events = append(events, chain.generateDepositNotify("transfer_bnt", data))
+							events = append(events, chain.generateWalletNotify("transfer_bnt", data))
 						} else {
-							data := make(map[string]interface{})
-							data["from"] = sub.Assets["gameId"]
-							data["to"] = sub.Assets["target"]
 							data["setId"] = sub.Assets["symbol"]
-							data["value"], _ = strconv.ParseFloat(sub.Assets["supply"], 64)
-							events = append(events, chain.generateDepositNotify("transfer_ft", data))
+							events = append(events, chain.generateWalletNotify("transfer_ft", data))
 						}
 						continue
 					}
@@ -133,7 +129,7 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 	}
 }
 
-func (chain *blockChain) generateDepositNotify(method string, data map[string]interface{}) types.DepositNotify {
+func (chain *blockChain) generateWalletNotify(method string, data map[string]interface{}) types.DepositNotify {
 	var notify types.DepositNotify
 	notify.Method = method
 	notify.Data = data
@@ -157,7 +153,7 @@ func (chain *blockChain) notifyTransferInfo(tx *types.Transaction, events []type
 				data["to"] = targetAddress
 				data["token"] = bntType
 				data["value"], _ = strconv.ParseFloat(bntValue, 64)
-				events = append(events, chain.generateDepositNotify("transfer_bnt", data))
+				events = append(events, chain.generateWalletNotify("transfer_bnt", data))
 			}
 		}
 
@@ -169,7 +165,7 @@ func (chain *blockChain) notifyTransferInfo(tx *types.Transaction, events []type
 				data["to"] = targetAddress
 				data["setId"] = ftSetId
 				data["value"], _ = strconv.ParseFloat(ftValue, 64)
-				events = append(events, chain.generateDepositNotify("transfer_ft", data))
+				events = append(events, chain.generateWalletNotify("transfer_ft", data))
 			}
 		}
 
@@ -181,7 +177,7 @@ func (chain *blockChain) notifyTransferInfo(tx *types.Transaction, events []type
 				data["to"] = targetAddress
 				data["setId"] = nft.SetId
 				data["tokenId"] = nft.Id
-				events = append(events, chain.generateDepositNotify("transfer_nft", data))
+				events = append(events, chain.generateWalletNotify("transfer_nft", data))
 			}
 		}
 	}
@@ -203,7 +199,7 @@ func (chain *blockChain) notifyWithDrawInfo(tx *types.Transaction, events []type
 		data["token"] = withDrawReq.BNT.TokenType
 		data["value"], _ = strconv.ParseFloat(withDrawReq.BNT.Value, 64)
 		data["status"] = 0
-		events = append(events, chain.generateDepositNotify("withdraw_bnt", data))
+		events = append(events, chain.generateWalletNotify("withdraw_bnt", data))
 	}
 
 	//ft
@@ -216,7 +212,7 @@ func (chain *blockChain) notifyWithDrawInfo(tx *types.Transaction, events []type
 			data["setId"] = k
 			data["value"], _ = strconv.ParseFloat(v, 64)
 			data["status"] = 0
-			events = append(events, chain.generateDepositNotify("withdraw_ft", data))
+			events = append(events, chain.generateWalletNotify("withdraw_ft", data))
 		}
 	}
 
@@ -230,7 +226,7 @@ func (chain *blockChain) notifyWithDrawInfo(tx *types.Transaction, events []type
 			data["setId"] = k.SetId
 			data["tokenId"] = k.Id
 			data["status"] = 0
-			events = append(events, chain.generateDepositNotify("withdraw_nft", data))
+			events = append(events, chain.generateWalletNotify("withdraw_nft", data))
 		}
 	}
 }
@@ -248,5 +244,5 @@ func (chain *blockChain) notifyShuttleNFT(tx *types.Transaction, events []types.
 	//这两个字段没有
 	data["fromAppId"] = ""
 	data["data"] = ""
-	events = append(events, chain.generateDepositNotify("shuttle", data))
+	events = append(events, chain.generateWalletNotify("shuttle", data))
 }
