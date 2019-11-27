@@ -89,7 +89,6 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 
 					if sub.Address == "TransferNFT" {
 						data := make(map[string]interface{})
-						//todo 这里对吧？
 						data["from"] = sub.Assets["appId"]
 						data["to"] = sub.Assets["target"]
 						data["setId"] = sub.Assets["setId"]
@@ -245,9 +244,9 @@ func (chain *blockChain) notifyShuttleNFT(tx *types.Transaction, events []types.
 	data["tokenId"] = shuttleData["id"]
 	data["toAppId"] = shuttleData["newAppId"]
 
-	//todo
+	data["owner"] = tx.Source
+	//这两个字段没有
 	data["fromAppId"] = ""
-	data["owner"] = ""
 	data["data"] = ""
 	events = append(events, chain.generateDepositNotify("shuttle", data))
 }
