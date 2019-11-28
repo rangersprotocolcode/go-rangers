@@ -2,9 +2,6 @@ package statemachine
 
 import (
 	"fmt"
-	"strings"
-	"path/filepath"
-	"os"
 	"log"
 	"io/ioutil"
 	"gopkg.in/yaml.v2"
@@ -69,19 +66,6 @@ func (v *Vol) String() string {
 	return fmt.Sprintf("%s:%s", v.Host, v.Target)
 }
 
-//Vols: 储存多卷映射序列
-type Vols []Vol
-
-//ReplacePWD: 替换卷映射过程中的" pwd" 为当前工作目录
-func (vs *Vols) ReplacePWD() {
-	curDir, _ := filepath.Abs(filepath.Dir(os.Args[0]))
-	for i, v := range *vs {
-		if strings.ToLower(v.Host[:3]) == "pwd" {
-			(*vs)[i].Host = strings.Replace(v.Host, v.Host[:3], curDir, -1)
-		}
-	}
-}
-
 //YAMLConfig: 储存从 yaml 读取的配置信息
 //Title: 配置名称
 //Service: 服务(对应于容器)
@@ -130,14 +114,14 @@ type ContainerConfig struct {
 	Name  string `yaml:"name" json:"name"`   // containerName 可以不指定
 	Image string `yaml:"image" json:"image"` // 镜像名
 
-	Hostname   string `yaml:"hostname" json:"hostname"`
-	Detached   bool   `yaml:"detached" json:"detached"` // 是否后台运行，一般为true
-	WorkDir    string `yaml:"work_dir" json:"work_dir"`
-	CMD        string `yaml:"cmd" json:"cmd"`
-	Net        string `yaml:"net" json:"net"`
-	Ports      Ports  `yaml:"ports" json:"ports"`
-	Volumes    Vols   `yaml:"volumes" json:"volumes"`
-	AutoRemove bool   `yaml:"auto_remove" json:"auto_remove"`
+	Hostname   string   `yaml:"hostname" json:"hostname"`
+	Detached   bool     `yaml:"detached" json:"detached"` // 是否后台运行，一般为true
+	WorkDir    string   `yaml:"work_dir" json:"work_dir"`
+	CMD        string   `yaml:"cmd" json:"cmd"`
+	Net        string   `yaml:"net" json:"net"`
+	Ports      Ports    `yaml:"ports" json:"ports"`
+	Storage    []string `yaml:"storages" json:"storages"`
+	AutoRemove bool     `yaml:"auto_remove" json:"auto_remove"`
 
 	DownloadUrl      string `yaml:"downloadUrl" json:"download_url"`           // 如果本地没有，去哪儿下载
 	DownloadProtocol string `yaml:"downloadProtocol" json:"download_protocol"` // 下载协议，例如 file/fileContainer/pull/ipfs/ipfsContainer

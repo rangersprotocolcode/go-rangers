@@ -630,9 +630,11 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function () {
 
                     $.each(d, function (i, val) {
                         stms_table.append(
-                            " <tr><td>appId</td><td>status</td></tr>"
+                            " <tr><td>appId</td><td>status</td><td>nonce</td><td>storage</td></tr>"
                                 .replace("appId", i)
-                                .replace("status", val)
+                                .replace("status", val["status"])
+                                .replace("nonce", val["nonce"])
+                                .replace("storage", val["storage"])
                         )
                     })
                 }

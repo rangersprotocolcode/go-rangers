@@ -15,6 +15,7 @@ import (
 	"x/src/middleware/log"
 	"net/http"
 	"encoding/json"
+	"crypto/md5"
 )
 
 type StateMachine struct {
@@ -38,6 +39,13 @@ type StateMachine struct {
 
 	// 与stm 通信用
 	wsServer *wsServer `json:"-"`
+
+	// stm的存储与宿主机的映射
+	storagePath []string `json:"-"`
+	// 存储的状态值
+	StorageStatus [md5.Size]byte `json:"storage"`
+
+	RequestId uint64 `json:"requestId"`
 }
 
 //将配置信息转换为 json 数据用于输出
@@ -53,7 +61,7 @@ func (c *StateMachine) TOJSONString() string {
 }
 
 func buildStateMachine(c ContainerConfig, cli *client.Client, ctx context.Context, logger log.Logger, httpClient *http.Client) StateMachine {
-	stm := StateMachine{c, "", cli, ctx, logger, preparing, httpClient, nil}
+	stm := StateMachine{c, "", cli, ctx, logger, preparing, httpClient, nil, nil, [16]byte{}, 0}
 	return stm
 }
 
@@ -180,13 +188,10 @@ func (c *StateMachine) runContainer() (string, Ports) {
 		return "", nil
 	}
 
-	//replace pwd to current abs dir
-	c.Volumes.ReplacePWD()
-
 	//set mount volumes
-	vols := make([]string, len(c.Volumes))
-	for index, item := range c.Volumes {
-		vols[index] = item.String()
+	c.storagePath = make([]string, len(c.Storage))
+	for index, item := range c.Storage {
+		c.storagePath[index] = fmt.Sprintf("./%s/%d/%s", c.Name, index, item)
 	}
 
 	//set exposed ports for containers and publish ports
@@ -218,7 +223,7 @@ func (c *StateMachine) runContainer() (string, Ports) {
 		WorkingDir:   c.WorkDir,
 		Hostname:     c.Hostname,
 	}, &container.HostConfig{
-		Binds:        vols,
+		Binds:        c.storagePath,
 		PortBindings: pts,
 		NetworkMode:  container.NetworkMode(mode),
 		AutoRemove:   c.AutoRemove,

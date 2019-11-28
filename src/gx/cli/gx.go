@@ -155,6 +155,7 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 		panic("Init miner core init error:" + err.Error())
 	}
 
+	//todo: 刷新requestId
 	statemachine.InitSTMManager(common.GlobalConf.GetString("docker", "config", ""), port)
 
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)

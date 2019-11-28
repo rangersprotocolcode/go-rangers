@@ -203,8 +203,9 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 				}
 			} else if 0 != len(transaction.Target) {
 				// 本地没有执行过状态机(game_executor还没有收到消息)，则需要调用状态机
+				// todo: RequestId 排序问题
 				transaction.SubTransactions = make([]types.UserData, 0)
-				outputMessage := statemachine.STMManger.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), transaction.Data, transaction)
+				outputMessage := statemachine.STMManger.Process(transaction.Target, "operator", transaction.RequestId, transaction.Data, transaction)
 				service.GetTransactionPool().PutGameData(transaction.Hash)
 				result := ""
 				if outputMessage != nil {

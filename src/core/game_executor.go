@@ -83,14 +83,13 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	} else {
 		gameExecutor.debug = true
 	}
+
 	gameExecutor.writeChan = make(chan notify.Message, maxWriteSize)
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.Write)
+	go gameExecutor.loop()
 
 	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.Read)
-	go gameExecutor.loop()
-	//notify.BUS.Subscribe(notify.BlockAddSucc, gameExecutor.onBlockAddSuccess)
-
-	log.GetLoggerByIndex(log.CoreLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	notify.BUS.Subscribe(notify.BlockAddSucc, gameExecutor.onBlockAddSuccess)
 }
 
 func (executor *GameExecutor) getCond(gameId string) *sync.Cond {
@@ -205,7 +204,7 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 	executor.writeChan <- msg
 }
 
-func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, string) {
+func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId uint64) (bool, string) {
 	txhash := txRaw.Hash.String()
 	executor.logger.Debugf("run tx. hash: %s", txhash)
 
@@ -260,7 +259,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 		var outputMessage *types.OutputMessage
 		if result && len(txRaw.Data) != 0 {
 			txRaw.SubTransactions = make([]types.UserData, 0)
-			outputMessage = statemachine.STMManger.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data, &txRaw)
+			outputMessage = statemachine.STMManger.Process(txRaw.Target, "operator", requestId, txRaw.Data, &txRaw)
 			executor.logger.Debugf("txhash %s invoke state machine. result:%v", txhash, outputMessage)
 			if outputMessage != nil {
 				message = outputMessage.Payload
@@ -429,62 +428,65 @@ func (executor *GameExecutor) loop() {
 	for {
 		select {
 		case msg := <-executor.writeChan:
-			message, ok := msg.(*notify.ClientTransactionMessage)
-			if !ok {
-				executor.logger.Errorf("GameExecutor:Write assert not ok!")
-				continue
-			}
-
-			txRaw := message.Tx
-			txRaw.RequestId = message.Nonce
-			//gameId := txRaw.Target
-			gameId := "fixed"
-
-			// 校验交易类型
-			//transactionType := txRaw.Type
-			//if transactionType != types.TransactionTypeOperatorEvent &&
-			//	transactionType != types.TransactionTypeWithdraw && transactionType != types.TransactionTypePublishFT {
-			//	logger.Debugf("GameExecutor:Write transactionType: %d, not ok!", transactionType)
-			//	continue
-			//}
-
-			// 校验 requestId
-			if !executor.debug {
-				requestId := message.Nonce
-				if requestId <= executor.requestIds[gameId] {
-					// 已经执行过的消息，忽略
-					executor.logger.Errorf("%s requestId :%d skipped, current requestId: %d", gameId, requestId, executor.requestIds[gameId])
-					continue
-				}
-
-				// requestId 按序执行
-				executor.getCond(gameId).L.Lock()
-				for ; requestId != (executor.requestIds[gameId] + 1); {
-
-					// waiting until the right requestId
-					executor.logger.Infof("%s requestId :%d is waiting, current requestId: %d", gameId, requestId, executor.requestIds[gameId])
-
-					// todo 超时放弃
-					executor.getCond(gameId).Wait()
-				}
-			}
-
-			result, execMessage := executor.runTransaction(txRaw)
-
-			// reply to the client
-			var response []byte
-			if result {
-				response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
-			} else {
-				response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
-			}
-			go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
-
-			if !executor.debug {
-				executor.getCond(gameId).Broadcast()
-				executor.getCond(gameId).L.Unlock()
-			}
-
+			executor.RunNotify(msg)
 		}
+	}
+}
+
+func (executor *GameExecutor) RunNotify(msg notify.Message) {
+	message, ok := msg.(*notify.ClientTransactionMessage)
+	if !ok {
+		executor.logger.Errorf("GameExecutor:Write assert not ok!")
+		return
+	}
+
+	txRaw := message.Tx
+	txRaw.RequestId = message.Nonce
+	//gameId := txRaw.Target
+	gameId := "fixed"
+
+	// 校验交易类型
+	//transactionType := txRaw.Type
+	//if transactionType != types.TransactionTypeOperatorEvent &&
+	//	transactionType != types.TransactionTypeWithdraw && transactionType != types.TransactionTypePublishFT {
+	//	logger.Debugf("GameExecutor:Write transactionType: %d, not ok!", transactionType)
+	//	continue
+	//}
+
+	// 校验 requestId
+	if !executor.debug {
+		requestId := message.Nonce
+		if requestId <= executor.requestIds[gameId] {
+			// 已经执行过的消息，忽略
+			executor.logger.Errorf("%s requestId :%d skipped, current requestId: %d", gameId, requestId, executor.requestIds[gameId])
+			return
+		}
+
+		// requestId 按序执行
+		executor.getCond(gameId).L.Lock()
+		for ; requestId != (executor.requestIds[gameId] + 1); {
+
+			// waiting until the right requestId
+			executor.logger.Infof("%s requestId :%d is waiting, current requestId: %d", gameId, requestId, executor.requestIds[gameId])
+
+			// todo 超时放弃
+			executor.getCond(gameId).Wait()
+		}
+	}
+
+	result, execMessage := executor.runTransaction(txRaw, message.Nonce)
+
+	// reply to the client
+	var response []byte
+	if result {
+		response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
+	} else {
+		response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
+	}
+	go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+
+	if !executor.debug {
+		executor.getCond(gameId).Broadcast()
+		executor.getCond(gameId).L.Unlock()
 	}
 }

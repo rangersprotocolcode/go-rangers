@@ -13,6 +13,7 @@ import (
 	"x/src/common"
 	"x/src/middleware/log"
 	"sync"
+	"strconv"
 )
 
 const (
@@ -47,7 +48,7 @@ type StateMachineManager struct {
 	Filename string // 配置文件名称
 
 	// stm entities
-	StateMachines map[string]*StateMachine
+	StateMachines map[string]*StateMachine // key 为appId
 
 	// tool for connecting stm
 	httpClient  *http.Client
@@ -164,19 +165,23 @@ func (d *StateMachineManager) ValidateAppId(appId, authCode string) bool {
 		return false
 	}
 	if expect != authCode {
-		d.logger.Errorf("Validate authCode error! appid:%s,authCode:%s,expect:%s", appId, authCode, expect)
+		d.logger.Errorf("Validate authCode error! appId:%s,authCode:%s,expect:%s", appId, authCode, expect)
 	}
 	return expect == authCode
 }
 
 // 获取当前STM状态
-func (s *StateMachineManager) GetStmStatus() map[string]string {
+func (s *StateMachineManager) GetStmStatus() map[string]map[string]string {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	result := make(map[string]string)
+	result := make(map[string]map[string]string)
 	for appId, stm := range s.StateMachines {
-		result[appId] = stm.Status
+		status := make(map[string]string, 3)
+		status["status"] = stm.Status
+		status["nonce"] = strconv.FormatUint(stm.RequestId, 10)
+		status["storage"] = common.Bytes2Hex(stm.StorageStatus[:])
+		result[appId] = status
 	}
 
 	return result
