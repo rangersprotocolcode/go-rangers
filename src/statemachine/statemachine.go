@@ -16,6 +16,8 @@ import (
 	"x/src/middleware/log"
 	"net/http"
 	"encoding/json"
+	"math/rand"
+	"x/src/utility"
 )
 
 const (
@@ -196,6 +198,17 @@ func (c *StateMachine) runContainer() (string, Ports) {
 	for _, p := range c.Ports {
 		tmpPort, _ := nat.NewPort("tcp", p.Target.String())
 		pb := make([]nat.PortBinding, 0)
+		if p.Host.String() == "0" {
+			for {
+				rand.Seed(int64(time.Now().UnixNano()))
+				port := 9000 + int(rand.Float32()*1000)
+				if !utility.PortInUse(port) {
+					p.Host = PortInt(port)
+					break
+				}
+			}
+
+		}
 		pb = append(pb, nat.PortBinding{
 			HostPort: p.Host.String(),
 		})

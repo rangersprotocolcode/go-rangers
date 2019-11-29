@@ -8,12 +8,21 @@ import (
 	"encoding/json"
 	"gopkg.in/yaml.v2"
 	"strings"
+	"math/rand"
+	"x/src/utility"
 )
 
 func TestDockerInit(t *testing.T) {
-	common.InitConf("/Users/daijia/go/src/x/deploy/daily/x1.ini")
-	InitSTMManager("test.yaml", 8080)
-	time.Sleep(1000 * time.Minute)
+	//common.InitConf("/Users/daijia/go/src/x/deploy/daily/x1.ini")
+	//InitSTMManager("test.yaml", 8080)
+	//time.Sleep(1000 * time.Minute)
+	rand.Seed(int64(time.Now().UnixNano()))
+	port := 9000 + int(rand.Float32()*1000)
+	if !utility.PortInUse(port) {
+		portInt := PortInt(port)
+		fmt.Println(portInt.String())
+	}
+
 }
 
 func TestContainerConfig(t *testing.T) {
