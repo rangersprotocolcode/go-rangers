@@ -61,7 +61,7 @@ func (c *StateMachine) TOJSONString() string {
 }
 
 func buildStateMachine(c ContainerConfig, cli *client.Client, ctx context.Context, logger log.Logger, httpClient *http.Client) StateMachine {
-	stm := StateMachine{c, "", cli, ctx, logger, preparing, httpClient, nil, nil, [16]byte{}, 0}
+	stm := StateMachine{c, "", cli, ctx, logger, preparing, httpClient, nil, nil, [md5.Size]byte{}, 0}
 	return stm
 }
 
@@ -191,7 +191,7 @@ func (c *StateMachine) runContainer() (string, Ports) {
 	//set mount volumes
 	c.storagePath = make([]string, len(c.Storage))
 	for index, item := range c.Storage {
-		c.storagePath[index] = fmt.Sprintf("./%s/%d/%s", c.Name, index, item)
+		c.storagePath[index] = fmt.Sprintf("%s/%d/%s", c.getStoragePathRoot(), index, item)
 	}
 
 	//set exposed ports for containers and publish ports
