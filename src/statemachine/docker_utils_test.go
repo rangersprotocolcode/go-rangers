@@ -71,3 +71,13 @@ func TestParse(t *testing.T) {
 
 	fmt.Println(str[index+7 : index+64+7])
 }
+
+func TestStateMachineManager_AddStatemachine(t *testing.T) {
+	common.InitConf("/Users/daijia/go/src/x/deploy/daily/x1.ini")
+	InitSTMManager("test.yaml", 8080)
+
+	//config:="{\"priority\":0,\"game\":\"0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54\",\"name\":\"genesis_test\",\"image\":\"littlebear234/genesis_image:latest\",\"hostname\":\"genesis_host_name\",\"detached\":true,\"work_dir\":\"\",\"cmd\":\"\",\"net\":\"\",\"ports\":[{\"host\":0,\"target\":0}],\"volumes\":null,\"auto_remove\":false,\"download_url\":\"littlebear234/genesis_image:latest\",\"download_protocol\":\"pull\"}"
+	config:="{\"priority\":0,\"game\":\"0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54\",\"name\":\"yeatol_genesis_test\",\"image\":\"yeatol/statemachine:test\",\"hostname\":\"yeatol_statemachine_test\",\"detached\":true,\"work_dir\":\"\",\"cmd\":\"/root/statemachine\",\"net\":\"\",\"ports\":[{\"host\":0,\"target\":80}],\"volumes\":null,\"auto_remove\":false,\"download_url\":\"yeatol/statemachine:test\",\"download_protocol\":\"pull\"}"
+	STMManger.AddStatemachine("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54",config)
+	time.Sleep(1000 * time.Minute)
+}
