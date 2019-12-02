@@ -238,9 +238,16 @@ func (c *StateMachine) runContainer() (string, Ports) {
 		c.logger.Errorf("fail to start container. config: %s, error: %s", c.TOJSONString(), err.Error())
 		return "", nil
 	}
+	c.logger.Warnf("Container %s is created, waiting for running. image: %s, game: %s", c.Id, c.Image, c.Game)
 
 	c.Id = resp.ID
 	c.waitUntilRun()
+
+	// 启动ws服务器，供stm调用
+	if c.wsServer == nil {
+		c.wsServer = newWSServer(c.Game)
+		c.wsServer.Start()
+	}
 
 	c.logger.Warnf("Container %s is created and started. image: %s, game: %s", c.Id, c.Image, c.Game)
 
