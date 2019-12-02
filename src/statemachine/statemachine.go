@@ -238,9 +238,10 @@ func (c *StateMachine) runContainer() (string, Ports) {
 		c.logger.Errorf("fail to start container. config: %s, error: %s", c.TOJSONString(), err.Error())
 		return "", nil
 	}
-	c.logger.Warnf("Container %s is created, waiting for running. image: %s, game: %s", c.Id, c.Image, c.Game)
 
 	c.Id = resp.ID
+	c.logger.Warnf("Container %s is created, waiting for running. image: %s, game: %s", c.Id, c.Image, c.Game)
+
 	c.waitUntilRun()
 
 	// 启动ws服务器，供stm调用
@@ -249,7 +250,7 @@ func (c *StateMachine) runContainer() (string, Ports) {
 		c.wsServer.Start()
 	}
 
-	c.logger.Warnf("Container %s is created and started. image: %s, game: %s", c.Id, c.Image, c.Game)
+	c.logger.Warnf("Container %s is created and prepared. image: %s, game: %s", c.Id, c.Image, c.Game)
 
 	c.prepared()
 	return c.Game, c.Ports

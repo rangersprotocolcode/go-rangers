@@ -27,10 +27,10 @@ func (s *StateMachine) UnPause() {
 func (s *StateMachine) Stop() {
 	err := s.cli.ContainerStop(s.ctx, s.Id, nil)
 	if err != nil {
-		s.logger.Errorf("fail to unpause stm, %s. err: %s", s.TOJSONString(), err.Error())
+		s.logger.Errorf("fail to stop stm, %s. err: %s", s.TOJSONString(), err.Error())
 	}
 
-	s.logger.Warnf("unpause stm, %s. err: %s", s.TOJSONString(), err.Error())
+	s.logger.Warnf("stop stm, %s. err: %s", s.TOJSONString(), err.Error())
 	s.stopped()
 
 }
@@ -43,4 +43,10 @@ func (s *StateMachine) Remove() {
 
 	s.logger.Warnf("Remove stm, %s. err: %s", s.TOJSONString(), err.Error())
 	s.removed()
+}
+
+func (s *StateMachine) Update() {
+	s.Stop()
+	s.Remove()
+
 }
