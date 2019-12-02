@@ -25,6 +25,11 @@ func (c *StateMachine) RefreshStorageStatus(requestId uint64) {
 	c.logger.Info(buffer.String())
 	c.StorageStatus = md5.Sum(buffer.Bytes())
 }
+
+func (c *StateMachine) getStoragePathRoot() string {
+	return fmt.Sprintf("./%s", c.Game)
+}
+
 //
 //func (c *StateMachine) UploadStorageStatus() {
 //	destZip := c.generateDestZip()
@@ -61,9 +66,7 @@ func (c *StateMachine) RefreshStorageStatus(requestId uint64) {
 //	//}
 //}
 //
-//func (c *StateMachine) getStoragePathRoot() string {
-//	return fmt.Sprintf("./%s", c.Game)
-//}
+
 //func (c *StateMachine) generateDestZip() string {
 //	return fmt.Sprintf("./%s-%d.zip", c.Game, c.RequestId)
 //}
