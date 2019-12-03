@@ -49,7 +49,7 @@ func newWSServer(uri string) *wsServer {
 				return false
 			}
 			// 只接受本地
-			if !strings.HasPrefix(r.RemoteAddr, "127.0.0.1") && !strings.HasPrefix(r.RemoteAddr, "0.0.0.0") && !strings.HasPrefix(r.RemoteAddr, "172.17.0.9"){
+			if !strings.HasPrefix(r.RemoteAddr, "127.0.0.1") && !strings.HasPrefix(r.RemoteAddr, "0.0.0.0") && !strings.HasPrefix(r.RemoteAddr, "172.17.0."){
 				ws.logger.Errorf("not local call error. %s", r.RemoteAddr)
 				return false
 			}
