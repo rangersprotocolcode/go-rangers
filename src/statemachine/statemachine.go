@@ -193,7 +193,7 @@ func (c *StateMachine) runContainer() (string, Ports) {
 	c.storagePath = make([]string, len(c.Storage))
 	pwd, _ := os.Getwd()
 	for index, item := range c.Storage {
-		c.storagePath[index] = fmt.Sprintf("%s/%s/%d:/%s", pwd, c.Game, index, item)
+		c.storagePath[index] = fmt.Sprintf("%s/storage/%s/%d:/%s", pwd, c.Game, index, item)
 	}
 
 	//set exposed ports for containers and publish ports
