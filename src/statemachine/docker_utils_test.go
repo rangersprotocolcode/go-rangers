@@ -77,7 +77,9 @@ func TestStateMachineManager_AddStatemachine(t *testing.T) {
 	InitSTMManager("test.yaml", 8080)
 
 	//config:="{\"priority\":0,\"game\":\"0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54\",\"name\":\"genesis_test\",\"image\":\"littlebear234/genesis_image:latest\",\"hostname\":\"genesis_host_name\",\"detached\":true,\"work_dir\":\"\",\"cmd\":\"\",\"net\":\"\",\"ports\":[{\"host\":0,\"target\":0}],\"volumes\":null,\"auto_remove\":false,\"download_url\":\"littlebear234/genesis_image:latest\",\"download_protocol\":\"pull\"}"
-	config:="{\"priority\":0,\"game\":\"0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54\",\"name\":\"yeatol_genesis_test\",\"image\":\"yeatol/statemachine:test\",\"hostname\":\"yeatol_statemachine_test\",\"detached\":true,\"work_dir\":\"\",\"cmd\":\"/root/statemachine\",\"net\":\"\",\"ports\":[{\"host\":0,\"target\":80}],\"volumes\":null,\"auto_remove\":false,\"download_url\":\"yeatol/statemachine:test\",\"download_protocol\":\"pull\"}"
-	STMManger.AddStatemachine("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54",config)
+	//config:="{\"priority\":0,\"game\":\"0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54\",\"name\":\"yeatol_genesis_test\",\"image\":\"yeatol/statemachine:test\",\"hostname\":\"yeatol_statemachine_test\",\"detached\":true,\"work_dir\":\"\",\"cmd\":\"/root/statemachine\",\"net\":\"\",\"ports\":[{\"host\":0,\"target\":80}],\"volumes\":null,\"auto_remove\":false,\"download_url\":\"yeatol/statemachine:test\",\"download_protocol\":\"pull\"}"
+	//config := "{\"priority\":0,\"game\":\"yeatol\",\"name\":\"yeatol_genesis_test\",\"image\":\"yeatol/centos:7\",\"hostname\":\"yeatol_statemachine_test\",\"detached\":true,\"work_dir\":\"\",\"cmd\":\"/root/statemachine\",\"net\":\"\",\"ports\":[{\"host\":9231,\"target\":80}],\"storages\":[\"\"],\"auto_remove\":false,\"download_url\":\"yeatol/centos:7\",\"download_protocol\":\"pull\"}"
+	config :="{\"priority\":0,\"game\":\"yeatol\",\"name\":\"yeatol_genesis_test\",\"image\":\"yeatol/statemachine:dev\",\"hostname\":\"yeatol_statemachine_test\",\"detached\":true,\"work_dir\":\"/root/docker\",\"cmd\":\"/root/statemachine\",\"net\":\"\",\"ports\":[{\"host\":9231,\"target\":80}],\"storages\":[\"/root/docker\"],\"auto_remove\":false,\"download_url\":\"yeatol/statemachine:dev\",\"download_protocol\":\"pull\"}"
+	STMManger.AddStatemachine("yeatol",config)
 	time.Sleep(1000 * time.Minute)
 }

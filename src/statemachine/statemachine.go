@@ -191,7 +191,7 @@ func (c *StateMachine) runContainer() (string, Ports) {
 	//set mount volumes
 	c.storagePath = make([]string, len(c.Storage))
 	for index, item := range c.Storage {
-		c.storagePath[index] = fmt.Sprintf("%s/%d/%s", c.getStoragePathRoot(), index, item)
+		c.storagePath[index] = fmt.Sprintf("%s/%d:/%s", c.getStoragePathRoot(), index, item)
 	}
 
 	//set exposed ports for containers and publish ports
