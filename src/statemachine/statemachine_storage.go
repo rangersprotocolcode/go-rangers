@@ -27,7 +27,7 @@ func (c *StateMachine) RefreshStorageStatus(requestId uint64) {
 }
 
 func (c *StateMachine) getStoragePathRoot() string {
-	return fmt.Sprintf("./%s", c.Game)
+	return fmt.Sprintf("%s", c.Game)
 }
 
 //
