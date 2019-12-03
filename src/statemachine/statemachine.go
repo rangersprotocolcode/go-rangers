@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"encoding/json"
 	"crypto/md5"
+	"os"
 )
 
 type StateMachine struct {
@@ -190,8 +191,9 @@ func (c *StateMachine) runContainer() (string, Ports) {
 
 	//set mount volumes
 	c.storagePath = make([]string, len(c.Storage))
+	pwd, _ := os.Getwd()
 	for index, item := range c.Storage {
-		c.storagePath[index] = fmt.Sprintf("%s-%d:/%s", c.getStoragePathRoot(), index, item)
+		c.storagePath[index] = fmt.Sprintf("%s/%s/%d:/%s", pwd, c.Game, index, item)
 	}
 
 	//set exposed ports for containers and publish ports

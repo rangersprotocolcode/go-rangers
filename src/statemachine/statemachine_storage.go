@@ -5,7 +5,8 @@ import (
 	"x/src/utility"
 	"bytes"
 	"fmt"
-	//"github.com/aliyun/aliyun-oss-go-sdk/oss"
+
+	"strings"
 )
 
 // 获取当前状态机的存储状态
@@ -18,16 +19,14 @@ func (c *StateMachine) RefreshStorageStatus(requestId uint64) {
 	var buffer bytes.Buffer
 	buffer.WriteString(fmt.Sprintf("%s nonce: %d\n", c.Game, c.RequestId))
 	for _, path := range c.storagePath {
-		pathMD5, _ := utility.CheckFolder(path)
+		realPath := strings.Split(path, ":")
+		pathMD5, _ := utility.CheckFolder(realPath[0])
 		buffer.WriteString(fmt.Sprintf("%s, md5: %v\n", path, pathMD5))
+		c.logger.Infof("checked: %s, md5: %v", realPath[0], pathMD5)
 	}
 
 	c.logger.Info(buffer.String())
 	c.StorageStatus = md5.Sum(buffer.Bytes())
-}
-
-func (c *StateMachine) getStoragePathRoot() string {
-	return fmt.Sprintf("%s", c.Game)
 }
 
 //
