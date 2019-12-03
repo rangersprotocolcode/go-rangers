@@ -97,7 +97,7 @@ func checkFolderDetail(folder string, limit int) (map[string][md5.Size]byte, err
 func CheckFolder(folder string) ([md5.Size]byte, sortableFileInfos) {
 	var list sortableFileInfos
 	err := filepath.Walk(folder, func(path string, info os.FileInfo, err error) error {
-		if !info.Mode().IsRegular() {
+		if nil == info || !info.Mode().IsRegular() {
 			return nil
 		}
 
@@ -136,7 +136,6 @@ func (s sortableFileInfos) Less(i, j int) bool {
 	return strings.Compare(s[i].Name, s[j].Name) > 0
 }
 
-
 // srcFile could be a single file or a directory
 func Zip(srcFile string, destZip string) error {
 	zipfile, err := os.Create(destZip)
@@ -158,8 +157,7 @@ func Zip(srcFile string, destZip string) error {
 			return err
 		}
 
-
-		header.Name = strings.TrimPrefix(path, filepath.Dir(srcFile) + "/")
+		header.Name = strings.TrimPrefix(path, filepath.Dir(srcFile)+"/")
 		// header.Name = path
 		if info.IsDir() {
 			header.Name += "/"
