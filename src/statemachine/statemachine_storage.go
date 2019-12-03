@@ -15,7 +15,7 @@ func (c *StateMachine) RefreshStorageStatus(requestId uint64) {
 	if 0 == len(c.storagePath) {
 		return
 	}
-
+	c.logger.Infof("start checkfiles, %s", c.Game)
 	var buffer bytes.Buffer
 	buffer.WriteString(fmt.Sprintf("%s nonce: %d\n", c.Game, c.RequestId))
 	for _, path := range c.storagePath {
@@ -25,7 +25,7 @@ func (c *StateMachine) RefreshStorageStatus(requestId uint64) {
 		c.logger.Infof("checked: %s, md5: %v", realPath[0], pathMD5)
 	}
 
-	c.logger.Info(buffer.String())
+	c.logger.Infof("end checkfiles, %s, detail: %s", c.Game, buffer.String())
 	c.StorageStatus = md5.Sum(buffer.Bytes())
 }
 
