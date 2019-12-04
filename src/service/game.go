@@ -138,10 +138,12 @@ func GetFTSet(id string) string {
 		} else {
 			response["totalSupply"] = "0"
 		}
+
+		bytes, _ := json.Marshal(response)
+		return string(bytes)
 	}
 
-	bytes, _ := json.Marshal(response)
-	return string(bytes)
+	return ""
 }
 
 // 状态机更新资产
