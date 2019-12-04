@@ -184,6 +184,24 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		result = GetAllNFTBySetId(param["address"], param["setId"])
 		break
+
+	case types.TransactionTypeNFTGtZero:
+		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
+		nftList := NFTManagerInstance.GetNFTListByAddress(source, "", accountDB)
+		resultMap := make(map[string]int, 0)
+		for _, nft := range nftList {
+			value, ok := resultMap[nft.SetID]
+			if ok {
+				value++
+			} else {
+				value = 1
+			}
+			resultMap[nft.SetID] = value
+		}
+
+		bytes, _ := json.Marshal(resultMap)
+		result = string(bytes)
+		break
 	}
 
 	responseId := txRaw.SocketRequestId

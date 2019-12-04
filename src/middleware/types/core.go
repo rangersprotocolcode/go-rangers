@@ -94,6 +94,7 @@ const (
 	TransactionTypeFTSet             = 113 // 根据ftId, 查询ftSet信息
 	TransactionTypeNFTCount          = 114 // 查询用户Rocket上的指定NFT的拥有数量
 	TransactionTypeNFTList           = 115 // 查询用户Rocket上的指定NFT的拥有数量
+	TransactionTypeNFTGtZero         = 118 // 查询指定用户Rocket上的余额大于0的非同质化代币列表
 
 	TransactionTypeWithdraw = 109
 
