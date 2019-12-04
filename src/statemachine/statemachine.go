@@ -123,10 +123,11 @@ func (c *StateMachine) getContainer() *types.Container {
 	}
 
 	for _, container := range containers {
-		if container.Image == c.Image {
-			return &container
+		if container.Image != c.Image {
+			continue
 		}
 
+		return &container
 		//c.cli.ContainerStop(c.ctx, container.ID, nil)
 		//c.cli.ContainerRemove(c.ctx, container.ID, types.ContainerRemoveOptions{Force: true})
 		//return nil

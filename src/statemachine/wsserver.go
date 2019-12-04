@@ -209,6 +209,7 @@ func (self *wsServer) connHandle(conn *websocket.Conn) {
 
 		reply = self.buildResponse(flag, answer)
 
+		self.logger.Debugf("send msg string: %s", string(reply))
 		// 回复client
 		conn.WriteMessage(websocket.TextMessage, reply)
 	}
