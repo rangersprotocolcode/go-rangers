@@ -32,7 +32,7 @@ func TestFT_EncodeRLP(t *testing.T) {
 }
 
 func TestNFT_EncodeRLP(t *testing.T) {
-	ft := &NFT{ID: "sword1", Name: "yitai", Symbol: "yt",CreateTime:"1571134085856098"}
+	ft := &NFT{ID: "sword1", Name: "yitai", Symbol: "yt", CreateTime: "1571134085856098"}
 
 	data, err := rlp.EncodeToBytes(ft)
 	if err != nil {
@@ -108,4 +108,15 @@ func Test_JSON(t *testing.T) {
 type Student struct {
 	Name string
 	Sex  string
+}
+
+func TestNFTSet_ToJSONString(t *testing.T) {
+	nftSet := &NFTSet{
+		TotalSupply: 12,
+	}
+	fmt.Println(nftSet.ToJSONString())
+
+	nftSet.TotalSupply++
+	fmt.Println(nftSet.ToJSONString())
+
 }
