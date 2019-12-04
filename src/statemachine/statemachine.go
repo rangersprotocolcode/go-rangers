@@ -127,6 +127,7 @@ func (c *StateMachine) getContainer() *types.Container {
 			continue
 		}
 
+
 		return &container
 		//c.cli.ContainerStop(c.ctx, container.ID, nil)
 		//c.cli.ContainerRemove(c.ctx, container.ID, types.ContainerRemoveOptions{Force: true})

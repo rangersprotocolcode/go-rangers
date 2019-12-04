@@ -28,7 +28,8 @@ func (self *wsServer) getFTBalance(params map[string]string) (string, bool) {
 
 func (self *wsServer) getFTSet(params map[string]string) (string, bool) {
 	id := params["id"]
-	return service.GetFTSet(id), true
+	answer := service.GetFTSet(id)
+	return answer, 0 != len(answer)
 }
 
 func (self *wsServer) getAllFT(params map[string]string) (string, bool) {
@@ -97,4 +98,3 @@ func (self *wsServer) notifyBroadcast(params map[string]string) (string, bool) {
 	go network.GetNetInstance().Notify(false, gameId, "", message)
 	return "", true
 }
-
