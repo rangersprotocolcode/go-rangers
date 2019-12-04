@@ -269,6 +269,8 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			if transaction.Source != "" {
 				accountdb.SetNonce(common.HexToAddress(transaction.Source), transaction.Nonce)
 			}
+
+			logger.Debugf("VMExecutor Execute success %s,type:%d", transaction.Hash.String(), transaction.Type)
 		}
 
 	}

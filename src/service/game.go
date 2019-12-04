@@ -339,7 +339,7 @@ func transferCoin(coin map[string]string, source string, target string, accountD
 // tx.data 发行参数，map jsonString
 // {"symbol":"","name":"","totalSupply":"12345678"}
 func PublishFT(accountdb *account.AccountDB, tx *types.Transaction) (string, bool) {
-	txLogger.Tracef("Execute publish ft tx:%s", tx.ToTxJson().ToString())
+	txLogger.Debugf("Execute publish ft tx:%s", tx.ToTxJson().ToString())
 	var ftSet map[string]string
 	if err := json.Unmarshal([]byte(tx.Data), &ftSet); nil != err {
 		txLogger.Errorf("Unmarshal data error:%s", err.Error())
@@ -349,7 +349,7 @@ func PublishFT(accountdb *account.AccountDB, tx *types.Transaction) (string, boo
 	appId := tx.Source
 	createTime := ftSet["createTime"]
 	id, ok := FTManagerInstance.PublishFTSet(FTManagerInstance.GenerateFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, createTime, 1), accountdb)
-	txLogger.Tracef("Publish ft name:%s,symbol:%s,totalSupply:%s,appId:%s,id:%s,publish result:%t", ftSet["name"], ftSet["symbol"], ftSet["totalSupply"], appId, id, ok)
+	txLogger.Debugf("Publish ft name:%s,symbol:%s,totalSupply:%s,appId:%s,id:%s,publish result:%t", ftSet["name"], ftSet["symbol"], ftSet["totalSupply"], appId, id, ok)
 
 	return id, ok
 }
