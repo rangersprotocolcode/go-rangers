@@ -111,7 +111,6 @@ type ContainerConfig struct {
 	Priority uint `yaml:"priority" json:"priority"` // 启动优先级
 
 	Game  string `yaml:"game" json:"game"`   // appId
-	Name  string `yaml:"name" json:"name"`   // containerName 可以不指定
 	Image string `yaml:"image" json:"image"` // 镜像名
 
 	Hostname   string   `yaml:"hostname" json:"hostname"`

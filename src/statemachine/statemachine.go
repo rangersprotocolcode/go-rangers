@@ -23,7 +23,8 @@ type StateMachine struct {
 	ContainerConfig
 
 	// docker containerId
-	Id string `json:"containerId"`
+	Id   string `json:"containerId"`
+	name string `json:"containerName"` // containerName 不能指定
 
 	// docker client
 	cli *client.Client  `json:"-"`
@@ -62,19 +63,14 @@ func (c *StateMachine) TOJSONString() string {
 }
 
 func buildStateMachine(c ContainerConfig, cli *client.Client, ctx context.Context, logger log.Logger, httpClient *http.Client) StateMachine {
-	stm := StateMachine{c, "", cli, ctx, logger, preparing, httpClient, nil, nil, [md5.Size]byte{}, 0}
-	return stm
+	name := fmt.Sprintf("%s-%d", c.Game, time.Now().UnixNano())
+	return StateMachine{c, "", name, cli, ctx, logger, preparing, httpClient, nil, nil, [md5.Size]byte{}, 0}
 }
 
 //ContainerConfig.RunContainer: 从配置运行容器
 //cli:  用于访问 docker 守护进程
 //ctx:  传递本次操作的上下文信息
 func (c *StateMachine) Run() (string, Ports) {
-	// c.name 如果不申明，则默认为c.game
-	if 0 == len(c.Name) {
-		c.Name = c.Game
-	}
-
 	cli := c.cli
 	ctx := c.ctx
 	resp := c.getContainer()
@@ -127,15 +123,13 @@ func (c *StateMachine) getContainer() *types.Container {
 	}
 
 	for _, container := range containers {
-		if container.Names[0] == fmt.Sprintf("/%s", c.Name) {
-			if container.Image == c.Image {
-				return &container
-			}
-
-			c.cli.ContainerStop(c.ctx, container.ID, nil)
-			c.cli.ContainerRemove(c.ctx, container.ID, types.ContainerRemoveOptions{Force: true})
-			return nil
+		if container.Image == c.Image {
+			return &container
 		}
+
+		//c.cli.ContainerStop(c.ctx, container.ID, nil)
+		//c.cli.ContainerRemove(c.ctx, container.ID, types.ContainerRemoveOptions{Force: true})
+		//return nil
 	}
 
 	return nil
@@ -175,7 +169,7 @@ func (c *StateMachine) makePorts(port uint16) Ports {
 }
 
 func (c *StateMachine) runContainer() (string, Ports) {
-	if 0 == len(c.Image) || 0 == len(c.Name) {
+	if 0 == len(c.Image) {
 		c.failed()
 		c.logger.Errorf("skip to start image, stm config: %s", c.TOJSONString())
 		return "", nil
@@ -229,7 +223,7 @@ func (c *StateMachine) runContainer() (string, Ports) {
 		PortBindings: pts,
 		NetworkMode:  container.NetworkMode(mode),
 		AutoRemove:   c.AutoRemove,
-	}, nil, c.Name)
+	}, nil, c.name)
 	if err != nil {
 		panic(err)
 	}
