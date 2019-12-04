@@ -127,7 +127,9 @@ func (c *StateMachine) getContainer() *types.Container {
 			continue
 		}
 
-
+		// check port
+		data, _ := json.Marshal(container)
+		c.logger.Errorf("get container: %s", string(data))
 		return &container
 		//c.cli.ContainerStop(c.ctx, container.ID, nil)
 		//c.cli.ContainerRemove(c.ctx, container.ID, types.ContainerRemoveOptions{Force: true})
