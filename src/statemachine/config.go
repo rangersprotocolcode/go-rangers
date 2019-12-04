@@ -82,7 +82,7 @@ func (t *YAMLConfig) InitFromFile(filename string) error {
 		log.Fatal(err)
 	}
 
-	err = yaml.UnmarshalStrict(yamlFile, t)
+	err = yaml.Unmarshal(yamlFile, t)
 	if err != nil {
 		log.Fatal(err)
 	}
