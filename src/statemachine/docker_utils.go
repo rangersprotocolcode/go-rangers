@@ -109,14 +109,13 @@ func (d *StateMachineManager) buildConfig() {
 	// 加载配置文件
 	// 配置文件的方式应该逐步废除
 	d.Config.InitFromFile(d.Filename)
+	d.logger.Infof("get stm configs from file, %v", d.Config.Services)
 
 	// 获取当前机器上已有的容器
 	containers, _ := d.cli.ContainerList(d.ctx, dockerTypes.ContainerListOptions{All: true})
 	if 0 == len(containers) {
 		return
 	}
-
-	d.logger.Infof("get stm configs from file, %v", d.Config.Services)
 
 	for _, container := range containers {
 		name := container.Names[0]

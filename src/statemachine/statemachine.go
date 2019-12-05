@@ -111,24 +111,6 @@ func (c *StateMachine) Run() (string, Ports) {
 	return "", nil
 }
 
-// 根据名字查找当前容器的配置
-//func (c *StateMachine) getContainer() *types.Container {
-//	containers, _ := c.cli.ContainerList(c.ctx, types.ContainerListOptions{All: true})
-//	if nil == containers || 0 == (len(containers)) {
-//		return nil
-//	}
-//
-//	for _, container := range containers {
-//		if container.Image != c.Image {
-//			continue
-//		}
-//
-//		return &container
-//	}
-//
-//	return nil
-//}
-
 // 根据已存在的容器
 func (s *StateMachine) runByExistedContainer() (string, Ports) {
 	s.waitUntilRun()
@@ -230,7 +212,7 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 	//遇到容器创建错误时发起 panic
 	if err := c.cli.ContainerStart(c.ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		c.failed()
-		c.logger.Errorf("fail to start container. config: %s, error: %s", c.TOJSONString(), err.Error())
+		c.logger.Errorf("fail to start stm. config: %s, error: %s", c.TOJSONString(), err.Error())
 		return "", nil
 	}
 
@@ -244,7 +226,7 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 
 	}
 
-	c.logger.Warnf("Container %s is created, waiting for running. image: %s, game: %s", resp.ID, c.Image, c.Game)
+	c.logger.Warnf("stm %s is created, waiting for running. image: %s, game: %s", resp.ID, c.Image, c.Game)
 	c.waitUntilRun()
 
 	// 启动ws服务器，供stm调用
@@ -253,7 +235,7 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 		c.wsServer.Start()
 	}
 
-	c.logger.Warnf("Container %s is created and prepared. image: %s, game: %s", resp.ID, c.Image, c.Game)
+	c.logger.Warnf("stm %s is created and prepared. image: %s, game: %s", resp.ID, c.Image, c.Game)
 	c.prepared()
 
 	return c.Game, c.Ports
