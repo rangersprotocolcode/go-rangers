@@ -19,12 +19,10 @@ import (
 	"os"
 )
 
+const containerPrefix = "rp-"
+
 type StateMachine struct {
 	ContainerConfig
-
-	// docker containerId
-	Id   string `json:"containerId"`
-	name string `json:"containerName"` // containerName 不能指定
 
 	// docker client
 	cli *client.Client  `json:"-"`
@@ -32,22 +30,19 @@ type StateMachine struct {
 
 	logger log.Logger `json:"-"`
 
-	// 工作状态
-	// todo: 心跳检测
-	Status string
-
 	// 下载image用
 	httpClient *http.Client `json:"-"`
 
 	// 与stm 通信用
 	wsServer *wsServer `json:"-"`
+	// 工作状态
+	Status string
 
 	// stm的存储与宿主机的映射
 	storagePath []string `json:"-"`
 	// 存储的状态值
 	StorageStatus [md5.Size]byte `json:"storage"`
-
-	RequestId uint64 `json:"requestId"`
+	RequestId     uint64         `json:"requestId"`
 }
 
 //将配置信息转换为 json 数据用于输出
@@ -63,93 +58,97 @@ func (c *StateMachine) TOJSONString() string {
 }
 
 func buildStateMachine(c ContainerConfig, cli *client.Client, ctx context.Context, logger log.Logger, httpClient *http.Client) StateMachine {
-	name := fmt.Sprintf("%s-%d", c.Game, time.Now().UnixNano())
-	return StateMachine{c, "", name, cli, ctx, logger, preparing, httpClient, nil, nil, [md5.Size]byte{}, 0}
+	return StateMachine{c, cli, ctx, logger, httpClient, nil, preparing, nil, [md5.Size]byte{}, 0}
 }
 
-//ContainerConfig.RunContainer: 从配置运行容器
-//cli:  用于访问 docker 守护进程
-//ctx:  传递本次操作的上下文信息
+// cli:  用于访问 docker 守护进程
+// ctx:  传递本次操作的上下文信息
 func (c *StateMachine) Run() (string, Ports) {
+	// 从配置运行容器
+	if 0 == len(c.This.ID) {
+		c.logger.Infof("stm is nil, start to create. stm image: %s, game: %s", c.Image, c.Game)
+		return c.runByConfig()
+	}
+
 	cli := c.cli
 	ctx := c.ctx
-	resp := c.getContainer()
-	if nil == resp {
-		c.logger.Warnf("Contain is nil, start to create. stm image: %s, game: %s", c.Image, c.Game)
-		return c.runContainer()
-	}
+	c.logger.Infof("existing stm id: %s,state: %s, image: %s, game: %s", c.This.ID, c.This.Status, c.Image, c.Game)
 
-	c.logger.Warnf("Contain id: %s,state: %s, image: %s, game: %s", resp.ID, resp.Status, c.Image, c.Game)
-
-	state := strings.ToLower(resp.State)
+	state := strings.ToLower(c.This.State)
 	if strings.HasPrefix(state, "running") || strings.HasPrefix(state, "up") {
-		return c.after(resp)
+		return c.runByExistedContainer()
 	}
 
-	if "created" == resp.State || strings.HasPrefix(state, "created") {
-		cli.ContainerRemove(ctx, resp.ID, types.ContainerRemoveOptions{Force: true})
+	// 比较危险
+	if "created" == c.This.State || strings.HasPrefix(state, "created") {
+		cli.ContainerRemove(ctx, c.This.ID, types.ContainerRemoveOptions{Force: true})
+		c.This.ID = ""
 		return c.Run()
 	}
 
 	if strings.Contains(state, "exited") {
-		if err := cli.ContainerStart(ctx, resp.ID, types.ContainerStartOptions{}); nil != err {
-			c.logger.Errorf("fail to start container. image: %s, error: %s", c.Image, err.Error())
+		if err := cli.ContainerStart(ctx, c.This.ID, types.ContainerStartOptions{}); nil != err {
+			c.logger.Errorf("fail to start stm. image: %s, error: %s", c.Image, err.Error())
 			c.Status = "fail to start"
 			return "", nil
 		}
 
-		return c.after(nil)
+		return c.runByExistedContainer()
 	}
 
 	if strings.Contains(state, "paused") {
-		if err := cli.ContainerUnpause(ctx, resp.ID); nil != err {
-			c.logger.Errorf("fail to unpause container. image: %s, error: %s", c.Image, err.Error())
+		if err := cli.ContainerUnpause(ctx, c.This.ID); nil != err {
+			c.logger.Errorf("fail to unpause stm. image: %s, error: %s", c.Image, err.Error())
 			c.Status = "fail to start"
 			return "", nil
 		}
 
-		return c.after(nil)
+		return c.runByExistedContainer()
 	}
 
 	c.failed()
+	c.logger.Errorf("fail to start existing stm, id: %s, status: %s", c.This.ID, c.This.Status)
 	return "", nil
 }
 
 // 根据名字查找当前容器的配置
-func (c *StateMachine) getContainer() *types.Container {
-	containers, _ := c.cli.ContainerList(c.ctx, types.ContainerListOptions{All: true})
-	if nil == containers || 0 == (len(containers)) {
-		return nil
-	}
+//func (c *StateMachine) getContainer() *types.Container {
+//	containers, _ := c.cli.ContainerList(c.ctx, types.ContainerListOptions{All: true})
+//	if nil == containers || 0 == (len(containers)) {
+//		return nil
+//	}
+//
+//	for _, container := range containers {
+//		if container.Image != c.Image {
+//			continue
+//		}
+//
+//		return &container
+//	}
+//
+//	return nil
+//}
 
-	for _, container := range containers {
-		if container.Image != c.Image {
-			continue
-		}
-
-		// check port
-		data, _ := json.Marshal(container)
-		c.logger.Errorf("get container: %s", string(data))
-		return &container
-		//c.cli.ContainerStop(c.ctx, container.ID, nil)
-		//c.cli.ContainerRemove(c.ctx, container.ID, types.ContainerRemoveOptions{Force: true})
-		//return nil
-	}
-
-	return nil
-}
-
-func (s *StateMachine) after(existed *types.Container) (string, Ports) {
-	resp := existed
-	if nil == resp {
-		resp = s.getContainer()
-	}
-
-	s.Id = resp.ID
+// 根据已存在的容器
+func (s *StateMachine) runByExistedContainer() (string, Ports) {
 	s.waitUntilRun()
 
+	// 刷新storagePath配置
+	s.storagePath = make([]string, len(s.This.Mounts))
+	for i, mount := range s.This.Mounts {
+		s.storagePath[i] = fmt.Sprintf("%s:%s", mount.Source, mount.Destination)
+	}
+	s.RefreshStorageStatus(0)
+
+	// 启动ws服务器，供stm调用
+	if s.wsServer == nil {
+		s.wsServer = newWSServer(s.Game)
+		s.wsServer.Start()
+	}
+
+	// 刷新端口
 	var p uint16 = 0
-	for _, port := range resp.Ports {
+	for _, port := range s.This.Ports {
 		if port.PublicPort > p {
 			p = port.PublicPort
 		}
@@ -157,11 +156,6 @@ func (s *StateMachine) after(existed *types.Container) (string, Ports) {
 
 	s.prepared()
 
-	// 启动ws服务器，供stm调用
-	if s.wsServer == nil {
-		s.wsServer = newWSServer(s.Game)
-		s.wsServer.Start()
-	}
 	return s.Game, s.makePorts(p)
 }
 
@@ -172,7 +166,8 @@ func (c *StateMachine) makePorts(port uint16) Ports {
 	return ports
 }
 
-func (c *StateMachine) runContainer() (string, Ports) {
+// 根据配置启动容器
+func (c *StateMachine) runByConfig() (string, Ports) {
 	if 0 == len(c.Image) {
 		c.failed()
 		c.logger.Errorf("skip to start image, stm config: %s", c.TOJSONString())
@@ -227,7 +222,7 @@ func (c *StateMachine) runContainer() (string, Ports) {
 		PortBindings: pts,
 		NetworkMode:  container.NetworkMode(mode),
 		AutoRemove:   c.AutoRemove,
-	}, nil, c.name)
+	}, nil, fmt.Sprintf("%s%s-%d", containerPrefix, c.Game, time.Now().UnixNano()))
 	if err != nil {
 		panic(err)
 	}
@@ -239,9 +234,17 @@ func (c *StateMachine) runContainer() (string, Ports) {
 		return "", nil
 	}
 
-	c.Id = resp.ID
-	c.logger.Warnf("Container %s is created, waiting for running. image: %s, game: %s", c.Id, c.Image, c.Game)
+	// 获取container实例
+	containers, _ := c.cli.ContainerList(c.ctx, types.ContainerListOptions{All: true})
+	for _, container := range containers {
+		if container.ID == resp.ID {
+			c.This = container
+			break
+		}
 
+	}
+
+	c.logger.Warnf("Container %s is created, waiting for running. image: %s, game: %s", resp.ID, c.Image, c.Game)
 	c.waitUntilRun()
 
 	// 启动ws服务器，供stm调用
@@ -250,16 +253,15 @@ func (c *StateMachine) runContainer() (string, Ports) {
 		c.wsServer.Start()
 	}
 
-	c.logger.Warnf("Container %s is created and prepared. image: %s, game: %s", c.Id, c.Image, c.Game)
-
+	c.logger.Warnf("Container %s is created and prepared. image: %s, game: %s", resp.ID, c.Image, c.Game)
 	c.prepared()
+
 	return c.Game, c.Ports
 }
 
 // 检查container运行状态
 func (c *StateMachine) checkIfRunning() bool {
-	container := c.getContainer()
-	state := strings.ToLower(container.State)
+	state := strings.ToLower(c.This.State)
 	return strings.HasPrefix(state, "running") || strings.HasPrefix(state, "up")
 }
 

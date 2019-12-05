@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"gopkg.in/yaml.v2"
 	"encoding/json"
+	"github.com/docker/docker/api/types"
 )
 
 //PortInt: 端口号类型
@@ -124,6 +125,8 @@ type ContainerConfig struct {
 
 	DownloadUrl      string `yaml:"downloadUrl" json:"download_url"`           // 如果本地没有，去哪儿下载
 	DownloadProtocol string `yaml:"downloadProtocol" json:"download_protocol"` // 下载协议，例如 file/fileContainer/pull/ipfs/ipfsContainer
+
+	This types.Container `json:"current"`
 }
 
 func (c ContainerConfig) TOJSONString() string {

@@ -10,7 +10,7 @@ import (
 	"strconv"
 )
 
-// 通过配置文件，加载STM
+// 加载STM
 func (s *StateMachineManager) runStateMachine(service ContainerConfig) {
 	s.lock.Lock()
 	if 0 == len(service.Game) {
@@ -18,8 +18,9 @@ func (s *StateMachineManager) runStateMachine(service ContainerConfig) {
 		s.lock.Unlock()
 		return
 	}
-	if _, ok := s.StateMachines[service.Game]; ok {
-		s.logger.Errorf("fail to create stm with nil game. config: %s", service.TOJSONString())
+	stm, ok := s.StateMachines[service.Game]
+	if ok && stm.isReady() {
+		s.logger.Errorf("fail to create stm with same game. config: %s", service.TOJSONString())
 		s.lock.Unlock()
 		return
 	}
@@ -36,6 +37,7 @@ func (s *StateMachineManager) runStateMachine(service ContainerConfig) {
 	authCode := s.generateAuthcode()
 	s.callInit(ports[0].Host, stateMachine.wsServer.GetURL(), authCode)
 	stateMachine.ready()
+	stateMachine.heartbeat()
 
 	s.lock.Lock()
 	s.Mapping[appId] = ports[0].Host

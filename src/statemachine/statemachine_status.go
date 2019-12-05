@@ -12,13 +12,17 @@ const (
 	remove = "removed(已删除)"
 )
 
-// 设置statemacine的状态
+// 设置stateMachine的状态
 func (s *StateMachine) setStatus(status string) {
 	s.Status = status
 }
 
 func (s *StateMachine) ready() {
 	s.setStatus(ready)
+}
+
+func (s *StateMachine) isReady() bool {
+	return s.Status == ready
 }
 
 func (s *StateMachine) prepared() {

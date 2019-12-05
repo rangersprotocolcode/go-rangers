@@ -12,7 +12,7 @@ import (
 
 func TestDockerInit(t *testing.T) {
 	common.InitConf("/Users/daijia/go/src/x/deploy/daily/x1.ini")
-	InitSTMManager("test.yaml", 8080)
+	InitSTMManager("test.yaml")
 	time.Sleep(1000 * time.Minute)
 }
 
@@ -55,13 +55,13 @@ func TestContainerConfig(t *testing.T) {
 
 func TestDownloadByFile(t *testing.T) {
 	common.InitConf("/Users/daijia/go/src/x/deploy/daily/x1.ini")
-	InitSTMManager("test1.yaml", 8080)
+	InitSTMManager("test1.yaml")
 	time.Sleep(1000 * time.Minute)
 }
 
 func TestDownloadByContainer(t *testing.T) {
 	common.InitConf("/Users/daijia/go/src/x/deploy/daily/x1.ini")
-	InitSTMManager("test2.yaml", 8080)
+	InitSTMManager("test2.yaml")
 	time.Sleep(1000 * time.Minute)
 }
 
@@ -74,7 +74,7 @@ func TestParse(t *testing.T) {
 
 func TestStateMachineManager_AddStatemachine(t *testing.T) {
 	common.InitConf("/Users/daijia/go/src/x/deploy/daily/x1.ini")
-	InitSTMManager("test.yaml", 8080)
+	InitSTMManager("test.yaml")
 
 	//config:="{\"priority\":0,\"game\":\"0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54\",\"name\":\"genesis_test\",\"image\":\"littlebear234/genesis_image:latest\",\"hostname\":\"genesis_host_name\",\"detached\":true,\"work_dir\":\"\",\"cmd\":\"\",\"net\":\"\",\"ports\":[{\"host\":0,\"target\":0}],\"volumes\":null,\"auto_remove\":false,\"download_url\":\"littlebear234/genesis_image:latest\",\"download_protocol\":\"pull\"}"
 	//config:="{\"priority\":0,\"game\":\"0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54\",\"name\":\"yeatol_genesis_test\",\"image\":\"yeatol/statemachine:test\",\"hostname\":\"yeatol_statemachine_test\",\"detached\":true,\"work_dir\":\"\",\"cmd\":\"/root/statemachine\",\"net\":\"\",\"ports\":[{\"host\":0,\"target\":80}],\"volumes\":null,\"auto_remove\":false,\"download_url\":\"yeatol/statemachine:test\",\"download_protocol\":\"pull\"}"

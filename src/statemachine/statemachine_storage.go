@@ -17,7 +17,7 @@ func (c *StateMachine) RefreshStorageStatus(requestId uint64) {
 	}
 	c.logger.Infof("start checkfiles, %s", c.Game)
 	var buffer bytes.Buffer
-	buffer.WriteString(fmt.Sprintf("%s nonce: %d\n", c.Game, c.RequestId))
+	buffer.WriteString(fmt.Sprintf("%s RequestId: %d\n", c.Game, c.RequestId))
 	for _, path := range c.storagePath {
 		realPath := strings.Split(path, ":")
 		pathMD5, _ := utility.CheckFolder(realPath[0])

@@ -22,7 +22,7 @@ func TestConfig(t *testing.T) {
 }
 
 func TestDocker(t *testing.T) {
-	var tom = InitSTMManager("test.yaml",8080)
+	var tom = InitSTMManager("test.yaml")
 
 	nonce := tom.Nonce("j")
 	fmt.Println(nonce)

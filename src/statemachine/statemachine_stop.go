@@ -5,7 +5,7 @@ import "github.com/docker/docker/api/types"
 
 // 暂停容器
 func (s *StateMachine) Pause() {
-	err := s.cli.ContainerPause(s.ctx, s.Id)
+	err := s.cli.ContainerPause(s.ctx, s.This.ID)
 	if err != nil {
 		s.logger.Errorf("fail to pause stm, %s. err: %s", s.TOJSONString(), err.Error())
 	}
@@ -15,7 +15,7 @@ func (s *StateMachine) Pause() {
 }
 
 func (s *StateMachine) UnPause() {
-	err := s.cli.ContainerUnpause(s.ctx, s.Id)
+	err := s.cli.ContainerUnpause(s.ctx, s.This.ID)
 	if err != nil {
 		s.logger.Errorf("fail to unpause stm, %s. err: %s", s.TOJSONString(), err.Error())
 	}
@@ -25,7 +25,7 @@ func (s *StateMachine) UnPause() {
 }
 
 func (s *StateMachine) Stop() {
-	err := s.cli.ContainerStop(s.ctx, s.Id, nil)
+	err := s.cli.ContainerStop(s.ctx, s.This.ID, nil)
 	if err != nil {
 		s.logger.Errorf("fail to stop stm, %s. err: %s", s.TOJSONString(), err.Error())
 	}
@@ -36,7 +36,7 @@ func (s *StateMachine) Stop() {
 }
 
 func (s *StateMachine) Remove() {
-	err := s.cli.ContainerRemove(s.ctx, s.Id, types.ContainerRemoveOptions{Force: true, RemoveVolumes: false})
+	err := s.cli.ContainerRemove(s.ctx, s.This.ID, types.ContainerRemoveOptions{Force: true, RemoveVolumes: false})
 	if err != nil {
 		s.logger.Errorf("fail to Remove stm, %s. err: %s", s.TOJSONString(), err.Error())
 	}

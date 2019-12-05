@@ -26,10 +26,6 @@ const (
 	GXVersion = "0.0.3.1"
 	// Section 默认section配置
 	Section = "gx"
-	// RemoteHost 默认host
-	RemoteHost = "127.0.0.1"
-	// RemotePort 默认端口
-	RemotePort = 8088
 
 	instanceSection = "instance"
 
@@ -112,7 +108,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(*instanceIndex, *apply, *keystore, *portRpc, *env, *gateAddr)
+		gx.initMiner(*instanceIndex, *apply, *keystore, *env, *gateAddr)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc)
 			if err != nil {
@@ -124,7 +120,7 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port uint, env string, gateAddr string) {
+func (gx *GX) initMiner(instanceIndex int, apply, keystore, env, gateAddr string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	databaseValue := "d" + strconv.Itoa(instanceIndex)
@@ -156,7 +152,7 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 	}
 
 	//todo: 刷新requestId
-	statemachine.InitSTMManager(common.GlobalConf.GetString("docker", "config", ""), port)
+	statemachine.InitSTMManager(common.GlobalConf.GetString("docker", "config", ""))
 
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
 	if !ok {
