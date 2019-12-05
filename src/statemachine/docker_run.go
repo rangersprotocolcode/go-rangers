@@ -24,7 +24,7 @@ func (s *StateMachineManager) runStateMachine(service ContainerConfig) {
 		s.lock.Unlock()
 		return
 	}
-	stateMachine := buildStateMachine(service, s.cli, s.ctx, s.logger, s.httpClient)
+	stateMachine := buildStateMachine(service, s.StorageRoot, s.cli, s.ctx, s.logger, s.httpClient)
 	s.StateMachines[service.Game] = &stateMachine
 	s.lock.Unlock()
 

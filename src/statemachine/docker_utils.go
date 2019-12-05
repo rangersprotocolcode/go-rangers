@@ -16,6 +16,8 @@ import (
 	"sync"
 	"strconv"
 	"strings"
+	"os"
+	"x/src/middleware/notify"
 )
 
 const (
@@ -52,6 +54,8 @@ type StateMachineManager struct {
 	// stm entities
 	StateMachines map[string]*StateMachine // key 为appId
 
+	StorageRoot string
+
 	// tool for connecting stm
 	httpClient *http.Client
 
@@ -85,7 +89,12 @@ func InitSTMManager(filename string) *StateMachineManager {
 	STMManger.Mapping = make(map[string]PortInt)
 	STMManger.AuthMapping = make(map[string]string)
 
+	pwd, _ := os.Getwd()
+	STMManger.StorageRoot = pwd + "/storage"
 	STMManger.init()
+
+	// 订阅状态更新消息
+	notify.BUS.Subscribe(notify.STMStorageReady, STMManger.updateSTMStorage)
 
 	return STMManger
 }

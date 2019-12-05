@@ -16,7 +16,6 @@ import (
 	"net/http"
 	"encoding/json"
 	"crypto/md5"
-	"os"
 )
 
 const containerPrefix = "rp-"
@@ -39,6 +38,8 @@ type StateMachine struct {
 	Status string
 
 	// stm的存储与宿主机的映射
+	storageRoot string   `json:"-"` // "${pwd}/storage"
+	storageGame string   `json:"-"` // "${pwd}/storage/${appId}"
 	storagePath []string `json:"-"`
 	// 存储的状态值
 	StorageStatus [md5.Size]byte `json:"storage"`
@@ -57,8 +58,9 @@ func (c *StateMachine) TOJSONString() string {
 	}
 }
 
-func buildStateMachine(c ContainerConfig, cli *client.Client, ctx context.Context, logger log.Logger, httpClient *http.Client) StateMachine {
-	return StateMachine{c, cli, ctx, logger, httpClient, nil, preparing, nil, [md5.Size]byte{}, 0}
+func buildStateMachine(c ContainerConfig, storageRoot string, cli *client.Client, ctx context.Context, logger log.Logger, httpClient *http.Client) StateMachine {
+	return StateMachine{c, cli, ctx, logger, httpClient, nil, preparing,
+		storageRoot, fmt.Sprintf("%s/%s", storageRoot, c.Game), nil, [md5.Size]byte{}, 0}
 }
 
 // cli:  用于访问 docker 守护进程
@@ -69,7 +71,6 @@ func (c *StateMachine) Run() (string, Ports) {
 		c.logger.Infof("stm is nil, start to create. stm image: %s, game: %s", c.Image, c.Game)
 		return c.runByConfig()
 	}
-
 
 	c.logger.Infof("existing stm id: %s,state: %s, image: %s, game: %s", c.This.ID, c.This.Status, c.Image, c.Game)
 
@@ -170,9 +171,8 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 
 	//set mount volumes
 	c.storagePath = make([]string, len(c.Storage))
-	pwd, _ := os.Getwd()
 	for index, item := range c.Storage {
-		c.storagePath[index] = fmt.Sprintf("%s/storage/%s/%d:/%s", pwd, c.Game, index, item)
+		c.storagePath[index] = fmt.Sprintf("%s/%s/%d:/%s", c.storageRoot, c.Game, index, item)
 	}
 
 	//set exposed ports for containers and publish ports

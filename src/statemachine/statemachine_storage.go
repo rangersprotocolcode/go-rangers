@@ -7,6 +7,8 @@ import (
 	"fmt"
 
 	"strings"
+	"os"
+	"time"
 )
 
 // 获取当前状态机的存储状态
@@ -29,65 +31,59 @@ func (c *StateMachine) RefreshStorageStatus(requestId uint64) {
 	c.StorageStatus = md5.Sum(buffer.Bytes())
 }
 
-//
-//func (c *StateMachine) UploadStorageStatus() {
-//	destZip := c.generateDestZip()
-//	err := utility.Zip(c.getStoragePathRoot(), destZip)
-//	if err != nil {
-//		c.logger.Errorf("fail to generate storage. %s", err)
-//		return
-//	}
-//
-//	bucket := c.getOSSBucket()
-//	if nil == bucket {
-//		return
-//	}
-//
-//	err = bucket.PutObjectFromFile(destZip, destZip)
-//	if err != nil {
-//		c.logger.Errorf("fail to generate storage. %s", err)
-//		return
-//	}
-//
-//	//msg := network.Message{Code: network.STMStorageReady, Body: body}
-//	//network.GetNetInstance().Broadcast(msg)
-//}
-//
-//func (c *StateMachine) DownloadStorage() {
-//	bucket := c.getOSSBucket()
-//	if nil == bucket {
-//		return
-//	}
-//	//err := bucket.GetObjectToFile(objectName, downloadedFileName)
-//	//if err != nil {
-//	//	c.logger.Errorf("fail to generate storage. %s", err)
-//	//	return
-//	//}
-//}
-//
+func (c *StateMachine) UploadStorage() string {
+	zipFile := c.zipStorage()
+	defer os.Remove(zipFile)
 
-//func (c *StateMachine) generateDestZip() string {
-//	return fmt.Sprintf("./%s-%d.zip", c.Game, c.RequestId)
-//}
-//func (c *StateMachine) getOSSBucket() *oss.Bucket {
-//	// Endpoint以杭州为例，其它Region请按实际情况填写。
-//	endpoint := "oss-accelerate.aliyuncs.com"
-//	// 阿里云主账号AccessKey拥有所有API的访问权限，风险很高。强烈建议您创建并使用RAM账号进行API访问或日常运维，请登录 https://ram.console.aliyun.com 创建RAM账号。
-//	accessKeyId := "LTAI4FgUH1VQBohuGnG2qW22"
-//	accessKeySecret := "bpXd7mnNYwN9zus4zXxXGclImiCpeI"
-//	bucketName := "rocket-protocol-stm-file-dev"
-//	// 创建OSSClient实例
-//	client, err := oss.New(endpoint, accessKeyId, accessKeySecret)
-//	if err != nil {
-//		c.logger.Errorf("fail to generate storage. %s", err)
-//		return nil
-//	}
-//	// 获取存储空间。
-//	bucket, err := client.Bucket(bucketName)
-//	if err != nil {
-//		c.logger.Errorf("fail to generate storage. %s", err)
-//		return nil
-//	}
-//
-//	return bucket
-//}
+	// 上传
+	if 0 != len(zipFile) && c.uploadStorage(zipFile) {
+		return zipFile
+	}
+	return ""
+}
+
+// 打包本地存储
+func (c *StateMachine) zipStorage() string {
+	zipFile := fmt.Sprintf("%s-%d-%d.zip", c.Game, c.RequestId, time.Now().UnixNano())
+	err := utility.Zip(c.storageGame, zipFile)
+	if err != nil {
+		c.logger.Errorf("stm %s failed to zip storage, storageRoot: %s, zipFile: %s, err: %s", c.Game, c.storageRoot, zipFile, err.Error())
+		return ""
+	}
+
+	c.logger.Infof("stm %s zipStorage, storageRoot: %s, zipFile: %s", c.Game, c.storageGame, zipFile)
+	return zipFile
+}
+
+//更新本地存储
+func (c *StateMachine) updateStorage(zipFile string) {
+	// 删除
+	err := os.RemoveAll(c.storageGame)
+	if err != nil {
+		c.logger.Errorf("stm %s failed to remove storage, storageRoot: %s, err: %s", c.Game, c.storageRoot, err.Error())
+		return
+	}
+
+	// 下载
+	if c.downloadStorage(zipFile) {
+		c.logger.Errorf("stm %s failed to download storage: %s, storageRoot: %s, err: %s", c.Game, zipFile, c.storageRoot, err.Error())
+		return
+	}
+
+	//解压
+	err = utility.Unzip(zipFile, c.storageRoot)
+	if err != nil {
+		c.logger.Errorf("stm %s failed to unzip storage, storageRoot: %s, err: %s", c.Game, c.storageRoot, err.Error())
+		return
+	}
+
+	c.logger.Infof("stm %s update storage, storageRoot: %s, zipFile: %s", c.Game, c.storageRoot, zipFile)
+}
+
+func (c *StateMachine) downloadStorage(zipFile string) bool {
+	return true
+}
+
+func (c *StateMachine) uploadStorage(zipFile string) bool {
+	return true
+}
