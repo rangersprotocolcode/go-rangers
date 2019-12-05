@@ -75,6 +75,11 @@ type YAMLConfig struct {
 	Services []ContainerConfig `yaml:"services"`
 }
 
+func (t *YAMLConfig) TOJSONString() string {
+	data, _ := json.Marshal(t.Services)
+	return string(data)
+}
+
 // Init toml from *.yaml
 //filename: 文件名信息
 func (t *YAMLConfig) InitFromFile(filename string) error {

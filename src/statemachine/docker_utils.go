@@ -109,7 +109,7 @@ func (d *StateMachineManager) buildConfig() {
 	// 加载配置文件
 	// 配置文件的方式应该逐步废除
 	d.Config.InitFromFile(d.Filename)
-	d.logger.Infof("get stm configs from file, %v", d.Config.Services)
+	d.logger.Infof("get stm configs from file, %s", d.Config.TOJSONString())
 
 	// 获取当前机器上已有的容器
 	containers, _ := d.cli.ContainerList(d.ctx, dockerTypes.ContainerListOptions{All: true})
@@ -142,7 +142,7 @@ func (d *StateMachineManager) buildConfig() {
 		d.Config.Services = append(d.Config.Services, config)
 	}
 
-	d.logger.Infof("get stm configs, merged by existing containers, %v", d.Config.Services)
+	d.logger.Infof("get stm configs, merged by existing containers, %s", d.Config.TOJSONString())
 }
 
 func (d *StateMachineManager) Nonce(name string) int {
