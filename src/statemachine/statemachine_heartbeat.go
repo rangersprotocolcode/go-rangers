@@ -8,7 +8,6 @@ import (
 func (c *StateMachine) heartbeat() {
 	go func() {
 		for {
-			c.refreshThis()
 			if c.checkIfRunning() {
 				c.setStatus(ready)
 			} else {

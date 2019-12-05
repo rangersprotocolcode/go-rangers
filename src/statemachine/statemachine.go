@@ -70,14 +70,16 @@ func (c *StateMachine) Run() (string, Ports) {
 		return c.runByConfig()
 	}
 
-	cli := c.cli
-	ctx := c.ctx
+
 	c.logger.Infof("existing stm id: %s,state: %s, image: %s, game: %s", c.This.ID, c.This.Status, c.Image, c.Game)
 
 	state := strings.ToLower(c.This.State)
 	if strings.HasPrefix(state, "running") || strings.HasPrefix(state, "up") {
 		return c.runByExistedContainer()
 	}
+
+	cli := c.cli
+	ctx := c.ctx
 
 	// 比较危险
 	if "created" == c.This.State || strings.HasPrefix(state, "created") {
@@ -87,6 +89,7 @@ func (c *StateMachine) Run() (string, Ports) {
 	}
 
 	if strings.Contains(state, "exited") {
+		c.logger.Warnf("start exited stm, id: %s, image: %s", c.This.ID, c.Image)
 		if err := cli.ContainerStart(ctx, c.This.ID, types.ContainerStartOptions{}); nil != err {
 			c.logger.Errorf("fail to start stm. image: %s, error: %s", c.Image, err.Error())
 			c.Status = "fail to start"
@@ -97,6 +100,7 @@ func (c *StateMachine) Run() (string, Ports) {
 	}
 
 	if strings.Contains(state, "paused") {
+		c.logger.Warnf("start paused stm, id: %s, image: %s", c.This.ID, c.Image)
 		if err := cli.ContainerUnpause(ctx, c.This.ID); nil != err {
 			c.logger.Errorf("fail to unpause stm. image: %s, error: %s", c.Image, err.Error())
 			c.Status = "fail to start"
@@ -243,6 +247,7 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 
 // 检查container运行状态
 func (c *StateMachine) checkIfRunning() bool {
+	c.refreshThis()
 	state := strings.ToLower(c.This.State)
 	return strings.HasPrefix(state, "running") || strings.HasPrefix(state, "up")
 }
