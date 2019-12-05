@@ -27,3 +27,15 @@ func TestCheckFolder(t *testing.T) {
 	}
 
 }
+
+func TestZip(t *testing.T) {
+	err := Zip("/Users/daijia/go/src/x/src/statemachine/logs", "1111.zip")
+	if err != nil {
+		panic(err)
+	}
+
+}
+
+func TestUnzip(t *testing.T) {
+	Unzip("1111.zip", "")
+}

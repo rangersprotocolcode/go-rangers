@@ -50,7 +50,7 @@ func (s *StateMachineManager) callInit(dockerPortInt PortInt, wsUrl, authCode st
 	values := url.Values{}
 	values["url"] = []string{wsUrl}
 	values["authCode"] = []string{authCode}
-	s.logger.Infof("Send post req:path:%s,values:%v", path, values)
+	s.logger.Infof("send init req:path:%s,values:%v", path, values)
 
 	// keeping waiting
 	// todo: timeout

@@ -22,6 +22,7 @@ func (c *StateMachine) heartbeat() {
 
 // 根据ID刷新当前容器的配置
 func (c *StateMachine) refreshThis() {
+	// todo: 执行过docker rm命令后，container就查不到了
 	containers, _ := c.cli.ContainerList(c.ctx, types.ContainerListOptions{All: true})
 	if nil == containers || 0 == (len(containers)) {
 		return

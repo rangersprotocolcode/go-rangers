@@ -8,6 +8,8 @@ import (
 	"github.com/docker/docker/api/types"
 	"io"
 	"os"
+	"encoding/json"
+	"fmt"
 )
 
 func TestDocker_Bind(t *testing.T) {
@@ -51,4 +53,14 @@ func TestDocker_Bind(t *testing.T) {
 	}
 
 	io.Copy(os.Stdout, out)
+}
+
+func TestDocker_Container(t *testing.T) {
+	ctx := context.Background()
+	cli, _ := client.NewClientWithOpts(client.FromEnv)
+
+	containers, _ := cli.ContainerList(ctx, types.ContainerListOptions{All: true})
+	data, _ := json.Marshal(containers)
+	fmt.Println(string(data))
+
 }
