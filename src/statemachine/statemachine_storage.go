@@ -5,10 +5,10 @@ import (
 	"x/src/utility"
 	"bytes"
 	"fmt"
-
 	"strings"
 	"os"
 	"time"
+	"github.com/ipfs/go-ipfs-api"
 )
 
 // 获取当前状态机的存储状态
@@ -85,5 +85,7 @@ func (c *StateMachine) downloadStorage(zipFile string) bool {
 }
 
 func (c *StateMachine) uploadStorage(zipFile string) bool {
+	shell.NewShell("localhost:5001")
+	//localID, err := sh.ID()
 	return true
 }
