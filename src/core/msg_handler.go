@@ -9,11 +9,11 @@ import (
 	"x/src/middleware/types"
 	"x/src/middleware/notify"
 
-	"github.com/gogo/protobuf/proto"
 	"x/src/middleware/pb"
 	"x/src/middleware"
 	"time"
 	"x/src/service"
+	"github.com/golang/protobuf/proto"
 )
 
 const blockResponseSize = 1
