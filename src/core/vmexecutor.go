@@ -255,9 +255,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			logger.Debugf("Execute failed tx:%s", transaction.Hash.String())
 			evictedTxs = append(evictedTxs, transaction.Hash)
 			accountdb.RevertToSnapshot(snapshot)
-		}
-
-		if success || transaction.Type != types.TransactionTypeBonus {
+		} else {
 			transactions = append(transactions, transaction)
 			receipt := types.NewReceipt(nil, !success, 0)
 			receipt.TxHash = transaction.Hash
