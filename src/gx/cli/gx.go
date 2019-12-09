@@ -143,7 +143,8 @@ func (gx *GX) initMiner(instanceIndex int, apply, keystore, env, gateAddr string
 		minerInfo.NType = types.MinerTypeHeavy
 	}
 
-	network.InitNetwork(cnet.MessageHandler, "0x"+common.Bytes2Hex(gx.account.Miner.ID[:]), env, gateAddr)
+	minerId := "0x" + common.Bytes2Hex(gx.account.Miner.ID[:])
+	network.InitNetwork(cnet.MessageHandler, minerId, env, gateAddr)
 	service.InitService(minerInfo.NType)
 
 	err = core.InitCore(consensus.NewConsensusHelper(minerInfo.ID))
@@ -152,7 +153,7 @@ func (gx *GX) initMiner(instanceIndex int, apply, keystore, env, gateAddr string
 	}
 
 	//todo: 刷新requestId
-	statemachine.InitSTMManager(common.GlobalConf.GetString("docker", "config", ""))
+	statemachine.InitSTMManager(common.GlobalConf.GetString("docker", "config", ""), minerId)
 
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
 	if !ok {

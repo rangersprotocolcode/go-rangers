@@ -45,8 +45,6 @@ func (s *StateMachine) Remove() {
 	s.removed()
 }
 
-func (s *StateMachine) Update() {
-	s.Stop()
-	s.Remove()
+func (s *StateMachine) Restart() {
 
 }

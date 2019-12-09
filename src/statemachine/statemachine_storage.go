@@ -31,12 +31,15 @@ func (c *StateMachine) RefreshStorageStatus(requestId uint64) {
 	c.StorageStatus = md5.Sum(buffer.Bytes())
 }
 
-func (c *StateMachine) UploadStorage() string {
+func (c *StateMachine) uploadStorage() string {
 	zipFile := c.zipStorage()
 	defer os.Remove(zipFile)
 
 	// 上传
-	if 0 != len(zipFile) && c.uploadStorage(zipFile) {
+	if 0 != len(zipFile) {
+		shell.NewShell("localhost:5001")
+		//localID, err := sh.ID()
+
 		return zipFile
 	}
 	return ""
@@ -62,6 +65,8 @@ func (c *StateMachine) updateStorage(zipFile string) {
 	if err != nil {
 		c.logger.Errorf("stm %s failed to remove storage, storageRoot: %s, err: %s", c.Game, c.storageRoot, err.Error())
 		return
+	}else {
+		c.logger.Warnf("stm %s removed storage, storageRoot: %s, err: %s", c.Game, c.storageRoot, err.Error())
 	}
 
 	// 下载
@@ -81,11 +86,5 @@ func (c *StateMachine) updateStorage(zipFile string) {
 }
 
 func (c *StateMachine) downloadStorage(zipFile string) bool {
-	return true
-}
-
-func (c *StateMachine) uploadStorage(zipFile string) bool {
-	shell.NewShell("localhost:5001")
-	//localID, err := sh.ID()
 	return true
 }

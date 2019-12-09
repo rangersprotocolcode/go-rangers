@@ -68,10 +68,12 @@ type StateMachineManager struct {
 	ctx context.Context //ctx:  传递本次操作的上下文信息
 
 	logger log.Logger
+
+	minerId string
 }
 
 // docker
-func InitSTMManager(filename string) *StateMachineManager {
+func InitSTMManager(filename, minerId string) *StateMachineManager {
 	if nil != STMManger {
 		return STMManger
 	}
@@ -88,6 +90,7 @@ func InitSTMManager(filename string) *StateMachineManager {
 	STMManger.logger = log.GetLoggerByIndex(log.STMLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	STMManger.Mapping = make(map[string]PortInt)
 	STMManger.AuthMapping = make(map[string]string)
+	STMManger.minerId = minerId
 
 	pwd, _ := os.Getwd()
 	STMManger.StorageRoot = pwd + "/storage"

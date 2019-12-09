@@ -34,8 +34,7 @@ func (d *StateMachineManager) AddStatemachine(owner, config string) bool {
 	return true
 }
 
-// 通过交易的方式，添加stm
-func (d *StateMachineManager) UploadSTMStorage(appId string) bool {
+func (d *StateMachineManager) UpdateSTMStorage(appId, minerId string) bool {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
 
@@ -45,16 +44,25 @@ func (d *StateMachineManager) UploadSTMStorage(appId string) bool {
 		return false
 	}
 
-	zipFile := stm.UploadStorage()
-	if 0 != len(zipFile) {
-		msg := network.Message{Body: []byte(zipFile), Code: network.STMStorageReady}
-		go network.GetNetInstance().Broadcast(msg)
+	stm.Stop()
+
+	if minerId == d.minerId {
+		zipFile := stm.uploadStorage()
+		if 0 != len(zipFile) {
+			// todo: 安全问题，需要签名
+			msg := network.Message{Body: []byte(zipFile), Code: network.STMStorageReady}
+			d.logger.Warnf("%s uploaded stm %s storage, filename: %s", minerId, stm.Game, zipFile)
+			go network.GetNetInstance().Broadcast(msg)
+		}
+
 	}
 
 	return true
 }
 
 func (d *StateMachineManager) updateSTMStorage(message notify.Message) {
+	d.logger.Warnf("received uploaded stm storage, msg: %v", message)
+
 	msg, ok := message.(*notify.STMStorageReadyMessage)
 	if !ok {
 		d.logger.Errorf("fail to get msg. %v", message)
