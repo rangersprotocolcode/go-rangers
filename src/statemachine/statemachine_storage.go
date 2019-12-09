@@ -8,7 +8,7 @@ import (
 	"strings"
 	"os"
 	"time"
-	"github.com/ipfs/go-ipfs-api"
+	"context"
 )
 
 // 获取当前状态机的存储状态
@@ -37,11 +37,21 @@ func (c *StateMachine) uploadStorage() string {
 
 	// 上传
 	if 0 != len(zipFile) {
-		shell.NewShell("localhost:5001")
-		//localID, err := sh.ID()
+		cid, err := c.ipfsShell.AddLink(zipFile)
+		if err != nil {
+			c.logger.Errorf("fail to add ipfs link, %s", zipFile)
+			return ""
+		}
 
-		return zipFile
+		localID, err := c.ipfsShell.ID()
+		if err != nil {
+			c.logger.Errorf("fail to add ipfs link, %s", zipFile)
+			return ""
+		}
+
+		return fmt.Sprintf("%s:%s:%s", localID, cid, zipFile)
 	}
+
 	return ""
 }
 
@@ -59,18 +69,20 @@ func (c *StateMachine) zipStorage() string {
 }
 
 //更新本地存储
-func (c *StateMachine) updateStorage(zipFile string) {
+func (c *StateMachine) updateStorage(localID, cid, zipFile string) {
+	defer os.Remove(zipFile)
+
 	// 删除
 	err := os.RemoveAll(c.storageGame)
 	if err != nil {
 		c.logger.Errorf("stm %s failed to remove storage, storageRoot: %s, err: %s", c.Game, c.storageRoot, err.Error())
 		return
-	}else {
+	} else {
 		c.logger.Warnf("stm %s removed storage, storageRoot: %s, err: %s", c.Game, c.storageRoot, err.Error())
 	}
 
 	// 下载
-	if c.downloadStorage(zipFile) {
+	if c.downloadStorage(localID, cid, zipFile) {
 		c.logger.Errorf("stm %s failed to download storage: %s, storageRoot: %s, err: %s", c.Game, zipFile, c.storageRoot, err.Error())
 		return
 	}
@@ -85,6 +97,20 @@ func (c *StateMachine) updateStorage(zipFile string) {
 	c.logger.Infof("stm %s update storage, storageRoot: %s, zipFile: %s", c.Game, c.storageRoot, zipFile)
 }
 
-func (c *StateMachine) downloadStorage(zipFile string) bool {
+func (c *StateMachine) downloadStorage(localID, cid, zipFile string) bool {
+	err := c.ipfsShell.SwarmConnect(context.Background(), localID)
+	if err != nil {
+		c.logger.Errorf("fail to download Storage, error: %s, appId: %s", err, c.Game)
+		return false
+	}
+	c.logger.Debugf("connect ok! %s %s %s", localID, cid, zipFile)
+
+	err = c.ipfsShell.Get(cid, zipFile)
+	if err != nil {
+		c.logger.Errorf("fail to download Storage, error: %s, appId: %s", err, c.Game)
+		return false
+	}
+
+	c.logger.Debugf("Got file! %s %s %s", localID, cid, zipFile)
 	return true
 }

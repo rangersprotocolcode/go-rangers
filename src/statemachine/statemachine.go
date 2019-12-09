@@ -16,6 +16,7 @@ import (
 	"net/http"
 	"encoding/json"
 	"crypto/md5"
+	"github.com/ipfs/go-ipfs-api"
 )
 
 const containerPrefix = "rp-"
@@ -31,6 +32,7 @@ type StateMachine struct {
 
 	// 下载image用
 	httpClient *http.Client `json:"-"`
+	ipfsShell  *shell.Shell
 
 	// 与stm 通信用
 	wsServer *wsServer `json:"-"`
@@ -59,8 +61,10 @@ func (c *StateMachine) TOJSONString() string {
 }
 
 func buildStateMachine(c ContainerConfig, storageRoot string, cli *client.Client, ctx context.Context, logger log.Logger, httpClient *http.Client) StateMachine {
-	return StateMachine{c, cli, ctx, logger, httpClient, nil, preparing,
-		storageRoot, fmt.Sprintf("%s/%s", storageRoot, c.Game), nil, [md5.Size]byte{}, 0}
+	return StateMachine{c, cli, ctx, logger, httpClient, shell.NewShell("localhost:5001"),
+		nil, preparing,
+		storageRoot, fmt.Sprintf("%s/%s", storageRoot, c.Game), nil,
+		[md5.Size]byte{}, 0}
 }
 
 // cli:  用于访问 docker 守护进程

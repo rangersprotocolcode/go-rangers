@@ -69,9 +69,21 @@ func (d *StateMachineManager) updateSTMStorage(message notify.Message) {
 		return
 	}
 
-	zipFile := string(msg.FileName)
-	nameSplit := strings.Split(zipFile, "-")
-	appId := nameSplit[0]
+	//fmt.Sprintf("%s:%s:%s", localID, cid, zipFile)
+	data := string(msg.FileName)
+	nameSplit := strings.Split(data, ":")
+	if 3 != len(nameSplit) {
+		d.logger.Errorf("wrong updateSTMStorage msg. %v", message)
+		return
+	}
+
+	localID := nameSplit[0]
+	cid := nameSplit[1]
+	zipFile := nameSplit[2]
+
+	//zipFile := fmt.Sprintf("%s-%d-%d.zip", c.Game, c.RequestId, time.Now().UnixNano())
+	zipFileSplit := strings.Split(zipFile, "-")
+	appId := zipFileSplit[0]
 
 	d.lock.RLock()
 	defer d.lock.RUnlock()
@@ -82,5 +94,5 @@ func (d *StateMachineManager) updateSTMStorage(message notify.Message) {
 		return
 	}
 
-	stm.updateStorage(zipFile)
+	stm.updateStorage(localID, cid, zipFile)
 }
