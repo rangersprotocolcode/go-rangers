@@ -251,11 +251,13 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			break
 		case types.TransactionTypeAddStateMachine:
 			// todo: 经济模型，新增状态机应该要付费
-			success = statemachine.STMManger.AddStatemachine(transaction.Source, transaction.Data)
+			go statemachine.STMManger.AddStatemachine(transaction.Source, transaction.Data)
+			success = true
 			break
 		case types.TransactionTypeUpdateStorage:
 			// todo: 经济模型，更新状态机应该要付费
-			success = statemachine.STMManger.UpdateSTMStorage(transaction.Source, transaction.Data)
+			go statemachine.STMManger.UpdateSTMStorage(transaction.Source, transaction.Data)
+			success = true
 			break
 
 		}

@@ -48,8 +48,7 @@ var STMManger *StateMachineManager
 
 type StateMachineManager struct {
 	// stm config
-	Config   YAMLConfig
-	Filename string // 配置文件名称
+	Config YAMLConfig
 
 	// stm entities
 	StateMachines map[string]*StateMachine // key 为appId
@@ -79,7 +78,6 @@ func InitSTMManager(filename, minerId string) *StateMachineManager {
 	}
 
 	STMManger = &StateMachineManager{
-		Filename:      filename,
 		StateMachines: make(map[string]*StateMachine),
 	}
 	STMManger.httpClient = createHTTPClient()
@@ -94,7 +92,7 @@ func InitSTMManager(filename, minerId string) *StateMachineManager {
 
 	pwd, _ := os.Getwd()
 	STMManger.StorageRoot = pwd + "/storage"
-	STMManger.init()
+	STMManger.init(filename)
 
 	// 订阅状态更新消息
 	notify.BUS.Subscribe(notify.STMStorageReady, STMManger.updateSTMStorage)
@@ -102,8 +100,8 @@ func InitSTMManager(filename, minerId string) *StateMachineManager {
 	return STMManger
 }
 
-func (d *StateMachineManager) init() {
-	d.buildConfig()
+func (d *StateMachineManager) init(filename string) {
+	d.buildConfig(filename)
 	d.runStateMachines()
 }
 
@@ -117,10 +115,13 @@ func (d *StateMachineManager) runStateMachines() {
 	}
 }
 
-func (d *StateMachineManager) buildConfig() {
+func (d *StateMachineManager) buildConfig(filename string) {
 	// 加载配置文件
 	// 配置文件的方式应该逐步废除
-	d.Config.InitFromFile(d.Filename)
+	if 0 != len(filename) {
+		d.Config.InitFromFile(filename)
+	}
+
 	d.logger.Infof("get stm configs from file, %s", d.Config.TOJSONString())
 
 	// 获取当前机器上已有的容器

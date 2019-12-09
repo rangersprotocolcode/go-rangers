@@ -30,7 +30,7 @@ func (s *StateMachine) Stop() {
 		s.logger.Errorf("fail to stop stm, %s. err: %s", s.TOJSONString(), err.Error())
 	}
 
-	s.logger.Warnf("stop stm, %s. err: %s", s.TOJSONString(), err.Error())
+	s.logger.Warnf("stop stm, %s", s.TOJSONString())
 	s.stopped()
 
 }

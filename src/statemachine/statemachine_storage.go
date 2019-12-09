@@ -9,6 +9,7 @@ import (
 	"os"
 	"time"
 	"context"
+	"bufio"
 )
 
 // 获取当前状态机的存储状态
@@ -37,7 +38,11 @@ func (c *StateMachine) uploadStorage() string {
 
 	// 上传
 	if 0 != len(zipFile) {
-		cid, err := c.ipfsShell.AddLink(zipFile)
+		file, _ := os.Open(zipFile)
+		defer file.Close()
+
+		reader := bufio.NewReader(file)
+		cid, err := c.ipfsShell.Add(reader)
 		if err != nil {
 			c.logger.Errorf("fail to add ipfs link, %s", zipFile)
 			return ""
@@ -48,8 +53,9 @@ func (c *StateMachine) uploadStorage() string {
 			c.logger.Errorf("fail to add ipfs link, %s", zipFile)
 			return ""
 		}
+		addressList := localID.Addresses
 
-		return fmt.Sprintf("%s:%s:%s", localID, cid, zipFile)
+		return fmt.Sprintf("%s:%s:%s", addressList[len(addressList)-1], cid, zipFile)
 	}
 
 	return ""
@@ -78,12 +84,12 @@ func (c *StateMachine) updateStorage(localID, cid, zipFile string) {
 		c.logger.Errorf("stm %s failed to remove storage, storageRoot: %s, err: %s", c.Game, c.storageRoot, err.Error())
 		return
 	} else {
-		c.logger.Warnf("stm %s removed storage, storageRoot: %s, err: %s", c.Game, c.storageRoot, err.Error())
+		c.logger.Warnf("stm %s removed storage, storageRoot: %s", c.Game, c.storageRoot)
 	}
 
 	// 下载
-	if c.downloadStorage(localID, cid, zipFile) {
-		c.logger.Errorf("stm %s failed to download storage: %s, storageRoot: %s, err: %s", c.Game, zipFile, c.storageRoot, err.Error())
+	if !c.downloadStorage(localID, cid, zipFile) {
+		c.logger.Errorf("stm %s failed to download storage: %s, storageRoot: %s, err: %s", c.Game, zipFile, c.storageRoot)
 		return
 	}
 

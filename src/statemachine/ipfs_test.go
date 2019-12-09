@@ -17,9 +17,12 @@ func TestGetLocalId(t *testing.T) {
 		fmt.Fprintf(os.Stderr, "error: %s", err)
 		os.Exit(1)
 	}
-	fmt.Printf("local id:%v\n", localID)
+	fmt.Printf("local id:%v\n", localID.ID)
 	addressList := localID.Addresses
-	fmt.Printf("local address:%v\n", addressList[len(addressList)-1])
+	for i, address := range addressList {
+		fmt.Printf("%d local address:%v\n", i, address)
+	}
+
 }
 
 func TestAddSimpleFile(t *testing.T) {
@@ -64,10 +67,25 @@ func TestGetFile(t *testing.T) {
 	//genesisImageId := "Qmeof3ShtuG5yt9jqx6xVV9RZjwVFb3PFddjyxaNg2YRMK"
 	//snakeImageId:="QmXFNy9ADTR2Ljw7tTpWLPsWEFR21h8DbZBb1X9zdzBST2"
 	mixmarvelImageId := "QmZCxfCbBkCYwYa5vt7YG3ctS19jVYSer3vc3f9b6pVJhk"
-	err = sh.Get(mixmarvelImageId, "/home/ipfs/mixmarvel_image.tar")
+	err = sh.Get(mixmarvelImageId, "/Users/daijia/go/src/x/src/statemachine/logs/mixmarvel_image.tar")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %s", err)
 		os.Exit(1)
 	}
 	fmt.Print("Got file!\n")
+}
+
+func TestGetLocalFile(t *testing.T) {
+	sh := shell.NewShell("localhost:5001")
+
+	fileProviderAddress := "/ip4/127.0.0.1/tcp/9001/ipfs/QmU8Pu6hkzJY1P4JmtgJCgy3Z52rqdChjvkysPmrqWGEkM"
+	err := sh.SwarmConnect(context.Background(), fileProviderAddress)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "error: %s", err)
+		os.Exit(1)
+	}
+	fmt.Print("connect ok!\n")
+
+	//cid := "QmTp2hEo8eXRp6wg7jXv1BLCMh5a4F3B7buAUZNZUu772j"
+
 }

@@ -32,7 +32,7 @@ type StateMachine struct {
 
 	// 下载image用
 	httpClient *http.Client `json:"-"`
-	ipfsShell  *shell.Shell
+	ipfsShell  *shell.Shell `json:"-"`
 
 	// 与stm 通信用
 	wsServer *wsServer `json:"-"`
@@ -61,7 +61,9 @@ func (c *StateMachine) TOJSONString() string {
 }
 
 func buildStateMachine(c ContainerConfig, storageRoot string, cli *client.Client, ctx context.Context, logger log.Logger, httpClient *http.Client) StateMachine {
-	return StateMachine{c, cli, ctx, logger, httpClient, shell.NewShell("localhost:5001"),
+	sh := shell.NewShell("localhost:5001")
+
+	return StateMachine{c, cli, ctx, logger, httpClient, sh,
 		nil, preparing,
 		storageRoot, fmt.Sprintf("%s/%s", storageRoot, c.Game), nil,
 		[md5.Size]byte{}, 0}
