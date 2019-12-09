@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	GXVersion = "0.0.4"
+	GXVersion = "0.0.5"
 	// Section 默认section配置
 	Section = "gx"
 	// RemoteHost 默认host
