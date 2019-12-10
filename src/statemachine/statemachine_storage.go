@@ -103,6 +103,7 @@ func (c *StateMachine) updateStorage(localID, cid, zipFile, requestId string) {
 
 	c.logger.Infof("stm %s updated storage successful, storageRoot: %s, zipFile: %s", c.Game, c.storageRoot, zipFile)
 
+	// 下载完毕，刷新下
 	nonce, _ := strconv.Atoi(requestId)
 	c.RefreshStorageStatus(uint64(nonce))
 }

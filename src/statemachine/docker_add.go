@@ -47,6 +47,7 @@ func (d *StateMachineManager) UpdateSTMStorage(appId, minerId string) bool {
 	stm.Stop()
 
 	if minerId == d.minerId {
+		stm.RefreshStorageStatus(stm.RequestId)
 		zipFile := stm.uploadStorage()
 		if 0 != len(zipFile) {
 			// todo: 安全问题，需要签名
