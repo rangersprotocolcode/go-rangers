@@ -11,8 +11,8 @@ const (
 	stop   = "stopped(停止)"
 	remove = "removed(已删除)"
 
-	syncing = "syncing(同步状态中)"
-	synced  = "synced(同步状态完成)"
+	synchronizing = "synchronizing(同步状态中)"
+	synchronized  = "synchronized(同步状态完成，等待重启)"
 )
 
 // 设置stateMachine的状态
@@ -49,20 +49,20 @@ func (s *StateMachine) removed() {
 }
 
 func (s *StateMachine) sync() {
-	s.setStatus(syncing)
+	s.setStatus(synchronizing)
 }
 
 func (s *StateMachine) isSync() bool {
-	return s.Status == syncing
+	return s.Status == synchronizing
 }
 
 func (s *StateMachine) synced() {
 	// 刷新存储状态
 	s.RefreshStorageStatus(s.RequestId)
 
-	s.setStatus(synced)
+	s.setStatus(synchronized)
 }
 
 func (s *StateMachine) isSynced() bool {
-	return s.Status == synced
+	return s.Status == synchronized
 }

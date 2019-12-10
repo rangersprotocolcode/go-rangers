@@ -5,6 +5,7 @@ import (
 	"x/src/middleware/notify"
 	"strings"
 	"x/src/network"
+	"encoding/hex"
 )
 
 // 通过交易的方式，添加stm
@@ -84,9 +85,11 @@ func (d *StateMachineManager) updateSTMStorage(message notify.Message) {
 	zipFile := nameSplit[2]
 
 	//zipFile := fmt.Sprintf("%s-%d-%d.zip", c.Game, c.RequestId, time.Now().UnixNano())
+	//fmt.Sprintf("%s-%d-%s-%d.zip", c.Game, c.RequestId, hex.EncodeToString(c.StorageStatus[:]), time.Now().UnixNano())
 	zipFileSplit := strings.Split(zipFile, "-")
 	appId := zipFileSplit[0]
 	requestId := zipFileSplit[1]
+	storageStatus := zipFileSplit[2]
 
 	d.lock.RLock()
 	defer d.lock.RUnlock()
@@ -97,6 +100,10 @@ func (d *StateMachineManager) updateSTMStorage(message notify.Message) {
 		return
 	}
 
-	stm.updateStorage(localID, cid, zipFile, requestId)
+	if storageStatus != hex.EncodeToString(stm.StorageStatus[:]) {
+		stm.updateStorage(localID, cid, zipFile, requestId)
+	} else {
+		d.logger.Warnf("same storage: %s", storageStatus)
+	}
 	stm.synced()
 }

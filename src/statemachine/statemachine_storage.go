@@ -11,6 +11,7 @@ import (
 	"context"
 	"bufio"
 	"strconv"
+	"encoding/hex"
 )
 
 // 获取当前状态机的存储状态
@@ -64,7 +65,7 @@ func (c *StateMachine) uploadStorage() string {
 
 // 打包本地存储
 func (c *StateMachine) zipStorage() string {
-	zipFile := fmt.Sprintf("%s-%d-%d.zip", c.Game, c.RequestId, time.Now().UnixNano())
+	zipFile := fmt.Sprintf("%s-%d-%s-%d.zip", c.Game, c.RequestId, hex.EncodeToString(c.StorageStatus[:]), time.Now().UnixNano())
 	err := utility.Zip(c.storageGame, zipFile)
 	if err != nil {
 		c.logger.Errorf("stm %s failed to zip storage, storageRoot: %s, zipFile: %s, err: %s", c.Game, c.storageRoot, zipFile, err.Error())
