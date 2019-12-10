@@ -62,3 +62,7 @@ func (s *StateMachine) synced() {
 
 	s.setStatus(synced)
 }
+
+func (s *StateMachine) isSynced() bool {
+	return s.Status == synced
+}

@@ -40,13 +40,14 @@ func (d *StateMachineManager) UpdateSTMStorage(appId, minerId string) bool {
 
 	stm, ok := d.StateMachines[appId]
 	if !ok {
-		d.logger.Errorf("fail to upload stm storage, appId: %s", appId)
+		d.logger.Errorf("fail to update stm storage, appId: %s", appId)
 		return false
 	}
 
 	stm.Stop()
 
 	if minerId == d.minerId {
+		stm.synced()
 		zipFile := stm.uploadStorage()
 		if 0 != len(zipFile) {
 			// todo: 安全问题，需要签名
@@ -54,8 +55,6 @@ func (d *StateMachineManager) UpdateSTMStorage(appId, minerId string) bool {
 			d.logger.Warnf("%s uploaded stm %s storage, filename: %s", minerId, stm.Game, zipFile)
 			go network.GetNetInstance().Broadcast(msg)
 		}
-
-		stm.synced()
 	} else {
 		stm.sync()
 	}
@@ -99,4 +98,5 @@ func (d *StateMachineManager) updateSTMStorage(message notify.Message) {
 	}
 
 	stm.updateStorage(localID, cid, zipFile, requestId)
+	stm.synced()
 }

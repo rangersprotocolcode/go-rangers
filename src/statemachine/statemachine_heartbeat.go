@@ -10,7 +10,7 @@ func (c *StateMachine) heartbeat() {
 		for {
 			if c.checkIfRunning() {
 				c.setStatus(ready)
-			} else if !c.isSync() {
+			} else if !c.isSync() && !c.isSynced() {
 				c.stopped()
 				c.logger.Errorf("stm stopped, id: %s, game: %s", c.This.ID, c.Game)
 			}

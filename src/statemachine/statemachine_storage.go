@@ -101,12 +101,10 @@ func (c *StateMachine) updateStorage(localID, cid, zipFile, requestId string) {
 		return
 	}
 
-	c.logger.Infof("stm %s updated storage successful, storageRoot: %s, zipFile: %s", c.Game, c.storageRoot, zipFile)
-
-	// 下载完毕，刷新下
 	nonce, _ := strconv.Atoi(requestId)
 	c.RequestId = uint64(nonce)
-	c.synced()
+
+	c.logger.Infof("stm %s updated storage successful, storageRoot: %s, zipFile: %s, requestId: %s", c.Game, c.storageRoot, zipFile, requestId)
 }
 
 func (c *StateMachine) downloadStorage(localID, cid, zipFile string) bool {
