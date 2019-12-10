@@ -10,6 +10,7 @@ import (
 	"time"
 	"context"
 	"bufio"
+	"strconv"
 )
 
 // 获取当前状态机的存储状态
@@ -75,7 +76,7 @@ func (c *StateMachine) zipStorage() string {
 }
 
 //更新本地存储
-func (c *StateMachine) updateStorage(localID, cid, zipFile string) {
+func (c *StateMachine) updateStorage(localID, cid, zipFile, requestId string) {
 	defer os.Remove(zipFile)
 
 	// 删除
@@ -100,7 +101,10 @@ func (c *StateMachine) updateStorage(localID, cid, zipFile string) {
 		return
 	}
 
-	c.logger.Infof("stm %s update storage, storageRoot: %s, zipFile: %s", c.Game, c.storageRoot, zipFile)
+	c.logger.Infof("stm %s updated storage successful, storageRoot: %s, zipFile: %s", c.Game, c.storageRoot, zipFile)
+
+	nonce, _ := strconv.Atoi(requestId)
+	c.RefreshStorageStatus(uint64(nonce))
 }
 
 func (c *StateMachine) downloadStorage(localID, cid, zipFile string) bool {

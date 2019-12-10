@@ -84,6 +84,7 @@ func (d *StateMachineManager) updateSTMStorage(message notify.Message) {
 	//zipFile := fmt.Sprintf("%s-%d-%d.zip", c.Game, c.RequestId, time.Now().UnixNano())
 	zipFileSplit := strings.Split(zipFile, "-")
 	appId := zipFileSplit[0]
+	requestId := zipFileSplit[1]
 
 	d.lock.RLock()
 	defer d.lock.RUnlock()
@@ -94,5 +95,5 @@ func (d *StateMachineManager) updateSTMStorage(message notify.Message) {
 		return
 	}
 
-	stm.updateStorage(localID, cid, zipFile)
+	stm.updateStorage(localID, cid, zipFile, requestId)
 }
