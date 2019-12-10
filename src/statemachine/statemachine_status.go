@@ -11,8 +11,8 @@ const (
 	stop   = "stopped(停止)"
 	remove = "removed(已删除)"
 
-	syncing = "sync storage(同步状态中)"
-	synced  = "synced storage(同步状态完成)"
+	syncing = "syncing(同步状态中)"
+	synced  = "synced(同步状态完成)"
 )
 
 // 设置stateMachine的状态
