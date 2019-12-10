@@ -32,7 +32,6 @@ func (s *StateMachine) Stop() {
 
 	s.logger.Warnf("stop stm, %s", s.TOJSONString())
 	s.stopped()
-
 }
 
 func (s *StateMachine) Remove() {

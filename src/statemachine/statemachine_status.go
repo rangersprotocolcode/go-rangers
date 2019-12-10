@@ -10,6 +10,9 @@ const (
 	pause  = "paused(暂停)"
 	stop   = "stopped(停止)"
 	remove = "removed(已删除)"
+
+	syncing = "sync storage(同步状态中)"
+	synced  = "synced storage(同步状态完成)"
 )
 
 // 设置stateMachine的状态
@@ -43,4 +46,19 @@ func (s *StateMachine) stopped() {
 
 func (s *StateMachine) removed() {
 	s.setStatus(remove)
+}
+
+func (s *StateMachine) sync() {
+	s.setStatus(syncing)
+}
+
+func (s *StateMachine) isSync() bool {
+	return s.Status == syncing
+}
+
+func (s *StateMachine) synced() {
+	// 刷新存储状态
+	s.RefreshStorageStatus(s.RequestId)
+
+	s.setStatus(synced)
 }

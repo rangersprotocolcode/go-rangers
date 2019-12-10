@@ -105,7 +105,8 @@ func (c *StateMachine) updateStorage(localID, cid, zipFile, requestId string) {
 
 	// 下载完毕，刷新下
 	nonce, _ := strconv.Atoi(requestId)
-	c.RefreshStorageStatus(uint64(nonce))
+	c.RequestId = uint64(nonce)
+	c.synced()
 }
 
 func (c *StateMachine) downloadStorage(localID, cid, zipFile string) bool {
@@ -114,7 +115,7 @@ func (c *StateMachine) downloadStorage(localID, cid, zipFile string) bool {
 		c.logger.Errorf("fail to download Storage, error: %s, appId: %s", err, c.Game)
 		return false
 	}
-	c.logger.Debugf("connect ok! %s %s %s", localID, cid, zipFile)
+	c.logger.Debugf("connect ok %s %s %s", localID, cid, zipFile)
 
 	err = c.ipfsShell.Get(cid, zipFile)
 	if err != nil {
@@ -122,6 +123,6 @@ func (c *StateMachine) downloadStorage(localID, cid, zipFile string) bool {
 		return false
 	}
 
-	c.logger.Debugf("Got file! %s %s %s", localID, cid, zipFile)
+	c.logger.Debugf("got file %s %s %s", localID, cid, zipFile)
 	return true
 }
