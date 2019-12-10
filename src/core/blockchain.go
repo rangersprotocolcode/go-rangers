@@ -124,6 +124,7 @@ func initBlockChain() error {
 			panic(err)
 		}
 		service.AccountDBManagerInstance.SetLatestStateDB(state)
+		logger.Debugf("refreshed latestStateDB, state: %v, height: %d", chain.latestBlock.StateTree, chain.latestBlock.Height)
 
 		if !chain.versionValidate() {
 			fmt.Println("Illegal data version! Please delete the directory d0 and restart the program!")
