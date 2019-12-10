@@ -118,6 +118,13 @@ func initBlockChain() error {
 		chain.insertGenesisBlock()
 	} else {
 		chain.ensureChainConsistency()
+
+		state, err := service.AccountDBManagerInstance.GetAccountDBByHash(chain.latestBlock.StateTree)
+		if nil != err {
+			panic(err)
+		}
+		service.AccountDBManagerInstance.SetLatestStateDB(state)
+
 		if !chain.versionValidate() {
 			fmt.Println("Illegal data version! Please delete the directory d0 and restart the program!")
 			os.Exit(0)

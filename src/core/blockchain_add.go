@@ -250,8 +250,8 @@ func (chain *blockChain) updateLastBlock(state *account.AccountDB, header *types
 
 	chain.latestBlock = header
 	chain.requestIds = header.RequestIds
-	service.AccountDBManagerInstance.SetLatestStateDB(state)
 
+	service.AccountDBManagerInstance.SetLatestStateDB(state)
 	logger.Debugf("Update latestStateDB:%s height:%d", header.StateTree.Hex(), header.Height)
 
 	return true
