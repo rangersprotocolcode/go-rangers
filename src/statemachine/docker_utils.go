@@ -97,6 +97,7 @@ func InitSTMManager(filename, minerId string) *StateMachineManager {
 	// 订阅状态更新消息
 	notify.BUS.Subscribe(notify.STMStorageReady, STMManger.updateSTMStorage)
 
+	STMManger.logger.Infof("start success, minerId: %s", minerId)
 	return STMManger
 }
 
