@@ -21,6 +21,9 @@ func (s *StateMachine) setStatus(status string) {
 }
 
 func (s *StateMachine) ready() {
+	// 刷新存储状态
+	s.RefreshStorageStatus(s.RequestId)
+
 	s.setStatus(ready)
 }
 

@@ -114,7 +114,7 @@ func (c *StateMachine) downloadStorage(localID, cid, zipFile string) bool {
 		c.logger.Errorf("fail to download Storage, error: %s, appId: %s", err, c.Game)
 		return false
 	}
-	c.logger.Debugf("connect ok %s %s %s", localID, cid, zipFile)
+	c.logger.Debugf("connect ok %s, %s, %s", localID, cid, zipFile)
 
 	err = c.ipfsShell.Get(cid, zipFile)
 	if err != nil {
@@ -122,6 +122,6 @@ func (c *StateMachine) downloadStorage(localID, cid, zipFile string) bool {
 		return false
 	}
 
-	c.logger.Debugf("got file %s %s %s", localID, cid, zipFile)
+	c.logger.Debugf("got file %s, %s, %s", localID, cid, zipFile)
 	return true
 }
