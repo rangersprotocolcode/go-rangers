@@ -30,7 +30,7 @@ func (d *StateMachineManager) AddStatemachine(owner, config string) bool {
 
 	// 异步加载新的状态机
 	d.logger.Errorf("add new stateMachine, config: %s", containerConfig.TOJSONString())
-	go d.runStateMachine(containerConfig)
+	go d.loadStateMachine(containerConfig)
 
 	return true
 }
@@ -131,21 +131,5 @@ func (d *StateMachineManager) StartSTM(appId string) {
 		return
 	}
 
-	appId, ports := stm.Run()
-	if appId == "" || ports == nil {
-		d.logger.Errorf("fail to run stm, appId: %s", appId)
-		return
-	}
-
-	// 调用stm init接口
-	authCode := d.generateAuthcode()
-	d.callInit(ports[0].Host, stm.wsServer.GetURL(), authCode)
-	stm.ready()
-
-	d.lock.Lock()
-	defer d.lock.Unlock()
-
-	d.Mapping[appId] = ports[0].Host
-	d.AuthMapping[appId] = authCode
-
+	d.runSTM(stm, false)
 }
