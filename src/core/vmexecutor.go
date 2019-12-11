@@ -259,7 +259,11 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			go statemachine.STMManger.UpdateSTMStorage(transaction.Source, transaction.Data)
 			success = true
 			break
-
+		case types.TransactionTypeStartSTM:
+			// todo: 经济模型，重启状态机应该要付费
+			go statemachine.STMManger.StartSTM(transaction.Source)
+			success = true
+			break
 		}
 
 		if !success {

@@ -131,7 +131,6 @@ func (s *StateMachine) runByExistedContainer() (string, Ports) {
 	for i, mount := range s.This.Mounts {
 		s.storagePath[i] = fmt.Sprintf("%s:%s", mount.Source, mount.Destination)
 	}
-	s.RefreshStorageStatus(0)
 
 	// 启动ws服务器，供stm调用
 	if s.wsServer == nil {

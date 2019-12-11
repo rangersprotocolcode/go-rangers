@@ -8,7 +8,7 @@ import (
 	"encoding/hex"
 )
 
-// 通过交易的方式，添加stm
+// 通过交易的方式，新增stm
 func (d *StateMachineManager) AddStatemachine(owner, config string) bool {
 	if 0 == len(config) {
 		d.logger.Errorf("fail to add statemachine, config: %s", config)
@@ -35,6 +35,8 @@ func (d *StateMachineManager) AddStatemachine(owner, config string) bool {
 	return true
 }
 
+// 节点停stm
+// 种子节点上传存储
 func (d *StateMachineManager) UpdateSTMStorage(appId, minerId string) bool {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
@@ -63,6 +65,7 @@ func (d *StateMachineManager) UpdateSTMStorage(appId, minerId string) bool {
 	return true
 }
 
+// 从发布者拉取存储状态并更新
 func (d *StateMachineManager) updateSTMStorage(message notify.Message) {
 	d.logger.Warnf("received uploaded stm storage, msg: %v", message)
 
@@ -90,6 +93,10 @@ func (d *StateMachineManager) updateSTMStorage(message notify.Message) {
 	appId := zipFileSplit[0]
 	requestId := zipFileSplit[1]
 	storageStatus := zipFileSplit[2]
+	if 3 != len(zipFileSplit) {
+		d.logger.Errorf("wrong updateSTMStorage msg. %v", message)
+		return
+	}
 
 	d.lock.RLock()
 	defer d.lock.RUnlock()
@@ -106,4 +113,39 @@ func (d *StateMachineManager) updateSTMStorage(message notify.Message) {
 		d.logger.Warnf("same storage: %s", storageStatus)
 	}
 	stm.synced()
+}
+
+func (d *StateMachineManager) StartSTM(appId string) {
+	d.lock.RLock()
+	d.logger.Warnf("start stm, appId: %s", appId)
+
+	stm, ok := d.StateMachines[appId]
+	if !ok {
+		d.logger.Errorf("fail to start stm, appId: %s", appId)
+		return
+	}
+	d.lock.RUnlock()
+
+	if stm.isReady() {
+		d.logger.Errorf("stm is already running, appId: %s", appId)
+		return
+	}
+
+	appId, ports := stm.Run()
+	if appId == "" || ports == nil {
+		d.logger.Errorf("fail to run stm, appId: %s", appId)
+		return
+	}
+
+	// 调用stm init接口
+	authCode := d.generateAuthcode()
+	d.callInit(ports[0].Host, stm.wsServer.GetURL(), authCode)
+	stm.ready()
+
+	d.lock.Lock()
+	defer d.lock.Unlock()
+
+	d.Mapping[appId] = ports[0].Host
+	d.AuthMapping[appId] = authCode
+
 }
