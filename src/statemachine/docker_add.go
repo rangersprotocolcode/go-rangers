@@ -8,7 +8,7 @@ import (
 	"encoding/hex"
 )
 
-// 通过交易的方式，添加stm
+// 通过交易的方式，新增stm
 func (d *StateMachineManager) AddStatemachine(owner, config string) bool {
 	if 0 == len(config) {
 		d.logger.Errorf("fail to add statemachine, config: %s", config)
@@ -30,11 +30,13 @@ func (d *StateMachineManager) AddStatemachine(owner, config string) bool {
 
 	// 异步加载新的状态机
 	d.logger.Errorf("add new stateMachine, config: %s", containerConfig.TOJSONString())
-	go d.runStateMachine(containerConfig)
+	go d.loadStateMachine(containerConfig)
 
 	return true
 }
 
+// 节点停stm
+// 种子节点上传存储
 func (d *StateMachineManager) UpdateSTMStorage(appId, minerId string) bool {
 	d.lock.RLock()
 	defer d.lock.RUnlock()
@@ -63,6 +65,7 @@ func (d *StateMachineManager) UpdateSTMStorage(appId, minerId string) bool {
 	return true
 }
 
+// 从发布者拉取存储状态并更新
 func (d *StateMachineManager) updateSTMStorage(message notify.Message) {
 	d.logger.Warnf("received uploaded stm storage, msg: %v", message)
 
@@ -90,6 +93,10 @@ func (d *StateMachineManager) updateSTMStorage(message notify.Message) {
 	appId := zipFileSplit[0]
 	requestId := zipFileSplit[1]
 	storageStatus := zipFileSplit[2]
+	if 3 != len(zipFileSplit) {
+		d.logger.Errorf("wrong updateSTMStorage msg. %v", message)
+		return
+	}
 
 	d.lock.RLock()
 	defer d.lock.RUnlock()
@@ -106,4 +113,23 @@ func (d *StateMachineManager) updateSTMStorage(message notify.Message) {
 		d.logger.Warnf("same storage: %s", storageStatus)
 	}
 	stm.synced()
+}
+
+func (d *StateMachineManager) StartSTM(appId string) {
+	d.lock.RLock()
+	d.logger.Warnf("start stm, appId: %s", appId)
+
+	stm, ok := d.StateMachines[appId]
+	if !ok {
+		d.logger.Errorf("fail to start stm, appId: %s", appId)
+		return
+	}
+	d.lock.RUnlock()
+
+	if stm.isReady() {
+		d.logger.Errorf("stm is already running, appId: %s", appId)
+		return
+	}
+
+	d.runSTM(stm, false)
 }

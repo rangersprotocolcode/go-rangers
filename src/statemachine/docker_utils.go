@@ -51,7 +51,7 @@ type StateMachineManager struct {
 	Config YAMLConfig
 
 	// stm entities
-	StateMachines map[string]*StateMachine // key 为appId
+	StateMachines map[string]StateMachine // key 为appId
 
 	StorageRoot string
 
@@ -78,7 +78,7 @@ func InitSTMManager(filename, minerId string) *StateMachineManager {
 	}
 
 	STMManger = &StateMachineManager{
-		StateMachines: make(map[string]*StateMachine),
+		StateMachines: make(map[string]StateMachine),
 	}
 	STMManger.httpClient = createHTTPClient()
 	STMManger.ctx = context.Background()
@@ -103,15 +103,12 @@ func InitSTMManager(filename, minerId string) *StateMachineManager {
 
 func (d *StateMachineManager) init(filename string) {
 	d.buildConfig(filename)
-	d.runStateMachines()
-}
 
-func (d *StateMachineManager) runStateMachines() {
 	if 0 != len(d.Config.Services) {
 		//todo : 根据Priority排序
 		for _, service := range d.Config.Services {
 			// 异步启动
-			go d.runStateMachine(service)
+			go d.loadStateMachine(service)
 		}
 	}
 }
