@@ -51,7 +51,7 @@ type StateMachineManager struct {
 	Config YAMLConfig
 
 	// stm entities
-	StateMachines map[string]StateMachine // key 为appId
+	StateMachines map[string]*StateMachine // key 为appId
 
 	StorageRoot string
 
@@ -78,7 +78,7 @@ func InitSTMManager(filename, minerId string) *StateMachineManager {
 	}
 
 	STMManger = &StateMachineManager{
-		StateMachines: make(map[string]StateMachine),
+		StateMachines: make(map[string]*StateMachine),
 	}
 	STMManger.httpClient = createHTTPClient()
 	STMManger.ctx = context.Background()
