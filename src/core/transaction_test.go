@@ -80,7 +80,7 @@ func TestSign(t *testing.T) {
 
 
 func TestStateMachineTx(t *testing.T) {
-	containerConfig := statemachine.ContainerConfig{Priority: 0, Game: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54", Name: "genesis_test",
+	containerConfig := statemachine.ContainerConfig{Priority: 0, Game: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54",
 		Image: "littlebear234/genesis_image:latest", Detached: true, Hostname: "genesis_host_name"}
 
 	port := statemachine.Port{Host:0,Target:0}

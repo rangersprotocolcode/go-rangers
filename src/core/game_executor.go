@@ -253,12 +253,14 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 			}
 
 			snapshot := accountDB.Snapshot()
-			result, ok := executor.doTransfer(txRaw, accountDB)
+			msg, ok := executor.doTransfer(txRaw, accountDB)
 			if !ok {
 				accountDB.RevertToSnapshot(snapshot)
 			}
 
-			return ok, result
+			result = ok
+			message = msg
+			break
 		}
 
 		// 已经执行过了（入块时），则不用再执行了
