@@ -12,7 +12,6 @@ services:
       - host: 6636
         target: 5005
     detached: true
-    type: "ETH"
 
   - priority: 1
     game: "0xf677e4051eeff7a60598cc6419b982cdeef60b01"
@@ -22,7 +21,6 @@ services:
       - host: 5556
         target: 8080
     detached: true
-    type: "ETH"
 
   - priority: 2
     game: "0xc37a349ba8f91f8cd4da47c087b6bbc571d4e7ef"
@@ -32,4 +30,3 @@ services:
       - host: 7776
         target: 8080
     detached: true
-    type: "ETH"

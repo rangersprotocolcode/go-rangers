@@ -221,6 +221,7 @@ var (
 	methodNotify, _           = hex.DecodeString("20000000")
 	methodNotifyBroadcast, _  = hex.DecodeString("20000001")
 	methodNotifyGroup, _      = hex.DecodeString("20000002")
+	methodNotifyInit, _       = hex.DecodeString("20000003")
 )
 
 type ClientConn struct {
@@ -241,12 +242,18 @@ func (clientConn *ClientConn) Send(targetId string, msg []byte, nonce uint64) {
 	clientConn.send(clientConn.method, target, msg, nonce)
 }
 
-func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, logger log.Logger) {
+func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, logger log.Logger, isNotify bool) {
 	clientConn.method = method
 	clientConn.nonceLock = sync.Mutex{}
 	clientConn.notifyNonce = 0
 
 	clientConn.doRcv = func(wsHeader wsHeader, body []byte) {
+		if bytes.Equal(wsHeader.method, methodNotifyInit) {
+			clientConn.logger.Errorf("refresh notify nonce: %d", wsHeader.nonce)
+			clientConn.notifyNonce = wsHeader.nonce
+			return
+		}
+
 		if !bytes.Equal(wsHeader.method, clientConn.method) {
 			clientConn.logger.Error("%s received wrong method. wsHeader: %v", clientConn.path, wsHeader)
 			return
@@ -254,6 +261,7 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 
 		clientConn.handleClientMessage(body, strconv.FormatUint(wsHeader.sourceId, 10), wsHeader.nonce, event)
 	}
+	//流控方法
 	clientConn.rcv = func(msg []byte) {
 		if len(clientConn.rcvChan) == clientConn.rcvSize {
 			clientConn.logger.Errorf("client rcvChan full, remove it, msg size: %d", len(msg))
@@ -262,12 +270,21 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 
 		clientConn.rcvChan <- msg
 	}
-
+	// 流控方法
 	clientConn.isSend = func(method []byte, target uint64, msg []byte, nonce uint64) bool {
 		return len(clientConn.sendChan) < clientConn.sendSize
 	}
 
 	clientConn.init(ipPort, path, logger)
+
+	if isNotify {
+		clientConn.initNotify()
+	}
+}
+
+func (clientConn *ClientConn) initNotify() {
+	clientConn.logger.Errorf("initNotify")
+	clientConn.send(methodNotifyInit, 0, []byte{}, 0)
 }
 
 func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, nonce uint64, event string) {
@@ -324,27 +341,27 @@ var (
 	methodRcvFromCoinConnector, _ = hex.DecodeString("30000002")
 )
 
-type CoinerConn struct {
+type ConnectorConn struct {
 	baseConn
 }
 
-func (coinerConn *CoinerConn) Send(msg []byte) {
-	coinerConn.send(methodSendToCoinConnector, 0, msg, 0)
+func (connectorConn *ConnectorConn) Send(msg []byte) {
+	connectorConn.send(methodSendToCoinConnector, 0, msg, 0)
 }
 
-func (coinerConn *CoinerConn) Init(ipPort string, logger log.Logger) {
-	coinerConn.doRcv = func(wsHeader wsHeader, body []byte) {
+func (connectorConn *ConnectorConn) Init(ipPort string, logger log.Logger) {
+	connectorConn.doRcv = func(wsHeader wsHeader, body []byte) {
 		if !bytes.Equal(wsHeader.method, methodRcvFromCoinConnector) {
-			coinerConn.logger.Error("%s received wrong method. wsHeader: %v", coinerConn.path, wsHeader)
+			connectorConn.logger.Error("%s received wrong method. wsHeader: %v", connectorConn.path, wsHeader)
 			return
 		}
-		coinerConn.handleCoinConnectorMessage(body, wsHeader.nonce)
+		connectorConn.handleConnectorMessage(body, wsHeader.nonce)
 	}
 
-	coinerConn.init(ipPort, "/srv/worker_coiner", logger)
+	connectorConn.init(ipPort, "/srv/worker_coiner", logger)
 }
 
-func (coinerConn *CoinerConn) handleCoinConnectorMessage(data []byte, nonce uint64) {
+func (connectorConn *ConnectorConn) handleConnectorMessage(data []byte, nonce uint64) {
 	var txJson types.TxJson
 	err := json.Unmarshal(data, &txJson)
 	if err != nil {

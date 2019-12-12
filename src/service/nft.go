@@ -183,6 +183,7 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 		}
 
 		nftSet.OccupiedID[id] = owner
+		nftSet.TotalSupply++
 		self.updateNFTSet(nftSet, accountDB)
 		return "nft mint successful", true
 	} else {

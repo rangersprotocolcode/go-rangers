@@ -16,12 +16,12 @@ type server struct {
 	writer ClientConn
 
 	// coiner消息
-	coiner CoinerConn
+	coiner ConnectorConn
 }
 
 func (s *server) Init(logger log.Logger, gateAddr, selfMinerId string, consensusHandler MsgHandler) {
-	s.reader.Init(gateAddr, "/srv/worker_reader", notify.ClientTransactionRead, methodCodeClientReader, logger)
-	s.writer.Init(gateAddr, "/srv/worker_writer", notify.ClientTransaction, methodCodeClientWriter, logger)
+	s.reader.Init(gateAddr, "/srv/worker_reader", notify.ClientTransactionRead, methodCodeClientReader, logger, true)
+	s.writer.Init(gateAddr, "/srv/worker_writer", notify.ClientTransaction, methodCodeClientWriter, logger, false)
 	s.worker.Init(gateAddr, selfMinerId, consensusHandler, logger)
 	s.coiner.Init(gateAddr, logger)
 }

@@ -93,7 +93,8 @@ const (
 	TransactionTypeStateMachineNonce = 108 // 调用状态机nonce(预留接口）
 	TransactionTypeFTSet             = 113 // 根据ftId, 查询ftSet信息
 	TransactionTypeNFTCount          = 114 // 查询用户Rocket上的指定NFT的拥有数量
-	TransactionTypeNFTList           = 115 // 查询用户Rocket上的指定NFT的列表
+	TransactionTypeNFTList           = 115 // 查询用户Rocket上的指定NFT的拥有数量
+	TransactionTypeNFTGtZero         = 118 // 查询指定用户Rocket上的余额大于0的非同质化代币列表
 
 	TransactionTypeWithdraw = 109
 
@@ -419,15 +420,6 @@ type BNTWithdrawInfo struct {
 	Value     string `json:"value,omitempty"`
 }
 
-//提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链
-type DepositData struct {
-	ChainType string            `json:"chainType,omitempty"`
-	Amount    string            `json:"amount,omitempty"`
-	TxId      string            `json:"txId,omitempty"`
-	FT        map[string]string `json:"ft,omitempty"`
-	NFT       map[string]string `json:"nft,omitempty"`
-}
-
 type TxJson struct {
 	// 用户id
 	Source string `json:"source"`
@@ -494,36 +486,6 @@ func (tx Transaction) ToTxJson() TxJson {
 	}
 	txJson.SocketRequestId = tx.SocketRequestId
 	return txJson
-}
-
-type DepositCoinData struct {
-	ChainType string `json:"chainType,omitempty"`
-	Amount    string `json:"amount,omitempty"`
-	TxId      string `json:"txId,omitempty"`
-}
-
-//FT充值确认数据结构
-type DepositFTData struct {
-	FTId   string `json:"ftId,omitempty"`
-	Amount string `json:"amount,omitempty"`
-	TxId   string `json:"txId,omitempty"`
-}
-
-//NFT充值确认数据结构
-type DepositNFTData struct {
-	SetId      string            `json:"setId,omitempty"`
-	Name       string            `json:"name,omitempty"`
-	Symbol     string            `json:"symbol,omitempty"`
-	ID         string            `json:"id,omitempty"`
-	Creator    string            `json:"creator,omitempty"`
-	CreateTime string            `json:"createTime,omitempty"`
-	Owner      string            `json:"owner,omitempty"`
-	Renter     string            `json:"renter,omitempty"`
-	Status     byte              `json:"status,omitempty"`
-	Condition  byte              `json:"condition,omitempty"`
-	AppId      string            `json:"appId,omitempty"`
-	Data       map[string]string `json:"data,omitempty"`
-	TxId       string            `json:"txId,omitempty"`
 }
 
 type JSONObject struct {

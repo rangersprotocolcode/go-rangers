@@ -13,16 +13,32 @@ import (
 // GameData = map[string]*NFTMap key为gameId
 // NFTMap = map[string]*NFT key为nftId
 type NFTSet struct {
-	SetID      string `json:"setId,omitempty"`
-	Name       string `json:"name,omitempty"`
-	Symbol     string `json:"symbol,omitempty"`
-	MaxSupply  int    `json:"maxSupply,omitempty"`
-	Creator    string `json:"creator,omitempty"`
-	Owner      string `json:"owner,omitempty"`
-	CreateTime string `json:"createTime,omitempty"`
+	SetID       string `json:"setId,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Symbol      string `json:"symbol,omitempty"`
+	MaxSupply   int    `json:"maxSupply,omitempty"`   // 最大发行量
+	TotalSupply int    `json:"totalSupply,omitempty"` // 历史上发行量
+	Creator     string `json:"creator,omitempty"`
+	Owner       string `json:"owner,omitempty"`
+	CreateTime  string `json:"createTime,omitempty"`
 
 	// 已经发行的NFTID及其拥有者
-	OccupiedID map[string]common.Address `json:"occupied,omitempty"`
+	OccupiedID map[string]common.Address `json:"occupied,omitempty"` // 当前在layer2里的nft
+}
+
+func (self *NFTSet) ToJSONString() string {
+	nftSetMap := make(map[string]interface{}, 12)
+	nftSetMap["setId"] = self.SetID
+	nftSetMap["name"] = self.Name
+	nftSetMap["symbol"] = self.Symbol
+	nftSetMap["maxSupply"] = self.MaxSupply
+	nftSetMap["totalSupply"] = self.TotalSupply
+	nftSetMap["currentSupply"] = strconv.Itoa(len(self.OccupiedID))
+	nftSetMap["creator"] = self.Creator
+	nftSetMap["owner"] = self.Owner
+	nftSetMap["createTime"] = self.CreateTime
+	bytes, _ := json.Marshal(nftSetMap)
+	return string(bytes)
 }
 
 func (self *NFTSet) ChangeOwner(id string, newOwner common.Address) {
@@ -95,20 +111,6 @@ func (self *NFT) SetData(data string, gameId string) {
 		self.DataValue[index] = data
 	}
 
-}
-
-func (self *NFTSet) ToJSONString() string {
-	nftSetMap := make(map[string]interface{}, 12)
-	nftSetMap["setId"] = self.SetID
-	nftSetMap["name"] = self.Name
-	nftSetMap["symbol"] = self.Symbol
-	nftSetMap["totalSupply"] = strconv.Itoa(len(self.OccupiedID))
-	nftSetMap["maxSupply"] = self.MaxSupply
-	nftSetMap["creator"] = self.Creator
-	nftSetMap["owner"] = self.Owner
-	nftSetMap["createTime"] = self.CreateTime
-	bytes, _ := json.Marshal(nftSetMap)
-	return string(bytes)
 }
 
 func (self *NFT) ToJSONString() string {
