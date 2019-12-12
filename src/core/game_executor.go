@@ -187,8 +187,8 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 		break
 
 	case types.TransactionTypeNFTGtZero:
-		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-		nftList := NFTManagerInstance.GetNFTListByAddress(source, "", accountDB)
+		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
+		nftList := service.NFTManagerInstance.GetNFTListByAddress(source, "", accountDB)
 		resultMap := make(map[string]int, 0)
 		for _, nft := range nftList {
 			value, ok := resultMap[nft.SetID]
