@@ -302,7 +302,24 @@ func (chain *blockChain) publishSet(txs []*types.Transaction) {
 				break
 			}
 
+			appId := tx.Source
+			&nftSet = service.NFTManagerInstance.GenerateNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime)
 			service.NFTManagerInstance.SendPublishNFTSetToConnector(&nftSet)
+			break
+		}
+
+		// 直接发交易的ftSet publish
+		if tx.Type == types.TransactionTypePublishFT {
+			var ftSetMap map[string]string
+			if err := json.Unmarshal([]byte(tx.Data), &ftSetMap); nil != err {
+				logger.Errorf("Unmarshal data error:%s", err.Error())
+				break
+			}
+
+			appId := tx.Source
+			createTime := ftSetMap["createTime"]
+			ftSet := service.FTManagerInstance.GenerateFTSet(ftSetMap["name"], ftSetMap["symbol"], appId, ftSetMap["maxSupply"], appId, createTime, 1)
+			service.FTManagerInstance.SendPublishFTSetToConnector(ftSet)
 			break
 		}
 
@@ -330,7 +347,6 @@ func (chain *blockChain) publishSet(txs []*types.Transaction) {
 		}
 	}
 }
-
 
 func (chain *blockChain) validateGroupSig(bh *types.BlockHeader) (bool, error) {
 	if chain.Height() == 0 {
