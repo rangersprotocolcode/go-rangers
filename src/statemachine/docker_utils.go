@@ -232,5 +232,6 @@ func (s *StateMachineManager) GetStmStatus() map[string]map[string]string {
 		result[appId] = status
 	}
 
+	s.logger.Errorf("GetStmStatus %v", result)
 	return result
 }

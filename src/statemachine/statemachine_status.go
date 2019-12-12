@@ -17,8 +17,10 @@ const (
 
 // 设置stateMachine的状态
 func (s *StateMachine) setStatus(status string) {
-	s.logger.Warnf("stm %s change status, from %s to %s", s.Game, s.Status, status)
-	s.Status = status
+	if status != s.Status {
+		s.logger.Warnf("stm %s change status, from %s to %s", s.Game, s.Status, status)
+		s.Status = status
+	}
 }
 
 func (s *StateMachine) ready() {
