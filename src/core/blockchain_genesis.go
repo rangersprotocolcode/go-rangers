@@ -11,6 +11,7 @@ import (
 	"gopkg.in/yaml.v2"
 	"x/src/consensus/groupsig"
 	"x/src/consensus/vrf"
+	"x/src/service"
 )
 
 const ChainDataVersion = 2
@@ -25,9 +26,9 @@ type GenesisProposer struct {
 }
 
 func (chain *blockChain) insertGenesisBlock() {
-	state, err := account.NewAccountDB(common.Hash{}, chain.stateDB)
+	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	if nil == err {
-		genesisBlock := genGenesisBlock(state, chain.stateDB.TrieDB(), consensusHelper.GenerateGenesisInfo())
+		genesisBlock := genGenesisBlock(state, service.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
 		logger.Debugf("GenesisBlock Hash:%s,StateTree:%s", genesisBlock.Header.Hash.String(), genesisBlock.Header.StateTree.Hex())
 		blockByte, _ := types.MarshalBlock(genesisBlock)
 		chain.saveBlockByHash(genesisBlock.Header.Hash, blockByte)
@@ -91,8 +92,11 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	stateDB.SetNonce(common.HeavyDBAddress, 1)
 	stateDB.SetNonce(common.LightDBAddress, 1)
 
-	FTManagerInstance.PublishFTSet("tuntun", "pig", "hz", "0", "hz", "10086", 0, stateDB, true)
-	NFTManagerInstance.PublishNFTSet("tuntunhz", "tuntun", "t", "hz", "hz", 0, "10000", stateDB, true)
+	// 测试用
+	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("tuntun", "pig", "hz", "0", "hz", "10086", 0), stateDB)
+	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("tuntunhz", "tuntun", "t", "hz", "hz", 0, "10000"), stateDB)
+	stateDB.SetFT(common.HexToAddress("0x69564f3eccc4aedabde33bd5cb350b9829deced1"),"official-ETH.ETH",big.NewInt(10000000000))
+	stateDB.SetFT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"),"official-ETH.ETH",big.NewInt(10000000000))
 
 	root, _ := stateDB.Commit(true)
 	triedb.Commit(root, false)

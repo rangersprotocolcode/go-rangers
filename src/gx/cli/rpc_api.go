@@ -12,6 +12,7 @@ import (
 	"sync"
 	"x/src/middleware/log"
 	"x/src/statemachine"
+	"x/src/service"
 )
 
 func successResult(data interface{}) (*Result, error) {
@@ -70,7 +71,7 @@ func (api *GtasAPI) GroupHeight() (*Result, error) {
 
 // TransPool 查询缓冲区的交易信息。
 func (api *GtasAPI) TransPool() (*Result, error) {
-	transactions := core.GetBlockChain().GetTransactionPool().GetReceived()
+	transactions := service.GetTransactionPool().GetReceived()
 	transList := make([]Transactions, 0, len(transactions))
 	for _, v := range transactions {
 		transList = append(transList, Transactions{
@@ -197,8 +198,8 @@ func (api *GtasAPI) GetTopBlock() (*Result, error) {
 	blockDetail["txs"] = len(bh.Transactions)
 	blockDetail["tps"] = math.Round(float64(len(bh.Transactions)) / bh.CurTime.Sub(bh.PreTime).Seconds())
 
-	blockDetail["tx_pool_count"] = len(core.GetBlockChain().GetTransactionPool().GetReceived())
-	blockDetail["tx_pool_total"] = core.GetBlockChain().GetTransactionPool().TxNum()
+	blockDetail["tx_pool_count"] = len(service.GetTransactionPool().GetReceived())
+	blockDetail["tx_pool_total"] = service.GetTransactionPool().TxNum()
 	blockDetail["miner_id"] = consensus.Proc.GetPubkeyInfo().ID.ShortS()
 	return successResult(blockDetail)
 }
@@ -380,7 +381,7 @@ func (api *GtasAPI) NodeInfo() (*Result, error) {
 		ni.WGroupNum = wg
 		ni.AGroupNum = ag
 
-		if txs := core.GetBlockChain().GetTransactionPool().GetReceived(); txs != nil {
+		if txs := service.GetTransactionPool().GetReceived(); txs != nil {
 			ni.TxPoolNum = len(txs)
 		}
 	}
@@ -501,14 +502,14 @@ func (api *GtasAPI) BlockReceipts(h string) (*Result, error) {
 
 	evictedReceipts := make([]*types.Receipt, 0)
 	for _, tx := range bh.EvictedTxs {
-		wrapper := chain.GetTransactionPool().GetExecuted(tx)
+		wrapper := service.GetTransactionPool().GetExecuted(tx)
 		if wrapper != nil {
 			evictedReceipts = append(evictedReceipts, wrapper.Receipt)
 		}
 	}
 	receipts := make([]*types.Receipt, len(bh.Transactions))
 	for i, tx := range bh.Transactions {
-		wrapper := chain.GetTransactionPool().GetExecuted(tx[0])
+		wrapper := service.GetTransactionPool().GetExecuted(tx[0])
 		if wrapper != nil {
 			receipts[i] = wrapper.Receipt
 		}
@@ -578,6 +579,6 @@ func (api *GtasAPI) Dashboard() (*Result, error) {
 //}
 
 func (api *GtasAPI) TxReceipt(h string) (*Result, error) {
-	w := core.GetBlockChain().GetTransactionPool().GetExecuted(common.HexToHash(h))
+	w := service.GetTransactionPool().GetExecuted(common.HexToHash(h))
 	return successResult(w)
 }

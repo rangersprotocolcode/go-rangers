@@ -99,6 +99,10 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 	case ChainPieceBlock:
 		msg := notify.ChainPieceBlockMessage{ChainPieceBlockMsgByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.ChainPieceBlock, &msg)
+	case STMStorageReady:
+		msg := notify.STMStorageReadyMessage{FileName: message.Body}
+		notify.BUS.Publish(notify.STMStorageReady, &msg)
+		break
 	}
 }
 

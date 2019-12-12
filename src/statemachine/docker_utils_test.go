@@ -8,21 +8,21 @@ import (
 	"encoding/json"
 	"gopkg.in/yaml.v2"
 	"strings"
-	"math/rand"
-	"x/src/utility"
+	"x/src/middleware/notify"
 )
 
 func TestDockerInit(t *testing.T) {
-	//common.InitConf("/Users/daijia/go/src/x/deploy/daily/x1.ini")
-	//InitSTMManager("test.yaml", 8080)
-	//time.Sleep(1000 * time.Minute)
-	rand.Seed(int64(time.Now().UnixNano()))
-	port := 9000 + int(rand.Float32()*1000)
-	if !utility.PortInUse(port) {
-		portInt := PortInt(port)
-		fmt.Println(portInt.String())
-	}
+	common.InitConf("/Users/daijia/go/src/x/deploy/daily/x1.ini")
 
+	notify.BUS = notify.NewBus()
+	InitSTMManager("test.yaml", "daijia")
+
+	msg := notify.STMStorageReadyMessage{FileName: []byte("/ip4/192.168.0.101/tcp/4001/ipfs/QmU8Pu6hkzJY1P4JmtgJCgy3Z52rqdChjvkysPmrqWGEkM:QmaqSc7Y1Aw2pzE2KeNBkV1MqG58pU8HDGdmjJ4fuW7XQH:j-0-1575878863425150000.zip")}
+	STMManger.updateSTMStorage(&msg)
+
+	time.Sleep(10 * time.Second)
+	STMManger.UpdateSTMStorage("j","daijia")
+	time.Sleep(1000 * time.Minute)
 }
 
 func TestContainerConfig(t *testing.T) {
@@ -64,13 +64,13 @@ func TestContainerConfig(t *testing.T) {
 
 func TestDownloadByFile(t *testing.T) {
 	common.InitConf("/Users/daijia/go/src/x/deploy/daily/x1.ini")
-	InitSTMManager("test1.yaml", 8080)
+	InitSTMManager("test1.yaml", "daijia")
 	time.Sleep(1000 * time.Minute)
 }
 
 func TestDownloadByContainer(t *testing.T) {
 	common.InitConf("/Users/daijia/go/src/x/deploy/daily/x1.ini")
-	InitSTMManager("test2.yaml", 8080)
+	InitSTMManager("test2.yaml", "daijia")
 	time.Sleep(1000 * time.Minute)
 }
 
@@ -79,4 +79,16 @@ func TestParse(t *testing.T) {
 	index := strings.Index(str, "sha256:")
 
 	fmt.Println(str[index+7 : index+64+7])
+}
+
+func TestStateMachineManager_AddStatemachine(t *testing.T) {
+	common.InitConf("/Users/daijia/go/src/x/deploy/daily/x1.ini")
+	InitSTMManager("", "daijia")
+
+	//config:="{\"priority\":0,\"game\":\"0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54\",\"name\":\"genesis_test\",\"image\":\"littlebear234/genesis_image:latest\",\"hostname\":\"genesis_host_name\",\"detached\":true,\"work_dir\":\"\",\"cmd\":\"\",\"net\":\"\",\"ports\":[{\"host\":0,\"target\":0}],\"volumes\":null,\"auto_remove\":false,\"download_url\":\"littlebear234/genesis_image:latest\",\"download_protocol\":\"pull\"}"
+	//config:="{\"priority\":0,\"game\":\"0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54\",\"name\":\"yeatol_genesis_test\",\"image\":\"yeatol/statemachine:test\",\"hostname\":\"yeatol_statemachine_test\",\"detached\":true,\"work_dir\":\"\",\"cmd\":\"/root/statemachine\",\"net\":\"\",\"ports\":[{\"host\":0,\"target\":80}],\"volumes\":null,\"auto_remove\":false,\"download_url\":\"yeatol/statemachine:test\",\"download_protocol\":\"pull\"}"
+	//config := "{\"priority\":0,\"game\":\"yeatol\",\"name\":\"yeatol_genesis_test\",\"image\":\"yeatol/centos:7\",\"hostname\":\"yeatol_statemachine_test\",\"detached\":true,\"work_dir\":\"\",\"cmd\":\"/root/statemachine\",\"net\":\"\",\"ports\":[{\"host\":9231,\"target\":80}],\"storages\":[\"\"],\"auto_remove\":false,\"download_url\":\"yeatol/centos:7\",\"download_protocol\":\"pull\"}"
+	config := "{\"priority\":0,\"game\":\"yeatol\",\"name\":\"yeatol_genesis_test\",\"image\":\"yeatol/statemachine:dev\",\"hostname\":\"yeatol_statemachine_test\",\"detached\":true,\"work_dir\":\"/root/docker\",\"cmd\":\"/root/statemachine\",\"net\":\"\",\"ports\":[{\"host\":9231,\"target\":80}],\"storages\":[\"/root/docker\"],\"auto_remove\":false,\"download_url\":\"yeatol/statemachine:dev\",\"download_protocol\":\"pull\"}"
+	STMManger.AddStatemachine("yeatol", config)
+	time.Sleep(1000 * time.Minute)
 }

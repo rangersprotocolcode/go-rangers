@@ -7,6 +7,9 @@ import (
 	"x/src/utility"
 	"x/src/middleware/notify"
 	"errors"
+	"encoding/json"
+	"strconv"
+	"x/src/service"
 )
 
 func (chain *blockChain) consensusVerify(source string, b *types.Block) (types.AddBlockResult, bool) {
@@ -123,7 +126,7 @@ func (chain *blockChain) executeTransaction(block *types.Block) (bool, *account.
 	if len(block.Transactions) > 0 {
 		logger.Debugf("NewAccountDB height:%d StateTree:%s preHash:%s preRoot:%s", block.Header.Height, block.Header.StateTree.Hex(), preBlock.Hash.Hex(), preRoot.Hex())
 	}
-	state, err := account.NewAccountDB(preRoot, chain.stateDB)
+	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(preRoot)
 	if err != nil {
 		logger.Errorf("Fail to new statedb, error:%s", err)
 		return false, state, nil
@@ -229,7 +232,7 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 		return false, state, receipts
 	}
 
-	trieDB := chain.stateDB.TrieDB()
+	trieDB := service.AccountDBManagerInstance.GetTrieDB()
 	err = trieDB.Commit(root, false)
 	if err != nil {
 		logger.Errorf("Trie commit error:%s", err.Error())
@@ -244,10 +247,11 @@ func (chain *blockChain) updateLastBlock(state *account.AccountDB, header *types
 		logger.Errorf("Fail to put %s, error:%s", latestBlockKey, err.Error())
 		return false
 	}
-	chain.latestStateDB = state
+
 	chain.latestBlock = header
 	chain.requestIds = header.RequestIds
 
+	service.AccountDBManagerInstance.SetLatestStateDB(state)
 	logger.Debugf("Update latestStateDB:%s height:%d", header.StateTree.Hex(), header.Height)
 
 	return true
@@ -279,6 +283,52 @@ func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block) {
 	}
 
 	go chain.notifyWallet(remoteBlock)
+	//check txs
+	go chain.publishSet(remoteBlock.Transactions)
+}
+
+// 块上链成功之后，调用Connector
+func (chain *blockChain) publishSet(txs []*types.Transaction) {
+	if 0 == len(txs) {
+		return
+	}
+
+	for _, tx := range txs {
+		// 直接发交易的nftSet publish
+		if tx.Type == types.TransactionTypePublishNFTSet {
+			var nftSet types.NFTSet
+			if err := json.Unmarshal([]byte(tx.Data), &nftSet); nil != err {
+				logger.Errorf("Unmarshal data error:%s", err.Error())
+				break
+			}
+
+			service.NFTManagerInstance.SendPublishNFTSetToConnector(&nftSet)
+			break
+		}
+
+		// 状态机内调用
+		if 0 != len(tx.SubTransactions) {
+			for _, user := range tx.SubTransactions {
+				if user.Address == "StartFT" {
+					ftSet := service.FTManagerInstance.GenerateFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], user.Assets["createTime"], 1)
+					service.FTManagerInstance.SendPublishFTSetToConnector(ftSet)
+					continue
+				}
+
+				if user.Address == "PublishNFTSet" {
+					maxSupplyString := user.Assets["maxSupply"]
+					maxSupply, err := strconv.Atoi(maxSupplyString)
+					if err != nil {
+						logger.Errorf("Publish nft set! MaxSupply bad format:%s", maxSupplyString)
+						continue
+					}
+					appId := user.Assets["appId"]
+					nftSet := service.NFTManagerInstance.GenerateNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"])
+					service.NFTManagerInstance.SendPublishNFTSetToConnector(nftSet)
+				}
+			}
+		}
+	}
 }
 
 

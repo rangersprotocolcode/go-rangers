@@ -11,24 +11,21 @@ import (
 	"time"
 	"x/src/common"
 	"x/src/middleware/types"
-	"x/src/network"
 	"x/src/core"
 	"x/src/middleware"
 	"x/src/consensus"
 	"x/src/consensus/model"
-	cnet "x/src/consensus/net"
 	"x/src/middleware/log"
+	"x/src/network"
+	cnet "x/src/consensus/net"
 	"x/src/statemachine"
+	"x/src/service"
 )
 
 const (
 	GXVersion = "0.0.5"
 	// Section 默认section配置
 	Section = "gx"
-	// RemoteHost 默认host
-	RemoteHost = "127.0.0.1"
-	// RemotePort 默认端口
-	RemotePort = 8088
 
 	instanceSection = "instance"
 
@@ -111,7 +108,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(*instanceIndex, *apply, *keystore, *portRpc, *env, *gateAddr)
+		gx.initMiner(*instanceIndex, *apply, *keystore, *env, *gateAddr)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc)
 			if err != nil {
@@ -123,14 +120,13 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port uint, env string, gateAddr string) {
+func (gx *GX) initMiner(instanceIndex int, apply, keystore, env, gateAddr string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	databaseValue := "d" + strconv.Itoa(instanceIndex)
 	common.GlobalConf.SetString(chainSection, databaseKey, databaseValue)
 
 	middleware.InitMiddleware()
-	statemachine.InitSTMManager(common.GlobalConf.GetString("docker", "config", ""), port)
 
 	minerAddr := common.GlobalConf.GetString(Section, "miner", "")
 	err := gx.getAccountInfo(keystore, minerAddr)
@@ -141,18 +137,23 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 
 	minerInfo := model.NewSelfMinerDO(gx.account.Miner.ID[:])
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
-
 	if apply == "light" {
 		minerInfo.NType = types.MinerTypeLight
 	} else if apply == "heavy" {
 		minerInfo.NType = types.MinerTypeHeavy
 	}
-	network.InitNetwork(cnet.MessageHandler, "0x"+common.Bytes2Hex(gx.account.Miner.ID[:]), env, gateAddr)
 
-	err = core.InitCore(minerInfo.NType, consensus.NewConsensusHelper(minerInfo.ID))
+	minerId := "0x" + common.Bytes2Hex(gx.account.Miner.ID[:])
+	network.InitNetwork(cnet.MessageHandler, minerId, env, gateAddr)
+	service.InitService(minerInfo.NType)
+
+	err = core.InitCore(consensus.NewConsensusHelper(minerInfo.ID))
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
 	}
+
+	//todo: 刷新requestId
+	statemachine.InitSTMManager(common.GlobalConf.GetString("docker", "config", ""), minerId)
 
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
 	if !ok {
@@ -219,8 +220,8 @@ func syncChainInfo() {
 				}
 				localBlockHeight := core.GetBlockChain().Height()
 				jsonObject := types.NewJSONObject()
-				jsonObject.Put("candidateHeight",candicateHeight)
-				jsonObject.Put("localHeight",localBlockHeight)
+				jsonObject.Put("candidateHeight", candicateHeight)
+				jsonObject.Put("localHeight", localBlockHeight)
 				middleware.HeightLogger.Debugf(jsonObject.TOJSONString())
 				fmt.Printf("Sync candidate block height:%d,local block height:%d\n", candicateHeight, localBlockHeight)
 				timer.Reset(time.Second * 5)

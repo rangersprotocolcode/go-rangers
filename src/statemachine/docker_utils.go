@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"x/src/middleware/types"
+	dockerTypes "github.com/docker/docker/api/types"
 	"time"
 	"net"
 	"github.com/docker/docker/client"
@@ -13,6 +14,10 @@ import (
 	"x/src/common"
 	"x/src/middleware/log"
 	"sync"
+	"strconv"
+	"strings"
+	"os"
+	"x/src/middleware/notify"
 )
 
 const (
@@ -43,14 +48,16 @@ var STMManger *StateMachineManager
 
 type StateMachineManager struct {
 	// stm config
-	Config   YAMLConfig
-	Filename string // 配置文件名称
+	Config YAMLConfig
 
 	// stm entities
-	StateMachines map[string]*StateMachine
+	StateMachines map[string]StateMachine // key 为appId
+
+	StorageRoot string
 
 	// tool for connecting stm
-	httpClient  *http.Client
+	httpClient *http.Client
+
 	Mapping     map[string]PortInt // key 为appId， value为端口号
 	AuthMapping map[string]string  // key 为appId， value为authCode
 	lock        sync.RWMutex
@@ -59,20 +66,19 @@ type StateMachineManager struct {
 	cli *client.Client  //cli:  用于访问 docker 守护进程
 	ctx context.Context //ctx:  传递本次操作的上下文信息
 
-	layer2Port uint // layer2 节点本机端口，用于给状态机提供服务
-
 	logger log.Logger
+
+	minerId string
 }
 
 // docker
-func InitSTMManager(filename string, layer2Port uint) *StateMachineManager {
+func InitSTMManager(filename, minerId string) *StateMachineManager {
 	if nil != STMManger {
 		return STMManger
 	}
 
 	STMManger = &StateMachineManager{
-		Filename:      filename,
-		StateMachines: make(map[string]*StateMachine),
+		StateMachines: make(map[string]StateMachine),
 	}
 	STMManger.httpClient = createHTTPClient()
 	STMManger.ctx = context.Background()
@@ -82,29 +88,72 @@ func InitSTMManager(filename string, layer2Port uint) *StateMachineManager {
 	STMManger.logger = log.GetLoggerByIndex(log.STMLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	STMManger.Mapping = make(map[string]PortInt)
 	STMManger.AuthMapping = make(map[string]string)
-	STMManger.layer2Port = layer2Port
+	STMManger.minerId = minerId
 
-	STMManger.init()
+	pwd, _ := os.Getwd()
+	STMManger.StorageRoot = pwd + "/storage"
+	STMManger.init(filename)
 
+	// 订阅状态更新消息
+	notify.BUS.Subscribe(notify.STMStorageReady, STMManger.updateSTMStorage)
+
+	STMManger.logger.Infof("start success, minerId: %s", minerId)
 	return STMManger
 }
 
-func (d *StateMachineManager) init() {
-	d.Config.InitFromFile(d.Filename)
-	d.runStateMachines()
+func (d *StateMachineManager) init(filename string) {
+	d.buildConfig(filename)
+
+	if 0 != len(d.Config.Services) {
+		//todo : 根据Priority排序
+		for _, service := range d.Config.Services {
+			// 异步启动
+			go d.loadStateMachine(service)
+		}
+	}
 }
 
-func (d *StateMachineManager) runStateMachines() {
-	if 0 == len(d.Config.Services) {
+func (d *StateMachineManager) buildConfig(filename string) {
+	// 加载配置文件
+	// 配置文件的方式应该逐步废除
+	if 0 != len(filename) {
+		d.Config.InitFromFile(filename)
+	}
+
+	d.logger.Infof("get stm configs from file, %s", d.Config.TOJSONString())
+
+	// 获取当前机器上已有的容器
+	containers, _ := d.cli.ContainerList(d.ctx, dockerTypes.ContainerListOptions{All: true})
+	if 0 == len(containers) {
 		return
 	}
 
-	//todo : 根据Priority排序
-	for _, service := range d.Config.Services {
-		// 异步启动
-		go d.runStateMachine(service)
+	for _, container := range containers {
+		name := container.Names[0]
+		if !strings.HasPrefix(name, "/"+containerPrefix) {
+			continue
+		}
 
+		index := -1
+		for i, service := range d.Config.Services {
+			if service.Image == container.Image {
+				index = i
+				break
+			}
+		}
+		if -1 != index {
+			d.Config.Services = append(d.Config.Services[:index], d.Config.Services[index+1:]...)
+		}
+
+		var config ContainerConfig
+		nameSplited := strings.Split(name, "-")
+		config.Game = nameSplited[1]
+		config.Image = container.Image
+		config.This = container
+		d.Config.Services = append(d.Config.Services, config)
 	}
+
+	d.logger.Infof("get stm configs, merged by existing containers, %s", d.Config.TOJSONString())
 }
 
 func (d *StateMachineManager) Nonce(name string) int {
@@ -164,19 +213,23 @@ func (d *StateMachineManager) ValidateAppId(appId, authCode string) bool {
 		return false
 	}
 	if expect != authCode {
-		d.logger.Errorf("Validate authCode error! appid:%s,authCode:%s,expect:%s", appId, authCode, expect)
+		d.logger.Errorf("Validate authCode error! appId:%s,authCode:%s,expect:%s", appId, authCode, expect)
 	}
 	return expect == authCode
 }
 
 // 获取当前STM状态
-func (s *StateMachineManager) GetStmStatus() map[string]string {
+func (s *StateMachineManager) GetStmStatus() map[string]map[string]string {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
-	result := make(map[string]string)
+	result := make(map[string]map[string]string)
 	for appId, stm := range s.StateMachines {
-		result[appId] = stm.Status
+		status := make(map[string]string, 3)
+		status["status"] = stm.Status
+		status["nonce"] = strconv.FormatUint(stm.RequestId, 10)
+		status["storage"] = common.Bytes2Hex(stm.StorageStatus[:])
+		result[appId] = status
 	}
 
 	return result

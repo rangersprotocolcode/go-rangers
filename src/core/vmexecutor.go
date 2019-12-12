@@ -13,6 +13,7 @@ import (
 	"math/big"
 	"fmt"
 	"x/src/middleware"
+	"x/src/service"
 )
 
 const MaxCastBlockTime = time.Second * 3
@@ -57,7 +58,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 					success = false
 					break
 				}
-				_, ok := changeAssets(transaction.Source, mm, accountdb)
+				_, ok := service.ChangeAssets(transaction.Source, mm, accountdb)
 				if !ok {
 					success = false
 					break
@@ -73,7 +74,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 			// 在交易池里，表示game_executor已经执行过状态机了
 			// 只要处理交易里的subTransaction即可
-			if nil != TxManagerInstance.BeginTransaction(transaction.Target, accountdb, transaction) {
+			if nil != service.TxManagerInstance.BeginTransaction(transaction.Target, accountdb, transaction) {
 				success = true
 				logger.Debugf("Is not game data")
 				if 0 != len(transaction.SubTransactions) {
@@ -83,7 +84,8 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						// 发币
 						if user.Address == "StartFT" {
 							createTime, _ := user.Assets["createTime"]
-							_, flag := FTManagerInstance.PublishFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], createTime, 1, accountdb, true)
+							ftSet := service.FTManagerInstance.GenerateFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], createTime, 1)
+							_, flag := service.FTManagerInstance.PublishFTSet(ftSet, accountdb)
 							if !flag {
 								success = false
 								break
@@ -97,7 +99,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 							ftId := user.Assets["ftId"]
 							target := user.Assets["target"]
 							supply := user.Assets["balance"]
-							_, flag := FTManagerInstance.MintFT(owner, ftId, target, supply, accountdb)
+							_, flag := service.FTManagerInstance.MintFT(owner, ftId, target, supply, accountdb)
 
 							if !flag {
 								success = false
@@ -109,7 +111,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 
 						// 给用户币
 						if user.Address == "TransferFT" {
-							_, _, flag := FTManagerInstance.TransferFT(user.Assets["gameId"], user.Assets["symbol"], user.Assets["target"], user.Assets["supply"], accountdb)
+							_, _, flag := service.FTManagerInstance.TransferFT(user.Assets["gameId"], user.Assets["symbol"], user.Assets["target"], user.Assets["supply"], accountdb)
 							if !flag {
 								success = false
 								break
@@ -120,7 +122,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						// 修改NFT属性
 						if user.Address == "UpdateNFT" {
 							addr := common.HexToAddress(user.Assets["addr"])
-							flag := NFTManagerInstance.UpdateNFT(addr, user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], accountdb)
+							flag := service.NFTManagerInstance.UpdateNFT(addr, user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], accountdb)
 							if !flag {
 								success = false
 								break
@@ -131,7 +133,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						// NFT
 						if user.Address == "TransferNFT" {
 							appId := user.Assets["appId"]
-							_, ok := NFTManagerInstance.Transfer(user.Assets["setId"], user.Assets["id"], common.HexToAddress(appId), common.HexToAddress(user.Assets["target"]), accountdb)
+							_, ok := service.NFTManagerInstance.Transfer(user.Assets["setId"], user.Assets["id"], common.HexToAddress(appId), common.HexToAddress(user.Assets["target"]), accountdb)
 							if !ok {
 								success = false
 								break
@@ -165,13 +167,13 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 							maxSupplyString := user.Assets["maxSupply"]
 							maxSupply, err := strconv.Atoi(maxSupplyString)
 							if err != nil {
-								logger.Errorf("Publish nft set!MaxSupply bad format:%s", maxSupplyString)
+								logger.Errorf("Publish nft set! MaxSupply bad format:%s", maxSupplyString)
 								success = false
 								break
 							}
 							appId := user.Assets["appId"]
-
-							_, ok, _ := NFTManagerInstance.PublishNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"], accountdb, true)
+							nftSet := service.NFTManagerInstance.GenerateNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"])
+							_, ok := service.NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
 							if !ok {
 								success = false
 								break
@@ -180,7 +182,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						}
 
 						if user.Address == "MintNFT" {
-							_, ok := NFTManagerInstance.MintNFT(user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], user.Assets["createTime"], common.HexToAddress(user.Assets["target"]), accountdb)
+							_, ok := service.NFTManagerInstance.MintNFT(user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], user.Assets["createTime"], common.HexToAddress(user.Assets["target"]), accountdb)
 							if !ok {
 								success = false
 								break
@@ -189,7 +191,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 						}
 
 						// 用户之间转账
-						if !UpdateAsset(user, transaction.Target, accountdb) {
+						if !service.UpdateAsset(user, transaction.Target, accountdb) {
 							success = false
 							break
 						}
@@ -201,34 +203,36 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 				}
 			} else if 0 != len(transaction.Target) {
 				// 本地没有执行过状态机(game_executor还没有收到消息)，则需要调用状态机
+				// todo: RequestId 排序问题
 				transaction.SubTransactions = make([]types.UserData, 0)
-				outputMessage := statemachine.STMManger.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), transaction.Data, transaction)
-				GetBlockChain().GetTransactionPool().PutGameData(transaction.Hash)
+				outputMessage := statemachine.STMManger.Process(transaction.Target, "operator", transaction.RequestId, transaction.Data, transaction)
+				service.GetTransactionPool().PutGameData(transaction.Hash)
 				result := ""
 				if outputMessage != nil {
 					result = outputMessage.Payload
 				}
 
 				if 0 == len(result) || result == "fail to transfer" || outputMessage == nil || outputMessage.Status == 1 {
-					TxManagerInstance.RollBack(transaction.Target)
+					success = false
+					service.TxManagerInstance.RollBack(transaction.Target)
 				} else {
-					TxManagerInstance.Commit(transaction.Target)
+					service.TxManagerInstance.Commit(transaction.Target)
 					success = true
 				}
 
 			}
 			break
 		case types.TransactionTypePublishFT:
-			_, success = PublishFT(accountdb, transaction, true)
+			_, success = service.PublishFT(accountdb, transaction)
 			break
 		case types.TransactionTypePublishNFTSet:
-			success, _ = PublishNFTSet(accountdb, transaction, true)
+			success, _ = service.PublishNFTSet(accountdb, transaction)
 			break
 		case types.TransactionTypeMintFT:
-			success, _ = MintFT(accountdb, transaction)
+			success, _ = service.MintFT(accountdb, transaction)
 			break
 		case types.TransactionTypeMintNFT:
-			success, _ = MintNFT(accountdb, transaction)
+			success, _ = service.MintNFT(accountdb, transaction)
 			break
 		case types.TransactionTypeWithdraw:
 			_, success = Withdraw(accountdb, transaction, true)
@@ -243,11 +247,22 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			success = executor.executeNFTDepositNotify(accountdb, transaction)
 			break
 		case types.TransactionTypeShuttleNFT:
-			success, _ = ShuttleNFT(accountdb, transaction)
+			success, _ = service.ShuttleNFT(accountdb, transaction)
 			break
 		case types.TransactionTypeAddStateMachine:
 			// todo: 经济模型，新增状态机应该要付费
-			success = statemachine.STMManger.AddStatemachine(transaction.Source, transaction.Data)
+			go statemachine.STMManger.AddStatemachine(transaction.Source, transaction.Data)
+			success = true
+			break
+		case types.TransactionTypeUpdateStorage:
+			// todo: 经济模型，更新状态机应该要付费
+			go statemachine.STMManger.UpdateSTMStorage(transaction.Source, transaction.Data)
+			success = true
+			break
+		case types.TransactionTypeStartSTM:
+			// todo: 经济模型，重启状态机应该要付费
+			go statemachine.STMManger.StartSTM(transaction.Source)
+			success = true
 			break
 		}
 
@@ -263,6 +278,8 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			if transaction.Source != "" {
 				accountdb.SetNonce(common.HexToAddress(transaction.Source), transaction.Nonce)
 			}
+
+			logger.Debugf("VMExecutor Execute success %s,type:%d", transaction.Hash.String(), transaction.Type)
 		}
 
 	}
@@ -339,13 +356,14 @@ func (executor *VMExecutor) executeNFTDepositNotify(accountdb *account.AccountDB
 	}
 
 	// 检查setId
-	nftSet := NFTManagerInstance.GetNFTSet(depositNFTData.SetId, accountdb)
+	nftSet := service.NFTManagerInstance.GetNFTSet(depositNFTData.SetId, accountdb)
 	if nil == nftSet {
-		_, _, nftSet = NFTManagerInstance.PublishNFTSet(depositNFTData.SetId, depositNFTData.Name, depositNFTData.Symbol, depositNFTData.Creator, depositNFTData.Owner, 0, depositNFTData.CreateTime, accountdb, true)
+		nftSet = service.NFTManagerInstance.GenerateNFTSet(depositNFTData.SetId, depositNFTData.Name, depositNFTData.Symbol, depositNFTData.Creator, depositNFTData.Owner, 0, depositNFTData.CreateTime, )
+		service.NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
 	}
 
 	appId := transaction.Target
-	str, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, "", depositNFTData.Creator, depositNFTData.CreateTime, common.HexToAddress(transaction.Source), depositNFTData.Data, accountdb)
+	str, ok := service.NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, "", depositNFTData.Creator, depositNFTData.CreateTime, common.HexToAddress(transaction.Source), depositNFTData.Data, accountdb)
 	txLogger.Debugf("GenerateNFT result:%s,%t", str, ok)
 	return ok
 }

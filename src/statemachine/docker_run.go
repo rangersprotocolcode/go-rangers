@@ -10,40 +10,60 @@ import (
 	"strconv"
 )
 
-// 通过配置文件，加载STM
-func (s *StateMachineManager) runStateMachine(service ContainerConfig) {
+// 加载STM
+func (s *StateMachineManager) loadStateMachine(service ContainerConfig) {
+	s.lock.Lock()
 	if 0 == len(service.Game) {
 		s.logger.Errorf("fail to create stm with nil game. config: %s", service.TOJSONString())
+		s.lock.Unlock()
 		return
 	}
-	stateMachine := buildStateMachine(service, s.cli, s.ctx, s.logger, s.httpClient)
+	stm, ok := s.StateMachines[service.Game]
+	if ok && stm.isReady() {
+		s.logger.Errorf("fail to create stm with same game. config: %s", service.TOJSONString())
+		s.lock.Unlock()
+		return
+	}
 
-	s.lock.Lock()
-	s.StateMachines[service.Game] = &stateMachine
+	// 构建stm实例
+	stateMachine := buildStateMachine(service, s.StorageRoot, s.cli, s.ctx, s.logger, s.httpClient)
+	s.StateMachines[service.Game] = stateMachine
 	s.lock.Unlock()
 
-	appId, ports := stateMachine.Run()
+	s.runSTM(stateMachine, true)
+}
+
+// 启动stm并调用其init方法
+func (s *StateMachineManager) runSTM(stm StateMachine, heartbeat bool) {
+	appId, ports := stm.Run()
 	if appId == "" || ports == nil {
+		s.logger.Errorf("fail to run stm, appId: %s", appId)
 		return
 	}
 
 	// 调用stm init接口
 	authCode := s.generateAuthcode()
-	s.callInit(ports[0].Host, authCode)
-	stateMachine.ready()
+	s.callInit(ports[0].Host, stm.wsServer.GetURL(), authCode)
+	stm.ready()
 
+	// 是否启动心跳
+	if heartbeat {
+		stm.heartbeat()
+	}
+
+	// 保存stm实例
 	s.lock.Lock()
 	s.Mapping[appId] = ports[0].Host
 	s.AuthMapping[appId] = authCode
 	s.lock.Unlock()
 }
 
-func (s *StateMachineManager) callInit(dockerPortInt PortInt, authCode string) {
+func (s *StateMachineManager) callInit(dockerPortInt PortInt, wsUrl, authCode string) {
 	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", dockerPortInt, "init")
 	values := url.Values{}
-	values["url"] = []string{fmt.Sprintf("http://%s:%d", "172.17.0.1", s.layer2Port)}
+	values["url"] = []string{wsUrl}
 	values["authCode"] = []string{authCode}
-	s.logger.Infof("Send post req:path:%s,values:%v", path, values)
+	s.logger.Infof("send init req:path:%s,values:%v", path, values)
 
 	// keeping waiting
 	// todo: timeout

@@ -11,6 +11,8 @@ import (
 	"x/src/statemachine"
 	"time"
 	"x/src/middleware/log"
+	"x/src/storage/account"
+	"x/src/service"
 )
 
 // 客户端web socket 请求的返回数据结构
@@ -81,14 +83,13 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	} else {
 		gameExecutor.debug = true
 	}
+
 	gameExecutor.writeChan = make(chan notify.Message, maxWriteSize)
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.Write)
+	go gameExecutor.loop()
 
 	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.Read)
-	go gameExecutor.loop()
-	//notify.BUS.Subscribe(notify.BlockAddSucc, gameExecutor.onBlockAddSuccess)
-
-	log.GetLoggerByIndex(log.CoreLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	notify.BUS.Subscribe(notify.BlockAddSucc, gameExecutor.onBlockAddSuccess)
 }
 
 func (executor *GameExecutor) getCond(gameId string) *sync.Cond {
@@ -131,22 +132,22 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 
 	// 查询主链币
 	case types.TransactionTypeGetCoin:
-		result = GetCoinBalance(source, txRaw.Data)
+		result = service.GetCoinBalance(source, txRaw.Data)
 		break
 
 		// 查询所有主链币
 	case types.TransactionTypeGetAllCoin:
-		result = GetAllCoinInfo(source)
+		result = service.GetAllCoinInfo(source)
 		break
 
 		// 查询FT
 	case types.TransactionTypeFT:
-		result = GetFTInfo(source, txRaw.Data)
+		result = service.GetFTInfo(source, txRaw.Data)
 		break
 
 		// 查询用户所有FT
 	case types.TransactionTypeAllFT:
-		result = GetAllFT(source)
+		result = service.GetAllFT(source)
 		break
 
 		//查询特定NFT
@@ -154,35 +155,35 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 		var id types.NFTID
 		err := json.Unmarshal([]byte(txRaw.Data), &id)
 		if nil == err {
-			result = GetNFTInfo(id.SetId, id.Id, gameId)
+			result = service.GetNFTInfo(id.SetId, id.Id, gameId)
 		}
 		break
 
 		// 查询账户下某个游戏的所有NFT
 	case types.TransactionTypeNFTListByAddress:
-		result = GetAllNFT(source, gameId)
+		result = service.GetAllNFT(source, gameId)
 		break
 
 		// 查询NFTSet信息
 	case types.TransactionTypeNFTSet:
-		result = GetNFTSet(txRaw.Data)
+		result = service.GetNFTSet(txRaw.Data)
 		break
 
 	case types.TransactionTypeFTSet:
-		result = GetFTSet(txRaw.Data)
+		result = service.GetFTSet(txRaw.Data)
 		break
 
 	case types.TransactionTypeNFTCount:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
 
-		result = strconv.Itoa(GetNFTCount(param["address"], param["setId"], ""))
+		result = strconv.Itoa(service.GetNFTCount(param["address"], param["setId"], ""))
 		break
 
 	case types.TransactionTypeNFTList:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
-		result = GetAllNFTBySetId(param["address"], param["setId"])
+		result = service.GetAllNFTBySetId(param["address"], param["setId"])
 		break
 
 	case types.TransactionTypeNFTGtZero:
@@ -221,7 +222,7 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 	executor.writeChan <- msg
 }
 
-func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, string) {
+func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId uint64) (bool, string) {
 	txhash := txRaw.Hash.String()
 	executor.logger.Debugf("run tx. hash: %s", txhash)
 
@@ -238,90 +239,57 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 	switch txRaw.Type {
 	// execute state machine transaction
 	case types.TransactionTypeOperatorEvent:
+		executor.logger.Debugf("begin TransactionTypeOperatorEvent. txhash: %s, appId: %s, transferInfo: %s, payload: %s", txhash, txRaw.Target, txRaw.ExtraData, txRaw.Data)
 
 		gameId := txRaw.Target
+		accountDB := service.AccountDBManagerInstance.GetAccountDB(gameId, true)
 		isTransferOnly := 0 == len(gameId)
-		executor.logger.Debugf("begin callstm. txhash: %s, appId: %s, transferInfo: %s, payload: %s", txhash, gameId, txRaw.ExtraData, txRaw.Data)
 
-		accountDB := AccountDBManagerInstance.GetAccountDB(gameId, true)
+		// 只是转账
+		if isTransferOnly {
+			// 交易已经执行过了
+			if executor.isExisted(txRaw) {
+				return true, ""
+			}
+
+			snapshot := accountDB.Snapshot()
+			result, ok := executor.doTransfer(txRaw, accountDB)
+			if !ok {
+				accountDB.RevertToSnapshot(snapshot)
+			}
+
+			return ok, result
+		}
 
 		// 已经执行过了（入块时），则不用再执行了
-		if nil != TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw) || GetBlockChain().GetTransactionPool().IsGameData(txRaw.Hash) {
+		if nil != service.TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw) {
 			// bingo
 			executor.logger.Infof("Tx is executed!")
 			executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
 			return false, "Tx Is Executed"
 		}
 
-		// 处理转账
-		// 支持source地址给多人转账，包含余额，ft，nft
-		// 数据格式{"address1":{"balance":"127","ft":{"name1":"189","name2":"1"},"nft":["id1","sword2"]}, "address2":{"balance":"1"}}
+		// 调用状态机
+		// 1. 先转账
+		message, result = executor.doTransfer(txRaw, accountDB)
 
-		//{
-		//	"address1": {
-		//		"bnt": {
-		//          "ETH.ETH":"0.008",
-		//          "NEO.CGAS":"100"
-		//      },
-		//		"ft": {
-		//			"name1": "189",
-		//			"name2": "1"
-		//		},
-		//		"nft": [{"setId":"suit1","id":"xizhuang"},
-		//              {"setId":"gun","id":"rifle"}
-		// 				]
-		//	},
-		//	"address2": {
-		//		"balance": "1"
-		//	}
-		//}
-
-		if 0 != len(txRaw.ExtraData) {
-			mm := make(map[string]types.TransferData, 0)
-			if err := json.Unmarshal([]byte(txRaw.ExtraData), &mm); nil != err {
-				executor.logger.Errorf("Transfer data unmarshal error:%s", err.Error())
-				message = "Transfer Bad Format"
-				result = false
-			} else {
-				// todo: mm条目数校验：调用状态机的，mm条目数只能有一个；纯转账，允许多个
-				snapshot := 0
-				if isTransferOnly {
-					snapshot = accountDB.Snapshot()
-				}
-				response, ok := changeAssets(txRaw.Source, mm, accountDB)
-				if !ok {
-					message = response
-					result = false
-
-					if isTransferOnly {
-						accountDB.RevertToSnapshot(snapshot)
-					}
-					executor.logger.Errorf("change balances failed")
-				} else {
-					result = true
-					message = response
-				}
-			}
-		}
-
+		// 2. 转账成功，调用状态机
 		var outputMessage *types.OutputMessage
-		// 转账成功，调用状态机
-		if result && !isTransferOnly && len(txRaw.Data) != 0 {
-			// 调用状态机
+		if result && len(txRaw.Data) != 0 {
 			txRaw.SubTransactions = make([]types.UserData, 0)
-			outputMessage = statemachine.STMManger.Process(txRaw.Target, "operator", strconv.FormatUint(txRaw.Nonce, 10), txRaw.Data, &txRaw)
+			outputMessage = statemachine.STMManger.Process(txRaw.Target, "operator", requestId, txRaw.Data, &txRaw)
 			executor.logger.Debugf("txhash %s invoke state machine. result:%v", txhash, outputMessage)
 			if outputMessage != nil {
 				message = outputMessage.Payload
 			}
 
-			GetBlockChain().GetTransactionPool().PutGameData(txRaw.Hash)
+			service.GetTransactionPool().PutGameData(txRaw.Hash)
 		}
 
 		// 没有结果返回，默认出错，回滚
 		if !result || len(txRaw.Data) != 0 && (outputMessage == nil || outputMessage.Status == 1) {
 			executor.logger.Infof("Roll back tx.")
-			TxManagerInstance.RollBack(gameId)
+			service.TxManagerInstance.RollBack(gameId)
 
 			// 加入到已执行过的交易池，打包入块不会再执行这笔交易
 			executor.markExecuted(&txRaw)
@@ -329,17 +297,14 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 				message = "Tx Execute Failed"
 			}
 		} else {
-			TxManagerInstance.Commit(gameId)
-			//if 0 == len(message) {
-			//	message = "Tx Execute Success"
-			//}
+			service.TxManagerInstance.Commit(gameId)
 		}
 
-		executor.logger.Debugf("end callstm. txhash: %s", txhash)
+		executor.logger.Debugf("end TransactionTypeOperatorEvent. txhash: %s", txhash)
 
 	case types.TransactionTypeWithdraw:
 		gameId := txRaw.Target
-		accountDB := AccountDBManagerInstance.GetAccountDB(gameId, true)
+		accountDB := service.AccountDBManagerInstance.GetAccountDB(gameId, true)
 
 		response, ok := Withdraw(accountDB, &txRaw, false)
 		if ok {
@@ -353,8 +318,8 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 
 	case types.TransactionTypePublishFT:
 		appId := txRaw.Source
-		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-		id, ok := PublishFT(accountDB, &txRaw, false)
+		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
+		id, ok := service.PublishFT(accountDB, &txRaw)
 		if ok {
 			var ftSet map[string]string
 			json.Unmarshal([]byte(txRaw.Data), &ftSet)
@@ -373,8 +338,8 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 
 	case types.TransactionTypePublishNFTSet:
 		appId := txRaw.Source
-		accountDB := AccountDBManagerInstance.GetAccountDB(appId, true)
-		flag, response := PublishNFTSet(accountDB, &txRaw, false)
+		accountDB := service.AccountDBManagerInstance.GetAccountDB(appId, true)
+		flag, response := service.PublishNFTSet(accountDB, &txRaw)
 		if flag {
 			message = txRaw.Data
 			result = true
@@ -385,23 +350,23 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 		break
 
 	case types.TransactionTypeMintFT:
-		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-		flag, response := MintFT(accountDB, &txRaw)
+		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
+		flag, response := service.MintFT(accountDB, &txRaw)
 
 		result = flag
 		message = response
 		break
 
 	case types.TransactionTypeMintNFT:
-		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-		flag, response := MintNFT(accountDB, &txRaw)
+		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
+		flag, response := service.MintNFT(accountDB, &txRaw)
 		message = response
 		result = flag
 		break
 
 	case types.TransactionTypeShuttleNFT:
-		accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-		ok, response := ShuttleNFT(accountDB, &txRaw)
+		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
+		ok, response := service.ShuttleNFT(accountDB, &txRaw)
 		message = response
 		result = ok
 		break
@@ -414,12 +379,54 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction) (bool, str
 	// bingo
 	executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
 
-	executor.logger.Infof("run tx. result: %t, cost time : %v, txhash: %s", result, time.Since(start), txhash)
+	executor.logger.Debugf("finish tx. result: %t, message: %s, cost time : %v, txhash: %s, requestId: %d", result, message, time.Since(start), txhash, executor.requestIds[txRaw.Target])
 	return result, message
 }
 
+// 处理转账
+// 支持source地址给多人转账，包含余额，ft，nft
+// 数据格式{"address1":{"balance":"127","ft":{"name1":"189","name2":"1"},"nft":["id1","sword2"]}, "address2":{"balance":"1"}}
+//{
+//	"address1": {
+//		"bnt": {
+//          "ETH.ETH":"0.008",
+//          "NEO.CGAS":"100"
+//      },
+//		"ft": {
+//			"name1": "189",
+//			"name2": "1"
+//		},
+//		"nft": [{"setId":"suit1","id":"xizhuang"},
+//              {"setId":"gun","id":"rifle"}
+// 				]
+//	},
+//	"address2": {
+//		"balance": "1"
+//	}
+//}
+func (executor *GameExecutor) doTransfer(txRaw types.Transaction, accountDB *account.AccountDB) (string, bool) {
+	if 0 == len(txRaw.ExtraData) {
+		return "", true
+	}
+
+	mm := make(map[string]types.TransferData, 0)
+	if err := json.Unmarshal([]byte(txRaw.ExtraData), &mm); nil != err {
+		executor.logger.Errorf("Transfer data unmarshal error:%s", err.Error())
+		return "Transfer Bad Format", false
+	}
+
+	// todo: mm条目数校验：调用状态机的，mm条目数只能有一个；纯转账，允许多个
+	response, ok := service.ChangeAssets(txRaw.Source, mm, accountDB)
+	if !ok {
+		executor.logger.Errorf("change balances failed")
+	}
+
+	return response, ok
+
+}
+
 func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {
-	if ok, err := executor.chain.GetTransactionPool().AddTransaction(tx); err != nil || !ok {
+	if ok, err := service.GetTransactionPool().AddTransaction(tx); err != nil || !ok {
 		executor.logger.Errorf("Add tx error:%s", err.Error())
 		return
 	}
@@ -428,73 +435,76 @@ func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {
 }
 
 func (executor *GameExecutor) markExecuted(trans *types.Transaction) {
-	executor.chain.GetTransactionPool().AddExecuted(trans)
+	service.GetTransactionPool().AddExecuted(trans)
 }
 
 func (executor *GameExecutor) isExisted(tx types.Transaction) bool {
-	return executor.chain.GetTransactionPool().IsExisted(tx.Hash)
+	return service.GetTransactionPool().IsExisted(tx.Hash)
 }
 
 func (executor *GameExecutor) loop() {
 	for {
 		select {
 		case msg := <-executor.writeChan:
-			message, ok := msg.(*notify.ClientTransactionMessage)
-			if !ok {
-				executor.logger.Errorf("GameExecutor:Write assert not ok!")
-				continue
-			}
-
-			txRaw := message.Tx
-			txRaw.RequestId = message.Nonce
-			//gameId := txRaw.Target
-			gameId := "fixed"
-
-			// 校验交易类型
-			//transactionType := txRaw.Type
-			//if transactionType != types.TransactionTypeOperatorEvent &&
-			//	transactionType != types.TransactionTypeWithdraw && transactionType != types.TransactionTypePublishFT {
-			//	logger.Debugf("GameExecutor:Write transactionType: %d, not ok!", transactionType)
-			//	continue
-			//}
-
-			// 校验 requestId
-			if !executor.debug {
-				requestId := message.Nonce
-				if requestId <= executor.requestIds[gameId] {
-					// 已经执行过的消息，忽略
-					executor.logger.Errorf("%s requestId :%d skipped, current requestId: %d", gameId, requestId, executor.requestIds[gameId])
-					continue
-				}
-
-				// requestId 按序执行
-				executor.getCond(gameId).L.Lock()
-				for ; requestId != (executor.requestIds[gameId] + 1); {
-
-					// waiting until the right requestId
-					executor.logger.Infof("%s requestId :%d is waiting, current requestId: %d", gameId, requestId, executor.requestIds[gameId])
-
-					// todo 超时放弃
-					executor.getCond(gameId).Wait()
-				}
-			}
-
-			result, execMessage := executor.runTransaction(txRaw)
-
-			// reply to the client
-			var response []byte
-			if result {
-				response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
-			} else {
-				response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
-			}
-			go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
-
-			if !executor.debug {
-				executor.getCond(gameId).Broadcast()
-				executor.getCond(gameId).L.Unlock()
-			}
-
+			executor.RunNotify(msg)
 		}
+	}
+}
+
+func (executor *GameExecutor) RunNotify(msg notify.Message) {
+	message, ok := msg.(*notify.ClientTransactionMessage)
+	if !ok {
+		executor.logger.Errorf("GameExecutor:Write assert not ok!")
+		return
+	}
+
+	txRaw := message.Tx
+	txRaw.RequestId = message.Nonce
+	//gameId := txRaw.Target
+	gameId := "fixed"
+
+	// 校验交易类型
+	//transactionType := txRaw.Type
+	//if transactionType != types.TransactionTypeOperatorEvent &&
+	//	transactionType != types.TransactionTypeWithdraw && transactionType != types.TransactionTypePublishFT {
+	//	logger.Debugf("GameExecutor:Write transactionType: %d, not ok!", transactionType)
+	//	continue
+	//}
+
+	// 校验 requestId
+	if !executor.debug {
+		requestId := message.Nonce
+		if requestId <= executor.requestIds[gameId] {
+			// 已经执行过的消息，忽略
+			executor.logger.Errorf("%s requestId :%d skipped, current requestId: %d", gameId, requestId, executor.requestIds[gameId])
+			return
+		}
+
+		// requestId 按序执行
+		executor.getCond(gameId).L.Lock()
+		for ; requestId != (executor.requestIds[gameId] + 1); {
+
+			// waiting until the right requestId
+			executor.logger.Infof("%s requestId :%d is waiting, current requestId: %d", gameId, requestId, executor.requestIds[gameId])
+
+			// todo 超时放弃
+			executor.getCond(gameId).Wait()
+		}
+	}
+
+	result, execMessage := executor.runTransaction(txRaw, message.Nonce)
+
+	// reply to the client
+	var response []byte
+	if result {
+		response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
+	} else {
+		response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
+	}
+	go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+
+	if !executor.debug {
+		executor.getCond(gameId).Broadcast()
+		executor.getCond(gameId).L.Unlock()
 	}
 }

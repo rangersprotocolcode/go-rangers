@@ -1,0 +1,11 @@
+title: x4
+services:
+  - priority: 0
+    game: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"
+    name: "genesis4"
+    image: "genesis_image:latest"
+    ports:
+      - host: 7774
+        target: 8080
+    detached: true
+    hostname: "genesis_4_daily"

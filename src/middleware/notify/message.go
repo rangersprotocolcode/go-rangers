@@ -302,3 +302,14 @@ func (m *CoinProxyNotifyMessage) GetRaw() []byte {
 func (m *CoinProxyNotifyMessage) GetData() interface{} {
 	return m
 }
+
+type STMStorageReadyMessage struct {
+	FileName []byte
+}
+
+func (s *STMStorageReadyMessage) GetRaw() []byte {
+	return s.FileName
+}
+func (s *STMStorageReadyMessage) GetData() interface{} {
+	return s.FileName
+}

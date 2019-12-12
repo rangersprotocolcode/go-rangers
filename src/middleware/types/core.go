@@ -82,7 +82,7 @@ const (
 	TransactionTypeMinerRefund = 4
 
 	//以下交易类型会被外部使用 禁止更改
-	TransactionTypeOperatorEvent     = 100
+	TransactionTypeOperatorEvent     = 100 // 调用状态机/转账
 	TransactionTypeGetCoin           = 101 // 查询主链币
 	TransactionTypeGetAllCoin        = 102 // 查询所有主链币
 	TransactionTypeFT                = 103 // 查询特定FT
@@ -98,11 +98,25 @@ const (
 
 	TransactionTypeWithdraw = 109
 
-	TransactionTypePublishFT     = 110 // 用户发FT
-	TransactionTypePublishNFTSet = 111 // 用户发NFTSet
-	TransactionTypeShuttleNFT    = 112 // 用户穿梭NFT
-	TransactionTypeMintFT        = 116 // mintFT
-	TransactionTypeMintNFT       = 117 // mintFT
+	TransactionTypePublishFT      = 110 // 用户发FTSet
+	TransactionTypePublishNFTSet  = 111 // 用户发NFTSet
+	TransactionTypeShuttleNFT     = 112 // 用户穿梭NFT
+	TransactionTypeMintFT         = 116 // mintFT
+	TransactionTypeMintNFT        = 117 // mintNFT
+	TransactionTypeTransferBNT    = 118 // 状态机给用户转主链币
+	TransactionTypeTransferFT     = 119 // 状态机给用户转FT
+	TransactionTypeLockNFT        = 120 // 锁定NFT
+	TransactionTypeUnLockNFT      = 121 // 解锁NFT
+	TransactionTypeApproveNFT     = 122 // 授权NFT
+	TransactionTypeRevokeNFT      = 123 // 回收NFT
+	TransactionTypeTransferNFT    = 124 // 状态机给用户转NFT
+	TransactionTypeUpdateNFT      = 125 // 更新NFT数据
+	TransactionTypeBatchUpdateNFT = 126 // 批量更新NFT数据
+
+	// 状态机通知客户端
+	TransactionTypeNotify          = 301 // 通知某个用户
+	TransactionTypeNotifyGroup     = 302 // 通知某个组
+	TransactionTypeNotifyBroadcast = 303 // 通知所有人
 
 	// 从rocket_connector来的消息
 	TransactionTypeCoinDepositAck = 201 // 充值
@@ -110,7 +124,9 @@ const (
 	TransactionTypeNFTDepositAck  = 203 // 充值
 
 	// 状态机管理
-	TransactionTypeAddStateMachine = 901
+	TransactionTypeAddStateMachine = 901 // 新增状态机
+	TransactionTypeUpdateStorage   = 902 // 刷新状态机存储
+	TransactionTypeStartSTM      = 903 // 重启状态机存储
 )
 
 type Transaction struct {

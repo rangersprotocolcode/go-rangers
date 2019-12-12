@@ -30,4 +30,5 @@ func InitNetwork(consensusHandler MsgHandler, selfMinerId, env, gate string) {
 	s.Init(Logger, gateAddr, selfMinerId, consensusHandler)
 
 	instance = s
+	Logger.Warnf("connected gate: %s, env: %s", gateAddr, env)
 }

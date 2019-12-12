@@ -14,6 +14,7 @@ import (
 	"x/src/consensus/groupsig"
 	"x/src/storage/trie"
 	"github.com/hashicorp/golang-lru"
+	"x/src/service"
 )
 
 const (
@@ -50,7 +51,7 @@ func initMinerManager() {
 
 func (mm *MinerManager) GetMinerById(id []byte, ttype byte, accountdb *account.AccountDB) *types.Miner {
 	if accountdb == nil {
-		accountdb = blockChainImpl.LatestStateDB()
+		accountdb = service.AccountDBManagerInstance.GetLatestStateDB()
 	}
 	db := mm.getMinerDatabase(ttype)
 	data := accountdb.GetData(db, id)
@@ -227,7 +228,7 @@ func (mm *MinerManager) abortMiner(id []byte, ttype byte, height uint64, account
 func (mm *MinerManager) minerIterator(minerType byte, accountdb *account.AccountDB) *MinerIterator {
 	db := mm.getMinerDatabase(minerType)
 	if accountdb == nil {
-		accountdb = blockChainImpl.LatestStateDB()
+		accountdb = service.AccountDBManagerInstance.GetLatestStateDB()
 	}
 	iterator := &MinerIterator{iterator: accountdb.DataIterator(db, []byte(""))}
 	return iterator

@@ -101,7 +101,7 @@ func TestStrToBigInt6(t *testing.T) {
 }
 
 func TestStrToBigInt7(t *testing.T) {
-	str := "0"
+	str := "1"
 	value, err := StrToBigInt(str)
 	if err != nil {
 		panic(err)

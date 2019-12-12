@@ -8,7 +8,7 @@ import (
 	"encoding/json"
 )
 
-func (d *StateMachineManager) Process(name string, kind string, nonce string, payload string, tx *types.Transaction) *types.OutputMessage {
+func (d *StateMachineManager) Process(name string, kind string, nonce uint64, payload string, tx *types.Transaction) *types.OutputMessage {
 	prefix := d.getUrlPrefix(name)
 	if 0 == len(prefix) {
 		return nil
@@ -38,6 +38,8 @@ func (d *StateMachineManager) Process(name string, kind string, nonce string, pa
 		return nil
 	}
 
+	stm := d.StateMachines[name]
+	stm.RefreshStorageStatus(nonce)
 	return &output
 }
 

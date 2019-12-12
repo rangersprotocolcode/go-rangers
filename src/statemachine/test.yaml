@@ -10,3 +10,7 @@ services:
     detached: true
     downloadUrl: "tequiladj/stm:v1.0"
     downloadProtocol: "pUlL"
+    storages:
+      - "/root/test1"
+      - "/root/test2"
+      - "/root/test3"

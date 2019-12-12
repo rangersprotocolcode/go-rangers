@@ -4,14 +4,8 @@ import (
 	"x/src/common"
 	"math/big"
 	"x/src/middleware/types"
-	"x/src/storage/account"
 	"time"
 )
-
-type ExecutedTransaction struct {
-	Receipt     *types.Receipt
-	Transaction *types.Transaction
-}
 
 type GroupIterator struct {
 	current *types.Group
@@ -49,23 +43,13 @@ type BlockChain interface {
 
 	GetBalance(address common.Address) *big.Int
 
-	GetNonce(address common.Address, gameId string) uint64
-
 	GetTransaction(txHash common.Hash) (*types.Transaction, error)
-
-	GetTransactionPool() TransactionPool
 
 	Remove(block *types.Block) bool
 
-	Clear() error
-
 	Close()
 
-	GetAccountDBByHash(hash common.Hash) (*account.AccountDB, error)
-
 	GetVerifyHash(height uint64) (common.Hash, error)
-
-	GetAccountDB() *account.AccountDB
 
 	HasBlockByHash(hash common.Hash) bool
 }
@@ -84,41 +68,4 @@ type GroupChain interface {
 	Close()
 
 	Iterator() *GroupIterator
-}
-
-type TransactionPool interface {
-	PackForCast() []*types.Transaction
-
-	//add new transaction to the transaction pool
-	AddTransaction(tx *types.Transaction) (bool, error)
-
-	//rcv transactions broadcast from other nodes
-	AddBroadcastTransactions(txs []*types.Transaction)
-
-	//add  local miss transactions while verifying blocks to the transaction pool
-	AddMissTransactions(txs []*types.Transaction)
-
-	GetTransaction(hash common.Hash) (*types.Transaction, error)
-
-	GetTransactionStatus(hash common.Hash) (uint, error)
-
-	GetExecuted(hash common.Hash) *ExecutedTransaction
-
-	GetReceived() []*types.Transaction
-
-	TxNum() int
-
-	MarkExecuted(receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash)
-
-	UnMarkExecuted(txs []*types.Transaction)
-
-	AddExecuted(tx *types.Transaction) error
-
-	Clear()
-
-	IsExisted(hash common.Hash) bool
-
-	IsGameData(hash common.Hash) bool
-
-	PutGameData(hash common.Hash)
 }
