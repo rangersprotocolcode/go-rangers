@@ -20,6 +20,7 @@ func (c *StateMachine) RefreshStorageStatus(requestId uint64) {
 	if 0 == len(c.storagePath) {
 		return
 	}
+
 	c.logger.Infof("start checkfiles, %s", c.Game)
 	var buffer bytes.Buffer
 	buffer.WriteString(fmt.Sprintf("%s RequestId: %d\n", c.Game, c.RequestId))

@@ -75,7 +75,7 @@ func (s *StateMachineManager) callInit(dockerPortInt PortInt, wsUrl, authCode st
 		} else {
 			body, _ := ioutil.ReadAll(resp.Body)
 			resp.Body.Close()
-			s.logger.Errorf("start success: %s", string(body))
+			s.logger.Errorf("call init success: %s", string(body))
 
 			return
 		}
