@@ -34,7 +34,7 @@ func (s *StateMachineManager) loadStateMachine(service ContainerConfig) {
 }
 
 // 启动stm并调用其init方法
-func (s *StateMachineManager) runSTM(stm StateMachine, heartbeat bool) {
+func (s *StateMachineManager) runSTM(stm *StateMachine, heartbeat bool) {
 	appId, ports := stm.Run()
 	if appId == "" || ports == nil {
 		s.logger.Errorf("fail to run stm, appId: %s", appId)
@@ -75,7 +75,7 @@ func (s *StateMachineManager) callInit(dockerPortInt PortInt, wsUrl, authCode st
 		} else {
 			body, _ := ioutil.ReadAll(resp.Body)
 			resp.Body.Close()
-			s.logger.Errorf("start success: %s", string(body))
+			s.logger.Errorf("call init success: %s", string(body))
 
 			return
 		}
