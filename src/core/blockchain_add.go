@@ -296,15 +296,15 @@ func (chain *blockChain) publishSet(txs []*types.Transaction) {
 	for _, tx := range txs {
 		// 直接发交易的nftSet publish
 		if tx.Type == types.TransactionTypePublishNFTSet {
-			var nftSet types.NFTSet
-			if err := json.Unmarshal([]byte(tx.Data), &nftSet); nil != err {
+			var nftSet *types.NFTSet
+			if err := json.Unmarshal([]byte(tx.Data), nftSet); nil != err {
 				logger.Errorf("Unmarshal data error:%s", err.Error())
 				break
 			}
 
 			appId := tx.Source
-			&nftSet = service.NFTManagerInstance.GenerateNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime)
-			service.NFTManagerInstance.SendPublishNFTSetToConnector(&nftSet)
+			nftSet = service.NFTManagerInstance.GenerateNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime)
+			service.NFTManagerInstance.SendPublishNFTSetToConnector(nftSet)
 			break
 		}
 
