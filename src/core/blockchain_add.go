@@ -299,13 +299,13 @@ func (chain *blockChain) publishSet(txs []*types.Transaction) {
 			var nftSet *types.NFTSet
 			if err := json.Unmarshal([]byte(tx.Data), nftSet); nil != err {
 				logger.Errorf("Unmarshal data error:%s", err.Error())
-				break
+				continue
 			}
 
 			appId := tx.Source
 			nftSet = service.NFTManagerInstance.GenerateNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime)
 			service.NFTManagerInstance.SendPublishNFTSetToConnector(nftSet)
-			break
+			continue
 		}
 
 		// 直接发交易的ftSet publish
@@ -313,14 +313,14 @@ func (chain *blockChain) publishSet(txs []*types.Transaction) {
 			var ftSetMap map[string]string
 			if err := json.Unmarshal([]byte(tx.Data), &ftSetMap); nil != err {
 				logger.Errorf("Unmarshal data error:%s", err.Error())
-				break
+				continue
 			}
 
 			appId := tx.Source
 			createTime := ftSetMap["createTime"]
 			ftSet := service.FTManagerInstance.GenerateFTSet(ftSetMap["name"], ftSetMap["symbol"], appId, ftSetMap["maxSupply"], appId, createTime, 1)
 			service.FTManagerInstance.SendPublishFTSetToConnector(ftSet)
-			break
+			continue
 		}
 
 		// 状态机内调用
