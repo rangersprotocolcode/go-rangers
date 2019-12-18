@@ -10,6 +10,7 @@ import (
 
 	"github.com/hashicorp/golang-lru"
 	"github.com/vmihailenco/msgpack"
+	"fmt"
 )
 
 const (
@@ -115,7 +116,7 @@ func newTransactionPool(nodeType byte) TransactionPool {
 
 	executed, err := db.NewDatabase(txDataBasePrefix)
 	if err != nil {
-		logger.Errorf("Init transaction pool error! Error:%s", err.Error())
+		txLogger.Errorf("Init transaction pool error! Error:%s", err.Error())
 		return nil
 	}
 	pool.executed = executed
@@ -123,7 +124,7 @@ func newTransactionPool(nodeType byte) TransactionPool {
 
 	gameData, err := db.NewDatabase(gameDataPrefix)
 	if err != nil {
-		logger.Errorf("Init transaction pool error! Error:%s", err.Error())
+		txLogger.Errorf("Init transaction pool error! Error:%s", err.Error())
 		return nil
 	}
 	pool.gameData = gameData
@@ -133,14 +134,13 @@ func newTransactionPool(nodeType byte) TransactionPool {
 
 func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 	if err := pool.verifyTransaction(tx); err != nil {
-		logger.Infof("Tx verify error:%s. Hash:%s, tx type:%d", err.Error(), tx.Hash.String(), tx.Type)
+		txLogger.Infof("Tx verify error:%s. Hash:%s, tx type:%d", err.Error(), tx.Hash.String(), tx.Type)
 		return false, err
 	}
 
 	pool.lock.Lock("AddTransaction")
 	defer pool.lock.Unlock("AddTransaction")
 	b, err := pool.add(tx)
-	//	logger.Debugf("Add tx %s to pool result:%t", tx.Hash.String(), b)
 	return b, err
 }
 
@@ -154,7 +154,7 @@ func (pool *TxPool) AddBroadcastTransactions(txs []*types.Transaction) {
 
 	for _, tx := range txs {
 		if err := pool.verifyTransaction(tx); err != nil {
-			logger.Infof("Tx verify error:%s. Hash:%s, tx type:%d", err.Error(), tx.Hash.String(), tx.Type)
+			txLogger.Infof("Tx verify error:%s. Hash:%s, tx type:%d", err.Error(), tx.Hash.String(), tx.Type)
 			continue
 		}
 		pool.add(tx)
@@ -336,15 +336,16 @@ func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
 		return ErrEvicted
 	}
 
-	//expectHash := tx.GenHash()
-	//if tx.Hash != expectHash {
-	//	logger.Infof("Illegal tx hash! Hash:%s,except hash:%s", tx.Hash.String(), expectHash.String())
-	//	return ErrHash
-	//}
-	//err := pool.verifySign(tx)
-	//if err != nil {
-	//	return err
-	//}
+	expectHash := tx.GenHash()
+	if tx.Hash != expectHash {
+		txLogger.Infof("Illegal tx hash! Hash:%s,expect hash:%s", tx.Hash.String(), expectHash.String())
+		return ErrHash
+	}
+	err := pool.verifySign(tx)
+	if err != nil {
+		txLogger.Info(err.Error())
+		return err
+	}
 	return nil
 }
 
@@ -354,14 +355,18 @@ func (pool *TxPool) verifySign(tx *types.Transaction) error {
 		return nil
 	}
 	//其他交易签名校验
-	//hashByte := tx.Hash.Bytes()
-	//pk, err := tx.Sign.RecoverPubkey(hashByte)
-	//if err != nil {
-	//	return err
-	//}
-	//if !pk.Verify(hashByte, tx.Sign) {
-	//	return fmt.Errorf("verify sign fail, hash=%v", tx.Hash.Hex())
-	//}
+	hashByte := tx.Hash.Bytes()
+	pk, err := tx.Sign.RecoverPubkey(hashByte)
+	if err != nil {
+		return err
+	}
+	if !pk.Verify(hashByte, tx.Sign) {
+		return fmt.Errorf("verify sign fail, hash=%s", tx.Hash.Hex())
+	}
+	expectAddr := pk.GetAddress().GetHexString()
+	if tx.Source != expectAddr {
+		return fmt.Errorf("illegal sign tx:%s! Source:%s,expect source:%s", tx.Hash.Hex(), tx.Source, expectAddr)
+	}
 	return nil
 }
 
@@ -379,7 +384,7 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 		tx.Type == types.TransactionTypeBonus || tx.Type == types.TransactionTypeMinerRefund {
 
 		if tx.Type == types.TransactionTypeMinerApply {
-			logger.Debugf("Add TransactionTypeMinerApply,hash:%s,", tx.Hash.String())
+			txLogger.Debugf("Add TransactionTypeMinerApply,hash:%s,", tx.Hash.String())
 		}
 		pool.minerTxs.Add(tx.Hash, tx)
 	} else {
@@ -433,7 +438,7 @@ func (pool *TxPool) packMinerTx() []*types.Transaction {
 		if v, ok := pool.minerTxs.Get(minerTxHash); ok {
 			minerTxs = append(minerTxs, v.(*types.Transaction))
 			if v.(*types.Transaction).Type == types.TransactionTypeMinerApply {
-				logger.Debugf("pack miner apply tx hash:%s,", v.(*types.Transaction).Hash.String())
+				txLogger.Debugf("pack miner apply tx hash:%s,", v.(*types.Transaction).Hash.String())
 			}
 		}
 		if len(minerTxs) >= txCountPerBlock {
