@@ -16,7 +16,7 @@ func TestRPC(t *testing.T) {
 	gx := NewGX()
 	common.InitConf("tas.ini")
 	walletManager = newWallets()
-	gx.initMiner(0, "heavy", "keystore", 8080)
+	gx.initMiner(0, "heavy", "keystore", "dev","")
 
 	host := "0.0.0.0"
 	var port uint = 8989
@@ -73,6 +73,10 @@ func TestStrToFloat(t *testing.T) {
 
 	c := strconv.FormatFloat(b, 'E', -1, 64)
 	fmt.Printf("string :%v\n", c)
+
+	var m = "2.28E-5"
+	n, _ := strconv.ParseFloat(m, 64)
+	fmt.Printf("float :%v\n", n)
 }
 
 func TestJSONString(t *testing.T) {

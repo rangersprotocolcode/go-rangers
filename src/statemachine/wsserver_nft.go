@@ -115,7 +115,8 @@ func (self *wsServer) transferNFT(params map[string]string) (string, bool) {
 	}
 
 	accountDB := context.AccountDB
-	_, ok = service.NFTManagerInstance.Transfer(setId, id, common.HexToAddress(appId), common.HexToAddress(target), accountDB)
+	var reason string
+	reason, ok = service.NFTManagerInstance.Transfer(setId, id, common.HexToAddress(appId), common.HexToAddress(target), accountDB)
 	if ok {
 		// 生成交易，上链 context.Tx.SubTransactions
 		userData := types.UserData{}
@@ -131,7 +132,7 @@ func (self *wsServer) transferNFT(params map[string]string) (string, bool) {
 
 		return "success update nft", true
 	} else {
-		msg := fmt.Sprintf("fail to TransferNFT setId %s or id %s from %s to %s", setId, id, appId, target)
+		msg := fmt.Sprintf("fail to TransferNFT setId %s or id %s from %s to %s:%s", setId, id, appId, target, reason)
 		self.logger.Debugf(msg)
 		return msg, false
 	}
@@ -276,7 +277,7 @@ func (self *wsServer) publishNFTSet(params map[string]string) (string, bool) {
 	accountDB := context.AccountDB
 	value, _ := strconv.Atoi(maxSupply)
 	nftSet := service.NFTManagerInstance.GenerateNFTSet(setId, name, symbol, appId, appId, value, createTime)
-	if _, ok := service.NFTManagerInstance.PublishNFTSet(nftSet, accountDB); ok {
+	if reason, ok := service.NFTManagerInstance.PublishNFTSet(nftSet, accountDB); ok {
 		// 生成交易，上链 context.Tx.SubTransactions
 		userData := types.UserData{}
 		userData.Address = "PublishNFTSet"
@@ -292,7 +293,7 @@ func (self *wsServer) publishNFTSet(params map[string]string) (string, bool) {
 		context.Tx.AppendSubTransaction(userData)
 		return "success PublishNFTSet", true
 	} else {
-		msg := fmt.Sprintf("fail to PublishNFTSet setId %s  appId %s", setId, appId)
+		msg := fmt.Sprintf("fail to PublishNFTSet setId %s  appId %s :%s", setId, appId, reason)
 		self.logger.Debugf(msg)
 		return msg, false
 	}
@@ -321,7 +322,7 @@ func (self *wsServer) mintNFT(params map[string]string) (string, bool) {
 	}
 
 	accountDB := context.AccountDB
-	if _, ok := service.NFTManagerInstance.MintNFT(appId, setId, id, data, createTime, common.HexToAddress(target), accountDB); ok {
+	if reason, ok := service.NFTManagerInstance.MintNFT(appId, setId, id, data, createTime, common.HexToAddress(target), accountDB); ok {
 		// 生成交易，上链 context.Tx.SubTransactions
 		userData := types.UserData{}
 		userData.Address = "MintNFT"
@@ -338,7 +339,7 @@ func (self *wsServer) mintNFT(params map[string]string) (string, bool) {
 
 		return "success MintNFT", true
 	} else {
-		msg := fmt.Sprintf("fail to MintNFT setId %s id %s appId %s", setId, id, appId)
+		msg := fmt.Sprintf("fail to MintNFT setId %s id %s appId %s:%s", setId, id, appId, reason)
 		self.logger.Debugf(msg)
 		return msg, false
 	}

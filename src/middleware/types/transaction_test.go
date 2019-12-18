@@ -21,8 +21,8 @@ func TestMintNFTTx(t *testing.T) {
 	tx := Transaction{Source: "0x1ee7c120be9587415d235be9fe7032c17a610900", Target: "0x1ee7c120be9587415d235be9fe7032c17a610900", Type: TransactionTypeMintNFT, Time: "1556076659050692000", SocketRequestId: "12140"}
 
 	mintNFTInfo := make(map[string]string)
-	mintNFTInfo["setId"] = "689dab31-548e-4b88-9a02-a3c84b4004dc"
-	mintNFTInfo["id"] = "aaa"
+	mintNFTInfo["setId"] = "bcb2d247-6586-4367-8e05-5fa3b2d88958"
+	mintNFTInfo["id"] = "123457"
 	mintNFTInfo["data"] = "5.99"
 	mintNFTInfo["createTime"] = "1569736452603"
 	mintNFTInfo["target"] = "0x1ee7c120be9587415d235be9fe7032c17a610900"
