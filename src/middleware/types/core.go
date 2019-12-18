@@ -454,10 +454,6 @@ func (txJson TxJson) ToTransaction() Transaction {
 	}
 
 	if txJson.Hash != "" {
-		s := txJson.Hash
-		if s[0:2] == "0x" || s[0:2] == "0X" {
-			s = s[2:]
-		}
 		tx.Hash = common.HexToHash(txJson.Hash)
 	}
 
