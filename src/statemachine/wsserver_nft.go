@@ -134,7 +134,7 @@ func (self *wsServer) transferNFT(params map[string]string) (string, bool) {
 	} else {
 		msg := fmt.Sprintf("fail to TransferNFT setId %s or id %s from %s to %s:%s", setId, id, appId, target, reason)
 		self.logger.Debugf(msg)
-		return msg, false
+		return reason, false
 	}
 }
 
