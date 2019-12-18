@@ -295,7 +295,8 @@ func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, no
 		return
 	}
 	tx := txJson.ToTransaction()
-	clientConn.logger.Debugf("Rcv from client.Tx info:%s", txJson.ToString())
+	tx.RequestId = nonce
+	clientConn.logger.Debugf("Rcv from client.Tx info:%s", tx.ToTxJson().ToString())
 
 	msg := notify.ClientTransactionMessage{Tx: tx, UserId: userId, Nonce: nonce}
 	notify.BUS.Publish(event, &msg)
@@ -368,13 +369,13 @@ func (connectorConn *ConnectorConn) handleConnectorMessage(data []byte, nonce ui
 		Logger.Errorf("Json unmarshal coiner msg err:", err.Error())
 		return
 	}
-	Logger.Debugf("Rcv message from coiner.Tx info:%s", txJson.ToString())
+	tx := txJson.ToTransaction()
+	tx.RequestId = nonce
+	Logger.Debugf("Rcv message from coiner.Tx info:%s", tx.ToTxJson().ToString())
 	if !types.CoinerSignVerifier.VerifyDeposit(txJson) {
 		Logger.Infof("Tx from coiner verify sign error!Tx Info:%s", txJson.ToString())
 		return
 	}
-	tx := txJson.ToTransaction()
-	tx.RequestId = nonce
 
 	if tx.Type == types.TransactionTypeCoinDepositAck || tx.Type == types.TransactionTypeFTDepositAck || tx.Type == types.TransactionTypeNFTDepositAck {
 		msg := notify.CoinProxyNotifyMessage{Tx: tx}

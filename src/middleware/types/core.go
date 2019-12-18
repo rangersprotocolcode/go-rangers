@@ -126,7 +126,7 @@ const (
 	// 状态机管理
 	TransactionTypeAddStateMachine = 901 // 新增状态机
 	TransactionTypeUpdateStorage   = 902 // 刷新状态机存储
-	TransactionTypeStartSTM      = 903 // 重启状态机存储
+	TransactionTypeStartSTM        = 903 // 重启状态机存储
 )
 
 type Transaction struct {
@@ -477,14 +477,13 @@ func (txJson TxJson) ToString() string {
 }
 
 func (tx Transaction) ToTxJson() TxJson {
-	txJson := TxJson{Source: tx.Source, Target: tx.Target,
-		Type: tx.Type, Data: tx.Data, Nonce: tx.Nonce,
-		RequestId: tx.RequestId, Hash: tx.Hash.String(), Time: tx.Time, ExtraData: tx.ExtraData}
+	txJson := TxJson{Source: tx.Source, Target: tx.Target, Type: tx.Type,
+		Time: tx.Time, Data: tx.Data, ExtraData: tx.ExtraData,
+		Hash: tx.Hash.String(), Nonce: tx.Nonce, RequestId: tx.RequestId, SocketRequestId: tx.SocketRequestId}
 
 	if tx.Sign != nil {
 		txJson.Sign = tx.Sign.GetHexString()
 	}
-	txJson.SocketRequestId = tx.SocketRequestId
 	return txJson
 }
 
