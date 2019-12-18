@@ -479,7 +479,7 @@ func (txJson TxJson) ToString() string {
 func (tx Transaction) ToTxJson() TxJson {
 	txJson := TxJson{Source: tx.Source, Target: tx.Target,
 		Type: tx.Type, Data: tx.Data, Nonce: tx.Nonce,
-		RequestId: tx.RequestId, Hash: tx.Hash.String(), Time: tx.Time}
+		RequestId: tx.RequestId, Hash: tx.Hash.String(), Time: tx.Time, ExtraData: tx.ExtraData}
 
 	if tx.Sign != nil {
 		txJson.Sign = tx.Sign.GetHexString()

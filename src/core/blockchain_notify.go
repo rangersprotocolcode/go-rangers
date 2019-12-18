@@ -126,6 +126,7 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 		notify["block"] = block
 		notify["events"] = events
 		result, _ := json.Marshal(notify)
+		logger.Debug("Notify event:%s",result)
 		network.GetNetInstance().Notify(false, "wallet", "wallet", string(result))
 	}
 }
