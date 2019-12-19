@@ -161,7 +161,7 @@ func (tx *Transaction) GenHash() common.Hash {
 	buffer.Write([]byte(strconv.FormatUint(tx.Nonce, 10)))
 	buffer.Write([]byte(tx.Source))
 	buffer.Write([]byte(tx.Target))
-	buffer.Write([]byte( strconv.Itoa(int(tx.Type))))
+	buffer.Write([]byte(strconv.Itoa(int(tx.Type))))
 	buffer.Write([]byte(tx.Time))
 	buffer.Write([]byte(tx.ExtraData))
 	return common.BytesToHash(common.Sha256(buffer.Bytes()))
@@ -474,9 +474,9 @@ func (txJson TxJson) ToString() string {
 }
 
 func (tx Transaction) ToTxJson() TxJson {
-	txJson := TxJson{Source: tx.Source, Target: tx.Target, Type: tx.Type,
-		Time: tx.Time, Data: tx.Data, ExtraData: tx.ExtraData,
-		Hash: tx.Hash.String(), Nonce: tx.Nonce, RequestId: tx.RequestId, SocketRequestId: tx.SocketRequestId}
+	txJson := TxJson{Source: tx.Source, Target: tx.Target, Type: tx.Type, Time: tx.Time,
+		Data: tx.Data, ExtraData: tx.ExtraData, Nonce: tx.Nonce,
+		Hash: tx.Hash.String(),RequestId: tx.RequestId, SocketRequestId: tx.SocketRequestId}
 
 	if tx.Sign != nil {
 		txJson.Sign = tx.Sign.GetHexString()
