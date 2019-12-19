@@ -163,6 +163,7 @@ func (tx *Transaction) GenHash() common.Hash {
 	buffer.Write([]byte(tx.Target))
 	buffer.Write([]byte( strconv.Itoa(int(tx.Type))))
 	buffer.Write([]byte(tx.Time))
+	buffer.Write([]byte(tx.ExtraData))
 	return common.BytesToHash(common.Sha256(buffer.Bytes()))
 }
 
