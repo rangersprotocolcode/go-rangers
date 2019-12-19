@@ -40,20 +40,26 @@ func TestStateMachineTx(t *testing.T) {
 }
 
 func TestMintNFTTx(t *testing.T) {
-	tx := types.Transaction{Source: "0x1ee7c120be9587415d235be9fe7032c17a610900", Target: "0x1ee7c120be9587415d235be9fe7032c17a610900", Type: types.TransactionTypeMintNFT, Time: "1556076659050692000", SocketRequestId: "12140"}
+	tx := types.Transaction{Source: "0xe4cb43dc1659b7978ce2e5f71b0d1163fc96936c", Target: "0xe4cb43dc1659b7978ce2e5f71b0d1163fc96936c", Type: types.TransactionTypeMintNFT, Time: "1556076659050692000", SocketRequestId: "12140"}
 
 	mintNFTInfo := make(map[string]string)
-	mintNFTInfo["setId"] = "bcb2d247-6586-4367-8e05-5fa3b2d88958"
-	mintNFTInfo["id"] = "123457"
+	mintNFTInfo["setId"] = "c5313630-5d5b-43e4-aea7-fb11b8163803"
+	mintNFTInfo["id"] = "123456"
 	mintNFTInfo["data"] = "5.99"
 	mintNFTInfo["createTime"] = "1569736452603"
-	mintNFTInfo["target"] = "0x1ee7c120be9587415d235be9fe7032c17a610900"
+	mintNFTInfo["target"] = "0xe4cb43dc1659b7978ce2e5f71b0d1163fc96936c"
 
 	b, _ := json.Marshal(mintNFTInfo)
 	tx.Data = string(b)
 	fmt.Printf("data:\n%s\n", tx.Data)
 
 	tx.Hash = tx.GenHash()
+
+	//skStr := "0x05aa662f06e9a60c1d0d9304e5f8999be12bc4b66277416cf77601dcdd51a071"
+	////skStr := "0x0bdfc3725a93be336de9cd2e97e508b41d67d7fefe368fb7fd7f02b6236c7cc0"
+	//sk := common.HexStringToSecKey(skStr)
+	//sign := sk.Sign(tx.Hash.Bytes())
+	//tx.Sign = &sign
 
 	j, _ := json.Marshal(tx.ToTxJson())
 	fmt.Printf("TX JSON:\n%s\n", string(j))

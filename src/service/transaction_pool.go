@@ -351,6 +351,10 @@ func (pool *TxPool) VerifyTransactionHash(tx *types.Transaction) error {
 }
 
 func (pool *TxPool) VerifyTransactionSign(tx *types.Transaction) error {
+	if tx.Sign == nil {
+		return fmt.Errorf("nil sign")
+	}
+
 	hashByte := tx.Hash.Bytes()
 	pk, err := tx.Sign.RecoverPubkey(hashByte)
 	if err != nil {
