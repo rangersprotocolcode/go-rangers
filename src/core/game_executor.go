@@ -125,6 +125,9 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	txRaw := message.Tx
 	if err := service.GetTransactionPool().VerifyTransactionHash(&txRaw); err != nil {
 		txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
+		response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
+		go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+		return
 	}
 
 	var result string
@@ -499,10 +502,18 @@ func (executor *GameExecutor) RunNotify(msg notify.Message) {
 
 	if err := service.GetTransactionPool().VerifyTransactionHash(&txRaw); err != nil {
 		txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
+
+		response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
+		go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+		return
 	}
 
 	if err := service.GetTransactionPool().VerifyTransactionSign(&txRaw); err != nil {
 		txLogger.Errorf("Verify tx sign error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
+
+		response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
+		go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+		return
 	}
 
 	result, execMessage := executor.runTransaction(txRaw, message.Nonce)
