@@ -73,6 +73,10 @@ type TransactionPool interface {
 	IsGameData(hash common.Hash) bool
 
 	PutGameData(hash common.Hash)
+
+	VerifyTransactionHash(tx *types.Transaction) error
+
+	VerifyTransactionSign(tx *types.Transaction) error
 }
 
 type TxPool struct {
@@ -335,37 +339,29 @@ func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
 	if pool.evictedTxs.Contains(tx.Hash) {
 		return ErrEvicted
 	}
+	return nil
+}
 
+func (pool *TxPool) VerifyTransactionHash(tx *types.Transaction) error {
 	expectHash := tx.GenHash()
 	if tx.Hash != expectHash {
-		txLogger.Infof("Illegal tx hash! Hash:%s,expect hash:%s", tx.Hash.String(), expectHash.String())
-		return ErrHash
-	}
-	err := pool.verifySign(tx)
-	if err != nil {
-		txLogger.Info(err.Error())
-		return err
+		return fmt.Errorf("illegal tx hash! Hash:%s,expect hash:%s", tx.Hash.String(), expectHash.String())
 	}
 	return nil
 }
 
-func (pool *TxPool) verifySign(tx *types.Transaction) error {
-	//coiner 发送过来的充值消息不需要验证签名，因为在收到消息的时候验证过了
-	if tx.Type == types.TransactionTypeCoinDepositAck || tx.Type == types.TransactionTypeFTDepositAck || tx.Type == types.TransactionTypeNFTDepositAck {
-		return nil
-	}
-	//其他交易签名校验
+func (pool *TxPool) VerifyTransactionSign(tx *types.Transaction) error {
 	hashByte := tx.Hash.Bytes()
 	pk, err := tx.Sign.RecoverPubkey(hashByte)
 	if err != nil {
 		return err
 	}
 	if !pk.Verify(hashByte, tx.Sign) {
-		return fmt.Errorf("verify sign fail, hash=%s", tx.Hash.Hex())
+		return fmt.Errorf("verify sign fail")
 	}
 	expectAddr := pk.GetAddress().GetHexString()
 	if tx.Source != expectAddr {
-		return fmt.Errorf("illegal sign tx:%s! Source:%s,expect source:%s", tx.Hash.Hex(), tx.Source, expectAddr)
+		return fmt.Errorf("illegal signer! Source:%s,expect source:%s", tx.Source, expectAddr)
 	}
 	return nil
 }

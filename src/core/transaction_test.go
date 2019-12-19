@@ -24,8 +24,8 @@ func TestTxHash(t *testing.T) {
 
 func TestVerifySign(t *testing.T) {
 	const PREFIX = "0x"
-	signStr := "0xc93f6f6400587c1123b79823ca7b29adbc7d8c95746be0dab311166875029af35c9c35747eaf6090d5d19081eead2167300a719bdeec1e76014fb64b7d92227b01"
-	hashStr := "c0b29b883cd39d5f261024081d1e0d140df1c3394a1980054eb2a75634d21e8a"
+	signStr := "0xb8a458d065d386ef31d0cddefeb4eee5fcae3ba6d1f9638220a96b470bd3ce1a6a37727e61d72da332e6b7b5a5c76481dae8b60b71cc97861f8a35a1a2b899a700"
+	hashStr := "0x0f52724aac3746d6b081e5bf6ba23b7c21c2810e6087366486652a10052dc9ee"
 
 	if len(signStr) < len(PREFIX) || signStr[:len(PREFIX)] != PREFIX {
 		return
@@ -75,5 +75,3 @@ func TestSign(t *testing.T) {
 	fmt.Printf("sign bytes:%v\n", sign.Bytes())
 	fmt.Printf("sign:%s\n", sign.GetHexString())
 }
-
-

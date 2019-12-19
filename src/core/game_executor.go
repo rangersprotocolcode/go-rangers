@@ -122,9 +122,12 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 		executor.logger.Errorf("blockReqHandler:Message assert not ok!")
 		return
 	}
+	txRaw := message.Tx
+	if err := service.GetTransactionPool().VerifyTransactionHash(&txRaw); err != nil {
+		txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
+	}
 
 	var result string
-	txRaw := message.Tx
 	sourceString := txRaw.Source
 	source := common.HexToAddress(sourceString)
 	gameId := txRaw.Target
@@ -492,6 +495,14 @@ func (executor *GameExecutor) RunNotify(msg notify.Message) {
 			// todo 超时放弃
 			executor.getCond(gameId).Wait()
 		}
+	}
+
+	if err := service.GetTransactionPool().VerifyTransactionHash(&txRaw); err != nil {
+		txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
+	}
+
+	if err := service.GetTransactionPool().VerifyTransactionSign(&txRaw); err != nil {
+		txLogger.Errorf("Verify tx sign error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
 	}
 
 	result, execMessage := executor.runTransaction(txRaw, message.Nonce)

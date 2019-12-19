@@ -294,7 +294,6 @@ func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, no
 		clientConn.logger.Errorf("Json unmarshal client message error:%s", err.Error())
 		return
 	}
-	clientConn.logger.Debugf("Rcv from client.Tx json info:%s", txJson.ToString())
 	tx := txJson.ToTransaction()
 	tx.RequestId = nonce
 	clientConn.logger.Debugf("Rcv from client.Tx info:%s", tx.ToTxJson().ToString())
