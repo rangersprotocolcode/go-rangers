@@ -23,14 +23,14 @@ func TestStateMachineTx(t *testing.T) {
 	containerConfig := statemachine.ContainerConfig{Priority: 0, Game: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54",
 		Image: "littlebear234/genesis_image:latest", Detached: true, Hostname: "genesis_host_name"}
 
-	port := statemachine.Port{Host:0,Target:0}
+	port := statemachine.Port{Host: 0, Target: 0}
 	ports := statemachine.Ports{port}
 	containerConfig.Ports = ports
 
 	containerConfig.DownloadUrl = "littlebear234/genesis_image:latest"
 	containerConfig.DownloadProtocol = "pull"
 
-	tx := types.Transaction{Source: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54", Target: "", Type: types.TransactionTypeAddStateMachine,Time:"12121"}
+	tx := types.Transaction{Source: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54", Target: "", Type: types.TransactionTypeAddStateMachine, Time: "12121"}
 	tx.Data = containerConfig.TOJSONString()
 
 	tx.Hash = tx.GenHash()
@@ -65,4 +65,13 @@ func TestMintNFTTx(t *testing.T) {
 	fmt.Printf("TX JSON:\n%s\n", string(j))
 }
 
+func TestTxJson(t *testing.T) {
+	txJson := types.TxJson{}
+	fmt.Printf("%v",txJson.Nonce)
 
+	txJson.Nonce = 0
+	txJson.Source = "111"
+	byte, _ := json.Marshal(txJson)
+	fmt.Printf("%s",string(byte))
+
+}

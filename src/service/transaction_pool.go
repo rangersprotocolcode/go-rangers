@@ -225,6 +225,7 @@ func (pool *TxPool) MarkExecuted(receipts types.Receipts, txs []*types.Transacti
 	}
 	if evictedTxs != nil {
 		for _, hash := range evictedTxs {
+			txLogger.Debugf("remove evicted tx:%s", hash.String())
 			pool.remove(hash)
 			pool.evictedTxs.Add(hash, 0)
 		}
