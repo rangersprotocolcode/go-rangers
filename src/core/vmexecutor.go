@@ -272,16 +272,15 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			accountdb.RevertToSnapshot(snapshot)
 		} else {
 			transactions = append(transactions, transaction)
-			receipt := types.NewReceipt(nil, !success, 0)
-			receipt.TxHash = transaction.Hash
-			receipts = append(receipts, receipt)
 			if transaction.Source != "" {
 				accountdb.SetNonce(common.HexToAddress(transaction.Source), transaction.Nonce)
 			}
 
 			logger.Debugf("VMExecutor Execute success %s,type:%d", transaction.Hash.String(), transaction.Type)
 		}
-
+		receipt := types.NewReceipt(nil, !success, 0)
+		receipt.TxHash = transaction.Hash
+		receipts = append(receipts, receipt)
 	}
 
 	accountdb.AddBalance(common.BytesToAddress(block.Header.Castor), consensusHelper.ProposalBonus())

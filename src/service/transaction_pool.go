@@ -193,7 +193,6 @@ func (pool *TxPool) AddExecuted(tx *types.Transaction) error {
 }
 
 func (pool *TxPool) MarkExecuted(receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash) {
-	txLogger.Debugf("mark executed. receipts len:%d,evicted tx len:%d", len(receipts), len(evictedTxs))
 	if nil == receipts || 0 == len(receipts) {
 		return
 	}
@@ -226,7 +225,6 @@ func (pool *TxPool) MarkExecuted(receipts types.Receipts, txs []*types.Transacti
 	}
 	if evictedTxs != nil {
 		for _, hash := range evictedTxs {
-			txLogger.Debugf("remove evicted tx:%s", hash.String())
 			pool.remove(hash)
 			pool.evictedTxs.Add(hash, 0)
 		}
