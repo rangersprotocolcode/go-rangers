@@ -148,7 +148,7 @@ func (chain *blockChain) executeTransaction(block *types.Block) (bool, *account.
 }
 
 func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockResult, []byte) {
-	logger.Debugf("Insert block hash:%s,height:%d", remoteBlock.Header.Hash.Hex(), remoteBlock.Header.Height)
+	logger.Debugf("Insert block hash:%s,height:%d,evicted tx len:%d", remoteBlock.Header.Hash.Hex(), remoteBlock.Header.Height, len(remoteBlock.Header.EvictedTxs))
 	blockByte, err := types.MarshalBlock(remoteBlock)
 	if err != nil {
 		logger.Errorf("Fail to json Marshal, error:%s", err.Error())
