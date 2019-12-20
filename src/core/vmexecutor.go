@@ -271,13 +271,13 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			evictedTxs = append(evictedTxs, transaction.Hash)
 			accountdb.RevertToSnapshot(snapshot)
 		} else {
-			transactions = append(transactions, transaction)
 			if transaction.Source != "" {
 				accountdb.SetNonce(common.HexToAddress(transaction.Source), transaction.Nonce)
 			}
 
 			logger.Debugf("VMExecutor Execute success %s,type:%d", transaction.Hash.String(), transaction.Type)
 		}
+		transactions = append(transactions, transaction)
 		receipt := types.NewReceipt(nil, !success, 0)
 		receipt.TxHash = transaction.Hash
 		receipts = append(receipts, receipt)
