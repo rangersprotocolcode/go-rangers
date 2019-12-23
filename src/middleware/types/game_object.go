@@ -77,6 +77,9 @@ type NFT struct {
 	// 4. NFT在游戏中的数据
 	DataValue []string `json:"dataValue,omitempty"` //key为appId，
 	DataKey   []string `json:"dataKey,omitempty"`
+
+	// 5. 从外部导入的相关信息
+	Imported string `json:"imported,omitempty"`
 }
 
 func (self *NFT) GetData(gameId string) string {
@@ -126,11 +129,14 @@ func (self *NFT) ToJSONString() string {
 	nftMap["status"] = self.Status
 	nftMap["condition"] = self.Condition
 	nftMap["appId"] = self.AppId
+	nftMap["imported"] = self.Imported
+
 	data := make(map[string]string, 0)
 	for i := range self.DataKey {
 		data[self.DataKey[i]] = self.DataValue[i]
 	}
 	nftMap["data"] = data
+
 	bytes, _ := json.Marshal(nftMap)
 	return string(bytes)
 }
@@ -285,4 +291,10 @@ type FTSet struct {
 type FT struct {
 	Balance *big.Int // 余额，注意这里会存储实际余额乘以10的9次方，用于表达浮点数。例如，用户拥有12.45币，这里的数值就是12450000000
 	ID      string   // 代币ID，在发行时由layer2生成。生成规则时appId-symbol。例如0x12ef3-NOX
+}
+
+// 导入nftSet/nft数据结构
+type ImportedNFT struct {
+	SetList []NFTSet `json:"setList,omitempty"`
+	NFTList []NFT    `json:"nftList,omitempty"`
 }
