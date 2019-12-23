@@ -18,7 +18,7 @@ func (d *StateMachineManager) AddStatemachine(owner, config string) bool {
 	var containerConfig ContainerConfig
 	err := json.Unmarshal([]byte(config), &containerConfig)
 	if err != nil {
-		d.logger.Errorf("fail to add statemachine, config: %s", config)
+		d.logger.Errorf("fail to add statemachine, config: %s,err:%s", config, err.Error())
 		return false
 	}
 
