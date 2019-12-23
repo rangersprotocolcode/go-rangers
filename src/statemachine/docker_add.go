@@ -122,6 +122,7 @@ func (d *StateMachineManager) StartSTM(appId string) {
 	stm, ok := d.StateMachines[appId]
 	if !ok {
 		d.logger.Errorf("fail to start stm, appId: %s", appId)
+		d.lock.RUnlock()
 		return
 	}
 	d.lock.RUnlock()
@@ -132,4 +133,19 @@ func (d *StateMachineManager) StartSTM(appId string) {
 	}
 
 	d.runSTM(stm, false)
+}
+
+func (d *StateMachineManager) StopSTM(appId string) {
+	d.lock.RLock()
+	d.logger.Warnf("start stm, appId: %s", appId)
+
+	stm, ok := d.StateMachines[appId]
+	if !ok {
+		d.logger.Errorf("fail to start stm, appId: %s", appId)
+		d.lock.RUnlock()
+		return
+	}
+	d.lock.RUnlock()
+
+	stm.Stop()
 }
