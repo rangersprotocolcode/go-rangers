@@ -189,7 +189,7 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 
 	sort.Sort(c.Ports)
 	//配置端口映射数据结构
-	for _, p := range c.Ports {
+	for i, p := range c.Ports {
 		tmpPort, _ := nat.NewPort("tcp", p.Target.String())
 		pb := make([]nat.PortBinding, 0)
 		if p.Host.String() == "0" {
@@ -199,7 +199,7 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 				c.logger.Debugf("check port:%v", port)
 				if !utility.PortInUse(port) {
 					c.logger.Debugf("port not in use :%v", port)
-					p.Host = PortInt(port)
+					c.Ports[i].Host = PortInt(port)
 					break
 				}
 			}
