@@ -125,7 +125,7 @@ func (self *Ecc) Verify(info []byte, signed []byte) bool {
 			break
 		}
 	}
-	if finded == false {
+	if !finded {
 		return false
 	}
 
@@ -155,24 +155,26 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 				signstrs[i] = signstrs[i][2:]
 			}
 
-			finded := false
+			found := false
 			for j := 0; j < len(signeds); j++ {
 				if signstrs[i] == signeds[j] {
-					finded = true
+					found = true
 					break
 				}
 			}
-			if finded == true {
+
+			if found {
 				continue
 			} else {
 				signeds = append(signeds, signstrs[i])
 			}
 
 			sign := common.Hex2Bytes(signstrs[i])
-			if (self.Verify(info.ToJson(), sign) == true) {
+			if self.Verify(info.ToJson(), sign) {
 				iCount++
 			}
 		}
+
 		if iCount >= self.SignLimit {
 			return true
 		}
@@ -197,21 +199,21 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 				signstrs[i] = signstrs[i][2:]
 			}
 
-			finded := false
+			found := false
 			for j := 0; j < len(signeds); j++ {
 				if signstrs[i] == signeds[j] {
-					finded = true
+					found = true
 					break
 				}
 			}
-			if finded == true {
+			if found {
 				continue
 			} else {
 				signeds = append(signeds, signstrs[i])
 			}
 
 			sign := common.Hex2Bytes(signstrs[i])
-			if (self.Verify(info.ToJson(), sign) == true) {
+			if self.Verify(info.ToJson(), sign) {
 				iCount++
 			}
 		}
@@ -239,21 +241,21 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 				signstrs[i] = signstrs[i][2:]
 			}
 
-			finded := false
+			found := false
 			for j := 0; j < len(signeds); j++ {
 				if signstrs[i] == signeds[j] {
-					finded = true
+					found = true
 					break
 				}
 			}
-			if finded == true {
+			if found {
 				continue
 			} else {
 				signeds = append(signeds, signstrs[i])
 			}
 
 			sign := common.Hex2Bytes(signstrs[i])
-			if (self.Verify(info.ToJson(), sign) == true) {
+			if self.Verify(info.ToJson(), sign) {
 				iCount++
 			}
 		}
@@ -267,7 +269,7 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 func (self *Ecc) Sign(info []byte) (ret []byte) {
 	privateKey := self.privKeyFromHex(self.Privkey)
 	msg := common.Sha256(info)
-	//fmt.Println(common.Bytes2Hex(msg))
+
 	sign := privateKey.Sign([]byte(msg))
 	ret = sign.Bytes()
 
