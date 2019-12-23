@@ -14,11 +14,23 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 		return
 	}
 
+	evictedTxs := remoteBlock.Header.EvictedTxs
 	block := remoteBlock.Header.Height
 	events := make([]types.DepositNotify, 0)
 
 	for _, tx := range txs {
-		logger.Debugf("Notify tx:%v", tx)
+		isEvicted := false
+		for _, evictedTx := range evictedTxs {
+			if tx.Hash == evictedTx {
+				isEvicted = true
+				break
+			}
+		}
+		if isEvicted {
+			txLogger.Debugf("Evicted tx:%s.Don't notify", tx.Hash.String())
+			continue
+		}
+
 		switch tx.Type {
 		case types.TransactionTypeCoinDepositAck:
 			var depositCoinData types.DepositCoinData
@@ -126,7 +138,7 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 		notify["block"] = block
 		notify["events"] = events
 		result, _ := json.Marshal(notify)
-		logger.Debug("Notify event:%v",notify)
+		txLogger.Debugf("Notify event:%v", notify)
 		network.GetNetInstance().Notify(false, "wallet", "wallet", string(result))
 	}
 }
@@ -143,7 +155,7 @@ func (chain *blockChain) generateWalletNotify(method string, data map[string]int
 func (chain *blockChain) notifyTransferInfo(tx *types.Transaction, events *[]types.DepositNotify) {
 	transferDataMap := make(map[string]types.TransferData, 0)
 	if err := json.Unmarshal([]byte(tx.ExtraData), &transferDataMap); nil != err {
-		logger.Debugf("json unmarshal transfer data map error:%s", err.Error())
+		txLogger.Debugf("json unmarshal transfer data map error:%s", err.Error())
 		return
 	}
 
