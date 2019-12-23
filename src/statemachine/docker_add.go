@@ -30,7 +30,7 @@ func (d *StateMachineManager) AddStatemachine(owner, config string) bool {
 
 	// 异步加载新的状态机
 	d.logger.Errorf("add new stateMachine, config: %s", containerConfig.TOJSONString())
-	go d.loadStateMachine(containerConfig)
+	d.loadStateMachine(containerConfig)
 
 	return true
 }
@@ -148,4 +148,20 @@ func (d *StateMachineManager) StopSTM(appId string) {
 	d.lock.RUnlock()
 
 	stm.Stop()
+}
+
+func (d *StateMachineManager) UpgradeSTM(appId, downloadUrl, downloadProtocol string) {
+	d.lock.RLock()
+	d.logger.Warnf("start stm, appId: %s", appId)
+
+	stm, ok := d.StateMachines[appId]
+	if !ok {
+		d.logger.Errorf("fail to start stm, appId: %s", appId)
+		d.lock.RUnlock()
+		return
+	}
+	d.lock.RUnlock()
+
+	stm.Stop()
+	stm.Remove()
 }

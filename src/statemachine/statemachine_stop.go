@@ -40,10 +40,11 @@ func (s *StateMachine) Remove() {
 		s.logger.Errorf("fail to Remove stm, %s. err: %s", s.TOJSONString(), err.Error())
 	}
 
+	_, err = s.cli.ImageRemove(s.ctx, s.This.Image, types.ImageRemoveOptions{Force: true,})
+	if err != nil {
+		s.logger.Errorf("fail to Remove stm, %s. err: %s", s.TOJSONString(), err.Error())
+	}
+
 	s.logger.Warnf("Remove stm, %s. err: %s", s.TOJSONString(), err.Error())
 	s.removed()
-}
-
-func (s *StateMachine) Restart() {
-
 }
