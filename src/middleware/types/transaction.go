@@ -57,9 +57,10 @@ const (
 	TransactionTypeNFTDepositAck  = 203 // 充值
 
 	// 状态机管理
-	TransactionTypeAddStateMachine = 901 // 新增状态机
+	TransactionTypeAddStateMachine = 901 // 新增/更新状态机
 	TransactionTypeUpdateStorage   = 902 // 刷新状态机存储
 	TransactionTypeStartSTM        = 903 // 重启状态机
+	TransactionTypeStopSTM         = 904 // 重启状态机
 )
 
 type Transaction struct {

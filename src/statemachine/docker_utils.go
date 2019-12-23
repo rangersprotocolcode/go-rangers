@@ -234,3 +234,16 @@ func (s *StateMachineManager) GetStmStatus() map[string]map[string]string {
 
 	return result
 }
+
+func (s *StateMachineManager) IsAppId(appId string) bool {
+	if 0 == len(appId) {
+		return false
+	}
+
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	_, ok := s.AuthMapping[appId]
+
+	return ok
+}

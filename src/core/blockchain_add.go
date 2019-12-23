@@ -294,6 +294,8 @@ func (chain *blockChain) publishSet(txs []*types.Transaction) {
 	}
 
 	for _, tx := range txs {
+		appId := tx.Source
+
 		// 直接发交易的nftSet publish
 		if tx.Type == types.TransactionTypePublishNFTSet {
 			var nftSet types.NFTSet
@@ -302,7 +304,6 @@ func (chain *blockChain) publishSet(txs []*types.Transaction) {
 				continue
 			}
 
-			appId := tx.Source
 			set := service.NFTManagerInstance.GenerateNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime)
 			service.NFTManagerInstance.SendPublishNFTSetToConnector(set)
 			continue
@@ -323,6 +324,28 @@ func (chain *blockChain) publishSet(txs []*types.Transaction) {
 			continue
 		}
 
+		if tx.Type == types.TransactionTypeImportNFT {
+			var data types.ImportedNFT
+			err := json.Unmarshal([]byte(tx.Data), &data)
+			if err != nil {
+				txLogger.Errorf("fail to import NFTSetAndNFT, error: %s", err)
+				continue
+			}
+
+			if 0 != len(data.SetList) {
+				for _, set := range data.SetList {
+					service.NFTManagerInstance.SendPublishNFTSetToConnector(&set)
+				}
+			}
+
+			if 0 != len(data.NFTList) {
+				for _, nft := range data.NFTList {
+					set := service.NFTManagerInstance.GenerateNFTSet(nft.SetID, nft.Name, nft.Symbol, appId, appId, 0, "")
+					service.NFTManagerInstance.SendPublishNFTSetToConnector(set)
+				}
+			}
+
+		}
 		// 状态机内调用
 		if 0 != len(tx.SubTransactions) {
 			for _, user := range tx.SubTransactions {
