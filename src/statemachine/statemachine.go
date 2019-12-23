@@ -196,7 +196,9 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 			for {
 				rand.Seed(int64(time.Now().UnixNano()))
 				port := 9000 + int(rand.Float32()*1000)
+				c.logger.Debugf("check port:%v", port)
 				if !utility.PortInUse(port) {
+					c.logger.Debugf("port not in use :%v", port)
 					p.Host = PortInt(port)
 					break
 				}
