@@ -176,6 +176,7 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 		return "", nil
 	}
 
+	c.logger.Debugf("image ready!")
 	//set mount volumes
 	c.storagePath = make([]string, len(c.Storage))
 	for index, item := range c.Storage {
@@ -188,15 +189,17 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 
 	sort.Sort(c.Ports)
 	//配置端口映射数据结构
-	for _, p := range c.Ports {
+	for i, p := range c.Ports {
 		tmpPort, _ := nat.NewPort("tcp", p.Target.String())
 		pb := make([]nat.PortBinding, 0)
 		if p.Host.String() == "0" {
 			for {
 				rand.Seed(int64(time.Now().UnixNano()))
 				port := 9000 + int(rand.Float32()*1000)
+				c.logger.Debugf("check port:%v", port)
 				if !utility.PortInUse(port) {
-					p.Host = PortInt(port)
+					c.logger.Debugf("port not in use :%v", port)
+					c.Ports[i].Host = PortInt(port)
 					break
 				}
 			}
@@ -209,6 +212,7 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 		pts[tmpPort] = pb
 	}
 
+	c.logger.Debugf("port:%v", c.Ports)
 	mode := "default"
 	if 0 != len(c.Net) {
 		mode = c.Net
@@ -231,6 +235,7 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 		panic(err)
 	}
 
+	c.logger.Debugf("container creating")
 	//遇到容器创建错误时发起 panic
 	if err := c.cli.ContainerStart(c.ctx, resp.ID, types.ContainerStartOptions{}); err != nil {
 		c.failed()
@@ -276,11 +281,13 @@ func (s *StateMachine) checkImageExisted() bool {
 	for _, image := range images {
 		for _, repo := range image.RepoTags {
 			if repo == s.Image {
+				s.logger.Debugf("images has been found")
 				return true
 			}
 		}
 	}
 
+	s.logger.Debugf("images not found")
 	return false
 }
 
