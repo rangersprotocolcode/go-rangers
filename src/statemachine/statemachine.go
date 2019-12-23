@@ -17,8 +17,6 @@ import (
 	"encoding/json"
 	"crypto/md5"
 	"github.com/ipfs/go-ipfs-api"
-	"math/rand"
-	"x/src/utility"
 )
 
 const containerPrefix = "rp-"
@@ -189,24 +187,11 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 
 	sort.Sort(c.Ports)
 	//配置端口映射数据结构
-	for i, p := range c.Ports {
+	for _, p := range c.Ports {
 		tmpPort, _ := nat.NewPort("tcp", p.Target.String())
 		pb := make([]nat.PortBinding, 0)
-		if p.Host.String() == "0" {
-			for {
-				rand.Seed(int64(time.Now().UnixNano()))
-				port := 9000 + int(rand.Float32()*1000)
-				c.logger.Debugf("check port:%v", port)
-				if !utility.PortInUse(port) {
-					c.logger.Debugf("port not in use :%v", port)
-					c.Ports[i].Host = PortInt(port)
-					break
-				}
-			}
-
-		}
 		pb = append(pb, nat.PortBinding{
-			HostPort: p.Host.String(),
+			HostPort: "0",
 		})
 		exports[tmpPort] = struct{}{}
 		pts[tmpPort] = pb
@@ -252,6 +237,16 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 		}
 
 	}
+
+	var ports Ports
+	for _, realPort := range c.This.Ports {
+		var port Port
+		port.Host = PortInt(realPort.PublicPort)
+		port.Target = PortInt(realPort.PrivatePort)
+		ports = append(ports, port)
+	}
+	c.Ports = ports
+	c.logger.Warnf("stm %s refresh ports, %v", c.Ports)
 
 	c.logger.Warnf("stm %s is created, waiting for running. image: %s, game: %s", resp.ID, c.Image, c.Game)
 	c.waitUntilRun()
