@@ -249,6 +249,15 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		case types.TransactionTypeShuttleNFT:
 			success, _ = service.ShuttleNFT(accountdb, transaction)
 			break
+		case types.TransactionTypeImportNFT:
+			appId := transaction.Source
+			if !statemachine.STMManger.IsAppId(appId) {
+				success = false
+			} else {
+				success = service.ImportNFTSetAndNFT(accountdb, transaction)
+			}
+
+			break
 		case types.TransactionTypeAddStateMachine:
 			// todo: 经济模型，新增状态机应该要付费
 			go statemachine.STMManger.AddStatemachine(transaction.Source, transaction.Data)
@@ -362,7 +371,7 @@ func (executor *VMExecutor) executeNFTDepositNotify(accountdb *account.AccountDB
 	}
 
 	appId := transaction.Target
-	str, ok := service.NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, "", depositNFTData.Creator, depositNFTData.CreateTime, common.HexToAddress(transaction.Source), depositNFTData.Data, accountdb)
+	str, ok := service.NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, "", depositNFTData.Creator, depositNFTData.CreateTime, "official", common.HexToAddress(transaction.Source), depositNFTData.Data, accountdb)
 	txLogger.Debugf("GenerateNFT result:%s,%t", str, ok)
 	return ok
 }

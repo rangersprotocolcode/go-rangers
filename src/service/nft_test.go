@@ -34,7 +34,7 @@ func TestNFTManager_MintNFT(t *testing.T) {
 
 	// 发行
 	owner := common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54")
-	_, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, setId, id, "pppp", creator, "0", owner, nil, accountdb)
+	_, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, setId, id, "pppp", creator, "", "0", owner, nil, accountdb)
 	if !ok {
 		t.Fatalf("fail to mint")
 	}
