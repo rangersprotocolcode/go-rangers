@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"strconv"
+	"strings"
 )
 
 // 加载STM
@@ -35,6 +36,17 @@ func (s *StateMachineManager) loadStateMachine(service ContainerConfig) {
 
 // 启动stm并调用其init方法
 func (s *StateMachineManager) runSTM(stm *StateMachine, heartbeat bool) {
+	// refresh config from this
+	if 0 != len(stm.This.ID) {
+		stm.Image = stm.This.Image
+
+		name := stm.This.Names[0]
+		nameList := strings.Split(name, "-")
+		stm.Game = nameList[1]
+
+		stm.refreshPort()
+	}
+
 	appId, ports := stm.Run()
 	if appId == "" || ports == nil {
 		s.logger.Errorf("fail to run stm, appId: %s", appId)

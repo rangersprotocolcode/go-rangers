@@ -9,7 +9,6 @@ import (
 	"github.com/docker/docker/api/types"
 	"fmt"
 	"github.com/docker/go-connections/nat"
-	"sort"
 	"context"
 	"time"
 	"x/src/middleware/log"
@@ -17,6 +16,7 @@ import (
 	"encoding/json"
 	"crypto/md5"
 	"github.com/ipfs/go-ipfs-api"
+	"sort"
 )
 
 const containerPrefix = "rp-"
@@ -185,7 +185,6 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 	exports := make(nat.PortSet)
 	pts := make(nat.PortMap)
 
-	sort.Sort(c.Ports)
 	//配置端口映射数据结构
 	for _, p := range c.Ports {
 		tmpPort, _ := nat.NewPort("tcp", p.Target.String())
@@ -197,7 +196,6 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 		pts[tmpPort] = pb
 	}
 
-	c.logger.Debugf("port:%v", c.Ports)
 	mode := "default"
 	if 0 != len(c.Net) {
 		mode = c.Net
@@ -238,15 +236,7 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 
 	}
 
-	var ports Ports
-	for _, realPort := range c.This.Ports {
-		var port Port
-		port.Host = PortInt(realPort.PublicPort)
-		port.Target = PortInt(realPort.PrivatePort)
-		ports = append(ports, port)
-	}
-	c.Ports = ports
-	c.logger.Warnf("stm %s refresh ports, %v", c.Ports)
+	c.refreshPort()
 
 	c.logger.Warnf("stm %s is created, waiting for running. image: %s, game: %s", resp.ID, c.Image, c.Game)
 	c.waitUntilRun()
@@ -261,6 +251,20 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 	c.prepared()
 
 	return c.Game, c.Ports
+}
+
+func (c *StateMachine) refreshPort(){
+	var ports Ports
+	for _, realPort := range c.This.Ports {
+		var port Port
+		port.Host = PortInt(realPort.PublicPort)
+		port.Target = PortInt(realPort.PrivatePort)
+		ports = append(ports, port)
+	}
+	c.Ports = ports
+	sort.Sort(c.Ports)
+
+	c.logger.Warnf("stm %s refresh ports, %v", c.Ports)
 }
 
 // 检查container运行状态
