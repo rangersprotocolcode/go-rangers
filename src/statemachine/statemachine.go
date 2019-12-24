@@ -126,12 +126,6 @@ func (c *StateMachine) Run() (string, Ports) {
 func (s *StateMachine) runByExistedContainer() (string, Ports) {
 	s.waitUntilRun()
 
-	// 刷新storagePath配置
-	s.storagePath = make([]string, len(s.This.Mounts))
-	for i, mount := range s.This.Mounts {
-		s.storagePath[i] = fmt.Sprintf("%s:%s", mount.Source, mount.Destination)
-	}
-
 	// 启动ws服务器，供stm调用
 	if s.wsServer == nil {
 		s.wsServer = newWSServer(s.Game)
@@ -139,24 +133,24 @@ func (s *StateMachine) runByExistedContainer() (string, Ports) {
 	}
 
 	// 刷新端口
-	var p uint16 = 0
-	for _, port := range s.This.Ports {
-		if port.PublicPort > p {
-			p = port.PublicPort
-		}
-	}
+	//var p uint16 = 0
+	//for _, port := range s.This.Ports {
+	//	if port.PublicPort > p {
+	//		p = port.PublicPort
+	//	}
+	//}
 
 	s.prepared()
 
-	return s.Game, s.makePorts(p)
+	return s.Game, s.Ports
 }
 
-func (c *StateMachine) makePorts(port uint16) Ports {
-	ports := make(Ports, 1)
-	ports[0] = Port{Host: PortInt(port)}
-
-	return ports
-}
+//func (c *StateMachine) makePorts(port uint16) Ports {
+//	ports := make(Ports, 1)
+//	ports[0] = Port{Host: PortInt(port)}
+//
+//	return ports
+//}
 
 // 根据配置启动容器
 func (c *StateMachine) runByConfig() (string, Ports) {
@@ -175,10 +169,14 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 	}
 
 	c.logger.Debugf("image ready!")
+
 	//set mount volumes
-	c.storagePath = make([]string, len(c.Storage))
-	for index, item := range c.Storage {
-		c.storagePath[index] = fmt.Sprintf("%s/%s/%d:/%s", c.storageRoot, c.Game, index, item)
+	if 0 != len(c.Storage) && 0 == len(c.storagePath) {
+		c.storagePath = make([]string, len(c.Storage))
+		for index, item := range c.Storage {
+			c.storagePath[index] = fmt.Sprintf("%s/%s/%d:/%s", c.storageRoot, c.Game, index, item)
+		}
+
 	}
 
 	//set exposed ports for containers and publish ports
@@ -253,7 +251,8 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 	return c.Game, c.Ports
 }
 
-func (c *StateMachine) refreshPort(){
+// 刷新端口映射配置
+func (c *StateMachine) refreshPort() {
 	var ports Ports
 	for _, realPort := range c.This.Ports {
 		var port Port
@@ -265,6 +264,16 @@ func (c *StateMachine) refreshPort(){
 	sort.Sort(c.Ports)
 
 	c.logger.Warnf("stm %s refresh ports, %v", c.Ports)
+}
+
+// 刷新storagePath配置
+func (s *StateMachine) refreshStoragePath() {
+	s.storagePath = make([]string, len(s.This.Mounts))
+	s.Storage = make([]string, len(s.This.Mounts))
+	for i, mount := range s.This.Mounts {
+		s.storagePath[i] = fmt.Sprintf("%s:%s", mount.Source, mount.Destination)
+		s.Storage[i] = mount.Destination[1:]
+	}
 }
 
 // 检查container运行状态

@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"strconv"
-	"strings"
 )
 
 // 加载STM
@@ -40,9 +39,9 @@ func (s *StateMachineManager) runSTM(stm *StateMachine, heartbeat bool) {
 	if 0 != len(stm.This.ID) {
 		stm.Image = stm.This.Image
 
-		name := stm.This.Names[0]
-		nameList := strings.Split(name, "-")
-		stm.Game = nameList[1]
+		stm.storageRoot = s.StorageRoot
+		stm.storageGame = fmt.Sprintf("%s/%s", stm.storageRoot, stm.Game)
+		stm.refreshStoragePath()
 
 		stm.refreshPort()
 	}

@@ -148,7 +148,6 @@ func (d *StateMachineManager) buildConfig(filename string) {
 		var config ContainerConfig
 		nameSplited := strings.Split(name, "-")
 		config.Game = nameSplited[1]
-		config.Image = container.Image
 		config.This = container
 		d.Config.Services = append(d.Config.Services, config)
 	}
