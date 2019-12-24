@@ -427,6 +427,10 @@ func ImportNFTSetAndNFT(accountdb *account.AccountDB, tx *types.Transaction) boo
 			if nil == nftSet {
 				nftSet = NFTManagerInstance.GenerateNFTSet(nft.SetID, nft.Name, nft.Symbol, appId, appId, 0, "")
 				NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
+			} else {
+				if nftSet.Owner != appId {
+					return false
+				}
 			}
 			_, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, nft.SetID, nft.ID, "", nft.Creator, nft.CreateTime, "imported", common.HexToAddress(appId), nil, accountdb)
 			if !ok {
