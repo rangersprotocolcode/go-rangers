@@ -172,6 +172,8 @@ func (d *StateMachineManager) UpgradeSTM(appId, configString string) {
 	}
 	d.lock.RUnlock()
 
+	stm.StopHeartbeat()
+
 	if !stm.Stop() {
 		return
 	}
@@ -195,7 +197,7 @@ func (d *StateMachineManager) UpgradeSTM(appId, configString string) {
 	}
 	stm.This.ID = ""
 
-	d.runSTM(stm, false)
+	d.runSTM(stm, true)
 }
 
 func (d *StateMachineManager) QuitSTM(appId string) {
@@ -214,13 +216,14 @@ func (d *StateMachineManager) QuitSTM(appId string) {
 	}
 	d.lock.RUnlock()
 
+	stm.StopHeartbeat()
 	stm.Stop()
 	stm.Remove()
 
 	d.lock.Lock()
 	defer d.lock.Unlock()
 
-	stm.Close()
+	stm.Clear()
 	delete(d.StateMachines, appId)
 	delete(d.Mapping, appId)
 	delete(d.AuthMapping, appId)

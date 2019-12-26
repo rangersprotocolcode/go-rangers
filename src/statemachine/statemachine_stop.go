@@ -58,7 +58,10 @@ func (s *StateMachine) Remove() bool {
 	return true
 }
 
-func (s *StateMachine) Close() {
-	s.heartBeat = false
+func (s *StateMachine) Clear() {
 	os.Remove(s.storageGame)
+}
+
+func (s *StateMachine) StopHeartbeat(){
+	s.heartBeat = false
 }
