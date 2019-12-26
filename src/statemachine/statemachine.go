@@ -46,6 +46,8 @@ type StateMachine struct {
 	// 存储的状态值
 	StorageStatus [md5.Size]byte `json:"storage"`
 	RequestId     uint64         `json:"requestId"`
+
+	heartBeat bool `json:"-"`
 }
 
 //将配置信息转换为 json 数据用于输出
@@ -66,7 +68,7 @@ func buildStateMachine(c ContainerConfig, storageRoot string, cli *client.Client
 	return &StateMachine{c, cli, ctx, logger, httpClient, sh,
 		nil, preparing,
 		storageRoot, fmt.Sprintf("%s/%s", storageRoot, c.Game), nil,
-		[md5.Size]byte{}, 0}
+		[md5.Size]byte{}, 0, true}
 }
 
 // cli:  用于访问 docker 守护进程

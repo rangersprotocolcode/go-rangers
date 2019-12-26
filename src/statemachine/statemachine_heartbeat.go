@@ -1,13 +1,17 @@
 package statemachine
 
 import (
-	"time"
 	"github.com/docker/docker/api/types"
+	"time"
 )
 
 func (c *StateMachine) heartbeat() {
 	go func() {
 		for {
+			if !c.heartBeat {
+				return
+			}
+
 			if c.checkIfRunning() {
 				c.setStatus(ready)
 			} else if !c.isSync() && !c.isSynced() {

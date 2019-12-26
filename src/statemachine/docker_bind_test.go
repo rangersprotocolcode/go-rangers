@@ -10,6 +10,7 @@ import (
 	"os"
 	"encoding/json"
 	"fmt"
+	"time"
 )
 
 func TestDocker_Bind(t *testing.T) {
@@ -63,4 +64,17 @@ func TestDocker_Container(t *testing.T) {
 	data, _ := json.Marshal(containers)
 	fmt.Println(string(data))
 
+}
+
+func TestTicker(t *testing.T) {
+	ticker := time.NewTicker(time.Millisecond * 500)
+	go func() {
+		for {
+			<-ticker.C
+			fmt.Println("Tick at")
+		}
+	}()
+	time.Sleep(time.Millisecond * 1500)
+	ticker.Stop()
+	fmt.Println("Ticker stopped")
 }
