@@ -61,7 +61,8 @@ const (
 	TransactionTypeUpdateStorage   = 902 // 刷新状态机存储
 	TransactionTypeStartSTM        = 903 // 重启状态机
 	TransactionTypeStopSTM         = 904 // 关闭状态机
-	TransactionTypeUpgradeSTM      = 905 // 更新状态机（停机->删除本地镜像->下载新镜像->）
+	TransactionTypeUpgradeSTM      = 905 // 更新状态机（停机->删除本地镜像->下载新镜像->启动）
+	TransactionTypeQuitSTM         = 906 // 关服（停机->删除本地镜像->删除配置项）
 )
 
 type Transaction struct {

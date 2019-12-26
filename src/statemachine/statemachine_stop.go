@@ -1,7 +1,10 @@
 // statemachine的暂停、停止、删除容器
 package statemachine
 
-import "github.com/docker/docker/api/types"
+import (
+	"github.com/docker/docker/api/types"
+	"os"
+)
 
 // 暂停容器
 func (s *StateMachine) Pause() {
@@ -53,4 +56,8 @@ func (s *StateMachine) Remove() bool {
 	s.logger.Warnf("removed stm, %s", s.TOJSONString())
 	s.removed()
 	return true
+}
+
+func (s *StateMachine) Close() {
+	os.Remove(s.storageGame)
 }

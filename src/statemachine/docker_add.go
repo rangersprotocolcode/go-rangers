@@ -197,3 +197,31 @@ func (d *StateMachineManager) UpgradeSTM(appId, configString string) {
 
 	d.runSTM(stm, false)
 }
+
+func (d *StateMachineManager) QuitSTM(appId string) {
+	d.logger.Warnf("quit stm, appId: %s", appId)
+	if 0 == len(appId) {
+		d.logger.Warnf("fail to quit stm, appId: %s", appId)
+		return
+	}
+
+	d.lock.RLock()
+	stm, ok := d.StateMachines[appId]
+	if !ok {
+		d.logger.Errorf("fail to get stm, appId: %s", appId)
+		d.lock.RUnlock()
+		return
+	}
+	d.lock.RUnlock()
+
+	stm.Stop()
+	stm.Remove()
+
+	d.lock.Lock()
+	defer d.lock.Unlock()
+
+	stm.Close()
+	delete(d.StateMachines, appId)
+	delete(d.Mapping, appId)
+	delete(d.AuthMapping, appId)
+}

@@ -50,17 +50,16 @@ type StateMachineManager struct {
 	// stm config
 	Config YAMLConfig
 
-	// stm entities
-	StateMachines map[string]*StateMachine // key 为appId
-
 	StorageRoot string
 
 	// tool for connecting stm
 	httpClient *http.Client
 
-	Mapping     map[string]PortInt // key 为appId， value为端口号
-	AuthMapping map[string]string  // key 为appId， value为authCode
-	lock        sync.RWMutex
+	// stm entities
+	StateMachines map[string]*StateMachine // key 为appId
+	Mapping       map[string]PortInt       // key 为appId， value为端口号
+	AuthMapping   map[string]string        // key 为appId， value为authCode
+	lock          sync.RWMutex
 
 	// docker client
 	cli *client.Client  //cli:  用于访问 docker 守护进程

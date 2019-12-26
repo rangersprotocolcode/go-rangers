@@ -42,7 +42,7 @@ type StateMachine struct {
 	// stm的存储与宿主机的映射
 	storageRoot string   `json:"-"` // "${pwd}/storage"
 	storageGame string   `json:"-"` // "${pwd}/storage/${appId}"
-	storagePath []string `json:"-"`
+	storagePath []string `json:"-"` // "${pwd}/storage/${appId}/0:/root/data"
 	// 存储的状态值
 	StorageStatus [md5.Size]byte `json:"storage"`
 	RequestId     uint64         `json:"requestId"`
