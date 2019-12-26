@@ -6,6 +6,7 @@ import (
 	"x/src/utility"
 	"x/src/network"
 	"strconv"
+	"time"
 )
 
 func (self *wsServer) getBNTBalance(params map[string]string) (string, bool) {
@@ -23,6 +24,10 @@ func (self *wsServer) getAllCoinInfo(params map[string]string) (string, bool) {
 func (self *wsServer) getFTBalance(params map[string]string) (string, bool) {
 	addr := params["addr"]
 	id := params["id"]
+	//mock异常情况 返回超时
+	if addr == "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d55" {
+		time.Sleep(time.Second * 3)
+	}
 	return service.GetFTInfo(common.HexToAddress(addr), id), true
 }
 
