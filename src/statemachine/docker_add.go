@@ -150,18 +150,50 @@ func (d *StateMachineManager) StopSTM(appId string) {
 	stm.Stop()
 }
 
-func (d *StateMachineManager) UpgradeSTM(appId, downloadUrl, downloadProtocol string) {
-	d.lock.RLock()
-	d.logger.Warnf("start stm, appId: %s", appId)
+func (d *StateMachineManager) UpgradeSTM(appId, configString string) {
+	d.logger.Warnf("upgrade stm, appId: %s", appId)
+	if 0 == len(appId) || 0 == len(configString) {
+		d.logger.Warnf("fail to upgrade stm, appId: %s", appId)
+		return
+	}
+	var config ContainerConfig
+	err := json.Unmarshal([]byte(configString), &config)
+	if err != nil {
+		d.logger.Warnf("fail to upgrade stm, appId: %s", appId)
+		return
+	}
 
+	d.lock.RLock()
 	stm, ok := d.StateMachines[appId]
 	if !ok {
-		d.logger.Errorf("fail to start stm, appId: %s", appId)
+		d.logger.Errorf("fail to get stm, appId: %s", appId)
 		d.lock.RUnlock()
 		return
 	}
 	d.lock.RUnlock()
 
-	stm.Stop()
-	stm.Remove()
+	if !stm.Stop() {
+		return
+	}
+
+	if !stm.Remove() {
+		return
+	}
+
+	// renew configuration
+	if 0 != len(config.Image) {
+		stm.Image = config.Image
+	}
+	if 0 != len(config.DownloadUrl) {
+		stm.DownloadUrl = config.DownloadUrl
+	}
+	if 0 != len(config.DownloadProtocol) {
+		stm.DownloadProtocol = config.DownloadProtocol
+	}
+	if 0 != len(config.Storage) {
+		stm.Storage = config.Storage
+	}
+	stm.This.ID = ""
+
+	d.runSTM(stm, false)
 }

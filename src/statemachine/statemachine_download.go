@@ -117,7 +117,7 @@ func (s *StateMachine) loadOrImport(isImage bool, reader io.Reader) error {
 // 从docker官方仓库下载，最简单的方式
 // todo: 下载时的鉴权
 func (s *StateMachine) downloadByPull() bool {
-	_, err := s.cli.ImagePull(s.ctx, s.Image, types.ImagePullOptions{})
+	_, err := s.cli.ImagePull(s.ctx, s.DownloadUrl, types.ImagePullOptions{})
 	if err != nil {
 		s.logger.Warnf("fail to pull image: %s, downloadUrl: %s. error: %s", s.Image, s.DownloadUrl, err.Error())
 		return false

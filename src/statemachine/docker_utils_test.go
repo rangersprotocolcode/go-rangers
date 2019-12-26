@@ -17,11 +17,14 @@ func TestDockerInit(t *testing.T) {
 	notify.BUS = notify.NewBus()
 	InitSTMManager("test.yaml", "daijia")
 
-	msg := notify.STMStorageReadyMessage{FileName: []byte("/ip4/192.168.0.101/tcp/4001/ipfs/QmU8Pu6hkzJY1P4JmtgJCgy3Z52rqdChjvkysPmrqWGEkM:QmaqSc7Y1Aw2pzE2KeNBkV1MqG58pU8HDGdmjJ4fuW7XQH:j-0-1575878863425150000.zip")}
-	STMManger.updateSTMStorage(&msg)
+	//msg := notify.STMStorageReadyMessage{FileName: []byte("/ip4/192.168.0.101/tcp/4001/ipfs/QmU8Pu6hkzJY1P4JmtgJCgy3Z52rqdChjvkysPmrqWGEkM:QmaqSc7Y1Aw2pzE2KeNBkV1MqG58pU8HDGdmjJ4fuW7XQH:j-0-1575878863425150000.zip")}
+	//STMManger.updateSTMStorage(&msg)
+
 
 	time.Sleep(10 * time.Second)
-	STMManger.UpdateSTMStorage("j","daijia")
+
+	config:="{\"image\":\"tequiladj/stm:v1.0\",\"download_url\":\"tequiladj/stm:v1.0\",\"download_protocol\":\"pUlL\"}"
+	STMManger.UpgradeSTM("j", config)
 	time.Sleep(1000 * time.Minute)
 }
 
