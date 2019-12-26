@@ -207,10 +207,6 @@ func (self *wsServer) connHandle(conn *websocket.Conn) {
 
 		}
 
-		//mock 异常情况不返回数据
-		if msg.Type == types.TransactionTypeGetCoin{
-			return
-		}
 		reply = self.buildResponse(flag, answer)
 
 		self.logger.Debugf("send msg string: %s", string(reply))
