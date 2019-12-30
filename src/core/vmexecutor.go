@@ -251,12 +251,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			break
 		case types.TransactionTypeImportNFT:
 			appId := transaction.Source
-			if !statemachine.STMManger.IsAppId(appId) {
-				success = false
-			} else {
-				success = service.ImportNFTSetAndNFT(accountdb, transaction)
-			}
-
+			success = statemachine.STMManger.IsAppId(appId)
 			break
 		case types.TransactionTypeAddStateMachine:
 			// todo: 经济模型，新增状态机应该要付费

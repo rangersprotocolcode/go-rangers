@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"strconv"
 	"x/src/service"
+	"x/src/statemachine"
 )
 
 func (chain *blockChain) consensusVerify(source string, b *types.Block) (types.AddBlockResult, bool) {
@@ -325,27 +326,22 @@ func (chain *blockChain) publishSet(txs []*types.Transaction) {
 		}
 
 		if tx.Type == types.TransactionTypeImportNFT {
-			var data types.ImportedNFT
+			appId := tx.Source
+			if !statemachine.STMManger.IsAppId(appId) {
+				txLogger.Errorf("fail to import NFTSetAndNFT, appId: %s", appId)
+				continue
+			}
+
+			var data map[string]string
 			err := json.Unmarshal([]byte(tx.Data), &data)
 			if err != nil {
 				txLogger.Errorf("fail to import NFTSetAndNFT, error: %s", err)
 				continue
 			}
 
-			if 0 != len(data.SetList) {
-				for _, set := range data.SetList {
-					service.NFTManagerInstance.SendPublishNFTSetToConnector(&set)
-				}
-			}
-
-			if 0 != len(data.NFTList) {
-				for _, nft := range data.NFTList {
-					set := service.NFTManagerInstance.GenerateNFTSet(nft.SetID, nft.Name, nft.Symbol, appId, appId, 0, "")
-					service.NFTManagerInstance.SendPublishNFTSetToConnector(set)
-				}
-			}
-
+			service.NFTManagerInstance.ImportNFTSet(data["setId"], data["contract"])
 		}
+
 		// 状态机内调用
 		if 0 != len(tx.SubTransactions) {
 			for _, user := range tx.SubTransactions {

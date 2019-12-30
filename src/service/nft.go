@@ -355,14 +355,27 @@ func (self *NFTManager) SendPublishNFTSetToConnector(nftSet *types.NFTSet) {
 	data["creator"] = nftSet.Creator
 	data["owner"] = nftSet.Owner
 	data["createTime"] = nftSet.CreateTime
+	data["contract"] = "" // 标记为源生layer2的数据
 
+	self.publishNFTSetToConnector(data, nftSet.Creator, nftSet.CreateTime)
+}
+
+func (self *NFTManager) ImportNFTSet(setId, contract string) {
+	data := make(map[string]string, 2)
+	data["setId"] = setId
+	data["contract"] = contract // 标记为外部导入的数据
+
+	self.publishNFTSetToConnector(data, "", "")
+}
+
+func (self *NFTManager) publishNFTSetToConnector(data map[string]string, source, time string) {
 	b, err := json.Marshal(data)
 	if err != nil {
 		txLogger.Error("json marshal err, err:%s", err.Error())
 		return
 	}
 
-	t := types.Transaction{Source: nftSet.Creator, Target: "", Data: string(b), Type: types.TransactionTypePublishNFTSet, Time: nftSet.CreateTime}
+	t := types.Transaction{Source: source, Target: "", Data: string(b), Type: types.TransactionTypePublishNFTSet, Time: time}
 	t.Hash = t.GenHash()
 
 	msg, err := json.Marshal(t.ToTxJson())

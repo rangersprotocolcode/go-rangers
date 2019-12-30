@@ -292,9 +292,3 @@ type FT struct {
 	Balance *big.Int // 余额，注意这里会存储实际余额乘以10的9次方，用于表达浮点数。例如，用户拥有12.45币，这里的数值就是12450000000
 	ID      string   // 代币ID，在发行时由layer2生成。生成规则时appId-symbol。例如0x12ef3-NOX
 }
-
-// 导入nftSet/nft数据结构
-type ImportedNFT struct {
-	SetList []NFTSet `json:"setList,omitempty"`
-	NFTList []NFT    `json:"nftList,omitempty"`
-}
