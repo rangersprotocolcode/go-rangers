@@ -360,11 +360,12 @@ func (self *NFTManager) SendPublishNFTSetToConnector(nftSet *types.NFTSet) {
 	self.publishNFTSetToConnector(data, nftSet.Creator, nftSet.CreateTime)
 }
 
-func (self *NFTManager) ImportNFTSet(setId, contract string) {
+func (self *NFTManager) ImportNFTSet(setId, contract, chainType string) {
 	data := make(map[string]string)
 	data["setId"] = setId
 	data["maxSupply"] = "0"
 	data["contract"] = contract // 标记为外部导入的数据
+	data["chainType"] = chainType
 
 	self.publishNFTSetToConnector(data, "", "")
 }

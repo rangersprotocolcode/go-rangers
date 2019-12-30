@@ -339,7 +339,7 @@ func (chain *blockChain) publishSet(txs []*types.Transaction) {
 				continue
 			}
 
-			service.NFTManagerInstance.ImportNFTSet(data["setId"], data["contract"])
+			service.NFTManagerInstance.ImportNFTSet(data["setId"], data["contract"],data["chainType"])
 		}
 
 		// 状态机内调用
