@@ -347,7 +347,7 @@ func (self *NFTManager) shuttle(owner, setId, id, newAppId string, accountDB *ac
 }
 
 func (self *NFTManager) SendPublishNFTSetToConnector(nftSet *types.NFTSet) {
-	data := make(map[string]string, 7)
+	data := make(map[string]string, 8)
 	data["setId"] = nftSet.SetID
 	data["name"] = nftSet.Name
 	data["symbol"] = nftSet.Symbol
@@ -361,8 +361,9 @@ func (self *NFTManager) SendPublishNFTSetToConnector(nftSet *types.NFTSet) {
 }
 
 func (self *NFTManager) ImportNFTSet(setId, contract string) {
-	data := make(map[string]string, 2)
+	data := make(map[string]string)
 	data["setId"] = setId
+	data["maxSupply"] = "0"
 	data["contract"] = contract // 标记为外部导入的数据
 
 	self.publishNFTSetToConnector(data, "", "")
