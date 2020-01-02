@@ -5,7 +5,6 @@ import (
 	"x/src/consensus/groupsig"
 	"x/src/common"
 	"encoding/json"
-	"fmt"
 )
 
 func convertTransaction(tx *types.Transaction) *Transaction {
@@ -19,13 +18,7 @@ func convertTransaction(tx *types.Transaction) *Transaction {
 	}
 
 	if tx.Sign != nil {
-		fmt.Println("tx.Sign != nil")
-		fmt.Println(tx.Sign.Bytes())
-		fmt.Println(tx.Sign.GetR())
-		fmt.Println(tx.Sign.GetS())
 		trans.Signature = tx.Sign.GetHexString()
-	} else {
-		fmt.Println("tx.Sign = nil")
 	}
 
 	data, err := json.Marshal(tx.SubTransactions)
