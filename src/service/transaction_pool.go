@@ -9,8 +9,9 @@ import (
 	"x/src/middleware/db"
 
 	"github.com/hashicorp/golang-lru"
-	"github.com/vmihailenco/msgpack"
+
 	"fmt"
+	"encoding/json"
 )
 
 const (
@@ -183,7 +184,7 @@ func (pool *TxPool) AddExecuted(tx *types.Transaction) error {
 	executedTx := &ExecutedTransaction{
 		Transaction: tx,
 	}
-	executedTxBytes, err := msgpack.Marshal(executedTx)
+	executedTxBytes, err := json.Marshal(executedTx)
 	if nil != err {
 		return err
 	}
@@ -205,7 +206,7 @@ func (pool *TxPool) MarkExecuted(receipts types.Receipts, txs []*types.Transacti
 			Receipt:     receipt,
 			Transaction: findTxInList(txs, hash, i),
 		}
-		executedTxBytes, err := msgpack.Marshal(executedTx)
+		executedTxBytes, err := json.Marshal(executedTx)
 		if nil != err {
 			continue
 		}
@@ -313,7 +314,7 @@ func (pool *TxPool) GetExecuted(hash common.Hash) *ExecutedTransaction {
 	}
 
 	var executedTx *ExecutedTransaction
-	err := msgpack.Unmarshal(txBytes, &executedTx)
+	err := json.Unmarshal(txBytes, &executedTx)
 	if err != nil || executedTx == nil {
 		return nil
 	}
