@@ -43,7 +43,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function () {
                 title: 'preTime',
                 width: 189
             }, {field: 'curTime', title: 'curTime', width: 189},
-            {field: 'castor', title: 'castor'}, {field: 'groupId', title: 'groupId'}, {
+            {field: 'proposer', title: 'proposer'}, {field: 'groupId', title: 'groupId'}, {
                 field: 'txCount',
                 title: 'txCount'
             }, {field: 'qn', title: 'qn'}

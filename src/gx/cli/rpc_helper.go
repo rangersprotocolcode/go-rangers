@@ -41,8 +41,8 @@ func convertBlockHeader(bh *types.BlockHeader) *Block {
 		TxNum:       uint64(len(bh.Transactions)),
 	}
 
+	block.Txs = make([]common.Hash, len(bh.Transactions))
 	if 0 != len(bh.Transactions) {
-		block.Txs = make([]common.Hash, len(bh.Transactions))
 		for i, tx := range bh.Transactions {
 			block.Txs[i] = tx[0]
 		}

@@ -124,7 +124,7 @@ type Block struct {
 	PreHash     common.Hash   `json:"preHash"`
 	CurTime     string        `json:"curTime"`
 	PreTime     string        `json:"preTime"`
-	Castor      groupsig.ID   `json:"castor"`
+	Castor      groupsig.ID   `json:"proposer"`
 	GroupID     groupsig.ID   `json:"groupId"`
 	Signature   string        `json:"sigature"`
 	Prove       *big.Int      `json:"prove"`
