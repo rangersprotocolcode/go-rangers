@@ -165,6 +165,23 @@ func (api *GtasAPI) GetBlockByHash(hash string) (*Result, error) {
 	return successResult(block)
 }
 
+func (api *GtasAPI) GetCurrentBlock() (*Result, error) {
+	b := core.GetBlockChain().CurrentBlock()
+	if b == nil {
+		return failResult("layer2 error")
+	}
+	bh := b.Header
+	preBlock := core.GetBlockChain().QueryBlockByHash(bh.PreHash)
+	preBH := preBlock.Header
+	block := convertBlockHeader(bh)
+	if preBH != nil {
+		block.Qn = bh.TotalQN - preBH.TotalQN
+	} else {
+		block.Qn = bh.TotalQN
+	}
+	return successResult(block)
+}
+
 func (api *GtasAPI) GetBlocks(from uint64, to uint64) (*Result, error) {
 	blocks := make([]*Block, 0)
 	var preBH *types.BlockHeader
@@ -183,6 +200,31 @@ func (api *GtasAPI) GetBlocks(from uint64, to uint64) (*Result, error) {
 	return successResult(blocks)
 }
 
+func (api *GtasAPI) BlockDetail(h string) (*Result, error) {
+	chain := core.GetBlockChain()
+	b := chain.QueryBlockByHash(common.HexToHash(h))
+	if b == nil {
+		return successResult(nil)
+	}
+	bh := b.Header
+	block := convertBlockHeader(bh)
+
+	preBH := chain.QueryBlockByHash(bh.PreHash).Header
+	block.Qn = bh.TotalQN - preBH.TotalQN
+
+	trans := make([]Transaction, 0)
+	for _, tx := range b.Transactions {
+		trans = append(trans, *convertTransaction(tx))
+	}
+
+	bd := &BlockDetail{
+		Block: *block,
+		Trans: trans,
+	}
+	return successResult(bd)
+}
+
+//deprecated
 func (api *GtasAPI) GetTopBlock() (*Result, error) {
 	bh := core.GetBlockChain().TopBlock()
 	blockDetail := make(map[string]interface{})
@@ -463,30 +505,6 @@ func (api *GtasAPI) PageGetGroups(page, limit int) (*Result, error) {
 		i++
 	}
 	return successResult(pageObject)
-}
-
-func (api *GtasAPI) BlockDetail(h string) (*Result, error) {
-	chain := core.GetBlockChain()
-	b := chain.QueryBlockByHash(common.HexToHash(h))
-	if b == nil {
-		return successResult(nil)
-	}
-	bh := b.Header
-	block := convertBlockHeader(bh)
-
-	preBH := chain.QueryBlockByHash(bh.PreHash).Header
-	block.Qn = bh.TotalQN - preBH.TotalQN
-
-	trans := make([]Transaction, 0)
-	for _, tx := range b.Transactions {
-		trans = append(trans, *convertTransaction(tx))
-	}
-
-	bd := &BlockDetail{
-		Block:      *block,
-		Trans:      trans,
-	}
-	return successResult(bd)
 }
 
 func (api *GtasAPI) BlockReceipts(h string) (*Result, error) {

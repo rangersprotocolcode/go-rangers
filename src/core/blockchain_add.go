@@ -176,7 +176,7 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 		return types.AddBlockFailed, nil
 	}
 
-	if !chain.updateLastBlock(accountDB, remoteBlock.Header, headerByte) {
+	if !chain.updateLastBlock(accountDB, remoteBlock, headerByte) {
 		return types.AddBlockFailed, headerByte
 	}
 
@@ -242,13 +242,15 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 	return true, state, receipts
 }
 
-func (chain *blockChain) updateLastBlock(state *account.AccountDB, header *types.BlockHeader, headerJson []byte) bool {
+func (chain *blockChain) updateLastBlock(state *account.AccountDB, block *types.Block, headerJson []byte) bool {
+	header := block.Header
 	err := chain.heightDB.Put([]byte(latestBlockKey), headerJson)
 	if err != nil {
 		logger.Errorf("Fail to put %s, error:%s", latestBlockKey, err.Error())
 		return false
 	}
 
+	chain.currentBlock = block
 	chain.latestBlock = header
 	chain.requestIds = header.RequestIds
 
@@ -339,7 +341,7 @@ func (chain *blockChain) publishSet(txs []*types.Transaction) {
 				continue
 			}
 
-			service.NFTManagerInstance.ImportNFTSet(data["setId"], data["contract"],data["chainType"])
+			service.NFTManagerInstance.ImportNFTSet(data["setId"], data["contract"], data["chainType"])
 		}
 
 		// 状态机内调用
