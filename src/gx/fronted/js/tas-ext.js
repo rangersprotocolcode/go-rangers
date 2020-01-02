@@ -62,14 +62,14 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function(){
                 $("#block_detail_height").text(d.height)
                 $("#block_castor").text(d.castor)
                 $("#block_hash").text(d.hash)
-                $("#block_pre_hash").text(d.pre_hash)
-                $("#block_ts").text(d.cur_time)
-                $("#block_pre_ts").text(d.pre_time)
-                $("#block_group").text(d.group_id)
+                $("#block_pre_hash").text(d.preHash)
+                $("#block_ts").text(d.curTime)
+                $("#block_pre_ts").text(d.preTime)
+                $("#block_group").text(d.groupId)
                 $("#block_tx_cnt").text(d.txs.length)
                 $("#block_qn").text(d.qn)
-                $("#block_total_qn").text(d.total_qn)
-                $("#block_pre_total_qn").text(d.pre_total_qn)
+                $("#block_total_qn").text(d.totalQn)
+                $("#block_pre_total_qn").text(d.preTotalQn)
 
                 gbt = d.gen_bonus_tx
                 if (gbt != null && gbt != undefined) {

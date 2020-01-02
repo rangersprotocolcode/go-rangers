@@ -479,15 +479,12 @@ func (api *GtasAPI) BlockDetail(h string) (*Result, error) {
 
 	trans := make([]Transaction, 0)
 	for _, tx := range b.Transactions {
-
 		trans = append(trans, *convertTransaction(tx))
-
 	}
 
 	bd := &BlockDetail{
 		Block:      *block,
 		Trans:      trans,
-		PreTotalQN: preBH.TotalQN,
 	}
 	return successResult(bd)
 }

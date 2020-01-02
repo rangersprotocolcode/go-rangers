@@ -104,7 +104,7 @@ type BlockHeader struct {
 	Castor       []byte      //出块人ID
 	GroupId      []byte      //组ID，groupsig.ID的二进制表示
 	Signature    []byte      // 组签名
-	Nonce        uint64      //盐
+	Nonce        uint64      //盐 当前含义为版本号
 	RequestIds   map[string]uint64
 	Transactions []common.Hashes // 交易集哈希列表
 	TxTree       common.Hash     // 交易默克尔树根hash
@@ -112,8 +112,7 @@ type BlockHeader struct {
 	StateTree    common.Hash
 	ExtraData    []byte
 	Random       []byte
-	//ProveRoot    common.Hash
-	EvictedTxs []common.Hash
+	EvictedTxs   []common.Hash
 }
 
 type header struct {
@@ -345,7 +344,7 @@ func (txJson TxJson) ToString() string {
 func (tx Transaction) ToTxJson() TxJson {
 	txJson := TxJson{Source: tx.Source, Target: tx.Target, Type: tx.Type, Time: tx.Time,
 		Data: tx.Data, ExtraData: tx.ExtraData, Nonce: tx.Nonce,
-		Hash: tx.Hash.String(),RequestId: tx.RequestId, SocketRequestId: tx.SocketRequestId}
+		Hash: tx.Hash.String(), RequestId: tx.RequestId, SocketRequestId: tx.SocketRequestId}
 
 	if tx.Sign != nil {
 		txJson.Sign = tx.Sign.GetHexString()

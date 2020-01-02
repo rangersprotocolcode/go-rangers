@@ -16,33 +16,37 @@ func convertTransaction(tx *types.Transaction) *Transaction {
 		ExtraData:     tx.ExtraData,
 		ExtraDataType: tx.ExtraDataType,
 		Nonce:         tx.Nonce,
-
 	}
 	return trans
 }
 
 func convertBlockHeader(bh *types.BlockHeader) *Block {
 	block := &Block{
-		Height:  bh.Height,
-		Hash:    bh.Hash,
-		PreHash: bh.PreHash,
-		CurTime: bh.CurTime,
-		PreTime: bh.PreTime,
-		Castor:  groupsig.DeserializeId(bh.Castor),
-		GroupID: groupsig.DeserializeId(bh.GroupId),
-		Prove:   bh.ProveValue,
-		Txs:     bh.Transactions,
-		TotalQN: bh.TotalQN,
-		//Qn: mediator.Proc.CalcBlockHeaderQN(bh),
+		Version:     bh.Nonce,
+		Height:      bh.Height,
+		Hash:        bh.Hash,
+		PreHash:     bh.PreHash,
+		CurTime:     bh.CurTime.Format("2006-01-02 15:04:05"),
+		PreTime:     bh.PreTime.Format("2006-01-02 15:04:05"),
+		Castor:      groupsig.DeserializeId(bh.Castor),
+		GroupID:     groupsig.DeserializeId(bh.GroupId),
+		Signature:   common.ToHex(bh.Signature),
+		Prove:       bh.ProveValue,
+		EvictedTxs:  bh.EvictedTxs,
+		TotalQN:     bh.TotalQN,
 		StateRoot:   bh.StateTree,
 		TxRoot:      bh.TxTree,
 		ReceiptRoot: bh.ReceiptTree,
-		//ProveRoot:   bh.ProveRoot,
 		Random:      common.ToHex(bh.Random),
 		TxNum:       uint64(len(bh.Transactions)),
 	}
+
+	if 0 != len(bh.Transactions) {
+		block.Txs = make([]common.Hash, len(bh.Transactions))
+		for i, tx := range bh.Transactions {
+			block.Txs[i] = tx[0]
+		}
+	}
+
 	return block
 }
-
-
-

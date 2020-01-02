@@ -5,7 +5,6 @@ import (
 	"x/src/consensus/groupsig"
 	"math/big"
 	"x/src/middleware/types"
-	"time"
 )
 
 // Result rpc请求成功返回的可变参数部分
@@ -119,31 +118,30 @@ type PageObjects struct {
 }
 
 type Block struct {
-	Height      uint64          `json:"height"`
-	Hash        common.Hash     `json:"hash"`
-	PreHash     common.Hash     `json:"pre_hash"`
-	CurTime     time.Time       `json:"cur_time"`
-	PreTime     time.Time       `json:"pre_time"`
-	Castor      groupsig.ID     `json:"castor"`
-	GroupID     groupsig.ID     `json:"group_id"`
-	Prove       *big.Int        `json:"prove"`
-	TotalQN     uint64          `json:"total_qn"`
-	Qn          uint64          `json:"qn"`
-	Txs         []common.Hashes `json:"transactions"`
-	TxNum       uint64          `json:"txs"`
-	StateRoot   common.Hash     `json:"state_root"`
-	TxRoot      common.Hash     `json:"tx_root"`
-	ReceiptRoot common.Hash     `json:"receipt_root"`
-	ProveRoot   common.Hash     `json:"prove_root"`
-	Random      string          `json:"random"`
+	Version     uint64        `json:"version"`
+	Height      uint64        `json:"height"`
+	Hash        common.Hash   `json:"hash"`
+	PreHash     common.Hash   `json:"preHash"`
+	CurTime     string        `json:"curTime"`
+	PreTime     string        `json:"preTime"`
+	Castor      groupsig.ID   `json:"castor"`
+	GroupID     groupsig.ID   `json:"groupId"`
+	Signature   string        `json:"sigature"`
+	Prove       *big.Int      `json:"prove"`
+	TotalQN     uint64        `json:"totalQn"`
+	Qn          uint64        `json:"qn"`
+	Txs         []common.Hash `json:"txs"`
+	EvictedTxs  []common.Hash `json:"wrongTxs"`
+	TxNum       uint64        `json:"txsLength"`
+	StateRoot   common.Hash   `json:"stateRoot"`
+	TxRoot      common.Hash   `json:"txRoot"`
+	ReceiptRoot common.Hash   `json:"receiptRoot"`
+	Random      string        `json:"random"`
 }
 
 type BlockDetail struct {
 	Block
-	//Signature groupsig.Signature `json:"signature"`
-	//Random 	groupsig.Signature `json:"random"`
-	Trans      []Transaction `json:"trans"`
-	PreTotalQN uint64        `json:"pre_total_qn"`
+	Trans []Transaction `json:"txs"`
 }
 
 type BlockReceipt struct {
