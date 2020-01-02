@@ -57,3 +57,7 @@ func TestRand64(t *testing.T) {
 
 	fmt.Printf("%s", strconv.Itoa(i))
 }
+
+func TestFormatTime(t *testing.T){
+	fmt.Println(time.Now().Format("2006-01-02 15:04:05.999 -0700 MST"))
+}

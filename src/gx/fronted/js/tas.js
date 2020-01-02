@@ -38,16 +38,16 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function () {
                 title: 'hash',
                 templet: '<div><a href="javascript:void(0);" class="layui-table-link" name="block_table_hash_row">{{d.hash}}</a></div>'
             },
-            {field: 'pre_hash', title: 'pre_hash'}, {
-                field: 'pre_time',
-                title: 'pre_time',
+            {field: 'preHash', title: 'preHash'}, {
+                field: 'preTime',
+                title: 'preTime',
                 width: 189
-            }, {field: 'cur_time', title: 'cur_time', width: 189},
-            {field: 'castor', title: 'castor'}, {field: 'group_id', title: 'group_id'}, {
+            }, {field: 'curTime', title: 'curTime', width: 189},
+            {field: 'castor', title: 'castor'}, {field: 'groupId', title: 'groupId'}, {
                 field: 'txs',
-                title: 'tx_count'
+                title: 'txCount'
             }, {field: 'qn', title: 'qn'}
-            , {field: 'total_qn', title: 'totalQN'}]] //设置表头
+            , {field: 'totalQn', title: 'totalQN'}]] //设置表头
         , data: blocks
         , page: false
         , limit: 200

@@ -127,8 +127,8 @@
                         }
                         d = rdata.result.data
 
-                        pre = new Date(d.pre_time).getTime()
-                        cur = new Date(d.cur_time).getTime()
+                        pre = new Date(d.preTime).getTime()
+                        cur = new Date(d.curTime).getTime()
                         if (d.txs > 0) {
                             stat.total_cost += (cur - pre)/1000
                             stat.total_txs += d.txs
