@@ -36,7 +36,7 @@ var (
 
 type ExecutedTransaction struct {
 	Receipt     *types.Receipt
-	Transaction *types.Transaction
+	Transaction []byte
 }
 
 type TransactionPool interface {
@@ -182,8 +182,10 @@ func (pool *TxPool) AddExecuted(tx *types.Transaction) error {
 	}
 
 	executedTx := &ExecutedTransaction{
-		Transaction: tx,
 	}
+
+	txData, _ := types.MarshalTransaction(tx)
+	executedTx.Transaction = txData
 	executedTxBytes, err := json.Marshal(executedTx)
 	if nil != err {
 		return err
@@ -203,9 +205,11 @@ func (pool *TxPool) MarkExecuted(receipts types.Receipts, txs []*types.Transacti
 	for i, receipt := range receipts {
 		hash := receipt.TxHash
 		executedTx := &ExecutedTransaction{
-			Receipt:     receipt,
-			Transaction: findTxInList(txs, hash, i),
+			Receipt: receipt,
 		}
+		tx := findTxInList(txs, hash, i)
+		txData, _ := types.MarshalTransaction(tx)
+		executedTx.Transaction = txData
 		executedTxBytes, err := json.Marshal(executedTx)
 		if nil != err {
 			continue
@@ -266,7 +270,8 @@ func (pool *TxPool) GetTransaction(hash common.Hash) (*types.Transaction, error)
 
 	executedTx := pool.GetExecuted(hash)
 	if nil != executedTx {
-		return executedTx.Transaction, nil
+		tx, _ := types.UnMarshalTransaction(executedTx.Transaction)
+		return &tx, nil
 	}
 	return nil, ErrNil
 }
