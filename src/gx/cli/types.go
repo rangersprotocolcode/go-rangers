@@ -141,7 +141,7 @@ type Block struct {
 
 type BlockDetail struct {
 	Block
-	Trans []Transaction `json:"txs"`
+	Trans []Transaction `json:"txDetails"`
 }
 
 type BlockReceipt struct {
