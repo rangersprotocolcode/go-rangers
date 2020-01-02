@@ -44,7 +44,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function () {
                 width: 189
             }, {field: 'curTime', title: 'curTime', width: 189},
             {field: 'castor', title: 'castor'}, {field: 'groupId', title: 'groupId'}, {
-                field: 'txs',
+                field: 'txCount',
                 title: 'txCount'
             }, {field: 'qn', title: 'qn'}
             , {field: 'totalQn', title: 'totalQN'}]] //设置表头

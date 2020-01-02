@@ -132,7 +132,7 @@ type Block struct {
 	Qn          uint64        `json:"qn"`
 	Txs         []common.Hash `json:"txs"`
 	EvictedTxs  []common.Hash `json:"wrongTxs"`
-	TxNum       uint64        `json:"txsLength"`
+	TxNum       uint64        `json:"txCount"`
 	StateRoot   common.Hash   `json:"stateRoot"`
 	TxRoot      common.Hash   `json:"txRoot"`
 	ReceiptRoot common.Hash   `json:"receiptRoot"`
