@@ -95,13 +95,8 @@ func (api *GtasAPI) GetTransaction(hash string) (*Result, error) {
 	if err != nil {
 		return failResult(err.Error())
 	}
-	detail := make(map[string]interface{})
-	detail["hash"] = hash
-	detail["source"] = transaction.Source
 
-	detail["target"] = transaction.Target
-
-	return successResult(detail)
+	return successResult(*convertTransaction(transaction))
 }
 
 //

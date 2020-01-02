@@ -4,19 +4,28 @@ import (
 	"x/src/middleware/types"
 	"x/src/consensus/groupsig"
 	"x/src/common"
+	"encoding/json"
 )
 
 func convertTransaction(tx *types.Transaction) *Transaction {
 	trans := &Transaction{
-		Hash:          tx.Hash,
-		Source:        tx.Source,
-		Target:        tx.Target,
-		Type:          tx.Type,
-		Data:          tx.Data,
-		ExtraData:     tx.ExtraData,
-		ExtraDataType: tx.ExtraDataType,
-		Nonce:         tx.Nonce,
+		Hash:      tx.Hash,
+		Source:    tx.Source,
+		Target:    tx.Target,
+		Type:      tx.Type,
+		Data:      tx.Data,
+		ExtraData: tx.ExtraData,
 	}
+
+	if tx.Sign != nil {
+		trans.Signature = tx.Sign.GetHexString()
+	}
+
+	data, err := json.Marshal(tx.SubTransactions)
+	if err == nil {
+		trans.SubTransactions = string(data)
+	}
+
 	return trans
 }
 

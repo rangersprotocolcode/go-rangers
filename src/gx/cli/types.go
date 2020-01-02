@@ -166,17 +166,18 @@ type Group struct {
 }
 
 type Transaction struct {
-	Data string `json:"data"`
-
-	Nonce  uint64 `json:"nonce"`
 	Source string `json:"source"`
 	Target string `json:"target"`
 	Type   int32  `json:"type"`
 
+	Signature string `json:"signature"`
+
+	SubTransactions string `json:"subTransactions"`
+
 	Hash common.Hash `json:"hash"`
 
-	ExtraData     string `json:"extra_data"`
-	ExtraDataType int32  `json:"extra_data_type"`
+	Data      string `json:"data"`
+	ExtraData string `json:"extraData"`
 }
 
 type Dashboard struct {
