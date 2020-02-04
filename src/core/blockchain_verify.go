@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"x/src/consensus/groupsig"
 	"encoding/json"
+	"x/src/statemachine"
 )
 
 func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transaction) ([]common.Hashes, int8) {
@@ -26,9 +27,6 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 		}
 		return nil, 2
 	}
-
-
-
 
 	miss, missingTx, transactions := chain.missTransaction(bh, txs)
 	if miss {
@@ -56,10 +54,14 @@ func (chain *blockChain) hasPreBlock(bh types.BlockHeader) bool {
 }
 
 func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Transaction) (bool, []common.Hashes, []*types.Transaction) {
-	var missing []common.Hashes
-	var transactions []*types.Transaction
+	var (
+		missing      []common.Hashes
+		transactions []*types.Transaction
+		abnormal     map[string]bool
+	)
+
 	if nil == txs {
-		transactions, missing, _ = chain.queryTxsByBlockHash(bh.Hash, bh.Transactions)
+		transactions, missing, abnormal, _ = chain.queryTxsByBlockHash(bh.Hash, bh.Transactions)
 	} else {
 		transactions = txs
 	}
@@ -77,6 +79,10 @@ func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Tran
 		m := &transactionRequestMessage{TransactionHashes: missing, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue,}
 		go requestTransaction(*m, castorId.String())
 		return true, missing, transactions
+	}
+
+	if 0 != len(abnormal) {
+		statemachine.STMManger.SetAsyncApps(abnormal)
 	}
 	return false, missing, transactions
 }
