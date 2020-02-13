@@ -15,8 +15,6 @@ import (
 
 const (
 	heavyMinerNetTriggerInterval = time.Second * 10
-	proposerCountKey             = "heavy_miner_count"
-	validatorCountKey            = "light_miner_count"
 )
 
 var (
@@ -28,8 +26,6 @@ var (
 var MinerManagerImpl *MinerManager
 
 type MinerManager struct {
-	//hasNewHeavyMiner     bool
-	//heavyMiners          []string
 	heavyMinerNetTrigger *time.Timer
 
 	lock sync.RWMutex
@@ -58,6 +54,29 @@ func (mm *MinerManager) GetMinerById(id []byte, kind byte, accountdb *account.Ac
 		return &miner
 	}
 	return nil
+}
+
+func (mm *MinerManager) GetValidatorsStake(height uint64, members [][]byte) (total uint64, membersDetail map[string]uint64, err error) {
+	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
+	if err != nil {
+		logger.Errorf("Get account db by height %d error:%s", height, err.Error())
+		return 0, nil, err
+	}
+
+	total = 0
+	membersDetail = make(map[string]uint64, len(members))
+	for _, member := range members {
+		id := string(member)
+		miner := mm.GetMinerById(member, types.MinerTypeLight, accountDB)
+		if nil == miner {
+			logger.Errorf("fail to get Member,id: %s", id)
+			continue
+		}
+		membersDetail[id] = miner.Stake
+		total += miner.Stake
+	}
+
+	return total, membersDetail, nil
 }
 
 //
