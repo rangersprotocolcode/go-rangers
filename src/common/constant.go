@@ -26,12 +26,11 @@ var (
 
 // 地址相关常量
 var (
-	BonusStorageAddress = BigToAddress(big.NewInt(0))
-	LightDBAddress      = BigToAddress(big.NewInt(1))
-	HeavyDBAddress      = BigToAddress(big.NewInt(2))
-	MinerCountDBAddress = BigToAddress(big.NewInt(3))
-	FTSetAddress        = BigToAddress(big.NewInt(4))
-	NFTSetAddress       = BigToAddress(big.NewInt(5))
+	ValidatorDBAddress = BigToAddress(big.NewInt(1))
+	ProposerDBAddress  = BigToAddress(big.NewInt(2))
+
+	FTSetAddress  = BigToAddress(big.NewInt(4))
+	NFTSetAddress = BigToAddress(big.NewInt(5))
 )
 
 var (

@@ -9,6 +9,10 @@ import (
 )
 
 func (d *StateMachineManager) Process(name string, kind string, nonce uint64, payload string, tx *types.Transaction) *types.OutputMessage {
+	if 0 == len(name) {
+		return nil
+	}
+
 	prefix := d.getUrlPrefix(name)
 	if 0 == len(prefix) {
 		return nil

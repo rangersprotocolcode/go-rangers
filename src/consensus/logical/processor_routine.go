@@ -246,33 +246,3 @@ func (p *Processor) updateGlobalGroups() bool {
 	}
 	return true
 }
-
-func (p *Processor) getUpdateMonitorNodeInfoRoutine() string {
-	return "update_monitor_node_routine_" + p.getPrefix()
-}
-
-func (p *Processor) updateMonitorInfo() bool {
-	//if !monitor.Instance.MonitorEnable() {
-	//	return false
-	//}
-	//top := p.MainChain.Height()
-	//
-	//ni := &monitor.NodeInfo{
-	//	BlockHeight: top,
-	//	GroupHeight: p.GroupChain.Count(),
-	//	TxPoolCount: len(p.MainChain.GetTransactionPool().GetReceived()),
-	//}
-	//proposer := p.minerReader.getProposeMiner(p.GetMinerID())
-	//if proposer != nil {
-	//	ni.Type |= monitor.NtypeProposal
-	//	ni.PStake = proposer.Stake
-	//	ni.VrfThreshold = p.GetVrfThreshold(ni.PStake)
-	//}
-	//verifier := p.minerReader.getLightMiner(p.GetMinerID())
-	//if verifier != nil {
-	//	ni.Type |= monitor.NtypeVerifier
-	//}
-	//
-	//monitor.Instance.UpdateNodeInfo(ni)
-	return true
-}
