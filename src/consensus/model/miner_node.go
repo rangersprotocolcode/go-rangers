@@ -1,7 +1,6 @@
 package model
 
 import (
-	"x/src/middleware/types"
 	"x/src/common"
 	"x/src/consensus/groupsig"
 	"x/src/consensus/base"
@@ -11,11 +10,11 @@ import (
 const minerStake = 1
 
 type MinerDO struct {
-	PK    groupsig.Pubkey
-	VrfPK vrf.VRFPublicKey
-	ID    groupsig.ID
-	Stake uint64
-	NType byte
+	PK          groupsig.Pubkey
+	VrfPK       vrf.VRFPublicKey
+	ID          groupsig.ID
+	Stake       uint64
+	NType       byte
 	ApplyHeight uint64
 	AbortHeight uint64
 }
@@ -31,11 +30,11 @@ func (md *MinerDO) CanJoinGroupAt(h uint64) bool {
 }
 
 func (md *MinerDO) IsLight() bool {
-	return md.NType == types.MinerTypeLight
+	return md.NType == common.MinerTypeValidator
 }
 
 func (md *MinerDO) IsWeight() bool {
-	return md.NType == types.MinerTypeHeavy
+	return md.NType == common.MinerTypeProposer
 }
 
 type SelfMinerDO struct {

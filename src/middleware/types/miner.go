@@ -1,12 +1,5 @@
 package types
 
-const (
-	MinerTypeLight    = 0
-	MinerTypeHeavy    = 1
-	MinerStatusNormal = 0
-	MinerStatusAbort  = 1
-)
-
 type Miner struct {
 	Id           []byte
 	PublicKey    []byte

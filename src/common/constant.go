@@ -19,6 +19,13 @@ const (
 	GroupIdLength = 32
 )
 
+const (
+	MinerTypeValidator    = 0
+	MinerTypeProposer    = 1
+	MinerStatusNormal = 0
+	MinerStatusAbort  = 1
+)
+
 var (
 	hashT    = reflect.TypeOf(Hash{})
 	addressT = reflect.TypeOf(Address{})

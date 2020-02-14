@@ -6,6 +6,7 @@ import (
 	"x/src/middleware/types"
 	"x/src/core"
 	"x/src/consensus/vrf"
+	"x/src/common"
 )
 
 type MinerPoolReader struct {
@@ -46,7 +47,7 @@ func (access *MinerPoolReader) getLightMiner(id groupsig.ID) *model.MinerDO {
 	if minerPool == nil {
 		return nil
 	}
-	miner := minerPool.GetMinerById(id.Serialize(), types.MinerTypeLight, nil)
+	miner := minerPool.GetMinerById(id.Serialize(), common.MinerTypeValidator, nil)
 	if miner == nil {
 		//access.blog.log("getMinerById error id %v", id.ShortS())
 		return nil
@@ -59,7 +60,7 @@ func (access *MinerPoolReader) getProposeMiner(id groupsig.ID) *model.MinerDO {
 	if minerPool == nil {
 		return nil
 	}
-	miner := minerPool.GetMinerById(id.Serialize(), types.MinerTypeHeavy, nil)
+	miner := minerPool.GetMinerById(id.Serialize(), common.MinerTypeProposer, nil)
 	if miner == nil {
 		//access.blog.log("getMinerById error id %v", id.ShortS())
 		return nil
@@ -83,7 +84,7 @@ func (access *MinerPoolReader) getAllMinerDOByType(ntype byte, h uint64) []*mode
 }
 
 func (access *MinerPoolReader) getCanJoinGroupMinersAt(h uint64) []model.MinerDO {
-	miners := access.getAllMinerDOByType(types.MinerTypeLight, h)
+	miners := access.getAllMinerDOByType(common.MinerTypeValidator, h)
 	rets := make([]model.MinerDO, 0)
 	access.blog.log("all light nodes size %v", len(miners))
 	for _, md := range miners {

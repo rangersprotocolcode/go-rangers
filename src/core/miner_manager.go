@@ -67,7 +67,7 @@ func (mm *MinerManager) GetValidatorsStake(height uint64, members [][]byte) (tot
 	membersDetail = make(map[string]uint64, len(members))
 	for _, member := range members {
 		id := string(member)
-		miner := mm.GetMinerById(member, types.MinerTypeLight, accountDB)
+		miner := mm.GetMinerById(member, common.MinerTypeValidator, accountDB)
 		if nil == miner {
 			logger.Errorf("fail to get Member,id: %s", id)
 			continue
@@ -79,7 +79,6 @@ func (mm *MinerManager) GetValidatorsStake(height uint64, members [][]byte) (tot
 	return total, membersDetail, nil
 }
 
-//
 func (mm *MinerManager) GetProposerTotalStake(height uint64) uint64 {
 	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
 	if err != nil {
@@ -87,19 +86,19 @@ func (mm *MinerManager) GetProposerTotalStake(height uint64) uint64 {
 		return 0
 	}
 
-	iter := mm.minerIterator(types.MinerTypeHeavy, accountDB)
+	iter := mm.minerIterator(common.MinerTypeProposer, accountDB)
 	var total uint64 = 0
 	for iter.Next() {
 		miner, _ := iter.Current()
 		if height >= miner.ApplyHeight {
-			if miner.Status == types.MinerStatusNormal || height < miner.AbortHeight {
+			if miner.Status == common.MinerStatusNormal || height < miner.AbortHeight {
 				total += miner.Stake
 			}
 		}
 	}
 
 	if total == 0 {
-		iter = mm.minerIterator(types.MinerTypeHeavy, accountDB)
+		iter = mm.minerIterator(common.MinerTypeProposer, accountDB)
 		for iter.Next() {
 			miner, _ := iter.Current()
 			logger.Debugf("GetTotalStakeByHeight %+v", miner)
@@ -143,7 +142,7 @@ func (mm *MinerManager) MinerIterator(minerType byte, height uint64) *MinerItera
 //	for {
 //		<-mm.heavyMinerNetTrigger.C
 //		if mm.hasNewHeavyMiner {
-//			iterator := mm.minerIterator(types.MinerTypeHeavy, nil)
+//			iterator := mm.minerIterator(common.MinerTypeProposer, nil)
 //			array := make([]string, 0)
 //			for iterator.Next() {
 //				miner, _ := iterator.Current()
@@ -161,9 +160,9 @@ func (mm *MinerManager) MinerIterator(minerType byte, height uint64) *MinerItera
 
 func (mm *MinerManager) getMinerDatabase(minerType byte) common.Address {
 	switch minerType {
-	case types.MinerTypeLight:
+	case common.MinerTypeValidator:
 		return common.ValidatorDBAddress
-	case types.MinerTypeHeavy:
+	case common.MinerTypeProposer:
 		return common.ProposerDBAddress
 	}
 	return common.Address{}
@@ -180,7 +179,7 @@ func (mm *MinerManager) AddMiner(miner *types.Miner, accountdb *account.AccountD
 	} else {
 		data, _ := msgpack.Marshal(miner)
 		accountdb.SetData(db, id, data)
-		//if miner.Type == types.MinerTypeHeavy {
+		//if miner.Type == common.MinerTypeProposer {
 		//	mm.hasNewHeavyMiner = true
 		//}
 		//mm.updateMinerCount(miner.Type, minerCountIncrease, accountdb)
@@ -196,8 +195,8 @@ func (mm *MinerManager) removeMiner(id []byte, ttype byte, accountdb *account.Ac
 
 func (mm *MinerManager) abortMiner(id []byte, ttype byte, height uint64, accountdb *account.AccountDB) bool {
 	miner := mm.GetMinerById(id, ttype, accountdb)
-	if miner != nil && miner.Status == types.MinerStatusNormal {
-		miner.Status = types.MinerStatusAbort
+	if miner != nil && miner.Status == common.MinerStatusNormal {
+		miner.Status = common.MinerStatusAbort
 		miner.AbortHeight = height
 
 		db := mm.getMinerDatabase(ttype)
@@ -222,7 +221,7 @@ func (mm *MinerManager) minerIterator(minerType byte, accountdb *account.Account
 }
 
 //func (mm *MinerManager) updateMinerCount(minerType byte, operation MinerCountOperation, accountdb *account.AccountDB) {
-//	if minerType == types.MinerTypeHeavy {
+//	if minerType == common.MinerTypeProposer {
 //		heavyMinerCountByte := accountdb.GetData(common.MinerCountDBAddress, []byte(proposerCountKey))
 //		heavyMinerCount := utility.ByteToUInt64(heavyMinerCountByte)
 //		if operation == minerCountIncrease {
@@ -264,7 +263,7 @@ func (mi *MinerIterator) Current() (*types.Miner, error) {
 		err = errors.New("empty miner")
 	}
 
-	if miner.Status == types.MinerStatusAbort {
+	if miner.Status == common.MinerStatusAbort {
 		err = errors.New("abort miner")
 	}
 
