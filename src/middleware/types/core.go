@@ -151,6 +151,7 @@ func (bh *BlockHeader) ToString() string {
 		TotalQN:      bh.TotalQN,
 		CurTime:      bh.CurTime,
 		Castor:       bh.Castor,
+		GroupId:      bh.GroupId,
 		Nonce:        bh.Nonce,
 		Transactions: bh.Transactions,
 		TxTree:       bh.TxTree,

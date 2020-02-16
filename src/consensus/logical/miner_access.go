@@ -100,7 +100,7 @@ func (access *MinerPoolReader) getTotalStake(h uint64, cache bool) uint64 {
 	if cache && access.totalStakeCache > 0 {
 		return access.totalStakeCache
 	}
-	st, _ := access.minerPool.GetProposerTotalStake(h)
+	st := access.minerPool.GetProposerTotalStake(h)
 	access.totalStakeCache = st
 	return st
 	//return 30

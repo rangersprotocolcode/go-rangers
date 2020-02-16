@@ -9,6 +9,7 @@ import (
 	"x/src/middleware/log"
 	"x/src/storage/account"
 	"x/src/service"
+	"fmt"
 )
 
 type RewardCalculator struct {
@@ -40,7 +41,7 @@ func (reward *RewardCalculator) CalculateReward(height uint64, db *account.Accou
 	for addr, money := range total {
 		from := db.GetBalance(addr).String()
 		db.AddBalance(addr, money)
-		reward.logger.Debugf("add reward, from: %s to %v", from, db.GetBalance(addr))
+		reward.logger.Debugf("add reward, addr: %s, from: %s to %v", addr.String(), from, db.GetBalance(addr))
 	}
 	return true
 }
@@ -51,6 +52,7 @@ func (reward *RewardCalculator) calculateReward(height uint64) map[common.Addres
 	result := make(map[common.Address]*big.Int, 0)
 	from := height - common.RewardBlocks
 	reward.logger.Debugf("start to calculate, from %d to %d", from, height-1)
+	defer reward.logger.Debugf("end to calculate, from %d to %d", from, height-1)
 
 	for i := from; i < height; i++ {
 		if i == 0 {
@@ -64,17 +66,10 @@ func (reward *RewardCalculator) calculateReward(height uint64) map[common.Addres
 		}
 
 		for addr, value := range piece {
-			old, ok := result[addr]
-			if ok {
-				old.Add(old, value)
-				result[addr] = old
-			} else {
-				result[addr] = value
-			}
+			addReward(result, addr, value)
 		}
 	}
 
-	reward.logger.Debugf("end to calculate, from %d to %d", from, height)
 	return result
 }
 
@@ -91,6 +86,12 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) (
 	reward.logger.Debugf("start to calculate, bh: %s, totalReward %f", bh.ToString(), total)
 	defer reward.logger.Warnf("end to calculate, height %d, hash: %s, result: %v", height, hashString, result)
 
+	accountDB, err := service.AccountDBManagerInstance.GetAccountDBByHash(bh.StateTree)
+	if err != nil {
+		reward.logger.Errorf("get account db by height: %d error:%s", height, err.Error())
+		return
+	}
+
 	// 社区奖励
 	communityReward := utility.Float64ToBigInt(total * common.CommunityReward)
 	result[common.CommunityAddress] = communityReward
@@ -103,13 +104,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) (
 	reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, reward: %d", height, hashString, proposerAddr.String(), result[proposerAddr])
 
 	// 其他提案者奖励
-	accountDB, err := service.AccountDBManagerInstance.GetAccountDBByHash(bh.StateTree)
-	if err != nil {
-		reward.logger.Errorf("get account db by height: %d error:%s", height, err.Error())
-		return
-	}
-
-	totalProposerStake, proposersStake := reward.minerManager.GetProposerTotalStakeWithAccountDB(height, accountDB)
+	totalProposerStake, proposersStake := reward.minerManager.GetProposerTotalStakeWithDetail(height, accountDB)
 	if totalProposerStake != 0 {
 		otherRewardProposer := rewardProposer * (1 - common.ProposerReward)
 		for addr, stake := range proposersStake {
@@ -118,9 +113,8 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) (
 			//	continue
 			//}
 			delta := utility.Float64ToBigInt(float64(stake) / float64(totalProposerStake) * otherRewardProposer)
-			old := result[addr]
-			old.Add(old, delta)
-			reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr %s, reward %d", height, hashString, addr.String(), result[addr])
+			addReward(result, addr, delta)
+			reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, reward: %d", height, hashString, addr.String(), delta)
 		}
 	}
 
@@ -157,4 +151,17 @@ func getTotalReward(height uint64) float64 {
 
 func getAddressFromID(id []byte) common.Address {
 	return common.BytesToAddress(id)
+}
+
+func addReward(all map[common.Address]*big.Int, addr common.Address, delta *big.Int) {
+	old, ok := all[addr]
+	before := "0"
+	if ok {
+		before = old.String()
+		old.Add(old, delta)
+	} else {
+		all[addr] = delta
+	}
+
+	fmt.Printf("before: %s, after: %s \n", before, all[addr].String())
 }

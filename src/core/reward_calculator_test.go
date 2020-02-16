@@ -5,6 +5,7 @@ import (
 	"x/src/common"
 	"fmt"
 	"x/src/utility"
+	"math/big"
 )
 
 func TestGetYear(t *testing.T) {
@@ -60,4 +61,18 @@ func TestFloat64Stake(t *testing.T) {
 	prop := utility.Float64ToBigInt(money)
 	fmt.Println(money)
 	fmt.Println(prop)
+}
+
+func TestAddReward(t *testing.T) {
+	all := make(map[common.Address]*big.Int)
+	addr := common.CommunityAddress
+	delta := big.NewInt(1000)
+	fmt.Println(all[addr])
+
+	addReward(all, addr, delta)
+	fmt.Println(all[addr])
+
+	addReward(all, addr, delta)
+	fmt.Println(all[addr])
+
 }
