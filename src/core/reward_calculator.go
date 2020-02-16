@@ -87,7 +87,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) (
 	height := bh.Height
 	total := getTotalReward(height)
 	hashString := bh.Hash.String()
-	reward.logger.Debugf("start to calculate, bh: %v, totalReward %d", bh, total)
+	reward.logger.Debugf("start to calculate, bh: +%v, totalReward %f", bh, total)
 	defer reward.logger.Warnf("end to calculate, height %d, hash: %s, result: %v", height, hashString, result)
 
 	// 社区奖励
