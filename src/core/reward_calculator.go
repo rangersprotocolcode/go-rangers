@@ -49,9 +49,13 @@ func (reward *RewardCalculator) CalculateReward(height uint64, db *account.Accou
 func (reward *RewardCalculator) calculateReward(height uint64) map[common.Address]*big.Int {
 	result := make(map[common.Address]*big.Int, 0)
 	from := height - common.RewardBlocks
-	reward.logger.Debugf("start to calculate, from %d to %d", from, height)
+	reward.logger.Debugf("start to calculate, from %d to %d", from, height-1)
 
 	for i := from; i < height; i++ {
+		if i == 0 {
+			continue
+		}
+
 		bh := reward.blockChain.queryBlockHeaderByHeight(i, true)
 		piece := reward.calculateRewardPerBlock(bh)
 		if nil == piece {
@@ -83,7 +87,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) (
 	height := bh.Height
 	total := getTotalReward(height)
 	hashString := bh.Hash.String()
-	reward.logger.Debugf("start to calculate, height: %d, hash: %s, totalReward %d", height, hashString, total)
+	reward.logger.Debugf("start to calculate, bh: %v, totalReward %d", bh, total)
 	defer reward.logger.Warnf("end to calculate, height %d, hash: %s, result: %v", height, hashString, result)
 
 	// 社区奖励
