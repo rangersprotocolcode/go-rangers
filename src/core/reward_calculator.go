@@ -103,7 +103,8 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) m
 
 	proposerAddr := getAddressFromID(bh.Castor)
 	addReward(result, proposerAddr, rewardProposer)
-	reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, reward: %d, result: %d", height, hashString, proposerAddr.String(), rewardProposer, result[proposerAddr])
+	proposerResult := result[proposerAddr].String()
+	reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, reward: %d, result: %s", height, hashString, proposerAddr.String(), rewardProposer, proposerResult)
 
 	// 其他提案者奖励
 	totalProposerStake, proposersStake := reward.minerManager.GetProposerTotalStakeWithDetail(height, accountDB)
@@ -116,7 +117,8 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) m
 			//}
 			delta := utility.Float64ToBigInt(float64(stake) / float64(totalProposerStake) * otherRewardProposer)
 			addReward(result, addr, delta)
-			reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, reward: %d, result: %d", height, hashString, addr.String(), delta, result[addr])
+			proposerResult := result[addr].String()
+			reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, reward: %d, result: %s", height, hashString, addr.String(), delta, proposerResult)
 		}
 	}
 
