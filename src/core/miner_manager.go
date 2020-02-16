@@ -56,17 +56,17 @@ func (mm *MinerManager) GetMinerById(id []byte, kind byte, accountdb *account.Ac
 	return nil
 }
 
-func (mm *MinerManager) GetValidatorsStake(height uint64, members [][]byte) (total uint64, membersDetail map[string]uint64, err error) {
+func (mm *MinerManager) GetValidatorsStake(height uint64, members [][]byte) (total uint64, membersDetail map[common.Address]uint64) {
 	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
 	if err != nil {
 		logger.Errorf("Get account db by height %d error:%s", height, err.Error())
-		return 0, nil, err
+		return 0, nil
 	}
 
 	total = 0
-	membersDetail = make(map[string]uint64, len(members))
+	membersDetail = make(map[common.Address]uint64, len(members))
 	for _, member := range members {
-		id := string(member)
+		id := getAddressFromID(member)
 		miner := mm.GetMinerById(member, common.MinerTypeValidator, accountDB)
 		if nil == miner {
 			logger.Errorf("fail to get Member,id: %s", id)
@@ -76,24 +76,25 @@ func (mm *MinerManager) GetValidatorsStake(height uint64, members [][]byte) (tot
 		total += miner.Stake
 	}
 
-	return total, membersDetail, nil
+	return total, membersDetail
 }
 
-func (mm *MinerManager) GetProposerTotalStake(height uint64) uint64 {
+func (mm *MinerManager) GetProposerTotalStake(height uint64) (total uint64, membersDetail map[common.Address]uint64) {
 	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
 	if err != nil {
 		logger.Errorf("Get account db by height %d error:%s", height, err.Error())
-		return 0
+		return 0, nil
 	}
 
 	iter := mm.minerIterator(common.MinerTypeProposer, accountDB)
-	var total uint64 = 0
+	total = 0
+	membersDetail = make(map[common.Address]uint64)
+
 	for iter.Next() {
 		miner, _ := iter.Current()
-		if height >= miner.ApplyHeight {
-			if miner.Status == common.MinerStatusNormal || height < miner.AbortHeight {
-				total += miner.Stake
-			}
+		if height >= miner.ApplyHeight && (miner.Status == common.MinerStatusNormal || height < miner.AbortHeight) {
+			total += miner.Stake
+			membersDetail[getAddressFromID(miner.Id)] = miner.Stake
 		}
 	}
 
@@ -105,7 +106,7 @@ func (mm *MinerManager) GetProposerTotalStake(height uint64) uint64 {
 		}
 	}
 
-	return total
+	return
 }
 
 func (mm *MinerManager) MinerIterator(minerType byte, height uint64) *MinerIterator {

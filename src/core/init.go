@@ -30,6 +30,9 @@ func InitCore(helper types.ConsensusHelper) error {
 	if nil == groupChainImpl {
 		initGroupChain()
 	}
+
+	initRewardCalculator(MinerManagerImpl, blockChainImpl, groupChainImpl)
+
 	initChainHandler()
 
 	initGameExecutor(blockChainImpl)

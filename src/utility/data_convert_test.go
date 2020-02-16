@@ -97,7 +97,7 @@ func TestStrToBigInt6(t *testing.T) {
 	fmt.Println(str)
 	fmt.Println(value.String())
 
-	fmt.Println(bigIntToStr(value,0))
+	fmt.Println(bigIntToStr(value, 0))
 }
 
 func TestStrToBigInt7(t *testing.T) {
@@ -110,5 +110,14 @@ func TestStrToBigInt7(t *testing.T) {
 	fmt.Println(str)
 	fmt.Println(value.String())
 
-	fmt.Println(bigIntToStr(value,9))
+	fmt.Println(bigIntToStr(value, 9))
+}
+
+func TestFloat64ToBigInt(t *testing.T) {
+	number := float64(11.2222222222222222)
+	result := Float64ToBigInt(number)
+	fmt.Println(result)
+	if 11222222222 != result.Uint64() {
+		t.Fatalf("11222222222 error")
+	}
 }
