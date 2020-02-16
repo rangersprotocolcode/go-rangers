@@ -73,12 +73,13 @@ func (reward *RewardCalculator) calculateReward(height uint64) map[common.Addres
 }
 
 // 计算某一块的奖励
-func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) (result map[common.Address]*big.Int) {
+func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) map[common.Address]*big.Int {
 	if nil == bh {
 		return nil
 	}
 
-	result = make(map[common.Address]*big.Int)
+	result := make(map[common.Address]*big.Int)
+
 	height := bh.Height
 	total := getTotalReward(height)
 	hashString := bh.Hash.String()
@@ -88,7 +89,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) (
 	accountDB, err := service.AccountDBManagerInstance.GetAccountDBByHash(bh.StateTree)
 	if err != nil {
 		reward.logger.Errorf("get account db by height: %d error:%s", height, err.Error())
-		return
+		return nil
 	}
 
 	// 社区奖励
@@ -115,7 +116,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) (
 			//}
 			delta := utility.Float64ToBigInt(float64(stake) / float64(totalProposerStake) * otherRewardProposer)
 			addReward(result, addr, delta)
-			reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, reward: %d", height, hashString, addr.String(), delta)
+			reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, reward: %d, result: %d", height, hashString, addr.String(), delta, result[addr])
 		}
 	}
 
@@ -123,7 +124,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) (
 	group := reward.groupChain.GetGroupById(bh.GroupId)
 	if group == nil {
 		reward.logger.Errorf("fail to get group. id: %v", bh.GroupId)
-		return
+		return nil
 	}
 
 	totalValidatorStake, validatorStake := reward.minerManager.GetValidatorsStake(height, group.Members, accountDB)

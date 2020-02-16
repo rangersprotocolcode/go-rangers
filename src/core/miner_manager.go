@@ -56,9 +56,9 @@ func (mm *MinerManager) GetMinerById(id []byte, kind byte, accountdb *account.Ac
 	return nil
 }
 
-func (mm *MinerManager) GetValidatorsStake(height uint64, members [][]byte, accountDB *account.AccountDB) (total uint64, membersDetail map[common.Address]uint64) {
-	total = 0
-	membersDetail = make(map[common.Address]uint64, len(members))
+func (mm *MinerManager) GetValidatorsStake(height uint64, members [][]byte, accountDB *account.AccountDB) (uint64, map[common.Address]uint64) {
+	total := uint64(0)
+	membersDetail := make(map[common.Address]uint64, len(members))
 	for _, member := range members {
 		id := getAddressFromID(member)
 		miner := mm.GetMinerById(member, common.MinerTypeValidator, accountDB)
@@ -73,13 +73,13 @@ func (mm *MinerManager) GetValidatorsStake(height uint64, members [][]byte, acco
 	return total, membersDetail
 }
 
-func (mm *MinerManager) GetProposerTotalStakeWithDetail(height uint64, accountDB *account.AccountDB) (total uint64, membersDetail map[common.Address]uint64) {
+func (mm *MinerManager) GetProposerTotalStakeWithDetail(height uint64, accountDB *account.AccountDB) (uint64, map[common.Address]uint64) {
 	if accountDB == nil {
 		return 0, nil
 	}
 
-	total = 0
-	membersDetail = make(map[common.Address]uint64)
+	total := uint64(0)
+	membersDetail := make(map[common.Address]uint64)
 
 	iter := mm.minerIterator(common.MinerTypeProposer, accountDB)
 	for iter.Next() {
@@ -98,19 +98,19 @@ func (mm *MinerManager) GetProposerTotalStakeWithDetail(height uint64, accountDB
 		}
 	}
 
-	return
+	return total, membersDetail
 }
 
-func (mm *MinerManager) GetProposerTotalStake(height uint64) (total uint64) {
+func (mm *MinerManager) GetProposerTotalStake(height uint64) uint64 {
 	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
 	if err != nil {
 		logger.Errorf("Get account db by height %d error:%s", height, err.Error())
 		return 0
 	}
 
-	total, _ = mm.GetProposerTotalStakeWithDetail(height, accountDB)
+	total, _ := mm.GetProposerTotalStakeWithDetail(height, accountDB)
 
-	return
+	return total
 }
 
 func (mm *MinerManager) MinerIterator(minerType byte, height uint64) *MinerIterator {
