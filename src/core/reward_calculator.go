@@ -9,7 +9,6 @@ import (
 	"x/src/middleware/log"
 	"x/src/storage/account"
 	"x/src/service"
-	"fmt"
 )
 
 type RewardCalculator struct {
@@ -155,13 +154,11 @@ func getAddressFromID(id []byte) common.Address {
 
 func addReward(all map[common.Address]*big.Int, addr common.Address, delta *big.Int) {
 	old, ok := all[addr]
-	before := "0"
 	if ok {
-		before = old.String()
 		old.Add(old, delta)
 	} else {
-		all[addr] = delta
+		nb := &big.Int{}
+		nb.SetBytes(delta.Bytes())
+		all[addr] = nb
 	}
-
-	fmt.Printf("before: %s, after: %s \n", before, all[addr].String())
 }
