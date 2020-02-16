@@ -8,6 +8,7 @@ import (
 	"x/src/middleware/types"
 	"x/src/middleware/log"
 	"x/src/storage/account"
+	"x/src/service"
 )
 
 type RewardCalculator struct {
@@ -102,7 +103,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) (
 	reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, reward: %d", height, hashString, proposerAddr.String(), result[proposerAddr])
 
 	// 其他提案者奖励
-	accountDB, err := reward.blockChain.getAccountDBByHeight(height)
+	accountDB, err := service.AccountDBManagerInstance.GetAccountDBByHash(bh.StateTree)
 	if err != nil {
 		reward.logger.Errorf("get account db by height: %d error:%s", height, err.Error())
 		return
@@ -130,7 +131,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) (
 		return
 	}
 
-	totalValidatorStake, validatorStake := reward.minerManager.GetValidatorsStake(height, group.Members)
+	totalValidatorStake, validatorStake := reward.minerManager.GetValidatorsStake(height, group.Members, accountDB)
 	if totalValidatorStake != 0 {
 		rewardValidators := total * common.ValidatorsReward
 		for addr, stake := range validatorStake {

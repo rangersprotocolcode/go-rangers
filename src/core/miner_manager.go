@@ -56,13 +56,7 @@ func (mm *MinerManager) GetMinerById(id []byte, kind byte, accountdb *account.Ac
 	return nil
 }
 
-func (mm *MinerManager) GetValidatorsStake(height uint64, members [][]byte) (total uint64, membersDetail map[common.Address]uint64) {
-	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
-	if err != nil {
-		logger.Errorf("Get account db by height %d error:%s", height, err.Error())
-		return 0, nil
-	}
-
+func (mm *MinerManager) GetValidatorsStake(height uint64, members [][]byte, accountDB *account.AccountDB) (total uint64, membersDetail map[common.Address]uint64) {
 	total = 0
 	membersDetail = make(map[common.Address]uint64, len(members))
 	for _, member := range members {
