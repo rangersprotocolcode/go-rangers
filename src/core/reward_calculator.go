@@ -87,22 +87,28 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) (
 	height := bh.Height
 	total := getTotalReward(height)
 	hashString := bh.Hash.String()
-	reward.logger.Debugf("start to calculate, bh: +%v, totalReward %f", bh, total)
+	reward.logger.Debugf("start to calculate, bh: %s, totalReward %f", bh.ToString(), total)
 	defer reward.logger.Warnf("end to calculate, height %d, hash: %s, result: %v", height, hashString, result)
 
 	// 社区奖励
 	communityReward := utility.Float64ToBigInt(total * common.CommunityReward)
 	result[common.CommunityAddress] = communityReward
-	reward.logger.Debugf("calculating, height: %d, hash: %s, CommunityAddress %s, reward %d", height, hashString, common.CommunityAddress.String(), communityReward)
+	reward.logger.Debugf("calculating, height: %d, hash: %s, CommunityAddress: %s, reward: %d", height, hashString, common.CommunityAddress.String(), communityReward)
 
 	// 提案者奖励
 	rewardProposer := total * common.AllProposerReward
 	proposerAddr := getAddressFromID(bh.Castor)
 	result[proposerAddr] = utility.Float64ToBigInt(rewardProposer * common.ProposerReward)
-	reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr %s, reward %d", height, hashString, proposerAddr.String(), result[proposerAddr])
+	reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, reward: %d", height, hashString, proposerAddr.String(), result[proposerAddr])
 
 	// 其他提案者奖励
-	totalProposerStake, proposersStake := reward.minerManager.GetProposerTotalStake(height)
+	accountDB, err := reward.blockChain.getAccountDBByHeight(height)
+	if err != nil {
+		reward.logger.Errorf("get account db by height: %d error:%s", height, err.Error())
+		return
+	}
+
+	totalProposerStake, proposersStake := reward.minerManager.GetProposerTotalStakeWithAccountDB(height, accountDB)
 	if totalProposerStake != 0 {
 		otherRewardProposer := rewardProposer * (1 - common.ProposerReward)
 		for addr, stake := range proposersStake {
@@ -110,7 +116,9 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) (
 			//if addr == proposerAddr {
 			//	continue
 			//}
-			result[addr] = utility.Float64ToBigInt(float64(stake) / float64(totalProposerStake) * otherRewardProposer)
+			delta := utility.Float64ToBigInt(float64(stake) / float64(totalProposerStake) * otherRewardProposer)
+			old := result[addr]
+			old.Add(old, delta)
 			reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr %s, reward %d", height, hashString, addr.String(), result[addr])
 		}
 	}
@@ -118,6 +126,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) (
 	// 验证者奖励
 	group := reward.groupChain.GetGroupById(bh.GroupId)
 	if group == nil {
+		reward.logger.Errorf("fail to get group. id: %v", bh.GroupId)
 		return
 	}
 

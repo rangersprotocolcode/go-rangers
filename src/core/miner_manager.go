@@ -79,17 +79,15 @@ func (mm *MinerManager) GetValidatorsStake(height uint64, members [][]byte) (tot
 	return total, membersDetail
 }
 
-func (mm *MinerManager) GetProposerTotalStake(height uint64) (total uint64, membersDetail map[common.Address]uint64) {
-	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
-	if err != nil {
-		logger.Errorf("Get account db by height %d error:%s", height, err.Error())
+func (mm *MinerManager) GetProposerTotalStakeWithAccountDB(height uint64, accountDB *account.AccountDB) (total uint64, membersDetail map[common.Address]uint64) {
+	if accountDB == nil {
 		return 0, nil
 	}
 
-	iter := mm.minerIterator(common.MinerTypeProposer, accountDB)
 	total = 0
 	membersDetail = make(map[common.Address]uint64)
 
+	iter := mm.minerIterator(common.MinerTypeProposer, accountDB)
 	for iter.Next() {
 		miner, _ := iter.Current()
 		if height >= miner.ApplyHeight && (miner.Status == common.MinerStatusNormal || height < miner.AbortHeight) {
@@ -107,6 +105,16 @@ func (mm *MinerManager) GetProposerTotalStake(height uint64) (total uint64, memb
 	}
 
 	return
+}
+
+func (mm *MinerManager) GetProposerTotalStake(height uint64) (total uint64, membersDetail map[common.Address]uint64) {
+	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
+	if err != nil {
+		logger.Errorf("Get account db by height %d error:%s", height, err.Error())
+		return 0, nil
+	}
+
+	return mm.GetProposerTotalStakeWithAccountDB(height, accountDB)
 }
 
 func (mm *MinerManager) MinerIterator(minerType byte, height uint64) *MinerIterator {
