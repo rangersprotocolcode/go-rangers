@@ -7,6 +7,7 @@ import (
 	"x/src/utility"
 	"x/src/middleware/types"
 	"x/src/middleware/log"
+	"x/src/storage/account"
 )
 
 type RewardCalculator struct {
@@ -23,16 +24,36 @@ func initRewardCalculator(minerManager *MinerManager, blockChainImpl *blockChain
 	RewardCalculatorImpl.logger = log.GetLoggerByIndex(log.RewardLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 }
 
+func (reward *RewardCalculator) CalculateReward(height uint64, db *account.AccountDB) bool {
+	if !reward.needReward(height) {
+		reward.logger.Warnf("no need to reward, height: %d", height)
+		return false
+	}
+
+	total := reward.calculateReward(height)
+	if nil == total || 0 == len(total) {
+		reward.logger.Errorf("fail to reward, height: %d", height)
+		return false
+	}
+
+	for addr, money := range total {
+		from := db.GetBalance(addr).String()
+		db.AddBalance(addr, money)
+		reward.logger.Debugf("add reward, from: %s to %v", from, db.GetBalance(addr))
+	}
+	return true
+}
+
 // 计算完整奖励
 // 假定每10000块计算一次奖励，则这里会计算例如高度为0-9999，10000-19999的结果
-func (reward *RewardCalculator) CalculateReward(height uint64) map[common.Address]*big.Int {
+func (reward *RewardCalculator) calculateReward(height uint64) map[common.Address]*big.Int {
 	result := make(map[common.Address]*big.Int, 0)
 	from := height - common.RewardBlocks
 	reward.logger.Debugf("start to calculate, from %d to %d", from, height)
 
 	for i := from; i < height; i++ {
 		bh := reward.blockChain.queryBlockHeaderByHeight(i, true)
-		piece := reward.calculateReward(bh)
+		piece := reward.calculateRewardPerBlock(bh)
 		if nil == piece {
 			continue
 		}
@@ -53,7 +74,7 @@ func (reward *RewardCalculator) CalculateReward(height uint64) map[common.Addres
 }
 
 // 计算某一块的奖励
-func (reward *RewardCalculator) calculateReward(bh *types.BlockHeader) (result map[common.Address]*big.Int) {
+func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) (result map[common.Address]*big.Int) {
 	if nil == bh {
 		return nil
 	}
@@ -108,7 +129,7 @@ func (reward *RewardCalculator) calculateReward(bh *types.BlockHeader) (result m
 	return result
 }
 
-func (reward *RewardCalculator) NeedReward(height uint64) bool {
+func (reward *RewardCalculator) needReward(height uint64) bool {
 	return 0 == (height % common.RewardBlocks)
 }
 

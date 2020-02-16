@@ -302,7 +302,8 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		receipts = append(receipts, receipt)
 	}
 
-	accountdb.AddBalance(common.BytesToAddress(block.Header.Castor), consensusHelper.ProposalBonus())
+	RewardCalculatorImpl.CalculateReward(height, accountdb)
+	//accountdb.AddBalance(common.BytesToAddress(block.Header.Castor), consensusHelper.ProposalBonus())
 	state := accountdb.IntermediateRoot(true)
 
 	middleware.PerfLogger.Debugf("VMExecutor End. %s height: %d, cost: %v, txs: %d", situation, block.Header.Height, time.Since(beginTime), len(block.Transactions))
