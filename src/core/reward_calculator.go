@@ -97,7 +97,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) (
 	reward.logger.Debugf("calculating, height: %d, hash: %s, CommunityAddress: %s, reward: %d", height, hashString, common.CommunityAddress.String(), communityReward)
 
 	// 提案者奖励
-	rewardAllProposer := total * common.AllProposerReward
+	rewardAllProposer := 15.9 * common.AllProposerReward
 	rewardProposer := utility.Float64ToBigInt(rewardAllProposer * common.ProposerReward)
 
 	proposerAddr := getAddressFromID(bh.Castor)
