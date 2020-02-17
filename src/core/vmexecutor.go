@@ -283,6 +283,29 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			go statemachine.STMManger.QuitSTM(transaction.Source)
 			success = true
 			break
+		case types.TransactionTypeMinerApply:
+			data := transaction.Data
+			var miner types.Miner
+			err := json.Unmarshal([]byte(data), &miner)
+			if err != nil {
+				logger.Errorf("json Unmarshal error, %s", err.Error())
+				success = false
+			} else {
+				miner.ApplyHeight = height + common.HeightAfterStake
+				success = MinerManagerImpl.AddMiner(common.HexToAddress(transaction.Source), &miner, accountdb)
+			}
+			break
+		case types.TransactionTypeMinerAdd:
+			data := transaction.Data
+			var miner types.Miner
+			err := json.Unmarshal([]byte(data), &miner)
+			if err != nil {
+				logger.Errorf("json Unmarshal error, %s", err.Error())
+				success = false
+			} else {
+				success = MinerManagerImpl.AddStake(common.HexToAddress(transaction.Source), miner.Id, miner.Stake, accountdb)
+			}
+
 		}
 
 		if !success {

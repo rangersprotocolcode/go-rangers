@@ -132,6 +132,6 @@ func getGenesisProposer(path string) []*types.Miner {
 
 func addMiners(miners []*types.Miner, accountdb *account.AccountDB) {
 	for _, miner := range miners {
-		MinerManagerImpl.AddMiner(miner, accountdb)
+		MinerManagerImpl.addMiner(miner, accountdb)
 	}
 }

@@ -12,6 +12,7 @@ const (
 	TransactionTypeMinerApply  = 2
 	TransactionTypeMinerAbort  = 3
 	TransactionTypeMinerRefund = 4
+	TransactionTypeMinerAdd    = 5
 
 	//以下交易类型会被外部使用 禁止更改
 	TransactionTypeOperatorEvent     = 100 // 调用状态机/转账

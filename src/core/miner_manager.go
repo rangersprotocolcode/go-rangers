@@ -11,6 +11,7 @@ import (
 	"x/src/storage/account"
 	"x/src/storage/trie"
 	"x/src/service"
+	"x/src/utility"
 )
 
 const (
@@ -170,27 +171,35 @@ func (mm *MinerManager) getMinerDatabase(minerType byte) common.Address {
 	return common.Address{}
 }
 
-func (mm *MinerManager) changeStake(minerId []byte, minerType byte, add bool, delta uint64, accountdb *account.AccountDB) bool {
+func (mm *MinerManager) AddStake(addr common.Address, minerId []byte, delta uint64, accountdb *account.AccountDB) bool {
 	if delta == 0 {
 		return true
 	}
 
-	miner := mm.GetMinerById(minerId, minerType, accountdb)
-	if nil == miner {
+	stake := utility.Float64ToBigInt(float64(delta))
+	balance := accountdb.GetBalance(addr)
+	if balance.Cmp(stake) < 0 {
+		logger.Errorf("not enough balance, addr: %s, balance: %d, stake: %d", addr.String(), balance, stake)
 		return false
 	}
 
-	if add {
-		miner.Stake = miner.Stake + delta
-	} else {
-		miner.Stake = miner.Stake - delta
+	miner := mm.GetMinerById(minerId, common.MinerTypeProposer, accountdb)
+	if nil == miner {
+		miner = mm.GetMinerById(minerId, common.MinerTypeValidator, accountdb)
+		if nil == miner {
+			return false
+		}
 	}
+
+	miner.Stake = miner.Stake + delta
 	if miner.Stake < 0 {
 		return false
 	}
 
+	accountdb.SubBalance(addr, stake)
 	data, _ := msgpack.Marshal(miner)
-	accountdb.SetData(mm.getMinerDatabase(minerType), minerId, data)
+	accountdb.SetData(mm.getMinerDatabase(miner.Type), minerId, data)
+
 	return true
 }
 
@@ -223,7 +232,27 @@ func (mm *MinerManager) ChangeStakes(minerIds [][]byte, minerType byte, add bool
 	return true
 }
 
-func (mm *MinerManager) AddMiner(miner *types.Miner, accountdb *account.AccountDB) int {
+func (mm *MinerManager) AddMiner(addr common.Address, miner *types.Miner, accountdb *account.AccountDB) bool {
+	stake := utility.Float64ToBigInt(float64(miner.Stake))
+	balance := accountdb.GetBalance(addr)
+	if balance.Cmp(stake) < 0 {
+		logger.Errorf("not enough balance, addr: %s, balance: %d, stake: %d", addr.String(), balance, stake)
+		return false
+	}
+
+	id := miner.Id
+	db := mm.getMinerDatabase(miner.Type)
+	if accountdb.GetData(db, id) != nil {
+		return false
+	}
+
+	accountdb.SubBalance(addr, stake)
+	data, _ := msgpack.Marshal(miner)
+	accountdb.SetData(db, id, data)
+	return true
+}
+
+func (mm *MinerManager) addMiner(miner *types.Miner, accountdb *account.AccountDB) int {
 	logger.Debugf("Miner manager add miner, %v", miner)
 
 	id := miner.Id

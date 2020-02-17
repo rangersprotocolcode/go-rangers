@@ -44,6 +44,8 @@ const (
 const (
 	ValidatorStake = uint64(100000)
 	ProposerStake  = uint64(1000000)
+
+	HeightAfterStake = RewardBlocks
 )
 
 var (

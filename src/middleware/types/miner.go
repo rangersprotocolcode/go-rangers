@@ -1,15 +1,18 @@
 package types
 
 type Miner struct {
-	Id           []byte
-	PublicKey    []byte
-	VrfPublicKey []byte
+	Id           []byte `json:"id,omitempty"`
+	PublicKey    []byte `json:"publicKey,omitempty"`
+	VrfPublicKey []byte `json:"vrfPublicKey,omitempty"`
 
-	Type  byte   // 提案者 还是验证者
-	Stake uint64 // 质押数
+	// 提案者 还是验证者
+	Type byte `json:"type,omitempty"`
 
-	ApplyHeight uint64
-	AbortHeight uint64
+	// 质押数
+	Stake uint64 `json:"stake,omitempty"`
+
+	ApplyHeight uint64 `json:"-"`
+	AbortHeight uint64 `json:"-"`
 
 	Status byte // 当前状态
 }
