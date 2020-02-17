@@ -78,8 +78,6 @@ func TestAddReward(t *testing.T) {
 }
 
 func TestProposerReward(t *testing.T) {
-	rewardAllProposer := 15.9 * common.AllProposerReward
-	rewardProposer := utility.Float64ToBigInt(rewardAllProposer * common.ProposerReward)
-
-	fmt.Println(rewardProposer)
+	stake := uint64(190000)
+	fmt.Println(int(stake / common.ValidatorStake))
 }

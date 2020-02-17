@@ -95,6 +95,7 @@ func (chain *groupChain) AddGroup(group *types.Group) error {
 	if !bytes.Equal(chain.lastGroup.Id, group.Header.PreGroup) {
 		return fmt.Errorf("pre not equal lastgroup!Pre group id:%v,local last group id:%v", group.Header.PreGroup, chain.lastGroup.Id)
 	}
+
 	return chain.save(group)
 }
 

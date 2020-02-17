@@ -8,6 +8,7 @@ import (
 	"sync"
 	"math"
 	"bytes"
+	"x/src/common"
 )
 
 type GroupCreateChecker struct {
@@ -115,7 +116,7 @@ func (gchecker *GroupCreateChecker) selectCandidates(theBH *types.BlockHeader) (
 				}
 			}
 		}
-		if joinedNum < model.Param.MinerMaxJoinGroup {
+		if joinedNum < int(cand.Stake/common.ValidatorStake) {
 			candidates = append(candidates, cand)
 		}
 	}

@@ -18,12 +18,9 @@ const (
 )
 
 var (
-	emptyValue         [0]byte
-	minerCountIncrease = MinerCountOperation{0}
-	minerCountDecrease = MinerCountOperation{1}
+	emptyValue       [0]byte
+	MinerManagerImpl *MinerManager
 )
-
-var MinerManagerImpl *MinerManager
 
 type MinerManager struct {
 	heavyMinerNetTrigger *time.Timer
@@ -173,6 +170,59 @@ func (mm *MinerManager) getMinerDatabase(minerType byte) common.Address {
 	return common.Address{}
 }
 
+func (mm *MinerManager) changeStake(minerId []byte, minerType byte, add bool, delta uint64, accountdb *account.AccountDB) bool {
+	if delta == 0 {
+		return true
+	}
+
+	miner := mm.GetMinerById(minerId, minerType, accountdb)
+	if nil == miner {
+		return false
+	}
+
+	if add {
+		miner.Stake = miner.Stake + delta
+	} else {
+		miner.Stake = miner.Stake - delta
+	}
+	if miner.Stake < 0 {
+		return false
+	}
+
+	data, _ := msgpack.Marshal(miner)
+	accountdb.SetData(mm.getMinerDatabase(minerType), minerId, data)
+	return true
+}
+
+func (mm *MinerManager) ChangeStakes(minerIds [][]byte, minerType byte, add bool, delta uint64, accountdb *account.AccountDB) bool {
+	mm.lock.Lock()
+	defer mm.lock.Unlock()
+
+	miners := make([]*types.Miner, len(minerIds))
+	for i, minerId := range minerIds {
+		miner := mm.GetMinerById(minerId, minerType, accountdb)
+		if miner == nil {
+			return false
+		}
+
+		if add {
+			miner.Stake = miner.Stake + delta
+		} else {
+			miner.Stake = miner.Stake - delta
+		}
+		if miner.Stake < 0 {
+			return false
+		}
+		miners[i] = miner
+	}
+
+	for _, miner := range miners {
+		data, _ := msgpack.Marshal(miner)
+		accountdb.SetData(mm.getMinerDatabase(minerType), miner.Id, data)
+	}
+	return true
+}
+
 func (mm *MinerManager) AddMiner(miner *types.Miner, accountdb *account.AccountDB) int {
 	logger.Debugf("Miner manager add miner, %v", miner)
 
@@ -270,10 +320,6 @@ func (mi *MinerIterator) Current() (*types.Miner, error) {
 
 	if miner.Status == common.MinerStatusAbort {
 		err = errors.New("abort miner")
-	}
-
-	if miner.Stake-miner.Used < common.ValidatorStake {
-		err = errors.New("not enough stake")
 	}
 
 	return &miner, err
