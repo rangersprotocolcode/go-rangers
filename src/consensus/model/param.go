@@ -83,19 +83,11 @@ func InitParam(cc common.SectionConfManager) {
 	}
 }
 
-//取得门限值
-//func  (p *ConsensusParam) GetThreshold() int {
-//	return p.GetGroupK(p.GroupMemberMax)
-//}
-
 func (p *ConsensusParam) GetGroupK(max int) int {
 	return int(math.Ceil(float64(max*p.SSSSThreshold) / 100))
 }
 
-//获取组成员个数
-//func (p *ConsensusParam) GetGroupMemberNum() int {
-//	return p.GroupMemberMax
-//}
+
 func (p *ConsensusParam) IsGroupMemberCountLegal(cnt int) bool {
 	return p.GroupMemberMin <= cnt && cnt <= p.GroupMemberMax
 }
@@ -112,3 +104,13 @@ func (p *ConsensusParam) CreateGroupMemberCount(availCandidates int) int {
 	}
 	return cnt
 }
+
+//取得门限值
+//func  (p *ConsensusParam) GetThreshold() int {
+//	return p.GetGroupK(p.GroupMemberMax)
+//}
+
+//获取组成员个数
+//func (p *ConsensusParam) GetGroupMemberNum() int {
+//	return p.GroupMemberMax
+//}

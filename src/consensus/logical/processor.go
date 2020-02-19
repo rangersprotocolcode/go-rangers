@@ -141,9 +141,9 @@ func (p Processor) GetMinerInfo() *model.MinerDO {
 //}
 
 //检查铸块组是否合法
-func (p *Processor) isCastLegal(bh *types.BlockHeader, preHeader *types.BlockHeader) (ok bool, group *StaticGroupInfo, err error) {
+func (p *Processor) isCastLegal(bh *types.BlockHeader, preHeader *types.BlockHeader) (ok bool, group *model.GroupInfo, err error) {
 	blog := newBizLog("isCastLegal")
-	castor := groupsig.DeserializeId(bh.Castor)
+	castor := groupsig.DeserializeID(bh.Castor)
 	minerDO := p.minerReader.getProposeMiner(castor)
 	if minerDO == nil {
 		err = fmt.Errorf("minerDO is nil, id=%v", castor.ShortS())

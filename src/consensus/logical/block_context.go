@@ -31,7 +31,7 @@ type BlockContext struct {
 	lock sync.RWMutex
 }
 
-func NewBlockContext(p *Processor, sgi *StaticGroupInfo) *BlockContext {
+func NewBlockContext(p *Processor, sgi *model.GroupInfo) *BlockContext {
 	bc := &BlockContext{
 		Proc:               p,
 		MinerID:            model.NewGroupMinerID(sgi.GroupID, p.GetMinerID()),

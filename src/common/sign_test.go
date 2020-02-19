@@ -242,3 +242,12 @@ func TestStrToBigInt(t *testing.T) {
 	i := int64(f * 1000000000)
 	fmt.Printf("%v\n", i)
 }
+
+
+func TestKey(t *testing.T) {
+	privateKey := GenerateKey("")
+	publicKey := privateKey.GetPubKey()
+	address := publicKey.GetAddress()
+	fmt.Printf("Private key:%s\n",privateKey.GetHexString())
+	fmt.Printf("Address:%s\n",address.String())
+}

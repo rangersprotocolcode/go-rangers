@@ -11,6 +11,7 @@ import (
 	"x/src/middleware/types"
 	"sync"
 	"sync/atomic"
+	"gopkg.in/karalabe/cookiejar.v2/collections/set"
 )
 
 const (
@@ -51,7 +52,7 @@ func createSlotContext(bh *types.BlockHeader, threshold int) *SlotContext {
 	return &SlotContext{
 		BH:             bh,
 		vrfValue:       bh.ProveValue,
-		castor:         groupsig.DeserializeId(bh.Castor),
+		castor:         groupsig.DeserializeID(bh.Castor),
 		slotStatus:     SS_INITING,
 		gSignGenerator: model.NewGroupSignGenerator(threshold),
 		rSignGenerator: model.NewGroupSignGenerator(threshold),
@@ -131,7 +132,7 @@ func (sc *SlotContext) AcceptTrans(ths []common.Hashes) bool {
 }
 
 func (sc SlotContext) MessageSize() int {
-	return sc.gSignGenerator.WitnessSize()
+	return sc.gSignGenerator.WitnessCount()
 }
 
 //验证组签名
@@ -172,7 +173,7 @@ func (sc *SlotContext) IsWaiting() bool {
 
 //收到一个组内验证签名片段
 //返回：=0, 验证请求被接受，阈值达到组签名数量。=1，验证请求被接受，阈值尚未达到组签名数量。=2，重复的验签。=3，数据异常。
-func (sc *SlotContext) AcceptVerifyPiece(bh *types.BlockHeader, si *model.SignData) (ret CAST_BLOCK_MESSAGE_RESULT, err error) {
+func (sc *SlotContext) AcceptVerifyPiece(bh *types.BlockHeader, si *model.SignInfo) (ret CAST_BLOCK_MESSAGE_RESULT, err error) {
 	if bh.Hash != sc.BH.Hash {
 		return CBMR_BH_HASH_DIFF, fmt.Errorf("hash diff")
 	}
@@ -186,7 +187,7 @@ func (sc *SlotContext) AcceptVerifyPiece(bh *types.BlockHeader, si *model.SignDa
 		slog.log("hash=%v, height=%v, result=%v,%v", bh.Hash.ShortS(), bh.Height, add, generate)
 	}()
 
-	add, generate = sc.gSignGenerator.AddWitness(si.SignMember, si.DataSign)
+	add, generate = sc.gSignGenerator.AddWitnessSign(si.GetSignerID(), si.GetSignature())
 
 	if !add { //已经收到过该成员的验签
 		//忽略
@@ -196,7 +197,7 @@ func (sc *SlotContext) AcceptVerifyPiece(bh *types.BlockHeader, si *model.SignDa
 		if !rsign.IsValid() {
 			panic(fmt.Sprintf("rsign is invalid, bhHash=%v, height=%v, random=%v", bh.Hash.ShortS(), bh.Height, bh.Random))
 		}
-		radd, rgen := sc.rSignGenerator.AddWitness(si.SignMember, *rsign)
+		radd, rgen := sc.rSignGenerator.AddWitnessSign(si.GetSignerID(), *rsign)
 
 		if radd && generate && rgen { //达到组签名条件
 			sc.setSlotStatus(SS_RECOVERD)
@@ -232,8 +233,8 @@ func (sc *SlotContext) SetRewardTrans(tx *types.Transaction) bool {
 	return false
 }
 
-func (sc *SlotContext) AcceptRewardPiece(sd *model.SignData) (accept, recover bool) {
-	if sc.rewardTrans != nil && sc.rewardTrans.Hash != sd.DataHash {
+func (sc *SlotContext) AcceptRewardPiece(sd *model.SignInfo) (accept, recover bool) {
+	if sc.rewardTrans != nil && sc.rewardTrans.Hash != sd.GetDataHash(){
 		return
 	}
 	if sc.rewardTrans == nil {
@@ -242,7 +243,7 @@ func (sc *SlotContext) AcceptRewardPiece(sd *model.SignData) (accept, recover bo
 	if sc.rewardGSignGen == nil {
 		sc.rewardGSignGen = model.NewGroupSignGenerator(sc.gSignGenerator.Threshold())
 	}
-	accept, recover = sc.rewardGSignGen.AddWitness(sd.GetID(), sd.DataSign)
+	accept, recover = sc.rewardGSignGen.AddWitnessSign(sd.GetSignerID(), sd.GetSignature())
 	if accept && recover {
 		//groupID, _, _, _ := core.BlockChainImpl.GetBonusManager().ParseBonusTransaction(sc.rewardTrans)
 		//gpk := groupsig.DeserializePubkeyBytes(core.GroupChainImpl.GetGroupById(groupID).PubKey)

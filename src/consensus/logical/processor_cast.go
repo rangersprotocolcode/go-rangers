@@ -107,7 +107,7 @@ func (p *Processor) triggerCastCheck() {
 func (p *Processor) CalcVerifyGroupFromCache(preBH *types.BlockHeader, height uint64) (*groupsig.ID) {
 	var hash = CalcRandomHash(preBH, height)
 
-	selectGroup, err := p.globalGroups.SelectNextGroupFromCache(hash, height)
+	selectGroup, err := p.globalGroups.SelectVerifyGroupFromCache(hash, height)
 	if err != nil {
 		stdLogger.Errorf("SelectNextGroupFromCache height=%v, err: %v", height, err)
 		return nil
@@ -212,7 +212,7 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 		return
 	}
 
-	gpk := p.getGroupPubKey(groupsig.DeserializeId(bh.GroupId))
+	gpk := p.getGroupPubKey(groupsig.DeserializeID(bh.GroupId))
 	if !slot.VerifyGroupSigns(gpk, vctx.prevBH.Random) { //组签名验证通过
 		blog.log("group pub key local check failed, gpk=%v, hash in slot=%v, hash in bh=%v status=%v.",
 			gpk.ShortS(), slot.BH.Hash.ShortS(), bh.Hash.ShortS(), slot.GetSlotStatus())

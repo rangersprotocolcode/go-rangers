@@ -22,7 +22,7 @@ func init() {
 	rat1 = new(big.Rat).SetInt64(1)
 }
 
-func verifyBlockVRF(bh *types.BlockHeader, preBH *types.BlockHeader, castor *model.MinerDO, totalStake uint64) (bool, error) {
+func verifyBlockVRF(bh *types.BlockHeader, preBH *types.BlockHeader, castor *model.MinerInfo, totalStake uint64) (bool, error) {
 	prove := vrf.VRFProve(bh.ProveValue.Bytes())
 	ok, err := vrf.VRFVerify(castor.VrfPK, prove, genVrfMsg(preBH.Random, bh.Height-preBH.Height))
 	if !ok {

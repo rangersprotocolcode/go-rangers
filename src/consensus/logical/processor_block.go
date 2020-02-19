@@ -95,7 +95,7 @@ func (p *Processor) doAddOnChain(block *types.Block) (result int8) {
 	//log.Printf("AddBlockOnChain header %v \n", p.blockPreview(bh))
 	//log.Printf("QueryTopBlock header %v \n", p.blockPreview(p.MainChain.QueryTopBlock()))
 	rlog.log("height=%v, hash=%v, result=%v.", bh.Height, bh.Hash.ShortS(), result)
-	castor := groupsig.DeserializeId(bh.Castor)
+	castor := groupsig.DeserializeID(bh.Castor)
 	tlog := newHashTraceLog("doAddOnChain", bh.Hash, castor)
 	tlog.log("result=%v,castor=%v", result, castor.ShortS())
 
@@ -152,9 +152,9 @@ func (p *Processor) blockPreview(bh *types.BlockHeader) string {
 	return fmt.Sprintf("hash=%v, height=%v, curTime=%v, preHash=%v, preTime=%v", bh.Hash.ShortS(), bh.Height, bh.CurTime, bh.PreHash.ShortS(), bh.PreTime)
 }
 
-func (p *Processor) prepareForCast(sgi *StaticGroupInfo) {
+func (p *Processor) prepareForCast(sgi *model.GroupInfo) {
 	//组建组网络
-	p.NetServer.BuildGroupNet(sgi.GroupID.GetHexString(), sgi.GetMembers())
+	p.NetServer.BuildGroupNet(sgi.GroupID.GetHexString(), sgi.GetGroupMembers())
 
 	bc := NewBlockContext(p, sgi)
 
@@ -256,7 +256,7 @@ func (p *Processor) VerifyBlockHeader(bh *types.BlockHeader) (ok bool, err error
 		return
 	}
 
-	gid := groupsig.DeserializeId(bh.GroupId)
+	gid := groupsig.DeserializeID(bh.GroupId)
 	gpk := p.getGroupPubKey(gid)
 	sig := groupsig.DeserializeSign(bh.Signature)
 	b := groupsig.VerifySig(gpk, bh.Hash.Bytes(), *sig)
@@ -275,18 +275,16 @@ func (p *Processor) VerifyGroup(g *types.Group) (ok bool, err error) {
 
 	mems := make([]groupsig.ID, len(g.Members))
 	for idx, mem := range g.Members {
-		mems[idx] = groupsig.DeserializeId(mem)
+		mems[idx] = groupsig.DeserializeID(mem)
 	}
-	gInfo := &model.ConsensusGroupInitInfo{
-		GI: model.ConsensusGroupInitSummary{
-			Signature: *groupsig.DeserializeSign(g.Signature),
-			GHeader:   g.Header,
-		},
-		Mems: mems,
+	gInfo := &model.GroupInitInfo{
+		ParentGroupSign:    *groupsig.DeserializeSign(g.Signature),
+		GroupHeader:      g.Header,
+		GroupMembers: mems,
 	}
 	//检验头和签名
 	if _, ok, err := p.groupManager.checkGroupInfo(gInfo); ok {
-		gpk := groupsig.DeserializePubkeyBytes(g.PubKey)
+		gpk := groupsig.ByteToPublicKey(g.PubKey)
 		gid := groupsig.NewIDFromPubkey(gpk).Serialize()
 		if !bytes.Equal(gid, g.Id) {
 			return false, fmt.Errorf("gid error, expect %v, receive %v", gid, g.Id)

@@ -215,7 +215,7 @@ func (vc *VerifyContext) baseCheck(bh *types.BlockHeader, sender groupsig.ID) (s
 			err = fmt.Errorf("slot不接受piece，状态%v", slot.slotStatus)
 			return
 		}
-		if _, ok := slot.gSignGenerator.GetWitness(sender); ok {
+		if _, ok := slot.gSignGenerator.GetWitnessSign(sender); ok {
 			err = fmt.Errorf("重复消息%v", sender.ShortS())
 			return
 		}
@@ -265,7 +265,7 @@ func (vc *VerifyContext) prepareSlot(bh *types.BlockHeader, blog *bizLog) (*Slot
 }
 
 //收到某个验证人的验证完成消息（可能会比铸块完成消息先收到）
-func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.SignData, pk groupsig.Pubkey, slog *slowLog) (ret CAST_BLOCK_MESSAGE_RESULT, err error) {
+func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.SignInfo, pk groupsig.Pubkey, slog *slowLog) (ret CAST_BLOCK_MESSAGE_RESULT, err error) {
 	blog := newBizLog("UserVerified")
 
 	slog.addStage("prePareSlot")
@@ -284,11 +284,11 @@ func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.Sig
 	if slot.IsFailed() {
 		return CBMR_STATUS_FAIL, fmt.Errorf("slot fail")
 	}
-	if _, err2 := vc.baseCheck(bh, signData.GetID()); err2 != nil {
+	if _, err2 := vc.baseCheck(bh, signData.GetSignerID()); err2 != nil {
 		err = err2
 		return
 	}
-	isProposal := slot.castor.IsEqual(signData.GetID())
+	isProposal := slot.castor.IsEqual(signData.GetSignerID())
 
 	if isProposal { //提案者 // 不可能是提案者了
 		slog.addStage("vCastorSign")
@@ -296,7 +296,7 @@ func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.Sig
 		slog.endStage()
 
 		if !b {
-			err = fmt.Errorf("verify castorsign fail, id %v, pk %v", signData.GetID().ShortS(), pk.ShortS())
+			err = fmt.Errorf("verify castorsign fail, id %v, pk %v", signData.GetSignerID().ShortS(), pk.ShortS())
 			return
 		}
 
@@ -306,7 +306,7 @@ func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.Sig
 		slog.endStage()
 
 		if !b {
-			err = fmt.Errorf("verify sign fail, id %v, pk %v, sig %v hash %v", signData.GetID().ShortS(), pk.GetHexString(), signData.DataSign.GetHexString(), signData.DataHash.Hex())
+			err = fmt.Errorf("verify sign fail, id %v, pk %v, sig %v hash %v", signData.GetSignerID().ShortS(), pk.GetHexString(), signData.DataSign.GetHexString(), signData.DataHash.Hex())
 			return
 		}
 		sig := groupsig.DeserializeSign(bh.Random)
