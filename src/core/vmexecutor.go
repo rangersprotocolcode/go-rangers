@@ -312,7 +312,9 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 				logger.Errorf("fail to refund %s", transaction.Data)
 				success = false
 			} else {
-				minerId := common.Hex2Bytes(transaction.Source)
+				minerId := common.FromHex(transaction.Source)
+				logger.Debugf("before refund, addr: %s, money: %d, minerId:%v", transaction.Source, value, minerId)
+
 				refundHeight, money, refundErr := RefundManagerImpl.GetRefundStake(height, minerId, value, accountdb)
 				if refundErr != nil {
 					logger.Errorf("fail to refund %s, err: %s", transaction.Data, refundErr.Error())
