@@ -131,3 +131,12 @@ func Float64ToBigInt(number float64) *big.Int {
 
 	return result
 }
+
+func Uint64ToBigInt(number uint64) *big.Int {
+	base := big.NewInt(baseNumber)
+	result := new(big.Int)
+	result.SetUint64(number)
+	result.Mul(result, base)
+
+	return result
+}

@@ -34,6 +34,7 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 	transactions := make([]*types.Transaction, 0)
 	evictedTxs := make([]common.Hash, 0)
 	errs := make([]*types.TransactionError, len(block.Transactions))
+	refundInfos := make(map[uint64]RefundInfoList, 0)
 
 	for _, transaction := range block.Transactions {
 		executeTime := time.Now()
@@ -305,7 +306,31 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 			} else {
 				success = MinerManagerImpl.AddStake(common.HexToAddress(transaction.Source), miner.Id, miner.Stake, accountdb)
 			}
-
+		case types.TransactionTypeMinerRefund:
+			value, err := strconv.ParseUint(transaction.Data, 10, 64)
+			if err != nil {
+				logger.Errorf("fail to refund %s", transaction.Data)
+				success = false
+			} else {
+				minerId := common.Hex2Bytes(transaction.Source)
+				refundHeight, money, refundErr := RefundManagerImpl.GetRefundStake(height, minerId, value, accountdb)
+				if refundErr != nil {
+					logger.Errorf("fail to refund %s, err: %s", transaction.Data, refundErr.Error())
+					success = false
+				} else {
+					success = true
+					logger.Infof("add refund, minerId: %s, height: %d, money: %d", transaction.Source, refundHeight, money)
+					refundInfo, ok := refundInfos[refundHeight]
+					if ok {
+						refundInfo.AddRefundInfo(minerId, money)
+					} else {
+						refundInfo = RefundInfoList{}
+						refundInfo.AddRefundInfo(minerId, money)
+						refundInfos[refundHeight] = refundInfo
+					}
+				}
+			}
+			break
 		}
 
 		if !success {
@@ -325,8 +350,13 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 		receipts = append(receipts, receipt)
 	}
 
+	// 计算定时任务（冻结退款等等）
+	RefundManagerImpl.Add(refundInfos, accountdb)
+	RefundManagerImpl.CheckAndMove(height, accountdb)
+
+	// 计算出块奖励
 	RewardCalculatorImpl.CalculateReward(height, accountdb)
-	//accountdb.AddBalance(common.BytesToAddress(block.Header.Castor), consensusHelper.ProposalBonus())
+
 	state := accountdb.IntermediateRoot(true)
 
 	middleware.PerfLogger.Debugf("VMExecutor End. %s height: %d, cost: %v, txs: %d", situation, block.Header.Height, time.Since(beginTime), len(block.Transactions))

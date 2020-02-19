@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"x/src/utility"
 	"math/big"
+	"math"
 )
 
 func TestGetYear(t *testing.T) {
@@ -79,5 +80,5 @@ func TestAddReward(t *testing.T) {
 
 func TestProposerReward(t *testing.T) {
 	stake := uint64(190000)
-	fmt.Println(int(stake / common.ValidatorStake))
+	fmt.Println(math.Ceil(float64(stake) / float64(common.ValidatorStake)))
 }

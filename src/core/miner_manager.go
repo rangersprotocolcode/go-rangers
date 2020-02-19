@@ -38,6 +38,14 @@ func initMinerManager() {
 	MinerManagerImpl.lock = sync.RWMutex{}
 	//go MinerManagerImpl.loop()
 }
+func (mm *MinerManager) GetMiner(minerId []byte, accountdb *account.AccountDB) *types.Miner {
+	miner := MinerManagerImpl.GetMinerById(minerId, common.MinerTypeProposer, accountdb)
+	if nil == miner {
+		miner = MinerManagerImpl.GetMinerById(minerId, common.MinerTypeValidator, accountdb)
+	}
+
+	return miner
+}
 
 func (mm *MinerManager) GetMinerById(id []byte, kind byte, accountdb *account.AccountDB) *types.Miner {
 	if accountdb == nil {
@@ -197,38 +205,7 @@ func (mm *MinerManager) AddStake(addr common.Address, minerId []byte, delta uint
 	}
 
 	accountdb.SubBalance(addr, stake)
-	data, _ := msgpack.Marshal(miner)
-	accountdb.SetData(mm.getMinerDatabase(miner.Type), minerId, data)
-
-	return true
-}
-
-func (mm *MinerManager) ChangeStakes(minerIds [][]byte, minerType byte, add bool, delta uint64, accountdb *account.AccountDB) bool {
-	mm.lock.Lock()
-	defer mm.lock.Unlock()
-
-	miners := make([]*types.Miner, len(minerIds))
-	for i, minerId := range minerIds {
-		miner := mm.GetMinerById(minerId, minerType, accountdb)
-		if miner == nil {
-			return false
-		}
-
-		if add {
-			miner.Stake = miner.Stake + delta
-		} else {
-			miner.Stake = miner.Stake - delta
-		}
-		if miner.Stake < 0 {
-			return false
-		}
-		miners[i] = miner
-	}
-
-	for _, miner := range miners {
-		data, _ := msgpack.Marshal(miner)
-		accountdb.SetData(mm.getMinerDatabase(minerType), miner.Id, data)
-	}
+	mm.UpdateMiner(miner, accountdb)
 	return true
 }
 
@@ -247,9 +224,16 @@ func (mm *MinerManager) AddMiner(addr common.Address, miner *types.Miner, accoun
 	}
 
 	accountdb.SubBalance(addr, stake)
-	data, _ := msgpack.Marshal(miner)
-	accountdb.SetData(db, id, data)
+	mm.UpdateMiner(miner, accountdb)
 	return true
+}
+
+func (mm *MinerManager) UpdateMiner(miner *types.Miner, accountdb *account.AccountDB) {
+	id := miner.Id
+	db := mm.getMinerDatabase(miner.Type)
+	data, _ := msgpack.Marshal(miner)
+
+	accountdb.SetData(db, id, data)
 }
 
 func (mm *MinerManager) addMiner(miner *types.Miner, accountdb *account.AccountDB) int {
@@ -261,8 +245,7 @@ func (mm *MinerManager) addMiner(miner *types.Miner, accountdb *account.AccountD
 	if accountdb.GetData(db, id) != nil {
 		return -1
 	} else {
-		data, _ := msgpack.Marshal(miner)
-		accountdb.SetData(db, id, data)
+		mm.UpdateMiner(miner, accountdb)
 		//if miner.Type == common.MinerTypeProposer {
 		//	mm.hasNewHeavyMiner = true
 		//}
@@ -282,10 +265,7 @@ func (mm *MinerManager) abortMiner(id []byte, ttype byte, height uint64, account
 	if miner != nil && miner.Status == common.MinerStatusNormal {
 		miner.Status = common.MinerStatusAbort
 		miner.AbortHeight = height
-
-		db := mm.getMinerDatabase(ttype)
-		data, _ := msgpack.Marshal(miner)
-		accountdb.SetData(db, id, data)
+		mm.UpdateMiner(miner, accountdb)
 		//mm.updateMinerCount(ttype, minerCountDecrease, accountdb)
 		logger.Debugf("Miner manager abort miner update success %+v", miner)
 		return true

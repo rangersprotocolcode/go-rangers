@@ -20,10 +20,10 @@ const (
 )
 
 const (
-	MinerTypeValidator    = 0
-	MinerTypeProposer    = 1
-	MinerStatusNormal = 0
-	MinerStatusAbort  = 1
+	MinerTypeValidator = 0
+	MinerTypeProposer  = 1
+	MinerStatusNormal  = 0
+	MinerStatusAbort   = 1
 )
 
 var (
@@ -35,9 +35,10 @@ var (
 var (
 	ValidatorDBAddress = BigToAddress(big.NewInt(1))
 	ProposerDBAddress  = BigToAddress(big.NewInt(2))
+	RefundAddress      = BigToAddress(big.NewInt(3))
 
-	FTSetAddress  = BigToAddress(big.NewInt(4))
-	NFTSetAddress = BigToAddress(big.NewInt(5))
+	FTSetAddress       = BigToAddress(big.NewInt(4))
+	NFTSetAddress      = BigToAddress(big.NewInt(5))
 )
 
 var (

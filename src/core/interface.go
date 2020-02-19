@@ -70,4 +70,6 @@ type GroupChain interface {
 	Close()
 
 	Iterator() *GroupIterator
+
+	GetAvailableGroupsByMinerId(height uint64, minerId []byte) []*types.Group
 }

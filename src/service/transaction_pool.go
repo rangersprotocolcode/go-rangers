@@ -387,7 +387,8 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 	}
 
 	if tx.Type == types.TransactionTypeMinerApply || tx.Type == types.TransactionTypeMinerAbort ||
-		tx.Type == types.TransactionTypeBonus || tx.Type == types.TransactionTypeMinerRefund {
+		tx.Type == types.TransactionTypeBonus || tx.Type == types.TransactionTypeMinerRefund ||
+		tx.Type == types.TransactionTypeMinerAdd {
 
 		if tx.Type == types.TransactionTypeMinerApply {
 			txLogger.Debugf("Add TransactionTypeMinerApply,hash:%s,", tx.Hash.String())

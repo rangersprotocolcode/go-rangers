@@ -121,3 +121,8 @@ func TestFloat64ToBigInt(t *testing.T) {
 		t.Fatalf("11222222222 error")
 	}
 }
+
+func TestUint64ToBigInt(t *testing.T) {
+	number := uint64(1000009)
+	fmt.Println(Uint64ToBigInt(number))
+}
