@@ -210,6 +210,16 @@ func (mm *MinerManager) AddStake(addr common.Address, minerId []byte, delta uint
 }
 
 func (mm *MinerManager) AddMiner(addr common.Address, miner *types.Miner, accountdb *account.AccountDB) bool {
+	if miner.Type != common.MinerTypeValidator && miner.Type != common.MinerTypeProposer {
+		logger.Errorf("miner type error, minerId: %d, type: %d", common.ToHex(miner.Id), miner.Type)
+		return false
+	}
+	if (miner.Type == common.MinerTypeValidator && miner.Stake < common.ValidatorStake) ||
+		(miner.Type == common.MinerTypeProposer && miner.Stake < common.ProposerStake) {
+		logger.Errorf("not enough stake, minerId: %d, stake: %d", common.ToHex(miner.Id), miner.Stake)
+		return false
+	}
+
 	stake := utility.Float64ToBigInt(float64(miner.Stake))
 	balance := accountdb.GetBalance(addr)
 	if balance.Cmp(stake) < 0 {
