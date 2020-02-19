@@ -84,7 +84,6 @@ func (refund *RefundManager) Add(data map[uint64]RefundInfoList, db *account.Acc
 		db.SetData(common.RefundAddress, utility.UInt64ToByte(height), refundInfoList.TOJSON())
 		refund.logger.Warnf("add RefundInfoList: %v, height: %d", refundInfoList, height)
 	}
-	return
 }
 
 func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint64, accountdb *account.AccountDB) (uint64, *big.Int, error) {

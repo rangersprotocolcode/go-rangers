@@ -218,13 +218,14 @@ func (mm *MinerManager) AddMiner(addr common.Address, miner *types.Miner, accoun
 	}
 
 	id := miner.Id
-	db := mm.getMinerDatabase(miner.Type)
-	if accountdb.GetData(db, id) != nil {
+	if mm.GetMiner(id, accountdb) != nil {
+		logger.Errorf("miner is existed. minerId: %s", common.ToHex(id))
 		return false
 	}
 
 	accountdb.SubBalance(addr, stake)
 	mm.UpdateMiner(miner, accountdb)
+	logger.Debugf("add miner: %v", miner)
 	return true
 }
 
