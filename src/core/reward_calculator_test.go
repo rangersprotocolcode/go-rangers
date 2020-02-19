@@ -82,3 +82,15 @@ func TestProposerReward(t *testing.T) {
 	stake := uint64(190000)
 	fmt.Println(math.Ceil(float64(stake) / float64(common.ValidatorStake)))
 }
+
+func TestRewardCalculator_NextRewardHeight(t *testing.T) {
+	height := uint64(11)
+	fmt.Println(height / common.RewardBlocks)
+	next := math.Ceil(float64(height) / float64(common.RewardBlocks))
+	fmt.Println(next)
+
+	nextblock := uint64(0)
+	nextblock = uint64(next) * common.RewardBlocks
+	fmt.Println(nextblock)
+
+}

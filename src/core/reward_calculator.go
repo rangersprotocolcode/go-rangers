@@ -145,6 +145,11 @@ func (reward *RewardCalculator) needReward(height uint64) bool {
 	return 0 == (height % common.RewardBlocks)
 }
 
+func (reward *RewardCalculator) NextRewardHeight(height uint64) uint64 {
+	next := math.Ceil(float64(height) / float64(common.RewardBlocks))
+	return uint64(next) * common.RewardBlocks
+}
+
 func getYear(height uint64) uint64 {
 	return uint64(height / common.BlocksPerYear)
 }

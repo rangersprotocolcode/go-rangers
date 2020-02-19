@@ -102,8 +102,8 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint
 
 	refund := money
 	left := miner.Stake - money
-	// 小于最小质押量，则退出矿工
-	if (miner.Type == common.MinerTypeValidator && left < common.ValidatorStake) || left < common.ProposerStake {
+	// 验证小于最小质押量，则退出矿工
+	if miner.Type == common.MinerTypeProposer && left < common.ProposerStake {
 		MinerManagerImpl.removeMiner(minerId, miner.Type, accountdb)
 		refund = miner.Stake
 	} else {
@@ -113,7 +113,7 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint
 	}
 
 	// 计算解锁高度
-	height := now + common.RefundBlocks
+	height := RewardCalculatorImpl.NextRewardHeight(now) + common.RefundBlocks
 
 	// 验证节点，计算最多能加入的组数，来确定解锁块高
 	if miner.Type == common.MinerTypeValidator {
