@@ -83,7 +83,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) m
 	height := bh.Height
 	total := getTotalReward(height)
 	hashString := bh.Hash.String()
-	reward.logger.Debugf("start to calculate, bh: %s, totalReward %f", bh.ToString(), total)
+	reward.logger.Debugf("start to calculate, height: %d, hash: %s, proposer: %s, groupId: %s, totalReward %f", height, hashString, common.ToHex(bh.Castor), common.ToHex(bh.GroupId), total)
 	defer reward.logger.Warnf("end to calculate, height %d, hash: %s, result: %v", height, hashString, result)
 
 	accountDB, err := service.AccountDBManagerInstance.GetAccountDBByHash(bh.StateTree)
@@ -118,7 +118,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) m
 			delta := utility.Float64ToBigInt(float64(stake) / float64(totalProposerStake) * otherRewardProposer)
 			addReward(result, addr, delta)
 			proposerResult := result[addr].String()
-			reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, reward: %d, result: %s", height, hashString, addr.String(), delta, proposerResult)
+			reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, stake: %d, reward: %d, result: %s", height, hashString, addr.String(), stake, delta, proposerResult)
 		}
 	}
 
@@ -134,7 +134,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) m
 		rewardValidators := total * common.ValidatorsReward
 		for addr, stake := range validatorStake {
 			result[addr] = utility.Float64ToBigInt(float64(stake) / float64(totalValidatorStake) * rewardValidators)
-			reward.logger.Debugf("calculating, height: %d, hash: %s, validatorAddr %s, reward %d", height, hashString, addr.String(), result[addr])
+			reward.logger.Debugf("calculating, height: %d, hash: %s, validatorAddr %s, stake: %d, reward %d", height, hashString, addr.String(), stake, result[addr])
 		}
 	}
 
