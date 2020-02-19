@@ -136,7 +136,12 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	gameId := txRaw.Target
 	switch txRaw.Type {
 
-	// 查询主链币
+	// 查询账户余额
+	case types.TransactionTypeOperatorBalance:
+		result = service.GetBalance(source)
+		break
+
+		// 查询主链币
 	case types.TransactionTypeGetCoin:
 		result = service.GetCoinBalance(source, txRaw.Data)
 		break

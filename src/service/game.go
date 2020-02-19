@@ -10,6 +10,15 @@ import (
 	"x/src/utility"
 )
 
+func GetBalance(source common.Address) string {
+	logger.Debugf("Get  balance before get balance.source:%s", source)
+	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
+	logger.Debugf("Get coin balance after get balance.")
+	balance := accountDB.GetBalance(source)
+
+	return utility.BigIntToStr(balance)
+}
+
 func GetCoinBalance(source common.Address, ft string) string {
 	ftName := fmt.Sprintf("official-%s", ft)
 	logger.Debugf("Get coin balance before get balance.source:%s,ft:%s", source, ft)
