@@ -11,9 +11,9 @@ import (
 )
 
 func GetBalance(source common.Address) string {
-	logger.Debugf("Get  balance before get balance.source:%s", source)
+	logger.Debugf("Get balance before get balance.source:%s", source)
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	logger.Debugf("Get coin balance after get balance.")
+	logger.Debugf("Get balance after get balance.")
 	balance := accountDB.GetBalance(source)
 
 	return utility.BigIntToStr(balance)

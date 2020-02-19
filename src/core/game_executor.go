@@ -140,6 +140,7 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	// 查询账户余额
 	case types.TransactionTypeOperatorBalance:
 		result = service.GetBalance(source)
+		executor.logger.Debugf("balance,addr: %s, result: %s", sourceString, result)
 		break
 
 		// 查询主链币
