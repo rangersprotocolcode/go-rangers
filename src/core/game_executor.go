@@ -123,12 +123,12 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 		return
 	}
 	txRaw := message.Tx
-	if err := service.GetTransactionPool().VerifyTransactionHash(&txRaw); err != nil {
-		txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
-		response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
-		go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
-		return
-	}
+	//if err := service.GetTransactionPool().VerifyTransactionHash(&txRaw); err != nil {
+	//	txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
+	//	response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
+	//	go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+	//	return
+	//}
 
 	var result string
 	sourceString := txRaw.Source
