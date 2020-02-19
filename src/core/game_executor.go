@@ -122,6 +122,7 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 		executor.logger.Errorf("blockReqHandler:Message assert not ok!")
 		return
 	}
+	executor.logger.Debugf("rcv message: %v", message)
 	txRaw := message.Tx
 	//if err := service.GetTransactionPool().VerifyTransactionHash(&txRaw); err != nil {
 	//	txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
