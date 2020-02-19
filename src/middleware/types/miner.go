@@ -14,5 +14,6 @@ type Miner struct {
 	ApplyHeight uint64 `json:"-"`
 	AbortHeight uint64 `json:"-"`
 
-	Status byte // 当前状态
+	// 当前状态
+	Status byte `json:"-"`
 }

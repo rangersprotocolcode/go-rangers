@@ -312,8 +312,14 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 				logger.Errorf("fail to refund %s", transaction.Data)
 				success = false
 			} else {
+				// todo: 测试用代码
 				minerId := common.FromHex(transaction.Source)
-				logger.Debugf("before refund, addr: %s, money: %d, minerId:%v", transaction.Source, value, minerId)
+				if transaction.Sign != nil {
+					pk, _ := transaction.Sign.RecoverPubkey(transaction.Hash.Bytes())
+					minerId = pk.GetID()[:]
+				}
+
+				logger.Debugf("before refund, addr: %s, money: %d, minerId: %v", transaction.Source, value, minerId)
 
 				refundHeight, money, refundErr := RefundManagerImpl.GetRefundStake(height, minerId, value, accountdb)
 				if refundErr != nil {
