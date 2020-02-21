@@ -1,4 +1,4 @@
-package logical
+package group_create
 
 import (
 	"fmt"
@@ -71,7 +71,7 @@ func (p *groupCreateProcessor) OnMessageGroupInit(msg *model.GroupInitMessage) {
 				sharePieceMessage.ReceiverId.SetHexString(id)
 				sharePieceMessage.Share = piece
 
-				if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, sharePieceMessage); ok{
+				if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, sharePieceMessage); ok {
 					sharePieceMessage.SignInfo = signInfo
 					groupCreateLogger.Debugf("piece to ID(%v), gHash=%v, share=%v, pub=%v.", sharePieceMessage.ReceiverId.ShortS(), groupHash.ShortS(), sharePieceMessage.Share.Share.ShortS(), sharePieceMessage.Share.Pub.ShortS())
 					p.NetServer.SendKeySharePiece(sharePieceMessage)
@@ -221,7 +221,7 @@ func (p *groupCreateProcessor) handleSharePieceMessage(groupHash common.Hash, sh
 		recover = true
 		groupCreateLogger.Infof("Collected all share piece: groupHash=%v, cost=%v.", groupHash.ShortS(), time.Since(context.createTime).String())
 		joinedGroupInfo := model.NewJoindGroupInfo(context.nodeInfo.getSignSecKey(), context.nodeInfo.getGroupPubKey(), context.groupInitInfo.GroupHash())
-		p.joinGroup(joinedGroupInfo)
+		p.joinedGroupStorage.JoinGroup(joinedGroupInfo, p.minerInfo.ID)
 
 		if joinedGroupInfo.GroupPK.IsValid() && joinedGroupInfo.SignSecKey.IsValid() {
 			// 1. Broadcast the group-related public key to other members
@@ -295,7 +295,6 @@ func (p *groupCreateProcessor) OnMessageSignPK(signPubKeyMessage *model.SignPubK
 		return
 	}
 }
-
 
 // OnMessageGroupInited is a network-wide node processing function.
 // The entire network node receives a group of initialized completion messages from all of the members in the group
@@ -374,7 +373,7 @@ func (p *groupCreateProcessor) OnMessageGroupInited(msg *model.GroupInitedMessag
 		}
 	}
 
-	groupCreateLogger.Debugf("Group inited message received %v, required %v, missing list:%v etc.handle group pubkey result:%v,", groupPubkeyCollector.receiveGroupPKCount(), groupPubkeyCollector.threshold, waitIds,result)
+	groupCreateLogger.Debugf("Group inited message received %v, required %v, missing list:%v etc.handle group pubkey result:%v,", groupPubkeyCollector.receiveGroupPKCount(), groupPubkeyCollector.threshold, waitIds, result)
 	switch result {
 	case InitSuccess: // Receive the same message in the group >= threshold, can add on chain
 		staticGroup := model.NewGroupInfo(msg.GroupID, msg.GroupPK, groupInitInfo)
@@ -391,7 +390,6 @@ func (p *groupCreateProcessor) OnMessageGroupInited(msg *model.GroupInitedMessag
 	return
 }
 
-
 // recoverGroupInitInfo recover group info from mask
 func (p *groupCreateProcessor) recoverGroupInitInfo(baseHeight uint64, mask []byte) (*model.GroupInitInfo, error) {
 	ctx, err := p.genCreateGroupBaseInfo(baseHeight)
@@ -402,8 +400,7 @@ func (p *groupCreateProcessor) recoverGroupInitInfo(baseHeight uint64, mask []by
 }
 
 func (p *groupCreateProcessor) addGroupOnChain(groupInfo *model.GroupInfo) {
-	group := convertStaticGroup2CoreGroup(sgi)
-
+	group := convertToGroup(groupInfo)
 	groupCreateLogger.Infof("addGroupOnChain height:%d,id:%s\n", group.GroupHeight, groupInfo.GroupID.ShortS())
 
 	var err error
@@ -415,7 +412,7 @@ func (p *groupCreateProcessor) addGroupOnChain(groupInfo *model.GroupInfo) {
 		groupCreateLogger.Debugf("AddGroupOnChain! groupId=%v, workHeight=%v, result %v", groupInfo.GroupID.ShortS(), group.Header.WorkHeight, s)
 	}()
 
-	if p.groupChain.GetGroupById(group.ID) != nil {
+	if p.groupChain.GetGroupById(group.Id) != nil {
 		groupCreateLogger.Debugf("group already onchain, accept, id=%v\n", groupInfo.GroupID.ShortS())
 		p.acceptGroup(groupInfo)
 		err = fmt.Errorf("group already onchain")
@@ -447,24 +444,6 @@ func (p *groupCreateProcessor) addGroupCreatedHeight(h uint64) {
 	p.createdHeightsIndex = (p.createdHeightsIndex + 1) % len(p.createdHeights)
 }
 
-// joinGroup join a group (a miner ID can join multiple groups)
-//			gid : group ID (not dummy id)
-//			sk: user's group member signature private key
-func (p *groupCreateProcessor) joinGroup(joinedGroupInfo *model.JoinedGroupInfo) {
-	groupCreateLogger.Infof("(%v):join group,group idd=%v...\n", p.minerInfo.ID.ShortS(), joinedGroupInfo.GroupID.ShortS())
-	if !p.belongGroup(joinedGroupInfo.GroupID) {
-		p.joinedGroupStorage.AddJoinedGroupInfo(joinedGroupInfo)
-	}
-	return
-}
-
-//IsMinerGroup
-// IsMinerGroup detecting whether a group is a miner's ingot group
-// (a miner can participate in multiple groups)
-func (p *groupCreateProcessor) belongGroup(groupId groupsig.ID) bool {
-	return p.joinedGroupStorage.GetJoinedGroupInfo(groupId) != nil
-}
-
 // getGroupPubKey get the public key of an ingot group (loaded from
 // the chain when the processer is initialized)
 func (p *groupCreateProcessor) getGroupPubKey(groupId groupsig.ID) groupsig.Pubkey {
@@ -475,7 +454,6 @@ func (p *groupCreateProcessor) getGroupPubKey(groupId groupsig.ID) groupsig.Pubk
 	}
 
 }
-
 
 // GetGroup get a specific group
 func (p *groupCreateProcessor) GetGroupInfo(gid groupsig.ID) *model.GroupInfo {

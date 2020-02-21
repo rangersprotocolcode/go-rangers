@@ -135,17 +135,17 @@ func (gx *GX) initMiner(instanceIndex int, apply, keystore, env, gateAddr string
 	}
 	fmt.Println("Your Miner Address:", gx.account.Address)
 
-	minerInfo := model.NewSelfMinerDO(gx.account.Miner.ID[:])
+	minerInfo := model.NewSelfMinerInfo(gx.account.Miner.ID[:])
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 	if apply == "light" {
-		minerInfo.NType = types.MinerTypeLight
+		minerInfo.MinerType = types.MinerTypeLight
 	} else if apply == "heavy" {
-		minerInfo.NType = types.MinerTypeHeavy
+		minerInfo.MinerType = types.MinerTypeHeavy
 	}
 
 	minerId := "0x" + common.Bytes2Hex(gx.account.Miner.ID[:])
 	network.InitNetwork(cnet.MessageHandler, minerId, env, gateAddr)
-	service.InitService(minerInfo.NType)
+	service.InitService(minerInfo.MinerType)
 
 	err = core.InitCore(consensus.NewConsensusHelper(minerInfo.ID))
 	if err != nil {
@@ -232,12 +232,12 @@ func syncChainInfo() {
 	}()
 }
 
-func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerDO) {
+func (gx *GX) dumpAccountInfo(minerDO model.MinerInfo) {
 	if nil != common.DefaultLogger {
 		common.DefaultLogger.Infof("SecKey: %s", gx.account.Sk)
 		common.DefaultLogger.Infof("PubKey: %s", gx.account.Pk)
-		common.DefaultLogger.Infof("Miner SecKey: %s", minerDO.SK.GetHexString())
-		common.DefaultLogger.Infof("Miner PubKey: %s", minerDO.PK.GetHexString())
+		common.DefaultLogger.Infof("Miner SecKey: %s", minerDO.SecKey.GetHexString())
+		common.DefaultLogger.Infof("Miner PubKey: %s", minerDO.PubKey.GetHexString())
 		common.DefaultLogger.Infof("VRF PrivateKey: %s", minerDO.VrfSK.GetHexString())
 		common.DefaultLogger.Infof("VRF PubKey: %s", minerDO.VrfPK.GetHexString())
 		common.DefaultLogger.Infof("Miner ID: %s", minerDO.ID.GetHexString())

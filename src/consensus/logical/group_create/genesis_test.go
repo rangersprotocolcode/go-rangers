@@ -1,4 +1,4 @@
-package logical
+package group_create
 
 import (
 	"testing"

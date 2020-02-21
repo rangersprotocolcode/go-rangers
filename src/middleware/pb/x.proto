@@ -264,11 +264,6 @@ message SignData{
 
 
 
-message ConsensusGroupInitSummary{
-    required GroupHeader Header = 1;
-	required bytes    Signature = 2;
-}
-
 message PubKeyInfo{
 
       required bytes ID = 1;
@@ -276,8 +271,11 @@ message PubKeyInfo{
       required bytes PublicKey = 2;
 }
 message ConsensusGroupInitInfo{
-    required ConsensusGroupInitSummary GI = 1;
-	repeated  bytes Mems  = 2;
+    required GroupHeader Header = 1;
+
+	required bytes    Signature = 2;
+
+	repeated  bytes Mems  = 3;
 }
 
 message ConsensusGroupRawMessage{

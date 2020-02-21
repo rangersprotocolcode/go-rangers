@@ -12,22 +12,24 @@ import (
 )
 
 type ConsensusHandler struct {
-	processor MessageProcessor
+	groupCreateMessageProcessor GroupCreateMessageProcessor
+	miningMessageProcessor      MiningMessageProcessor
 }
 
 var MessageHandler = new(ConsensusHandler)
 
-func (c *ConsensusHandler) Init(proc MessageProcessor) {
-	c.processor = proc
+func (c *ConsensusHandler) Init(groupCreateMessageProcessor GroupCreateMessageProcessor, miningMessageProcessor MiningMessageProcessor) {
+	c.groupCreateMessageProcessor = groupCreateMessageProcessor
+	c.miningMessageProcessor = miningMessageProcessor
 	InitStateMachines()
 }
 
-func (c *ConsensusHandler) Processor() MessageProcessor {
-	return c.processor
-}
+//func (c *ConsensusHandler) Processor() MessageProcessor {
+//	return c.processor
+//}
 
 func (c *ConsensusHandler) ready() bool {
-	return c.processor != nil && c.processor.Ready()
+	return c.groupCreateMessageProcessor != nil && c.miningMessageProcessor != nil && c.miningMessageProcessor.Ready()
 }
 
 func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
@@ -62,30 +64,30 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 		//} else {
 		//	machines = &GroupOutsideMachines
 		//}
-		GroupInsideMachines.GetMachine(m.GInfo.GI.GetHash().Hex(), len(m.GInfo.Mems)).Transform(NewStateMsg(code, m, sourceId))
+		GroupInsideMachines.GetMachine(m.GroupInitInfo.GroupHash().Hex(), len(m.GroupInitInfo.GroupMembers)).Transform(NewStateMsg(code, m, sourceId))
 	case network.KeyPieceMsg:
 		m, e := unMarshalConsensusSharePieceMessage(body)
 		if e != nil {
 			logger.Errorf("[handler]Discard ConsensusSharePieceMessage because of unmarshal error:%s", e.Error())
 			return e
 		}
-		GroupInsideMachines.GetMachine(m.GHash.Hex(), int(m.MemCnt)).Transform(NewStateMsg(code, m, sourceId))
-		logger.Infof("SharepieceMsg receive from:%v, gHash:%v", sourceId, m.GHash.Hex())
+		GroupInsideMachines.GetMachine(m.GroupHash.Hex(), int(m.GroupMemberNum)).Transform(NewStateMsg(code, m, sourceId))
+		logger.Infof("SharepieceMsg receive from:%v, gHash:%v", sourceId, m.GroupHash.Hex())
 	case network.SignPubkeyMsg:
 		m, e := unMarshalConsensusSignPubKeyMessage(body)
 		if e != nil {
 			logger.Errorf("[handler]Discard ConsensusSignPubKeyMessage because of unmarshal error:%s", e.Error())
 			return e
 		}
-		GroupInsideMachines.GetMachine(m.GHash.Hex(), int(m.MemCnt)).Transform(NewStateMsg(code, m, sourceId))
-		logger.Infof("SignPubKeyMsg receive from:%v, gHash:%v, groupId:%v", sourceId, m.GHash.Hex(), m.GroupID.GetHexString())
+		GroupInsideMachines.GetMachine(m.GroupHash.Hex(), int(m.GroupMemberNum)).Transform(NewStateMsg(code, m, sourceId))
+		logger.Infof("SignPubKeyMsg receive from:%v, gHash:%v, groupId:%v", sourceId, m.GroupHash.Hex(), m.GroupID.GetHexString())
 	case network.GroupInitDoneMsg:
 		m, e := unMarshalConsensusGroupInitedMessage(body)
 		if e != nil {
 			logger.Errorf("[handler]Discard ConsensusGroupInitedMessage because of unmarshal error%s", e.Error())
 			return e
 		}
-		logger.Infof("Rcv GroupInitDoneMsg from:%s,gHash:%s, groupId:%v", sourceId, m.GHash.Hex(), m.GroupID.GetHexString())
+		logger.Infof("Rcv GroupInitDoneMsg from:%s,gHash:%s, groupId:%v", sourceId, m.GroupHash.Hex(), m.GroupID.GetHexString())
 
 		//belongGroup := c.processor.ExistInGroup(m.GHash)
 		//var machines *StateMachines
@@ -94,7 +96,7 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 		//} else {
 		//	machines = &GroupOutsideMachines
 		//}
-		GroupInsideMachines.GetMachine(m.GHash.Hex(), int(m.MemCnt)).Transform(NewStateMsg(code, m, sourceId))
+		GroupInsideMachines.GetMachine(m.GroupHash.Hex(), int(m.MemberNum)).Transform(NewStateMsg(code, m, sourceId))
 
 	case network.CurrentGroupCastMsg:
 
@@ -107,7 +109,7 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 
 		id := utility.GetGoroutineId()
 		middleware.PerfLogger.Infof("start Verify msg, id: %d, cost: %v, height: %v, hash: %v, msg size: %d", id, time.Since(m.BH.CurTime), m.BH.Height, m.BH.Hash.String(), len(body))
-		c.processor.OnMessageCast(m)
+		c.miningMessageProcessor.OnMessageCast(m)
 		middleware.PerfLogger.Infof("fin Verify msg, id: %d, cost: %v, height: %v, hash: %v, msg size: %d", id, time.Since(m.BH.CurTime), m.BH.Height, m.BH.Hash.String(), len(body))
 
 	case network.VerifiedCastMsg2:
@@ -119,7 +121,7 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 
 		id := utility.GetGoroutineId()
 		middleware.PerfLogger.Infof("start Verified msg, id: %d, hash: %v, msg size: %d", id, m.BlockHash.String(), len(body))
-		c.processor.OnMessageVerify(m)
+		c.miningMessageProcessor.OnMessageVerify(m)
 		middleware.PerfLogger.Infof("fin Verified msg, id: %d, hash: %v, msg size: %d", id, m.BlockHash.String(), len(body))
 
 	case network.CreateGroupaRaw:
@@ -129,7 +131,7 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 			return e
 		}
 
-		c.processor.OnMessageCreateGroupRaw(m)
+		c.groupCreateMessageProcessor.OnMessageParentGroupConsensus(m)
 		return nil
 	case network.CreateGroupSign:
 		m, e := unMarshalConsensusCreateGroupSignMessage(body)
@@ -138,7 +140,7 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 			return e
 		}
 
-		c.processor.OnMessageCreateGroupSign(m)
+		c.groupCreateMessageProcessor.OnMessageParentGroupConsensusSign(m)
 		return nil
 	case network.AskSignPkMsg:
 		m, e := unMarshalConsensusSignPKReqMessage(body)
@@ -146,14 +148,14 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 			logger.Errorf("[handler]Discard unMarshalConsensusSignPKReqMessage because of unmarshal error:%s", e.Error())
 			return e
 		}
-		c.processor.OnMessageSignPKReq(m)
+		c.groupCreateMessageProcessor.OnMessageSignPKReq(m)
 	case network.AnswerSignPkMsg:
 		m, e := unMarshalConsensusSignPubKeyMessage(body)
 		if e != nil {
 			logger.Errorf("[handler]Discard ConsensusSignPubKeyMessage because of unmarshal error:%s", e.Error())
 			return e
 		}
-		c.processor.OnMessageSignPK(m)
+		c.groupCreateMessageProcessor.OnMessageSignPK(m)
 
 	case network.GroupPing:
 		m, e := unMarshalCreateGroupPingMessage(body)
@@ -161,14 +163,14 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 			logger.Errorf("[handler]Discard unMarshalCreateGroupPingMessage because of unmarshal error:%s", e.Error())
 			return e
 		}
-		c.processor.OnMessageCreateGroupPing(m)
+		c.groupCreateMessageProcessor.OnMessageCreateGroupPing(m)
 	case network.GroupPong:
 		m, e := unMarshalCreateGroupPongMessage(body)
 		if e != nil {
 			logger.Errorf("[handler]Discard unMarshalCreateGroupPongMessage because of unmarshal error:%s", e.Error())
 			return e
 		}
-		c.processor.OnMessageCreateGroupPong(m)
+		c.groupCreateMessageProcessor.OnMessageCreateGroupPong(m)
 
 	case network.ReqSharePiece:
 		m, e := unMarshalSharePieceReqMessage(body)
@@ -176,7 +178,7 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 			logger.Errorf("[handler]Discard unMarshalSharePieceReqMessage because of unmarshal error:%s", e.Error())
 			return e
 		}
-		c.processor.OnMessageSharePieceReq(m)
+		c.groupCreateMessageProcessor.OnMessageSharePieceReq(m)
 
 	case network.ResponseSharePiece:
 		m, e := unMarshalSharePieceResponseMessage(body)
@@ -184,7 +186,7 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 			logger.Errorf("[handler]Discard unMarshalSharePieceResponseMessage because of unmarshal error:%s", e.Error())
 			return e
 		}
-		c.processor.OnMessageSharePieceResponse(m)
+		c.groupCreateMessageProcessor.OnMessageSharePieceResponse(m)
 	}
 
 	return nil

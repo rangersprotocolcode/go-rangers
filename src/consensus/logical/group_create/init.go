@@ -1,4 +1,4 @@
-package logical
+package group_create
 
 import (
 	"x/src/middleware/log"
@@ -8,7 +8,6 @@ import (
 	"sync"
 	"x/src/consensus/model"
 	"x/src/consensus/net"
-	"strings"
 	"x/src/consensus/access"
 )
 
@@ -44,25 +43,24 @@ func (p *groupCreateProcessor) Init(minerInfo model.MinerInfo) {
 	p.minerInfo = minerInfo
 	p.createdHeightsIndex = 0
 
-	p.joinedGroupStorage = access.InitJoinedGroupStorage()
+	p.joinedGroupStorage = access.GetJoinedGroupStorageInstance()
 	p.groupSignCollectorMap = sync.Map{}
 	p.groupInitContextCache = newGroupInitContextCache()
 
-	p.minerReader = access.NewMinerPoolReader(core.MinerManagerImpl, groupCreateLogger)
+	p.minerReader = access.NewMinerPoolReader(core.MinerManagerImpl)
+	access.InitPubkeyPool(p.minerReader)
 	p.groupAccessor = access.NewGroupAccessor(core.GetGroupChain())
 
 	p.blockChain = core.GetBlockChain()
 	p.groupChain = core.GetGroupChain()
 	p.NetServer = net.NewNetworkServer()
+
 	p.lock = sync.RWMutex{}
 }
 
 func (p *groupCreateProcessor) removeContext() {
 	p.context = nil
 }
-
-
-
 
 // getMemberSignPubKey get the signature public key of the member in the group
 func (p *groupCreateProcessor) getMemberSignPubKey(groupId groupsig.ID, minerId groupsig.ID) (pk groupsig.Pubkey, ok bool) {
@@ -75,40 +73,11 @@ func (p *groupCreateProcessor) getMemberSignPubKey(groupId groupsig.ID, minerId 
 	return
 }
 
-
-
-
-func (p *Processor) genBelongGroupStoreFile() string {
-	storeFile := p.conf.GetString(ConsensusConfSection, "groupstore", "")
-	if strings.TrimSpace(storeFile) == "" {
-		storeFile = "groupstore" + p.conf.GetString("instance", "index", "")
-	}
-	return storeFile
-}
-
-// getSignKey get the signature private key of the miner in a certain group
-func (p Processor) getSignKey(gid groupsig.ID) groupsig.Seckey {
-	if jg := p.belongGroups.getJoinedGroup(gid); jg != nil {
-		return jg.SignKey
-	}
-	return groupsig.Seckey{}
-}
-
-func (p *groupCreateProcessor) acceptGroup(staticGroup *StaticGroupInfo) {
-	add := p.globalGroups.AddStaticGroup(staticGroup)
-	blog := newBizLog("acceptGroup")
-	blog.debug("Add to Global static groups, result=%v, groups=%v.", add, p.globalGroups.GetGroupSize())
-	if staticGroup.MemExist(p.GetMinerID()) {
-		p.prepareForCast(staticGroup)
+func (p *groupCreateProcessor) onGroupAddSuccess(g *model.GroupInfo) {
+	ctx := p.context
+	if ctx != nil && ctx.groupInitInfo != nil && ctx.groupInitInfo.GroupHash() == g.GroupInitInfo.GroupHash() {
+		top := p.blockChain.Height()
+		groupCreateLogger.Infof("onGroupAddSuccess info=%v, gHash=%v, gid=%v, costHeight=%v", ctx.String(), g.GroupInitInfo.GroupHash().ShortS(), g.GroupID.ShortS(), top-ctx.createTopHeight)
+		p.removeContext()
 	}
 }
-
-func (gm *GroupManager) onGroupAddSuccess(g *StaticGroupInfo) {
-	ctx := gm.getContext()
-	if ctx != nil && ctx.gInfo != nil && ctx.gInfo.GroupHash() == g.GInfo.GroupHash() {
-		top := gm.mainChain.Height()
-		groupLogger.Infof("onGroupAddSuccess info=%v, gHash=%v, gid=%v, costHeight=%v", ctx.logString(), g.GInfo.GroupHash().ShortS(), g.GroupID.ShortS(), top-ctx.createTopHeight)
-		gm.removeContext()
-	}
-}
-

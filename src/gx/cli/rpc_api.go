@@ -237,7 +237,7 @@ func (api *GtasAPI) GetTopBlock() (*Result, error) {
 
 	blockDetail["tx_pool_count"] = len(service.GetTransactionPool().GetReceived())
 	blockDetail["tx_pool_total"] = service.GetTransactionPool().TxNum()
-	blockDetail["miner_id"] = consensus.Proc.GetPubkeyInfo().ID.ShortS()
+	blockDetail["miner_id"] = consensus.Proc.GetMinerID().ShortS()
 	return successResult(blockDetail)
 }
 

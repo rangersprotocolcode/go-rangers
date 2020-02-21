@@ -5,7 +5,6 @@ import (
 	"x/src/middleware/types"
 	"x/src/core"
 	"x/src/consensus/vrf"
-	"x/src/middleware/log"
 	"x/src/consensus/model"
 )
 
@@ -16,7 +15,7 @@ type MinerPoolReader struct {
 	totalStakeCache uint64
 }
 
-func NewMinerPoolReader(mp *core.MinerManager, logger log.Logger) *MinerPoolReader {
+func NewMinerPoolReader(mp *core.MinerManager) *MinerPoolReader {
 	if minerPoolReaderInstance == nil {
 		minerPoolReaderInstance = &MinerPoolReader{
 			minerPool: mp,
@@ -64,6 +63,15 @@ func (access *MinerPoolReader) GetCandidateMiners(h uint64) []model.MinerInfo {
 	return rets
 }
 
+func (access *MinerPoolReader) GetTotalStake(h uint64, cache bool) uint64 {
+	if cache && access.totalStakeCache > 0 {
+		return access.totalStakeCache
+	}
+	st := access.minerPool.GetTotalStake(h)
+	access.totalStakeCache = st
+	return st
+}
+
 func (access *MinerPoolReader) getAllMiner(minerType byte, height uint64) []*model.MinerInfo {
 	iter := access.minerPool.MinerIterator(minerType, height)
 	mds := make([]*model.MinerInfo, 0)
@@ -102,13 +110,4 @@ func (access *MinerPoolReader) convert2MinerDO(miner *types.Miner) *model.MinerI
 
 //func (access *MinerPoolReader) genesisMiner(miners []*types.Miner)  {
 //    access.minerPool.AddGenesesMiner(miners)
-//}
-
-//func (access *MinerPoolReader) getTotalStake(h uint64, cache bool) uint64 {
-//	if cache && access.totalStakeCache > 0 {
-//		return access.totalStakeCache
-//	}
-//	st := access.minerPool.GetTotalStake(h)
-//	access.totalStakeCache = st
-//	return st
 //}

@@ -1,4 +1,4 @@
-package logical
+package group_create
 
 import (
 	"x/src/consensus/model"
@@ -259,7 +259,7 @@ func (p *groupCreateProcessor) OnMessageParentGroupConsensusSign(msg *model.Pare
 	}
 
 	if msg.GenHash() != msg.SignInfo.GetDataHash() {
-		groupCreateLogger.Errorf("Msg hash validate error!Except:%s,real:%s",msg.SignInfo.GetDataHash().String(), msg.GenHash().String())
+		groupCreateLogger.Errorf("Msg hash validate error!Except:%s,real:%s", msg.SignInfo.GetDataHash().String(), msg.GenHash().String())
 		return
 	}
 
@@ -288,7 +288,7 @@ func (p *groupCreateProcessor) OnMessageParentGroupConsensusSign(msg *model.Pare
 			GroupInitInfo: *ctx.groupInitInfo,
 		}
 
-		if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, initMsg); ok && ctx.getStatus() != sendInit{
+		if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, initMsg); ok && ctx.getStatus() != sendInit {
 			initMsg.SignInfo = signInfo
 			p.NetServer.SendGroupInitMessage(initMsg)
 			ctx.setStatus(sendInit)
@@ -320,7 +320,7 @@ func (p *groupCreateProcessor) tryRecoverParentGroupSig(msg *model.ParentGroupCo
 	groupCreateLogger.Debugf("accept parent group consensus sign result: %v,recovered group sign:%v", accept, recovered)
 	//newHashTraceLog("OMCGS", msg.GHash, msg.SI.GetID()).log("onMessageCreateGroupSign ret %v, %v", recover, ctx.gSignGenerator.Brief())
 	if recovered {
-		ctx.groupInitInfo.ParentGroupSign= ctx.groupSignGenerator.GetGroupSign()
+		ctx.groupInitInfo.ParentGroupSign = ctx.groupSignGenerator.GetGroupSign()
 		return true, nil
 	}
 	return false, fmt.Errorf("waiting more sign piece")

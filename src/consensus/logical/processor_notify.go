@@ -18,7 +18,7 @@ func (p *Processor) triggerFutureVerifyMsg(hash common.Hash) {
 	p.removeFutureVerifyMsgs(hash)
 	mtype := "FUTURE_VERIFY"
 	for _, msg := range futures {
-		tlog := newHashTraceLog(mtype, msg.BH.Hash, msg.SI.GetID())
+		tlog := newHashTraceLog(mtype, msg.BH.Hash, msg.SignInfo.GetSignerID())
 		tlog.logStart("size %v", len(futures))
 		slog := newSlowLog(mtype, 0.5)
 		err := p.doVerify(mtype, msg, tlog, newBizLog(mtype), slog)
@@ -54,8 +54,8 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	tlog := newMsgTraceLog("OnBlockAddSuccess", bh.Hash.ShortS(), "")
 	tlog.log("preHash=%v, height=%v", bh.PreHash.ShortS(), bh.Height)
 
-	gid := groupsig.DeserializeId(bh.GroupId)
-	if p.IsMinerGroup(gid) {
+	gid := groupsig.DeserializeID(bh.GroupId)
+	if p.belongGroups.BelongGroup(gid) {
 		bc := p.GetBlockContext(gid)
 		if bc != nil {
 			bc.AddCastedHeight(bh.Height, bh.PreHash)
@@ -136,4 +136,13 @@ func (p *Processor) onMissTxAddSucc(message notify.Message) {
 
 	}
 	p.OnMessageNewTransactions(txHashes)
+}
+
+func (p *Processor) acceptGroup(staticGroup *model.GroupInfo) {
+	add := p.globalGroups.AddGroupInfo(staticGroup)
+	blog := newBizLog("acceptGroup")
+	blog.debug("Add to Global static groups, result=%v, groups=%v.", add, p.globalGroups.GroupSize())
+	if staticGroup.MemExist(p.GetMinerID()) {
+		p.prepareForCast(staticGroup)
+	}
 }

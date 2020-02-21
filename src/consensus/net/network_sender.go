@@ -21,7 +21,7 @@ func NewNetworkServer() NetworkServer {
 func id2String(ids []groupsig.ID) []string {
 	idStrs := make([]string, len(ids))
 	for idx, id := range ids {
-		idStrs[idx] = id.String()
+		idStrs[idx] = id.GetHexString()
 	}
 	return idStrs
 }
@@ -40,13 +40,13 @@ func (ns *NetworkServerImpl) ReleaseGroupNet(gid string) {
 }
 
 func (ns *NetworkServerImpl) send2Self(self groupsig.ID, m network.Message) {
-	go MessageHandler.Handle(self.String(), m)
+	go MessageHandler.Handle(self.GetHexString(), m)
 }
 
 //----------------------------------------------------组初始化-----------------------------------------------------------
 
 //广播 组初始化消息  全网广播
-func (ns *NetworkServerImpl) SendGroupInitMessage(grm *model.ConsensusGroupRawMessage) {
+func (ns *NetworkServerImpl) SendGroupInitMessage(grm *model.GroupInitMessage) {
 	body, e := marshalConsensusGroupRawMessage(grm)
 	if e != nil {
 		logger.Errorf("[peer]Discard send ConsensusGroupRawMessage because of marshal error:%s", e.Error())
@@ -60,15 +60,15 @@ func (ns *NetworkServerImpl) SendGroupInitMessage(grm *model.ConsensusGroupRawMe
 	//e = ns.net.Broadcast(m)
 	//e = ns.net.SpreadToGroup(grm.GInfo.GroupHash().Hex(), memIds, m, grm.GInfo.GroupHash().Bytes())
 	//目标组还未建成，需要点对点发送
-	for _, mem := range grm.GInfo.Mems {
-		logger.Debugf("%v SendGroupInitMessage gHash %v to %v", grm.SI.GetID().String(), grm.GInfo.GroupHash().Hex(), mem.String())
-		ns.net.Send(mem.String(), m)
+	for _, mem := range grm.GroupInitInfo.GroupMembers {
+		logger.Debugf("%v SendGroupInitMessage gHash %v to %v", grm.SignInfo.GetSignerID().GetHexString(), grm.GroupInitInfo.GroupHash().Hex(), mem.GetHexString())
+		ns.net.Send(mem.GetHexString(), m)
 	}
 	//logger.Debugf("SendGroupInitMessage hash:%s,  gHash %v", m.Hash(), grm.GInfo.GroupHash().Hex())
 }
 
 //组内广播密钥   for each定向发送 组内广播
-func (ns *NetworkServerImpl) SendKeySharePiece(spm *model.ConsensusSharePieceMessage) {
+func (ns *NetworkServerImpl) SendKeySharePiece(spm *model.SharePieceMessage) {
 
 	body, e := marshalConsensusSharePieceMessage(spm)
 	if e != nil {
@@ -76,19 +76,19 @@ func (ns *NetworkServerImpl) SendKeySharePiece(spm *model.ConsensusSharePieceMes
 		return
 	}
 	m := network.Message{Code: network.KeyPieceMsg, Body: body}
-	if spm.SI.SignMember.IsEqual(spm.Dest) {
-		go ns.send2Self(spm.SI.GetID(), m)
+	if spm.SignInfo.GetSignerID().IsEqual(spm.ReceiverId) {
+		go ns.send2Self(spm.SignInfo.GetSignerID(), m)
 		return
 	}
 
 	begin := time.Now()
 	//todo
 	//go ns.net.SendWithGroupRelay(spm.Dest.String(), spm.GHash.Hex(), m)
-	logger.Debugf("SendKeySharePiece to id:%s,hash:%s, gHash:%v, cost time:%v", spm.Dest.String(), m.Hash(), spm.GHash.Hex(), time.Since(begin))
+	logger.Debugf("SendKeySharePiece to id:%s,hash:%s, gHash:%v, cost time:%v", spm.ReceiverId.GetHexString(), m.Hash(), spm.GroupHash.Hex(), time.Since(begin))
 }
 
 //组内广播签名公钥
-func (ns *NetworkServerImpl) SendSignPubKey(spkm *model.ConsensusSignPubKeyMessage) {
+func (ns *NetworkServerImpl) SendSignPubKey(spkm *model.SignPubKeyMessage) {
 	body, e := marshalConsensusSignPubKeyMessage(spkm)
 	if e != nil {
 		network.Logger.Errorf("[peer]Discard send ConsensusSignPubKeyMessage because of marshal error:%s", e.Error())
@@ -97,15 +97,15 @@ func (ns *NetworkServerImpl) SendSignPubKey(spkm *model.ConsensusSignPubKeyMessa
 
 	m := network.Message{Code: network.SignPubkeyMsg, Body: body}
 	//给自己发
-	ns.send2Self(spkm.SI.GetID(), m)
+	ns.send2Self(spkm.SignInfo.GetSignerID(), m)
 
 	begin := time.Now()
-	go ns.net.SpreadToGroup(spkm.GHash.Hex(), m)
-	logger.Debugf("SendSignPubKey hash:%s, dummyId:%v, cost time:%v", m.Hash(), spkm.GHash.Hex(), time.Since(begin))
+	go ns.net.SpreadToGroup(spkm.GroupHash.Hex(), m)
+	logger.Debugf("SendSignPubKey hash:%s, dummyId:%v, cost time:%v", m.Hash(), spkm.GroupHash.Hex(), time.Since(begin))
 }
 
 //组初始化完成 广播组信息 全网广播
-func (ns *NetworkServerImpl) BroadcastGroupInfo(cgm *model.ConsensusGroupInitedMessage) {
+func (ns *NetworkServerImpl) BroadcastGroupInfo(cgm *model.GroupInitedMessage) {
 	body, e := marshalConsensusGroupInitedMessage(cgm)
 	if e != nil {
 		network.Logger.Errorf("[peer]Discard send ConsensusGroupInitedMessage because of marshal error:%s", e.Error())
@@ -114,10 +114,10 @@ func (ns *NetworkServerImpl) BroadcastGroupInfo(cgm *model.ConsensusGroupInitedM
 
 	m := network.Message{Code: network.GroupInitDoneMsg, Body: body}
 	//给自己发
-	ns.send2Self(cgm.SI.GetID(), m)
+	ns.send2Self(cgm.SignInfo.GetSignerID(), m)
 
 	go ns.net.Broadcast(m)
-	logger.Debugf("Broadcast GROUP_INIT_DONE_MSG, hash:%s, gHash:%v", m.Hash(), cgm.GHash.Hex())
+	logger.Debugf("Broadcast GROUP_INIT_DONE_MSG, hash:%s, gHash:%v", m.Hash(), cgm.GroupHash.Hex())
 
 }
 
@@ -193,7 +193,7 @@ func (ns *NetworkServerImpl) BroadcastNewBlock(cbm *model.ConsensusBlockMessage,
 	//	time.Now().UnixNano(), "", "", common.InstanceIndex, cbm.Block.Header.CurTime.UnixNano())
 }
 
-func (ns *NetworkServerImpl) AnswerSignPkMessage(msg *model.ConsensusSignPubKeyMessage, receiver groupsig.ID) {
+func (ns *NetworkServerImpl) AnswerSignPkMessage(msg *model.SignPubKeyMessage, receiver groupsig.ID) {
 	body, e := marshalConsensusSignPubKeyMessage(msg)
 	if e != nil {
 		network.Logger.Errorf("[peer]Discard send ConsensusSignPubKeyMessage because of marshal error:%s", e.Error())
@@ -204,10 +204,10 @@ func (ns *NetworkServerImpl) AnswerSignPkMessage(msg *model.ConsensusSignPubKeyM
 
 	begin := time.Now()
 	go ns.net.Send(receiver.GetHexString(), m)
-	logger.Debugf("AnswerSignPkMessage %v, hash:%s, dummyId:%v, cost time:%v", receiver.GetHexString(), m.Hash(), msg.GHash.Hex(), time.Since(begin))
+	logger.Debugf("AnswerSignPkMessage %v, hash:%s, dummyId:%v, cost time:%v", receiver.GetHexString(), m.Hash(), msg.GroupHash.Hex(), time.Since(begin))
 }
 
-func (ns *NetworkServerImpl) AskSignPkMessage(msg *model.ConsensusSignPubkeyReqMessage, receiver groupsig.ID) {
+func (ns *NetworkServerImpl) AskSignPkMessage(msg *model.SignPubkeyReqMessage, receiver groupsig.ID) {
 	body, e := marshalConsensusSignPubKeyReqMessage(msg)
 	if e != nil {
 		network.Logger.Errorf("[peer]Discard send ConsensusSignPubkeyReqMessage because of marshal error:%s", e.Error())
@@ -224,7 +224,7 @@ func (ns *NetworkServerImpl) AskSignPkMessage(msg *model.ConsensusSignPubkeyReqM
 //====================================建组前共识=======================
 
 //开始建组
-func (ns *NetworkServerImpl) SendCreateGroupRawMessage(msg *model.ConsensusCreateGroupRawMessage) {
+func (ns *NetworkServerImpl) SendCreateGroupRawMessage(msg *model.ParentGroupConsensusMessage) {
 	body, e := marshalConsensusCreateGroupRawMessage(msg)
 	if e != nil {
 		logger.Errorf("[peer]Discard send ConsensusCreateGroupRawMessage because of marshal error:%s", e.Error())
@@ -232,11 +232,11 @@ func (ns *NetworkServerImpl) SendCreateGroupRawMessage(msg *model.ConsensusCreat
 	}
 	m := network.Message{Code: network.CreateGroupaRaw, Body: body}
 
-	var groupId = msg.GInfo.GI.ParentID()
+	var groupId = msg.GroupInitInfo.ParentGroupID()
 	go ns.net.SpreadToGroup(groupId.GetHexString(), m)
 }
 
-func (ns *NetworkServerImpl) SendCreateGroupSignMessage(msg *model.ConsensusCreateGroupSignMessage, parentGid groupsig.ID) {
+func (ns *NetworkServerImpl) SendCreateGroupSignMessage(msg *model.ParentGroupConsensusSignMessage, parentGid groupsig.ID) {
 	//body, e := marshalConsensusCreateGroupSignMessage(msg)
 	//if e != nil {
 	//	logger.Errorf("[peer]Discard send ConsensusCreateGroupSignMessage because of marshal error:%s", e.Error())
@@ -256,7 +256,7 @@ func (ns *NetworkServerImpl) SendGroupPingMessage(msg *model.CreateGroupPingMess
 	}
 	m := network.Message{Code: network.GroupPing, Body: body}
 
-	ns.net.Send(receiver.String(), m)
+	ns.net.Send(receiver.GetHexString(), m)
 }
 
 func (ns *NetworkServerImpl) SendGroupPongMessage(msg *model.CreateGroupPongMessage, group *GroupBrief) {
@@ -281,7 +281,7 @@ func (ns *NetworkServerImpl) ReqSharePiece(msg *model.ReqSharePieceMessage, rece
 	}
 	m := network.Message{Code: network.ReqSharePiece, Body: body}
 
-	ns.net.Send(receiver.String(), m)
+	ns.net.Send(receiver.GetHexString(), m)
 }
 
 func (ns *NetworkServerImpl) ResponseSharePiece(msg *model.ResponseSharePieceMessage, receiver groupsig.ID) {
@@ -292,5 +292,5 @@ func (ns *NetworkServerImpl) ResponseSharePiece(msg *model.ResponseSharePieceMes
 	}
 	m := network.Message{Code: network.ResponseSharePiece, Body: body}
 
-	ns.net.Send(receiver.String(), m)
+	ns.net.Send(receiver.GetHexString(), m)
 }

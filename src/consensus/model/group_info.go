@@ -28,7 +28,7 @@ func NewGroupInfo(groupId groupsig.ID, groupPubkey groupsig.Pubkey, groupInitInf
 		ParentGroupID: groupInitInfo.ParentGroupID(),
 		PrevGroupID:   groupInitInfo.PreGroupID(),
 	}
-	groupInfo.buildMemberIndex()
+	groupInfo.BuildMemberIndex()
 	return groupInfo
 }
 
@@ -52,7 +52,7 @@ func ConvertToGroupInfo(coreGroup *types.Group) *GroupInfo {
 		PrevGroupID:   groupsig.DeserializeID(groupHeader.PreGroup),
 		GroupInitInfo: groupInitInfo,
 	}
-	groupInfo.buildMemberIndex()
+	groupInfo.BuildMemberIndex()
 	return groupInfo
 }
 
@@ -125,7 +125,7 @@ func (groupInfo *GroupInfo) GetReadyTimeout(height uint64) bool {
 	return groupInfo.GetGroupHeader().ReadyHeight <= height
 }
 
-func (groupInfo *GroupInfo) buildMemberIndex() {
+func (groupInfo *GroupInfo) BuildMemberIndex() {
 	if groupInfo.MemberIndexMap == nil {
 		groupInfo.MemberIndexMap = make(map[string]int)
 	}

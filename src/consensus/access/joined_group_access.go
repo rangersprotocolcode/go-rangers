@@ -33,15 +33,18 @@ type JoinedGroupStorage struct {
 	initMutex sync.Mutex
 }
 
+func GetJoinedGroupStorageInstance() *JoinedGroupStorage {
+	return joinedGroupStorageInstance
+}
+
 //NewBelongGroups
-func InitJoinedGroupStorage(filePath string, privateKey common.PrivateKey) *JoinedGroupStorage {
+func InitJoinedGroupStorage(filePath string, privateKey common.PrivateKey) {
 	if joinedGroupStorageInstance == nil {
 		joinedGroupStorageInstance = &JoinedGroupStorage{
 			privateKey: privateKey,
 			storeDir:   filePath,
 		}
 	}
-	return joinedGroupStorageInstance
 }
 
 func (storage *JoinedGroupStorage) AddJoinedGroupInfo(joinedGroupInfo *model.JoinedGroupInfo) {
@@ -130,6 +133,24 @@ func (storage *JoinedGroupStorage) Close() {
 	}
 	storage.cache = nil
 	storage.db.Close()
+}
+
+//IsMinerGroup
+// IsMinerGroup detecting whether a group is a miner's ingot group
+// (a miner can participate in multiple groups)
+func (storage *JoinedGroupStorage) BelongGroup(groupId groupsig.ID) bool {
+	return storage.GetJoinedGroupInfo(groupId) != nil
+}
+
+// joinGroup join a group (a miner ID can join multiple groups)
+//			gid : group ID (not dummy id)
+//			sk: user's group member signature private key
+func (storage *JoinedGroupStorage) JoinGroup(joinedGroupInfo *model.JoinedGroupInfo, selfMinerId groupsig.ID) {
+	logger.Infof("(%v):join group,group idd=%v...\n", selfMinerId, joinedGroupInfo.GroupID.ShortS())
+	if !storage.BelongGroup(joinedGroupInfo.GroupID) {
+		storage.AddJoinedGroupInfo(joinedGroupInfo)
+	}
+	return
 }
 
 func (storage *JoinedGroupStorage) initStore() {

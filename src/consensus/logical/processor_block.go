@@ -158,7 +158,7 @@ func (p *Processor) prepareForCast(sgi *model.GroupInfo) {
 
 	bc := NewBlockContext(p, sgi)
 
-	bc.pos = sgi.GetMinerPos(p.GetMinerID())
+	bc.pos = sgi.GetMemberPosition(p.GetMinerID())
 	stdLogger.Debugf("prepareForCast current ID %v in group pos=%v.\n", p.GetMinerID().ShortS(), bc.pos)
 	//to do:只有自己属于这个组的节点才需要调用AddBlockConext
 	b := p.AddBlockContext(bc)
@@ -278,9 +278,9 @@ func (p *Processor) VerifyGroup(g *types.Group) (ok bool, err error) {
 		mems[idx] = groupsig.DeserializeID(mem)
 	}
 	gInfo := &model.GroupInitInfo{
-		ParentGroupSign:    *groupsig.DeserializeSign(g.Signature),
-		GroupHeader:      g.Header,
-		GroupMembers: mems,
+		ParentGroupSign: *groupsig.DeserializeSign(g.Signature),
+		GroupHeader:     g.Header,
+		GroupMembers:    mems,
 	}
 	//检验头和签名
 	if _, ok, err := p.groupManager.checkGroupInfo(gInfo); ok {

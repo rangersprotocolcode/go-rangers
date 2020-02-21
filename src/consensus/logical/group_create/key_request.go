@@ -1,4 +1,4 @@
-package logical
+package group_create
 
 import (
 	"sync"
@@ -33,7 +33,7 @@ func (p *groupCreateProcessor) OnMessageSharePieceReq(msg *model.ReqSharePieceMe
 
 	pieceMsg := &model.ResponseSharePieceMessage{
 		GroupHash: msg.GroupHash,
-		Share: piece,
+		Share:     piece,
 	}
 	if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, pieceMsg); ok {
 		pieceMsg.SignInfo = signInfo
@@ -48,7 +48,7 @@ func (p *groupCreateProcessor) OnMessageSharePieceResponse(msg *model.ResponseSh
 	return
 }
 
-func (p *groupCreateProcessor) askSignPK(minerId groupsig.ID,groupId groupsig.ID) {
+func (p *groupCreateProcessor) askSignPK(minerId groupsig.ID, groupId groupsig.ID) {
 	if !addSignPkReq(minerId) {
 		return
 	}
@@ -66,7 +66,7 @@ func (p *groupCreateProcessor) askSignPK(minerId groupsig.ID,groupId groupsig.ID
 // responses own public key
 func (p *groupCreateProcessor) OnMessageSignPKReq(msg *model.SignPubkeyReqMessage) {
 	sender := msg.SignInfo.GetSignerID()
-	groupCreateLogger.Debugf("Rcv sign pk req! sender:%s",sender)
+	groupCreateLogger.Debugf("Rcv sign pk req! sender:%s", sender)
 	var err error
 	defer func() {
 		groupCreateLogger.Debugf("sender=%v, gid=%v, result=%v", sender.ShortS(), msg.GroupID.ShortS(), err)
@@ -93,9 +93,9 @@ func (p *groupCreateProcessor) OnMessageSignPKReq(msg *model.SignPubkeyReqMessag
 	}
 
 	resp := &model.SignPubKeyMessage{
-		GroupHash:   joinedGroupInfo.GroupHash,
-		GroupID: msg.GroupID,
-		SignPK:  *groupsig.GeneratePubkey(joinedGroupInfo.SignSecKey),
+		GroupHash: joinedGroupInfo.GroupHash,
+		GroupID:   msg.GroupID,
+		SignPK:    *groupsig.GeneratePubkey(joinedGroupInfo.SignSecKey),
 	}
 	if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, msg); ok {
 		resp.SignInfo = signInfo
@@ -106,11 +106,9 @@ func (p *groupCreateProcessor) OnMessageSignPKReq(msg *model.SignPubkeyReqMessag
 	}
 }
 
-
-
 type signPKReqRecord struct {
-	reqTime time.Time
-	reqMinerID  groupsig.ID
+	reqTime    time.Time
+	reqMinerID groupsig.ID
 }
 
 func (r *signPKReqRecord) reqTimeout() bool {
@@ -122,8 +120,8 @@ var recordMap sync.Map
 
 func addSignPkReq(id groupsig.ID) bool {
 	r := &signPKReqRecord{
-		reqTime: time.Now(),
-		reqMinerID:  id,
+		reqTime:    time.Now(),
+		reqMinerID: id,
 	}
 	_, load := recordMap.LoadOrStore(id.GetHexString(), r)
 	return !load

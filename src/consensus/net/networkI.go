@@ -7,22 +7,40 @@ import (
 	"x/src/middleware/types"
 )
 
-type MessageProcessor interface {
+type GroupCreateMessageProcessor interface {
+
+	OnMessageCreateGroupPing(msg *model.CreateGroupPingMessage)
+
+	OnMessageCreateGroupPong(msg *model.CreateGroupPongMessage)
+
+	OnMessageParentGroupConsensus(msg *model.ParentGroupConsensusMessage)
+
+	OnMessageParentGroupConsensusSign(msg *model.ParentGroupConsensusSignMessage)
+
+
+	OnMessageGroupInit(msg *model.GroupInitMessage)
+
+	OnMessageSharePiece(msg *model.SharePieceMessage)
+
+	OnMessageSignPK(msg *model.SignPubKeyMessage)
+
+	OnMessageGroupInited(msg *model.GroupInitedMessage)
+
+
+	OnMessageSharePieceReq(msg *model.ReqSharePieceMessage)
+
+	OnMessageSharePieceResponse(msg *model.ResponseSharePieceMessage)
+
+	OnMessageSignPKReq(msg *model.SignPubkeyReqMessage)
+
+}
+
+type MiningMessageProcessor interface {
 	Ready() bool
 
-	GetMinerID() groupsig.ID
-
-	ExistInGroup(gHash common.Hash) bool
-
-	OnMessageGroupInit(msg *model.ConsensusGroupRawMessage)
-
-	OnMessageSharePiece(msg *model.ConsensusSharePieceMessage)
-
-	OnMessageSignPK(msg *model.ConsensusSignPubKeyMessage)
-
-	OnMessageSignPKReq(msg *model.ConsensusSignPubkeyReqMessage)
-
-	OnMessageGroupInited(msg *model.ConsensusGroupInitedMessage)
+	//GetMinerID() groupsig.ID
+	//
+	//ExistInGroup(gHash common.Hash) bool
 
 	OnMessageCast(msg *model.ConsensusCastMessage)
 
@@ -31,17 +49,6 @@ type MessageProcessor interface {
 	OnMessageNewTransactions(txs []common.Hashes)
 
 	OnMessageBlock(msg *model.ConsensusBlockMessage)
-
-	OnMessageCreateGroupRaw(msg *model.ConsensusCreateGroupRawMessage)
-
-	OnMessageCreateGroupSign(msg *model.ConsensusCreateGroupSignMessage)
-
-	OnMessageCreateGroupPing(msg *model.CreateGroupPingMessage)
-
-	OnMessageCreateGroupPong(msg *model.CreateGroupPongMessage)
-
-	OnMessageSharePieceReq(msg *model.ReqSharePieceMessage)
-	OnMessageSharePieceResponse(msg *model.ResponseSharePieceMessage)
 }
 
 type GroupBrief struct {
@@ -50,13 +57,25 @@ type GroupBrief struct {
 }
 
 type NetworkServer interface {
-	SendGroupInitMessage(grm *model.ConsensusGroupRawMessage)
 
-	SendKeySharePiece(spm *model.ConsensusSharePieceMessage)
+	SendGroupPingMessage(msg *model.CreateGroupPingMessage, receiver groupsig.ID)
 
-	SendSignPubKey(spkm *model.ConsensusSignPubKeyMessage)
+	SendGroupPongMessage(msg *model.CreateGroupPongMessage, group *GroupBrief)
 
-	BroadcastGroupInfo(cgm *model.ConsensusGroupInitedMessage)
+	SendCreateGroupRawMessage(msg *model.ParentGroupConsensusMessage)
+
+	SendCreateGroupSignMessage(msg *model.ParentGroupConsensusSignMessage, parentGid groupsig.ID)
+
+
+
+	SendGroupInitMessage(grm *model.GroupInitMessage)
+
+	SendKeySharePiece(spm *model.SharePieceMessage)
+
+	SendSignPubKey(spkm *model.SignPubKeyMessage)
+
+	BroadcastGroupInfo(cgm *model.GroupInitedMessage)
+
 
 	SendCastVerify(ccm *model.ConsensusCastMessage, group *GroupBrief, body []*types.Transaction)
 
@@ -64,21 +83,18 @@ type NetworkServer interface {
 
 	BroadcastNewBlock(cbm *model.ConsensusBlockMessage, group *GroupBrief)
 
-	SendCreateGroupRawMessage(msg *model.ConsensusCreateGroupRawMessage)
-
-	SendCreateGroupSignMessage(msg *model.ConsensusCreateGroupSignMessage, parentGid groupsig.ID)
 
 	BuildGroupNet(groupIdentifier string, mems []groupsig.ID)
 
 	ReleaseGroupNet(groupIdentifier string)
 
-	AnswerSignPkMessage(msg *model.ConsensusSignPubKeyMessage, receiver groupsig.ID)
 
-	AskSignPkMessage(msg *model.ConsensusSignPubkeyReqMessage, receiver groupsig.ID)
-
-	SendGroupPingMessage(msg *model.CreateGroupPingMessage, receiver groupsig.ID)
-
-	SendGroupPongMessage(msg *model.CreateGroupPongMessage, group *GroupBrief)
 	ReqSharePiece(msg *model.ReqSharePieceMessage, receiver groupsig.ID)
+
 	ResponseSharePiece(msg *model.ResponseSharePieceMessage, receiver groupsig.ID)
+
+	AskSignPkMessage(msg *model.SignPubkeyReqMessage, receiver groupsig.ID)
+
+	AnswerSignPkMessage(msg *model.SignPubKeyMessage, receiver groupsig.ID)
+
 }

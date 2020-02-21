@@ -9,7 +9,7 @@ import (
 )
 
 type castedBlock struct {
-	height uint64
+	height  uint64
 	preHash common.Hash
 }
 
@@ -26,19 +26,19 @@ type BlockContext struct {
 	vctxs map[uint64]*VerifyContext //height -> *VerifyContext
 
 	recentCasted [40]*castedBlock
-	curr          int
+	curr         int
 
 	lock sync.RWMutex
 }
 
 func NewBlockContext(p *Processor, sgi *model.GroupInfo) *BlockContext {
 	bc := &BlockContext{
-		Proc:               p,
-		MinerID:            model.NewGroupMinerID(sgi.GroupID, p.GetMinerID()),
-		GroupMembers:       sgi.GetMemberCount(),
-		vctxs:              make(map[uint64]*VerifyContext),
-		Version:            model.CONSENSUS_VERSION,
-		curr:          		0,
+		Proc:         p,
+		MinerID:      model.NewGroupMinerID(sgi.GroupID, p.GetMinerID()),
+		GroupMembers: sgi.GetMemberCount(),
+		vctxs:        make(map[uint64]*VerifyContext),
+		Version:      model.CONSENSUS_VERSION,
+		curr:         0,
 	}
 
 	return bc
@@ -147,6 +147,7 @@ func (bc *BlockContext) CleanVerifyContext(height uint64) {
 	defer bc.lock.Unlock()
 	bc.vctxs = newCtxs
 }
+
 //
 func (bc *BlockContext) IsHeightCasted(height uint64, pre common.Hash) (cb *castedBlock, casted bool) {
 	bc.lock.RLock()
@@ -172,7 +173,7 @@ func (bc *BlockContext) AddCastedHeight(height uint64, pre common.Hash) {
 			cb.preHash = pre
 		} else {
 			bc.recentCasted[bc.curr] = &castedBlock{height: height, preHash: pre}
-			bc.curr = (bc.curr+1)%len(bc.recentCasted)
+			bc.curr = (bc.curr + 1) % len(bc.recentCasted)
 		}
 	}
 }

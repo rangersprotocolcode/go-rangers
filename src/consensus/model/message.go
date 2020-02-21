@@ -10,7 +10,6 @@ import (
 	"bytes"
 )
 
-
 type Hasher interface {
 	GenHash() common.Hash
 }
@@ -38,6 +37,15 @@ func NewSignInfo(sk groupsig.Seckey, id groupsig.ID, hasher Hasher) (SignInfo, b
 	return result, true
 }
 
+func MakeSignInfo(dataHash common.Hash, signature groupsig.Signature, signerID groupsig.ID, version int32) SignInfo {
+	result := SignInfo{}
+	result.dataHash = dataHash
+	result.signature = signature
+	result.signerID = signerID
+	result.version = version
+	return result
+}
+
 //用pk验证签名，验证通过返回true，否则false。
 func (si SignInfo) VerifySign(pk groupsig.Pubkey) bool {
 	if !si.signerID.IsValid() {
@@ -61,6 +69,10 @@ func (si SignInfo) GetDataHash() common.Hash {
 
 func (si SignInfo) GetSignature() groupsig.Signature {
 	return si.signature
+}
+
+func (si SignInfo) GetVersion() int32 {
+	return si.version
 }
 
 //====================================父组建组共识消息================================
@@ -360,7 +372,6 @@ type CastRewardTransSignMessage struct {
 func (msg *CastRewardTransSignMessage) GenHash() common.Hash {
 	return msg.ReqHash
 }
-
 
 //type ISignedMessage interface {
 //	GenSign(ski SecKeyInfo, hasher Hasher) bool

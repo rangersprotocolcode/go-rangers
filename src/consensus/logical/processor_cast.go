@@ -118,7 +118,7 @@ func (p *Processor) CalcVerifyGroupFromCache(preBH *types.BlockHeader, height ui
 func (p *Processor) CalcVerifyGroupFromChain(preBH *types.BlockHeader, height uint64) (*groupsig.ID) {
 	var hash = CalcRandomHash(preBH, height)
 
-	selectGroup, err := p.globalGroups.SelectNextGroupFromChain(hash, height)
+	selectGroup, err := p.globalGroups.SelectVerifyGroupFromChain(hash, height)
 	if err != nil {
 		stdLogger.Errorf("SelectNextGroupFromChain height=%v, err:%v", height, err)
 		return nil
@@ -134,7 +134,7 @@ func (p *Processor) spreadGroupBrief(bh *types.BlockHeader, height uint64) *net.
 	group := p.GetGroup(*nextId)
 	g := &net.GroupBrief{
 		Gid:    *nextId,
-		MemIds: group.GetMembers(),
+		MemIds: group.GetGroupMembers(),
 	}
 	return g
 }
@@ -275,7 +275,7 @@ func (p *Processor) GenProveHashs(heightLimit uint64, rand []byte, ids []groupsi
 		h := p.sampleBlockHeight(heightLimit, rand, id)
 		b := p.getNearestBlockByHeight(h)
 		hashs[idx] = p.GenVerifyHash(b, id)
-		blog.log("sampleHeight for %v is %v, real height is %v, proveHash is %v", id.String(), h, b.Header.Height, hashs[idx].String())
+		blog.log("sampleHeight for %v is %v, real height is %v, proveHash is %v", id.GetHexString(), h, b.Header.Height, hashs[idx].String())
 	}
 	proves = hashs
 
@@ -304,7 +304,7 @@ func (p *Processor) blockProposal() {
 	}
 	height := worker.castHeight
 
-	totalStake := p.minerReader.getTotalStake(worker.baseBH.Height, false)
+	totalStake := p.minerReader.GetTotalStake(worker.baseBH.Height, false)
 	blog.log("totalStake height=%v, stake=%v", height, totalStake)
 	pi, qn, err := worker.genProve(totalStake)
 	if err != nil {
@@ -343,19 +343,21 @@ func (p *Processor) blockProposal() {
 	tlog.logStart("height=%v,qn=%v, preHash=%v, verifyGroup=%v", bh.Height, qn, bh.PreHash.ShortS(), gid.ShortS())
 
 	if bh.Height > 0 && bh.Height == height && bh.PreHash == worker.baseBH.Hash {
-		skey := p.mi.SK //此处需要用普通私钥，非组相关私钥
+		skey := p.mi.SecKey //此处需要用普通私钥，非组相关私钥
 		//发送该出块消息
 		var ccm model.ConsensusCastMessage
 		ccm.BH = *bh
 		ccm.ProveHash = []common.Hash{}
 		//ccm.GroupID = gid
-		if !ccm.GenSign(model.NewSecKeyInfo(p.GetMinerID(), skey), &ccm) {
+		if signInfo, ok := model.NewSignInfo(p.mi.SecKey, p.mi.ID, &ccm); !ok {
 			blog.log("sign fail, id=%v, sk=%v", p.GetMinerID().ShortS(), skey.ShortS())
 			return
+		} else {
+			ccm.SignInfo = signInfo
 		}
 		//blog.log("hash=%v, proveRoot=%v, pi=%v, piHash=%v", bh.Hash.ShortS(), root.ShortS(), pi.ShortS(), common.Bytes2Hex(vrf.VRFProof2Hash(pi)))
 		//ccm.GenRandomSign(skey, worker.baseBH.Random)//castor不能对随机数签名
-		tlog.log("铸块成功, SendVerifiedCast, 时间间隔 %v, castor=%v, hash=%v, genHash=%v", bh.CurTime.Sub(bh.PreTime).Seconds(), ccm.SI.GetID().ShortS(), bh.Hash.ShortS(), ccm.SI.DataHash.ShortS())
+		tlog.log("铸块成功, SendVerifiedCast, 时间间隔 %v, castor=%v, hash=%v, genHash=%v", bh.CurTime.Sub(bh.PreTime).Seconds(), ccm.SignInfo.GetSignerID().ShortS(), bh.Hash.ShortS(), ccm.SignInfo.GetDataHash().ShortS())
 		p.NetServer.SendCastVerify(&ccm, gb, block.Transactions)
 
 		//发送日志

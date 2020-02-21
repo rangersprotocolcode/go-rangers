@@ -17,12 +17,12 @@ type stateHandleFunc func(msg interface{})
 type stateNode struct {
 	code        uint32
 	leastRepeat int32
-	mostRepeat 	int32
+	mostRepeat  int32
 	handler     stateHandleFunc
 	next        *stateNode
 
 	currentIdx int32
-	execNum 	int32
+	execNum    int32
 	queue      []*StateMsg
 	//lock       sync.RWMutex
 }
@@ -88,7 +88,7 @@ func newStateNode(st uint32, lr, mr int, h stateHandleFunc) *stateNode {
 	return &stateNode{
 		code:        st,
 		leastRepeat: int32(lr),
-		mostRepeat: 	int32(mr),
+		mostRepeat:  int32(mr),
 		queue:       make([]*StateMsg, 0),
 		handler:     h,
 	}
@@ -295,16 +295,16 @@ func (m *groupInsideMachineGenerator) Generate(id string, cnt int) *StateMachine
 	machine := newStateMachine(id)
 	memNum := cnt
 	machine.appendNode(newStateNode(network.GroupInitMsg, 1, 1, func(msg interface{}) {
-		MessageHandler.processor.OnMessageGroupInit(msg.(*model.ConsensusGroupRawMessage))
+		MessageHandler.groupCreateMessageProcessor.OnMessageGroupInit(msg.(*model.GroupInitMessage))
 	}))
 	machine.appendNode(newStateNode(network.KeyPieceMsg, memNum, memNum, func(msg interface{}) {
-		MessageHandler.processor.OnMessageSharePiece(msg.(*model.ConsensusSharePieceMessage))
+		MessageHandler.groupCreateMessageProcessor.OnMessageSharePiece(msg.(*model.SharePieceMessage))
 	}))
 	machine.appendNode(newStateNode(network.SignPubkeyMsg, 1, memNum, func(msg interface{}) {
-		MessageHandler.processor.OnMessageSignPK(msg.(*model.ConsensusSignPubKeyMessage))
+		MessageHandler.groupCreateMessageProcessor.OnMessageSignPK(msg.(*model.SignPubKeyMessage))
 	}))
 	machine.appendNode(newStateNode(network.GroupInitDoneMsg, model.Param.GetGroupK(memNum), model.Param.GetGroupK(memNum), func(msg interface{}) {
-		MessageHandler.processor.OnMessageGroupInited(msg.(*model.ConsensusGroupInitedMessage))
+		MessageHandler.groupCreateMessageProcessor.OnMessageGroupInited(msg.(*model.GroupInitedMessage))
 	}))
 	return machine
 }

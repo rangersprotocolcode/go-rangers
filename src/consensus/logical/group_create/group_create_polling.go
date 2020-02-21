@@ -1,4 +1,4 @@
-package logical
+package group_create
 
 import (
 	"bytes"
@@ -69,7 +69,7 @@ func (p *groupCreateProcessor) tryCreateGroup(baseHeight uint64) {
 
 	//todo 既然改成创始组创建了 之类还有必要检查吗？
 	// if current node doesn't belong to the selected parent group, it won't start the routine
-	if !p.belongGroup(baseCtx.parentGroupInfo.GroupID) {
+	if !p.joinedGroupStorage.BelongGroup(baseCtx.parentGroupInfo.GroupID) {
 		err = fmt.Errorf("next select group id %v, not belong to the group", baseCtx.parentGroupInfo.GroupID.GetHexString())
 		return
 	}
@@ -103,7 +103,7 @@ func (p *groupCreateProcessor) selectKing(theBH *types.BlockHeader, group *model
 			isKing = true
 		}
 	}
-	groupCreateLogger.Infof("SelectKings:king index=%v, ids=%v, isKing %v",selectIndexs, kings, isKing)
+	groupCreateLogger.Infof("SelectKings:king index=%v, ids=%v, isKing %v", selectIndexs, kings, isKing)
 	return
 }
 
@@ -135,7 +135,6 @@ func (p *groupCreateProcessor) genCreateGroupBaseInfo(baseHeight uint64) (*creat
 	}
 	return newCreateGroupBaseInfo(sgi, baseBH, lastGroup, candidates), nil
 }
-
 
 //选取候选人
 // selectCandidates randomly select a sufficient number of miners from the miners' pool as new group candidates

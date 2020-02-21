@@ -1,4 +1,4 @@
-package logical
+package group_create
 
 import (
 	"sync"
@@ -7,7 +7,6 @@ import (
 	"x/src/consensus/base"
 	"x/src/common"
 )
-
 
 // GroupNode
 //当前节点作为组成员参与建某个组的信息
@@ -33,7 +32,6 @@ func NewGroupNodeInfo(mi *model.MinerInfo, groupHash common.Hash, groupMemberNum
 	nodeInfo.groupPubKey = groupsig.Pubkey{}
 	return &nodeInfo
 }
-
 
 // GenSharePiece generate secret sharing for all members of the group
 func (nodeInfo groupNodeInfo) genSharePiece(mems []groupsig.ID) map[string]groupsig.Seckey {
@@ -61,7 +59,7 @@ func (nodeInfo groupNodeInfo) handleSharePiece(id groupsig.ID, share *model.Shar
 	if _, ok := nodeInfo.receivedSharePiece[id.GetHexString()]; !ok {
 		// Did not receive this member message
 		nodeInfo.receivedSharePiece[id.GetHexString()] = *share
-	}else {
+	} else {
 		// Received this member message
 		return -1
 	}
@@ -75,7 +73,6 @@ func (nodeInfo groupNodeInfo) handleSharePiece(id groupsig.ID, share *model.Shar
 	return 0
 }
 
-
 //hasPiece
 func (nodeInfo groupNodeInfo) hasSharePiece(id groupsig.ID) bool {
 	nodeInfo.lock.RLock()
@@ -84,12 +81,10 @@ func (nodeInfo groupNodeInfo) hasSharePiece(id groupsig.ID) bool {
 	return ok
 }
 
-
 // GetGroupPubKey get group public key (valid after secret exchange)
 func (nodeInfo groupNodeInfo) getGroupPubKey() groupsig.Pubkey {
 	return nodeInfo.groupPubKey
 }
-
 
 // getSignSecKey get the signature private key (this function
 // is not available in the official version)
@@ -101,11 +96,6 @@ func (nodeInfo groupNodeInfo) getSignSecKey() groupsig.Seckey {
 func (nodeInfo groupNodeInfo) getSeedPubKey() groupsig.Pubkey {
 	return *groupsig.GeneratePubkey(nodeInfo.genSeedSecKey())
 }
-
-
-
-
-
 
 func (nodeInfo groupNodeInfo) threshold() int {
 	return model.Param.GetGroupK(nodeInfo.groupMemberNum)
@@ -121,17 +111,14 @@ func (nodeInfo groupNodeInfo) genSecKeyList(threshold int) []groupsig.Seckey {
 	return secs
 }
 
-
 func (nodeInfo groupNodeInfo) gotAllSharePiece() bool {
 	return nodeInfo.receivedSharePieceCount() == nodeInfo.groupMemberNum
 }
-
 
 //GetSize
 func (nodeInfo groupNodeInfo) receivedSharePieceCount() int {
 	return len(nodeInfo.receivedSharePiece)
 }
-
 
 // beingValidMiner become an effective miner
 func (nodeInfo groupNodeInfo) aggregateKeys() bool {
@@ -143,7 +130,6 @@ func (nodeInfo groupNodeInfo) aggregateKeys() bool {
 	}
 	return nodeInfo.groupPubKey.IsValid() && nodeInfo.minerSignSeckey.IsValid()
 }
-
 
 // GenMinerSignSecKey generate miner signature private key
 func (nodeInfo groupNodeInfo) genMinerSignSecKey() *groupsig.Seckey {
@@ -165,12 +151,10 @@ func (nodeInfo groupNodeInfo) genGroupPubKey() *groupsig.Pubkey {
 	return gpk
 }
 
-
 // GenSecKey generate a private private key for a group
 func (nodeInfo groupNodeInfo) genSeedSecKey() groupsig.Seckey {
 	return *groupsig.NewSeckeyFromRand(nodeInfo.secretSeed.Deri(0))
 }
-
 
 //// GroupInitPool is data receiving pool
 //type GroupInitPool struct {

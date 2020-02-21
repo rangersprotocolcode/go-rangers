@@ -141,17 +141,17 @@ func (p *Processor) releaseRoutine() bool {
 			//}
 
 			msg := &model.ReqSharePieceMessage{
-				GHash: gc.gInfo.GroupHash(),
+				GroupHash: gc.gInfo.GroupHash(),
 			}
 			stdLogger.Infof("reqSharePieceRoutine:req size %v, ghash=%v", len(waitIds), gc.gInfo.GroupHash().ShortS())
-			if msg.GenSign(p.getDefaultSeckeyInfo(), msg) {
+			if signInfo, ok := model.NewSignInfo(p.mi.SecKey, p.mi.ID, msg); ok {
+				msg.SignInfo = signInfo
 				for _, receiver := range waitIds {
 					stdLogger.Infof("reqSharePieceRoutine:req share piece msg from %v, ghash=%v", receiver, gc.gInfo.GroupHash().ShortS())
 					p.NetServer.ReqSharePiece(msg, receiver)
 				}
 			} else {
-				ski := p.getDefaultSeckeyInfo()
-				stdLogger.Infof("gen req sharepiece sign fail, ski=%v %v", ski.ID.ShortS(), ski.SK.ShortS())
+				stdLogger.Infof("gen req sharepiece sign fail, ski=%v %v", p.mi.ID.ShortS(), p.mi.SecKey.ShortS())
 			}
 
 		}
@@ -236,11 +236,11 @@ func (p *Processor) updateGlobalGroups() bool {
 	top := p.MainChain.Height()
 	iter := p.GroupChain.Iterator()
 	for g := iter.Current(); g != nil && !IsGroupDissmisedAt(g.Header, top); g = iter.MovePre() {
-		gid := groupsig.DeserializeId(g.Id)
-		if g, _ := p.globalGroups.getGroupFromCache(gid); g != nil {
+		gid := groupsig.DeserializeID(g.Id)
+		if g, _ := p.globalGroups.GetGroupFromCache(gid); g != nil {
 			continue
 		}
-		sgi := NewSGIFromCoreGroup(g)
+		sgi := model.ConvertToGroupInfo(g)
 		stdLogger.Debugf("updateGlobalGroups:gid=%v, workHeight=%v, topHeight=%v", gid.ShortS(), g.Header.WorkHeight, top)
 		p.acceptGroup(sgi)
 	}

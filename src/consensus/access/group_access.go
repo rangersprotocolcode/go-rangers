@@ -93,7 +93,7 @@ func (groupAccessor *GroupAccessor) AddGroupInfo(g *model.GroupInfo) bool {
 
 // GetGroupByID returns the group info of the specified id.
 func (groupAccessor *GroupAccessor) GetGroupByID(id groupsig.ID) (g *model.GroupInfo, err error) {
-	if g, err = groupAccessor.getGroupFromCache(id); err != nil {
+	if g, err = groupAccessor.GetGroupFromCache(id); err != nil {
 		return
 	}
 	if g == nil {
@@ -174,7 +174,7 @@ func (groupAccessor *GroupAccessor) SelectVerifyGroupFromCache(hash common.Hash,
 // This method can be used to compensate when the result of the calculation through the cache(method SelectNextGroupFromCache)
 // does not match the expectation
 func (groupAccessor *GroupAccessor) SelectVerifyGroupFromChain(hash common.Hash, height uint64) (groupsig.ID, error) {
-	quaulifiedGS := groupAccessor.getCastQualifiedGroupFromChains(height)
+	quaulifiedGS := groupAccessor.GetCastQualifiedGroupFromChains(height)
 	idshort := make([]string, len(quaulifiedGS))
 	for idx, g := range quaulifiedGS {
 		idshort[idx] = groupsig.DeserializeID(g.Id).ShortS()
@@ -219,7 +219,6 @@ func (groupAccessor *GroupAccessor) GetGenesisGroup() *model.GroupInfo {
 	return g
 }
 
-
 func (groupAccessor *GroupAccessor) findPos(g *model.GroupInfo) (idx int, right bool) {
 	cnt := len(groupAccessor.groups)
 	if cnt == 1 {
@@ -263,7 +262,7 @@ func (groupAccessor *GroupAccessor) getGroupByIndex(i int) (g *model.GroupInfo, 
 	return
 }
 
-func (groupAccessor *GroupAccessor) getGroupFromCache(id groupsig.ID) (g *model.GroupInfo, err error) {
+func (groupAccessor *GroupAccessor) GetGroupFromCache(id groupsig.ID) (g *model.GroupInfo, err error) {
 	groupAccessor.lock.RLock()
 	defer groupAccessor.lock.RUnlock()
 
@@ -283,7 +282,7 @@ func (groupAccessor *GroupAccessor) selectIndex(num int, hash common.Hash) int64
 	return index.Int64()
 }
 
-func (groupAccessor *GroupAccessor) getCastQualifiedGroupFromChains(height uint64) []*types.Group {
+func (groupAccessor *GroupAccessor) GetCastQualifiedGroupFromChains(height uint64) []*types.Group {
 	iter := groupAccessor.chain.Iterator()
 	groups := make([]*types.Group, 0)
 	for g := iter.Current(); g != nil; g = iter.MovePre() {
@@ -332,7 +331,6 @@ func (groupAccessor *GroupAccessor) removeGroups(gids []groupsig.ID) {
 	groupAccessor.groupIndexMap = indexMap
 }
 
-
 func isGroupDissmisedAt(gh *types.GroupHeader, h uint64) bool {
 	return gh.DismissHeight <= h
 }
@@ -342,22 +340,22 @@ func isGroupWorkQualifiedAt(gh *types.GroupHeader, h uint64) bool {
 	return !isGroupDissmisedAt(gh, h) && gh.WorkHeight <= h
 }
 
-//// GetAvailableGroups gets all valid groups at a given height, including those can work currently or in the near future
-//func (groupAccessor *GroupAccessor) GetAvailableGroups(height uint64) []*model.GroupInfo {
-//	groupAccessor.lock.RLock()
-//	defer groupAccessor.lock.RUnlock()
-//
-//	gs := make([]*model.GroupInfo, 0)
-//	for _, g := range groupAccessor.groups {
-//		if g == nil {
-//			continue
-//		}
-//		if !g.Dismissed(height) {
-//			gs = append(gs, g)
-//		}
-//	}
-//	return gs
-//}
+// GetAvailableGroups gets all valid groups at a given height, including those can work currently or in the near future
+func (groupAccessor *GroupAccessor) GetAvailableGroups(height uint64) []*model.GroupInfo {
+	groupAccessor.lock.RLock()
+	defer groupAccessor.lock.RUnlock()
+
+	gs := make([]*model.GroupInfo, 0)
+	for _, g := range groupAccessor.groups {
+		if g == nil {
+			continue
+		}
+		if !g.NeedDismiss(height) {
+			gs = append(gs, g)
+		}
+	}
+	return gs
+}
 
 //func (gg *GlobalGroups) GetInitedGroup(gHash common.Hash) *InitedGroup {
 //	return gg.generator.getInitedGroup(gHash)

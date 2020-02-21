@@ -5,6 +5,9 @@ import (
 	"x/src/consensus/model"
 	"x/src/consensus/net"
 	"x/src/common"
+	"strings"
+	"x/src/consensus/access"
+	"x/src/consensus/logical/group_create"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -14,15 +17,16 @@ import (
 
 var Proc logical.Processor
 
-
 //共识初始化
 //mid: 矿工ID
 //返回：true初始化成功，可以启动铸块。内部会和链进行交互，进行初始数据加载和预处理。失败返回false。
-func ConsensusInit(mi model.SelfMinerDO, conf common.ConfManager) bool {
+func ConsensusInit(mi model.MinerInfo, conf common.ConfManager) bool {
 	logical.InitConsensus()
-	//groupsig.Init(1)
+	initJoinedGroupStorage(mi, conf)
+
+	group_create.GroupCreateProcessor.Init(mi)
 	ret := Proc.Init(mi, conf)
-	net.MessageHandler.Init(&Proc)
+	net.MessageHandler.Init(group_create.GroupCreateProcessor,&Proc)
 	return ret
 }
 
@@ -37,4 +41,24 @@ func StopMiner() {
 	Proc.Stop()
 	Proc.Finalize()
 	return
+}
+
+func initJoinedGroupStorage(mi model.MinerInfo, conf common.ConfManager) {
+	filePath := genBelongGroupStoreFile(conf)
+	encryptSecKey := getEncryptPrivateKey(mi)
+	access.InitJoinedGroupStorage(filePath, encryptSecKey)
+}
+
+func genBelongGroupStoreFile(conf common.ConfManager) string {
+	storeFile := conf.GetString(logical.ConsensusConfSection, "groupstore", "")
+	if strings.TrimSpace(storeFile) == "" {
+		storeFile = "groupstore" + conf.GetString("instance", "index", "")
+	}
+	return storeFile
+}
+
+func getEncryptPrivateKey(mi model.MinerInfo) common.PrivateKey {
+	seed := mi.SecKey.GetHexString() + mi.ID.GetHexString()
+	encryptPrivateKey := common.GenerateKey(seed)
+	return encryptPrivateKey
 }

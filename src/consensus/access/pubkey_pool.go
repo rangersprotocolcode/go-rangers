@@ -48,3 +48,7 @@ func GetMinerPubKey(id groupsig.ID) *groupsig.Pubkey {
 func ready() bool {
 	return pkPool.minerAccess != nil
 }
+
+func init() {
+	logger = log.GetLoggerByIndex(log.AccessLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+}

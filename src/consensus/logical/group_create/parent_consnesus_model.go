@@ -1,4 +1,4 @@
-package logical
+package group_create
 
 import (
 	"fmt"
@@ -52,15 +52,13 @@ func (ctx *createGroupBaseInfo) timeout(h uint64) bool {
 	return h >= ctx.readyHeight()
 }
 
-
-
 // CreatingGroupContext stores the context info when parent group starting group-create routine
 type createGroupContext struct {
 	createGroupBaseInfo
 	status  int8   // the context status(waitingPong,waitingSign,sendInit)
 	memMask []byte // each non-zero bit indicates that the candidate at the subscript replied to the ping message and will become a full member of the new-group
 
-	kings  []groupsig.ID // kings selected randomly from the parent group who responsible for node pings and new group proposal
+	kings       []groupsig.ID // kings selected randomly from the parent group who responsible for node pings and new group proposal
 	belongKings bool          // whether the current node is one of the kings
 
 	pingID          string          // identify one ping process
@@ -69,8 +67,8 @@ type createGroupContext struct {
 	createTopHeight uint64          // the blockchain height when starting the group-create routine
 
 	//gInfo
-	groupInitInfo          *model.GroupInitInfo // new group info generated during the routine and will be sent to the new-group members for consensus
-	groupSignGenerator *model.GroupSignGenerator     // group signature generator
+	groupInitInfo      *model.GroupInitInfo      // new group info generated during the routine and will be sent to the new-group members for consensus
+	groupSignGenerator *model.GroupSignGenerator // group signature generator
 
 	lock sync.RWMutex
 }
@@ -83,11 +81,11 @@ func newCreateGroupContext(baseCtx *createGroupBaseInfo, kings []groupsig.ID, is
 		kings:               kings,
 		status:              waitingPong,
 		createTime:          time.Now(),
-		belongKings:              isKing,
+		belongKings:         isKing,
 		createTopHeight:     top,
 		pingID:              base.Data2CommonHash(pingIDBytes).Hex(),
 		pongMap:             make(map[string]byte, 0),
-		groupSignGenerator:      model.NewGroupSignGenerator(model.Param.GetGroupK(baseCtx.parentGroupInfo.GetMemberCount())),
+		groupSignGenerator:  model.NewGroupSignGenerator(model.Param.GetGroupK(baseCtx.parentGroupInfo.GetMemberCount())),
 	}
 
 	return cg
@@ -141,8 +139,6 @@ func (ctx *createGroupContext) setStatus(st int8) {
 	defer ctx.lock.RUnlock()
 	ctx.status = st
 }
-
-
 
 //生成组初始化信息(mask groupheader, 成员)
 func (ctx *createGroupContext) genGroupInitInfo(h uint64) bool {
@@ -219,7 +215,6 @@ func (ctx *createGroupBaseInfo) createGroupHeader(memIds []groupsig.ID) *types.G
 	gh.Hash = gh.GenHash()
 	return gh
 }
-
 
 func (ctx *createGroupContext) String() string {
 	return fmt.Sprintf("baseHeight=%v, topHeight=%v, candidates=%v, isKing=%v, parentGroup=%v, pongs=%v, elapsed=%v",

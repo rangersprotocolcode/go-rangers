@@ -1,19 +1,4 @@
-//   Copyright (C) 2018 TASChain
-//
-//   This program is free software: you can redistribute it and/or modify
-//   it under the terms of the GNU General Public License as published by
-//   the Free Software Foundation, either version 3 of the License, or
-//   (at your option) any later version.
-//
-//   This program is distributed in the hope that it will be useful,
-//   but WITHOUT ANY WARRANTY; without even the implied warranty of
-//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-//   GNU General Public License for more details.
-//
-//   You should have received a copy of the GNU General Public License
-//   along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-package logical
+package group_create
 
 import (
 	"sync"
@@ -27,12 +12,11 @@ import (
 )
 
 const (
-	InitFail     = -1
-	Initing      = 0
+	InitFail = -1
+	Initing  = 0
 	// InitSuccess initialization successful, group public key generation
 	InitSuccess = 1
 )
-
 
 const (
 	// GisInit means the group is in its original state (knowing who is a group,
@@ -61,7 +45,7 @@ type groupInitContext struct {
 	groupInitInfo *model.GroupInitInfo // Group initialization information (specified by the parent group)
 	nodeInfo      *groupNodeInfo       // Group node information (for initializing groups of public and signed private keys)
 
-	status        int32 // Group initialization state
+	status int32 // Group initialization state
 	//candidates    []groupsig.ID
 	sharePieceMap map[string]model.SharePiece
 	createTime    time.Time
@@ -70,10 +54,10 @@ type groupInitContext struct {
 //CreateGroupContextWithRawMessage
 // CreateGroupContextWithRawMessage creates a GroupContext structure from
 // a group initialization message
-func newGroupInitContext(groupInitInfo *model.GroupInitInfo,  minerInfo *model.MinerInfo) *groupInitContext {
+func newGroupInitContext(groupInitInfo *model.GroupInitInfo, minerInfo *model.MinerInfo) *groupInitContext {
 	for k, v := range groupInitInfo.GroupMembers {
 		if !v.IsValid() {
-			stdLogger.Debug("i=%v, ID failed=%v.\n", k, v.GetHexString())
+			groupCreateLogger.Debug("NewGroupInitContext ID failed! index=%v, id=%v.\n", k, v.GetHexString())
 			return nil
 		}
 	}
@@ -82,13 +66,13 @@ func newGroupInitContext(groupInitInfo *model.GroupInitInfo,  minerInfo *model.M
 	context.status = GisInit
 	context.groupInitInfo = groupInitInfo
 
-	context.nodeInfo = NewGroupNodeInfo(minerInfo,groupInitInfo.GroupHash(),len(groupInitInfo.GroupMembers))
+	context.nodeInfo = NewGroupNodeInfo(minerInfo, groupInitInfo.GroupHash(), len(groupInitInfo.GroupMembers))
 	return context
 }
 
 // GenSharePieces generate secret sharing sent to members of the group: si = F(IDi)
 func (context groupInitContext) GenSharePieces() map[string]model.SharePiece {
-	shares := make(map[string]model.SharePiece , 0)
+	shares := make(map[string]model.SharePiece, 0)
 	secs := context.nodeInfo.genSharePiece(context.groupInitInfo.GroupMembers)
 	var piece model.SharePiece
 	piece.Pub = context.nodeInfo.getSeedPubKey()
@@ -136,7 +120,7 @@ func (context groupInitContext) TransformStatus(from, to int32) bool {
 func (context groupInitContext) generateMemberMask() (mask []byte) {
 	mask = make([]byte, (len(context.groupInitInfo.GroupMembers)+7)/8)
 
-	for i, id := range context.groupInitInfo.GroupMembers{
+	for i, id := range context.groupInitInfo.GroupMembers {
 		b := mask[i/8]
 		if context.MemExist(id) {
 			b |= 1 << byte(i%8)
@@ -145,10 +129,6 @@ func (context groupInitContext) generateMemberMask() (mask []byte) {
 	}
 	return
 }
-
-
-
-
 
 //JoiningGroups
 type groupInitContextCache struct {
@@ -162,7 +142,7 @@ func newGroupInitContextCache() groupInitContextCache {
 }
 
 //ConfirmGroupFromRaw
-func (groupInitContextCache *groupInitContextCache) GetOrNewContext(groupInitInfo *model.GroupInitInfo,mi *model.MinerInfo) *groupInitContext {
+func (groupInitContextCache *groupInitContextCache) GetOrNewContext(groupInitInfo *model.GroupInitInfo, mi *model.MinerInfo) *groupInitContext {
 	groupHash := groupInitInfo.GroupHash()
 	v := groupInitContextCache.GetContext(groupHash)
 	if v != nil {
@@ -213,16 +193,14 @@ func (groupInitContextCache *groupInitContextCache) forEach(f func(context *grou
 	}
 }
 
-
-
 //InitedGroup
 // InitedGroup is miner node processor
 //用于收集组成员的组公钥，得到真正正确的组公钥
 type groupPubkeyCollector struct {
-	groupInitInfo        *model.GroupInitInfo
+	groupInitInfo *model.GroupInitInfo
 
-	groupPK groupsig.Pubkey // output generated group public key
-	receivedGroupPKMap map[string]groupsig.Pubkey//key=>id,value=>group pubkey 从中选取正确的组公钥
+	groupPK            groupsig.Pubkey            // output generated group public key
+	receivedGroupPKMap map[string]groupsig.Pubkey //key=>id,value=>group pubkey 从中选取正确的组公钥
 
 	threshold int
 	// -1, Group initialization failed (timeout or unable to reach consensus, irreversible)
@@ -230,7 +208,7 @@ type groupPubkeyCollector struct {
 	// 1,Group initialization succeeded
 	status int32
 
-	lock         sync.RWMutex
+	lock sync.RWMutex
 }
 
 // createInitedGroup create a group in initialization
@@ -238,9 +216,9 @@ func NewGroupPubkeyCollector(groupInitInfo *model.GroupInitInfo) *groupPubkeyCol
 	threshold := model.Param.GetGroupK(len(groupInitInfo.GroupMembers))
 	return &groupPubkeyCollector{
 		receivedGroupPKMap: make(map[string]groupsig.Pubkey),
-		status:       Initing,
-		threshold:    threshold,
-		groupInitInfo:        groupInitInfo,
+		status:             Initing,
+		threshold:          threshold,
+		groupInitInfo:      groupInitInfo,
 	}
 }
 
@@ -277,14 +255,14 @@ func (collector *groupPubkeyCollector) hasReceived(id groupsig.ID) bool {
 
 //convergence
 // convergence find out the most received values
-func (collector *groupPubkeyCollector) tryGenGroupPubkey(){
+func (collector *groupPubkeyCollector) tryGenGroupPubkey() {
 	groupCreateLogger.Debugf("GroupPubkeyCollector try gen grouo pubkey, threshold=%v\n", collector.threshold)
 
 	type countData struct {
 		count int
 		pk    groupsig.Pubkey
 	}
-	countMap := make(map[string]*countData, 0)//key=> pubkeyStr value=>countData
+	countMap := make(map[string]*countData, 0) //key=> pubkeyStr value=>countData
 
 	// Statistical occurrences
 	for _, groupPubkey := range collector.receivedGroupPKMap {
@@ -317,8 +295,6 @@ func (collector *groupPubkeyCollector) tryGenGroupPubkey(){
 	}
 }
 
-
-
 //getInitedGroup
 func (p *groupCreateProcessor) getGroupPubkeyCollector(groupHash common.Hash) *groupPubkeyCollector {
 	if v, ok := p.groupSignCollectorMap.Load(groupHash.Hex()); ok {
@@ -344,8 +320,6 @@ func (p *groupCreateProcessor) forEach(f func(ig *groupPubkeyCollector) bool) {
 		return f(g)
 	})
 }
-
-
 
 // NewGroupGenerator is group generator, parent group node or whole network node
 // group external processor (non-group initialization consensus)

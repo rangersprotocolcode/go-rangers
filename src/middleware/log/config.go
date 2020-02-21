@@ -195,4 +195,13 @@ const (
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
 						</formats>
 					</seelog>`
+
+	AccessLogConfig = `<seelog minlevel="debug">
+						<outputs formatid="default">
+							<rollingfile type="size" filename="./logs/consensus_accessLOG_INDEX.log" maxsize="50000000" maxrolls="1"/>
+						</outputs>
+						<formats>
+							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
+						</formats>
+					</seelog>`
 )

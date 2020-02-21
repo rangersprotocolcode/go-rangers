@@ -1,10 +1,4 @@
-package logical
-
-import (
-	"fmt"
-
-	"x/src/consensus/model"
-)
+package group_create
 
 
 

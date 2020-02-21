@@ -25,7 +25,6 @@ func (p *Processor) Start() bool {
 	p.Ticker.RegisterRoutine(p.getReleaseRoutineName(), p.releaseRoutine, 600)
 	p.Ticker.StartTickerRoutine(p.getReleaseRoutineName(), false)
 
-
 	p.Ticker.RegisterRoutine(p.getUpdateGlobalGroupsRoutineName(), p.updateGlobalGroups, 60*1000)
 	p.Ticker.StartTickerRoutine(p.getUpdateGlobalGroupsRoutineName(), false)
 
@@ -49,14 +48,14 @@ func (p *Processor) prepareMiner() {
 
 	stdLogger.Infof("prepareMiner get groups from groupchain")
 	iterator := p.GroupChain.Iterator()
-	groups := make([]*StaticGroupInfo, 0)
+	groups := make([]*model.GroupInfo, 0)
 	for coreGroup := iterator.Current(); coreGroup != nil; coreGroup = iterator.MovePre() {
 		stdLogger.Infof("get group from core, id=%+v", coreGroup.Header)
 		if coreGroup.Id == nil || len(coreGroup.Id) == 0 {
 			continue
 		}
 		needBreak := false
-		sgi := NewSGIFromCoreGroup(coreGroup)
+		sgi := model.ConvertToGroupInfo(coreGroup)
 		//if sgi.Dismissed(topHeight) {
 		//	needBreak = true
 		//	genesis := p.GroupChain.GetGroupByHeight(0)
@@ -66,13 +65,13 @@ func (p *Processor) prepareMiner() {
 		//	sgi = NewSGIFromCoreGroup(genesis)
 		//}
 		groups = append(groups, sgi)
-		stdLogger.Infof("load group=%v, beginHeight=%v, topHeight=%v\n", sgi.GroupID.ShortS(), sgi.getGroupHeader().WorkHeight, topHeight)
+		stdLogger.Infof("load group=%v, beginHeight=%v, topHeight=%v\n", sgi.GroupID.ShortS(), sgi.GetGroupHeader().WorkHeight, topHeight)
 		if sgi.MemExist(p.GetMinerID()) {
-			jg := p.belongGroups.getJoinedGroup(sgi.GroupID)
+			jg := p.belongGroups.GetJoinedGroupInfo(sgi.GroupID)
 			if jg == nil {
 				stdLogger.Infof("prepareMiner get join group fail, gid=%v\n", sgi.GroupID.ShortS())
 			} else {
-				p.joinGroup(jg)
+				p.belongGroups.JoinGroup(jg, p.mi.ID)
 			}
 		}
 		if needBreak {
@@ -89,13 +88,13 @@ func (p *Processor) Ready() bool {
 	return p.ready
 }
 
-func (p *Processor) GetCastQualifiedGroups(height uint64) []*StaticGroupInfo {
-	return p.globalGroups.GetCastQualifiedGroups(height)
+func (p *Processor) GetCastQualifiedGroups(height uint64) []*model.GroupInfo {
+	return p.globalGroups.GetEffectiveGroups(height)
 }
 
 func (p *Processor) Finalize() {
 	if p.belongGroups != nil {
-		p.belongGroups.close()
+		p.belongGroups.Close()
 	}
 }
 
@@ -110,16 +109,16 @@ func (p *Processor) setVrfWorker(vrf *vrfWorker) {
 	p.vrf.Store(vrf)
 }
 
-func (p *Processor) GetSelfMinerDO() *model.SelfMinerDO {
-	md := p.minerReader.getProposeMiner(p.GetMinerID())
+func (p *Processor) GetSelfMinerDO() *model.MinerInfo {
+	md := p.minerReader.GetProposeMiner(p.GetMinerID())
 	if md != nil {
-		p.mi.MinerDO = *md
+		p.mi = md
 	}
 	return p.mi
 }
 
 func (p *Processor) canProposalAt(h uint64) bool {
-	miner := p.minerReader.getProposeMiner(p.GetMinerID())
+	miner := p.minerReader.GetProposeMiner(p.GetMinerID())
 	if miner == nil {
 		//		stdLogger.Errorf("get nil proposeMiner:%s", p.GetMinerID().String())
 		return false
@@ -134,7 +133,7 @@ func (p *Processor) GetJoinedWorkGroupNums() (work, avail int) {
 		if !g.MemExist(p.GetMinerID()) {
 			continue
 		}
-		if g.CastQualified(h) {
+		if g.IsEffective(h) {
 			work++
 		}
 		avail++
@@ -144,8 +143,8 @@ func (p *Processor) GetJoinedWorkGroupNums() (work, avail int) {
 
 func (p *Processor) CalcBlockHeaderQN(bh *types.BlockHeader) uint64 {
 	pi := vrf.VRFProve(bh.ProveValue.Bytes())
-	castor := groupsig.DeserializeId(bh.Castor)
-	miner := p.minerReader.getProposeMiner(castor)
+	castor := groupsig.DeserializeID(bh.Castor)
+	miner := p.minerReader.GetProposeMiner(castor)
 	if miner == nil {
 		stdLogger.Infof("CalcBHQN getMiner nil id=%v, bh=%v", castor.ShortS(), bh.Hash.ShortS())
 		return 0
@@ -154,7 +153,7 @@ func (p *Processor) CalcBlockHeaderQN(bh *types.BlockHeader) uint64 {
 	if pre == nil {
 		return 0
 	}
-	totalStake := p.minerReader.getTotalStake(pre.Header.Height, false)
+	totalStake := p.minerReader.GetTotalStake(pre.Header.Height, false)
 	_, qn := validateProve(pi, miner.Stake, totalStake)
 	return qn
 }
@@ -191,7 +190,7 @@ func (p *Processor) GenVerifyHash(b *types.Block, id groupsig.ID) common.Hash {
 }
 
 func (p *Processor) GetVrfThreshold(stake uint64) float64 {
-	totalStake := p.minerReader.getTotalStake(p.MainChain.Height(), true)
+	totalStake := p.minerReader.GetTotalStake(p.MainChain.Height(), true)
 	if totalStake == 0 {
 		return 0
 	}
@@ -240,13 +239,13 @@ func (p *Processor) BlockContextSummary() string {
 			for _, slot := range vctx.GetSlots() {
 				s := &slotSummary{
 					Hash:       slot.BH.Hash.String(),
-					GSigSize:   slot.gSignGenerator.WitnessSize(),
-					RSigSize:   slot.rSignGenerator.WitnessSize(),
+					GSigSize:   slot.gSignGenerator.WitnessCount(),
+					RSigSize:   slot.rSignGenerator.WitnessCount(),
 					LostTxSize: slot.lostTxHash.Size(),
 					Status:     slot.GetSlotStatus(),
 				}
 				if slot.rewardGSignGen != nil {
-					s.TxSigSize = slot.rewardGSignGen.WitnessSize()
+					s.TxSigSize = slot.rewardGSignGen.WitnessCount()
 				}
 				ss = append(ss, s)
 			}
@@ -295,24 +294,24 @@ func (p *Processor) BlockContextSummary() string {
 	return string(b)
 }
 
-func (p *Processor) GetJoinGroupInfo(gid string) *JoinedGroup {
+func (p *Processor) GetJoinGroupInfo(gid string) *model.JoinedGroupInfo {
 	var id groupsig.ID
 	id.SetHexString(gid)
-	jg := p.belongGroups.getJoinedGroup(id)
+	jg := p.belongGroups.GetJoinedGroupInfo(id)
 	return jg
 }
 
-func (p *Processor) GetAllMinerDOs() ([]*model.MinerDO) {
-	h := p.MainChain.Height()
-	dos := make([]*model.MinerDO, 0)
-	miners := p.minerReader.getAllMinerDOByType(types.MinerTypeHeavy, h)
-	dos = append(dos, miners...)
-
-	miners = p.minerReader.getAllMinerDOByType(types.MinerTypeLight, h)
-	dos = append(dos, miners...)
-	return dos
-}
+//func (p *Processor) GetAllMinerDOs() ([]*model.MinerInfo) {
+//	h := p.MainChain.Height()
+//	dos := make([]*model.MinerInfo, 0)
+//	miners := p.minerReader.getAllMinerDOByType(types.MinerTypeHeavy, h)
+//	dos = append(dos, miners...)
+//
+//	miners = p.minerReader.getAllMinerDOByType(types.MinerTypeLight, h)
+//	dos = append(dos, miners...)
+//	return dos
+//}
 
 func (p *Processor) GetCastQualifiedGroupsFromChain(height uint64) []*types.Group {
-	return p.globalGroups.getCastQualifiedGroupFromChains(height)
+	return p.globalGroups.GetCastQualifiedGroupFromChains(height)
 }

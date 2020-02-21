@@ -49,7 +49,7 @@ func (helper *ConsensusHelperImpl) CheckProveRoot(bh *types.BlockHeader) (bool, 
 	if preBlock == nil {
 		return false, errors.New(fmt.Sprintf("preBlock is nil,hash %v", bh.PreHash.ShortS()))
 	}
-	gid := groupsig.DeserializeId(bh.GroupId)
+	gid := groupsig.DeserializeID(bh.GroupId)
 	group := Proc.GetGroup(gid)
 	if !group.GroupID.IsValid() {
 		return false, errors.New(fmt.Sprintf("group is invalid, gid %v", gid))
