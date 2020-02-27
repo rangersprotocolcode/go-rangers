@@ -9,6 +9,7 @@ import (
 	"sync"
 	"bytes"
 	"time"
+	"x/src/consensus/logical/group_create"
 )
 
 type FutureMessageHolder struct {
@@ -283,7 +284,7 @@ func (p *Processor) VerifyGroup(g *types.Group) (ok bool, err error) {
 		GroupMembers:    mems,
 	}
 	//检验头和签名
-	if _, ok, err := p.groupManager.checkGroupInfo(gInfo); ok {
+	if ok, err := group_create.GroupCreateProcessor.ValidateGroupInfo(gInfo); ok {
 		gpk := groupsig.ByteToPublicKey(g.PubKey)
 		gid := groupsig.NewIDFromPubkey(gpk).Serialize()
 		if !bytes.Equal(gid, g.Id) {

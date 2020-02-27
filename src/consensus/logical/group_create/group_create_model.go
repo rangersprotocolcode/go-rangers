@@ -54,7 +54,7 @@ type groupInitContext struct {
 //CreateGroupContextWithRawMessage
 // CreateGroupContextWithRawMessage creates a GroupContext structure from
 // a group initialization message
-func newGroupInitContext(groupInitInfo *model.GroupInitInfo, minerInfo *model.MinerInfo) *groupInitContext {
+func newGroupInitContext(groupInitInfo *model.GroupInitInfo, minerInfo *model.SelfMinerInfo) *groupInitContext {
 	for k, v := range groupInitInfo.GroupMembers {
 		if !v.IsValid() {
 			groupCreateLogger.Debug("NewGroupInitContext ID failed! index=%v, id=%v.\n", k, v.GetHexString())
@@ -142,7 +142,7 @@ func newGroupInitContextCache() groupInitContextCache {
 }
 
 //ConfirmGroupFromRaw
-func (groupInitContextCache *groupInitContextCache) GetOrNewContext(groupInitInfo *model.GroupInitInfo, mi *model.MinerInfo) *groupInitContext {
+func (groupInitContextCache *groupInitContextCache) GetOrNewContext(groupInitInfo *model.GroupInitInfo, mi *model.SelfMinerInfo) *groupInitContext {
 	groupHash := groupInitInfo.GroupHash()
 	v := groupInitContextCache.GetContext(groupHash)
 	if v != nil {

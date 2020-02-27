@@ -194,7 +194,7 @@ func (mm *MinerManager) addGenesesProposer(miners []*types.Miner, accountdb *acc
 			data, _ := msgpack.Marshal(miner)
 			logger.Debugf("Miner manager add genesis miner %v", miner.Id)
 			accountdb.SetData(dbh, miner.Id, data)
-			mm.heavyMiners = append(mm.heavyMiners, groupsig.DeserializeId(miner.Id).String())
+			mm.heavyMiners = append(mm.heavyMiners, groupsig.DeserializeID(miner.Id).GetHexString())
 			mm.updateMinerCount(types.MinerTypeHeavy, minerCountIncrease, accountdb)
 		}
 	}

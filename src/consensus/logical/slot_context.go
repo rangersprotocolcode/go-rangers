@@ -11,7 +11,6 @@ import (
 	"x/src/middleware/types"
 	"sync"
 	"sync/atomic"
-	"gopkg.in/karalabe/cookiejar.v2/collections/set"
 )
 
 const (
@@ -234,7 +233,7 @@ func (sc *SlotContext) SetRewardTrans(tx *types.Transaction) bool {
 }
 
 func (sc *SlotContext) AcceptRewardPiece(sd *model.SignInfo) (accept, recover bool) {
-	if sc.rewardTrans != nil && sc.rewardTrans.Hash != sd.GetDataHash(){
+	if sc.rewardTrans != nil && sc.rewardTrans.Hash != sd.GetDataHash() {
 		return
 	}
 	if sc.rewardTrans == nil {

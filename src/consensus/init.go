@@ -20,13 +20,13 @@ var Proc logical.Processor
 //共识初始化
 //mid: 矿工ID
 //返回：true初始化成功，可以启动铸块。内部会和链进行交互，进行初始数据加载和预处理。失败返回false。
-func ConsensusInit(mi model.MinerInfo, conf common.ConfManager) bool {
+func ConsensusInit(mi model.SelfMinerInfo, conf common.ConfManager) bool {
 	logical.InitConsensus()
 	initJoinedGroupStorage(mi, conf)
 
 	group_create.GroupCreateProcessor.Init(mi)
 	ret := Proc.Init(mi, conf)
-	net.MessageHandler.Init(group_create.GroupCreateProcessor,&Proc)
+	net.MessageHandler.Init(group_create.GroupCreateProcessor, &Proc)
 	return ret
 }
 
@@ -43,7 +43,7 @@ func StopMiner() {
 	return
 }
 
-func initJoinedGroupStorage(mi model.MinerInfo, conf common.ConfManager) {
+func initJoinedGroupStorage(mi model.SelfMinerInfo, conf common.ConfManager) {
 	filePath := genBelongGroupStoreFile(conf)
 	encryptSecKey := getEncryptPrivateKey(mi)
 	access.InitJoinedGroupStorage(filePath, encryptSecKey)
@@ -57,7 +57,7 @@ func genBelongGroupStoreFile(conf common.ConfManager) string {
 	return storeFile
 }
 
-func getEncryptPrivateKey(mi model.MinerInfo) common.PrivateKey {
+func getEncryptPrivateKey(mi model.SelfMinerInfo) common.PrivateKey {
 	seed := mi.SecKey.GetHexString() + mi.ID.GetHexString()
 	encryptPrivateKey := common.GenerateKey(seed)
 	return encryptPrivateKey

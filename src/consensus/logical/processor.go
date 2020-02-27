@@ -22,7 +22,7 @@ import (
 type Processor struct {
 	ready bool //是否已初始化完成
 	conf  common.ConfManager
-	mi    *model.MinerInfo //////和组无关的矿工信息
+	mi    *model.SelfMinerInfo //////和组无关的矿工信息
 
 	blockContexts    *CastBlockContexts   //组ID->组铸块上下文
 	futureVerifyMsgs *FutureMessageHolder //存储缺失前一块的验证消息
@@ -60,7 +60,7 @@ func (p Processor) getPrefix() string {
 //}
 
 //初始化矿工数据（和组无关）
-func (p *Processor) Init(mi model.MinerInfo, conf common.ConfManager) bool {
+func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager) bool {
 	p.ready = false
 	p.lock = sync.Mutex{}
 	p.conf = conf
@@ -96,6 +96,7 @@ func (p *Processor) Init(mi model.MinerInfo, conf common.ConfManager) bool {
 	notify.BUS.Subscribe(notify.BlockAddSucc, p.onBlockAddSuccess)
 	notify.BUS.Subscribe(notify.GroupAddSucc, p.onGroupAddSuccess)
 	notify.BUS.Subscribe(notify.TransactionGotAddSucc, p.onMissTxAddSucc)
+	notify.BUS.Subscribe(notify.AcceptGroup, p.onGroupAccept)
 	//notify.BUS.Subscribe(notify.NewBlock, p.onNewBlockReceive)
 
 	jgFile := conf.GetString(ConsensusConfSection, "joined_group_store", "")
@@ -114,7 +115,7 @@ func (p Processor) GetMinerID() groupsig.ID {
 }
 
 func (p Processor) GetMinerInfo() *model.MinerInfo {
-	return p.mi
+	return &p.mi.MinerInfo
 }
 
 ////验证块的组签名是否正确

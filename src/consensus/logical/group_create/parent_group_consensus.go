@@ -56,15 +56,15 @@ func (p *groupCreateProcessor) OnMessageCreateGroupPing(msg *model.CreateGroupPi
 			PingID:    msg.PingID,
 			Timestamp: time.Now(),
 		}
-		//todo 这里网络发送如何处理？
-		//group := p.GetGroup(msg.FromGroupID)
+
+		//group := p.GetGroupInfo(msg.FromGroupID)
 		//gb := &net.GroupBrief{
 		//	Gid:    msg.FromGroupID,
-		//	MemIds: group.GetMembers(),
+		//	MemIds: group.GetGroupMembers(),
 		//}
 		if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, pongMsg); ok {
 			pongMsg.SignInfo = signInfo
-			p.NetServer.SendGroupPongMessage(pongMsg, gb)
+			p.NetServer.SendGroupPongMessage(pongMsg, msg.FromGroupID.GetHexString())
 		} else {
 			err = fmt.Errorf("gen sign fail")
 		}
@@ -194,7 +194,7 @@ func (p *groupCreateProcessor) OnMessageParentGroupConsensus(msg *model.ParentGr
 	}
 	parentGid := msg.GroupInitInfo.ParentGroupID()
 
-	gpk, ok := p.getMemberSignPubKey(parentGid, msg.SignInfo.GetSignerID())
+	gpk, ok := p.GetMemberSignPubKey(parentGid, msg.SignInfo.GetSignerID())
 	if !ok {
 		groupCreateLogger.Errorf("getMemberSignPubKey not ok, ask id %v", parentGid.ShortS())
 		return
@@ -268,7 +268,7 @@ func (p *groupCreateProcessor) OnMessageParentGroupConsensusSign(msg *model.Pare
 		groupCreateLogger.Warnf("context is nil")
 		return
 	}
-	mpk, ok := p.getMemberSignPubKey(ctx.parentGroupInfo.GroupID, msg.SignInfo.GetSignerID())
+	mpk, ok := p.GetMemberSignPubKey(ctx.parentGroupInfo.GroupID, msg.SignInfo.GetSignerID())
 	if !ok {
 		groupCreateLogger.Errorf("getMemberSignPubKey not ok, ask id %v", ctx.parentGroupInfo.GroupID.ShortS())
 		return

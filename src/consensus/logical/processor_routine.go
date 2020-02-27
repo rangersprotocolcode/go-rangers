@@ -5,6 +5,7 @@ import (
 	"x/src/consensus/model"
 	"x/src/common"
 	"x/src/consensus/groupsig"
+	"x/src/consensus/logical/group_create"
 )
 
 func (p *Processor) getCastCheckRoutineName() string {
@@ -81,124 +82,12 @@ func (p *Processor) releaseRoutine() bool {
 
 	//删除verifyContext
 	p.cleanVerifyContext(topHeight)
-
-	//在当前高度解散的组不应立即从缓存删除，延缓一个建组周期删除。保证该组解散前夕建的块有效
-	groups := p.globalGroups.DismissGroups(topHeight - model.Param.CreateGroupInterval)
-	ids := make([]groupsig.ID, 0)
-	for _, g := range groups {
-		ids = append(ids, g.GroupID)
-	}
-
 	blog := newBizLog("releaseRoutine")
 
+	ids := group_create.GroupCreateProcessor.ReleaseGroups(topHeight)
 	if len(ids) > 0 {
-		blog.log("clean group %v\n", len(ids))
-		p.globalGroups.RemoveGroups(ids)
 		p.blockContexts.removeBlockContexts(ids)
-		p.belongGroups.leaveGroups(ids)
-		for _, g := range groups {
-			gid := g.GroupID
-			blog.debug("DissolveGroupNet staticGroup gid %v ", gid.ShortS())
-			p.NetServer.ReleaseGroupNet(gid.GetHexString())
-			p.joiningGroups.RemoveGroup(g.GInfo.GroupHash())
-		}
 	}
-
-	//释放超时未建成组的组网络和相应的dummy组
-	p.joiningGroups.forEach(func(gc *GroupContext) bool {
-		if gc.gInfo == nil || gc.is == GisGroupInitDone {
-			return true
-		}
-		gis := &gc.gInfo.GI
-		gHash := gis.GetHash()
-		if gis.ReadyTimeout(topHeight) {
-			blog.debug("DissolveGroupNet dummyGroup from joiningGroups gHash %v", gHash.ShortS())
-			p.NetServer.ReleaseGroupNet(gHash.Hex())
-			waitPieceIds := make([]string, 0)
-			waitIds := make([]groupsig.ID, 0)
-			for _, mem := range gc.gInfo.Mems {
-				if !gc.node.hasPiece(mem) {
-					waitPieceIds = append(waitPieceIds, mem.ShortS())
-					waitIds = append(waitIds, mem)
-				}
-			}
-			//发送日志
-			//initedGroup := p.globalGroups.GetInitedGroup(gHash)
-			//omgied := "nil"
-			//if initedGroup != nil {
-			//	omgied = fmt.Sprintf("OMGIED:%v(%v)", initedGroup.receiveSize(), initedGroup.threshold)
-			//}
-			//le := &monitor.LogEntry{
-			//	LogType:  monitor.LogTypeInitGroupRevPieceTimeout,
-			//	Height:   p.GroupChain.Count(),
-			//	Hash:     gHash.Hex(),
-			//	Proposer: "00",
-			//	Ext:      fmt.Sprintf("MemCnt:%v,Pieces:%v,wait:%v,%v", gc.gInfo.MemberSize(),gc.node.groupInitPool.GetSize(),waitPieceIds,omgied),
-			//}
-			//if !gc.sendLog && monitor.Instance.IsFirstNInternalNodesInGroup(gc.gInfo.Mems, 50) {
-			//	monitor.Instance.AddLog(le)
-			//	gc.sendLog = true
-			//}
-
-			msg := &model.ReqSharePieceMessage{
-				GroupHash: gc.gInfo.GroupHash(),
-			}
-			stdLogger.Infof("reqSharePieceRoutine:req size %v, ghash=%v", len(waitIds), gc.gInfo.GroupHash().ShortS())
-			if signInfo, ok := model.NewSignInfo(p.mi.SecKey, p.mi.ID, msg); ok {
-				msg.SignInfo = signInfo
-				for _, receiver := range waitIds {
-					stdLogger.Infof("reqSharePieceRoutine:req share piece msg from %v, ghash=%v", receiver, gc.gInfo.GroupHash().ShortS())
-					p.NetServer.ReqSharePiece(msg, receiver)
-				}
-			} else {
-				stdLogger.Infof("gen req sharepiece sign fail, ski=%v %v", p.mi.ID.ShortS(), p.mi.SecKey.ShortS())
-			}
-
-		}
-		return true
-	})
-	gctx := p.groupManager.getContext()
-	if gctx != nil && gctx.readyTimeout(topHeight) {
-		groupLogger.Infof("releaseRoutine:info=%v, elapsed %v. ready timeout.", gctx.logString(), time.Since(gctx.createTime))
-
-		//if gctx.isKing() {
-		//	gHash := "0000"
-		//	if gctx != nil && gctx.gInfo != nil {
-		//		gHash = gctx.gInfo.GroupHash().Hex()
-		//	}
-		//	//发送日志
-		//	le := &monitor.LogEntry{
-		//		LogType:  monitor.LogTypeCreateGroupSignTimeout,
-		//		Height:   p.GroupChain.Count(),
-		//		Hash:     gHash,
-		//		Proposer: p.GetMinerID().GetHexString(),
-		//		Ext:      fmt.Sprintf("%v", gctx.gSignGenerator.Brief()),
-		//	}
-		//	if monitor.Instance.IsFirstNInternalNodesInGroup(gctx.kings, 50) {
-		//		monitor.Instance.AddLog(le)
-		//	}
-		//}
-		p.groupManager.removeContext()
-	}
-	//p.groupManager.creatingGroups.forEach(func(cg *CreatingGroupContext) bool {
-	//	gis := &cg.gInfo.GI
-	//	gHash := gis.GetHash()
-	//	if gis.ReadyTimeout(topHeight) {
-	//		blog.debug("DissolveGroupNet dummyGroup from creatingGroups gHash %v", gHash.ShortS())
-	//		p.NetServer.ReleaseGroupNet(gHash.Hex())
-	//		p.groupManager.creatingGroups.removeGroup(gHash)
-	//	}
-	//	return true
-	//})
-	p.globalGroups.generator.forEach(func(ig *InitedGroup) bool {
-		hash := ig.gInfo.GroupHash()
-		if ig.gInfo.GI.ReadyTimeout(topHeight) {
-			blog.debug("remove InitedGroup, gHash %v", hash.ShortS())
-			p.NetServer.ReleaseGroupNet(hash.Hex())
-			p.globalGroups.removeInitedGroup(hash)
-		}
-		return true
-	})
 
 	//释放futureVerifyMsg
 	p.futureVerifyMsgs.forEach(func(key common.Hash, arr []interface{}) bool {
@@ -212,9 +101,6 @@ func (p *Processor) releaseRoutine() bool {
 		}
 		return true
 	})
-
-	//清理超时的签名公钥请求
-	cleanSignPkReqRecord()
 
 	for _, h := range p.verifyMsgCaches.Keys() {
 		hash := h.(common.Hash)

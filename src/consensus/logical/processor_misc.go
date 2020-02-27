@@ -109,10 +109,10 @@ func (p *Processor) setVrfWorker(vrf *vrfWorker) {
 	p.vrf.Store(vrf)
 }
 
-func (p *Processor) GetSelfMinerDO() *model.MinerInfo {
+func (p *Processor) GetSelfMinerDO() *model.SelfMinerInfo {
 	md := p.minerReader.GetProposeMiner(p.GetMinerID())
 	if md != nil {
-		p.mi = md
+		p.mi.MinerInfo = *md
 	}
 	return p.mi
 }

@@ -306,7 +306,7 @@ func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.Sig
 		slog.endStage()
 
 		if !b {
-			err = fmt.Errorf("verify sign fail, id %v, pk %v, sig %v hash %v", signData.GetSignerID().ShortS(), pk.GetHexString(), signData.DataSign.GetHexString(), signData.DataHash.Hex())
+			err = fmt.Errorf("verify sign fail, id %v, pk %v, sig %v hash %v", signData.GetSignerID().ShortS(), pk.GetHexString(), signData.GetSignature().GetHexString(), signData.GetDataHash().Hex())
 			return
 		}
 		sig := groupsig.DeserializeSign(bh.Random)

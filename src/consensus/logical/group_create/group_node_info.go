@@ -22,7 +22,7 @@ type groupNodeInfo struct {
 }
 
 //InitForMiner+InitForGroup
-func NewGroupNodeInfo(mi *model.MinerInfo, groupHash common.Hash, groupMemberNum int) *groupNodeInfo {
+func NewGroupNodeInfo(mi *model.SelfMinerInfo, groupHash common.Hash, groupMemberNum int) *groupNodeInfo {
 	var nodeInfo = groupNodeInfo{}
 	nodeInfo.secretSeed = mi.GenSecretForGroup(groupHash) // Generate a private seed for the group
 	nodeInfo.groupMemberNum = groupMemberNum

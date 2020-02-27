@@ -4,12 +4,12 @@ import (
 	"x/src/common"
 	"x/src/consensus/vrf"
 	"x/src/consensus/groupsig"
-	"x/src/consensus/logical"
 	"x/src/consensus/model"
 	"errors"
 	"fmt"
 	"math/big"
 	"x/src/middleware/types"
+	"x/src/consensus/logical/group_create"
 )
 
 type ConsensusHelperImpl struct {
@@ -29,7 +29,7 @@ func (helper *ConsensusHelperImpl) PackBonus() *big.Int {
 }
 
 func (helper *ConsensusHelperImpl) GenerateGenesisInfo() []*types.GenesisInfo {
-	return logical.GenerateGenesis()
+	return group_create.GetGenesisInfo()
 }
 
 func (helper *ConsensusHelperImpl) VRFProve2Value(prove *big.Int) *big.Int {

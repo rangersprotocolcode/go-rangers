@@ -76,10 +76,10 @@ func (am *AccountManager) NewAccount(password string, miner bool) *Result {
 
 	if miner {
 		id := publicKey.GetID()
-		minerDO := model.NewSelfMinerDO(id[:])
+		minerDO := model.NewSelfMinerInfo(id[:])
 		minerRaw := &MinerRaw{
-			BPk:   minerDO.PK.GetHexString(),
-			BSk:   minerDO.SK.GetHexString(),
+			BPk:   minerDO.PubKey.GetHexString(),
+			BSk:   minerDO.SecKey.GetHexString(),
 			VrfPk: minerDO.VrfPK.GetHexString(),
 			VrfSk: minerDO.VrfSK.GetHexString(),
 			ID:    id,
@@ -184,7 +184,7 @@ func initAccountManager(keystore string, readyOnly bool) (accountOp, error) {
 	}
 
 	if accountManager, err := newAccountManager(keystore); err != nil {
-		fmt.Printf("new lelvel db error:%s\n",err.Error())
+		fmt.Printf("new lelvel db error:%s\n", err.Error())
 		return nil, err
 	} else {
 		return accountManager, nil
@@ -232,7 +232,7 @@ func (am *AccountManager) storeAccount(account *Account) error {
 	}
 
 	err = am.db.Put(account.Miner.ID[:], ct)
-	fmt.Printf("store account:%v\n",account.Miner.ID[:])
+	fmt.Printf("store account:%v\n", account.Miner.ID[:])
 	return err
 }
 

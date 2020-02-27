@@ -17,14 +17,14 @@ const (
 )
 
 type vrfWorker struct {
-	miner      *model.MinerInfo
+	miner      *model.SelfMinerInfo
 	baseBH     *types.BlockHeader
 	castHeight uint64
 	expire     time.Time
 	status     int32
 }
 
-func newVRFWorker(miner *model.MinerInfo, bh *types.BlockHeader, castHeight uint64, expire time.Time) *vrfWorker {
+func newVRFWorker(miner *model.SelfMinerInfo, bh *types.BlockHeader, castHeight uint64, expire time.Time) *vrfWorker {
 	return &vrfWorker{
 		miner:      miner,
 		baseBH:     bh,

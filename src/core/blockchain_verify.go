@@ -27,9 +27,6 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 		return nil, 2
 	}
 
-
-
-
 	miss, missingTx, transactions := chain.missTransaction(bh, txs)
 	if miss {
 		return missingTx, 1
@@ -75,7 +72,7 @@ func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Tran
 		}
 		//向CASTOR索取交易
 		m := &transactionRequestMessage{TransactionHashes: missing, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue,}
-		go requestTransaction(*m, castorId.String())
+		go requestTransaction(*m, castorId.GetHexString())
 		return true, missing, transactions
 	}
 	return false, missing, transactions

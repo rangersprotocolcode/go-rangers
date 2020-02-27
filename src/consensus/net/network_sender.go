@@ -259,18 +259,16 @@ func (ns *NetworkServerImpl) SendGroupPingMessage(msg *model.CreateGroupPingMess
 	ns.net.Send(receiver.GetHexString(), m)
 }
 
-func (ns *NetworkServerImpl) SendGroupPongMessage(msg *model.CreateGroupPongMessage, group *GroupBrief) {
-	//todo
-	//body, e := marshalCreateGroupPongMessage(msg)
-	//if e != nil {
-	//	network.Logger.Errorf("[peer]Discard send SendGroupPongMessage because of marshal error:%s", e.Error())
-	//	return
-	//}
-	//m := network.Message{Code: network.GroupPong, Body: body}
-	//
+func (ns *NetworkServerImpl) SendGroupPongMessage(msg *model.CreateGroupPongMessage, groupId string) {
+	body, e := marshalCreateGroupPongMessage(msg)
+	if e != nil {
+		network.Logger.Errorf("[peer]Discard send SendGroupPongMessage because of marshal error:%s", e.Error())
+		return
+	}
+	m := network.Message{Code: network.GroupPong, Body: body}
 	//mems := id2String(group.MemIds)
-	//
-	//ns.net.SpreadToGroup(group.Gid.GetHexString(), mems, m, msg.SI.DataHash.Bytes())
+
+	ns.net.SpreadToGroup(groupId, m)
 }
 
 func (ns *NetworkServerImpl) ReqSharePiece(msg *model.ReqSharePieceMessage, receiver groupsig.ID) {

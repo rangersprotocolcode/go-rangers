@@ -8,6 +8,7 @@ import (
 	"x/src/middleware/types"
 	"x/src/middleware"
 	"time"
+	"x/src/consensus/logical/group_create"
 )
 
 func (p *Processor) triggerFutureVerifyMsg(hash common.Hash) {
@@ -51,8 +52,8 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	block := message.GetData().(types.Block)
 	bh := block.Header
 
-	tlog := newMsgTraceLog("OnBlockAddSuccess", bh.Hash.ShortS(), "")
-	tlog.log("preHash=%v, height=%v", bh.PreHash.ShortS(), bh.Height)
+	//tlog := newMsgTraceLog("OnBlockAddSuccess", bh.Hash.ShortS(), "")
+	//tlog.log("preHash=%v, height=%v", bh.PreHash.ShortS(), bh.Height)
 
 	gid := groupsig.DeserializeID(bh.GroupId)
 	if p.belongGroups.BelongGroup(gid) {
@@ -76,7 +77,7 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	//p.triggerFutureBlockMsg(bh)
 	p.triggerFutureVerifyMsg(bh.Hash)
 
-	p.groupManager.CreateNextGroupRoutine()
+	group_create.GroupCreateProcessor.StartCreateGroupPolling()
 
 	p.cleanVerifyContext(bh.Height)
 
@@ -94,17 +95,14 @@ func (p *Processor) isTriggerCastImmediately() bool {
 
 func (p *Processor) onGroupAddSuccess(message notify.Message) {
 	group := message.GetData().(types.Group)
-	stdLogger.Infof("groupAddEventHandler receive message, groupId=%v, workheight=%v\n", groupsig.DeserializeId(group.Id).GetHexString(), group.Header.WorkHeight)
+	stdLogger.Infof("groupAddEventHandler receive message, groupId=%v, workheight=%v\n", groupsig.DeserializeID(group.Id).GetHexString(), group.Header.WorkHeight)
 	if group.Id == nil || len(group.Id) == 0 {
 		return
 	}
-	sgi := NewSGIFromCoreGroup(&group)
+	sgi := model.ConvertToGroupInfo(&group)
 	p.acceptGroup(sgi)
 
-	p.groupManager.onGroupAddSuccess(sgi)
-	p.joiningGroups.Clean(sgi.GInfo.GroupHash())
-	p.globalGroups.removeInitedGroup(sgi.GInfo.GroupHash())
-
+	group_create.GroupCreateProcessor.OnGroupAddSuccess(sgi)
 }
 
 func (p *Processor) onNewBlockReceive(message notify.Message) {
@@ -136,6 +134,16 @@ func (p *Processor) onMissTxAddSucc(message notify.Message) {
 
 	}
 	p.OnMessageNewTransactions(txHashes)
+}
+
+func (p *Processor) onGroupAccept(message notify.Message) {
+	group := message.GetData().(types.Group)
+	stdLogger.Infof("groupAcceptHandler receive message, groupId=%v, workheight=%v\n", groupsig.DeserializeID(group.Id).GetHexString(), group.Header.WorkHeight)
+	if group.Id == nil || len(group.Id) == 0 {
+		return
+	}
+	sgi := model.ConvertToGroupInfo(&group)
+	p.acceptGroup(sgi)
 }
 
 func (p *Processor) acceptGroup(staticGroup *model.GroupInfo) {

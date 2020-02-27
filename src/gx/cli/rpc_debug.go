@@ -131,7 +131,7 @@ func getAllGroup() map[string]*types.Group {
 	iterator := consensus.Proc.GroupChain.Iterator()
 	gs := make(map[string]*types.Group)
 	for coreGroup := iterator.Current(); coreGroup != nil; coreGroup = iterator.MovePre() {
-		id := groupsig.DeserializeId(coreGroup.Id)
+		id := groupsig.DeserializeID(coreGroup.Id)
 		gs[id.GetHexString()] = coreGroup
 	}
 
@@ -157,7 +157,7 @@ func selectNextVerifyGroup(gs map[string]*types.Group, preBH *types.BlockHeader,
 	value := hash.Big()
 	index := value.Mod(value, big.NewInt(int64(len(qualifiedGs))))
 	gid := qualifiedGs[index.Int64()].Id
-	return groupsig.DeserializeId(gid), qualifiedGs
+	return groupsig.DeserializeID(gid), qualifiedGs
 }
 
 func (api *GtasAPI) DebugVerifySummary(from, to uint64) (*Result, error) {
@@ -214,7 +214,7 @@ func (api *GtasAPI) DebugVerifySummary(from, to uint64) (*Result, error) {
 				}
 			}
 			//expectGid, gs := selectNextVerifyGroup(allGroup, preBH, h-preBH.Height)
-			gid := groupsig.DeserializeId(bh.GroupId)
+			gid := groupsig.DeserializeID(bh.GroupId)
 			//if !expectGid.IsEqual(gid) {
 			//	fmt.Printf("bh %+v\n", bh)
 			//	fmt.Printf("pre %+v\n", preBH)

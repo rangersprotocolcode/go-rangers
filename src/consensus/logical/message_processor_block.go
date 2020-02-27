@@ -10,6 +10,7 @@ import (
 
 	"x/src/middleware"
 	"x/src/utility"
+	"x/src/consensus/logical/group_create"
 )
 
 func (p *Processor) genCastGroupSummary(bh *types.BlockHeader) *model.CastGroupSummary {
@@ -147,7 +148,7 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 		pk = castorDO.PubKey
 
 	} else {
-		memPK, ok := p.GetMemberSignPubKey(model.NewGroupMinerID(gid, si.GetSignerID()))
+		memPK, ok := group_create.GroupCreateProcessor.GetMemberSignPubKey(gid, si.GetSignerID())
 		if !ok {
 			blog.log("GetMemberSignPubKey not ok, ask id %v", si.GetSignerID().ShortS())
 			return

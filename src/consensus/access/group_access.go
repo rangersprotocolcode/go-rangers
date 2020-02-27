@@ -302,7 +302,7 @@ func (groupAccessor *GroupAccessor) GetCastQualifiedGroupFromChains(height uint6
 	return reverseGroups
 }
 
-func (groupAccessor *GroupAccessor) removeGroups(gids []groupsig.ID) {
+func (groupAccessor *GroupAccessor) RemoveGroupsFromCache(gids []groupsig.ID) {
 	if len(gids) == 0 {
 		return
 	}

@@ -12,12 +12,9 @@ const minerStake = 1
 
 //矿工信息
 type MinerInfo struct {
-	SecretSeed base.Rand //私密随机数
-	SecKey     groupsig.Seckey
-	PubKey     groupsig.Pubkey
-	ID         groupsig.ID
+	PubKey groupsig.Pubkey
+	ID     groupsig.ID
 
-	VrfSK vrf.VRFPrivateKey
 	VrfPK vrf.VRFPublicKey
 
 	Stake     uint64
@@ -27,8 +24,16 @@ type MinerInfo struct {
 	AbortHeight uint64
 }
 
-func NewSelfMinerInfo(address []byte) MinerInfo {
-	var mi MinerInfo
+type SelfMinerInfo struct {
+	SecretSeed base.Rand //私密随机数
+	SecKey     groupsig.Seckey
+	VrfSK      vrf.VRFPrivateKey
+
+	MinerInfo
+}
+
+func NewSelfMinerInfo(address []byte) SelfMinerInfo {
+	var mi SelfMinerInfo
 	mi.SecretSeed = base.RandFromBytes(address)
 	mi.SecKey = *groupsig.NewSeckeyFromRand(mi.SecretSeed)
 	mi.PubKey = *groupsig.GeneratePubkey(mi.SecKey)
@@ -43,7 +48,7 @@ func NewSelfMinerInfo(address []byte) MinerInfo {
 	return mi
 }
 
-func (mi MinerInfo) GenSecretForGroup(h common.Hash) base.Rand {
+func (mi SelfMinerInfo) GenSecretForGroup(h common.Hash) base.Rand {
 	r := base.RandFromBytes(h.Bytes())
 	return mi.SecretSeed.DerivedRand(r[:])
 }
@@ -72,7 +77,7 @@ func (md *MinerInfo) CanJoinGroupAt(h uint64) bool {
 	return md.IsLight()
 }
 
-func (md *MinerInfo) Read(p []byte) (n int, err error) {
+func (md *SelfMinerInfo) Read(p []byte) (n int, err error) {
 	bs := md.SecretSeed.Bytes()
 	if p == nil || len(p) < len(bs) {
 		p = make([]byte, len(bs))
@@ -80,7 +85,6 @@ func (md *MinerInfo) Read(p []byte) (n int, err error) {
 	copy(p, bs)
 	return len(bs), nil
 }
-
 
 //func (mi MinerInfo) GetSecretSeed() base.Rand {
 //	return mi.SecretSeed

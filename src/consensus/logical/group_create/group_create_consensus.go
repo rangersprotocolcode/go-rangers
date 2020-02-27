@@ -7,6 +7,7 @@ import (
 	"x/src/common"
 	"x/src/consensus/access"
 	"time"
+	"x/src/middleware/notify"
 )
 
 //新建组成员收到父亲组建组消息
@@ -40,7 +41,7 @@ func (p *groupCreateProcessor) OnMessageGroupInit(msg *model.GroupInitMessage) {
 		return
 	}
 
-	ok, err := p.validateGroupInfo(&msg.GroupInitInfo)
+	ok, err := p.ValidateGroupInfo(&msg.GroupInitInfo)
 	if !ok {
 		groupCreateLogger.Debugf("group header illegal, err=%v", err)
 		return
@@ -88,7 +89,7 @@ func (p *groupCreateProcessor) OnMessageGroupInit(msg *model.GroupInitMessage) {
 
 //checkGroupInfo
 // checkGroupInfo check whether the group info is legal
-func (p *groupCreateProcessor) validateGroupInfo(groupInitInfo *model.GroupInitInfo) (bool, error) {
+func (p *groupCreateProcessor) ValidateGroupInfo(groupInitInfo *model.GroupInitInfo) (bool, error) {
 	groupHeader := groupInitInfo.GroupHeader
 	if groupHeader.Hash != groupHeader.GenHash() {
 		return false, fmt.Errorf("gh hash error, hash=%v, genHash=%v", groupHeader.Hash.ShortS(), groupHeader.GenHash().ShortS())
@@ -414,7 +415,10 @@ func (p *groupCreateProcessor) addGroupOnChain(groupInfo *model.GroupInfo) {
 
 	if p.groupChain.GetGroupById(group.Id) != nil {
 		groupCreateLogger.Debugf("group already onchain, accept, id=%v\n", groupInfo.GroupID.ShortS())
-		p.acceptGroup(groupInfo)
+
+		//p.acceptGroup(groupInfo)
+		msg := notify.GroupMessage{Group: *convertToGroup(groupInfo)}
+		notify.BUS.Publish(notify.AcceptGroup, &msg)
 		err = fmt.Errorf("group already onchain")
 	} else {
 		top := p.blockChain.Height()
@@ -463,12 +467,3 @@ func (p *groupCreateProcessor) GetGroupInfo(gid groupsig.ID) *model.GroupInfo {
 		return g
 	}
 }
-
-//func (gm *GroupManager) onGroupAddSuccess(g *StaticGroupInfo) {
-//	ctx := gm.getContext()
-//	if ctx != nil && ctx.gInfo != nil && ctx.gInfo.GroupHash() == g.GInfo.GroupHash() {
-//		top := gm.mainChain.Height()
-//		groupLogger.Infof("onGroupAddSuccess info=%v, gHash=%v, gid=%v, costHeight=%v", ctx.logString(), g.GInfo.GroupHash().ShortS(), g.GroupID.ShortS(), top-ctx.createTopHeight)
-//		gm.removeContext()
-//	}
-//}

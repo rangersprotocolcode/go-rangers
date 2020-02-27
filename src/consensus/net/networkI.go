@@ -8,7 +8,6 @@ import (
 )
 
 type GroupCreateMessageProcessor interface {
-
 	OnMessageCreateGroupPing(msg *model.CreateGroupPingMessage)
 
 	OnMessageCreateGroupPong(msg *model.CreateGroupPongMessage)
@@ -26,13 +25,11 @@ type GroupCreateMessageProcessor interface {
 
 	OnMessageGroupInited(msg *model.GroupInitedMessage)
 
-
 	OnMessageSharePieceReq(msg *model.ReqSharePieceMessage)
 
 	OnMessageSharePieceResponse(msg *model.ResponseSharePieceMessage)
 
 	OnMessageSignPKReq(msg *model.SignPubkeyReqMessage)
-
 }
 
 type MiningMessageProcessor interface {
@@ -57,18 +54,16 @@ type GroupBrief struct {
 }
 
 type NetworkServer interface {
-
 	SendGroupPingMessage(msg *model.CreateGroupPingMessage, receiver groupsig.ID)
 
-	SendGroupPongMessage(msg *model.CreateGroupPongMessage, group *GroupBrief)
+	SendGroupPongMessage(msg *model.CreateGroupPongMessage, groupId string)
 
 	SendCreateGroupRawMessage(msg *model.ParentGroupConsensusMessage)
 
 	SendCreateGroupSignMessage(msg *model.ParentGroupConsensusSignMessage, parentGid groupsig.ID)
 
-
-
 	SendGroupInitMessage(grm *model.GroupInitMessage)
+
 
 	SendKeySharePiece(spm *model.SharePieceMessage)
 
@@ -83,11 +78,9 @@ type NetworkServer interface {
 
 	BroadcastNewBlock(cbm *model.ConsensusBlockMessage, group *GroupBrief)
 
-
 	BuildGroupNet(groupIdentifier string, mems []groupsig.ID)
 
 	ReleaseGroupNet(groupIdentifier string)
-
 
 	ReqSharePiece(msg *model.ReqSharePieceMessage, receiver groupsig.ID)
 
@@ -96,5 +89,4 @@ type NetworkServer interface {
 	AskSignPkMessage(msg *model.SignPubkeyReqMessage, receiver groupsig.ID)
 
 	AnswerSignPkMessage(msg *model.SignPubKeyMessage, receiver groupsig.ID)
-
 }

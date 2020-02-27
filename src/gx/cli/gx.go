@@ -20,6 +20,7 @@ import (
 	cnet "x/src/consensus/net"
 	"x/src/statemachine"
 	"x/src/service"
+	"x/src/consensus/logical/group_create"
 )
 
 const (
@@ -161,7 +162,9 @@ func (gx *GX) initMiner(instanceIndex int, apply, keystore, env, gateAddr string
 
 	}
 	gx.dumpAccountInfo(minerInfo)
-	consensus.Proc.BeginGenesisGroupMember()
+
+	//consensus.Proc.BeginGenesisGroupMember()
+	group_create.GroupCreateProcessor.BeginGenesisGroupMember()
 
 	ok = consensus.StartMiner()
 	if !ok {
@@ -232,7 +235,7 @@ func syncChainInfo() {
 	}()
 }
 
-func (gx *GX) dumpAccountInfo(minerDO model.MinerInfo) {
+func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerInfo) {
 	if nil != common.DefaultLogger {
 		common.DefaultLogger.Infof("SecKey: %s", gx.account.Sk)
 		common.DefaultLogger.Infof("PubKey: %s", gx.account.Pk)
