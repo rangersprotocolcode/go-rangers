@@ -15,9 +15,9 @@ import (
 )
 
 const (
-	confPathPrefix       = `/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/daily1`
-	joinedGroupStorePath = "/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/daily1"
-	groupstore           = "/Users/zhangchao/Documents/GitRepository/goProject/src/x/deploy/daily1"
+	confPathPrefix       = `/Users/daijia/code/rp/testgroup`
+	joinedGroupStorePath = "/Users/daijia/code/rp/testgroup"
+	groupstore           = "/Users/daijia/code/rp/testgroup"
 )
 const ProcNum = 3
 
@@ -77,8 +77,6 @@ func mockProcessors(index int) (map[string]*Processor, map[string]int) {
 	}
 	return procs, indexs
 }
-
-
 
 func TestGenesisGroup(t *testing.T) {
 	common.InitConf(confPathPrefix + "/x1.ini")
@@ -214,6 +212,7 @@ func TestGenesisGroup(t *testing.T) {
 			for i, mem := range sgi.GetMembers() {
 				_p := procs[mem.GetHexString()]
 				vrfpks[i] = _p.mi.VrfPK
+				log.Println(_p.mi.VrfPK.GetHexString())
 				pks[i] = _p.mi.GetDefaultPubKey()
 			}
 			genesis.VrfPK = vrfpks

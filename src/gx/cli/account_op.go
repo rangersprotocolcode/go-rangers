@@ -184,7 +184,7 @@ func initAccountManager(keystore string, readyOnly bool) (accountOp, error) {
 	}
 
 	if accountManager, err := newAccountManager(keystore); err != nil {
-		fmt.Printf("new lelvel db error:%s\n",err.Error())
+		fmt.Printf("new lelvel db error:%s\n", err.Error())
 		return nil, err
 	} else {
 		return accountManager, nil
@@ -217,6 +217,14 @@ func (am *AccountManager) loadAccount(addr string) (*Account, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	pk := common.HexStringToPubKey(acc.Pk)
+	address := pk.GetAddress()
+	acc.Address = address.String()
+
+	bs,_=json.Marshal(acc)
+	fmt.Println(string(bs))
+
 	return acc, nil
 }
 
@@ -232,7 +240,7 @@ func (am *AccountManager) storeAccount(account *Account) error {
 	}
 
 	err = am.db.Put(account.Miner.ID[:], ct)
-	fmt.Printf("store account:%v\n",account.Miner.ID[:])
+	fmt.Printf("store account:%v\n", account.Miner.ID[:])
 	return err
 }
 
