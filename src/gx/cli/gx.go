@@ -89,9 +89,9 @@ func (gx *GX) Run() {
 	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString("instance", "index", ""))
 
 	if *apply == "heavy" {
-		fmt.Println("Welcom to be a tas propose miner!")
+		fmt.Println("Welcome to be a rocketProtocol propose miner!")
 	} else if *apply == "light" {
-		fmt.Println("Welcom to be a tas verify miner!")
+		fmt.Println("Welcome to be a rocketProtocol verify miner!")
 	}
 	switch command {
 	case versionCmd.FullCommand():
