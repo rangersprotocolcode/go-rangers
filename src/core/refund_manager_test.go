@@ -8,6 +8,9 @@ import (
 	"encoding/json"
 	"x/src/common"
 	"sort"
+
+	"golang.org/x/crypto/sha3"
+	"crypto/sha256"
 )
 
 func TestRefundInfoList_AddRefundInfo(t *testing.T) {
@@ -50,4 +53,9 @@ func TestDismissHeightList_Len(t *testing.T) {
 	sort.Sort(dismissHeightList)
 	fmt.Println(dismissHeightList)
 	fmt.Println(dismissHeightList[0])
+
+	addr_buf := sha3.Sum256([]byte("12345"))
+	fmt.Println(addr_buf)
+	addr_buf = sha256.Sum256([]byte("12345"))
+	fmt.Println(addr_buf)
 }

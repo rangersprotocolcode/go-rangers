@@ -8,7 +8,6 @@ import (
 	"io"
 	"x/src/common/secp256k1"
 	"x/src/common/ecies"
-	"crypto/sha256"
 )
 
 //用户公钥
@@ -39,7 +38,7 @@ func (pk PublicKey) GetID() [32]byte {
 	y := pk.PubKey.Y.Bytes()
 	x = append(x, y...)
 
-	addr_buf := sha256.Sum256(x)
+	addr_buf := sha3.Sum256(x)
 
 	return addr_buf
 }
