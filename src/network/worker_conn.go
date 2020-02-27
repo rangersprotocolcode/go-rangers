@@ -158,3 +158,10 @@ func (workerConn *WorkerConn) SendToGroup(groupId string, msg Message) {
 func (workerConn *WorkerConn) SendToEveryone(msg Message) {
 	workerConn.sendMessage(methodCodeBroadcast, 0, msg, 0)
 }
+
+
+func (workerConn *WorkerConn)JoinGroupNet(groupId string){
+	header := wsHeader{method: methodCodeJoinGroup, targetId: workerConn.generateTargetForGroup(groupId)}
+	workerConn.sendChan <- workerConn.headerToBytes(header)
+	workerConn.logger.Warnf("Join group: %d", header.targetId)
+}

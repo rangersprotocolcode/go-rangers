@@ -54,7 +54,7 @@ func (p *groupCreateProcessor) OnMessageGroupInit(msg *model.GroupInitMessage) {
 	}
 
 	// Establish a group network at local
-	p.NetServer.BuildGroupNet(groupHash.Hex(), msg.GroupInitInfo.GroupMembers)
+	p.NetServer.JoinGroupNet(groupHash.Hex())
 
 	groupCreateLogger.Debugf("groupHash:%s,current status=%v.", groupHash.ShortS(), groupInitContext.GetGroupStatus())
 	// Use CAS operation to make sure the logical below executed once

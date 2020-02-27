@@ -13,9 +13,9 @@ import (
 )
 
 type genesisGroup struct {
-	groupInfo model.GroupInfo
-	vrfPubkey []vrf.VRFPublicKey
-	pubkeys   []groupsig.Pubkey
+	GroupInfo model.GroupInfo
+	VrfPubkey []vrf.VRFPublicKey
+	Pubkeys   []groupsig.Pubkey
 }
 
 var genesisGroupInfo []*genesisGroup
@@ -25,15 +25,15 @@ func GetGenesisInfo() []*types.GenesisInfo {
 	genesisGroups := getGenesisGroupInfo()
 	var genesisInfos = make([]*types.GenesisInfo, 0)
 	for _, genesis := range genesisGroups {
-		sgi := &genesis.groupInfo
+		sgi := &genesis.GroupInfo
 		coreGroup := convertToGroup(sgi)
 		vrfPKs := make([][]byte, sgi.GetMemberCount())
 		pks := make([][]byte, sgi.GetMemberCount())
 
-		for i, vpk := range genesis.vrfPubkey {
+		for i, vpk := range genesis.VrfPubkey {
 			vrfPKs[i] = vpk
 		}
-		for i, vpk := range genesis.pubkeys {
+		for i, vpk := range genesis.Pubkeys {
 			pks[i] = vpk.Serialize()
 		}
 		genesisGroupInfo := &types.GenesisInfo{Group: *coreGroup, VrfPKs: vrfPKs, Pks: pks,}
@@ -48,10 +48,10 @@ func (p *groupCreateProcessor) BeginGenesisGroupMember() {
 
 	genesisGroups := getGenesisGroupInfo()
 	for _, genesis := range genesisGroups {
-		if !genesis.groupInfo.MemExist(p.minerInfo.ID) {
+		if !genesis.GroupInfo.MemExist(p.minerInfo.ID) {
 			continue
 		}
-		sgi := &genesis.groupInfo
+		sgi := &genesis.GroupInfo
 
 		jg := p.joinedGroupStorage.GetJoinedGroupInfo(sgi.GroupID)
 		if jg == nil {
@@ -84,7 +84,7 @@ func genGenesisGroupInfo(f string) []*genesisGroup {
 		}
 		genesisGroupStr = string(data)
 	}
-	//common.DefaultLogger.Errorf("genesisGroupStr:%s", genesisGroupStr)
+	//common.DefaultLogger.Debugf("genesisGroupStr:%s", genesisGroupStr)
 	splited := strings.Split(genesisGroupStr, "&&")
 	var groups = make([]*genesisGroup, 0)
 	for _, split := range splited {
@@ -93,7 +93,7 @@ func genGenesisGroupInfo(f string) []*genesisGroup {
 		if err != nil {
 			panic(err)
 		}
-		group := genesis.groupInfo
+		group := genesis.GroupInfo
 		group.BuildMemberIndex()
 		groups = append(groups, genesis)
 	}

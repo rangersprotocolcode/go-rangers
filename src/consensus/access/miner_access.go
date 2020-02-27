@@ -6,6 +6,8 @@ import (
 	"x/src/core"
 	"x/src/consensus/vrf"
 	"x/src/consensus/model"
+	"x/src/middleware/log"
+	"x/src/common"
 )
 
 var minerPoolReaderInstance *MinerPoolReader
@@ -16,6 +18,9 @@ type MinerPoolReader struct {
 }
 
 func NewMinerPoolReader(mp *core.MinerManager) *MinerPoolReader {
+	if logger == nil{
+		logger = log.GetLoggerByIndex(log.AccessLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	}
 	if minerPoolReaderInstance == nil {
 		minerPoolReaderInstance = &MinerPoolReader{
 			minerPool: mp,

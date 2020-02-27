@@ -112,6 +112,20 @@ func (pub *Pubkey) ShortS() string {
 	return common.ShortHex12(str)
 }
 
+func (pub Pubkey) MarshalJSON() ([]byte, error) {
+	str := "\"" + pub.GetHexString() + "\""
+	return []byte(str), nil
+}
+
+func (pub *Pubkey) UnmarshalJSON(data []byte) error {
+	str := string(data[:])
+	if len(str) < 2 {
+		return fmt.Errorf("data size less than min.")
+	}
+	str = str[1 : len(str)-1]
+	return pub.SetHexString(str)
+}
+
 ////公钥分片生成函数，用多项式替换生成特定于某个ID的公钥分片
 ////mpub : master公钥切片
 ////id : 获得该分片的id

@@ -53,3 +53,8 @@ func (s *server) SendToCoinConnector(msg []byte) {
 func (s *server) Notify(isUniCast bool, gameId string, userid string, msg string) {
 	s.reader.Notify(isUniCast, gameId, userid, msg)
 }
+
+
+func (s *server)JoinGroupNet(groupId string){
+	s.worker.JoinGroupNet(groupId)
+}

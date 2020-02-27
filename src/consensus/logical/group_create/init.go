@@ -14,7 +14,7 @@ import (
 
 var groupCreateLogger log.Logger
 
-var GroupCreateProcessor *groupCreateProcessor
+var GroupCreateProcessor groupCreateProcessor
 
 type groupCreateProcessor struct {
 	minerInfo model.SelfMinerInfo

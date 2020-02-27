@@ -26,7 +26,7 @@ func ConsensusInit(mi model.SelfMinerInfo, conf common.ConfManager) bool {
 
 	group_create.GroupCreateProcessor.Init(mi)
 	ret := Proc.Init(mi, conf)
-	net.MessageHandler.Init(group_create.GroupCreateProcessor, &Proc)
+	net.MessageHandler.Init(&group_create.GroupCreateProcessor, &Proc)
 	return ret
 }
 

@@ -146,7 +146,7 @@ func (storage *JoinedGroupStorage) BelongGroup(groupId groupsig.ID) bool {
 //			gid : group ID (not dummy id)
 //			sk: user's group member signature private key
 func (storage *JoinedGroupStorage) JoinGroup(joinedGroupInfo *model.JoinedGroupInfo, selfMinerId groupsig.ID) {
-	logger.Infof("(%v):join group,group idd=%v...\n", selfMinerId, joinedGroupInfo.GroupID.ShortS())
+	logger.Infof("(%v):join group,group idd=%v...\n", selfMinerId.GetHexString(), joinedGroupInfo.GroupID.ShortS())
 	if !storage.BelongGroup(joinedGroupInfo.GroupID) {
 		storage.AddJoinedGroupInfo(joinedGroupInfo)
 	}

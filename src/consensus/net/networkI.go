@@ -78,7 +78,7 @@ type NetworkServer interface {
 
 	BroadcastNewBlock(cbm *model.ConsensusBlockMessage, group *GroupBrief)
 
-	BuildGroupNet(groupIdentifier string, mems []groupsig.ID)
+	JoinGroupNet(groupId string)
 
 	ReleaseGroupNet(groupIdentifier string)
 

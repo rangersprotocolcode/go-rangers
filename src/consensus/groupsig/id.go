@@ -6,6 +6,7 @@ import (
 	"x/src/common"
 	"golang.org/x/crypto/sha3"
 	"log"
+	"fmt"
 )
 
 const ID_LENGTH = 32 //ID字节长度(256位，同私钥长度)
@@ -104,6 +105,19 @@ func newIDFromBigInt(b *big.Int) *ID {
 		return nil
 	}
 	return id
+}
+func (id ID) MarshalJSON() ([]byte, error) {
+	str := "\"" + id.GetHexString() + "\""
+	return []byte(str), nil
+}
+
+func (id *ID) UnmarshalJSON(data []byte) error {
+	str := string(data[:])
+	if len(str) < 2 {
+		return fmt.Errorf("data size less than min.")
+	}
+	str = str[1 : len(str)-1]
+	return id.SetHexString(str)
 }
 
 ////从160位地址创建（FP254曲线256位或FP382曲线384位的）ID

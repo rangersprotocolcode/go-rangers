@@ -28,10 +28,8 @@ func id2String(ids []groupsig.ID) []string {
 
 //------------------------------------组网络管理-----------------------
 
-func (ns *NetworkServerImpl) BuildGroupNet(gid string, mems []groupsig.ID) {
-	//todo
-	//memStrs := id2String(mems)
-	//ns.net.BuildGroupNet(gid, memStrs)
+func (ns *NetworkServerImpl) JoinGroupNet(groupId string) {
+	ns.net.JoinGroupNet(groupId)
 }
 
 func (ns *NetworkServerImpl) ReleaseGroupNet(gid string) {
