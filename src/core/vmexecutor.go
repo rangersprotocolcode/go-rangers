@@ -293,6 +293,9 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 				success = false
 			} else {
 				miner.ApplyHeight = height + common.HeightAfterStake
+				if isEmptyByteSlice(miner.Id) {
+					miner.Id = common.FromHex(transaction.Source)
+				}
 				success = MinerManagerImpl.AddMiner(common.HexToAddress(transaction.Source), &miner, accountdb)
 			}
 			break
@@ -304,6 +307,9 @@ func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.B
 				logger.Errorf("json Unmarshal error, %s", err.Error())
 				success = false
 			} else {
+				if isEmptyByteSlice(miner.Id) {
+					miner.Id = common.FromHex(transaction.Source)
+				}
 				success = MinerManagerImpl.AddStake(common.HexToAddress(transaction.Source), miner.Id, miner.Stake, accountdb)
 			}
 		case types.TransactionTypeMinerRefund:
@@ -461,4 +467,18 @@ func canWithDraw(withDrawAmount string, ftValue *big.Int) (bool, *big.Int) {
 	}
 
 	return true, ftValue.Sub(ftValue, b1)
+}
+
+func isEmptyByteSlice(data []byte) bool {
+	if nil == data || 0 == len(data) {
+		return true
+	}
+
+	for _, item := range data {
+		if 0 != item {
+			return false
+		}
+	}
+
+	return true
 }
