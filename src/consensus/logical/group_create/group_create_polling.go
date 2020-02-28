@@ -8,6 +8,7 @@ import (
 	"x/src/middleware/types"
 	"x/src/consensus/base"
 	"x/src/consensus/groupsig"
+	"x/src/common"
 )
 
 //检查建组
@@ -165,7 +166,7 @@ func (p *groupCreateProcessor) selectCandidates(theBH *types.BlockHeader) (enoug
 				}
 			}
 		}
-		if joinedNum < model.Param.MinerMaxJoinGroup {
+		if joinedNum < int(cand.Stake/common.ValidatorStake) {
 			candidates = append(candidates, cand)
 		}
 	}
