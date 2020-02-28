@@ -95,6 +95,7 @@ func (chain *groupChain) AddGroup(group *types.Group) error {
 	if !bytes.Equal(chain.lastGroup.Id, group.Header.PreGroup) {
 		return fmt.Errorf("pre not equal lastgroup!Pre group id:%v,local last group id:%v", group.Header.PreGroup, chain.lastGroup.Id)
 	}
+
 	return chain.save(group)
 }
 
@@ -125,6 +126,37 @@ func (chain *groupChain) Close() {
 
 func (chain *groupChain) Iterator() *GroupIterator {
 	return &GroupIterator{current: chain.lastGroup}
+}
+
+func (chain *groupChain) availableGroupsAt(h uint64) []*types.Group {
+	iter := chain.Iterator()
+	gs := make([]*types.Group, 0)
+	for g := iter.Current(); g != nil; g = iter.MovePre() {
+		if g.Header.DismissHeight > h {
+			gs = append(gs, g)
+		} else {
+			genesis := chain.GetGroupByHeight(0)
+			gs = append(gs, genesis)
+			break
+		}
+	}
+	return gs
+}
+
+func (chain *groupChain) GetAvailableGroupsByMinerId(height uint64, minerId []byte) []*types.Group {
+	allGroups := chain.availableGroupsAt(height)
+	group := make([]*types.Group, 0)
+
+	for _, g := range allGroups {
+		for _, mem := range g.Members {
+			if bytes.Equal(mem, minerId) {
+				group = append(group, g)
+				break
+			}
+		}
+	}
+
+	return group
 }
 
 func (chain *groupChain) getGroupByHeight(height uint64) *types.Group {

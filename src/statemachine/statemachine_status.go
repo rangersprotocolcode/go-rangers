@@ -11,6 +11,7 @@ const (
 	stop   = "stopped(停止)"
 	remove = "removed(已删除)"
 
+	asynchronous  = "asynchronous"
 	synchronizing = "synchronizing(同步状态中)"
 	synchronized  = "synchronized(同步状态完成，等待重启)"
 )
@@ -71,4 +72,12 @@ func (s *StateMachine) synced() {
 
 func (s *StateMachine) isSynced() bool {
 	return s.Status == synchronized
+}
+
+func (s *StateMachine) async() {
+	s.setStatus(asynchronous)
+}
+
+func (s *StateMachine) isAsync() bool {
+	return s.Status == asynchronous
 }

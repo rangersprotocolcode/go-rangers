@@ -217,6 +217,14 @@ func (am *AccountManager) loadAccount(addr string) (*Account, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	pk := common.HexStringToPubKey(acc.Pk)
+	address := pk.GetAddress()
+	acc.Address = address.String()
+
+	bs,_=json.Marshal(acc)
+	fmt.Println(string(bs))
+
 	return acc, nil
 }
 

@@ -7,7 +7,6 @@ import (
 	"bytes"
 
 	"crypto/sha256"
-	"go-ethereum/common"
 	"strconv"
 )
 
@@ -225,10 +224,10 @@ func TestHashFromBytes(t *testing.T) {
 
 func TestAddress(t *testing.T) {
 	s := "0xb253748a50c78ead4c472a8912ba614f12e9d94a"
-	hex := common.FromHex(s)
+	hex := FromHex(s)
 	fmt.Printf("from hex %v", hex)
 
-	addr := common.HexToAddress(s)
+	addr := HexToAddress(s)
 	fmt.Printf("addr %v", addr)
 }
 

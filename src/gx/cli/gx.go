@@ -90,9 +90,9 @@ func (gx *GX) Run() {
 	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString("instance", "index", ""))
 
 	if *apply == "heavy" {
-		fmt.Println("Welcom to be a tas propose miner!")
+		fmt.Println("Welcome to be a rocketProtocol propose miner!")
 	} else if *apply == "light" {
-		fmt.Println("Welcom to be a tas verify miner!")
+		fmt.Println("Welcome to be a rocketProtocol verify miner!")
 	}
 	switch command {
 	case versionCmd.FullCommand():
@@ -139,9 +139,9 @@ func (gx *GX) initMiner(instanceIndex int, apply, keystore, env, gateAddr string
 	minerInfo := model.NewSelfMinerInfo(gx.account.Miner.ID[:])
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 	if apply == "light" {
-		minerInfo.MinerType = types.MinerTypeLight
+		minerInfo.NType = common.MinerTypeValidator
 	} else if apply == "heavy" {
-		minerInfo.MinerType = types.MinerTypeHeavy
+		minerInfo.NType = common.MinerTypeProposer
 	}
 
 	minerId := "0x" + common.Bytes2Hex(gx.account.Miner.ID[:])

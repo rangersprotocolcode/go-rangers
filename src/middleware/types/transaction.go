@@ -12,8 +12,10 @@ const (
 	TransactionTypeMinerApply  = 2
 	TransactionTypeMinerAbort  = 3
 	TransactionTypeMinerRefund = 4
+	TransactionTypeMinerAdd    = 5
 
 	//以下交易类型会被外部使用 禁止更改
+	TransactionTypeOperatorBalance   = 99
 	TransactionTypeOperatorEvent     = 100 // 调用状态机/转账
 	TransactionTypeGetCoin           = 101 // 查询主链币
 	TransactionTypeGetAllCoin        = 102 // 查询所有主链币

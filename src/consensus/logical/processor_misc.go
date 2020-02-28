@@ -15,7 +15,7 @@ import (
 //后续如有全局定时器，从这个函数启动
 func (p *Processor) Start() bool {
 	// 检查是否要出块
-	p.Ticker.RegisterRoutine(p.getCastCheckRoutineName(), p.checkSelfCastRoutine, 300)
+	p.Ticker.RegisterRoutine(p.getCastCheckRoutineName(), p.checkSelfCastRoutine, common.CastingInterval)
 
 	// 出块后的广播
 	p.Ticker.RegisterRoutine(p.getBroadcastRoutineName(), p.broadcastRoutine, 300)
@@ -27,9 +27,6 @@ func (p *Processor) Start() bool {
 
 	p.Ticker.RegisterRoutine(p.getUpdateGlobalGroupsRoutineName(), p.updateGlobalGroups, 60*1000)
 	p.Ticker.StartTickerRoutine(p.getUpdateGlobalGroupsRoutineName(), false)
-
-	p.Ticker.RegisterRoutine(p.getUpdateMonitorNodeInfoRoutine(), p.updateMonitorInfo, 3*1000)
-	p.Ticker.StartTickerRoutine(p.getUpdateMonitorNodeInfoRoutine(), false)
 
 	p.triggerCastCheck()
 	p.prepareMiner()
@@ -301,16 +298,16 @@ func (p *Processor) GetJoinGroupInfo(gid string) *model.JoinedGroupInfo {
 	return jg
 }
 
-//func (p *Processor) GetAllMinerDOs() ([]*model.MinerInfo) {
-//	h := p.MainChain.Height()
-//	dos := make([]*model.MinerInfo, 0)
-//	miners := p.minerReader.getAllMinerDOByType(types.MinerTypeHeavy, h)
-//	dos = append(dos, miners...)
-//
-//	miners = p.minerReader.getAllMinerDOByType(types.MinerTypeLight, h)
-//	dos = append(dos, miners...)
-//	return dos
-//}
+func (p *Processor) GetAllMinerDOs() ([]*model.MinerDO) {
+	h := p.MainChain.Height()
+	dos := make([]*model.MinerDO, 0)
+	miners := p.minerReader.getAllMinerDOByType(common.MinerTypeProposer, h)
+	dos = append(dos, miners...)
+
+	miners = p.minerReader.getAllMinerDOByType(common.MinerTypeValidator, h)
+	dos = append(dos, miners...)
+	return dos
+}
 
 func (p *Processor) GetCastQualifiedGroupsFromChain(height uint64) []*types.Group {
 	return p.globalGroups.GetCastQualifiedGroupFromChains(height)

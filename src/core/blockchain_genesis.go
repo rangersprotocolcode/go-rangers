@@ -64,39 +64,26 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	block.Header.Signature = common.Sha256([]byte("tuntunhz"))
 	block.Header.Random = common.Sha256([]byte("RocketProtocolVRF"))
 
-	tenThousandGxCoin := big.NewInt(0).SetUint64(1000000000 * 10000)
-
-	for _, genesis := range genesisInfo {
-		for _, mem := range genesis.Group.Members {
-			addr := common.BytesToAddress(mem)
-			stateDB.SetBalance(addr, tenThousandGxCoin)
-		}
-	}
-
 	genesisProposers := getGenesisProposer("")
-	for _, proposer := range genesisProposers {
-		stateDB.SetBalance(common.BytesToAddress(proposer.Id), tenThousandGxCoin)
-	}
+	addMiners(genesisProposers, stateDB)
 
 	verifyMiners := make([]*types.Miner, 0)
 	for _, genesis := range genesisInfo {
 		for i, member := range genesis.Group.Members {
-			miner := &types.Miner{Id: member, PublicKey: genesis.Pks[i], VrfPublicKey: genesis.VrfPKs[i], Stake: 1000000000 * (100)}
+			miner := &types.Miner{Type: common.MinerTypeValidator, Id: member, PublicKey: genesis.Pks[i], VrfPublicKey: genesis.VrfPKs[i], Stake: common.ValidatorStake * uint64(i+2)}
 			verifyMiners = append(verifyMiners, miner)
 		}
 	}
-	MinerManagerImpl.addGenesesVerifier(verifyMiners, stateDB)
-	MinerManagerImpl.addGenesesProposer(genesisProposers, stateDB)
+	addMiners(verifyMiners, stateDB)
 
-	stateDB.SetNonce(common.BonusStorageAddress, 1)
-	stateDB.SetNonce(common.HeavyDBAddress, 1)
-	stateDB.SetNonce(common.LightDBAddress, 1)
+	stateDB.SetNonce(common.ProposerDBAddress, 1)
+	stateDB.SetNonce(common.ValidatorDBAddress, 1)
 
 	// 测试用
 	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("tuntun", "pig", "hz", "0", "hz", "10086", 0), stateDB)
 	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("tuntunhz", "tuntun", "t", "hz", "hz", 0, "10000"), stateDB)
-	stateDB.SetFT(common.HexToAddress("0x69564f3eccc4aedabde33bd5cb350b9829deced1"),"official-ETH.ETH",big.NewInt(10000000000))
-	stateDB.SetFT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"),"official-ETH.ETH",big.NewInt(10000000000))
+	stateDB.SetFT(common.HexToAddress("0x69564f3eccc4aedabde33bd5cb350b9829deced1"), "official-ETH.ETH", big.NewInt(10000000000))
+	stateDB.SetFT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"), "official-ETH.ETH", big.NewInt(10000000000))
 
 	root, _ := stateDB.Commit(true)
 	triedb.Commit(root, false)
@@ -134,11 +121,17 @@ func getGenesisProposer(path string) []*types.Miner {
 			PublicKey:    minerPubkey.Serialize(),
 			VrfPublicKey: vrfPubkey,
 			ApplyHeight:  0,
-			Stake:        1000000000 * (100),
-			Type:         types.MinerTypeHeavy,
-			Status:       types.MinerStatusNormal,
+			Stake:        common.ProposerStake,
+			Type:         common.MinerTypeProposer,
+			Status:       common.MinerStatusNormal,
 		}
 		miners = append(miners, &miner)
 	}
 	return miners
+}
+
+func addMiners(miners []*types.Miner, accountdb *account.AccountDB) {
+	for _, miner := range miners {
+		MinerManagerImpl.addMiner(miner, accountdb)
+	}
 }

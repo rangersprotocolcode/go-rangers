@@ -8,7 +8,11 @@ import (
 	"strings"
 )
 
-const zeroString = "0"
+const (
+	zeroString = "0"
+	prec       = 256
+	baseNumber = 1000000000
+)
 
 func UInt32ToByte(i uint32) []byte {
 	buf := bytes.NewBuffer([]byte{})
@@ -56,13 +60,13 @@ func StrToBigInt(s string) (*big.Int, error) {
 		return big.NewInt(0), nil
 	}
 
-	target, _, err := big.ParseFloat(s, 10, 256, big.ToNearestEven)
+	target, _, err := big.ParseFloat(s, 10, prec, big.ToNearestEven)
 	if err != nil {
 		return nil, err
 	}
 
 	base := new(big.Float)
-	base.SetInt(big.NewInt(1000000000))
+	base.SetInt(big.NewInt(baseNumber))
 
 	target.Mul(target, base)
 	result := new(big.Int)
@@ -110,4 +114,29 @@ func bigIntToStr(n *big.Int, precision int) string {
 		return fmt.Sprintf("%s%s", starter, first)
 	}
 	return fmt.Sprintf("%s%s.%s", starter, first, last)
+}
+
+//11.22->11220000000
+func Float64ToBigInt(number float64) *big.Int {
+	base := new(big.Float)
+	base.SetInt(big.NewInt(baseNumber))
+
+	target := new(big.Float)
+	target.SetPrec(prec)
+	target.SetFloat64(number)
+	target.Mul(target, base)
+
+	result := new(big.Int)
+	target.Int(result)
+
+	return result
+}
+
+func Uint64ToBigInt(number uint64) *big.Int {
+	base := big.NewInt(baseNumber)
+	result := new(big.Int)
+	result.SetUint64(number)
+	result.Mul(result, base)
+
+	return result
 }

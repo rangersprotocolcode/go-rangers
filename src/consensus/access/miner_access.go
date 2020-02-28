@@ -34,7 +34,7 @@ func (access *MinerPoolReader) GetLightMiner(id groupsig.ID) *model.MinerInfo {
 	if minerPool == nil {
 		return nil
 	}
-	miner := minerPool.GetMinerById(id.Serialize(), types.MinerTypeLight, nil)
+	miner := minerPool.GetMinerById(id.Serialize(), common.MinerTypeValidator, nil)
 	if miner == nil {
 		//access.blog.log("getMinerById error id %v", id.ShortS())
 		return nil
@@ -47,7 +47,7 @@ func (access *MinerPoolReader) GetProposeMiner(id groupsig.ID) *model.MinerInfo 
 	if minerPool == nil {
 		return nil
 	}
-	miner := minerPool.GetMinerById(id.Serialize(), types.MinerTypeHeavy, nil)
+	miner := minerPool.GetMinerById(id.Serialize(), common.MinerTypeProposer, nil)
 	if miner == nil {
 		//access.blog.log("getMinerById error id %v", id.ShortS())
 		return nil
@@ -56,7 +56,7 @@ func (access *MinerPoolReader) GetProposeMiner(id groupsig.ID) *model.MinerInfo 
 }
 
 func (access *MinerPoolReader) GetCandidateMiners(h uint64) []model.MinerInfo {
-	miners := access.getAllMiner(types.MinerTypeLight, h)
+	miners := access.getAllMiner(common.MinerTypeValidator, h)
 	rets := make([]model.MinerInfo, 0)
 	logger.Debugf("all light nodes size %v", len(miners))
 	for _, md := range miners {
@@ -72,7 +72,7 @@ func (access *MinerPoolReader) GetTotalStake(h uint64, cache bool) uint64 {
 	if cache && access.totalStakeCache > 0 {
 		return access.totalStakeCache
 	}
-	st := access.minerPool.GetTotalStake(h)
+	st := access.minerPool.GetProposerTotalStake(h)
 	access.totalStakeCache = st
 	return st
 }

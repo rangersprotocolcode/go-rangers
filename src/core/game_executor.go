@@ -122,13 +122,14 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 		executor.logger.Errorf("blockReqHandler:Message assert not ok!")
 		return
 	}
+	executor.logger.Debugf("rcv message: %v", message)
 	txRaw := message.Tx
-	if err := service.GetTransactionPool().VerifyTransactionHash(&txRaw); err != nil {
-		txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
-		response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
-		go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
-		return
-	}
+	//if err := service.GetTransactionPool().VerifyTransactionHash(&txRaw); err != nil {
+	//	txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
+	//	response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
+	//	go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+	//	return
+	//}
 
 	var result string
 	sourceString := txRaw.Source
@@ -136,7 +137,13 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	gameId := txRaw.Target
 	switch txRaw.Type {
 
-	// 查询主链币
+	// 查询账户余额
+	case types.TransactionTypeOperatorBalance:
+		result = service.GetBalance(source)
+		executor.logger.Debugf("balance,addr: %s, result: %s", sourceString, result)
+		break
+
+		// 查询主链币
 	case types.TransactionTypeGetCoin:
 		result = service.GetCoinBalance(source, txRaw.Data)
 		break
@@ -500,22 +507,22 @@ func (executor *GameExecutor) RunNotify(msg notify.Message) {
 		}
 	}
 
-	if err := service.GetTransactionPool().VerifyTransactionHash(&txRaw); err != nil {
-		txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
-
-		response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
-		go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
-		return
-
-	}
-
-	if err := service.GetTransactionPool().VerifyTransactionSign(&txRaw); err != nil {
-		txLogger.Errorf("Verify tx sign error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
-
-		response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
-		go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
-		return
-	}
+	//if err := service.GetTransactionPool().VerifyTransactionHash(&txRaw); err != nil {
+	//	txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
+	//
+	//	response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
+	//	go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+	//	return
+	//
+	//}
+	//
+	//if err := service.GetTransactionPool().VerifyTransactionSign(&txRaw); err != nil {
+	//	txLogger.Errorf("Verify tx sign error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
+	//
+	//	response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
+	//	go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+	//	return
+	//}
 
 	result, execMessage := executor.runTransaction(txRaw, message.Nonce)
 

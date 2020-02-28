@@ -245,3 +245,21 @@ func (s *StateMachineManager) IsAppId(appId string) bool {
 
 	return ok
 }
+
+func (s *StateMachineManager) SetAsyncApps(appIds map[string]bool) {
+	if 0 == len(appIds) {
+		return
+	}
+	s.logger.Errorf("setAsyncApps: %s", appIds)
+
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	for appId := range appIds {
+		stateMachine := s.StateMachines[appId]
+		if nil == stateMachine {
+			continue
+		}
+		stateMachine.async()
+	}
+}

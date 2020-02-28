@@ -231,7 +231,7 @@ func (chain *blockChain) GenerateBlock(bh types.BlockHeader) *types.Block {
 		Header: &bh,
 	}
 
-	txs, missTxs, _ := chain.queryTxsByBlockHash(bh.Hash, bh.Transactions)
+	txs, missTxs, _, _ := chain.queryTxsByBlockHash(bh.Hash, bh.Transactions)
 
 	if len(missTxs) != 0 {
 		logger.Debugf("GenerateBlock can not get all txs,return nil block!")
@@ -461,9 +461,9 @@ func (chain *blockChain) getAccountDBByHeight(height uint64) (*account.AccountDB
 	return service.AccountDBManagerInstance.GetAccountDBByHash(header.StateTree)
 }
 
-func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList []common.Hashes) ([]*types.Transaction, []common.Hashes, error) {
+func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList []common.Hashes) ([]*types.Transaction, []common.Hashes, map[string]bool, error) {
 	if nil == txHashList || 0 == len(txHashList) {
-		return nil, nil, service.ErrNil
+		return nil, nil, nil, service.ErrNil
 	}
 
 	verifiedBody, _ := chain.verifiedBodyCache.Get(blockHash)
@@ -474,7 +474,9 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 
 	txs := make([]*types.Transaction, 0)
 	need := make([]common.Hashes, 0)
+	abnormal := make(map[string]bool, 0)
 	var err error
+
 	for _, hash := range txHashList {
 		var tx *types.Transaction
 		if verifiedTxs != nil {
@@ -490,13 +492,22 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 			tx, err = chain.transactionPool.GetTransaction(hash[0])
 		}
 
-		if tx != nil && tx.SubHash == hash[1] {
+		// 没有找到
+		if tx == nil {
+			need = append(need, hash)
+		}
+
+		// 找到了
+		if tx.SubHash == hash[1] {
 			txs = append(txs, tx)
 		} else {
+			// 状态机出事了，同一笔交易，执行结果不一致
+			abnormal[tx.Target] = true
+			// 为了能跑下去，先找出块人要
 			need = append(need, hash)
 		}
 	}
-	return txs, need, err
+	return txs, need, abnormal, err
 }
 
 func (chain *blockChain) versionValidate() bool {

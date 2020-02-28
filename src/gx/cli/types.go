@@ -85,9 +85,9 @@ type MortGage struct {
 }
 
 func NewMortGageFromMiner(miner *types.Miner) *MortGage {
-	t := "重节点"
-	if miner.Type == types.MinerTypeLight {
-		t = "轻节点"
+	t := "提案节点"
+	if miner.Type == common.MinerTypeValidator {
+		t = "验证节点"
 	}
 	mg := &MortGage{
 		Stake:       uint64(float64(miner.Stake) / float64(1000000000)),

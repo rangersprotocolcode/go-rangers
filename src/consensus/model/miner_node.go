@@ -58,11 +58,11 @@ func (mi MinerInfo) GetMinerID() groupsig.ID {
 }
 
 func (md *MinerInfo) IsLight() bool {
-	return md.MinerType == types.MinerTypeLight
+	return md.MinerType ==  common.MinerTypeValidator
 }
 
 func (md *MinerInfo) IsWeight() bool {
-	return md.MinerType == types.MinerTypeHeavy
+	return md.MinerType == common.MinerTypeProposer
 }
 
 //在该高度是否可以铸块

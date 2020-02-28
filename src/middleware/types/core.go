@@ -74,24 +74,6 @@ func NewTransactionError(code int, msg string) *TransactionError {
 	return &TransactionError{Code: code, Message: msg}
 }
 
-const (
-	MinerTypeLight    = 0
-	MinerTypeHeavy    = 1
-	MinerStatusNormal = 0
-	MinerStatusAbort  = 1
-)
-
-type Miner struct {
-	Id           []byte
-	PublicKey    []byte
-	VrfPublicKey []byte
-	ApplyHeight  uint64
-	Stake        uint64
-	AbortHeight  uint64
-	Type         byte
-	Status       byte
-}
-
 //区块头结构
 type BlockHeader struct {
 	Hash         common.Hash // 本块的hash，to do : 是对哪些数据的哈希
@@ -169,6 +151,7 @@ func (bh *BlockHeader) ToString() string {
 		TotalQN:      bh.TotalQN,
 		CurTime:      bh.CurTime,
 		Castor:       bh.Castor,
+		GroupId:      bh.GroupId,
 		Nonce:        bh.Nonce,
 		Transactions: bh.Transactions,
 		TxTree:       bh.TxTree,
