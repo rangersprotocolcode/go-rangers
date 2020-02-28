@@ -1,25 +1,16 @@
-=============== Jun 20, 2019 (CST) ===============
-18:41:47.957394 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-18:41:47.959158 db@open opening
-18:41:47.960827 version@stat F·[] S·0B[] Sc·[]
-18:41:47.961806 db@janitor F·2 G·0
-18:41:47.961967 db@open done T·2.736021ms
-=============== Jun 20, 2019 (CST) ===============
-18:43:16.486757 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-18:43:16.488072 version@stat F·[] S·0B[] Sc·[]
-18:43:16.488138 db@open opening
-18:43:16.488313 journal@recovery F·1
-18:43:16.488485 journal@recovery recovering @1
-18:43:16.497704 memdb@flush created L0@2 N·5 S·1KiB "0xa..nfo,v5":"0xa..Key,v1"
-18:43:16.508472 version@stat F·[1] S·1KiB[1KiB] Sc·[0.25]
-18:43:16.537070 db@janitor F·3 G·0
-18:43:16.537188 db@open done T·49.010444ms
-=============== Jun 20, 2019 (CST) ===============
-18:51:44.277319 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-18:51:44.278277 version@stat F·[1] S·1KiB[1KiB] Sc·[0.25]
-18:51:44.278302 db@open opening
-18:51:44.278374 journal@recovery F·1
-18:51:44.281161 journal@recovery recovering @3
-18:51:44.283313 version@stat F·[1] S·1KiB[1KiB] Sc·[0.25]
-18:51:44.312185 db@janitor F·3 G·0
-18:51:44.312270 db@open done T·33.952894ms
+=============== Feb 28, 2020 (CST) ===============
+14:26:11.014712 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+14:26:11.038868 db@open opening
+14:26:11.041655 version@stat F·[] S·0B[] Sc·[]
+14:26:11.083518 db@janitor F·2 G·0
+14:26:11.083570 db@open done T·44.601833ms
+=============== Feb 28, 2020 (CST) ===============
+14:27:52.226789 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+14:27:52.227170 version@stat F·[] S·0B[] Sc·[]
+14:27:52.227207 db@open opening
+14:27:52.227309 journal@recovery F·1
+14:27:52.227915 journal@recovery recovering @1
+14:27:52.242137 memdb@flush created L0@2 N·5 S·1KiB "0x3..nfo,v5":"0x3..Key,v1"
+14:27:52.247342 version@stat F·[1] S·1KiB[1KiB] Sc·[0.25]
+14:27:52.274038 db@janitor F·3 G·0
+14:27:52.274130 db@open done T·46.896815ms
