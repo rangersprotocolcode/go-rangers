@@ -151,7 +151,8 @@ func (p *groupCreateProcessor) tryStartParentConsensus(topHeight uint64) bool {
 	msg := &model.ParentGroupConsensusMessage{
 		GroupInitInfo: *gInfo,
 	}
-	if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, msg); !ok {
+	inGroupSignSecKey := p.getInGroupSignSecKey(gInfo.ParentGroupID())
+	if signInfo, ok := model.NewSignInfo(inGroupSignSecKey, p.minerInfo.ID, msg); !ok {
 		desc = fmt.Sprintf("genSign fail, id=%v, sk=%v", p.minerInfo.ID.ShortS(), p.minerInfo.SecKey.ShortS())
 		return false
 	} else {
@@ -215,7 +216,8 @@ func (p *groupCreateProcessor) OnMessageParentGroupConsensus(msg *model.ParentGr
 			Launcher:  msg.SignInfo.GetSignerID(),
 			GroupHash: gh.Hash,
 		}
-		if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, signMsg); ok {
+		inGroupSignSecKey := p.getInGroupSignSecKey(parentGid)
+		if signInfo, ok := model.NewSignInfo(inGroupSignSecKey, p.minerInfo.ID, signMsg); ok {
 			signMsg.SignInfo = signInfo
 			p.NetServer.SendCreateGroupSignMessage(signMsg, parentGid)
 		} else {

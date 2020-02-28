@@ -20,7 +20,6 @@ const (
 	suffixGInfo   = "_gInfo"
 )
 
-var joinedGroupStorageInstance *JoinedGroupStorage
 //BelongGroups
 // BelongGroups stores all group-related infos which is important to the members
 type JoinedGroupStorage struct {
@@ -33,17 +32,11 @@ type JoinedGroupStorage struct {
 	initMutex sync.Mutex
 }
 
-func GetJoinedGroupStorageInstance() *JoinedGroupStorage {
-	return joinedGroupStorageInstance
-}
-
 //NewBelongGroups
-func InitJoinedGroupStorage(filePath string, privateKey common.PrivateKey) {
-	if joinedGroupStorageInstance == nil {
-		joinedGroupStorageInstance = &JoinedGroupStorage{
-			privateKey: privateKey,
-			storeDir:   filePath,
-		}
+func NewJoinedGroupStorage(filePath string, privateKey common.PrivateKey) *JoinedGroupStorage {
+	return &JoinedGroupStorage{
+		privateKey: privateKey,
+		storeDir:   filePath,
 	}
 }
 
@@ -146,7 +139,7 @@ func (storage *JoinedGroupStorage) BelongGroup(groupId groupsig.ID) bool {
 //			gid : group ID (not dummy id)
 //			sk: user's group member signature private key
 func (storage *JoinedGroupStorage) JoinGroup(joinedGroupInfo *model.JoinedGroupInfo, selfMinerId groupsig.ID) {
-	logger.Infof("(%v):join group,group idd=%v...\n", selfMinerId.GetHexString(), joinedGroupInfo.GroupID.ShortS())
+	logger.Infof("(%v):join group,group id=%v...\n", selfMinerId.GetHexString(), joinedGroupInfo.GroupID.ShortS())
 	if !storage.BelongGroup(joinedGroupInfo.GroupID) {
 		storage.AddJoinedGroupInfo(joinedGroupInfo)
 	}
@@ -184,6 +177,8 @@ func (storage *JoinedGroupStorage) saveSignSecKey(joinedGroupInfo *model.JoinedG
 	}
 	pubKey := storage.privateKey.GetPubKey()
 	ct, err := pubKey.Encrypt(rand.Reader, joinedGroupInfo.SignSecKey.Serialize())
+	//logger.Debugf("saveSignSecKey data:%v,privateKey:%v",joinedGroupInfo.SignSecKey.Serialize(),storage.privateKey.GetHexString())
+
 	if err != nil {
 		logger.Errorf("encrypt signkey fail, err=%v", err.Error())
 		return
@@ -220,6 +215,7 @@ func (storage *JoinedGroupStorage) load(gid groupsig.ID) *model.JoinedGroupInfo 
 		logger.Errorf("get signKey fail, gid=%v, err=%v", gid.ShortS(), err.Error())
 		return nil
 	}
+	//logger.Debugf("load bs:%v,privateKey:%v",bs,storage.privateKey.GetHexString())
 	m, err := storage.privateKey.Decrypt(rand.Reader, bs)
 	if err != nil {
 		logger.Errorf("decrypt signKey fail, err=%v", err.Error())

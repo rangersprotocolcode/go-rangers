@@ -131,25 +131,3 @@ func readGenesisJoinedGroup(file string, sgi *model.GroupInfo) *model.JoinedGrou
 	return group
 }
 
-//func generateGenesisGroupHeader(memIds []groupsig.ID) *types.GroupHeader {
-//	//parentId := "0xf2cb0c8e7d1086c8f311a28f51871564c5cc31361e7d1f1498d3306d54fd729b"
-//	//var id groupsig.ID
-//	//id.SetHexString(parentId)
-//	//idByte := id.Serialize()
-//	gh := &types.GroupHeader{
-//		Name:          "GX genesis group",
-//		Authority:     777,
-//		BeginTime:     time.Now(),
-//		CreateHeight:  0,
-//		ReadyHeight:   1,
-//		WorkHeight:    0,
-//		DismissHeight: common.MaxUint64,
-//		MemberRoot:    model.GenGroupMemberRoot(memIds),
-//		Extends:       "",
-//		//Parent:        idByte,
-//		//PreGroup:      idByte,
-//	}
-//
-//	gh.Hash = gh.GenHash()
-//	return gh
-//}

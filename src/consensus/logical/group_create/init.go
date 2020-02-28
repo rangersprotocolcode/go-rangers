@@ -39,12 +39,12 @@ type groupCreateProcessor struct {
 	lock      sync.RWMutex
 }
 
-func (p *groupCreateProcessor) Init(minerInfo model.SelfMinerInfo) {
+func (p *groupCreateProcessor) Init(minerInfo model.SelfMinerInfo, joinedGroupStorage *access.JoinedGroupStorage) {
 	groupCreateLogger = log.GetLoggerByIndex(log.GroupCreateLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	p.minerInfo = minerInfo
 	p.createdHeightsIndex = 0
 
-	p.joinedGroupStorage = access.GetJoinedGroupStorageInstance()
+	p.joinedGroupStorage = joinedGroupStorage
 	p.groupSignCollectorMap = sync.Map{}
 	p.groupInitContextCache = newGroupInitContextCache()
 
@@ -68,6 +68,13 @@ func (p *groupCreateProcessor) GetMemberSignPubKey(groupId groupsig.ID, minerId 
 		}
 	}
 	return
+}
+
+func (p *groupCreateProcessor) getInGroupSignSecKey(groupId groupsig.ID) groupsig.Seckey {
+	if joinedGroup := p.joinedGroupStorage.GetJoinedGroupInfo(groupId); joinedGroup != nil {
+		return joinedGroup.SignSecKey
+	}
+	return groupsig.Seckey{}
 }
 
 func (p *groupCreateProcessor) OnGroupAddSuccess(g *model.GroupInfo) {

@@ -71,7 +71,7 @@ func newGroupInitContext(groupInitInfo *model.GroupInitInfo, minerInfo *model.Se
 }
 
 // GenSharePieces generate secret sharing sent to members of the group: si = F(IDi)
-func (context groupInitContext) GenSharePieces() map[string]model.SharePiece {
+func (context *groupInitContext) GenSharePieces() map[string]model.SharePiece {
 	shares := make(map[string]model.SharePiece, 0)
 	secs := context.nodeInfo.genSharePiece(context.groupInitInfo.GroupMembers)
 	var piece model.SharePiece
@@ -89,7 +89,7 @@ func (context groupInitContext) GenSharePieces() map[string]model.SharePiece {
 //
 // Return -1 is abnormal, return 0 is normal, return 1 is the private key
 // of the aggregated group member (used for signing)
-func (context groupInitContext) HandleSharePiece(id groupsig.ID, share *model.SharePiece) int {
+func (context *groupInitContext) HandleSharePiece(id groupsig.ID, share *model.SharePiece) int {
 	result := context.nodeInfo.handleSharePiece(id, share)
 	return result
 }
@@ -104,20 +104,20 @@ func (context *groupInitContext) GetGroupStatus() int32 {
 }
 
 //getMembers
-func (context groupInitContext) getGroupMembers() []groupsig.ID {
+func (context *groupInitContext) getGroupMembers() []groupsig.ID {
 	return context.groupInitInfo.GroupMembers
 }
 
-func (context groupInitContext) MemExist(id groupsig.ID) bool {
+func (context *groupInitContext) MemExist(id groupsig.ID) bool {
 	return context.groupInitInfo.MemberExists(id)
 }
 
 //StatusTransfrom
-func (context groupInitContext) TransformStatus(from, to int32) bool {
+func (context *groupInitContext) TransformStatus(from, to int32) bool {
 	return atomic.CompareAndSwapInt32(&context.status, from, to)
 }
 
-func (context groupInitContext) generateMemberMask() (mask []byte) {
+func (context *groupInitContext) generateMemberMask() (mask []byte) {
 	mask = make([]byte, (len(context.groupInitInfo.GroupMembers)+7)/8)
 
 	for i, id := range context.groupInitInfo.GroupMembers {

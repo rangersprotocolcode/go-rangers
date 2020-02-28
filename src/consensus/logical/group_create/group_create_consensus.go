@@ -224,6 +224,7 @@ func (p *groupCreateProcessor) handleSharePieceMessage(groupHash common.Hash, sh
 		joinedGroupInfo := model.NewJoindGroupInfo(context.nodeInfo.getSignSecKey(), context.nodeInfo.getGroupPubKey(), context.groupInitInfo.GroupHash())
 		p.joinedGroupStorage.JoinGroup(joinedGroupInfo, p.minerInfo.ID)
 
+		inGroupSignSecKey := joinedGroupInfo.SignSecKey
 		if joinedGroupInfo.GroupPK.IsValid() && joinedGroupInfo.SignSecKey.IsValid() {
 			// 1. Broadcast the group-related public key to other members
 			if context.TransformStatus(GisSendSharePiece, GisSendSignPk) {
@@ -236,7 +237,7 @@ func (p *groupCreateProcessor) handleSharePieceMessage(groupHash common.Hash, sh
 				if !signPubKeyMessage.SignPK.IsValid() {
 					panic("signPK is InValid")
 				}
-				if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, signPubKeyMessage); ok {
+				if signInfo, ok := model.NewSignInfo(inGroupSignSecKey, p.minerInfo.ID, signPubKeyMessage); ok {
 					signPubKeyMessage.SignInfo = signInfo
 					groupCreateLogger.Debugf("(%V)Send Sign PubKey.Group id:%s", p.minerInfo.ID.ShortS(), joinedGroupInfo.GroupID.ShortS())
 					p.NetServer.SendSignPubKey(signPubKeyMessage)
@@ -256,7 +257,7 @@ func (p *groupCreateProcessor) handleSharePieceMessage(groupHash common.Hash, sh
 					MemberNum:       int32(context.groupInitInfo.MemberSize()),
 					MemberMask:      context.generateMemberMask(),
 				}
-				if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, groupInitedMessage); ok {
+				if signInfo, ok := model.NewSignInfo(inGroupSignSecKey, p.minerInfo.ID, groupInitedMessage); ok {
 					groupInitedMessage.SignInfo = signInfo
 					groupCreateLogger.Debugf("Broadcast group inited message:%v", joinedGroupInfo.GroupID.ShortS())
 					p.NetServer.BroadcastGroupInfo(groupInitedMessage)
@@ -349,7 +350,7 @@ func (p *groupCreateProcessor) OnMessageGroupInited(msg *model.GroupInitedMessag
 	}
 
 	parentID := groupInitInfo.ParentGroupID()
-	parentGroup := p.GetGroupInfo(parentID)
+	parentGroup := p.getGroupInfo(parentID)
 
 	gpk := parentGroup.GroupPK
 	if !groupsig.VerifySig(gpk, msg.GroupHash.Bytes(), msg.ParentGroupSign) {
@@ -460,7 +461,7 @@ func (p *groupCreateProcessor) getGroupPubKey(groupId groupsig.ID) groupsig.Pubk
 }
 
 // GetGroup get a specific group
-func (p *groupCreateProcessor) GetGroupInfo(gid groupsig.ID) *model.GroupInfo {
+func (p *groupCreateProcessor) getGroupInfo(gid groupsig.ID) *model.GroupInfo {
 	if g, err := p.groupAccessor.GetGroupByID(gid); err != nil {
 		panic("GetSelfGroup failed.")
 	} else {

@@ -60,7 +60,7 @@ func (p Processor) getPrefix() string {
 //}
 
 //初始化矿工数据（和组无关）
-func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager) bool {
+func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joinedGroupStorage *access.JoinedGroupStorage) bool {
 	p.ready = false
 	p.lock = sync.Mutex{}
 	p.conf = conf
@@ -72,7 +72,7 @@ func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager) bool {
 	p.mi = &mi
 	p.globalGroups = access.NewGroupAccessor(p.GroupChain)
 	//p.joiningGroups = NewJoiningGroups()
-	p.belongGroups = access.GetJoinedGroupStorageInstance()
+	p.belongGroups = joinedGroupStorage
 	p.blockContexts = NewCastBlockContexts()
 	p.NetServer = net.NewNetworkServer()
 

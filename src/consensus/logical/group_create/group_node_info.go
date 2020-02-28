@@ -34,7 +34,7 @@ func NewGroupNodeInfo(mi *model.SelfMinerInfo, groupHash common.Hash, groupMembe
 }
 
 // GenSharePiece generate secret sharing for all members of the group
-func (nodeInfo groupNodeInfo) genSharePiece(mems []groupsig.ID) map[string]groupsig.Seckey {
+func (nodeInfo *groupNodeInfo) genSharePiece(mems []groupsig.ID) map[string]groupsig.Seckey {
 	shares := make(map[string]groupsig.Seckey)
 	// How many thresholds are there, how many keys are generated
 	secs := nodeInfo.genSecKeyList(nodeInfo.threshold())
@@ -51,7 +51,7 @@ func (nodeInfo groupNodeInfo) genSharePiece(mems []groupsig.ID) map[string]group
 // 			0: normal reception
 // 			-1: exception
 // 			1: complete signature private key aggregation and group public key aggregation
-func (nodeInfo groupNodeInfo) handleSharePiece(id groupsig.ID, share *model.SharePiece) int {
+func (nodeInfo *groupNodeInfo) handleSharePiece(id groupsig.ID, share *model.SharePiece) int {
 	nodeInfo.lock.Lock()
 	defer nodeInfo.lock.Unlock()
 	groupCreateLogger.Debugf("HandleSharePiece: sender=%v, share=%v, pub=%v...\n", id.ShortS(), share.Share.ShortS(), share.Pub.ShortS())
@@ -74,7 +74,7 @@ func (nodeInfo groupNodeInfo) handleSharePiece(id groupsig.ID, share *model.Shar
 }
 
 //hasPiece
-func (nodeInfo groupNodeInfo) hasSharePiece(id groupsig.ID) bool {
+func (nodeInfo *groupNodeInfo) hasSharePiece(id groupsig.ID) bool {
 	nodeInfo.lock.RLock()
 	defer nodeInfo.lock.RUnlock()
 	_, ok := nodeInfo.receivedSharePiece[id.GetHexString()]
@@ -82,28 +82,28 @@ func (nodeInfo groupNodeInfo) hasSharePiece(id groupsig.ID) bool {
 }
 
 // GetGroupPubKey get group public key (valid after secret exchange)
-func (nodeInfo groupNodeInfo) getGroupPubKey() groupsig.Pubkey {
+func (nodeInfo *groupNodeInfo) getGroupPubKey() groupsig.Pubkey {
 	return nodeInfo.groupPubKey
 }
 
 // getSignSecKey get the signature private key (this function
 // is not available in the official version)
-func (nodeInfo groupNodeInfo) getSignSecKey() groupsig.Seckey {
+func (nodeInfo *groupNodeInfo) getSignSecKey() groupsig.Seckey {
 	return nodeInfo.minerSignSeckey
 }
 
 // GetSeedPubKey obtain a private key (related to the group)
-func (nodeInfo groupNodeInfo) getSeedPubKey() groupsig.Pubkey {
+func (nodeInfo *groupNodeInfo) getSeedPubKey() groupsig.Pubkey {
 	return *groupsig.GeneratePubkey(nodeInfo.genSeedSecKey())
 }
 
-func (nodeInfo groupNodeInfo) threshold() int {
+func (nodeInfo *groupNodeInfo) threshold() int {
 	return model.Param.GetGroupK(nodeInfo.groupMemberNum)
 }
 
 // GenSecKey generate a private private key list for a group
 // threshold : threshold number
-func (nodeInfo groupNodeInfo) genSecKeyList(threshold int) []groupsig.Seckey {
+func (nodeInfo *groupNodeInfo) genSecKeyList(threshold int) []groupsig.Seckey {
 	secs := make([]groupsig.Seckey, threshold)
 	for i := 0; i < threshold; i++ {
 		secs[i] = *groupsig.NewSeckeyFromRand(nodeInfo.secretSeed.Deri(i))
@@ -111,17 +111,17 @@ func (nodeInfo groupNodeInfo) genSecKeyList(threshold int) []groupsig.Seckey {
 	return secs
 }
 
-func (nodeInfo groupNodeInfo) gotAllSharePiece() bool {
+func (nodeInfo *groupNodeInfo) gotAllSharePiece() bool {
 	return nodeInfo.receivedSharePieceCount() == nodeInfo.groupMemberNum
 }
 
 //GetSize
-func (nodeInfo groupNodeInfo) receivedSharePieceCount() int {
+func (nodeInfo *groupNodeInfo) receivedSharePieceCount() int {
 	return len(nodeInfo.receivedSharePiece)
 }
 
 // beingValidMiner become an effective miner
-func (nodeInfo groupNodeInfo) aggregateKeys() bool {
+func (nodeInfo *groupNodeInfo) aggregateKeys() bool {
 	if !nodeInfo.groupPubKey.IsValid() || !nodeInfo.minerSignSeckey.IsValid() {
 		// Generate group public key
 		nodeInfo.groupPubKey = *nodeInfo.genGroupPubKey()
@@ -132,7 +132,7 @@ func (nodeInfo groupNodeInfo) aggregateKeys() bool {
 }
 
 // GenMinerSignSecKey generate miner signature private key
-func (nodeInfo groupNodeInfo) genMinerSignSecKey() *groupsig.Seckey {
+func (nodeInfo *groupNodeInfo) genMinerSignSecKey() *groupsig.Seckey {
 	shares := make([]groupsig.Seckey, 0)
 	for _, v := range nodeInfo.receivedSharePiece {
 		shares = append(shares, v.Share)
@@ -142,7 +142,7 @@ func (nodeInfo groupNodeInfo) genMinerSignSecKey() *groupsig.Seckey {
 }
 
 // GenGroupPubKey generate group public key
-func (nodeInfo groupNodeInfo) genGroupPubKey() *groupsig.Pubkey {
+func (nodeInfo *groupNodeInfo) genGroupPubKey() *groupsig.Pubkey {
 	pubs := make([]groupsig.Pubkey, 0)
 	for _, v := range nodeInfo.receivedSharePiece {
 		pubs = append(pubs, v.Pub)
@@ -152,7 +152,7 @@ func (nodeInfo groupNodeInfo) genGroupPubKey() *groupsig.Pubkey {
 }
 
 // GenSecKey generate a private private key for a group
-func (nodeInfo groupNodeInfo) genSeedSecKey() groupsig.Seckey {
+func (nodeInfo *groupNodeInfo) genSeedSecKey() groupsig.Seckey {
 	return *groupsig.NewSeckeyFromRand(nodeInfo.secretSeed.Deri(0))
 }
 
