@@ -139,9 +139,9 @@ func (gx *GX) initMiner(instanceIndex int, apply, keystore, env, gateAddr string
 	minerInfo := model.NewSelfMinerInfo(gx.account.Miner.ID[:])
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 	if apply == "light" {
-		minerInfo.NType = common.MinerTypeValidator
+		minerInfo.MinerType = common.MinerTypeValidator
 	} else if apply == "heavy" {
-		minerInfo.NType = common.MinerTypeProposer
+		minerInfo.MinerType = common.MinerTypeProposer
 	}
 
 	minerId := "0x" + common.Bytes2Hex(gx.account.Miner.ID[:])

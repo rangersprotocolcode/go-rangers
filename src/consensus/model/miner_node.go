@@ -1,7 +1,6 @@
 package model
 
 import (
-	"x/src/middleware/types"
 	"x/src/common"
 	"x/src/consensus/groupsig"
 	"x/src/consensus/base"
