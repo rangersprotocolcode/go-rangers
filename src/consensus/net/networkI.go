@@ -16,7 +16,6 @@ type GroupCreateMessageProcessor interface {
 
 	OnMessageParentGroupConsensusSign(msg *model.ParentGroupConsensusSignMessage)
 
-
 	OnMessageGroupInit(msg *model.GroupInitMessage)
 
 	OnMessageSharePiece(msg *model.SharePieceMessage)
@@ -56,21 +55,19 @@ type GroupBrief struct {
 type NetworkServer interface {
 	SendGroupPingMessage(msg *model.CreateGroupPingMessage, receiver groupsig.ID)
 
-	SendGroupPongMessage(msg *model.CreateGroupPongMessage, groupId string)
+	SendGroupPongMessage(msg *model.CreateGroupPongMessage, groupId string, belongGroup bool)
 
-	SendCreateGroupRawMessage(msg *model.ParentGroupConsensusMessage)
+	SendCreateGroupRawMessage(msg *model.ParentGroupConsensusMessage, belongGroup bool)
 
 	SendCreateGroupSignMessage(msg *model.ParentGroupConsensusSignMessage, parentGid groupsig.ID)
 
 	SendGroupInitMessage(grm *model.GroupInitMessage)
-
 
 	SendKeySharePiece(spm *model.SharePieceMessage)
 
 	SendSignPubKey(spkm *model.SignPubKeyMessage)
 
 	BroadcastGroupInfo(cgm *model.GroupInitedMessage)
-
 
 	SendCastVerify(ccm *model.ConsensusCastMessage, group *GroupBrief, body []*types.Transaction)
 

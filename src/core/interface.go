@@ -72,4 +72,6 @@ type GroupChain interface {
 	Iterator() *GroupIterator
 
 	GetAvailableGroupsByMinerId(height uint64, minerId []byte) []*types.Group
+
+	GetSyncGroupsById(id []byte) []*types.Group
 }

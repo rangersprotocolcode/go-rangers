@@ -28,7 +28,7 @@ const (
 						</formats>
 					</seelog>`
 
-	GroupSyncLogConfig = `<seelog minlevel="error">
+	GroupSyncLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/group_syncLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
@@ -63,7 +63,6 @@ const (
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
 						</formats>
 					</seelog>`
-
 
 	GroupCreateLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">

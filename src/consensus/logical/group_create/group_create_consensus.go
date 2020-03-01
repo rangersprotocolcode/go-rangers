@@ -257,7 +257,7 @@ func (p *groupCreateProcessor) handleSharePieceMessage(groupHash common.Hash, sh
 					MemberNum:       int32(context.groupInitInfo.MemberSize()),
 					MemberMask:      context.generateMemberMask(),
 				}
-				if signInfo, ok := model.NewSignInfo(inGroupSignSecKey, p.minerInfo.ID, groupInitedMessage); ok {
+				if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, groupInitedMessage); ok {
 					groupInitedMessage.SignInfo = signInfo
 					groupCreateLogger.Debugf("Broadcast group inited message:%v", joinedGroupInfo.GroupID.ShortS())
 					p.NetServer.BroadcastGroupInfo(groupInitedMessage)

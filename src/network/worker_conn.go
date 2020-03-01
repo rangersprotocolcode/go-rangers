@@ -15,6 +15,8 @@ var (
 	methodCodeSendToGroup, _ = hex.DecodeString("80000003")
 	methodCodeJoinGroup, _   = hex.DecodeString("80000004")
 	methodCodeQuitGroup, _   = hex.DecodeString("80000005")
+	methodSetNetId, _        = hex.DecodeString("10000000")
+	methodSendToManager, _   = hex.DecodeString("80000006")
 )
 
 type WorkerConn struct {
@@ -30,11 +32,14 @@ func (workerConn *WorkerConn) Init(ipPort, selfId string, consensusHandler MsgHa
 	workerConn.selfId = selfId
 	workerConn.doRcv = func(wsHeader wsHeader, body []byte) {
 		method := wsHeader.method
-		if !bytes.Equal(method, methodCodeSend) && !bytes.Equal(method, methodCodeBroadcast) && !bytes.Equal(method, methodCodeSendToGroup) {
-			workerConn.logger.Error("received wrong method, wsHeader: %v", wsHeader)
+		if !bytes.Equal(method, methodCodeSend) && !bytes.Equal(method, methodCodeBroadcast) && !bytes.Equal(method, methodCodeSendToGroup) && !bytes.Equal(method, methodSendToManager) {
+			workerConn.logger.Error("received wrong method, wsHeader: %v,body:%v", wsHeader, body)
 			return
 		}
 
+		if bytes.Equal(method, methodSendToManager) {
+			body = body[netIdSize:]
+		}
 		workerConn.handleMessage(body, strconv.FormatUint(wsHeader.sourceId, 10))
 	}
 
@@ -53,7 +58,8 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 
 	code := message.Code
 	switch code {
-	case CurrentGroupCastMsg, CastVerifyMsg, VerifiedCastMsg2, AskSignPkMsg, AnswerSignPkMsg, ReqSharePiece, ResponseSharePiece:
+	case CurrentGroupCastMsg, CastVerifyMsg, VerifiedCastMsg2, AskSignPkMsg, AnswerSignPkMsg, ReqSharePiece, ResponseSharePiece,
+		GroupInitMsg, KeyPieceMsg, SignPubkeyMsg, GroupInitDoneMsg, CreateGroupaRaw, CreateGroupSign, GroupPing, GroupPong:
 		if nil != workerConn.consensusHandler {
 			workerConn.consensusHandler.Handle(from, *message)
 		}
@@ -159,9 +165,30 @@ func (workerConn *WorkerConn) SendToEveryone(msg Message) {
 	workerConn.sendMessage(methodCodeBroadcast, 0, msg, 0)
 }
 
-
-func (workerConn *WorkerConn)JoinGroupNet(groupId string){
+//加入组网络
+func (workerConn *WorkerConn) JoinGroupNet(groupId string) {
 	header := wsHeader{method: methodCodeJoinGroup, targetId: workerConn.generateTargetForGroup(groupId)}
 	workerConn.sendChan <- workerConn.headerToBytes(header)
-	workerConn.logger.Warnf("Join group: %d", header.targetId)
+	workerConn.logger.Debugf("Join group: %v", groupId)
+}
+
+func (workerConn *WorkerConn) SetNetId(netId []byte) {
+	header := wsHeader{method: methodSetNetId}
+	bytes := workerConn.headerToBytes(header)
+
+	headerBytes := make([]byte, len(bytes)+netIdSize)
+	copy(headerBytes[:len(bytes)], bytes[:])
+	copy(headerBytes[len(bytes):], netId[:])
+
+	workerConn.sendChan <- headerBytes
+	workerConn.logger.Debugf("Set net id: %v,header:%v", netId, headerBytes)
+}
+
+func (workerConn *WorkerConn) SendToStranger(strangerId []byte, msg Message) {
+	msgByte, err := marshalMessage(msg)
+	if err != nil {
+		workerConn.logger.Errorf("worker sendMessage error. invalid message: %v", msg)
+		return
+	}
+	workerConn.unicast(methodSendToManager, strangerId, msgByte, 0)
 }

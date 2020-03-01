@@ -98,6 +98,10 @@ type Network interface {
 	Init(logger log.Logger, gateAddr, selfMinerId string, consensusHandler MsgHandler)
 
 	JoinGroupNet(groupId string)
+
+	SetNetId(netId []byte)
+
+	SendToStranger(strangerId []byte, msg Message)
 }
 
 func GetNetInstance() Network {

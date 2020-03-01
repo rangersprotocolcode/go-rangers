@@ -116,9 +116,8 @@ func (gs *groupSyncer) groupReqHandler(msg notify.Message) {
 	sourceId := groupReqMsg.Peer
 	groupId := groupReqMsg.GroupIdByte
 	gs.logger.Debugf("Rcv group req from:%s,id:%v\n", sourceId, groupId)
-	group := groupChainImpl.GetGroupById(groupId)
+	groups := groupChainImpl.GetSyncGroupsById(groupId)
 
-	groups := []*types.Group{group}
 	l := len(groups)
 	if l == 0 {
 		gs.logger.Errorf("Get nil group by id:%v", groupId)

@@ -27,6 +27,9 @@ const (
 
 	// ws读写缓存
 	defaultBufferSize = 1024 * 1024 * 16
+
+	//追加在HEADER之后的网络id的大小
+	netIdSize = 32
 )
 
 type wsHeader struct {
@@ -166,6 +169,19 @@ func (base *baseConn) send(method []byte, target uint64, msg []byte, nonce uint6
 	base.logger.Debugf("send message. wsHeader: %v, length: %d,body:%s", header, len(msg), string(msg))
 }
 
+//新的单播接口使用
+func (base *baseConn) unicast(method []byte, strangerId []byte, msg []byte, nonce uint64) {
+	byteArray := make([]byte, protocolHeaderSize+netIdSize+len(msg))
+	copy(byteArray[0:4], method)
+	copy(byteArray[20:28], utility.UInt64ToByte(nonce))
+	copy(byteArray[protocolHeaderSize:protocolHeaderSize+netIdSize], strangerId)
+	copy(byteArray[protocolHeaderSize+netIdSize:], msg)
+
+	//todo 这里流控方法的参数不一致，暂不使用流控
+	base.sendChan <- byteArray
+	base.logger.Debugf("unicast message. strangerId:%v,msg:%v,byte: %v", strangerId, msg, byteArray)
+}
+
 // 构建网络消息
 func (base *baseConn) loadMsg(header wsHeader, body []byte) []byte {
 	h := base.headerToBytes(header)
@@ -294,7 +310,7 @@ func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, no
 		clientConn.logger.Errorf("Json unmarshal client message error:%s", err.Error())
 		return
 	}
-	clientConn.logger.Debugf("Rcv from client.Tx json:%s",txJson.ToString())
+	clientConn.logger.Debugf("Rcv from client.Tx json:%s", txJson.ToString())
 
 	tx := txJson.ToTransaction()
 	tx.RequestId = nonce

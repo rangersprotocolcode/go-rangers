@@ -54,7 +54,14 @@ func (s *server) Notify(isUniCast bool, gameId string, userid string, msg string
 	s.reader.Notify(isUniCast, gameId, userid, msg)
 }
 
-
-func (s *server)JoinGroupNet(groupId string){
+func (s *server) JoinGroupNet(groupId string) {
 	s.worker.JoinGroupNet(groupId)
+}
+
+func (s *server) SetNetId(netId []byte) {
+	s.worker.SetNetId(netId)
+}
+
+func (s *server) SendToStranger(strangerId []byte, msg Message) {
+	s.worker.SendToStranger(strangerId, msg)
 }

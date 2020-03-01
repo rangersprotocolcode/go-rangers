@@ -37,9 +37,9 @@ func (p *groupCreateProcessor) OnMessageCreateGroupPing(msg *model.CreateGroupPi
 	var err error
 	defer func() {
 		if err != nil {
-			groupCreateLogger.Errorf("from %v, gid %v, pingId %v, height=%v, won't pong, err=%v", msg.SignInfo.GetSignerID().ShortS(), msg.FromGroupID.ShortS(), msg.PingID, msg.BaseHeight, err)
+			groupCreateLogger.Errorf("Rcv create group ping. from %v, groupId %v, pingId %v, height=%v, won't pong, err=%v", msg.SignInfo.GetSignerID().ShortS(), msg.FromGroupID.ShortS(), msg.PingID, msg.BaseHeight, err)
 		} else {
-			groupCreateLogger.Debugf("from %v, gid %v, pingId %v, height=%v, pong!", msg.SignInfo.GetSignerID().ShortS(), msg.FromGroupID.ShortS(), msg.PingID, msg.BaseHeight)
+			groupCreateLogger.Debugf("Rcv create group ping. from %v, groupId %v, pingId %v, height=%v, pong!", msg.SignInfo.GetSignerID().ShortS(), msg.FromGroupID.ShortS(), msg.PingID, msg.BaseHeight)
 		}
 	}()
 	pk := access.GetMinerPubKey(msg.SignInfo.GetSignerID())
@@ -57,14 +57,13 @@ func (p *groupCreateProcessor) OnMessageCreateGroupPing(msg *model.CreateGroupPi
 			Timestamp: time.Now(),
 		}
 
-		//group := p.GetGroupInfo(msg.FromGroupID)
-		//gb := &net.GroupBrief{
-		//	Gid:    msg.FromGroupID,
-		//	MemIds: group.GetGroupMembers(),
-		//}
 		if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, pongMsg); ok {
 			pongMsg.SignInfo = signInfo
-			p.NetServer.SendGroupPongMessage(pongMsg, msg.FromGroupID.GetHexString())
+			var belongGroup = false
+			if p.joinedGroupStorage.BelongGroup(msg.FromGroupID) {
+				belongGroup = true
+			}
+			p.NetServer.SendGroupPongMessage(pongMsg, msg.FromGroupID.GetHexString(), belongGroup)
 		} else {
 			err = fmt.Errorf("gen sign fail")
 		}
@@ -79,7 +78,7 @@ func (p *groupCreateProcessor) OnMessageCreateGroupPing(msg *model.CreateGroupPi
 func (p *groupCreateProcessor) OnMessageCreateGroupPong(msg *model.CreateGroupPongMessage) {
 	var err error
 	defer func() {
-		groupCreateLogger.Debugf("OnMessageCreateGroupPong:rcv from %v, pingId %v, got pong, ret=%v", msg.SignInfo.GetSignerID().ShortS(), msg.PingID, err)
+		groupCreateLogger.Debugf("OnMessageCreateGroupPong:rcv from %v, pingId %v, got pong, result=%v", msg.SignInfo.GetSignerID().ShortS(), msg.PingID, err)
 	}()
 
 	ctx := p.context
@@ -159,24 +158,12 @@ func (p *groupCreateProcessor) tryStartParentConsensus(topHeight uint64) bool {
 		msg.SignInfo = signInfo
 	}
 
-	//memIDStrs := make([]string, 0)
-	//for _, mem := range gInfo.GroupMembers {
-	//	memIDStrs = append(memIDStrs, mem.ShortS())
-	//}
-	//newHashTraceLog("checkReqCreateGroupSign", gh.Hash, gm.processor.GetMinerID()).log("parent %v, members %v", ctx.parentInfo.GroupID.ShortS(), strings.Join(memIDStrs, ","))
-
-	// Send info
-	//le := &monitor.LogEntry{
-	//	LogType:  monitor.LogTypeCreateGroup,
-	//	Height:   gm.groupChain.Height(),
-	//	Hash:     gh.Hash.Hex(),
-	//	Proposer: gm.processor.GetMinerID().GetHexString(),
-	//}
-	//if monitor.Instance.IsFirstNInternalNodesInGroup(ctx.kings, 20) {
-	//	monitor.Instance.AddLog(le)
-	//}
-	p.NetServer.SendCreateGroupRawMessage(msg)
-	desc = fmt.Sprintf("start parent group consensus gHash=%v, memsize=%v", gh.Hash.ShortS(), gInfo.MemberSize())
+	var belongGroup = false
+	if p.joinedGroupStorage.BelongGroup(gInfo.ParentGroupID()) {
+		belongGroup = true
+	}
+	p.NetServer.SendCreateGroupRawMessage(msg, belongGroup)
+	desc = fmt.Sprintf("start parent group consensus. groupHash=%v, memsize=%v", gh.Hash.ShortS(), gInfo.MemberSize())
 	return true
 }
 
@@ -210,7 +197,6 @@ func (p *groupCreateProcessor) OnMessageParentGroupConsensus(msg *model.ParentGr
 		return
 	}
 
-	//tlog := newHashTraceLog("OMCGR", gh.Hash, msg.SI.GetID())
 	if ok, err := p.validateCreateGroupInfo(msg); ok {
 		signMsg := &model.ParentGroupConsensusSignMessage{
 			Launcher:  msg.SignInfo.GetSignerID(),
@@ -220,6 +206,7 @@ func (p *groupCreateProcessor) OnMessageParentGroupConsensus(msg *model.ParentGr
 		if signInfo, ok := model.NewSignInfo(inGroupSignSecKey, p.minerInfo.ID, signMsg); ok {
 			signMsg.SignInfo = signInfo
 			p.NetServer.SendCreateGroupSignMessage(signMsg, parentGid)
+			groupCreateLogger.Debugf("Send create group sign to: sender=%v,groupHash=%v", msg.SignInfo.GetSignerID().ShortS(), gh.Hash.ShortS(), )
 		} else {
 			groupCreateLogger.Errorf("ParentGroupConsensusSignMessage sign fail, signer id=%v,seckey=%v", p.minerInfo.ID.ShortS(), p.minerInfo.SecKey.ShortS())
 		}
@@ -272,7 +259,7 @@ func (p *groupCreateProcessor) OnMessageParentGroupConsensusSign(msg *model.Pare
 	}
 	mpk, ok := p.GetMemberSignPubKey(ctx.parentGroupInfo.GroupID, msg.SignInfo.GetSignerID())
 	if !ok {
-		groupCreateLogger.Errorf("getMemberSignPubKey not ok, ask id %v", ctx.parentGroupInfo.GroupID.ShortS())
+		groupCreateLogger.Errorf("can not get member sign pubkey , ask for %v", ctx.parentGroupInfo.GroupID.ShortS())
 		return
 	}
 	if !msg.VerifySign(mpk) {

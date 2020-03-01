@@ -13,11 +13,11 @@ const (
 	GROUP_INIT_MAX_SECONDS     = 60 * 60 * 24 //10分钟内完成初始化，否则该组失败。不再有初始化机会。(测试改成一天)
 	MaxSlotSize                = 3            //每一轮slot数
 
-	SSSS_THRESHOLD         int = 51  //1-100
-	GROUP_MAX_MEMBERS      int = 100 //一个组最大的成员数量
-	GROUP_MIN_MEMBERS      int = 10  //一个组最大的成员数量
-	MINER_MAX_JOINED_GROUP     = 5   //一个矿工最多加入的组数
-	CANDIDATES_MIN_RATIO       = 1   //最小的候选人相对于组成员数量的倍数
+	SSSS_THRESHOLD         int = 51 //1-100
+	GROUP_MAX_MEMBERS      int = 3  //一个组最大的成员数量
+	GROUP_MIN_MEMBERS      int = 3  //一个组最大的成员数量
+	MINER_MAX_JOINED_GROUP     = 5  //一个矿工最多加入的组数
+	CANDIDATES_MIN_RATIO       = 1  //最小的候选人相对于组成员数量的倍数
 
 	EPOCH                 int = 5
 	Group_Create_Gap          = EPOCH * 2
@@ -49,11 +49,11 @@ type ConsensusParam struct {
 	//EffectGapAfterApply uint64	//矿工申请后，到生效的高度间隔
 	PotentialProposal int //潜在提案者
 
-	ProposalBonus 		uint64	//提案奖励
-	PackBonus 			uint64	//打包一个分红交易奖励
-	VerifyBonus 		uint64	//验证者总奖励
+	ProposalBonus uint64 //提案奖励
+	PackBonus     uint64 //打包一个分红交易奖励
+	VerifyBonus   uint64 //验证者总奖励
 
-	MaxSlotSize       int
+	MaxSlotSize int
 }
 
 var Param ConsensusParam
@@ -86,7 +86,6 @@ func InitParam(cc common.SectionConfManager) {
 func (p *ConsensusParam) GetGroupK(max int) int {
 	return int(math.Ceil(float64(max*p.SSSSThreshold) / 100))
 }
-
 
 func (p *ConsensusParam) IsGroupMemberCountLegal(cnt int) bool {
 	return p.GroupMemberMin <= cnt && cnt <= p.GroupMemberMax

@@ -222,3 +222,32 @@ func (iterator *GroupIterator) MovePre() *types.Group {
 	iterator.current = groupChainImpl.GetGroupById(iterator.current.Header.PreGroup)
 	return iterator.current
 }
+
+func (chain *groupChain) GetSyncGroupsById(id []byte) []*types.Group {
+	result := make([]*types.Group, 0)
+	group := chain.getGroupById(id)
+	if group == nil {
+		return result
+	}
+	return chain.GetSyncGroupsByHeight(group.GroupHeight+1, 5)
+}
+
+func (chain *groupChain) GetSyncGroupsByHeight(height uint64, limit int) ([]*types.Group) {
+	chain.lock.RLock()
+	defer chain.lock.RUnlock()
+	return chain.getSyncGroupsByHeight(height, limit)
+}
+
+func (chain *groupChain) getSyncGroupsByHeight(height uint64, limit int) []*types.Group {
+	result := make([]*types.Group, 0)
+	for i := 0; i < limit; i++ {
+		groupId, _ := chain.groups.Get(generateKey(height + uint64(i)))
+		if nil != groupId {
+			result = append(result, chain.getGroupById(groupId))
+		} else {
+			break
+		}
+	}
+
+	return result
+}

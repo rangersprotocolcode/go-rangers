@@ -18,31 +18,59 @@ func NewNetworkServer() NetworkServer {
 	}
 }
 
-func id2String(ids []groupsig.ID) []string {
-	idStrs := make([]string, len(ids))
-	for idx, id := range ids {
-		idStrs[idx] = id.GetHexString()
+//====================================建组前共识=======================
+func (ns *NetworkServerImpl) SendGroupPingMessage(msg *model.CreateGroupPingMessage, receiver groupsig.ID) {
+	body, e := marshalCreateGroupPingMessage(msg)
+	if e != nil {
+		network.Logger.Errorf("[peer]Discard send SendGroupPingMessage because of marshal error:%s", e.Error())
+		return
 	}
-	return idStrs
+	m := network.Message{Code: network.GroupPing, Body: body}
+
+	ns.net.SendToStranger(receiver.Serialize(), m)
 }
 
-//------------------------------------组网络管理-----------------------
-
-func (ns *NetworkServerImpl) JoinGroupNet(groupId string) {
-	ns.net.JoinGroupNet(groupId)
+func (ns *NetworkServerImpl) SendGroupPongMessage(msg *model.CreateGroupPongMessage, groupId string, belongGroup bool) {
+	body, e := marshalCreateGroupPongMessage(msg)
+	if e != nil {
+		network.Logger.Errorf("[peer]Discard send SendGroupPongMessage because of marshal error:%s", e.Error())
+		return
+	}
+	m := network.Message{Code: network.GroupPong, Body: body}
+	ns.net.SpreadToGroup(groupId, m)
+	if belongGroup {
+		ns.send2Self(msg.GetSignerID(), m)
+	}
 }
 
-func (ns *NetworkServerImpl) ReleaseGroupNet(gid string) {
-	//todo
-	//ns.net.DissolveGroupNet(gid)
+func (ns *NetworkServerImpl) SendCreateGroupSignMessage(msg *model.ParentGroupConsensusSignMessage, parentGid groupsig.ID) {
+	body, e := marshalConsensusCreateGroupSignMessage(msg)
+	if e != nil {
+		logger.Errorf("[peer]Discard send ConsensusCreateGroupSignMessage because of marshal error:%s", e.Error())
+		return
+	}
+
+	m := network.Message{Code: network.CreateGroupSign, Body: body}
+	go ns.net.SendToStranger(msg.Launcher.Serialize(), m)
 }
 
-func (ns *NetworkServerImpl) send2Self(self groupsig.ID, m network.Message) {
-	go MessageHandler.Handle(self.GetHexString(), m)
+//开始建组
+func (ns *NetworkServerImpl) SendCreateGroupRawMessage(msg *model.ParentGroupConsensusMessage, belongGroup bool) {
+	body, e := marshalConsensusCreateGroupRawMessage(msg)
+	if e != nil {
+		logger.Errorf("[peer]Discard send ConsensusCreateGroupRawMessage because of marshal error:%s", e.Error())
+		return
+	}
+	m := network.Message{Code: network.CreateGroupaRaw, Body: body}
+
+	var groupId = msg.GroupInitInfo.ParentGroupID()
+	go ns.net.SpreadToGroup(groupId.GetHexString(), m)
+	if belongGroup {
+		ns.send2Self(msg.GetSignerID(), m)
+	}
 }
 
 //----------------------------------------------------组初始化-----------------------------------------------------------
-
 //广播 组初始化消息  全网广播
 func (ns *NetworkServerImpl) SendGroupInitMessage(grm *model.GroupInitMessage) {
 	body, e := marshalConsensusGroupRawMessage(grm)
@@ -52,22 +80,16 @@ func (ns *NetworkServerImpl) SendGroupInitMessage(grm *model.GroupInitMessage) {
 	}
 
 	m := network.Message{Code: network.GroupInitMsg, Body: body}
-	//给自己发
-	//ns.send2Self(grm.SI.GetID(), m)
-	//memIds := id2String(grm.GInfo.Mems)
-	//e = ns.net.Broadcast(m)
-	//e = ns.net.SpreadToGroup(grm.GInfo.GroupHash().Hex(), memIds, m, grm.GInfo.GroupHash().Bytes())
 	//目标组还未建成，需要点对点发送
 	for _, mem := range grm.GroupInitInfo.GroupMembers {
 		logger.Debugf("%v SendGroupInitMessage gHash %v to %v", grm.SignInfo.GetSignerID().GetHexString(), grm.GroupInitInfo.GroupHash().Hex(), mem.GetHexString())
-		ns.net.Send(mem.GetHexString(), m)
+		ns.net.SendToStranger(mem.Serialize(), m)
 	}
 	//logger.Debugf("SendGroupInitMessage hash:%s,  gHash %v", m.Hash(), grm.GInfo.GroupHash().Hex())
 }
 
 //组内广播密钥   for each定向发送 组内广播
 func (ns *NetworkServerImpl) SendKeySharePiece(spm *model.SharePieceMessage) {
-
 	body, e := marshalConsensusSharePieceMessage(spm)
 	if e != nil {
 		logger.Errorf("[peer]Discard send ConsensusSharePieceMessage because of marshal error:%s", e.Error())
@@ -80,8 +102,7 @@ func (ns *NetworkServerImpl) SendKeySharePiece(spm *model.SharePieceMessage) {
 	}
 
 	begin := time.Now()
-	//todo
-	//go ns.net.SendWithGroupRelay(spm.Dest.String(), spm.GHash.Hex(), m)
+	go ns.net.SendToStranger(spm.ReceiverId.Serialize(), m)
 	logger.Debugf("SendKeySharePiece to id:%s,hash:%s, gHash:%v, cost time:%v", spm.ReceiverId.GetHexString(), m.Hash(), spm.GroupHash.Hex(), time.Since(begin))
 }
 
@@ -123,13 +144,6 @@ func (ns *NetworkServerImpl) BroadcastGroupInfo(cgm *model.GroupInitedMessage) {
 
 //铸币节点完成铸币，将blockheader  签名后发送至组内其他节点进行验证。组内广播
 func (ns *NetworkServerImpl) SendCastVerify(ccm *model.ConsensusCastMessage, group *GroupBrief, body []*types.Transaction) {
-
-	//txs, e := types.MarshalTransactions(body)
-	//if e != nil {
-	//	logger.Errorf("[peer]Discard send cast verify because of MarshalTransactions error:%s", e.Error())
-	//	return
-	//}
-
 	var groupId groupsig.ID
 	e1 := groupId.Deserialize(ccm.BH.GroupId)
 	if e1 != nil {
@@ -139,9 +153,6 @@ func (ns *NetworkServerImpl) SendCastVerify(ccm *model.ConsensusCastMessage, gro
 	timeFromCast := time.Since(ccm.BH.CurTime)
 	begin := time.Now()
 
-	//txMsg := network.Message{Code: network.TransactionMsg, Body: txs}
-	//go ns.net.SpreadToGroup(groupId.GetHexString(), mems, txMsg, ccm.BH.TxTree.Bytes())
-
 	ccMsg, e := marshalConsensusCastMessage(ccm)
 	if e != nil {
 		logger.Errorf("[peer]Discard send cast verify because of marshalConsensusCastMessage error:%s", e.Error())
@@ -149,9 +160,6 @@ func (ns *NetworkServerImpl) SendCastVerify(ccm *model.ConsensusCastMessage, gro
 	}
 	m := network.Message{Code: network.CastVerifyMsg, Body: ccMsg}
 	go ns.net.SpreadToGroup(groupId.GetHexString(), m)
-
-	//mems := id2String(group.MemIds)
-	//go ns.net.SpreadToGroup(groupId.GetHexString(), mems, m, ccm.BH.Hash.Bytes())
 	logger.Debugf("send CAST_VERIFY_MSG,%d-%d to group:%s,invoke SpreadToGroup cost time:%v,time from cast:%v,hash:%s", ccm.BH.Height, ccm.BH.TotalQN, groupId.GetHexString(), time.Since(begin), timeFromCast, ccm.BH.Hash.String())
 }
 
@@ -191,20 +199,7 @@ func (ns *NetworkServerImpl) BroadcastNewBlock(cbm *model.ConsensusBlockMessage,
 	//	time.Now().UnixNano(), "", "", common.InstanceIndex, cbm.Block.Header.CurTime.UnixNano())
 }
 
-func (ns *NetworkServerImpl) AnswerSignPkMessage(msg *model.SignPubKeyMessage, receiver groupsig.ID) {
-	body, e := marshalConsensusSignPubKeyMessage(msg)
-	if e != nil {
-		network.Logger.Errorf("[peer]Discard send ConsensusSignPubKeyMessage because of marshal error:%s", e.Error())
-		return
-	}
-
-	m := network.Message{Code: network.AnswerSignPkMsg, Body: body}
-
-	begin := time.Now()
-	go ns.net.Send(receiver.GetHexString(), m)
-	logger.Debugf("AnswerSignPkMessage %v, hash:%s, dummyId:%v, cost time:%v", receiver.GetHexString(), m.Hash(), msg.GroupHash.Hex(), time.Since(begin))
-}
-
+//-----------------------------------------------------------------密钥请求----------------------------------------------
 func (ns *NetworkServerImpl) AskSignPkMessage(msg *model.SignPubkeyReqMessage, receiver groupsig.ID) {
 	body, e := marshalConsensusSignPubKeyReqMessage(msg)
 	if e != nil {
@@ -215,58 +210,22 @@ func (ns *NetworkServerImpl) AskSignPkMessage(msg *model.SignPubkeyReqMessage, r
 	m := network.Message{Code: network.AskSignPkMsg, Body: body}
 
 	begin := time.Now()
-	go ns.net.Send(receiver.GetHexString(), m)
+	go ns.net.SendToStranger(receiver.Serialize(), m)
 	logger.Debugf("AskSignPkMessage %v, hash:%s, cost time:%v", receiver.GetHexString(), m.Hash(), time.Since(begin))
 }
 
-//====================================建组前共识=======================
-
-//开始建组
-func (ns *NetworkServerImpl) SendCreateGroupRawMessage(msg *model.ParentGroupConsensusMessage) {
-	body, e := marshalConsensusCreateGroupRawMessage(msg)
+func (ns *NetworkServerImpl) AnswerSignPkMessage(msg *model.SignPubKeyMessage, receiver groupsig.ID) {
+	body, e := marshalConsensusSignPubKeyMessage(msg)
 	if e != nil {
-		logger.Errorf("[peer]Discard send ConsensusCreateGroupRawMessage because of marshal error:%s", e.Error())
+		network.Logger.Errorf("[peer]Discard send ConsensusSignPubKeyMessage because of marshal error:%s", e.Error())
 		return
 	}
-	m := network.Message{Code: network.CreateGroupaRaw, Body: body}
 
-	var groupId = msg.GroupInitInfo.ParentGroupID()
-	go ns.net.SpreadToGroup(groupId.GetHexString(), m)
-}
+	m := network.Message{Code: network.AnswerSignPkMsg, Body: body}
 
-func (ns *NetworkServerImpl) SendCreateGroupSignMessage(msg *model.ParentGroupConsensusSignMessage, parentGid groupsig.ID) {
-	//body, e := marshalConsensusCreateGroupSignMessage(msg)
-	//if e != nil {
-	//	logger.Errorf("[peer]Discard send ConsensusCreateGroupSignMessage because of marshal error:%s", e.Error())
-	//	return
-	//}
-
-	//todo
-	//m := network.Message{Code: network.CreateGroupSign, Body: body}
-	//go ns.net.SendWithGroupRelay(msg.Launcher.String(), parentGid.GetHexString(), m)
-}
-
-func (ns *NetworkServerImpl) SendGroupPingMessage(msg *model.CreateGroupPingMessage, receiver groupsig.ID) {
-	body, e := marshalCreateGroupPingMessage(msg)
-	if e != nil {
-		network.Logger.Errorf("[peer]Discard send SendGroupPingMessage because of marshal error:%s", e.Error())
-		return
-	}
-	m := network.Message{Code: network.GroupPing, Body: body}
-
-	ns.net.Send(receiver.GetHexString(), m)
-}
-
-func (ns *NetworkServerImpl) SendGroupPongMessage(msg *model.CreateGroupPongMessage, groupId string) {
-	body, e := marshalCreateGroupPongMessage(msg)
-	if e != nil {
-		network.Logger.Errorf("[peer]Discard send SendGroupPongMessage because of marshal error:%s", e.Error())
-		return
-	}
-	m := network.Message{Code: network.GroupPong, Body: body}
-	//mems := id2String(group.MemIds)
-
-	ns.net.SpreadToGroup(groupId, m)
+	begin := time.Now()
+	go ns.net.SendToStranger(receiver.Serialize(), m)
+	logger.Debugf("AnswerSignPkMessage %v, hash:%s, dummyId:%v, cost time:%v", receiver.GetHexString(), m.Hash(), msg.GroupHash.Hex(), time.Since(begin))
 }
 
 func (ns *NetworkServerImpl) ReqSharePiece(msg *model.ReqSharePieceMessage, receiver groupsig.ID) {
@@ -277,7 +236,7 @@ func (ns *NetworkServerImpl) ReqSharePiece(msg *model.ReqSharePieceMessage, rece
 	}
 	m := network.Message{Code: network.ReqSharePiece, Body: body}
 
-	ns.net.Send(receiver.GetHexString(), m)
+	ns.net.SendToStranger(receiver.Serialize(), m)
 }
 
 func (ns *NetworkServerImpl) ResponseSharePiece(msg *model.ResponseSharePieceMessage, receiver groupsig.ID) {
@@ -288,5 +247,20 @@ func (ns *NetworkServerImpl) ResponseSharePiece(msg *model.ResponseSharePieceMes
 	}
 	m := network.Message{Code: network.ResponseSharePiece, Body: body}
 
-	ns.net.Send(receiver.GetHexString(), m)
+	ns.net.SendToStranger(receiver.Serialize(), m)
+}
+
+//------------------------------------组网络管理-----------------------
+
+func (ns *NetworkServerImpl) JoinGroupNet(groupId string) {
+	ns.net.JoinGroupNet(groupId)
+}
+
+func (ns *NetworkServerImpl) ReleaseGroupNet(gid string) {
+	//todo
+	//ns.net.DissolveGroupNet(gid)
+}
+
+func (ns *NetworkServerImpl) send2Self(self groupsig.ID, m network.Message) {
+	go MessageHandler.Handle(self.GetHexString(), m)
 }
