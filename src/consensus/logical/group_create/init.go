@@ -25,9 +25,9 @@ type groupCreateProcessor struct {
 	createdHeights      [50]uint64 // Identifies whether the group height has already been created
 	createdHeightsIndex int
 
+	groupInitContextCache groupInitContextCache
 	joinedGroupStorage    *access.JoinedGroupStorage
 	groupSignCollectorMap sync.Map // id==>group hash,value==>GroupPubkeyCollector
-	groupInitContextCache groupInitContextCache
 
 	minerReader   *access.MinerPoolReader
 	groupAccessor *access.GroupAccessor
