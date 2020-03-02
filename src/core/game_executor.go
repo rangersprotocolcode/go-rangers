@@ -321,7 +321,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 		gameId := txRaw.Target
 		accountDB := service.AccountDBManagerInstance.GetAccountDB(gameId, true)
 
-		response, ok := Withdraw(accountDB, &txRaw, false)
+		response, ok := service.Withdraw(accountDB, &txRaw, false)
 		if ok {
 			message = response
 			result = true
@@ -475,7 +475,6 @@ func (executor *GameExecutor) RunNotify(msg notify.Message) {
 
 	txRaw := message.Tx
 	txRaw.RequestId = message.Nonce
-	//gameId := txRaw.Target
 	gameId := "fixed"
 
 	// 校验交易类型

@@ -52,7 +52,6 @@ type blockChain struct {
 	heightDB     db.Database
 	verifyHashDB db.Database
 
-	executor        *VMExecutor
 	forkProcessor   *forkProcessor
 	transactionPool service.TransactionPool
 
@@ -109,7 +108,6 @@ func initBlockChain() error {
 		return err
 	}
 
-	chain.executor = NewVMExecutor(chain)
 	chain.forkProcessor = initForkProcessor(chain)
 
 	initMinerManager()
@@ -176,7 +174,9 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		logger.Errorf("Fail to new account db while casting block!Latest block height:%d,error:%s", latestBlock.Height, err.Error())
 		return nil
 	}
-	stateRoot, evictedTxs, transactions, receipts, err, _ := chain.executor.Execute(state, block, height, "casting")
+
+	executor := newVMExecutor(state, block, "casting")
+	stateRoot, evictedTxs, transactions, receipts, err, _ := executor.Execute()
 	middleware.PerfLogger.Infof("fin execute txs. last: %v height: %v", time.Since(timestamp), height)
 
 	transactionHashes := make([]common.Hashes, len(transactions))

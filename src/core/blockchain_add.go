@@ -133,7 +133,8 @@ func (chain *blockChain) executeTransaction(block *types.Block) (bool, *account.
 		return false, state, nil
 	}
 
-	stateRoot, _, _, receipts, err, _ := chain.executor.Execute(state, block, block.Header.Height, "fullverify")
+	vmExecutor := newVMExecutor(state, block, "fullverify")
+	stateRoot, _, _, receipts, err, _ := vmExecutor.Execute()
 	if common.ToHex(stateRoot.Bytes()) != common.ToHex(block.Header.StateTree.Bytes()) {
 		logger.Errorf("Fail to verify state tree, hash1:%x hash2:%x", stateRoot.Bytes(), block.Header.StateTree.Bytes())
 		return false, state, receipts

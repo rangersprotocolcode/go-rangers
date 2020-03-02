@@ -1,4 +1,4 @@
-package core
+package service
 
 import (
 	"x/src/storage/account"
@@ -8,7 +8,7 @@ import (
 	"x/src/network"
 	"x/src/utility"
 	"fmt"
-	"x/src/service"
+	"math/big"
 )
 
 // 提现
@@ -77,7 +77,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 		}
 
 		for _, k := range withDrawReq.NFT {
-			nft := service.NFTManagerInstance.DeleteNFT(source, k.SetId, k.Id, accountdb)
+			nft := NFTManagerInstance.DeleteNFT(source, k.SetId, k.Id, accountdb)
 			if nil == nft {
 				return "NFT Not Exist In This Game", false
 			}
@@ -121,4 +121,25 @@ func sendWithdrawToCoiner(withDrawReq types.WithDrawReq, transaction *types.Tran
 	txLogger.Tracef("After execute withdraw.Send msg to coin proxy:%s", t.ToTxJson().ToString())
 	go network.GetNetInstance().SendToCoinConnector(msg)
 	return true
+}
+
+/**
+字符串的余额比较
+withDrawAmount金额大于等于ftValue 返回TRUE 否则返回FALSE
+withDrawAmount 是浮点数的STRING "11.256"
+ftValue 是bigInt的STRING "56631"
+如果格式有错误返回FALSE
+返回为true的话 返回二者的差值string
+*/
+func canWithDraw(withDrawAmount string, ftValue *big.Int) (bool, *big.Int) {
+	b1, err1 := utility.StrToBigInt(withDrawAmount)
+	if err1 != nil {
+		return false, nil
+	}
+
+	if b1.Cmp(ftValue) > 0 {
+		return false, nil
+	}
+
+	return true, ftValue.Sub(ftValue, b1)
 }

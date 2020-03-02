@@ -31,6 +31,7 @@ func InitCore(helper types.ConsensusHelper) error {
 		initGroupChain()
 	}
 
+	initExecutors()
 	initRewardCalculator(MinerManagerImpl, blockChainImpl, groupChainImpl)
 	initRefundManager()
 
