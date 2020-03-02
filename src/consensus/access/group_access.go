@@ -356,11 +356,3 @@ func (groupAccessor *GroupAccessor) GetAvailableGroups(height uint64) []*model.G
 	}
 	return gs
 }
-
-//func (gg *GlobalGroups) GetInitedGroup(gHash common.Hash) *InitedGroup {
-//	return gg.generator.getInitedGroup(gHash)
-//}
-//
-//func (gg *GlobalGroups) removeInitedGroup(gHash common.Hash) {
-//	gg.generator.removeInitedGroup(gHash)
-//}

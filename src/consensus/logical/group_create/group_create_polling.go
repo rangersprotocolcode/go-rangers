@@ -23,7 +23,6 @@ func (p *groupCreateProcessor) StartCreateGroupPolling() {
 
 	gap := model.Param.GroupCreateGap
 	if topHeight > gap {
-		//todo 这里为啥要来一次？
 		p.tryStartParentConsensus(topHeight)
 
 		pre := p.blockChain.QueryBlockByHash(top.PreHash)
@@ -68,7 +67,6 @@ func (p *groupCreateProcessor) tryCreateGroup(baseHeight uint64) {
 		return
 	}
 
-	//todo 既然改成创始组创建了 之类还有必要检查吗？
 	// if current node doesn't belong to the selected parent group, it won't start the routine
 	if !p.joinedGroupStorage.BelongGroup(baseCtx.parentGroupInfo.GroupID) {
 		err = fmt.Errorf("next select group id %v, not belong to the group", baseCtx.parentGroupInfo.GroupID.GetHexString())
@@ -110,9 +108,7 @@ func (p *groupCreateProcessor) selectKing(theBH *types.BlockHeader, group *model
 
 // selectParentGroup determine the parent group randomly and the result is deterministic because of the base BlockHeader
 //获取父亲组
-//todo 都是由创世组创建的？
 func (p *groupCreateProcessor) selectParentGroup(baseBH *types.BlockHeader, preGroupID []byte) (*model.GroupInfo, error) {
-	//todo 这里如何选择？
 	return p.groupAccessor.GetGenesisGroup(), nil
 }
 
@@ -230,20 +226,3 @@ func (p *groupCreateProcessor) setCreatingGroupContext(baseCtx *createGroupBaseI
 func validateHeight(h uint64) bool {
 	return h > 0 && h%model.Param.CreateGroupInterval == 0
 }
-
-//// GroupCreateChecker is responsible for legality verification
-//type GroupCreateChecker struct {
-//	processor      *Processor
-//	access         *MinerPoolReader
-//	createdHeights [50]uint64 // Identifies whether the group height has already been created
-//	curr           int
-//	lock           sync.RWMutex // CreateHeightGroups mutex to prevent repeated writes
-//}
-//
-//func newGroupCreateChecker(proc *Processor) *GroupCreateChecker {
-//	return &GroupCreateChecker{
-//		processor: proc,
-//		access:    proc.minerReader,
-//		curr:      0,
-//	}
-//}
