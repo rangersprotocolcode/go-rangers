@@ -197,7 +197,9 @@ func (chain *groupChain) save(group *types.Group) error {
 	chain.groups.Put([]byte(groupCountKey), utility.UInt64ToByte(chain.count))
 	chain.lastGroup = group
 
-	notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group,})
+	if nil != notify.BUS {
+		notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group,})
+	}
 	if GroupSyncer != nil {
 		GroupSyncer.sendGroupHeightToNeighbor(chain.count)
 	}

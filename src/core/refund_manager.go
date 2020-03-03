@@ -103,7 +103,8 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint
 	refund := money
 	left := miner.Stake - money
 	// 验证小于最小质押量，则退出矿工
-	if miner.Type == common.MinerTypeProposer && left < common.ProposerStake {
+	if miner.Type == common.MinerTypeProposer && left < common.ProposerStake ||
+		miner.Type == common.MinerTypeValidator && left < common.ValidatorStake {
 		MinerManagerImpl.removeMiner(minerId, miner.Type, accountdb)
 		refund = miner.Stake
 	} else {
