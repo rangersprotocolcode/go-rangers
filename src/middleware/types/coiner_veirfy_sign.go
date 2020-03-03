@@ -120,7 +120,7 @@ func (self *Ecc) Verify(info []byte, signed []byte) bool {
 	addr := PubkeyToAddress(pubk.PubKey)
 	var finded bool = false
 	for _, v := range self.Whitelist {
-		if strings.ToLower(common.Bytes2Hex(addr)) == strings.ToLower(v) {
+		if strings.ToLower(common.ToHex(addr)) == strings.ToLower(v) {
 			finded = true
 			break
 		}
@@ -308,7 +308,7 @@ func Keccak256(data ...[]byte) []byte {
 }
 func PubkeyToAddress(p ecdsa.PublicKey) []byte {
 	pubBytes := FromECDSAPub(&p)
-	return Keccak256(pubBytes[1:])
+	return Keccak256(pubBytes[1:])[12:]
 }
 
 func (self *Incoming) ToJson() []byte {
