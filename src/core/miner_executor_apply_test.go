@@ -333,6 +333,38 @@ func testMinerExecutorApply8(t *testing.T) {
 	}
 }
 
+// 正常流程
+// 默认账户
+func testMinerExecutorApply9(t *testing.T) {
+	accountDB := getTestAccountDB()
+	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(1000000000000000))
+	miner := &types.Miner{
+		Type:  common.MinerTypeValidator,
+		Stake: common.ValidatorStake * 3,
+	}
+	data, _ := json.Marshal(miner)
+
+	transaction := &types.Transaction{
+		Source: "0x0003",
+		Data:   string(data),
+	}
+
+	processor := &minerApplyExecutor{}
+	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
+		t.Fatalf("error apply miner")
+	}
+
+	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
+	if miner2 == nil || miner2.Stake != miner.Stake || miner2.ApplyHeight != 10086+common.HeightAfterStake {
+		t.Fatalf("error apply miner")
+	}
+
+	left := accountDB.GetBalance(common.HexToAddress("0x0003"))
+	if left == nil || 0 != left.Cmp(big.NewInt(700000000000000)) {
+		t.Fatalf("error money")
+	}
+}
+
 func TestMinerExecutorApplyAll(t *testing.T) {
 	fs := []func(*testing.T){testMinerExecutorApply,
 		testMinerExecutorApply1,
@@ -342,7 +374,8 @@ func TestMinerExecutorApplyAll(t *testing.T) {
 		testMinerExecutorApply5,
 		testMinerExecutorApply6,
 		testMinerExecutorApply7,
-		testMinerExecutorApply8,}
+		testMinerExecutorApply8,
+		testMinerExecutorApply9,}
 
 	for i, f := range fs {
 		name := strconv.Itoa(i)
