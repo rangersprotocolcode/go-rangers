@@ -308,7 +308,7 @@ func Keccak256(data ...[]byte) []byte {
 }
 func PubkeyToAddress(p ecdsa.PublicKey) []byte {
 	pubBytes := FromECDSAPub(&p)
-	return Keccak256(pubBytes[1:])[12:]
+	return Keccak256(pubBytes[1:])
 }
 
 func (self *Incoming) ToJson() []byte {
