@@ -9,6 +9,7 @@ import (
 )
 
 type minerRefundExecutor struct {
+
 }
 
 func (this *minerRefundExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
