@@ -668,7 +668,7 @@ func teardown(id string) {
 //	teardown()
 //}
 
-func TestAll(t *testing.T) {
+func TestMinerExecutorRefundAll(t *testing.T) {
 	fs := []func(*testing.T){testMinerRefundExecutor,
 		testMinerRefundExecutor1,
 		testMinerRefundExecutor2,
