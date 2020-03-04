@@ -175,6 +175,7 @@ func (gx *GX) initMiner(instanceIndex int, apply, keystore, env, gateAddr string
 }
 
 func (gx *GX) getAccountInfo(keystore, address string) error {
+	fmt.Printf("get account info. keystore:%v,address:%v\n", keystore, address)
 	aop, err := initAccountManager(keystore, true)
 	if err != nil {
 		fmt.Printf("initAccountManager:%s\n", err.Error())
