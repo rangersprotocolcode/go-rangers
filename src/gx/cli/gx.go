@@ -87,7 +87,8 @@ func (gx *GX) Run() {
 
 	common.InitConf(*configFile)
 	walletManager = newWallets()
-	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString("instance", "index", ""))
+	common.GlobalConf.SetInt(instanceSection, indexKey, *instanceIndex)
+	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString(instanceSection, indexKey, ""))
 
 	if *apply == "heavy" {
 		fmt.Println("Welcome to be a rocketProtocol propose miner!")
