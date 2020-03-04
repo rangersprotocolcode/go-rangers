@@ -183,9 +183,12 @@ func (gx *GX) getAccountInfo(keystore, address string) error {
 	}
 	defer aop.Close()
 
-	acm := aop.(*AccountManager)
+	fmt.Printf("db path:%v\n", aop.db.Path())
+	if aop.db == nil {
+		fmt.Printf("db is nil\n")
+	}
 	if address != "" {
-		if aci, err := acm.getAccountInfo(address); err != nil {
+		if aci, err := aop.getAccountInfo(address); err != nil {
 			return fmt.Errorf("cannot get miner, err:%v", err.Error())
 		} else {
 			if aci.Miner == nil {
@@ -195,7 +198,7 @@ func (gx *GX) getAccountInfo(keystore, address string) error {
 			return nil
 		}
 	} else {
-		aci := acm.getFirstMinerAccount()
+		aci := aop.getFirstMinerAccount()
 		if aci != nil {
 			gx.account = *aci
 			return nil

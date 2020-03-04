@@ -170,7 +170,7 @@ func (am *AccountManager) Close() {
 	am.db.Close()
 }
 
-func initAccountManager(keystore string, readyOnly bool) (accountOp, error) {
+func initAccountManager(keystore string, readyOnly bool) (*AccountManager, error) {
 	fmt.Printf("initAccountManager:keystore:%v,readOnly:%v\n", keystore, readyOnly)
 	if readyOnly && !dirExists(keystore) {
 		accountManager, err := newAccountManager(keystore)
@@ -198,6 +198,7 @@ func newAccountManager(ks string) (*AccountManager, error) {
 	fmt.Printf("new level db.keystore:%s\n", ks)
 	accountManagerDB, err := db.NewLDBDatabase(ks, 128, 128)
 	if err != nil {
+		fmt.Printf("new ldb failed:%v",err.Error())
 		return nil, fmt.Errorf("new ldb fail:%v", err.Error())
 	}
 	return &AccountManager{db: accountManagerDB}, nil
