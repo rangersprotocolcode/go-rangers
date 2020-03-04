@@ -86,12 +86,9 @@ func (am *AccountManager) NewAccount(password string, miner bool) *Result {
 		}
 		account.Miner = minerRaw
 	}
-	fmt.Printf("new account:%v\n", account)
 	if err := am.storeAccount(account); err != nil {
 		return opError(err)
 	}
-	test, err := am.db.Get([]byte{})
-	fmt.Printf("db test2 get result:%v,err:%v\n", test, err)
 	return opSuccess(address.GetHexString())
 }
 
@@ -173,23 +170,17 @@ func (am *AccountManager) Close() {
 }
 
 func initAccountManager(keystore string, readyOnly bool) (*AccountManager, error) {
-	fmt.Printf("initAccountManager:keystore:%v,readOnly:%v\n", keystore, readyOnly)
 	if readyOnly && !dirExists(keystore) {
 		accountManager, err := newAccountManager(keystore)
 		if err != nil {
 			panic(err)
 		}
-		test, err := accountManager.db.Get([]byte{})
-		fmt.Printf("db test1 get result:%v,err:%v\n", test, err)
 
-		fmt.Printf("after new account manager.\n", )
 		ret := accountManager.NewAccount(defaultPassword, true)
 		if !ret.IsSuccess() {
 			fmt.Println(ret.Message)
 			panic(ret.Message)
 		}
-		test, err = accountManager.db.Get([]byte{})
-		fmt.Printf("db test23get result:%v,err:%v\n", test, err)
 		return accountManager, nil
 	}
 
@@ -202,22 +193,16 @@ func initAccountManager(keystore string, readyOnly bool) (*AccountManager, error
 }
 
 func newAccountManager(ks string) (*AccountManager, error) {
-	fmt.Printf("new level db.keystore:%s\n", ks)
 	accountManagerDB, err := db.NewLDBDatabase(ks, 128, 128)
 	if err != nil {
-		fmt.Printf("new ldb failed:%v",err.Error())
+		fmt.Printf("new ldb failed:%v", err.Error())
 		return nil, fmt.Errorf("new ldb fail:%v", err.Error())
 	}
-	//err = accountManagerDB.Put([]byte{1},[]byte{22})
-	//fmt.Printf("db test1 put ,err:%v\n", err)
-
-	test, err := accountManagerDB.Get([]byte{1})
-	fmt.Printf("db test4 get result:%v,err:%v\n", test, err)
 	return &AccountManager{db: accountManagerDB}, nil
 }
 
 func (am *AccountManager) loadAccount(addr string) (*Account, error) {
-	fmt.Printf("key:%v\n", []byte(addr))
+	//fmt.Printf("load account.addr:%v,key:%v", addr, common.FromHex(addr))
 	v, err := am.db.Get(common.FromHex(addr))
 	//v, err := am.db.Get([]byte(addr))
 	if err != nil {
@@ -241,7 +226,7 @@ func (am *AccountManager) loadAccount(addr string) (*Account, error) {
 	acc.Address = address.String()
 
 	bs, _ = json.Marshal(acc)
-	fmt.Println(string(bs))
+	fmt.Println("accout info:" + string(bs))
 
 	return acc, nil
 }
@@ -258,15 +243,14 @@ func (am *AccountManager) storeAccount(account *Account) error {
 	}
 
 	err = am.db.Put(account.Miner.ID[:], ct)
-	fmt.Printf("store account:%v,key:%v,err:%v\n", account.Miner.ID[:], account.Miner.ID[:],err)
+	//fmt.Printf("store account:%v,key:%v,err:%v\n", account.Miner.ID[:], account.Miner.ID[:], err)
 	return err
 }
 
 func (am *AccountManager) getFirstMinerAccount() *Account {
 	iter := am.db.NewIterator()
 	for iter.Next() {
-		fmt.Printf("iter key:%v\n", string(iter.Key()))
-		if ac, err := am.getAccountInfo(string(iter.Key())); err != nil {
+		if ac, err := am.getAccountInfo(common.Bytes2Hex(iter.Key())); err != nil {
 			panic(fmt.Sprintf("getAccountInfo err,addr=%v,err=%v", iter.Key(), err.Error()))
 		} else {
 			if ac.Miner != nil {

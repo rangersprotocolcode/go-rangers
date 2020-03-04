@@ -175,7 +175,6 @@ func (gx *GX) initMiner(instanceIndex int, apply, keystore, env, gateAddr string
 }
 
 func (gx *GX) getAccountInfo(keystore, address string) error {
-	fmt.Printf("get account info. keystore:%v,address:%v\n", keystore, address)
 	aop, err := initAccountManager(keystore, true)
 	if err != nil {
 		fmt.Printf("initAccountManager:%s\n", err.Error())
@@ -184,10 +183,6 @@ func (gx *GX) getAccountInfo(keystore, address string) error {
 
 	defer aop.Close()
 
-	fmt.Printf("db path:%v\n", aop.db.Path())
-	if aop.db == nil {
-		fmt.Printf("db is nil\n")
-	}
 	if address != "" {
 		if aci, err := aop.getAccountInfo(address); err != nil {
 			return fmt.Errorf("cannot get miner, err:%v", err.Error())
