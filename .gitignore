@@ -28,5 +28,6 @@ src/gopkg.in
 */database/
 
 main
+rocket-node
 
 venv/
