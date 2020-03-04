@@ -90,6 +90,8 @@ func (am *AccountManager) NewAccount(password string, miner bool) *Result {
 	if err := am.storeAccount(account); err != nil {
 		return opError(err)
 	}
+	test, err := am.db.Get([]byte{})
+	fmt.Printf("db test2 get result:%v,err:%v\n", test, err)
 	return opSuccess(address.GetHexString())
 }
 
@@ -177,12 +179,17 @@ func initAccountManager(keystore string, readyOnly bool) (*AccountManager, error
 		if err != nil {
 			panic(err)
 		}
+		test, err := accountManager.db.Get([]byte{})
+		fmt.Printf("db test1 get result:%v,err:%v\n", test, err)
+
 		fmt.Printf("after new account manager.\n", )
 		ret := accountManager.NewAccount(defaultPassword, true)
 		if !ret.IsSuccess() {
 			fmt.Println(ret.Message)
 			panic(ret.Message)
 		}
+		test, err = accountManager.db.Get([]byte{})
+		fmt.Printf("db test23get result:%v,err:%v\n", test, err)
 		return accountManager, nil
 	}
 

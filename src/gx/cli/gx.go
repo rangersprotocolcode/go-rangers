@@ -181,8 +181,6 @@ func (gx *GX) getAccountInfo(keystore, address string) error {
 		fmt.Printf("initAccountManager:%s\n", err.Error())
 		return err
 	}
-	test, err := aop.db.Get([]byte{})
-	fmt.Printf("db test get result:%v,err:%v\n", test, err)
 
 	defer aop.Close()
 
