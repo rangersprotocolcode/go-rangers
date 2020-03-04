@@ -208,6 +208,8 @@ func newAccountManager(ks string) (*AccountManager, error) {
 		fmt.Printf("new ldb failed:%v",err.Error())
 		return nil, fmt.Errorf("new ldb fail:%v", err.Error())
 	}
+	test, err := accountManagerDB.Get([]byte{})
+	fmt.Printf("db test4 get result:%v,err:%v\n", test, err)
 	return &AccountManager{db: accountManagerDB}, nil
 }
 
@@ -253,7 +255,7 @@ func (am *AccountManager) storeAccount(account *Account) error {
 	}
 
 	err = am.db.Put(account.Miner.ID[:], ct)
-	fmt.Printf("store account:%v,key:%v\n", account.Miner.ID[:], account.Miner.ID[:])
+	fmt.Printf("store account:%v,key:%v,err:%v\n", account.Miner.ID[:], account.Miner.ID[:],err)
 	return err
 }
 
