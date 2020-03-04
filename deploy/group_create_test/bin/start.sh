@@ -9,7 +9,7 @@ instance_index=$1
 instance_count=$2
 instance_end=$instance_index+$instance_count
 
-gateaddr=47.96.99.105:10000
+gateaddr='47.96.99.105:10000'
 
 for((;instance_index<instance_end;instance_index++))
 
@@ -28,7 +28,9 @@ do
 
 	stdout_log='logs/nohup_out_'$instance_index'.log'
 	pid_file='pid/pid_gx'$instance_index'.txt'
-
+    if [ -e $pid_file ];then
+		kill -9 `cat $pid_file`
+	fi
 
 	if [ $instance_index -le 3 ];then
 		nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port   --apply light --keystore keystore$instance_index --gateaddr $gateaddr > $stdout_log 2>&1 & echo $! > $pid_file
