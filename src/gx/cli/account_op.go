@@ -208,7 +208,10 @@ func newAccountManager(ks string) (*AccountManager, error) {
 		fmt.Printf("new ldb failed:%v",err.Error())
 		return nil, fmt.Errorf("new ldb fail:%v", err.Error())
 	}
-	test, err := accountManagerDB.Get([]byte{})
+	err = accountManagerDB.Put([]byte{1},[]byte{22})
+	fmt.Printf("db test1 put ,err:%v\n", err)
+
+	test, err := accountManagerDB.Get([]byte{1})
 	fmt.Printf("db test4 get result:%v,err:%v\n", test, err)
 	return &AccountManager{db: accountManagerDB}, nil
 }
