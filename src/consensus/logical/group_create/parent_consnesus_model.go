@@ -164,14 +164,16 @@ func (ctx *createGroupContext) genGroupInitInfo(h uint64) bool {
 func (ctx *createGroupContext) generateMemberMask() (mask []byte) {
 	mask = make([]byte, (len(ctx.candidates)+7)/8)
 
+	common.DefaultLogger.Debugf("gen member mask,candidates:")
 	for i, id := range ctx.candidates {
+		common.DefaultLogger.Debugf(id.GetHexString())
 		b := mask[i/8]
 		if _, ok := ctx.pongMap[id.GetHexString()]; ok {
 			b |= 1 << byte(i%8)
 			mask[i/8] = b
 		}
 	}
-	common.DefaultLogger.Debugf("gen member mask,candidates:%v,mask:%v", ctx.candidates, mask)
+	common.DefaultLogger.Debugf("mask:%v", mask)
 	return
 }
 
@@ -185,7 +187,10 @@ func (ctx *createGroupBaseInfo) createGroupInitInfo(mask []byte) *model.GroupIni
 }
 
 func (ctx *createGroupBaseInfo) recoverMemberSet(mask []byte) (ids []groupsig.ID) {
-	common.DefaultLogger.Debugf("recover member set,candidates:%v,mask:%v", ctx.candidates, mask)
+	common.DefaultLogger.Debugf("recover member mask:%v,candidates:", mask)
+	for _, id := range ctx.candidates {
+		common.DefaultLogger.Debugf(id.GetHexString())
+	}
 	ids = make([]groupsig.ID, 0)
 	for i, id := range ctx.candidates {
 		b := mask[i/8]
