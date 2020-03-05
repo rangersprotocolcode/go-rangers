@@ -118,18 +118,15 @@ func (context *groupInitContext) TransformStatus(from, to int32) bool {
 }
 
 func (context *groupInitContext) generateMemberMask() (mask []byte) {
-	common.DefaultLogger.Debugf("gen member mask,candidates:")
 	mask = make([]byte, (len(context.groupInitInfo.GroupMembers)+7)/8)
 
 	for i, id := range context.groupInitInfo.GroupMembers {
-		common.DefaultLogger.Debugf(id.GetHexString())
 		b := mask[i/8]
 		if context.MemExist(id) {
 			b |= 1 << byte(i%8)
 			mask[i/8] = b
 		}
 	}
-	common.DefaultLogger.Debugf("mask:%v", mask)
 	return
 }
 

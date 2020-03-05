@@ -18,7 +18,11 @@ func (p *groupCreateProcessor) OnMessageGroupInit(msg *model.GroupInitMessage) {
 	groupHash := groupInitInfo.GroupHash()
 	groupHeader := groupInitInfo.GroupHeader
 
-	groupCreateLogger.Debugf("(%v)Rcv group init message, sender=%v, groupHash=%v...,group members:%v", p.minerInfo.ID.ShortS(), msg.SignInfo.GetSignerID().ShortS(), groupHash.ShortS(),msg.GroupInitInfo.GroupMembers)
+	groupCreateLogger.Debugf("(%v)Rcv group init message, sender=%v, groupHash=%v...", p.minerInfo.ID.ShortS(), msg.SignInfo.GetSignerID().ShortS(), groupHash.ShortS())
+	groupCreateLogger.Debugf("Rcv group init msg:group members")
+	for _, id := range msg.GroupInitInfo.GroupMembers {
+		groupCreateLogger.Debugf(id.GetHexString())
+	}
 	//tlog := newHashTraceLog("OMGI", gHash, msg.SI.GetID())
 
 	if msg.SignInfo.GetDataHash() != msg.GenHash() || groupHeader.Hash != groupHeader.GenHash() {
@@ -257,9 +261,15 @@ func (p *groupCreateProcessor) handleSharePieceMessage(groupHash common.Hash, sh
 					MemberNum:       int32(context.groupInitInfo.MemberSize()),
 					MemberMask:      context.generateMemberMask(),
 				}
+				groupCreateLogger.Debugf("Before broadcast groupInitedMessage.Gen member mask:")
+				for _, id := range context.groupInitInfo.GroupMembers {
+					groupCreateLogger.Debugf(id.GetHexString())
+				}
+				groupCreateLogger.Debugf("Before broadcast groupInitedMessage.member mask:%v", groupInitedMessage.MemberMask)
+
 				if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, groupInitedMessage); ok {
 					groupInitedMessage.SignInfo = signInfo
-					groupCreateLogger.Debugf("Broadcast group inited message:%v,member mask:%v", joinedGroupInfo.GroupID.ShortS(), groupInitedMessage.MemberMask)
+					groupCreateLogger.Debugf("Broadcast group inited message:%v", joinedGroupInfo.GroupID.ShortS())
 					p.NetServer.BroadcastGroupInfo(groupInitedMessage)
 				} else {
 					err = fmt.Errorf("genSign fail, id=%v, sk=%v", p.minerInfo.ID.ShortS(), p.minerInfo.SecKey.ShortS())
@@ -304,8 +314,9 @@ func (p *groupCreateProcessor) OnMessageSignPK(signPubKeyMessage *model.SignPubK
 func (p *groupCreateProcessor) OnMessageGroupInited(msg *model.GroupInitedMessage) {
 	groupHash := msg.GroupHash
 
-	groupCreateLogger.Debugf("(%v)Rcv group inited message!sender=%v, groupHash=%v, groupId=%v, groupPK=%v,memberMask=%v", p.minerInfo.ID.ShortS(),
-		msg.SignInfo.GetSignerID().ShortS(), groupHash.ShortS(), msg.GroupID.ShortS(), msg.GroupPK.ShortS(), msg.MemberMask)
+	groupCreateLogger.Debugf("(%v)Rcv group inited message!sender=%v, groupHash=%v, groupId=%v, groupPK=%v", p.minerInfo.ID.ShortS(),
+		msg.SignInfo.GetSignerID().ShortS(), groupHash.ShortS(), msg.GroupID.ShortS(), msg.GroupPK.ShortS())
+	groupCreateLogger.Debugf("Rcv group inited msg.member mask:%v,group members:", msg.MemberMask)
 
 	if msg.SignInfo.GetDataHash() != msg.GenHash() {
 		panic("grm gis hash diff")

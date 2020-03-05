@@ -134,6 +134,10 @@ func (p *groupCreateProcessor) tryStartParentConsensus(topHeight uint64) bool {
 		desc = fmt.Sprintf("cannot generate group info, pongsize %v, pongdeadline %v", pongsize, ctx.isPongTimeout(topHeight))
 		return false
 	}
+	groupCreateLogger.Debugf("tryStartConsensus:gen member mask:%v", ctx.memMask)
+	for _, id := range ctx.candidates {
+		groupCreateLogger.Debugf(id.GetHexString())
+	}
 
 	ctx.setStatus(waitingSign)
 	gInfo := ctx.groupInitInfo
@@ -231,6 +235,11 @@ func (p *groupCreateProcessor) validateCreateGroupInfo(msg *model.ParentGroupCon
 	if !ctx.genGroupInitInfo(top) {
 		return false, fmt.Errorf("generate group init info fail")
 	}
+	groupCreateLogger.Debugf("validateCreateGroupInfo:gen member mask:%v", ctx.memMask)
+	for _, id := range ctx.candidates {
+		groupCreateLogger.Debugf(id.GetHexString())
+	}
+
 	if ctx.groupInitInfo.GroupHash() != msg.GroupInitInfo.GroupHash() {
 		groupCreateLogger.Errorf("Illegal group header! expect gh %+v, real gh %+v", ctx.groupInitInfo.GroupHeader, msg.GroupInitInfo.GroupHeader)
 		return false, fmt.Errorf("grouphash diff")
@@ -282,6 +291,10 @@ func (p *groupCreateProcessor) OnMessageParentGroupConsensusSign(msg *model.Pare
 			p.NetServer.SendGroupInitMessage(initMsg)
 			ctx.setStatus(sendInit)
 			groupCreateLogger.Infof("Send group init: context=%v, groupHash=%v, costHeight=%v", ctx.String(), ctx.groupInitInfo.GroupHash().ShortS(), p.blockChain.Height()-ctx.createTopHeight)
+			groupCreateLogger.Debugf("Send group init:group members")
+			for _, id := range initMsg.GroupInitInfo.GroupMembers {
+				groupCreateLogger.Debugf(id.GetHexString())
+			}
 		} else {
 			groupCreateLogger.Errorf("GroupInitMessage sign failed, signer id=%v,seckey=%v", p.minerInfo.ID.ShortS(), p.minerInfo.SecKey.ShortS())
 		}
