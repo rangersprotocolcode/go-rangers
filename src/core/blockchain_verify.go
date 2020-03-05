@@ -10,11 +10,6 @@ import (
 )
 
 func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transaction) ([]common.Hashes, int8) {
-	// use cache before verify
-	if chain.verifiedBlocks.Contains(bh.Hash) {
-		return nil, 0
-	}
-
 	logger.Infof("verifyBlock hash:%v,height:%d,totalQn:%d,preHash:%v,len header tx:%d,len tx:%d", bh.Hash.String(), bh.Height, bh.TotalQN, bh.PreHash.String(), len(bh.Transactions), len(txs))
 	if bh.Hash != bh.GenHash() {
 		logger.Debugf("Validate block hash error!")
@@ -26,6 +21,11 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 			chain.futureBlocks.Add(bh.PreHash, &types.Block{Header: &bh, Transactions: txs})
 		}
 		return nil, 2
+	}
+
+	// use cache before verify
+	if chain.verifiedBlocks.Contains(bh.Hash) {
+		return nil, 0
 	}
 
 	miss, missingTx, transactions := chain.missTransaction(bh, txs)
