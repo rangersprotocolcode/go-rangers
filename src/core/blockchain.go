@@ -396,10 +396,12 @@ func (chain *blockChain) remove(block *types.Block) bool {
 
 	chain.markRemoveBlock(block)
 
-	chain.topBlocks.Remove(height)
 	chain.hashDB.Delete(hash.Bytes())
 	chain.heightDB.Delete(generateHeightKey(height))
 	chain.verifyHashDB.Delete(utility.UInt64ToByte(height))
+
+	chain.topBlocks.Remove(height)
+	chain.verifiedBlocks.Remove(hash)
 
 	preBlock := chain.queryBlockByHash(block.Header.PreHash)
 	if preBlock == nil {
