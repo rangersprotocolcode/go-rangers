@@ -45,8 +45,8 @@ type groupInitContext struct {
 	groupInitInfo *model.GroupInitInfo // Group initialization information (specified by the parent group)
 	nodeInfo      *groupNodeInfo       // Group node information (for initializing groups of public and signed private keys)
 
-	status int32 // Group initialization state
-	//candidates    []groupsig.ID
+	status        int32 // Group initialization state
+	candidates    []groupsig.ID
 	sharePieceMap map[string]model.SharePiece
 	createTime    time.Time
 }
@@ -54,7 +54,7 @@ type groupInitContext struct {
 //CreateGroupContextWithRawMessage
 // CreateGroupContextWithRawMessage creates a GroupContext structure from
 // a group initialization message
-func newGroupInitContext(groupInitInfo *model.GroupInitInfo, minerInfo *model.SelfMinerInfo) *groupInitContext {
+func newGroupInitContext(groupInitInfo *model.GroupInitInfo, candidates []groupsig.ID, minerInfo *model.SelfMinerInfo) *groupInitContext {
 	for k, v := range groupInitInfo.GroupMembers {
 		if !v.IsValid() {
 			groupCreateLogger.Debug("NewGroupInitContext ID failed! index=%v, id=%v.\n", k, v.GetHexString())
@@ -65,6 +65,7 @@ func newGroupInitContext(groupInitInfo *model.GroupInitInfo, minerInfo *model.Se
 	context.createTime = time.Now()
 	context.status = GisInit
 	context.groupInitInfo = groupInitInfo
+	context.candidates = candidates
 
 	context.nodeInfo = NewGroupNodeInfo(minerInfo, groupInitInfo.GroupHash(), len(groupInitInfo.GroupMembers))
 	return context
@@ -118,7 +119,7 @@ func (context *groupInitContext) TransformStatus(from, to int32) bool {
 }
 
 func (context *groupInitContext) generateMemberMask() (mask []byte) {
-	mask = make([]byte, (len(context.groupInitInfo.GroupMembers)+7)/8)
+	mask = make([]byte, (len(context.candidates)+7)/8)
 
 	for i, id := range context.groupInitInfo.GroupMembers {
 		b := mask[i/8]
@@ -142,7 +143,7 @@ func newGroupInitContextCache() groupInitContextCache {
 }
 
 //ConfirmGroupFromRaw
-func (groupInitContextCache *groupInitContextCache) GetOrNewContext(groupInitInfo *model.GroupInitInfo, mi *model.SelfMinerInfo) *groupInitContext {
+func (groupInitContextCache *groupInitContextCache) GetOrNewContext(groupInitInfo *model.GroupInitInfo, candidates []groupsig.ID, mi *model.SelfMinerInfo) *groupInitContext {
 	groupHash := groupInitInfo.GroupHash()
 	v := groupInitContextCache.GetContext(groupHash)
 	if v != nil {
@@ -152,7 +153,7 @@ func (groupInitContextCache *groupInitContextCache) GetOrNewContext(groupInitInf
 	}
 
 	groupCreateLogger.Debug("create new Initing group context\n")
-	v = newGroupInitContext(groupInitInfo, mi)
+	v = newGroupInitContext(groupInitInfo, candidates, mi)
 	if v != nil {
 		groupInitContextCache.cache.Add(groupHash.Hex(), v)
 	}

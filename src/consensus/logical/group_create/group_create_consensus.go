@@ -45,14 +45,14 @@ func (p *groupCreateProcessor) OnMessageGroupInit(msg *model.GroupInitMessage) {
 		return
 	}
 
-	ok, err := p.ValidateGroupInfo(&msg.GroupInitInfo)
+	candidates, ok, err := p.ValidateGroupInfo(&msg.GroupInitInfo)
 	if !ok {
 		groupCreateLogger.Debugf("group header illegal, err=%v", err)
 		return
 	}
 	//tlog.logStart("%v", "")
 
-	groupInitContext = p.groupInitContextCache.GetOrNewContext(&groupInitInfo, &p.minerInfo)
+	groupInitContext = p.groupInitContextCache.GetOrNewContext(&groupInitInfo, candidates, &p.minerInfo)
 	if groupInitContext == nil {
 		panic("Processor::OMGI failed, ConfirmGroupFromRaw return nil.")
 	}
@@ -93,55 +93,55 @@ func (p *groupCreateProcessor) OnMessageGroupInit(msg *model.GroupInitMessage) {
 
 //checkGroupInfo
 // checkGroupInfo check whether the group info is legal
-func (p *groupCreateProcessor) ValidateGroupInfo(groupInitInfo *model.GroupInitInfo) (bool, error) {
+func (p *groupCreateProcessor) ValidateGroupInfo(groupInitInfo *model.GroupInitInfo) ([]groupsig.ID, bool, error) {
 	groupHeader := groupInitInfo.GroupHeader
 	if groupHeader.Hash != groupHeader.GenHash() {
-		return false, fmt.Errorf("gh hash error, hash=%v, genHash=%v", groupHeader.Hash.ShortS(), groupHeader.GenHash().ShortS())
+		return nil, false, fmt.Errorf("gh hash error, hash=%v, genHash=%v", groupHeader.Hash.ShortS(), groupHeader.GenHash().ShortS())
 	}
 
 	// check if the member count is legal
 	if !model.Param.IsGroupMemberCountLegal(len(groupInitInfo.GroupMembers)) {
-		return false, fmt.Errorf("group member size error %v(%v-%v)", len(groupInitInfo.GroupMembers), model.Param.GroupMemberMin, model.Param.GroupMemberMax)
+		return nil, false, fmt.Errorf("group member size error %v(%v-%v)", len(groupInitInfo.GroupMembers), model.Param.GroupMemberMin, model.Param.GroupMemberMax)
 	}
 	// check if the create height is legal
 	if !validateHeight(groupHeader.CreateHeight) {
-		return false, fmt.Errorf("cannot create at the height %v", groupHeader.CreateHeight)
+		return nil, false, fmt.Errorf("cannot create at the height %v", groupHeader.CreateHeight)
 	}
 	baseBH := p.blockChain.QueryBlock(groupHeader.CreateHeight)
 	if baseBH == nil {
-		return false, common.ErrCreateBlockNil
+		return nil, false, common.ErrCreateBlockNil
 	}
 	// The previous group, whether the parent group exists
 	preGroup := p.groupChain.GetGroupById(groupHeader.PreGroup)
 	if preGroup == nil {
-		return false, fmt.Errorf("preGroup is nil, gid=%v", groupsig.DeserializeID(groupHeader.PreGroup).ShortS())
+		return nil, false, fmt.Errorf("preGroup is nil, gid=%v", groupsig.DeserializeID(groupHeader.PreGroup).ShortS())
 	}
 	parentGroup := p.groupChain.GetGroupById(groupHeader.Parent)
 	if parentGroup == nil {
-		return false, fmt.Errorf("parentGroup is nil, gid=%v", groupsig.DeserializeID(groupHeader.Parent).ShortS())
+		return nil, false, fmt.Errorf("parentGroup is nil, gid=%v", groupsig.DeserializeID(groupHeader.Parent).ShortS())
 	}
 
 	// check if it is the specified parent group
 	sgi, err := p.selectParentGroup(baseBH.Header, groupHeader.PreGroup)
 	if err != nil {
-		return false, fmt.Errorf("select parent group err %v", err)
+		return nil, false, fmt.Errorf("select parent group err %v", err)
 	}
 	pid := groupsig.DeserializeID(parentGroup.Id)
 	if !sgi.GroupID.IsEqual(pid) {
-		return false, fmt.Errorf("select parent group not equal, expect %v, recieve %v", sgi.GroupID.ShortS(), pid.ShortS())
+		return nil, false, fmt.Errorf("select parent group not equal, expect %v, recieve %v", sgi.GroupID.ShortS(), pid.ShortS())
 	}
 	//todo
 	gpk := p.getGroupPubKey(groupsig.DeserializeID(groupHeader.Parent))
 
 	// check the signature of the parent group
 	if !groupsig.VerifySig(gpk, groupHeader.Hash.Bytes(), groupInitInfo.ParentGroupSign) {
-		return false, fmt.Errorf("verify parent sign fail")
+		return nil, false, fmt.Errorf("verify parent sign fail")
 	}
 
 	// check if the candidates are legal
 	enough, candidates := p.selectCandidates(baseBH.Header)
 	if !enough {
-		return false, fmt.Errorf("not enough candidates")
+		return nil, false, fmt.Errorf("not enough candidates")
 	}
 	// Whether the selected member is in the designated candidate
 	for _, mem := range groupInitInfo.GroupMembers {
@@ -153,10 +153,10 @@ func (p *groupCreateProcessor) ValidateGroupInfo(groupInitInfo *model.GroupInitI
 			}
 		}
 		if !find {
-			return false, fmt.Errorf("mem error: %v is not a legal candidate", mem.ShortS())
+			return nil, false, fmt.Errorf("mem error: %v is not a legal candidate", mem.ShortS())
 		}
 	}
-	return true, nil
+	return candidates, true, nil
 }
 
 // OnMessageSharePiece handles sharepiece message received from other members during the group formation process.
