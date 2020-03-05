@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"x/src/service"
 	"x/src/statemachine"
+	"time"
 )
 
 func (chain *blockChain) consensusVerify(source string, b *types.Block) (types.AddBlockResult, bool) {
@@ -98,7 +99,6 @@ func (chain *blockChain) addBlockOnChain(source string, coming *types.Block, sit
 	// 不是同一块，但是QN与本地链相同，需要二次判断
 	if comingHeader.TotalQN == topBlock.TotalQN {
 		commonAncestor := chain.queryBlockHeaderByHash(comingHeader.PreHash)
-		logger.Debugf("commonAncestor:%v,comingHeader:%v", commonAncestor, comingHeader)
 		if chain.compareValue(commonAncestor, comingHeader) {
 			if situation == types.Sync {
 				logger.Warnf("coming equal to local. but sync. coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
@@ -409,6 +409,10 @@ func (chain *blockChain) removeFromCommonAncestor(commonAncestor *types.BlockHea
 
 // 找到commonAncestor在本地链的下一块，然后与remoteHeader比较
 func (chain *blockChain) compareValue(commonAncestor *types.BlockHeader, remoteHeader *types.BlockHeader) bool {
+	if commonAncestor == nil || chain.latestBlock == nil {
+		logger.Debugf("compareValue commonAncestor:%v,chain.latestBlock:%v", commonAncestor, chain.latestBlock)
+		time.Sleep(time.Second * 3)
+	}
 	if commonAncestor.Height == chain.latestBlock.Height {
 		return false
 	}
