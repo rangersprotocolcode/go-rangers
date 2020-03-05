@@ -89,6 +89,10 @@ func (chain *blockChain) addBlockOnChain(source string, coming *types.Block, sit
 	// 比本地链好，要
 	if comingHeader.TotalQN > topBlock.TotalQN {
 		commonAncestor := chain.queryBlockHeaderByHash(comingHeader.PreHash)
+		if commonAncestor == nil || comingHeader == nil || topBlock == nil {
+			logger.Debugf("Debug1:commonAncestor:%v,comingHeader:%v,topBlock:%v", commonAncestor, comingHeader, topBlock)
+			time.Sleep(time.Second * 3)
+		}
 		logger.Warnf("coming greater than local. Removing and Forking...coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
 			comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
 
@@ -410,7 +414,7 @@ func (chain *blockChain) removeFromCommonAncestor(commonAncestor *types.BlockHea
 // 找到commonAncestor在本地链的下一块，然后与remoteHeader比较
 func (chain *blockChain) compareValue(commonAncestor *types.BlockHeader, remoteHeader *types.BlockHeader) bool {
 	if commonAncestor == nil || chain.latestBlock == nil {
-		logger.Debugf("compareValue commonAncestor:%v,chain.latestBlock:%v", commonAncestor, chain.latestBlock)
+		logger.Debugf("Debug2:compareValue commonAncestor:%v,chain.latestBlock:%v", commonAncestor, chain.latestBlock)
 		time.Sleep(time.Second * 3)
 	}
 	if commonAncestor.Height == chain.latestBlock.Height {
