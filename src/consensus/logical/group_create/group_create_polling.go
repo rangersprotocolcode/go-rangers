@@ -76,7 +76,7 @@ func (p *groupCreateProcessor) tryCreateGroup(baseHeight uint64) {
 	kings, isKing := p.selectKing(baseCtx.baseBlockHeader, baseCtx.parentGroupInfo)
 
 	p.setCreatingGroupContext(baseCtx, kings, isKing)
-	groupCreateLogger.Infof("createGroupContext info=%v", p.context.String())
+	groupCreateLogger.Infof("Try create group.createGroupContext info=%v", p.context.String())
 
 	p.pingNodes()
 	create = true
@@ -186,7 +186,7 @@ func (p *groupCreateProcessor) selectCandidates(theBH *types.BlockHeader) (enoug
 	for _, id := range result {
 		str += id.ShortS() + ","
 	}
-	groupCreateLogger.Infof("Got Candidates: %v", str)
+	groupCreateLogger.Infof("Got Candidates: %v,size:%d", str,len(result))
 	return true, result
 }
 

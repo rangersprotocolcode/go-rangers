@@ -98,6 +98,7 @@ func (chain *blockChain) addBlockOnChain(source string, coming *types.Block, sit
 	// 不是同一块，但是QN与本地链相同，需要二次判断
 	if comingHeader.TotalQN == topBlock.TotalQN {
 		commonAncestor := chain.queryBlockHeaderByHash(comingHeader.PreHash)
+		logger.Debugf("commonAncestor:%v,comingHeader:%v", commonAncestor, comingHeader)
 		if chain.compareValue(commonAncestor, comingHeader) {
 			if situation == types.Sync {
 				logger.Warnf("coming equal to local. but sync. coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",

@@ -8,6 +8,7 @@ import (
 	"x/src/consensus/groupsig"
 	"x/src/consensus/model"
 	"x/src/consensus/base"
+	"x/src/common"
 )
 
 // status enum of the CreatingGroupContext
@@ -170,6 +171,7 @@ func (ctx *createGroupContext) generateMemberMask() (mask []byte) {
 			mask[i/8] = b
 		}
 	}
+	common.DefaultLogger.Debugf("gen member mask,candidates:%v,mask:%v", ctx.candidates, mask)
 	return
 }
 
@@ -183,6 +185,7 @@ func (ctx *createGroupBaseInfo) createGroupInitInfo(mask []byte) *model.GroupIni
 }
 
 func (ctx *createGroupBaseInfo) recoverMemberSet(mask []byte) (ids []groupsig.ID) {
+	common.DefaultLogger.Debugf("recover member set,candidates:%v,mask:%v", ctx.candidates, mask)
 	ids = make([]groupsig.ID, 0)
 	for i, id := range ctx.candidates {
 		b := mask[i/8]
