@@ -59,6 +59,9 @@ func (gx *GX) Run() {
 	_ = app.Flag("metrics", "enable metrics").Bool()
 	_ = app.Flag("dashboard", "enable metrics dashboard").Bool()
 	pprofPort := app.Flag("pprof", "enable pprof").Default("23333").Uint()
+	keystore := app.Flag("keystore", "the keystore path, default is current path").Default("keystore").Short('k').String()
+	fmt.Println(keystore)
+
 	//控制台
 	consoleCmd := app.Command("console", "start RocketProtocol console")
 	showRequest := consoleCmd.Flag("show", "show the request json").Short('v').Bool()
