@@ -5,6 +5,7 @@ import (
 	"x/src/middleware/log"
 	"hash/fnv"
 	"fmt"
+	"strconv"
 )
 
 func TestWorkerConn_Init(t *testing.T) {
@@ -16,12 +17,14 @@ func TestWorkerConn_Init(t *testing.T) {
 
 }
 
-
 func TestGenTargetForgroup(t *testing.T) {
-	groupId:="0x2d4f9bd77fb95cdbe857b615c7bd2e21f20d3bd1e73974a7943d11a289bc3ac4"
+	groupId := "0x2a63497b8b48bc85ae6f61576d4a2988e7b71e1c02898ea2a02ead17f076bf92"
 	hash64 := fnv.New64()
 	hash64.Write([]byte(groupId))
 
-	fmt.Printf("%v\n",hash64.Sum64())
+	idInt := hash64.Sum64()
+	fmt.Printf("%v\n", idInt)
 
+	s16 := strconv.FormatUint(idInt, 16) //10 yo 16
+	fmt.Printf("%v\n", s16)
 }

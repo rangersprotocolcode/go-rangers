@@ -134,23 +134,6 @@ func (p *groupCreateProcessor) ReleaseGroups(topHeight uint64) (needDimissGroups
 					waitIds = append(waitIds, mem)
 				}
 			}
-			//发送日志
-			//initedGroup := p.globalGroups.GetInitedGroup(gHash)
-			//omgied := "nil"
-			//if initedGroup != nil {
-			//	omgied = fmt.Sprintf("OMGIED:%v(%v)", initedGroup.receiveSize(), initedGroup.threshold)
-			//}
-			//le := &monitor.LogEntry{
-			//	LogType:  monitor.LogTypeInitGroupRevPieceTimeout,
-			//	Height:   p.GroupChain.Count(),
-			//	Hash:     gHash.Hex(),
-			//	Proposer: "00",
-			//	Ext:      fmt.Sprintf("MemCnt:%v,Pieces:%v,wait:%v,%v", gc.gInfo.MemberSize(),gc.node.groupInitPool.GetSize(),waitPieceIds,omgied),
-			//}
-			//if !gc.sendLog && monitor.Instance.IsFirstNInternalNodesInGroup(gc.gInfo.Mems, 50) {
-			//	monitor.Instance.AddLog(le)
-			//	gc.sendLog = true
-			//}
 
 			msg := &model.ReqSharePieceMessage{
 				GroupHash: gc.groupInitInfo.GroupHash(),
@@ -169,39 +152,13 @@ func (p *groupCreateProcessor) ReleaseGroups(topHeight uint64) (needDimissGroups
 		}
 		return true
 	})
+
 	gctx := p.context
 	if gctx != nil && gctx.timeout(topHeight) {
 		groupCreateLogger.Infof("releaseRoutine:info=%v, elapsed %v. ready timeout.", gctx.String(), time.Since(gctx.createTime))
-
-		//if gctx.isKing() {
-		//	gHash := "0000"
-		//	if gctx != nil && gctx.gInfo != nil {
-		//		gHash = gctx.gInfo.GroupHash().Hex()
-		//	}
-		//	//发送日志
-		//	le := &monitor.LogEntry{
-		//		LogType:  monitor.LogTypeCreateGroupSignTimeout,
-		//		Height:   p.GroupChain.Count(),
-		//		Hash:     gHash,
-		//		Proposer: p.GetMinerID().GetHexString(),
-		//		Ext:      fmt.Sprintf("%v", gctx.gSignGenerator.Brief()),
-		//	}
-		//	if monitor.Instance.IsFirstNInternalNodesInGroup(gctx.kings, 50) {
-		//		monitor.Instance.AddLog(le)
-		//	}
-		//}
 		p.removeContext()
 	}
-	//p.groupManager.creatingGroups.forEach(func(cg *CreatingGroupContext) bool {
-	//	gis := &cg.gInfo.GI
-	//	gHash := gis.GetHash()
-	//	if gis.ReadyTimeout(topHeight) {
-	//		blog.debug("DissolveGroupNet dummyGroup from creatingGroups gHash %v", gHash.ShortS())
-	//		p.NetServer.ReleaseGroupNet(gHash.Hex())
-	//		p.groupManager.creatingGroups.removeGroup(gHash)
-	//	}
-	//	return true
-	//})
+
 	p.forEach(func(ig *groupPubkeyCollector) bool {
 		hash := ig.groupInitInfo.GroupHash()
 		if ig.groupInitInfo.ReadyTimeout(topHeight) {
