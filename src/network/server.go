@@ -58,6 +58,10 @@ func (s *server) JoinGroupNet(groupId string) {
 	s.worker.JoinGroupNet(groupId)
 }
 
+func (s *server) QuitGroupNet(groupId string) {
+	s.worker.QuitGroupNet(groupId)
+}
+
 func (s *server) SetNetId(netId []byte) {
 	s.worker.SetNetId(netId)
 }

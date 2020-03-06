@@ -154,7 +154,7 @@ func (p *Processor) blockPreview(bh *types.BlockHeader) string {
 }
 
 func (p *Processor) prepareForCast(sgi *model.GroupInfo) {
-	//组建组网络
+	//加入组网络 真正的组网络 group id
 	p.NetServer.JoinGroupNet(sgi.GroupID.GetHexString())
 
 	bc := NewBlockContext(p, sgi)

@@ -57,7 +57,7 @@ func (p *groupCreateProcessor) OnMessageGroupInit(msg *model.GroupInitMessage) {
 		panic("Processor::OMGI failed, ConfirmGroupFromRaw return nil.")
 	}
 
-	// Establish a group network at local
+	// join group by group hash
 	p.NetServer.JoinGroupNet(groupHash.Hex())
 
 	groupCreateLogger.Debugf("groupHash:%s,current status=%v.", groupHash.ShortS(), groupInitContext.GetGroupStatus())

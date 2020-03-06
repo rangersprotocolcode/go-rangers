@@ -99,6 +99,8 @@ type Network interface {
 
 	JoinGroupNet(groupId string)
 
+	QuitGroupNet(groupId string)
+
 	SetNetId(netId []byte)
 
 	SendToStranger(strangerId []byte, msg Message)

@@ -256,9 +256,8 @@ func (ns *NetworkServerImpl) JoinGroupNet(groupId string) {
 	ns.net.JoinGroupNet(groupId)
 }
 
-func (ns *NetworkServerImpl) ReleaseGroupNet(gid string) {
-	//todo
-	//ns.net.DissolveGroupNet(gid)
+func (ns *NetworkServerImpl) ReleaseGroupNet(groupId string) {
+	ns.net.QuitGroupNet(groupId)
 }
 
 func (ns *NetworkServerImpl) send2Self(self groupsig.ID, m network.Message) {
