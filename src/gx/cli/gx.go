@@ -3,24 +3,24 @@ package cli
 import (
 	"fmt"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"os"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"runtime"
 	"strconv"
 	"time"
 	"x/src/common"
-	"x/src/middleware/types"
+	"x/src/consensus"
+	"x/src/consensus/logical/group_create"
+	"x/src/consensus/model"
+	cnet "x/src/consensus/net"
 	"x/src/core"
 	"x/src/middleware"
-	"x/src/consensus"
-	"x/src/consensus/model"
 	"x/src/middleware/log"
+	"x/src/middleware/types"
 	"x/src/network"
-	cnet "x/src/consensus/net"
-	"x/src/statemachine"
 	"x/src/service"
-	"x/src/consensus/logical/group_create"
+	"x/src/statemachine"
 )
 
 const (
@@ -59,7 +59,6 @@ func (gx *GX) Run() {
 	_ = app.Flag("metrics", "enable metrics").Bool()
 	_ = app.Flag("dashboard", "enable metrics dashboard").Bool()
 	pprofPort := app.Flag("pprof", "enable pprof").Default("23333").Uint()
-	keystore := app.Flag("keystore", "the keystore path, default is current path").Default("keystore").Short('k').String()
 	//控制台
 	consoleCmd := app.Command("console", "start RocketProtocol console")
 	showRequest := consoleCmd.Flag("show", "show the request json").Short('v').Bool()
@@ -100,7 +99,7 @@ func (gx *GX) Run() {
 		fmt.Println("GX Version:", GXVersion)
 		os.Exit(0)
 	case consoleCmd.FullCommand():
-		err := ConsoleInit(*keystore, *remoteHost, *remotePort, *showRequest, *rpcPort)
+		err := ConsoleInit(*remoteHost, *remotePort, *showRequest, *rpcPort)
 		if err != nil {
 			fmt.Errorf(err.Error())
 		}
@@ -110,7 +109,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(*instanceIndex, *apply, *keystore, *env, *gateAddr)
+		gx.initMiner(*instanceIndex, *apply, *env, *gateAddr)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc)
 			if err != nil {
@@ -122,7 +121,7 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, apply, keystore, env, gateAddr string) {
+func (gx *GX) initMiner(instanceIndex int, apply, env, gateAddr string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	databaseValue := "d" + strconv.Itoa(instanceIndex)
@@ -130,8 +129,8 @@ func (gx *GX) initMiner(instanceIndex int, apply, keystore, env, gateAddr string
 
 	middleware.InitMiddleware()
 
-	minerAddr := common.GlobalConf.GetString(Section, "miner", "")
-	err := gx.getAccountInfo(keystore, minerAddr)
+	privateKey := common.GlobalConf.GetString(Section, "privateKey", "")
+	err := gx.getAccountInfo(privateKey)
 	if err != nil {
 		panic("Init miner get account info error:" + err.Error())
 	}
@@ -143,6 +142,8 @@ func (gx *GX) initMiner(instanceIndex int, apply, keystore, env, gateAddr string
 		minerInfo.MinerType = common.MinerTypeValidator
 	} else if apply == "heavy" {
 		minerInfo.MinerType = common.MinerTypeProposer
+	} else {
+		minerInfo.MinerType = common.MinerTypeUnknown
 	}
 
 	minerId := "0x" + common.Bytes2Hex(gx.account.Miner.ID[:])
@@ -175,34 +176,13 @@ func (gx *GX) initMiner(instanceIndex int, apply, keystore, env, gateAddr string
 	gx.init = true
 }
 
-func (gx *GX) getAccountInfo(keystore, address string) error {
-	aop, err := initAccountManager(keystore, true)
-	if err != nil {
-		fmt.Printf("initAccountManager:%s\n", err.Error())
-		return err
+func (gx *GX) getAccountInfo(sk string) error {
+	if 0 == len(sk) {
+		return fmt.Errorf("sk error")
 	}
 
-	defer aop.Close()
-
-	if address != "" {
-		if aci, err := aop.getAccountInfo(address); err != nil {
-			return fmt.Errorf("cannot get miner, err:%v", err.Error())
-		} else {
-			if aci.Miner == nil {
-				return fmt.Errorf("the address is not a miner account: %v", address)
-			}
-			gx.account = aci.Account
-			return nil
-		}
-	} else {
-		aci := aop.getFirstMinerAccount()
-		if aci != nil {
-			gx.account = *aci
-			return nil
-		} else {
-			return fmt.Errorf("please create a miner account first")
-		}
-	}
+	gx.account = getAccountByPrivateKey(sk)
+	return nil
 }
 
 func syncChainInfo() {

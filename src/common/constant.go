@@ -1,9 +1,9 @@
 package common
 
 import (
-	"reflect"
-	"math/big"
 	"errors"
+	"math/big"
+	"reflect"
 )
 
 const PREFIX = "0x"
@@ -22,8 +22,10 @@ const (
 const (
 	MinerTypeValidator = 0
 	MinerTypeProposer  = 1
-	MinerStatusNormal  = 0
-	MinerStatusAbort   = 1
+	MinerTypeUnknown   = 2
+
+	MinerStatusNormal = 0
+	MinerStatusAbort  = 1
 )
 
 var (
@@ -37,8 +39,8 @@ var (
 	ProposerDBAddress  = BigToAddress(big.NewInt(2))
 	RefundAddress      = BigToAddress(big.NewInt(3))
 
-	FTSetAddress       = BigToAddress(big.NewInt(4))
-	NFTSetAddress      = BigToAddress(big.NewInt(5))
+	FTSetAddress  = BigToAddress(big.NewInt(4))
+	NFTSetAddress = BigToAddress(big.NewInt(5))
 )
 
 var (

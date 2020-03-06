@@ -1,16 +1,16 @@
 package cli
 
 import (
-	"time"
-	"sync"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"os"
-	"crypto/rand"
+	"sync"
+	"time"
 
 	"x/src/common"
-	"x/src/middleware/db"
 	"x/src/consensus/model"
+	"x/src/middleware/db"
 )
 
 const accountUnLockTime = time.Second * 120
@@ -60,6 +60,31 @@ type MinerRaw struct {
 	VrfPk string
 	VrfSk string
 	ID    [32]byte
+}
+
+func getAccountByPrivateKey(pk string) Account {
+	privateKey := common.HexStringToSecKey(pk)
+	publicKey := privateKey.GetPubKey()
+	address := publicKey.GetAddress()
+
+	account := Account{
+		Address: address.GetHexString(),
+		Pk:      publicKey.GetHexString(),
+		Sk:      privateKey.GetHexString(),
+	}
+
+	id := publicKey.GetID()
+	minerDO := model.NewSelfMinerInfo(id[:])
+	minerRaw := &MinerRaw{
+		BPk:   minerDO.PubKey.GetHexString(),
+		BSk:   minerDO.SecKey.GetHexString(),
+		VrfPk: minerDO.VrfPK.GetHexString(),
+		VrfSk: minerDO.VrfSK.GetHexString(),
+		ID:    id,
+	}
+	account.Miner = minerRaw
+
+	return account
 }
 
 func (am *AccountManager) NewAccount(password string, miner bool) *Result {
@@ -169,7 +194,8 @@ func (am *AccountManager) Close() {
 	am.db.Close()
 }
 
-func initAccountManager(keystore string, readyOnly bool) (*AccountManager, error) {
+func initAccountManager(readyOnly bool) (*AccountManager, error) {
+	keystore := "keystore"
 	if readyOnly && !dirExists(keystore) {
 		accountManager, err := newAccountManager(keystore)
 		if err != nil {
