@@ -59,8 +59,6 @@ func (gx *GX) Run() {
 	_ = app.Flag("metrics", "enable metrics").Bool()
 	_ = app.Flag("dashboard", "enable metrics dashboard").Bool()
 	pprofPort := app.Flag("pprof", "enable pprof").Default("23333").Uint()
-	keystore := app.Flag("keystore", "the keystore path, default is current path").Default("keystore").Short('k').String()
-	fmt.Println(keystore)
 
 	//控制台
 	consoleCmd := app.Command("console", "start RocketProtocol console")
@@ -133,10 +131,7 @@ func (gx *GX) initMiner(instanceIndex int, apply, env, gateAddr string) {
 	middleware.InitMiddleware()
 
 	privateKey := common.GlobalConf.GetString(Section, "privateKey", "")
-	err := gx.getAccountInfo(privateKey)
-	if err != nil {
-		panic("Init miner get account info error:" + err.Error())
-	}
+	gx.getAccountInfo(privateKey)
 	fmt.Println("Your Miner Address:", gx.account.Address)
 
 	minerInfo := model.NewSelfMinerInfo(gx.account.Miner.ID[:])
@@ -153,7 +148,7 @@ func (gx *GX) initMiner(instanceIndex int, apply, env, gateAddr string) {
 	network.InitNetwork(cnet.MessageHandler, minerId, env, gateAddr)
 	service.InitService(minerInfo.MinerType)
 
-	err = core.InitCore(consensus.NewConsensusHelper(minerInfo.ID))
+	err := core.InitCore(consensus.NewConsensusHelper(minerInfo.ID))
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
 	}
@@ -179,13 +174,12 @@ func (gx *GX) initMiner(instanceIndex int, apply, env, gateAddr string) {
 	gx.init = true
 }
 
-func (gx *GX) getAccountInfo(sk string) error {
+func (gx *GX) getAccountInfo(sk string) {
 	if 0 == len(sk) {
-		return fmt.Errorf("sk error")
+		sk = common.GenerateKey("rocketProtocol").GetHexString()
 	}
 
 	gx.account = getAccountByPrivateKey(sk)
-	return nil
 }
 
 func syncChainInfo() {
