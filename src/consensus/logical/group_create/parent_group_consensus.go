@@ -134,10 +134,6 @@ func (p *groupCreateProcessor) tryStartParentConsensus(topHeight uint64) bool {
 		desc = fmt.Sprintf("cannot generate group info, pongsize %v, pongdeadline %v", pongsize, ctx.isPongTimeout(topHeight))
 		return false
 	}
-	groupCreateLogger.Debugf("tryStartConsensus:gen member mask:%v", ctx.memMask)
-	for _, id := range ctx.candidates {
-		groupCreateLogger.Debugf(id.GetHexString())
-	}
 
 	ctx.setStatus(waitingSign)
 	gInfo := ctx.groupInitInfo
@@ -234,10 +230,6 @@ func (p *groupCreateProcessor) validateCreateGroupInfo(msg *model.ParentGroupCon
 	}
 	if !ctx.genGroupInitInfo(top) {
 		return false, fmt.Errorf("generate group init info fail")
-	}
-	groupCreateLogger.Debugf("validateCreateGroupInfo:gen member mask:%v", ctx.memMask)
-	for _, id := range ctx.candidates {
-		groupCreateLogger.Debugf(id.GetHexString())
 	}
 
 	if ctx.groupInitInfo.GroupHash() != msg.GroupInitInfo.GroupHash() {
