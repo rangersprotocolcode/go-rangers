@@ -90,7 +90,7 @@ func NewMortGageFromMiner(miner *types.Miner) *MortGage {
 		t = "验证节点"
 	}
 	mg := &MortGage{
-		Stake:       uint64(float64(miner.Stake) / float64(1000000000)),
+		Stake:       miner.Stake,
 		ApplyHeight: miner.ApplyHeight,
 		AbortHeight: miner.AbortHeight,
 		Type:        t,

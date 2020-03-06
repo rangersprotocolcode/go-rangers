@@ -399,15 +399,15 @@ func (api *GtasAPI) NodeInfo() (*Result, error) {
 	} else {
 		ni.Status = "运行中"
 		morts := make([]MortGage, 0)
-		t := "--"
-		heavyInfo := core.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeProposer, nil)
+		t := ""
+		heavyInfo := core.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeProposer, service.AccountDBManagerInstance.GetLatestStateDB())
 		if heavyInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(heavyInfo))
 			if heavyInfo.AbortHeight == 0 {
 				t = "提案节点"
 			}
 		}
-		lightInfo := core.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeValidator, nil)
+		lightInfo := core.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeValidator, service.AccountDBManagerInstance.GetLatestStateDB())
 		if lightInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(lightInfo))
 			if lightInfo.AbortHeight == 0 {

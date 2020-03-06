@@ -720,7 +720,7 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function () {
                     tr += "<td>" + v.apply_height + "</td>"
                     tr += "<td>" + v.abort_height + "</td>"
                     mtype = 0
-                    if (v.type == "重节点") {
+                    if (v.type == "提案节点") {
                         mtype = 1
                     }
                     if (v.abort_height > 0) {
