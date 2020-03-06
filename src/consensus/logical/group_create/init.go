@@ -109,7 +109,7 @@ func (p *groupCreateProcessor) ReleaseGroups(topHeight uint64) (needDimissGroups
 		p.joinedGroupStorage.LeaveGroups(ids)
 		for _, g := range groups {
 			gid := g.GroupID
-			//blog.debug("DissolveGroupNet staticGroup gid %v ", gid.ShortS())
+			//quit group net.real group:group id
 			p.NetServer.ReleaseGroupNet(gid.GetHexString())
 			p.groupInitContextCache.RemoveContext(g.GroupInitInfo.GroupHash())
 		}
@@ -124,6 +124,7 @@ func (p *groupCreateProcessor) ReleaseGroups(topHeight uint64) (needDimissGroups
 		gHash := groupInitInfo.GroupHash()
 		if groupInitInfo.ReadyTimeout(topHeight) {
 			groupCreateLogger.Debugf("DissolveGroupNet dummyGroup from joiningGroups gHash %v", gHash.ShortS())
+			//quit group net.group hash
 			p.NetServer.ReleaseGroupNet(gHash.Hex())
 			waitPieceIds := make([]string, 0)
 			waitIds := make([]groupsig.ID, 0)
@@ -205,6 +206,7 @@ func (p *groupCreateProcessor) ReleaseGroups(topHeight uint64) (needDimissGroups
 		hash := ig.groupInitInfo.GroupHash()
 		if ig.groupInitInfo.ReadyTimeout(topHeight) {
 			groupCreateLogger.Debugf("remove groupPubkeyCollector, gHash %v", hash.ShortS())
+			//quit group net.group hash
 			p.NetServer.ReleaseGroupNet(hash.Hex())
 			p.groupSignCollectorMap.Delete(hash)
 		}

@@ -172,6 +172,13 @@ func (workerConn *WorkerConn) JoinGroupNet(groupId string) {
 	workerConn.logger.Debugf("Join group: %v", groupId)
 }
 
+//退出组网络
+func (workerConn *WorkerConn) QuitGroupNet(groupId string) {
+	header := wsHeader{method: methodCodeQuitGroup, targetId: workerConn.generateTargetForGroup(groupId)}
+	workerConn.sendChan <- workerConn.headerToBytes(header)
+	workerConn.logger.Debugf("Quit group: %v", groupId)
+}
+
 func (workerConn *WorkerConn) SetNetId(netId []byte) {
 	header := wsHeader{method: methodSetNetId}
 	bytes := workerConn.headerToBytes(header)
