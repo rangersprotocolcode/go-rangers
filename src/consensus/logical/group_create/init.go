@@ -116,42 +116,29 @@ func (p *groupCreateProcessor) ReleaseGroups(topHeight uint64) (needDimissGroups
 	}
 
 	//释放超时未建成组的组网络和相应的dummy组
+	invalidDummyGroups := make([]common.Hash, 0)
 	p.groupInitContextCache.forEach(func(gc *groupInitContext) bool {
 		if gc.groupInitInfo == nil || gc.status == GisGroupInitDone {
 			return true
 		}
 		groupInitInfo := gc.groupInitInfo
 		gHash := groupInitInfo.GroupHash()
+		//已经达到组可以开始工作的高度，但是组还没建成
 		if groupInitInfo.ReadyTimeout(topHeight) {
-			groupCreateLogger.Debugf("DissolveGroupNet dummyGroup from joiningGroups gHash %v", gHash.ShortS())
-			//quit group net.group hash
-			p.NetServer.ReleaseGroupNet(gHash.Hex())
-			waitPieceIds := make([]string, 0)
-			waitIds := make([]groupsig.ID, 0)
-			for _, mem := range groupInitInfo.GroupMembers {
-				if !gc.nodeInfo.hasSharePiece(mem) {
-					waitPieceIds = append(waitPieceIds, mem.ShortS())
-					waitIds = append(waitIds, mem)
-				}
-			}
-
-			msg := &model.ReqSharePieceMessage{
-				GroupHash: gc.groupInitInfo.GroupHash(),
-			}
-			groupCreateLogger.Infof("reqSharePieceRoutine:req size %v, ghash=%v", len(waitIds), gc.groupInitInfo.GroupHash().ShortS())
-			if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, msg); ok {
-				msg.SignInfo = signInfo
-				for _, receiver := range waitIds {
-					groupCreateLogger.Infof("reqSharePieceRoutine:req share piece msg from %v, ghash=%v", receiver, gc.groupInitInfo.GroupHash().ShortS())
-					p.NetServer.ReqSharePiece(msg, receiver)
-				}
+			if topHeight < groupInitInfo.GroupHeader.ReadyHeight+600 {
+				p.tryReqSharePiece(gc)
 			} else {
-				groupCreateLogger.Infof("gen req sharepiece sign fail, ski=%v %v", p.minerInfo.ID.ShortS(), p.minerInfo.SecKey.ShortS())
+				invalidDummyGroups = append(invalidDummyGroups, gHash)
 			}
-
 		}
 		return true
 	})
+	for _, groupHash := range invalidDummyGroups {
+		groupCreateLogger.Debugf("DissolveGroupNet dummyGroup from joiningGroups gHash %v", groupHash.ShortS())
+		//quit group net.group hash
+		p.NetServer.ReleaseGroupNet(groupHash.Hex())
+		p.groupInitContextCache.RemoveContext(groupHash)
+	}
 
 	gctx := p.context
 	if gctx != nil && gctx.timeout(topHeight) {
@@ -173,4 +160,30 @@ func (p *groupCreateProcessor) ReleaseGroups(topHeight uint64) (needDimissGroups
 	//清理超时的签名公钥请求
 	cleanSignPkReqRecord()
 	return
+}
+
+func (p *groupCreateProcessor) tryReqSharePiece(gc *groupInitContext) {
+	waitPieceIds := make([]string, 0)
+	waitIds := make([]groupsig.ID, 0)
+	for _, mem := range gc.groupInitInfo.GroupMembers {
+		if !gc.nodeInfo.hasSharePiece(mem) {
+			waitPieceIds = append(waitPieceIds, mem.ShortS())
+			waitIds = append(waitIds, mem)
+		}
+	}
+
+	msg := &model.ReqSharePieceMessage{
+		GroupHash: gc.groupInitInfo.GroupHash(),
+	}
+	groupCreateLogger.Infof("reqSharePieceRoutine:req size %v, ghash=%v", len(waitIds), gc.groupInitInfo.GroupHash().ShortS())
+	if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, msg); ok {
+		msg.SignInfo = signInfo
+		for _, receiver := range waitIds {
+			groupCreateLogger.Infof("reqSharePieceRoutine:req share piece msg from %v, ghash=%v", receiver, gc.groupInitInfo.GroupHash().ShortS())
+			p.NetServer.ReqSharePiece(msg, receiver)
+		}
+	} else {
+		groupCreateLogger.Infof("gen req sharepiece sign fail, ski=%v %v", p.minerInfo.ID.ShortS(), p.minerInfo.SecKey.ShortS())
+	}
+
 }
