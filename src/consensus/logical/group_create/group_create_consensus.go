@@ -261,11 +261,6 @@ func (p *groupCreateProcessor) handleSharePieceMessage(groupHash common.Hash, sh
 					MemberNum:       int32(context.groupInitInfo.MemberSize()),
 					MemberMask:      context.generateMemberMask(),
 				}
-				groupCreateLogger.Debugf("Before broadcast groupInitedMessage.Gen member mask:")
-				for _, id := range context.groupInitInfo.GroupMembers {
-					groupCreateLogger.Debugf(id.GetHexString())
-				}
-				groupCreateLogger.Debugf("Before broadcast groupInitedMessage.member mask:%v", groupInitedMessage.MemberMask)
 
 				if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, groupInitedMessage); ok {
 					groupInitedMessage.SignInfo = signInfo
@@ -316,7 +311,6 @@ func (p *groupCreateProcessor) OnMessageGroupInited(msg *model.GroupInitedMessag
 
 	groupCreateLogger.Debugf("(%v)Rcv group inited message!sender=%v, groupHash=%v, groupId=%v, groupPK=%v", p.minerInfo.ID.ShortS(),
 		msg.SignInfo.GetSignerID().ShortS(), groupHash.ShortS(), msg.GroupID.ShortS(), msg.GroupPK.ShortS())
-	groupCreateLogger.Debugf("Rcv group inited msg.member mask:%v,group members:", msg.MemberMask)
 
 	if msg.SignInfo.GetDataHash() != msg.GenHash() {
 		panic("grm gis hash diff")
