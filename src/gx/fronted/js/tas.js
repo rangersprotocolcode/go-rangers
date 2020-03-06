@@ -286,7 +286,8 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function () {
             data: JSON.stringify(params),
             success: function (rdata) {
                 let tr = "<tr class='wallet_tr'><td>" + rdata.result.data.private_key + "</td><td>" + rdata.result.data.address
-                    + '</td><td ><button class="layui-btn wallet_del">删除</button></td></tr>';
+                    + "</td><td>" + rdata.result.data.miner
+                    + '</td><td><button class="layui-btn wallet_del">删除</button></td></tr>';
                 $("#create_chart").append(tr);
 
                 $(".wallet_del").click(function () {

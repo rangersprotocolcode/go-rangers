@@ -1,18 +1,18 @@
 package cli
 
 import (
+	"encoding/hex"
+	"encoding/json"
+	"math"
+	"sync"
 	"x/src/common"
+	"x/src/consensus"
 	"x/src/consensus/groupsig"
 	"x/src/core"
-	"encoding/json"
-	"x/src/middleware/types"
-	"encoding/hex"
-	"math"
-	"x/src/consensus"
-	"sync"
 	"x/src/middleware/log"
-	"x/src/statemachine"
+	"x/src/middleware/types"
 	"x/src/service"
+	"x/src/statemachine"
 )
 
 func successResult(data interface{}) (*Result, error) {
@@ -39,10 +39,12 @@ var gxLock *sync.RWMutex
 
 // NewWallet 新建账户接口
 func (api *GtasAPI) NewWallet() (*Result, error) {
-	privKey, addr := walletManager.newWallet()
+	privKey, addr, miner := walletManager.newWallet()
 	data := make(map[string]string)
 	data["private_key"] = privKey
 	data["address"] = addr
+	data["miner"] = miner
+
 	return successResult(data)
 }
 

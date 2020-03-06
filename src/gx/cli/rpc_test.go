@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/json"
@@ -10,6 +11,9 @@ import (
 	"testing"
 	"time"
 	"x/src/common"
+	"x/src/consensus/base"
+	"x/src/consensus/vrf"
+	"x/src/middleware/types"
 )
 
 func TestRPC(t *testing.T) {
@@ -117,4 +121,29 @@ func TestNotifyId(t *testing.T) {
 	id := uint64(binary.BigEndian.Uint64(idBytes))
 
 	fmt.Println(id)
+}
+
+func TestGtasAPI_NewWallet(t *testing.T) {
+	priv := common.HexStringToSecKey("0x04a75d51da3bf3e79da72fd778547613d4fca6fe0a99de24d364d9bf3151c18a37c2063ad91995ca41eb396bdc12ae03cdd1e7ab3b5cf6c82c2310438cd8a61d0d703f96985effb724e9af17031ab9456259860623b859f42ec79894e925a43c28")
+	pub := priv.GetPubKey()
+	address := pub.GetAddress()
+	privKeyStr, walletAddress := pub.GetHexString(), address.GetHexString()
+
+	fmt.Println(privKeyStr)
+	fmt.Println(walletAddress)
+
+	// 加入本地钱包
+	//*ws = append(*ws, wallet{privKeyStr, walletAddress})
+	//ws.store()
+
+	var miner types.Miner
+	miner.Id = address.Bytes()
+	miner.PublicKey = pub.ToBytes()
+
+	secretSeed := base.RandFromBytes(address.Bytes())
+	vrfPK, vrfSK, _ := vrf.VRFGenerateKey(bytes.NewReader(secretSeed.Bytes()))
+	miner.VrfPublicKey = vrfPK
+
+	fmt.Println(vrfPK.GetHexString())
+	fmt.Println(vrfSK.GetHexString())
 }

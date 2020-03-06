@@ -1,11 +1,15 @@
 package cli
 
 import (
+	"bytes"
 	"encoding/json"
 	"log"
 	"sync"
 	"x/src/common"
+	"x/src/consensus/base"
+	"x/src/consensus/vrf"
 	"x/src/core"
+	"x/src/middleware/types"
 )
 
 var walletManager wallets
@@ -42,7 +46,7 @@ func (ws *wallets) deleteWallet(key string) {
 }
 
 // newWallet 新建钱包并存储到config文件中
-func (ws *wallets) newWallet() (privKeyStr, walletAddress string) {
+func (ws *wallets) newWallet() (privKeyStr, walletAddress, minerString string) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	priv := common.GenerateKey("")
@@ -52,6 +56,18 @@ func (ws *wallets) newWallet() (privKeyStr, walletAddress string) {
 	// 加入本地钱包
 	//*ws = append(*ws, wallet{privKeyStr, walletAddress})
 	//ws.store()
+
+	var miner types.Miner
+	miner.Id = address.Bytes()
+	miner.PublicKey = pub.ToBytes()
+
+	secretSeed := base.RandFromBytes(address.Bytes())
+	vrfPK, _, _ := vrf.VRFGenerateKey(bytes.NewReader(secretSeed.Bytes()))
+	miner.VrfPublicKey = vrfPK
+
+	minerJson, _ := json.Marshal(miner)
+	minerString = string(minerJson)
+
 	return
 }
 
