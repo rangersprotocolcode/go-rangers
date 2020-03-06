@@ -73,7 +73,7 @@ func InitParam(cc common.SectionConfManager) {
 		GroupWorkGap:        uint64(cc.GetInt("group_cast_qualify_gap", GROUP_Work_GAP)),
 		GroupworkDuration:   uint64(cc.GetInt("group_cast_duration", GROUP_Work_DURATION)),
 		//EffectGapAfterApply: EPOCH,
-		PotentialProposal:   10,
+		PotentialProposal:   5,
 		CreateGroupInterval: uint64(Group_Create_Interval),
 		GroupCreateGap:      uint64(Group_Create_Gap),
 		GroupWaitPongGap:    uint64(Group_Wait_Pong_Gap),
