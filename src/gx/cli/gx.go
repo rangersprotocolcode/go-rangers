@@ -112,7 +112,7 @@ func (gx *GX) Run() {
 		}()
 		gx.initMiner(*instanceIndex, *apply, *env, *gateAddr)
 		if *rpc {
-			err = StartRPC(addrRpc.String(), *portRpc)
+			err = StartRPC(addrRpc.String(), *portRpc, gx.account.Sk)
 			if err != nil {
 				common.DefaultLogger.Infof(err.Error())
 				return

@@ -50,12 +50,15 @@ func (ws *wallets) newWallet() (privKeyStr, walletAddress, minerString string) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	priv := common.GenerateKey("")
+
+	return ws.newWalletByPrivateKey(priv.GetHexString())
+}
+
+func (ws *wallets) newWalletByPrivateKey(privateKey string) (privKeyStr, walletAddress, minerString string) {
+	priv := common.HexStringToSecKey(privateKey)
 	pub := priv.GetPubKey()
 	address := pub.GetAddress()
 	privKeyStr, walletAddress = pub.GetHexString(), address.GetHexString()
-	// 加入本地钱包
-	//*ws = append(*ws, wallet{privKeyStr, walletAddress})
-	//ws.store()
 
 	var miner types.Miner
 	miner.Id = address.Bytes()
@@ -67,7 +70,6 @@ func (ws *wallets) newWallet() (privKeyStr, walletAddress, minerString string) {
 
 	minerJson, _ := json.Marshal(miner)
 	minerString = string(minerJson)
-
 	return
 }
 

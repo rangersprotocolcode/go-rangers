@@ -735,15 +735,9 @@ layui.use(['form', 'jquery', 'element', 'layer', 'table'], function () {
                 //链接节点
                 let nodes_table = $("#nodes_table");
                 nodes_table.empty();
-                if (d.conns != null) {
-                    d.conns.sort(function (a, b) {
-                        return parseInt(a.ip.split(".")[3]) - parseInt(b.ip.split(".")[3])
-                    });
-                    $.each(d.conns, function (i, val) {
-                        nodes_table.append(
-                            " <tr><td>id</td><td>ip</td><td>port</td></tr>".replace("ip", val.ip).replace("id", val.id).replace("port", val.tcp_port)
-                        )
-                    })
+                if (d.miner != null) {
+                    let tr = "<tr class='wallet_tr'><td>" + d.addr + "</td><td>" + d.miner + "</td></tr>";
+                    nodes_table.append(tr);
                 }
             },
             error: function (err) {

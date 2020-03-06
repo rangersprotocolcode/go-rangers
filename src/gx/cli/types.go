@@ -1,9 +1,9 @@
 package cli
 
 import (
+	"math/big"
 	"x/src/common"
 	"x/src/consensus/groupsig"
-	"math/big"
 	"x/src/middleware/types"
 )
 
@@ -186,6 +186,8 @@ type Dashboard struct {
 	WorkGNum    int        `json:"work_g_num"`
 	NodeInfo    *NodeInfo  `json:"node_info"`
 	Conns       []ConnInfo `json:"conns"`
+	Miner       string     `json:"miner"`
+	Addr        string     `json:"addr"`
 }
 
 //

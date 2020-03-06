@@ -24,7 +24,7 @@ func TestRPC(t *testing.T) {
 
 	host := "0.0.0.0"
 	var port uint = 8989
-	if err := StartRPC(host, port); err != nil {
+	if err := StartRPC(host, port,""); err != nil {
 		panic(err)
 	}
 

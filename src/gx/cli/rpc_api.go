@@ -32,7 +32,8 @@ func failResult(err string) (*Result, error) {
 
 // GtasAPI is a single-method API handler to be returned by test services.
 type GtasAPI struct {
-	logger log.Logger
+	privateKey string
+	logger     log.Logger
 }
 
 var gxLock *sync.RWMutex
@@ -547,12 +548,15 @@ func (api *GtasAPI) Dashboard() (*Result, error) {
 	groupHeight := core.GetGroupChain().Count()
 	workNum := len(consensus.Proc.GetCastQualifiedGroups(blockHeight))
 	nodeResult, _ := api.NodeInfo()
+	_, addr, self := walletManager.newWalletByPrivateKey(api.privateKey)
 
 	dash := &Dashboard{
 		BlockHeight: blockHeight,
 		GroupHeight: groupHeight,
 		WorkGNum:    workNum,
 		NodeInfo:    nodeResult.Data.(*NodeInfo),
+		Miner:       self,
+		Addr:        addr,
 	}
 	return successResult(dash)
 }
