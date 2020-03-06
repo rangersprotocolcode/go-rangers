@@ -112,7 +112,7 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 	}
 }
 
-// 节点加入组，订阅组消息
+// 创始节点加入创始组，订阅组消息
 func (workerConn *WorkerConn) joinGroup() {
 	for _, group := range netMemberInfo.VerifyGroupList {
 		for _, member := range group.Members {

@@ -1,22 +1,22 @@
 package cli
 
 import (
-	"encoding/json"
-	"log"
-	"testing"
-	"strconv"
-	"fmt"
-	"time"
-	"x/src/common"
 	"crypto/md5"
 	"encoding/binary"
+	"encoding/json"
+	"fmt"
+	"log"
+	"strconv"
+	"testing"
+	"time"
+	"x/src/common"
 )
 
 func TestRPC(t *testing.T) {
 	gx := NewGX()
 	common.InitConf("tas.ini")
 	walletManager = newWallets()
-	gx.initMiner(0, "heavy", "keystore", "dev","")
+	gx.initMiner(0, "heavy", "dev", "")
 
 	host := "0.0.0.0"
 	var port uint = 8989
@@ -40,7 +40,7 @@ func TestRPC(t *testing.T) {
 		{"Rocket_getAsset", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb", "1"}},
 		{"Rocket_getAllAssets", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
 		{"Rocket_getBalance", []interface{}{"a", "0x8ad32757d4dbcea703ba4b982f6fd08dad84bfcb"}},
-		{"Rocket_notify", []interface{}{"tuntun", "a19d069d48d2e9392ec2bb41ecab0a72119d633b","notify one"}},
+		{"Rocket_notify", []interface{}{"tuntun", "a19d069d48d2e9392ec2bb41ecab0a72119d633b", "notify one"}},
 		//{"Rocket_notifyGroup", []interface{}{"tuntun", "groupA","notify groupA"}},
 		//{"Rocket_notifyBroadcast", []interface{}{"tuntun", "notify all"}},
 		//{"GTAS_blockHeight", nil},
@@ -56,7 +56,7 @@ func TestRPC(t *testing.T) {
 			t.Errorf("%s failed: %v", test.method, res.Error.Message)
 			continue
 		}
-		if nil!=res && nil!=res.Result{
+		if nil != res && nil != res.Result {
 			data, _ := json.Marshal(res.Result.Data)
 			log.Printf("%s response data: %s", test.method, data)
 		}

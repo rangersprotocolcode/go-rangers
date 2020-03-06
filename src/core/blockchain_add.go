@@ -89,10 +89,6 @@ func (chain *blockChain) addBlockOnChain(source string, coming *types.Block, sit
 	// 比本地链好，要
 	if comingHeader.TotalQN > topBlock.TotalQN {
 		commonAncestor := chain.queryBlockHeaderByHash(comingHeader.PreHash)
-		if commonAncestor == nil || comingHeader == nil || topBlock == nil {
-			logger.Debugf("Debug1:commonAncestor:%v,comingHeader:%v,topBlock:%v", commonAncestor, comingHeader, topBlock)
-			time.Sleep(time.Second * 3)
-		}
 		logger.Warnf("coming greater than local. Removing and Forking...coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
 			comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
 
