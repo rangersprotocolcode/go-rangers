@@ -176,7 +176,7 @@ func (gx *GX) initMiner(instanceIndex int, apply, env, gateAddr string) {
 
 func (gx *GX) getAccountInfo(sk string) {
 	if 0 == len(sk) {
-		privateKey := common.GenerateKey("rocketProtocol")
+		privateKey := common.GenerateKey("")
 		sk = privateKey.GetHexString()
 	}
 
