@@ -44,7 +44,6 @@ func (workerConn *WorkerConn) Init(ipPort, selfId string, consensusHandler MsgHa
 	}
 
 	workerConn.init(ipPort, "/srv/worker_worker", logger)
-	workerConn.joinGroup()
 }
 
 func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
@@ -112,21 +111,7 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 	}
 }
 
-// 创始节点加入创始组，订阅组消息
-func (workerConn *WorkerConn) joinGroup() {
-	for _, group := range netMemberInfo.VerifyGroupList {
-		for _, member := range group.Members {
-			if workerConn.selfId != member {
-				continue
-			}
 
-			header := wsHeader{method: methodCodeJoinGroup, targetId: workerConn.generateTargetForGroup(group.GroupId)}
-			workerConn.sendChan <- workerConn.headerToBytes(header)
-			workerConn.logger.Warnf("Join group: %d", header.targetId)
-			break
-		}
-	}
-}
 
 func (workerConn *WorkerConn) generateTargetForGroup(groupId string) uint64 {
 	hash64 := fnv.New64()

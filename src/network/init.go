@@ -24,7 +24,6 @@ func InitNetwork(consensusHandler MsgHandler, selfMinerId, env, gate string) {
 		}
 	}
 
-	getNetMemberInfo("")
 
 	var s server
 	s.Init(Logger, gateAddr, selfMinerId, consensusHandler)
