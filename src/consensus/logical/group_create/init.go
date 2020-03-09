@@ -123,6 +123,7 @@ func (p *groupCreateProcessor) ReleaseGroups(topHeight uint64) (needDimissGroups
 		}
 		groupInitInfo := gc.groupInitInfo
 		gHash := groupInitInfo.GroupHash()
+		groupCreateLogger.Debugf("group init context hash:%v,ready height:%d,top height:%d", groupInitInfo.GroupHash(), groupInitInfo.GroupHeader.ReadyHeight, topHeight)
 		//已经达到组可以开始工作的高度，但是组还没建成
 		if groupInitInfo.ReadyTimeout(topHeight) {
 			if topHeight < groupInitInfo.GroupHeader.ReadyHeight+600 {
