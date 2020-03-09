@@ -292,6 +292,12 @@ func (p *Processor) blockProposal() {
 	start := time.Now()
 	blog := newBizLog("blockProposal")
 	top := p.MainChain.TopBlock()
+
+	if time.Since(top.CurTime).Seconds() < common.CastingInterval/1000 {
+		blog.log("time cost %v s from chain casting last block,less than %v s,do not proposal ", top.Hash.ShortS(), common.CastingInterval/1000)
+		return
+	}
+
 	worker := p.GetVrfWorker()
 	if worker.getBaseBH().Hash != top.Hash {
 		blog.log("vrf baseBH differ from top!")
