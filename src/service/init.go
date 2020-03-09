@@ -7,11 +7,11 @@ import (
 
 var logger, txLogger log.Logger
 
-func InitService(nodeType byte) {
+func InitService() {
 	logger = log.GetLoggerByIndex(log.CoreLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	txLogger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
-	initTransactionPool(nodeType)
+	initTransactionPool()
 	initTxManager()
 	initFTManager()
 	initNFTManager()

@@ -6,11 +6,11 @@ import (
 	"time"
 	"x/src/common"
 
-	"x/src/middleware/types"
 	"github.com/vmihailenco/msgpack"
+	"x/src/middleware/types"
+	"x/src/service"
 	"x/src/storage/account"
 	"x/src/storage/trie"
-	"x/src/service"
 	"x/src/utility"
 )
 
@@ -218,6 +218,11 @@ func (mm *MinerManager) AddMiner(addr common.Address, miner *types.Miner, accoun
 		(miner.Type == common.MinerTypeProposer && miner.Stake < common.ProposerStake) {
 		logger.Errorf("not enough stake, minerId: %d, stake: %d", common.ToHex(miner.Id), miner.Stake)
 		return false
+	}
+	if isEmptyByteSlice(miner.VrfPublicKey) || isEmptyByteSlice(miner.PublicKey) {
+		logger.Errorf("VrfPublicKey or PublicKey is empty, minerId: %d, vrfPublicKey: %v,publicKey: %v", common.ToHex(miner.Id), miner.VrfPublicKey, miner.PublicKey)
+		return false
+
 	}
 
 	stake := utility.Float64ToBigInt(float64(miner.Stake))

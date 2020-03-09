@@ -53,7 +53,7 @@ func (c *simpleContainer) asSlice() []*types.Transaction {
 	return c.txs
 }
 
-func (c *simpleContainer) push(tx *types.Transaction, nodeType byte) {
+func (c *simpleContainer) push(tx *types.Transaction) {
 	c.lock.Lock()
 	defer c.lock.Unlock()
 
@@ -61,12 +61,7 @@ func (c *simpleContainer) push(tx *types.Transaction, nodeType byte) {
 		c.txs = append(c.txs, tx)
 		c.txsMap[tx.Hash] = tx
 		return
-	} else if nodeType != common.MinerTypeProposer {
-		c.txs = types.Transactions{}
-		c.txsMap = map[common.Hash]*types.Transaction{}
-		txLogger.Errorf("overflow txs,remove all")
 	}
-
 }
 
 func (c *simpleContainer) remove(key common.Hash) {

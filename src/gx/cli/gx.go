@@ -75,7 +75,6 @@ func (gx *GX) Run() {
 	addrRpc := mineCmd.Flag("rpcaddr", "rpc host").Short('r').Default("0.0.0.0").IP()
 	portRpc := mineCmd.Flag("rpcport", "rpc port").Short('p').Default("8088").Uint()
 	instanceIndex := mineCmd.Flag("instance", "instance index").Short('i').Default("0").Int()
-	apply := mineCmd.Flag("apply", "apply heavy or light miner").String()
 	env := mineCmd.Flag("env", "the environment application run in").String()
 
 	//自定义网关
@@ -90,11 +89,7 @@ func (gx *GX) Run() {
 	common.GlobalConf.SetInt(instanceSection, indexKey, *instanceIndex)
 	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString(instanceSection, indexKey, ""))
 
-	if *apply == "heavy" {
-		fmt.Println("Welcome to be a rocketProtocol propose miner!")
-	} else if *apply == "light" {
-		fmt.Println("Welcome to be a rocketProtocol verify miner!")
-	}
+	fmt.Println("Welcome to be a rocketProtocol miner!")
 	switch command {
 	case versionCmd.FullCommand():
 		fmt.Println("GX Version:", GXVersion)
@@ -110,7 +105,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(*instanceIndex, *apply, *env, *gateAddr)
+		gx.initMiner(*instanceIndex, *env, *gateAddr)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc, gx.account.Sk)
 			if err != nil {
@@ -122,7 +117,7 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, apply, env, gateAddr string) {
+func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	databaseValue := "d" + strconv.Itoa(instanceIndex)
@@ -136,17 +131,9 @@ func (gx *GX) initMiner(instanceIndex int, apply, env, gateAddr string) {
 
 	minerInfo := model.NewSelfMinerInfo(gx.account.Miner.ID[:])
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
-	if apply == "light" {
-		minerInfo.MinerType = common.MinerTypeValidator
-	} else if apply == "heavy" {
-		minerInfo.MinerType = common.MinerTypeProposer
-	} else {
-		minerInfo.MinerType = common.MinerTypeUnknown
-	}
-
 	minerId := "0x" + common.Bytes2Hex(gx.account.Miner.ID[:])
 	network.InitNetwork(cnet.MessageHandler, minerId, env, gateAddr)
-	service.InitService(minerInfo.MinerType)
+	service.InitService()
 
 	err := core.InitCore(consensus.NewConsensusHelper(minerInfo.ID))
 	if err != nil {
