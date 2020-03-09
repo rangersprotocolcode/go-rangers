@@ -3,9 +3,9 @@ package network
 import (
 	"testing"
 	"x/src/middleware/log"
-	"hash/fnv"
 	"fmt"
 	"strconv"
+	"hash/fnv"
 )
 
 func TestWorkerConn_Init(t *testing.T) {
@@ -23,8 +23,8 @@ func TestGenTargetForgroup(t *testing.T) {
 	hash64.Write([]byte(groupId))
 
 	idInt := hash64.Sum64()
-	fmt.Printf("%v\n", idInt)
+	fmt.Printf("hash:%v\n", idInt)
 
-	s16 := strconv.FormatUint(idInt, 16) //10 yo 16
-	fmt.Printf("%v\n", s16)
+	b16 := strconv.FormatUint(idInt, 16) //10 yo 16
+	fmt.Printf("hex:%v\n", b16)
 }

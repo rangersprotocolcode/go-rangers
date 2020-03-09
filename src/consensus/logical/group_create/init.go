@@ -86,8 +86,15 @@ func (p *groupCreateProcessor) OnGroupAddSuccess(g *model.GroupInfo) {
 	}
 	//p.joiningGroups.Clean(sgi.GInfo.GroupHash())
 	//p.globalGroups.removeInitedGroup(sgi.GInfo.GroupHash())
-	p.groupInitContextCache.Clean(g.GroupInitInfo.GroupHash())
+
+	//p.groupInitContextCache.Clean(g.GroupInitInfo.GroupHash())
 	p.groupSignCollectorMap.Delete(g.GroupInitInfo.GroupHash())
+	if p.joinedGroupStorage.BelongGroup(g.GroupID) {
+		p.groupInitContextCache.RemoveContext(g.GroupInitInfo.GroupHash())
+		//退出DUMMY 网络
+		p.NetServer.ReleaseGroupNet(g.GroupInitInfo.GroupHash().String())
+	}
+
 }
 
 func (p *groupCreateProcessor) removeContext() {
@@ -125,7 +132,7 @@ func (p *groupCreateProcessor) ReleaseGroups(topHeight uint64) (needDimissGroups
 		gHash := groupInitInfo.GroupHash()
 		//已经达到组可以开始工作的高度，但是组还没建成
 		if groupInitInfo.ReadyTimeout(topHeight) {
-			if topHeight < groupInitInfo.GroupHeader.ReadyHeight+600 {
+			if topHeight < groupInitInfo.GroupHeader.ReadyHeight+model.Param.CreateGroupInterval {
 				p.tryReqSharePiece(gc)
 			} else {
 				invalidDummyGroups = append(invalidDummyGroups, gHash)

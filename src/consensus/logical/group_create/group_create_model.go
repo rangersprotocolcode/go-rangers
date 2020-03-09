@@ -138,7 +138,7 @@ type groupInitContextCache struct {
 
 func newGroupInitContextCache() groupInitContextCache {
 	return groupInitContextCache{
-		cache: common.CreateLRUCache(50),
+		cache: common.CreateLRUCache(100),
 	}
 }
 

@@ -19,10 +19,6 @@ func (p *groupCreateProcessor) OnMessageGroupInit(msg *model.GroupInitMessage) {
 	groupHeader := groupInitInfo.GroupHeader
 
 	groupCreateLogger.Debugf("(%v)Rcv group init message, sender=%v, groupHash=%v...", p.minerInfo.ID.ShortS(), msg.SignInfo.GetSignerID().ShortS(), groupHash.ShortS())
-	groupCreateLogger.Debugf("Rcv group init msg:group members")
-	for _, id := range msg.GroupInitInfo.GroupMembers {
-		groupCreateLogger.Debugf(id.GetHexString())
-	}
 	//tlog := newHashTraceLog("OMGI", gHash, msg.SI.GetID())
 
 	if msg.SignInfo.GetDataHash() != msg.GenHash() || groupHeader.Hash != groupHeader.GenHash() {

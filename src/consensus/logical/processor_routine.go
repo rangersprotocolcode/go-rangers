@@ -38,6 +38,11 @@ func (p *Processor) checkSelfCastRoutine() bool {
 		return false
 	}
 
+	if time.Since(top.CurTime).Seconds() < common.CastingInterval/1000 {
+		blog.log("time cost %vs from chain casting last block,less than %vs,do not proposal.last block cast time:%v ", time.Since(top.CurTime).Seconds(), common.CastingInterval/1000, top.CurTime)
+		return false
+	}
+
 	deltaHeight = uint64(d.Seconds())/uint64(model.Param.MaxGroupCastTime) + 1
 	if top.Height > 0 {
 		castHeight = top.Height + deltaHeight

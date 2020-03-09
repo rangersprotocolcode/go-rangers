@@ -292,6 +292,7 @@ func (p *Processor) blockProposal() {
 	start := time.Now()
 	blog := newBizLog("blockProposal")
 	top := p.MainChain.TopBlock()
+
 	worker := p.GetVrfWorker()
 	if worker.getBaseBH().Hash != top.Hash {
 		blog.log("vrf baseBH differ from top!")
