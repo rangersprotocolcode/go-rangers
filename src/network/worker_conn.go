@@ -111,8 +111,6 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 	}
 }
 
-
-
 func (workerConn *WorkerConn) generateTargetForGroup(groupId string) uint64 {
 	hash64 := fnv.New64()
 	hash64.Write([]byte(groupId))
@@ -154,14 +152,14 @@ func (workerConn *WorkerConn) SendToEveryone(msg Message) {
 func (workerConn *WorkerConn) JoinGroupNet(groupId string) {
 	header := wsHeader{method: methodCodeJoinGroup, targetId: workerConn.generateTargetForGroup(groupId)}
 	workerConn.sendChan <- workerConn.headerToBytes(header)
-	workerConn.logger.Debugf("Join group: %v", groupId)
+	workerConn.logger.Debugf("Join group: %v,targetId:%v,hex:%v", groupId, header.targetId, strconv.FormatUint(header.targetId, 16))
 }
 
 //退出组网络
 func (workerConn *WorkerConn) QuitGroupNet(groupId string) {
 	header := wsHeader{method: methodCodeQuitGroup, targetId: workerConn.generateTargetForGroup(groupId)}
 	workerConn.sendChan <- workerConn.headerToBytes(header)
-	workerConn.logger.Debugf("Quit group: %v", groupId)
+	workerConn.logger.Debugf("Quit group: %v,targetId:%v,hex:%v", groupId, header.targetId, strconv.FormatUint(header.targetId, 16))
 }
 
 func (workerConn *WorkerConn) SetNetId(netId []byte) {
