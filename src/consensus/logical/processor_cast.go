@@ -294,7 +294,7 @@ func (p *Processor) blockProposal() {
 	top := p.MainChain.TopBlock()
 
 	if time.Since(top.CurTime).Seconds() < common.CastingInterval/1000 {
-		blog.log("time cost %v s from chain casting last block,less than %v s,do not proposal ", top.Hash.ShortS(), common.CastingInterval/1000)
+		blog.log("time cost %vs from chain casting last block,less than %vs,do not proposal.last block cast time:%v ", time.Since(top.CurTime).Seconds(), common.CastingInterval/1000, top.CurTime)
 		return
 	}
 
