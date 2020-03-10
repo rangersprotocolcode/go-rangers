@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"strings"
-	"time"
+	"x/src/common"
 	"x/src/consensus/groupsig"
 	"x/src/consensus/model"
 	"x/src/consensus/vrf"
@@ -49,16 +49,23 @@ func (p *groupCreateProcessor) BeginGenesisGroupMember() {
 		if !genesis.GroupInfo.MemExist(p.minerInfo.ID) {
 			continue
 		}
-		sgi := &genesis.GroupInfo
 
-		jg := p.joinedGroupStorage.GetJoinedGroupInfo(sgi.GroupID)
-		if jg == nil {
-			time.Sleep(time.Second * 1)
-			panic("genesisMember find join_group fail" + sgi.GroupID.GetHexString())
-		}
+		jg := genGenesisJoinedGroup()
+		sec := new(groupsig.Seckey)
+		sec.SetHexString(common.GlobalConf.GetString("gx", "signSecKey", ""))
+		jg.SignSecKey = *sec
+
 		p.joinedGroupStorage.JoinGroup(jg, p.minerInfo.ID)
 	}
 
+}
+
+func genGenesisJoinedGroup() *model.JoinedGroupInfo {
+	genesisJoinedGroupString := `{"GroupHash":"0x0000000000000000000000000000000000000000000000000000000000000000","GroupID":"0x2a63497b8b48bc85ae6f61576d4a2988e7b71e1c02898ea2a02ead17f076bf92","GroupPK":"0x1f1fc4d3707b60990e1e80fcdb941fd124cf617e187ffc032c2a5c721dea5bcf1272174f98f1f1fae039df6d661e695e39eca5dcbfa97adc84fe94ea9be0e1812c79239e11d0f762a58df0cae07ba81b6c63f687e40354b45e9a83d80dde0e2a27c44ab34a87afddb56ee809df11cd40d2376ca0e7409ec9ef9051c0d78c96e3","SignSecKey":{},"MemberSignPubkeyMap":{"0x445173ab39681491f688e8b5b11f3f51041ce0d05b5ddd75ccc86f4c3343a418":"0x14d852bd2ae1d416c62a4ca98ebfb4825c7da9681572360e3cf678888088bb141fd1546dd661ba8c8c23649a0e5562e72a62e2b8632d8c77585818820584f9391a398295f35bae8a40de7909962ad50c415b3ddc5924ee6877c9208bf81e17412f077393c0717d6fcd4623716c98de7246100de0fec8627e35967f7975948aa1","0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443":"0x1f0135c825f4fffb6d0f91a66d08e2b322e8adb2ee561b1b050d7de26d1f287b0c54067c47677581cd56f2976be170b54cdcf0aeba76513f38105894933e9d0524a648bfd572fe0c1c14672afef7be73ac411f3d76fdb7828690ab66f29847941754a9eb4f9fcb44ed2c9e497bb1df0517558224cb4bb955a959f9bd3760f9e8","0x9f67e8e7785f489a1e54a8ff8e7ca7859fcfc5c2cef2278d5bb6528a0c5c609e":"0x1a71862c8d6e22ab027d93200488ec57edc583dd6e72d213d3ea9032955d7e4a05641d0b1d3d3c2f2d8b5d981098ec3c504596a2f372db4d091f90f89b04cff50c3d8d16131b2a452c25a651725ec0d16db6cfbdf5645e1364b23b22db27959909bf5622e395528d8e77ed3b65efbb267708bb0af1105be0560d7634604e6eaa"}}`
+	jg := new(model.JoinedGroupInfo)
+	json.Unmarshal([]byte(genesisJoinedGroupString), jg)
+
+	return jg
 }
 
 func getGenesisGroupInfo() []*genesisGroup {
