@@ -3,19 +3,18 @@ package logical
 import (
 	"x/src/consensus/groupsig"
 
+	"fmt"
+	"github.com/hashicorp/golang-lru"
+	"sync"
+	"sync/atomic"
 	"x/src/common"
+	"x/src/consensus/access"
 	"x/src/consensus/model"
 	"x/src/consensus/net"
 	"x/src/consensus/ticker"
 	"x/src/core"
-	"fmt"
 	"x/src/middleware/notify"
 	"x/src/middleware/types"
-	"sync/atomic"
-	"strings"
-	"github.com/hashicorp/golang-lru"
-	"sync"
-	"x/src/consensus/access"
 )
 
 //见证人处理器
@@ -98,13 +97,6 @@ func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joined
 	notify.BUS.Subscribe(notify.TransactionGotAddSucc, p.onMissTxAddSucc)
 	notify.BUS.Subscribe(notify.AcceptGroup, p.onGroupAccept)
 	//notify.BUS.Subscribe(notify.NewBlock, p.onNewBlockReceive)
-
-	jgFile := conf.GetString(ConsensusConfSection, "joined_group_store", "")
-	if strings.TrimSpace(jgFile) == "" {
-		jgFile = "joined_group.config." + common.GlobalConf.GetString("instance", "index", "")
-	}
-	stdLogger.Errorf("jgFile:%s", jgFile)
-	p.belongGroups.JoinedGroupFromConfig(jgFile)
 
 	return true
 }

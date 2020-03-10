@@ -2,16 +2,13 @@ package access
 
 import (
 	"sync"
+	"x/src/core"
 
+	"encoding/json"
+	"github.com/hashicorp/golang-lru"
 	"x/src/common"
 	"x/src/consensus/groupsig"
-	"github.com/hashicorp/golang-lru"
-	"crypto/rand"
-	"encoding/json"
-	"os"
-	"x/src/middleware/db"
 	"x/src/consensus/model"
-	"io/ioutil"
 )
 
 // key suffix definition when store the group infos to db
@@ -23,24 +20,19 @@ const (
 //BelongGroups
 // BelongGroups stores all group-related infos which is important to the members
 type JoinedGroupStorage struct {
-	privateKey common.PrivateKey //加密用的
-
-	cache *lru.Cache
-	db    *db.LDBDatabase
-
-	storeDir  string
-	initMutex sync.Mutex
+	groupChain core.GroupChain
+	cache      *lru.Cache
+	initMutex  sync.Mutex
 }
 
 //NewBelongGroups
-func NewJoinedGroupStorage(filePath string, privateKey common.PrivateKey) *JoinedGroupStorage {
+func NewJoinedGroupStorage() *JoinedGroupStorage {
 	return &JoinedGroupStorage{
-		privateKey: privateKey,
-		storeDir:   filePath,
+		groupChain: core.GetGroupChain(),
 	}
 }
 
-func (storage *JoinedGroupStorage) AddJoinedGroupInfo(joinedGroupInfo *model.JoinedGroupInfo) {
+func (storage *JoinedGroupStorage) addJoinedGroupInfo(joinedGroupInfo *model.JoinedGroupInfo) {
 	if !storage.ready() {
 		storage.initStore()
 	}
@@ -81,42 +73,13 @@ func (storage *JoinedGroupStorage) AddMemberSignPk(minerId groupsig.ID, groupId 
 	return jg, false
 }
 
-//joinedGroup2DBIfConfigExists
-func (storage *JoinedGroupStorage) JoinedGroupFromConfig(file string) bool {
-	if !fileExists(file) || isDir(file) {
-		return false
-	}
-	logger.Debugf("load joined Groups info from %v", file)
-	data, err := ioutil.ReadFile(file)
-	if err != nil {
-		logger.Errorf("load file %v fail, err %v", file, err.Error())
-		return false
-	}
-	var gs []*model.JoinedGroupInfo
-	err = json.Unmarshal(data, &gs)
-	if err != nil {
-		logger.Errorf("unmarshal joined group storage store file %v fail, err %v", file, err.Error())
-		return false
-	}
-	n := 0
-	storage.initStore()
-	for _, jg := range gs {
-		if storage.GetJoinedGroupInfo(jg.GroupID) == nil {
-			n++
-			storage.AddJoinedGroupInfo(jg)
-		}
-	}
-	logger.Debugf("joined group info from config size %v", n)
-	return true
-}
-
 func (storage *JoinedGroupStorage) LeaveGroups(gids []groupsig.ID) {
 	if !storage.ready() {
 		return
 	}
 	for _, gid := range gids {
 		storage.cache.Remove(gid.GetHexString())
-		storage.db.Delete(gInfoSuffix(gid))
+		storage.groupChain.DeleteJoinedGroup(gInfoSuffix(gid))
 	}
 }
 
@@ -125,7 +88,7 @@ func (storage *JoinedGroupStorage) Close() {
 		return
 	}
 	storage.cache = nil
-	storage.db.Close()
+	//storage.db.Close()
 }
 
 //IsMinerGroup
@@ -141,7 +104,7 @@ func (storage *JoinedGroupStorage) BelongGroup(groupId groupsig.ID) bool {
 func (storage *JoinedGroupStorage) JoinGroup(joinedGroupInfo *model.JoinedGroupInfo, selfMinerId groupsig.ID) {
 	logger.Infof("(%v):join group,group id=%v...\n", selfMinerId.GetHexString(), joinedGroupInfo.GroupID.ShortS())
 	if !storage.BelongGroup(joinedGroupInfo.GroupID) {
-		storage.AddJoinedGroupInfo(joinedGroupInfo)
+		storage.addJoinedGroupInfo(joinedGroupInfo)
 	}
 	return
 }
@@ -153,17 +116,11 @@ func (storage *JoinedGroupStorage) initStore() {
 	if storage.ready() {
 		return
 	}
-	db, err := db.NewLDBDatabase(storage.storeDir, 1, 1)
-	if err != nil {
-		panic("newLDBDatabase fail, file=" + storage.storeDir + "err=" + err.Error())
-		return
-	}
 	storage.cache = common.CreateLRUCache(30)
-	storage.db = db
 }
 
 func (storage *JoinedGroupStorage) ready() bool {
-	return storage.cache != nil && storage.db != nil
+	return storage.cache != nil
 }
 
 func (storage *JoinedGroupStorage) storeJoinedGroup(joinedGroupInfo *model.JoinedGroupInfo) {
@@ -175,15 +132,7 @@ func (storage *JoinedGroupStorage) saveSignSecKey(joinedGroupInfo *model.JoinedG
 	if !storage.ready() {
 		return
 	}
-	pubKey := storage.privateKey.GetPubKey()
-	ct, err := pubKey.Encrypt(rand.Reader, joinedGroupInfo.SignSecKey.Serialize())
-	//logger.Debugf("saveSignSecKey data:%v,privateKey:%v",joinedGroupInfo.SignSecKey.Serialize(),storage.privateKey.GetHexString())
-
-	if err != nil {
-		logger.Errorf("encrypt signkey fail, err=%v", err.Error())
-		return
-	}
-	storage.db.Put(signKeySuffix(joinedGroupInfo.GroupID), ct)
+	storage.groupChain.SaveJoinedGroup(signKeySuffix(joinedGroupInfo.GroupID), joinedGroupInfo.SignSecKey.Serialize())
 }
 
 func (storage *JoinedGroupStorage) saveGroupInfo(joinedGroupInfo *model.JoinedGroupInfo) {
@@ -199,7 +148,7 @@ func (storage *JoinedGroupStorage) saveGroupInfo(joinedGroupInfo *model.JoinedGr
 	if err != nil {
 		logger.Errorf("marshal joinedGroupDO fail, err=%v", err)
 	} else {
-		storage.db.Put(gInfoSuffix(joinedGroupInfo.GroupID), bs)
+		storage.groupChain.SaveJoinedGroup(gInfoSuffix(joinedGroupInfo.GroupID), bs)
 	}
 }
 
@@ -210,21 +159,16 @@ func (storage *JoinedGroupStorage) load(gid groupsig.ID) *model.JoinedGroupInfo 
 	joinedGroupInfo := new(model.JoinedGroupInfo)
 	joinedGroupInfo.MemberSignPubkeyMap = make(map[string]groupsig.Pubkey, 0)
 	// Load signature private key
-	bs, err := storage.db.Get(signKeySuffix(gid))
+	bs, err := storage.groupChain.GetJoinedGroup(signKeySuffix(gid))
 	if err != nil {
 		logger.Errorf("get signKey fail, gid=%v, err=%v", gid.ShortS(), err.Error())
 		return nil
 	}
 	//logger.Debugf("load bs:%v,privateKey:%v",bs,storage.privateKey.GetHexString())
-	m, err := storage.privateKey.Decrypt(rand.Reader, bs)
-	if err != nil {
-		logger.Errorf("decrypt signKey fail, err=%v", err.Error())
-		return nil
-	}
-	joinedGroupInfo.SignSecKey.Deserialize(m)
+	joinedGroupInfo.SignSecKey.Deserialize(bs)
 
 	// Load group information
-	infoBytes, err := storage.db.Get(gInfoSuffix(gid))
+	infoBytes, err := storage.groupChain.GetJoinedGroup(gInfoSuffix(gid))
 	if err != nil {
 		logger.Errorf("get groupInfo fail, gid=%v, err=%v", gid.ShortS(), err.Error())
 		return joinedGroupInfo
@@ -248,23 +192,4 @@ func signKeySuffix(gid groupsig.ID) []byte {
 
 func gInfoSuffix(gid groupsig.ID) []byte {
 	return []byte(gid.GetHexString() + suffixGInfo)
-}
-
-func fileExists(f string) bool {
-	// os.Stat gets file information
-	_, err := os.Stat(f)
-	if err != nil {
-		if os.IsExist(err) {
-			return true
-		}
-		return false
-	}
-	return true
-}
-func isDir(path string) bool {
-	s, err := os.Stat(path)
-	if err != nil {
-		return false
-	}
-	return s.IsDir()
 }

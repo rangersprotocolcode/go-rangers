@@ -1,16 +1,16 @@
 package core
 
 import (
-	"sync"
-	"encoding/json"
-	"fmt"
-	"encoding/binary"
-	"x/src/middleware/db"
-	"x/src/middleware/types"
-	"x/src/middleware/notify"
-	"x/src/utility"
 	"bytes"
+	"encoding/binary"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"sync"
+	"x/src/middleware/db"
+	"x/src/middleware/notify"
+	"x/src/middleware/types"
+	"x/src/utility"
 )
 
 const (
@@ -106,7 +106,7 @@ func (chain *groupChain) GetGroupById(id []byte) *types.Group {
 	return chain.getGroupById(id)
 }
 
-func (chain *groupChain) GetGroupByHeight(height uint64) (*types.Group) {
+func (chain *groupChain) GetGroupByHeight(height uint64) *types.Group {
 	chain.lock.RLock()
 	defer chain.lock.RUnlock()
 	return chain.getGroupByHeight(height)
@@ -234,7 +234,7 @@ func (chain *groupChain) GetSyncGroupsById(id []byte) []*types.Group {
 	return chain.GetSyncGroupsByHeight(group.GroupHeight+1, 5)
 }
 
-func (chain *groupChain) GetSyncGroupsByHeight(height uint64, limit int) ([]*types.Group) {
+func (chain *groupChain) GetSyncGroupsByHeight(height uint64, limit int) []*types.Group {
 	chain.lock.RLock()
 	defer chain.lock.RUnlock()
 	return chain.getSyncGroupsByHeight(height, limit)
@@ -252,4 +252,18 @@ func (chain *groupChain) getSyncGroupsByHeight(height uint64, limit int) []*type
 	}
 
 	return result
+}
+
+func (chain *groupChain) SaveJoinedGroup(id []byte, value []byte) bool {
+	err := chain.groups.Put(id, value)
+	return err == nil
+}
+
+func (chain *groupChain) GetJoinedGroup(id []byte) ([]byte, error) {
+	return chain.groups.Get(id)
+}
+
+func (chain *groupChain) DeleteJoinedGroup(id []byte) bool {
+	err := chain.groups.Delete(id)
+	return err == nil
 }

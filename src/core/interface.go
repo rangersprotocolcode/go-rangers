@@ -1,10 +1,10 @@
 package core
 
 import (
-	"x/src/common"
 	"math/big"
-	"x/src/middleware/types"
 	"time"
+	"x/src/common"
+	"x/src/middleware/types"
 )
 
 type GroupIterator struct {
@@ -61,7 +61,7 @@ type GroupChain interface {
 
 	GetGroupById(id []byte) *types.Group
 
-	GetGroupByHeight(height uint64) (*types.Group)
+	GetGroupByHeight(height uint64) *types.Group
 
 	LastGroup() *types.Group
 
@@ -74,4 +74,10 @@ type GroupChain interface {
 	GetAvailableGroupsByMinerId(height uint64, minerId []byte) []*types.Group
 
 	GetSyncGroupsById(id []byte) []*types.Group
+
+	SaveJoinedGroup(id []byte, value []byte) bool
+
+	GetJoinedGroup(id []byte) ([]byte, error)
+
+	DeleteJoinedGroup(id []byte) bool
 }
