@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"x/src/common"
 	"x/src/middleware/db"
 	"x/src/middleware/notify"
 	"x/src/middleware/types"
@@ -29,6 +30,8 @@ type groupChain struct {
 	lastGroup *types.Group
 
 	groups db.Database // key:id, value:group && key:number, value:id
+
+	joinedGroups *db.LDBDatabase
 }
 
 func initGroupChain() {
@@ -38,6 +41,11 @@ func initGroupChain() {
 	chain.groups, err = db.NewDatabase(groupChainPrefix)
 	if err != nil {
 		panic("Init group chain error:" + err.Error())
+	}
+
+	chain.joinedGroups, err = db.NewLDBDatabase(common.GlobalConf.GetString(db.ConfigSec, db.DefaultJoinedGroupDatabaseKey, "jgs"), 1, 1)
+	if err != nil {
+		panic("newLDBDatabase fail, file=" + "" + "err=" + err.Error())
 	}
 
 	lastGroupId, _ := chain.groups.Get([]byte(lastGroupKey))
@@ -255,15 +263,15 @@ func (chain *groupChain) getSyncGroupsByHeight(height uint64, limit int) []*type
 }
 
 func (chain *groupChain) SaveJoinedGroup(id []byte, value []byte) bool {
-	err := chain.groups.Put(id, value)
+	err := chain.joinedGroups.Put(id, value)
 	return err == nil
 }
 
 func (chain *groupChain) GetJoinedGroup(id []byte) ([]byte, error) {
-	return chain.groups.Get(id)
+	return chain.joinedGroups.Get(id)
 }
 
 func (chain *groupChain) DeleteJoinedGroup(id []byte) bool {
-	err := chain.groups.Delete(id)
+	err := chain.joinedGroups.Delete(id)
 	return err == nil
 }

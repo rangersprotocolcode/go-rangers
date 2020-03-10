@@ -16,6 +16,7 @@ import (
 	cnet "x/src/consensus/net"
 	"x/src/core"
 	"x/src/middleware"
+	"x/src/middleware/db"
 	"x/src/middleware/log"
 	"x/src/middleware/types"
 	"x/src/network"
@@ -31,10 +32,6 @@ const (
 	instanceSection = "instance"
 
 	indexKey = "index"
-
-	chainSection = "chain"
-
-	databaseKey = "database"
 )
 
 type GX struct {
@@ -121,7 +118,9 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	databaseValue := "d" + strconv.Itoa(instanceIndex)
-	common.GlobalConf.SetString(chainSection, databaseKey, databaseValue)
+	common.GlobalConf.SetString(db.ConfigSec, db.DefaultDatabase, databaseValue)
+	joinedGroupDatabaseValue := "jgs" + strconv.Itoa(instanceIndex)
+	common.GlobalConf.SetString(db.ConfigSec, db.DefaultJoinedGroupDatabaseKey, joinedGroupDatabaseValue)
 
 	middleware.InitMiddleware()
 
