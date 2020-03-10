@@ -3,11 +3,9 @@ package common
 import (
 	"crypto/ecdsa"
 	"crypto/elliptic"
-	"golang.org/x/crypto/sha3"
 	"encoding/hex"
-	"io"
+	"golang.org/x/crypto/sha3"
 	"x/src/common/secp256k1"
-	"x/src/common/ecies"
 )
 
 //用户公钥
@@ -71,10 +69,6 @@ func (pk PublicKey) GetHexString() string {
 	return str
 }
 
-func (pk *PublicKey) Encrypt(rand io.Reader, msg []byte) ([]byte, error) {
-	return Encrypt(rand, pk, msg)
-}
-
 //导入函数
 func HexStringToPubKey(s string) (pk *PublicKey) {
 	if len(s) < len(PREFIX) || s[:len(PREFIX)] != PREFIX {
@@ -83,10 +77,4 @@ func HexStringToPubKey(s string) (pk *PublicKey) {
 	buf, _ := hex.DecodeString(s[len(PREFIX):])
 	pk = BytesToPublicKey(buf)
 	return
-}
-
-//公钥加密消息
-func Encrypt(rand io.Reader, pub *PublicKey, msg []byte) (ct []byte, err error) {
-	pubECIES := ecies.ImportECDSAPublic(&pub.PubKey)
-	return ecies.Encrypt(rand, pubECIES, msg, nil, nil)
 }

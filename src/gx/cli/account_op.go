@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -236,13 +235,8 @@ func (am *AccountManager) loadAccount(addr string) (*Account, error) {
 		return nil, err
 	}
 
-	bs, err := encryptPrivateKey.Decrypt(rand.Reader, v)
-	if err != nil {
-		return nil, err
-	}
-
 	var acc = new(Account)
-	err = json.Unmarshal(bs, acc)
+	err = json.Unmarshal(v, acc)
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +245,7 @@ func (am *AccountManager) loadAccount(addr string) (*Account, error) {
 	address := pk.GetAddress()
 	acc.Address = address.String()
 
-	bs, _ = json.Marshal(acc)
+	bs, _ := json.Marshal(acc)
 	fmt.Println("accout info:" + string(bs))
 
 	return acc, nil
@@ -263,12 +257,7 @@ func (am *AccountManager) storeAccount(account *Account) error {
 		return err
 	}
 
-	ct, err := common.Encrypt(rand.Reader, encryptPublicKey, bs)
-	if err != nil {
-		return err
-	}
-
-	err = am.db.Put(account.Miner.ID[:], ct)
+	err = am.db.Put(account.Miner.ID[:], bs)
 	//fmt.Printf("store account:%v,key:%v,err:%v\n", account.Miner.ID[:], account.Miner.ID[:], err)
 	return err
 }
