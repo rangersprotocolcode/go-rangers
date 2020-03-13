@@ -130,6 +130,7 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 
 	minerInfo := model.NewSelfMinerInfo(gx.account.Miner.ID[:])
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
+	common.GlobalConf.SetString(Section, "privateKey", gx.account.Sk)
 	minerId := "0x" + common.Bytes2Hex(gx.account.Miner.ID[:])
 	network.InitNetwork(cnet.MessageHandler, minerId, env, gateAddr)
 	service.InitService()
