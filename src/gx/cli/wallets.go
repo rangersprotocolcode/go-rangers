@@ -58,7 +58,7 @@ func (ws *wallets) newWalletByPrivateKey(privateKey string) (privKeyStr, walletA
 	priv := common.HexStringToSecKey(privateKey)
 	pub := priv.GetPubKey()
 	address := pub.GetAddress()
-	privKeyStr, walletAddress = pub.GetHexString(), address.GetHexString()
+	privKeyStr, walletAddress = priv.GetHexString(), address.GetHexString()
 
 	var miner types.Miner
 	miner.Id = address.Bytes()
