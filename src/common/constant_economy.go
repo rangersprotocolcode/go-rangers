@@ -50,7 +50,7 @@ const (
 // 最小质押量
 const (
 	ValidatorStake = uint64(100000)
-	ProposerStake  = uint64(1000000)
+	ProposerStake  = uint64(5000000)
 
 	HeightAfterStake = RewardBlocks
 )
