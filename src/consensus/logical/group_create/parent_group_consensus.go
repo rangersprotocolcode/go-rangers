@@ -164,14 +164,14 @@ func (p *groupCreateProcessor) tryStartParentConsensus(topHeight uint64) bool {
 		belongGroup = true
 	}
 	p.NetServer.SendCreateGroupRawMessage(msg, belongGroup)
-	desc = fmt.Sprintf("start parent group consensus. groupHash=%v, memsize=%v", gh.Hash.ShortS(), gInfo.MemberSize())
+	desc = fmt.Sprintf("start parent group consensus. groupHash=%v, memsize=%v,member mask:%v", gh.Hash.ShortS(), gInfo.MemberSize(), p.context.memMask)
 
 	var candidateBuff bytes.Buffer
 	for _, candidate := range ctx.groupInitInfo.GroupMembers {
 		candidateBuff.WriteString(candidate.GetHexString() + ",")
 	}
-	groupCreateDebugLogger.Debugf("Start create group. Hash:%s", ctx.groupInitInfo.GroupHash().String())
-	groupCreateDebugLogger.Debugf("Effective candidate:%s", candidateBuff.String())
+	groupCreateDebugLogger.Debugf("Start create group. Hash:%s,create height:%d", ctx.groupInitInfo.GroupHash().String(), ctx.groupInitInfo.GroupHeader.CreateHeight)
+	groupCreateDebugLogger.Debugf("Effective candidate:%s,num:%d", candidateBuff.String(), len(ctx.groupInitInfo.GroupMembers))
 
 	p.createGroupCache.Add(ctx.groupInitInfo.GroupHash(), ctx.groupInitInfo.GroupHeader.CreateHeight)
 	return true

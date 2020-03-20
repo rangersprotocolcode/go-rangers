@@ -305,8 +305,8 @@ func (p *groupCreateProcessor) OnMessageSignPK(signPubKeyMessage *model.SignPubK
 func (p *groupCreateProcessor) OnMessageGroupInited(msg *model.GroupInitedMessage) {
 	groupHash := msg.GroupHash
 
-	groupCreateLogger.Debugf("(%v)Rcv group inited message!sender=%v, groupHash=%v, groupId=%v, groupPK=%v", p.minerInfo.ID.ShortS(),
-		msg.SignInfo.GetSignerID().ShortS(), groupHash.ShortS(), msg.GroupID.ShortS(), msg.GroupPK.ShortS())
+	groupCreateLogger.Debugf("(%v)Rcv group inited message!sender=%v, groupHash=%v, groupId=%v, groupPK=%v,member mask:%v", p.minerInfo.ID.ShortS(),
+		msg.SignInfo.GetSignerID().ShortS(), groupHash.ShortS(), msg.GroupID.ShortS(), msg.GroupPK.ShortS(), msg.MemberMask)
 
 	if msg.SignInfo.GetDataHash() != msg.GenHash() {
 		panic("grm gis hash diff")
