@@ -41,7 +41,7 @@ func (p *groupCreateProcessor) StartCreateGroupPolling() {
 	for _, hash := range groupHashList {
 		createHeight, _ := p.createGroupCache.Get(hash)
 		if topHeight > createHeight.(uint64)+model.Param.GroupReadyGap {
-			groupCreateDebugLogger.Infof("Group create time out.Hash:%s\n", hash.(common.Hash).String())
+			groupCreateDebugLogger.Infof("Group create time out. Hash:%s\n", hash.(common.Hash).String())
 			p.createGroupCache.Remove(hash)
 		}
 	}
