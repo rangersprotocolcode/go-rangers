@@ -121,7 +121,7 @@ func (context *groupInitContext) TransformStatus(from, to int32) bool {
 func (context *groupInitContext) generateMemberMask() (mask []byte) {
 	mask = make([]byte, (len(context.candidates)+7)/8)
 
-	for i, id := range context.groupInitInfo.GroupMembers {
+	for i, id := range context.candidates {
 		b := mask[i/8]
 		if context.MemExist(id) {
 			b |= 1 << byte(i%8)

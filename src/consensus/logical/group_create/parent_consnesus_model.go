@@ -8,6 +8,7 @@ import (
 	"x/src/consensus/groupsig"
 	"x/src/consensus/model"
 	"x/src/consensus/base"
+	"bytes"
 )
 
 // status enum of the CreatingGroupContext
@@ -176,6 +177,13 @@ func (ctx *createGroupContext) generateMemberMask() (mask []byte) {
 func (ctx *createGroupBaseInfo) createGroupInitInfo(mask []byte) *model.GroupInitInfo {
 	memIds := ctx.recoverMemberSet(mask)
 	gh := ctx.createGroupHeader(memIds)
+
+	var memberBuffer bytes.Buffer
+	for _, member := range memIds {
+		memberBuffer.WriteString(member.ShortS() + ",")
+	}
+	groupCreateLogger.Debugf("member mask:%v.After mask,members:%s", mask, memberBuffer.String())
+
 	return &model.GroupInitInfo{
 		GroupHeader:  gh,
 		GroupMembers: memIds,
