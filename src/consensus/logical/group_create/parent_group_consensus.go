@@ -165,15 +165,6 @@ func (p *groupCreateProcessor) tryStartParentConsensus(topHeight uint64) bool {
 	}
 	p.NetServer.SendCreateGroupRawMessage(msg, belongGroup)
 	desc = fmt.Sprintf("start parent group consensus. groupHash=%v, memsize=%v,member mask:%v", gh.Hash.ShortS(), gInfo.MemberSize(), p.context.memMask)
-
-	var candidateBuff bytes.Buffer
-	for _, candidate := range ctx.groupInitInfo.GroupMembers {
-		candidateBuff.WriteString(candidate.GetHexString() + ",")
-	}
-	groupCreateDebugLogger.Debugf("Start create group. Hash:%s,create height:%d", ctx.groupInitInfo.GroupHash().String(), ctx.groupInitInfo.GroupHeader.CreateHeight)
-	groupCreateDebugLogger.Debugf("Effective candidate:%s,num:%d", candidateBuff.String(), len(ctx.groupInitInfo.GroupMembers))
-
-	p.createGroupCache.Add(ctx.groupInitInfo.GroupHash(), ctx.groupInitInfo.GroupHeader.CreateHeight)
 	return true
 }
 
@@ -186,6 +177,14 @@ func (p *groupCreateProcessor) tryStartParentConsensus(topHeight uint64) bool {
 func (p *groupCreateProcessor) OnMessageParentGroupConsensus(msg *model.ParentGroupConsensusMessage) {
 	gh := msg.GroupInitInfo.GroupHeader
 	groupCreateLogger.Debugf("(%v)Rcv ParentGroupConsensus: groupHash=%v sender=%v", p.minerInfo.ID.ShortS(), gh.Hash.ShortS(), msg.SignInfo.GetSignerID().ShortS())
+
+	var candidateBuff bytes.Buffer
+	for _, candidate := range msg.GroupInitInfo.GroupMembers {
+		candidateBuff.WriteString(candidate.GetHexString() + ",")
+	}
+	groupCreateDebugLogger.Debugf("Start create group. Hash:%s,create height:%d", msg.GroupInitInfo.GroupHash().String(), msg.GroupInitInfo.GroupHeader.CreateHeight)
+	groupCreateDebugLogger.Debugf("Effective candidate:%s,num:%d", candidateBuff.String(), len(msg.GroupInitInfo.GroupMembers))
+	p.createGroupCache.Add(msg.GroupInitInfo.GroupHash(), msg.GroupInitInfo.GroupHeader.CreateHeight)
 
 	if p.minerInfo.GetMinerID().IsEqual(msg.SignInfo.GetSignerID()) {
 		return
