@@ -100,7 +100,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		}
 
 		transactions = append(transactions, transaction)
-		receipt := types.NewReceipt(nil, !success, 0)
+		receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height)
 		receipt.TxHash = transaction.Hash
 		receipts = append(receipts, receipt)
 	}

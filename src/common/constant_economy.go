@@ -29,7 +29,7 @@ const (
 // 奖励
 const (
 	// 第一年的奖励
-	FirstYearRewardPerBlock = float64(15.9)
+	FirstYearRewardPerBlock = float64(15.85)
 
 	// 通胀率
 	Inflation = float64(1.05)
@@ -56,5 +56,5 @@ const (
 )
 
 var (
-	CommunityAddress = HexToAddress("0x000001")
+	CommunityAddress = HexToAddress("0xffffff")
 )

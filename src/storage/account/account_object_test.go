@@ -3,6 +3,7 @@ package account
 import (
 	"testing"
 	"math/big"
+	"x/src/common"
 	"x/src/middleware/types"
 	"x/src/storage/rlp"
 	"fmt"
@@ -33,6 +34,7 @@ func Test_RLP_account(t *testing.T) {
 	}
 
 	fmt.Println(data)
+	fmt.Println(common.ToHex(data))
 
 	accountBeta := &Account{}
 	err = rlp.DecodeBytes(data, accountBeta)
