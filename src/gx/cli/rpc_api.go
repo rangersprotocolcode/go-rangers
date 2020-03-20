@@ -3,6 +3,7 @@ package cli
 import (
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"math"
 	"sync"
 	"x/src/common"
@@ -100,6 +101,23 @@ func (api *GtasAPI) GetTransaction(hash string) (*Result, error) {
 	}
 
 	return successResult(*convertTransaction(transaction))
+}
+
+func (api *GtasAPI) GetExecutedTransaction(hash string) (*Result, error) {
+	executed := service.GetTransactionPool().GetExecuted(common.HexToHash(hash))
+	if executed == nil {
+		return failResult(fmt.Sprintf("%s not existed", hash))
+	}
+
+	tx, err := types.UnMarshalTransaction(executed.Transaction)
+	if err != nil {
+		return failResult(err.Error())
+	}
+
+	result := make(map[string]interface{}, 0)
+	result["tx"] = convertTransaction(&tx)
+	result["receipt"] = executed.Receipt
+	return successResult(result)
 }
 
 //
