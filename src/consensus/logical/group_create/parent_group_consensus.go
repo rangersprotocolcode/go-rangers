@@ -170,7 +170,8 @@ func (p *groupCreateProcessor) tryStartParentConsensus(topHeight uint64) bool {
 	for _, candidate := range ctx.groupInitInfo.GroupMembers {
 		candidateBuff.WriteString(candidate.GetHexString() + ",")
 	}
-	groupCreateDebugLogger.Debugf("Start create group. Hash:%s,effective candidate:", ctx.groupInitInfo.GroupHash().String(), candidateBuff.String())
+	groupCreateDebugLogger.Debugf("Start create group. Hash:%s", ctx.groupInitInfo.GroupHash().String())
+	groupCreateDebugLogger.Debugf("Effective candidate:%s", candidateBuff.String())
 
 	p.createGroupCache.Add(ctx.groupInitInfo.GroupHash(), ctx.groupInitInfo.GroupHeader.CreateHeight)
 	return true
