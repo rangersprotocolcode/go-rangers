@@ -6,6 +6,7 @@ import (
 	"time"
 	"x/src/consensus/groupsig"
 	"x/src/consensus/access"
+	"bytes"
 )
 
 //发送PING 信息
@@ -164,6 +165,14 @@ func (p *groupCreateProcessor) tryStartParentConsensus(topHeight uint64) bool {
 	}
 	p.NetServer.SendCreateGroupRawMessage(msg, belongGroup)
 	desc = fmt.Sprintf("start parent group consensus. groupHash=%v, memsize=%v", gh.Hash.ShortS(), gInfo.MemberSize())
+
+	var candidateBuff bytes.Buffer
+	for _, candidate := range ctx.groupInitInfo.GroupMembers {
+		candidateBuff.WriteString(candidate.GetHexString() + ",")
+	}
+	groupCreateDebugLogger.Debugf("Start create group. Hash:%s,effective candidate:", ctx.groupInitInfo.GroupHash().String(), candidateBuff.String())
+
+	p.createGroupCache.Add(ctx.groupInitInfo.GroupHash(), ctx.groupInitInfo.GroupHeader.CreateHeight)
 	return true
 }
 

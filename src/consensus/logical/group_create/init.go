@@ -10,9 +10,11 @@ import (
 	"x/src/consensus/net"
 	"x/src/consensus/access"
 	"time"
+	"github.com/hashicorp/golang-lru"
 )
 
 var groupCreateLogger log.Logger
+var groupCreateDebugLogger log.Logger
 
 var GroupCreateProcessor groupCreateProcessor
 
@@ -20,6 +22,7 @@ type groupCreateProcessor struct {
 	minerInfo model.SelfMinerInfo
 	context   *createGroupContext
 
+	createGroupCache *lru.Cache //key:create group hash,value:create group base height
 	//数组循环使用，用来存储已经创建过的组的高度
 	//todo 有木有更好的方案？
 	createdHeights      [50]uint64 // Identifies whether the group height has already been created
@@ -41,8 +44,11 @@ type groupCreateProcessor struct {
 
 func (p *groupCreateProcessor) Init(minerInfo model.SelfMinerInfo, joinedGroupStorage *access.JoinedGroupStorage) {
 	groupCreateLogger = log.GetLoggerByIndex(log.GroupCreateLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	groupCreateDebugLogger = log.GetLoggerByIndex(log.GroupCreateDebugLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	p.minerInfo = minerInfo
 	p.createdHeightsIndex = 0
+
+	p.createGroupCache = common.CreateLRUCache(100)
 
 	p.joinedGroupStorage = joinedGroupStorage
 	p.groupSignCollectorMap = sync.Map{}
@@ -94,6 +100,8 @@ func (p *groupCreateProcessor) OnGroupAddSuccess(g *model.GroupInfo) {
 		//退出DUMMY 网络
 		p.NetServer.ReleaseGroupNet(g.GroupInitInfo.GroupHash().String())
 	}
+	groupCreateDebugLogger.Infof("Group create success.Group hash:%s, group id:%s", ctx.groupInitInfo.GroupHash(), g.GroupID.GetHexString())
+	p.createGroupCache.Remove(g.GroupInitInfo.GroupHash())
 
 }
 
