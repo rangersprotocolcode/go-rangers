@@ -1,14 +1,17 @@
 package core
 
 import (
-	"x/src/common"
+	"encoding/json"
 	"math"
 	"math/big"
-	"x/src/utility"
-	"x/src/middleware/types"
+	"strconv"
+	"x/src/common"
 	"x/src/middleware/log"
-	"x/src/storage/account"
+	"x/src/middleware/types"
+	"x/src/network"
 	"x/src/service"
+	"x/src/storage/account"
+	"x/src/utility"
 )
 
 type RewardCalculator struct {
@@ -37,12 +40,29 @@ func (reward *RewardCalculator) CalculateReward(height uint64, db *account.Accou
 		return false
 	}
 
+	go reward.notify(total, height)
+
 	for addr, money := range total {
 		from := db.GetBalance(addr).String()
 		db.AddBalance(addr, money)
 		reward.logger.Debugf("add reward, addr: %s, from: %s to %v", addr.String(), from, db.GetBalance(addr))
 	}
 	return true
+}
+
+// send reward detail
+func (reward *RewardCalculator) notify(total map[common.Address]*big.Int, height uint64) {
+	result := make(map[string]interface{})
+	result["from"] = strconv.FormatUint(height-common.RewardBlocks, 10)
+	result["to"] = strconv.FormatUint(height, 10)
+	data := make(map[string]string, len(total))
+	for addr, balance := range total {
+		data[addr.GetHexString()] = utility.BigIntToStr(balance)
+	}
+	result["data"] = data
+
+	resultByte, _ := json.Marshal(result)
+	network.GetNetInstance().Notify(false, "rocketProtocol", "reward", string(resultByte))
 }
 
 // 计算完整奖励
