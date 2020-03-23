@@ -62,7 +62,7 @@ func (reward *RewardCalculator) notify(total map[common.Address]*big.Int, height
 	result["data"] = data
 
 	resultByte, _ := json.Marshal(result)
-	network.GetNetInstance().Notify(false, "rocketProtocol", "reward", string(resultByte))
+	network.GetNetInstance().Notify(false, "rocketprotocol", "reward", string(resultByte))
 }
 
 // 计算完整奖励
