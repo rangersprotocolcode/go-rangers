@@ -1,6 +1,7 @@
 package core
 
 import (
+	"x/src/service"
 	"x/src/storage/account"
 	"x/src/middleware/types"
 	"strconv"
@@ -13,6 +14,10 @@ type minerRefundExecutor struct {
 }
 
 func (this *minerRefundExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
+	if err := service.GetTransactionPool().ProcessFee(*transaction, accountdb); err != nil {
+		return false
+	}
+
 	value, err := strconv.ParseUint(transaction.Data, 10, 64)
 	if err != nil {
 		logger.Errorf("fail to refund %s", transaction.Data)
@@ -45,6 +50,10 @@ type minerApplyExecutor struct {
 }
 
 func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
+	if err := service.GetTransactionPool().ProcessFee(*transaction, accountdb); err != nil {
+		return false
+	}
+
 	data := transaction.Data
 	var miner types.Miner
 	err := json.Unmarshal([]byte(data), &miner)
@@ -64,6 +73,10 @@ type minerAddExecutor struct {
 }
 
 func (this *minerAddExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
+	if err := service.GetTransactionPool().ProcessFee(*transaction, accountdb); err != nil {
+		return false
+	}
+
 	data := transaction.Data
 	var miner types.Miner
 	err := json.Unmarshal([]byte(data), &miner)

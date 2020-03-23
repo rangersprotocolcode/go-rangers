@@ -10,6 +10,10 @@ type ftExecutor struct {
 }
 
 func (this *ftExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
+	if err := service.GetTransactionPool().ProcessFee(*transaction, accountdb); err != nil {
+		return false
+	}
+
 	success := false
 	switch transaction.Type {
 	case types.TransactionTypePublishFT:

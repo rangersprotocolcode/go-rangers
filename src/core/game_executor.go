@@ -1,18 +1,18 @@
 package core
 
 import (
-	"x/src/common"
-	"x/src/network"
 	"encoding/json"
+	"strconv"
 	"sync"
+	"time"
+	"x/src/common"
+	"x/src/middleware/log"
 	"x/src/middleware/notify"
 	"x/src/middleware/types"
-	"strconv"
-	"x/src/statemachine"
-	"time"
-	"x/src/middleware/log"
-	"x/src/storage/account"
+	"x/src/network"
 	"x/src/service"
+	"x/src/statemachine"
+	"x/src/storage/account"
 )
 
 // 客户端web socket 请求的返回数据结构
@@ -248,6 +248,10 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 	result := true
 
 	start := time.Now()
+	accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
+	if err := service.GetTransactionPool().ProcessFee(txRaw, accountDB); err != nil {
+		return false, err.Error()
+	}
 
 	switch txRaw.Type {
 	// execute state machine transaction
@@ -461,12 +465,12 @@ func (executor *GameExecutor) loop() {
 	for {
 		select {
 		case msg := <-executor.writeChan:
-			executor.RunNotify(msg)
+			executor.RunWrite(msg)
 		}
 	}
 }
 
-func (executor *GameExecutor) RunNotify(msg notify.Message) {
+func (executor *GameExecutor) RunWrite(msg notify.Message) {
 	message, ok := msg.(*notify.ClientTransactionMessage)
 	if !ok {
 		executor.logger.Errorf("GameExecutor:Write assert not ok!")
@@ -506,22 +510,12 @@ func (executor *GameExecutor) RunNotify(msg notify.Message) {
 		}
 	}
 
-	//if err := service.GetTransactionPool().VerifyTransactionHash(&txRaw); err != nil {
-	//	txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
-	//
-	//	response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
-	//	go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
-	//	return
-	//
-	//}
-	//
-	//if err := service.GetTransactionPool().VerifyTransactionSign(&txRaw); err != nil {
-	//	txLogger.Errorf("Verify tx sign error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
-	//
-	//	response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
-	//	go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
-	//	return
-	//}
+	if err := service.GetTransactionPool().VerifyTransaction(&txRaw); err != nil {
+		response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
+		go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+		return
+
+	}
 
 	result, execMessage := executor.runTransaction(txRaw, message.Nonce)
 

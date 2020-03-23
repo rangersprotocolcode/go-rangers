@@ -5,13 +5,15 @@ import (
 	"sort"
 	"x/src/common"
 	"x/src/middleware"
-	"x/src/middleware/types"
 	"x/src/middleware/db"
+	"x/src/middleware/types"
+	"x/src/storage/account"
+	"x/src/utility"
 
 	"github.com/hashicorp/golang-lru"
 
-	"fmt"
 	"encoding/json"
+	"fmt"
 )
 
 const (
@@ -75,9 +77,9 @@ type TransactionPool interface {
 
 	PutGameData(hash common.Hash)
 
-	VerifyTransactionHash(tx *types.Transaction) error
+	VerifyTransaction(tx *types.Transaction) error
 
-	VerifyTransactionSign(tx *types.Transaction) error
+	ProcessFee(tx types.Transaction, accountDB *account.AccountDB) error
 }
 
 type TxPool struct {
@@ -109,7 +111,7 @@ func GetTransactionPool() TransactionPool {
 
 func newTransactionPool() TransactionPool {
 	pool := &TxPool{
-		lock:     middleware.NewLoglock("txPool"),
+		lock: middleware.NewLoglock("txPool"),
 	}
 	pool.received = newSimpleContainer(rcvTxPoolSize)
 	pool.minerTxs, _ = lru.New(minerTxCacheSize)
@@ -345,15 +347,46 @@ func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
 	return nil
 }
 
-func (pool *TxPool) VerifyTransactionHash(tx *types.Transaction) error {
-	expectHash := tx.GenHash()
-	if tx.Hash != expectHash {
-		return fmt.Errorf("illegal tx hash! Hash:%s,expect hash:%s", tx.Hash.String(), expectHash.String())
+func (pool *TxPool) VerifyTransaction(tx *types.Transaction) error {
+	err := pool.verifyTransactionHash(tx)
+	if nil != err {
+		return err
 	}
+
+	err = pool.verifyTransactionSign(tx)
+	if nil != err {
+		return err
+	}
+
 	return nil
 }
 
-func (pool *TxPool) VerifyTransactionSign(tx *types.Transaction) error {
+func (pool *TxPool) ProcessFee(tx types.Transaction, accountDB *account.AccountDB) error {
+	addr := common.HexStringToAddress(tx.Source)
+	balance := accountDB.GetBalance(addr)
+
+	delta, _ := utility.StrToBigInt("0.0001")
+	if balance.Cmp(delta) < 0 {
+		msg := fmt.Sprintf("not enough max, addr: %s, balance: %s", tx.Source, balance)
+		return fmt.Errorf(msg)
+	}
+	accountDB.SubBalance(addr, delta)
+
+	return nil
+}
+
+func (pool *TxPool) verifyTransactionHash(tx *types.Transaction) error {
+	expectHash := tx.GenHash()
+	if tx.Hash != expectHash {
+		err := fmt.Errorf("illegal tx hash! Hash:%s,expect hash:%s", tx.Hash.String(), expectHash.String())
+		txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", tx.Hash.String(), err.Error())
+		return err
+	}
+
+	return nil
+}
+
+func (pool *TxPool) verifyTransactionSign(tx *types.Transaction) error {
 	if tx.Sign == nil {
 		return fmt.Errorf("nil sign")
 	}
@@ -361,14 +394,18 @@ func (pool *TxPool) VerifyTransactionSign(tx *types.Transaction) error {
 	hashByte := tx.Hash.Bytes()
 	pk, err := tx.Sign.RecoverPubkey(hashByte)
 	if err != nil {
+		txLogger.Errorf("Verify tx sign error!Hash:%s,error:%s", tx.Hash.String(), err.Error())
 		return err
 	}
 	if !pk.Verify(hashByte, tx.Sign) {
+		txLogger.Errorf("Verify tx sign error!Hash:%s, error: verify sign fail", tx.Hash.String())
 		return fmt.Errorf("verify sign fail")
 	}
 	expectAddr := pk.GetAddress().GetHexString()
 	if tx.Source != expectAddr {
-		return fmt.Errorf("illegal signer! Source:%s,expect source:%s", tx.Source, expectAddr)
+		err := fmt.Errorf("illegal signer! Source:%s,expect source:%s", tx.Source, expectAddr)
+		txLogger.Errorf("Verify tx sign error!Hash:%s,error:%s", tx.Hash.String(), err.Error())
+		return err
 	}
 	return nil
 }

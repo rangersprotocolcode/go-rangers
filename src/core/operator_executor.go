@@ -1,13 +1,13 @@
 package core
 
 import (
-	"x/src/middleware/types"
-	"x/src/storage/account"
-	"x/src/service"
-	"x/src/statemachine"
 	"encoding/json"
 	"strconv"
 	"x/src/common"
+	"x/src/middleware/types"
+	"x/src/service"
+	"x/src/statemachine"
+	"x/src/storage/account"
 )
 
 type operatorExecutor struct {
@@ -15,6 +15,10 @@ type operatorExecutor struct {
 
 func (this *operatorExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
 	logger.Debugf("Begin transaction is not nil!")
+
+	if err := service.GetTransactionPool().ProcessFee(*transaction, accountdb); err != nil {
+		return false
+	}
 
 	// 处理转账
 	// 支持多人转账{"address1":"value1", "address2":"value2"}
