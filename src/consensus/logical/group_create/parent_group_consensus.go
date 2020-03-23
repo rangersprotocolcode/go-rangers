@@ -182,8 +182,8 @@ func (p *groupCreateProcessor) OnMessageParentGroupConsensus(msg *model.ParentGr
 	for _, candidate := range msg.GroupInitInfo.GroupMembers {
 		candidateBuff.WriteString(candidate.GetHexString() + ",")
 	}
-	groupCreateDebugLogger.Debugf("Start create group. Hash:%s,create height:%d", msg.GroupInitInfo.GroupHash().String(), msg.GroupInitInfo.GroupHeader.CreateHeight)
-	groupCreateDebugLogger.Debugf("Effective candidate:%s,num:%d", candidateBuff.String(), len(msg.GroupInitInfo.GroupMembers))
+	groupCreateDebugLogger.Debugf("Start create group. Hash:%s, create height:%d", msg.GroupInitInfo.GroupHash().String(), msg.GroupInitInfo.GroupHeader.CreateHeight)
+	groupCreateDebugLogger.Debugf("Effective candidate:%s num:%d", candidateBuff.String(), len(msg.GroupInitInfo.GroupMembers))
 	p.createGroupCache.Add(msg.GroupInitInfo.GroupHash(), msg.GroupInitInfo.GroupHeader.CreateHeight)
 
 	if p.minerInfo.GetMinerID().IsEqual(msg.SignInfo.GetSignerID()) {

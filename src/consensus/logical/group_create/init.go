@@ -89,7 +89,7 @@ func (p *groupCreateProcessor) OnGroupAddSuccess(g *model.GroupInfo) {
 		top := p.blockChain.Height()
 		groupCreateLogger.Infof("onGroupAddSuccess info=%v, gHash=%v, gid=%v, costHeight=%v", ctx.String(), g.GroupInitInfo.GroupHash().ShortS(), g.GroupID.ShortS(), top-ctx.createTopHeight)
 		p.removeContext()
-		groupCreateDebugLogger.Infof("Group create success.Group hash:%s, group id:%s\n", ctx.groupInitInfo.GroupHash().String(), g.GroupID.GetHexString())
+		groupCreateDebugLogger.Infof("Group create success. Group hash:%s, group id:%s\n", ctx.groupInitInfo.GroupHash().String(), g.GroupID.GetHexString())
 	}
 	//p.joiningGroups.Clean(sgi.GInfo.GroupHash())
 	//p.globalGroups.removeInitedGroup(sgi.GInfo.GroupHash())
