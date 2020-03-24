@@ -1,13 +1,13 @@
 package core
 
 import (
+	"encoding/json"
+	"fmt"
+	"x/src/common"
 	"x/src/middleware/types"
+	"x/src/service"
 	"x/src/storage/account"
 	"x/src/utility"
-	"fmt"
-	"encoding/json"
-	"x/src/common"
-	"x/src/service"
 )
 
 type coinDepositExecutor struct {
@@ -19,8 +19,12 @@ type ftDepositExecutor struct {
 type nftDepositExecutor struct {
 }
 
+func (this *coinDepositExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	return this.execute(transaction, header, accountdb, context), ""
+}
+
 //主链币充值确认
-func (this *coinDepositExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
+func (this *coinDepositExecutor) execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
 	txLogger.Tracef("Execute coin deposit ack tx:%s", transaction.ToTxJson().ToString())
 	if transaction.Data == "" {
 		return false
@@ -41,8 +45,12 @@ func (this *coinDepositExecutor) Execute(transaction *types.Transaction, header 
 
 }
 
+func (this *ftDepositExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	return this.execute(transaction, header, accountdb, context), ""
+}
+
 //FT充值确认
-func (this *ftDepositExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
+func (this *ftDepositExecutor) execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
 	txLogger.Tracef("Execute ft deposit ack tx:%s", transaction.ToTxJson().ToString())
 	if transaction.Data == "" {
 		return false
@@ -63,8 +71,12 @@ func (this *ftDepositExecutor) Execute(transaction *types.Transaction, header *t
 
 }
 
+func (this *nftDepositExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	return this.execute(transaction, header, accountdb, context), ""
+}
+
 //NFT充值确认
-func (this *nftDepositExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
+func (this *nftDepositExecutor) execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
 	txLogger.Tracef("Execute nft deposit ack tx:%s", transaction.ToTxJson().ToString())
 	if transaction.Data == "" {
 		return false

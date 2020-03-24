@@ -3,16 +3,16 @@ package core
 import (
 	"x/src/middleware/types"
 	"x/src/service"
-	"x/src/storage/account"
 	"x/src/statemachine"
+	"x/src/storage/account"
 )
 
 type stmExecutor struct {
 }
 
-func (this *stmExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
+func (this *stmExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	if err := service.GetTransactionPool().ProcessFee(*transaction, accountdb); err != nil {
-		return false
+		return false, "not enough fee"
 	}
 
 	switch transaction.Type {
@@ -42,8 +42,8 @@ func (this *stmExecutor) Execute(transaction *types.Transaction, header *types.B
 		break
 	case types.TransactionTypeImportNFT:
 		appId := transaction.Source
-		return statemachine.STMManger.IsAppId(appId)
+		return statemachine.STMManger.IsAppId(appId), ""
 	}
 
-	return true
+	return true, ""
 }

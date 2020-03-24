@@ -2,6 +2,7 @@ package core
 
 import (
 	"errors"
+	"fmt"
 	"sync"
 	"time"
 	"x/src/common"
@@ -179,69 +180,75 @@ func (mm *MinerManager) getMinerDatabase(minerType byte) common.Address {
 	return common.Address{}
 }
 
-func (mm *MinerManager) AddStake(addr common.Address, minerId []byte, delta uint64, accountdb *account.AccountDB) bool {
+func (mm *MinerManager) AddStake(addr common.Address, minerId []byte, delta uint64, accountdb *account.AccountDB) (bool, string) {
 	if delta == 0 {
-		return true
+		return true, ""
 	}
 
 	stake := utility.Float64ToBigInt(float64(delta))
 	balance := accountdb.GetBalance(addr)
 	if balance.Cmp(stake) < 0 {
-		logger.Errorf("not enough balance, addr: %s, balance: %d, stake: %d", addr.String(), balance, stake)
-		return false
+		msg := fmt.Sprintf("not enough balance, addr: %s, balance: %d, stake: %d", addr.String(), balance, stake)
+		logger.Errorf(msg)
+		return false, msg
 	}
 
 	miner := mm.GetMinerById(minerId, common.MinerTypeProposer, accountdb)
 	if nil == miner {
 		miner = mm.GetMinerById(minerId, common.MinerTypeValidator, accountdb)
 		if nil == miner {
-			return false
+			return false, "miner is not existed"
 		}
 	}
 
 	miner.Stake = miner.Stake + delta
 	if miner.Stake < 0 {
-		return false
+		return false, "overflow"
 	}
 
 	accountdb.SubBalance(addr, stake)
 	mm.UpdateMiner(miner, accountdb)
-	return true
+	return true, ""
 }
 
-func (mm *MinerManager) AddMiner(addr common.Address, miner *types.Miner, accountdb *account.AccountDB) bool {
+func (mm *MinerManager) AddMiner(addr common.Address, miner *types.Miner, accountdb *account.AccountDB) (bool, string) {
 	if miner.Type != common.MinerTypeValidator && miner.Type != common.MinerTypeProposer {
-		logger.Errorf("miner type error, minerId: %d, type: %d", common.ToHex(miner.Id), miner.Type)
-		return false
+		msg := fmt.Sprintf("miner type error, minerId: %d, type: %d", common.ToHex(miner.Id), miner.Type)
+		logger.Errorf(msg)
+		return false, msg
 	}
 	if (miner.Type == common.MinerTypeValidator && miner.Stake < common.ValidatorStake) ||
 		(miner.Type == common.MinerTypeProposer && miner.Stake < common.ProposerStake) {
-		logger.Errorf("not enough stake, minerId: %d, stake: %d", common.ToHex(miner.Id), miner.Stake)
-		return false
+		msg := fmt.Sprintf("not enough stake, minerId: %d, stake: %d", common.ToHex(miner.Id), miner.Stake)
+		logger.Errorf(msg)
+		return false, msg
 	}
 	if isEmptyByteSlice(miner.VrfPublicKey) || isEmptyByteSlice(miner.PublicKey) {
-		logger.Errorf("VrfPublicKey or PublicKey is empty, minerId: %d, vrfPublicKey: %v,publicKey: %v", common.ToHex(miner.Id), miner.VrfPublicKey, miner.PublicKey)
-		return false
+		msg := fmt.Sprintf("VrfPublicKey or PublicKey is empty, minerId: %d, vrfPublicKey: %v,publicKey: %v", common.ToHex(miner.Id), miner.VrfPublicKey, miner.PublicKey)
+		logger.Errorf(msg)
+		return false, msg
 
 	}
 
 	stake := utility.Float64ToBigInt(float64(miner.Stake))
 	balance := accountdb.GetBalance(addr)
 	if balance.Cmp(stake) < 0 {
-		logger.Errorf("not enough balance, addr: %s, balance: %d, stake: %d", addr.String(), balance, stake)
-		return false
+		msg := fmt.Sprintf("not enough max, addr: %s, balance: %d, stake: %d", addr.String(), balance, stake)
+		logger.Errorf(msg)
+		return false, msg
 	}
 
 	id := miner.Id
 	if mm.GetMiner(id, accountdb) != nil {
-		logger.Errorf("miner is existed. minerId: %s", common.ToHex(id))
-		return false
+		msg := fmt.Sprintf("miner is existed. minerId: %s", common.ToHex(id))
+		logger.Errorf(msg)
+		return false, msg
 	}
 
 	accountdb.SubBalance(addr, stake)
 	mm.UpdateMiner(miner, accountdb)
 	logger.Debugf("add miner: %v", miner)
-	return true
+	return true, ""
 }
 
 func (mm *MinerManager) UpdateMiner(miner *types.Miner, accountdb *account.AccountDB) {

@@ -2,17 +2,17 @@ package core
 
 import (
 	"x/src/middleware/types"
-	"x/src/storage/account"
 	"x/src/service"
+	"x/src/storage/account"
 )
 
 type withdrawExecutor struct {
 }
 
-func (this *withdrawExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
+func (this *withdrawExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	if err := service.GetTransactionPool().ProcessFee(*transaction, accountdb); err != nil {
-		return false
+		return false, "not enough fee"
 	}
-	_, success := service.Withdraw(accountdb, transaction, true)
-	return success
+	msg, success := service.Withdraw(accountdb, transaction, true)
+	return success, msg
 }

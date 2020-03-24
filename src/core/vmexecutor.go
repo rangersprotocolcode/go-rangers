@@ -12,7 +12,7 @@ import (
 var executors map[int32]executor
 
 type executor interface {
-	Execute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool
+	Execute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string)
 }
 
 func initExecutors() {
@@ -83,8 +83,9 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		executor := executors[transaction.Type]
 		snapshot := this.accountdb.Snapshot()
 		success := false
+		msg := ""
 		if executor != nil {
-			success = executor.Execute(transaction, this.block.Header, this.accountdb, this.context)
+			success, msg = executor.Execute(transaction, this.block.Header, this.accountdb, this.context)
 		}
 
 		if !success {
@@ -100,7 +101,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		}
 
 		transactions = append(transactions, transaction)
-		receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height)
+		receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height, msg)
 		receipt.TxHash = transaction.Hash
 		receipts = append(receipts, receipt)
 	}

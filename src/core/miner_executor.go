@@ -1,38 +1,41 @@
 package core
 
 import (
-	"x/src/service"
-	"x/src/storage/account"
-	"x/src/middleware/types"
+	"encoding/json"
+	"fmt"
 	"strconv"
 	"x/src/common"
-	"encoding/json"
+	"x/src/middleware/types"
+	"x/src/service"
+	"x/src/storage/account"
 )
 
 type minerRefundExecutor struct {
-
 }
 
-func (this *minerRefundExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
+func (this *minerRefundExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	if err := service.GetTransactionPool().ProcessFee(*transaction, accountdb); err != nil {
-		return false
+		return false, "not enough fee"
 	}
 
 	value, err := strconv.ParseUint(transaction.Data, 10, 64)
 	if err != nil {
-		logger.Errorf("fail to refund %s", transaction.Data)
-		return false
+		msg := fmt.Sprintf("fail to refund %s", transaction.Data)
+		logger.Errorf(msg)
+		return false, msg
 	}
 
 	minerId := common.FromHex(transaction.Source)
 	logger.Debugf("before refund, addr: %s, money: %d, minerId: %v", transaction.Source, value, minerId)
 	refundHeight, money, refundErr := RefundManagerImpl.GetRefundStake(header.Height, minerId, value, accountdb)
 	if refundErr != nil {
-		logger.Errorf("fail to refund %s, err: %s", transaction.Data, refundErr.Error())
-		return false
+		msg := fmt.Sprintf("fail to refund %s, err: %s", transaction.Data, refundErr.Error())
+		logger.Errorf(msg)
+		return false, msg
 	}
 
-	logger.Infof("add refund, minerId: %s, height: %d, money: %d", transaction.Source, refundHeight, money)
+	msg := fmt.Sprintf("refund, minerId: %s, height: %d, money: %d", transaction.Source, refundHeight, money)
+	logger.Infof(msg)
 	refundInfos := getRefundInfo(context)
 	refundInfo, ok := refundInfos[refundHeight]
 	if ok {
@@ -43,23 +46,24 @@ func (this *minerRefundExecutor) Execute(transaction *types.Transaction, header 
 		refundInfos[refundHeight] = refundInfo
 	}
 
-	return true
+	return true, msg
 }
 
 type minerApplyExecutor struct {
 }
 
-func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
+func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	if err := service.GetTransactionPool().ProcessFee(*transaction, accountdb); err != nil {
-		return false
+		return false, ""
 	}
 
 	data := transaction.Data
 	var miner types.Miner
 	err := json.Unmarshal([]byte(data), &miner)
 	if err != nil {
-		logger.Errorf("json Unmarshal error, %s", err.Error())
-		return false
+		msg := fmt.Sprintf("json Unmarshal error, %s", err.Error())
+		logger.Errorf(msg)
+		return false, msg
 	}
 
 	miner.ApplyHeight = header.Height + common.HeightAfterStake
@@ -72,17 +76,18 @@ func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *
 type minerAddExecutor struct {
 }
 
-func (this *minerAddExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
+func (this *minerAddExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	if err := service.GetTransactionPool().ProcessFee(*transaction, accountdb); err != nil {
-		return false
+		return false, "not enough fee"
 	}
 
 	data := transaction.Data
 	var miner types.Miner
 	err := json.Unmarshal([]byte(data), &miner)
 	if err != nil {
-		logger.Errorf("json Unmarshal error, %s", err.Error())
-		return false
+		msg := fmt.Sprintf("json Unmarshal error, %s", err.Error())
+		logger.Errorf(msg)
+		return false, msg
 	}
 
 	if isEmptyByteSlice(miner.Id) {
