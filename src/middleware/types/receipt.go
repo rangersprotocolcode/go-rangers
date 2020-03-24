@@ -28,10 +28,11 @@ type Receipt struct {
 	Height            uint64      `json:"height"`
 	TxHash            common.Hash `json:"transactionHash" gencodec:"required"`
 	Msg               string      `json:"-"`
+	Source            string      `json:"-"`
 }
 
-func NewReceipt(root []byte, failed bool, cumulativeGasUsed uint64, height uint64, msg string) *Receipt {
-	r := &Receipt{PostState: common.CopyBytes(root), CumulativeGasUsed: cumulativeGasUsed, Height: height, Msg: msg}
+func NewReceipt(root []byte, failed bool, cumulativeGasUsed uint64, height uint64, msg, source string) *Receipt {
+	r := &Receipt{PostState: common.CopyBytes(root), CumulativeGasUsed: cumulativeGasUsed, Height: height, Msg: msg, Source: source}
 	if failed {
 		r.Status = ReceiptStatusFailed
 	} else {

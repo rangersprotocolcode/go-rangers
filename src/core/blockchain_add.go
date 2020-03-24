@@ -1,17 +1,17 @@
 package core
 
 import (
-	"x/src/middleware/types"
-	"x/src/storage/account"
-	"x/src/common"
-	"x/src/utility"
-	"x/src/middleware/notify"
-	"errors"
 	"encoding/json"
+	"errors"
 	"strconv"
+	"time"
+	"x/src/common"
+	"x/src/middleware/notify"
+	"x/src/middleware/types"
 	"x/src/service"
 	"x/src/statemachine"
-	"time"
+	"x/src/storage/account"
+	"x/src/utility"
 )
 
 func (chain *blockChain) consensusVerify(source string, b *types.Block) (types.AddBlockResult, bool) {
@@ -269,6 +269,7 @@ func (chain *blockChain) updateVerifyHash(block *types.Block) {
 }
 
 func (chain *blockChain) updateTxPool(block *types.Block, receipts types.Receipts) {
+	go chain.notifyReceipts(receipts)
 	chain.transactionPool.MarkExecuted(receipts, block.Transactions, block.Header.EvictedTxs)
 }
 

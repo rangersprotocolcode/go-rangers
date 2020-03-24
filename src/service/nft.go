@@ -1,14 +1,14 @@
 package service
 
 import (
-	"x/src/common"
-	"x/src/middleware/types"
-	"sync"
-	"x/src/storage/account"
 	"encoding/json"
 	"fmt"
 	"strconv"
+	"sync"
+	"x/src/common"
+	"x/src/middleware/types"
 	"x/src/network"
+	"x/src/storage/account"
 )
 
 var NFTManagerInstance *NFTManager
@@ -147,8 +147,9 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 	txLogger.Tracef("Generate NFT! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, timeStamp, owner.String())
 	// 检查id是否存在
 	if _, ok := nftSet.OccupiedID[id]; ok {
-		txLogger.Debugf("Generate NFT wrong id! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, timeStamp, owner.String())
-		return "wrong id", false
+		msg := fmt.Sprintf("Generate NFT wrong id! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, timeStamp, owner.String())
+		txLogger.Debugf(msg)
+		return msg, false
 	}
 	ownerString := owner.GetHexString()
 	// 创建NFT对象
@@ -186,10 +187,11 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 		nftSet.OccupiedID[id] = owner
 		nftSet.TotalSupply++
 		self.updateNFTSet(nftSet, accountDB)
-		return "nft mint successful", true
+		return fmt.Sprintf("nft mint successful. setId: %s,id: %s", setId, id), true
 	} else {
-		txLogger.Debugf("Generate NFT! fail to nft mint appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, timeStamp, owner.String())
-		return "fail to nft mint", false
+		msg := fmt.Sprintf("nft mint failed. appId: %s,setId: %s,id: %s,data: %s,createTime: %s,owner: %s", appId, setId, id, data, timeStamp, owner.String())
+		txLogger.Debugf(msg)
+		return msg, false
 	}
 }
 

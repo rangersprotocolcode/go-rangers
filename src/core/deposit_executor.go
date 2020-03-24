@@ -19,78 +19,73 @@ type ftDepositExecutor struct {
 type nftDepositExecutor struct {
 }
 
-func (this *coinDepositExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
-	return this.execute(transaction, header, accountdb, context), ""
-}
-
 //主链币充值确认
-func (this *coinDepositExecutor) execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
+func (this *coinDepositExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	txLogger.Tracef("Execute coin deposit ack tx:%s", transaction.ToTxJson().ToString())
 	if transaction.Data == "" {
-		return false
+		return false, fmt.Sprintf("data error, data: %s", transaction.Data)
 	}
 	var depositCoinData types.DepositCoinData
 	err := json.Unmarshal([]byte(transaction.Data), &depositCoinData)
 	if err != nil {
 		txLogger.Errorf("Deposit coin data unmarshal error:%s", err.Error())
-		return false
+		return false, fmt.Sprintf("data error, data: %s", transaction.Data)
 	}
-	txLogger.Tracef("deposit coin data:%v,target address:%s", depositCoinData, transaction.Source)
+	txLogger.Tracef("deposit coin data: %v,target address:%s", depositCoinData, transaction.Source)
 	if depositCoinData.Amount == "" || depositCoinData.ChainType == "" {
-		return false
+		return false, fmt.Sprintf("data error, data: %s", transaction.Data)
 	}
 
 	value, _ := utility.StrToBigInt(depositCoinData.Amount)
-	return accountdb.AddFT(common.HexToAddress(transaction.Source), fmt.Sprintf("official-%s", depositCoinData.ChainType), value)
+	result := accountdb.AddFT(common.HexToAddress(transaction.Source), fmt.Sprintf("official-%s", depositCoinData.ChainType), value)
+	if result {
+		return result, fmt.Sprintf("coin: %s, deposit %s", fmt.Sprintf("official-%s", depositCoinData.ChainType), value)
+	}
+	return result, fmt.Sprintf("too much value %s", value)
 
-}
-
-func (this *ftDepositExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
-	return this.execute(transaction, header, accountdb, context), ""
 }
 
 //FT充值确认
-func (this *ftDepositExecutor) execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
+func (this *ftDepositExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	txLogger.Tracef("Execute ft deposit ack tx:%s", transaction.ToTxJson().ToString())
 	if transaction.Data == "" {
-		return false
+		return false, fmt.Sprintf("data error, data: %s", transaction.Data)
 	}
 	var depositFTData types.DepositFTData
 	err := json.Unmarshal([]byte(transaction.Data), &depositFTData)
 	if err != nil {
 		txLogger.Errorf("Deposit ft data unmarshal error:%s", err.Error())
-		return false
+		return false, fmt.Sprintf("data error, data: %s", transaction.Data)
 	}
 	txLogger.Tracef("deposit ft data:%v, address:%s", depositFTData, transaction.Source)
 	if depositFTData.Amount == "" || depositFTData.FTId == "" {
-		return false
+		return false, fmt.Sprintf("data error, data: %s", transaction.Data)
 	}
 	//todo 先不检查此ft是否存在
 	value, _ := utility.StrToBigInt(depositFTData.Amount)
-	return accountdb.AddFT(common.HexToAddress(transaction.Source), depositFTData.FTId, value)
-
-}
-
-func (this *nftDepositExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
-	return this.execute(transaction, header, accountdb, context), ""
+	result := accountdb.AddFT(common.HexToAddress(transaction.Source), depositFTData.FTId, value)
+	if result {
+		return result, fmt.Sprintf("coin: %s, deposit %s", depositFTData.FTId, value)
+	}
+	return result, fmt.Sprintf("too much value %s", value)
 }
 
 //NFT充值确认
-func (this *nftDepositExecutor) execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) bool {
+func (this *nftDepositExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	txLogger.Tracef("Execute nft deposit ack tx:%s", transaction.ToTxJson().ToString())
 	if transaction.Data == "" {
-		return false
+		return false, fmt.Sprintf("data error, data: %s", transaction.Data)
 	}
 	var depositNFTData types.DepositNFTData
 	err := json.Unmarshal([]byte(transaction.Data), &depositNFTData)
 	if err != nil {
 		txLogger.Errorf("Deposit nft data unmarshal error:%s", err.Error())
-		return false
+		return false, fmt.Sprintf("data error, data: %s", transaction.Data)
 	}
 	//todo 这里需要重写
 	txLogger.Tracef("deposit nft data:%v,target address:%s", depositNFTData, transaction.Source)
 	if depositNFTData.SetId == "" || depositNFTData.ID == "" {
-		return false
+		return false, fmt.Sprintf("data error, data: %s", transaction.Data)
 	}
 
 	// 检查setId
@@ -102,6 +97,7 @@ func (this *nftDepositExecutor) execute(transaction *types.Transaction, header *
 
 	appId := transaction.Target
 	str, ok := service.NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, "", depositNFTData.Creator, depositNFTData.CreateTime, "official", common.HexToAddress(transaction.Source), depositNFTData.Data, accountdb)
-	txLogger.Debugf("GenerateNFT result:%s,%t", str, ok)
-	return ok
+	msg := fmt.Sprintf("depositNFT result: %s, %t", str, ok)
+	txLogger.Debugf(msg)
+	return ok, msg
 }

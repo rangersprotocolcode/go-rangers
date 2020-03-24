@@ -1,12 +1,31 @@
 package core
 
 import (
-	"x/src/middleware/types"
-	"x/src/network"
 	"encoding/json"
 	"strconv"
 	"strings"
+	"x/src/middleware/types"
+	"x/src/network"
 )
+
+func (chain *blockChain) notifyReceipts(receipts types.Receipts) {
+	if nil == receipts || 0 == len(receipts) {
+		return
+	}
+
+	for _, receipt := range receipts {
+		if 0 == len(receipt.Source) {
+			continue
+		}
+
+		msg := make(map[string]string, 0)
+		msg["msg"] = receipt.Source
+		msg["hash"] = receipt.TxHash.Hex()
+		msg["height"] = strconv.FormatUint(receipt.Height, 10)
+		msgBytes, _ := json.Marshal(msg)
+		network.GetNetInstance().Notify(true, "rocketprotocol", receipt.Source, string(msgBytes))
+	}
+}
 
 func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 	txs := remoteBlock.Transactions
