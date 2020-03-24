@@ -74,7 +74,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	}
 	addMiners(verifyMiners, stateDB)
 
-	addTestMiners(stateDB)
+	//addTestMiners(stateDB)
 
 	stateDB.SetNonce(common.ProposerDBAddress, 1)
 	stateDB.SetNonce(common.ValidatorDBAddress, 1)
