@@ -439,7 +439,7 @@ func approveNFT(accountDB *account.AccountDB, params map[string]string, owner st
 	target := params["target"]
 
 	if 0 == len(owner) || 0 == len(target) || 0 == len(setId) || 0 == len(id) {
-		return false, "param error"
+		return false, fmt.Sprintf("param error. owner: %s, setId: %s, id: %s, target: %s", owner, setId, id, target)
 	}
 
 	if accountDB.ApproveNFT(common.HexToAddress(owner), owner, setId, id, target) {
