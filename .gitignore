@@ -31,3 +31,4 @@ main
 
 venv/
 /vendor/
+/src/statemachine/logs/

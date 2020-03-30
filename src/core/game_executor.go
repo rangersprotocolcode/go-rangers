@@ -389,6 +389,13 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 		message = response
 		result = ok
 		break
+
+	case types.TransactionTypeUpdateNFT:
+		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
+		ok, response := service.UpdateNFT(accountDB, &txRaw)
+		message = response
+		result = ok
+		break
 	}
 
 	// 打包入块

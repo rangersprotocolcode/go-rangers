@@ -33,6 +33,9 @@ func (this *ftExecutor) Execute(transaction *types.Transaction, header *types.Bl
 	case types.TransactionTypeShuttleNFT:
 		success, msg = service.ShuttleNFT(accountdb, transaction)
 		break
+	case types.TransactionTypeUpdateNFT:
+		success, msg = service.UpdateNFT(accountdb, transaction)
+		break
 	}
 
 	return success, msg

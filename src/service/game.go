@@ -1,12 +1,12 @@
 package service
 
 import (
-	"x/src/middleware/types"
-	"x/src/common"
-	"x/src/storage/account"
-	"strings"
-	"fmt"
 	"encoding/json"
+	"fmt"
+	"strings"
+	"x/src/common"
+	"x/src/middleware/types"
+	"x/src/storage/account"
 	"x/src/utility"
 )
 
@@ -402,4 +402,29 @@ func MintNFT(accountdb *account.AccountDB, tx *types.Transaction) (bool, string)
 
 	message, ok := NFTManagerInstance.MintNFT(tx.Source, data["setId"], data["id"], data["data"], data["createTime"], common.HexToAddress(data["target"]), accountdb)
 	return ok, message
+}
+
+func UpdateNFT(accountDB *account.AccountDB, tx *types.Transaction) (bool, string) {
+	params := make(map[string]string, 0)
+	json.Unmarshal([]byte(tx.ExtraData), &params)
+
+	appId := tx.Source
+	setId := params["setId"]
+	id := params["id"]
+	data := params["data"]
+
+	addr := NFTManagerInstance.GetNFTOwner(setId, id, accountDB)
+	if nil == addr {
+		msg := fmt.Sprintf("wrong setId %s or id %s", setId, id)
+		txLogger.Debugf(msg)
+		return false, msg
+	}
+
+	if NFTManagerInstance.UpdateNFT(*addr, appId, setId, id, data, accountDB) {
+		return true, "success update nft"
+	} else {
+		msg := fmt.Sprintf("fail to update setId %s or id %s", setId, id)
+		txLogger.Debugf(msg)
+		return false, msg
+	}
 }

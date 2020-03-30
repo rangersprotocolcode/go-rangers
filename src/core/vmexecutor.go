@@ -32,6 +32,7 @@ func initExecutors() {
 	executors[types.TransactionTypeMintFT] = &ftExecutor{}
 	executors[types.TransactionTypeMintNFT] = &ftExecutor{}
 	executors[types.TransactionTypeShuttleNFT] = &ftExecutor{}
+	executors[types.TransactionTypeUpdateNFT] = &ftExecutor{}
 
 	executors[types.TransactionTypeAddStateMachine] = &stmExecutor{}
 	executors[types.TransactionTypeUpdateStorage] = &stmExecutor{}
