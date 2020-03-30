@@ -396,6 +396,19 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 		message = response
 		result = ok
 		break
+
+	case types.TransactionTypeApproveNFT:
+		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
+		ok, response := service.ApproveNFT(accountDB, &txRaw)
+		message = response
+		result = ok
+		break
+	case types.TransactionTypeRevokeNFT:
+		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
+		ok, response := service.RevokeNFT(accountDB, &txRaw)
+		message = response
+		result = ok
+		break
 	}
 
 	// 打包入块

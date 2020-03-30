@@ -406,12 +406,16 @@ func MintNFT(accountdb *account.AccountDB, tx *types.Transaction) (bool, string)
 
 func UpdateNFT(accountDB *account.AccountDB, tx *types.Transaction) (bool, string) {
 	params := make(map[string]string, 0)
-	json.Unmarshal([]byte(tx.ExtraData), &params)
+	json.Unmarshal([]byte(tx.Data), &params)
 
 	appId := tx.Source
 	setId := params["setId"]
 	id := params["id"]
 	data := params["data"]
+
+	if 0 == len(appId) || 0 == len(setId) || 0 == len(id) {
+		return false, "param error"
+	}
 
 	addr := NFTManagerInstance.GetNFTOwner(setId, id, accountDB)
 	if nil == addr {
@@ -427,4 +431,37 @@ func UpdateNFT(accountDB *account.AccountDB, tx *types.Transaction) (bool, strin
 		txLogger.Debugf(msg)
 		return false, msg
 	}
+}
+
+func approveNFT(accountDB *account.AccountDB, params map[string]string, owner string) (bool, string) {
+	setId := params["setId"]
+	id := params["id"]
+	target := params["target"]
+
+	if 0 == len(owner) || 0 == len(target) || 0 == len(setId) || 0 == len(id) {
+		return false, "param error"
+	}
+
+	if accountDB.ApproveNFT(common.HexToAddress(owner), owner, setId, id, target) {
+		return true, "success"
+	} else {
+		msg := fmt.Sprintf("fail to approve/revoke NFT, setId %s or id %s from %s to %s", setId, id, owner, target)
+		txLogger.Debugf(msg)
+		return false, msg
+	}
+}
+
+func ApproveNFT(accountDB *account.AccountDB, tx *types.Transaction) (bool, string) {
+	params := make(map[string]string, 0)
+	json.Unmarshal([]byte(tx.Data), &params)
+
+	return approveNFT(accountDB, params, tx.Source)
+}
+
+func RevokeNFT(accountDB *account.AccountDB, tx *types.Transaction) (bool, string) {
+	params := make(map[string]string, 0)
+	json.Unmarshal([]byte(tx.Data), &params)
+
+	params["target"] = tx.Source
+	return approveNFT(accountDB, params, tx.Source)
 }

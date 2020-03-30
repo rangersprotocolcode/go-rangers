@@ -36,6 +36,12 @@ func (this *ftExecutor) Execute(transaction *types.Transaction, header *types.Bl
 	case types.TransactionTypeUpdateNFT:
 		success, msg = service.UpdateNFT(accountdb, transaction)
 		break
+	case types.TransactionTypeApproveNFT:
+		success, msg = service.ApproveNFT(accountdb, transaction)
+		break
+	case types.TransactionTypeRevokeNFT:
+		success, msg = service.RevokeNFT(accountdb, transaction)
+		break
 	}
 
 	return success, msg
