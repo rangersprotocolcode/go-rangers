@@ -164,6 +164,7 @@ func (gx *GX) getAccountInfo(sk string) {
 	if 0 == len(sk) {
 		privateKey := common.GenerateKey("")
 		sk = privateKey.GetHexString()
+		common.GlobalConf.SetString(Section, "privateKey", sk)
 	}
 
 	gx.account = getAccountByPrivateKey(sk)

@@ -43,6 +43,7 @@ func TestProposerApplyTx(t *testing.T) {
 	}
 
 	obj.Stake = 2000000
+	obj.Type = common.MinerTypeProposer
 
 	applyData, _ := json.Marshal(obj)
 	//fmt.Printf("data:%v\n",string(applyData))
@@ -71,6 +72,7 @@ func TestVerifierApplyTx(t *testing.T) {
 	}
 
 	obj.Stake = 2000000
+	obj.Type = common.MinerTypeValidator
 
 	applyData, _ := json.Marshal(obj)
 	//fmt.Printf("data:%v\n",string(applyData))

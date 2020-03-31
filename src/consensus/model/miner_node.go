@@ -57,7 +57,7 @@ func (mi MinerInfo) GetMinerID() groupsig.ID {
 }
 
 func (md *MinerInfo) IsLight() bool {
-	return md.MinerType ==  common.MinerTypeValidator
+	return md.MinerType == common.MinerTypeValidator
 }
 
 func (md *MinerInfo) IsWeight() bool {
@@ -66,14 +66,12 @@ func (md *MinerInfo) IsWeight() bool {
 
 //在该高度是否可以铸块
 func (md *MinerInfo) CanCastAt(h uint64) bool {
-	//todo 这里不考虑高度？
-	return md.IsWeight()
+	return md.IsWeight() && h > md.ApplyHeight
 }
 
 //在该高度是否可以加入组
 func (md *MinerInfo) CanJoinGroupAt(h uint64) bool {
-	//todo 这里不考虑高度？
-	return md.IsLight()
+	return md.IsLight() && h > md.ApplyHeight
 }
 
 func (md *SelfMinerInfo) Read(p []byte) (n int, err error) {
