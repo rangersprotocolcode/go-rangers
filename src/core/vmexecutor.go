@@ -24,7 +24,7 @@ func (this *baseFeeExecutor) BeforeExecute(tx *types.Transaction, header *types.
 	if err == nil {
 		return true, ""
 	}
-	return false, "not enough fee"
+	return false, err.Error()
 }
 
 func initExecutors() {
@@ -77,13 +77,12 @@ func newVMExecutor(accountdb *account.AccountDB, block *types.Block, situation s
 	return vm
 }
 
-func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transaction, []*types.Receipt, error, []*types.TransactionError) {
+func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transaction, []*types.Receipt) {
 	beginTime := time.Now()
 
 	receipts := make([]*types.Receipt, 0)
 	transactions := make([]*types.Transaction, 0)
 	evictedTxs := make([]common.Hash, 0)
-	errs := make([]*types.TransactionError, len(this.block.Transactions))
 
 	this.prepare()
 
@@ -100,8 +99,8 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		msg := ""
 
 		if executor != nil {
-			isProcessed, result := executor.BeforeExecute(transaction, this.block.Header, this.accountdb, this.context)
-			if isProcessed {
+			success, msg = executor.BeforeExecute(transaction, this.block.Header, this.accountdb, this.context)
+			if success {
 				snapshot := this.accountdb.Snapshot()
 				success, msg = executor.Execute(transaction, this.block.Header, this.accountdb, this.context)
 
@@ -116,8 +115,6 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 
 					logger.Debugf("Execute success %s,type:%d", transaction.Hash.String(), transaction.Type)
 				}
-			} else {
-				msg = result
 			}
 		}
 
@@ -132,7 +129,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 	state := this.accountdb.IntermediateRoot(true)
 
 	middleware.PerfLogger.Debugf("VMExecutor End. %s height: %d, cost: %v, txs: %d", this.situation, this.block.Header.Height, time.Since(beginTime), len(this.block.Transactions))
-	return state, evictedTxs, transactions, receipts, nil, errs
+	return state, evictedTxs, transactions, receipts
 }
 
 func (executor *VMExecutor) validateNonce(accountdb *account.AccountDB, transaction *types.Transaction) bool {

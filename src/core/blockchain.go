@@ -176,7 +176,7 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	}
 
 	executor := newVMExecutor(state, block, "casting")
-	stateRoot, evictedTxs, transactions, receipts, err, _ := executor.Execute()
+	stateRoot, evictedTxs, transactions, receipts:= executor.Execute()
 	middleware.PerfLogger.Infof("fin execute txs. last: %v height: %v", time.Since(timestamp), height)
 
 	transactionHashes := make([]common.Hashes, len(transactions))

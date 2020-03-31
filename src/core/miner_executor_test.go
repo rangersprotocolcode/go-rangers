@@ -540,7 +540,7 @@ func testMinerRefundExecutor8(t *testing.T) {
 
 	transaction := &types.Transaction{
 		Source: "0xdd03",
-		Data:   "2000900",
+		Data:   "10000900",
 	}
 
 	// run
@@ -564,7 +564,7 @@ func testMinerRefundExecutor8(t *testing.T) {
 	if 0 != bytes.Compare(refundInfo.Id, common.FromHex(transaction.Source)) {
 		t.Fatalf("fail to refundInfo.Id")
 	}
-	if 0 != refundInfo.Value.Cmp(big.NewInt(3000000000000000)) {
+	if 0 != refundInfo.Value.Cmp(big.NewInt(15000000000000000)) {
 		t.Fatalf("fail to refundInfo.Value, %d", refundInfo.Value)
 	}
 
@@ -652,6 +652,7 @@ func setup(id string) {
 func teardown(id string) {
 	os.RemoveAll("test")
 	os.RemoveAll("database")
+	os.RemoveAll("1.ini")
 	fmt.Printf("After %s test\n", id)
 }
 

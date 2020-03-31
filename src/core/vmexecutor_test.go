@@ -6,6 +6,9 @@ import (
 	"math/big"
 	"testing"
 	"x/src/common"
+	"x/src/middleware"
+	"x/src/middleware/types"
+	"x/src/service"
 )
 
 func TestError(t *testing.T) {
@@ -66,4 +69,33 @@ func testMap(context map[string]interface{}) {
 
 	//fmt.Println(context)
 	//fmt.Println(refundInfos)
+}
+
+func vmExecutorSetup() {
+	common.InitConf("1.ini")
+	middleware.InitMiddleware()
+	service.InitService()
+	setup("")
+	initExecutors()
+	initRewardCalculator(MinerManagerImpl, blockChainImpl, groupChainImpl)
+}
+
+func TestVMExecutor_Execute2(t *testing.T) {
+	vmExecutorSetup()
+	defer teardown("1")
+
+	block := &types.Block{}
+	block.Header = getTestBlockHeader()
+	block.Transactions = make([]*types.Transaction, 0)
+
+	tx1 := types.Transaction{Source: "0x001", Type: types.TransactionTypeOperatorEvent}
+	block.Transactions = append(block.Transactions, &tx1)
+
+	executor := newVMExecutor(getTestAccountDB(), block, "testing")
+	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
+
+	fmt.Println(stateRoot)
+	fmt.Println(evictedTxs)
+	fmt.Println(transactions)
+	fmt.Println(receipts)
 }
