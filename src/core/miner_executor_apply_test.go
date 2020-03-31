@@ -1,12 +1,12 @@
 package core
 
 import (
-	"testing"
-	"strconv"
-	"x/src/middleware/types"
-	"x/src/common"
 	"encoding/json"
 	"math/big"
+	"strconv"
+	"testing"
+	"x/src/common"
+	"x/src/middleware/types"
 )
 
 // 异常流程
@@ -27,7 +27,8 @@ func testMinerExecutorApply(t *testing.T) {
 	}
 
 	processor := &minerApplyExecutor{}
-	if processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
+	succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil)
+	if succ {
 		t.Fatalf("error apply miner")
 	}
 	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
@@ -53,7 +54,8 @@ func testMinerExecutorApply1(t *testing.T) {
 	}
 
 	processor := &minerApplyExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
+	succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil)
+	if !succ {
 		t.Fatalf("error apply miner")
 	}
 
@@ -86,7 +88,7 @@ func testMinerExecutorApply2(t *testing.T) {
 	}
 
 	processor := &minerApplyExecutor{}
-	if processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
+	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); succ {
 		t.Fatalf("error apply miner")
 	}
 	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
@@ -113,7 +115,7 @@ func testMinerExecutorApply3(t *testing.T) {
 	}
 
 	processor := &minerApplyExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
+	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); !succ {
 		t.Fatalf("error apply miner")
 	}
 
@@ -127,7 +129,7 @@ func testMinerExecutorApply3(t *testing.T) {
 		t.Fatalf("error money")
 	}
 
-	if processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
+	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); succ {
 		t.Fatalf("error apply miner twice")
 	}
 	miner3 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
@@ -161,7 +163,7 @@ func testMinerExecutorApply4(t *testing.T) {
 	}
 
 	processor := &minerApplyExecutor{}
-	if processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
+	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); succ {
 		t.Fatalf("error apply miner")
 	}
 	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
@@ -187,7 +189,7 @@ func testMinerExecutorApply5(t *testing.T) {
 	}
 
 	processor := &minerApplyExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
+	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); !succ {
 		t.Fatalf("error apply miner")
 	}
 
@@ -220,7 +222,7 @@ func testMinerExecutorApply6(t *testing.T) {
 	}
 
 	processor := &minerApplyExecutor{}
-	if processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
+	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); succ {
 		t.Fatalf("error apply miner")
 	}
 	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
@@ -247,7 +249,7 @@ func testMinerExecutorApply7(t *testing.T) {
 	}
 
 	processor := &minerApplyExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
+	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); !succ {
 		t.Fatalf("error apply miner")
 	}
 
@@ -261,7 +263,7 @@ func testMinerExecutorApply7(t *testing.T) {
 		t.Fatalf("error money")
 	}
 
-	if processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
+	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); succ {
 		t.Fatalf("error apply miner twice")
 	}
 	miner3 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
@@ -293,7 +295,7 @@ func testMinerExecutorApply8(t *testing.T) {
 	}
 
 	processor := &minerApplyExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
+	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); !succ {
 		t.Fatalf("error apply miner")
 	}
 
@@ -319,7 +321,7 @@ func testMinerExecutorApply8(t *testing.T) {
 		Data:   string(data),
 	}
 
-	if processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
+	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); succ {
 		t.Fatalf("error apply miner twice")
 	}
 	miner3 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
@@ -350,7 +352,7 @@ func testMinerExecutorApply9(t *testing.T) {
 	}
 
 	processor := &minerApplyExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
+	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); !succ {
 		t.Fatalf("error apply miner")
 	}
 

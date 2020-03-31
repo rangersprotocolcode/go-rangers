@@ -1,17 +1,17 @@
 package core
 
 import (
+	"bytes"
+	"fmt"
+	"math/big"
+	"os"
+	"strconv"
 	"testing"
+	"x/src/common"
+	"x/src/middleware/db"
 	"x/src/middleware/log"
 	"x/src/middleware/types"
-	"x/src/middleware/db"
 	"x/src/storage/account"
-	"x/src/common"
-	"os"
-	"bytes"
-	"math/big"
-	"fmt"
-	"strconv"
 )
 
 var groupChainImplLocal *groupChain
@@ -38,7 +38,7 @@ func testMinerRefundExecutor(t *testing.T) {
 
 	// run
 	processor := minerRefundExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, context) {
+	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); !succ {
 		t.Fatalf("fail to refund")
 	}
 
@@ -84,7 +84,7 @@ func testMinerRefundExecutor1(t *testing.T) {
 
 	// run
 	processor := minerRefundExecutor{}
-	if processor.Execute(transaction, getTestBlockHeader(), accountDB, context) {
+	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); s {
 		t.Fatalf("fail to refund")
 	}
 
@@ -142,7 +142,7 @@ func testMinerRefundExecutor2(t *testing.T) {
 
 	// run
 	processor := minerRefundExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, context) {
+	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); !s {
 		t.Fatalf("fail to refund")
 	}
 
@@ -212,7 +212,7 @@ func testMinerRefundExecutor3(t *testing.T) {
 
 	// run
 	processor := minerRefundExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, context) {
+	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); !s {
 		t.Fatalf("fail to refund")
 	}
 
@@ -282,7 +282,7 @@ func testMinerRefundExecutor4(t *testing.T) {
 
 	// run
 	processor := minerRefundExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, context) {
+	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); !s {
 		t.Fatalf("fail to refund")
 	}
 
@@ -362,7 +362,7 @@ func testMinerRefundExecutor5(t *testing.T) {
 
 	// run
 	processor := minerRefundExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, context) {
+	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); !s {
 		t.Fatalf("fail to refund")
 	}
 
@@ -442,7 +442,7 @@ func testMinerRefundExecutor6(t *testing.T) {
 
 	// run
 	processor := minerRefundExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, context) {
+	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); !s {
 		t.Fatalf("fail to refund")
 	}
 
@@ -493,7 +493,7 @@ func testMinerRefundExecutor7(t *testing.T) {
 
 	// run
 	processor := minerRefundExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, context) {
+	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); !s {
 		t.Fatalf("fail to refund")
 	}
 
@@ -545,7 +545,7 @@ func testMinerRefundExecutor8(t *testing.T) {
 
 	// run
 	processor := minerRefundExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, context) {
+	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); !s {
 		t.Fatalf("fail to refund")
 	}
 
@@ -597,7 +597,7 @@ func testMinerRefundExecutor9(t *testing.T) {
 
 	// run
 	processor := minerRefundExecutor{}
-	if processor.Execute(transaction, getTestBlockHeader(), accountDB, context) {
+	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); s {
 		t.Fatalf("fail to refund")
 	}
 

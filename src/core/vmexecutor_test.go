@@ -1,12 +1,21 @@
 package core
 
 import (
-	"testing"
-	"fmt"
-	"x/src/common"
-	"math/big"
 	"encoding/json"
+	"fmt"
+	"math/big"
+	"testing"
+	"x/src/common"
 )
+
+func TestError(t *testing.T) {
+	var e error
+	if e == nil {
+		fmt.Println("nil")
+	} else {
+		fmt.Println("not nil")
+	}
+}
 
 func TestVMExecutor_Execute(t *testing.T) {
 	context := make(map[string]interface{})

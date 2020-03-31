@@ -7,13 +7,10 @@ import (
 )
 
 type ftExecutor struct {
+	baseFeeExecutor
 }
 
 func (this *ftExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
-	if err := service.GetTransactionPool().ProcessFee(*transaction, accountdb); err != nil {
-		return false, "not enough fee"
-	}
-
 	success := false
 	msg := ""
 

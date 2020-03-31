@@ -213,18 +213,18 @@ func (mm *MinerManager) AddStake(addr common.Address, minerId []byte, delta uint
 
 func (mm *MinerManager) AddMiner(addr common.Address, miner *types.Miner, accountdb *account.AccountDB) (bool, string) {
 	if miner.Type != common.MinerTypeValidator && miner.Type != common.MinerTypeProposer {
-		msg := fmt.Sprintf("miner type error, minerId: %d, type: %d", common.ToHex(miner.Id), miner.Type)
+		msg := fmt.Sprintf("miner type error, minerId: %s, type: %d", common.ToHex(miner.Id), miner.Type)
 		logger.Errorf(msg)
 		return false, msg
 	}
 	if (miner.Type == common.MinerTypeValidator && miner.Stake < common.ValidatorStake) ||
 		(miner.Type == common.MinerTypeProposer && miner.Stake < common.ProposerStake) {
-		msg := fmt.Sprintf("not enough stake, minerId: %d, stake: %d", common.ToHex(miner.Id), miner.Stake)
+		msg := fmt.Sprintf("not enough stake, minerId: %s, stake: %d", common.ToHex(miner.Id), miner.Stake)
 		logger.Errorf(msg)
 		return false, msg
 	}
 	if isEmptyByteSlice(miner.VrfPublicKey) || isEmptyByteSlice(miner.PublicKey) {
-		msg := fmt.Sprintf("VrfPublicKey or PublicKey is empty, minerId: %d, vrfPublicKey: %v,publicKey: %v", common.ToHex(miner.Id), miner.VrfPublicKey, miner.PublicKey)
+		msg := fmt.Sprintf("VrfPublicKey or PublicKey is empty, minerId: %s, vrfPublicKey: %v,publicKey: %v", common.ToHex(miner.Id), miner.VrfPublicKey, miner.PublicKey)
 		logger.Errorf(msg)
 		return false, msg
 

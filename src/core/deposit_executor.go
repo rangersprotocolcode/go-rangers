@@ -19,6 +19,10 @@ type ftDepositExecutor struct {
 type nftDepositExecutor struct {
 }
 
+func (this *coinDepositExecutor) BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	return true, ""
+}
+
 //主链币充值确认
 func (this *coinDepositExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	txLogger.Tracef("Execute coin deposit ack tx:%s", transaction.ToTxJson().ToString())
@@ -45,6 +49,10 @@ func (this *coinDepositExecutor) Execute(transaction *types.Transaction, header 
 
 }
 
+func (this *ftDepositExecutor) BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	return true, ""
+}
+
 //FT充值确认
 func (this *ftDepositExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	txLogger.Tracef("Execute ft deposit ack tx:%s", transaction.ToTxJson().ToString())
@@ -68,6 +76,10 @@ func (this *ftDepositExecutor) Execute(transaction *types.Transaction, header *t
 		return result, fmt.Sprintf("coin: %s, deposit %s", depositFTData.FTId, value)
 	}
 	return result, fmt.Sprintf("too much value %s", value)
+}
+
+func (this *nftDepositExecutor) BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	return true,""
 }
 
 //NFT充值确认

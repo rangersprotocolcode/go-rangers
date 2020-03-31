@@ -27,8 +27,9 @@ func testMinerExecutorAdd(t *testing.T) {
 	}
 
 	processor := &minerAddExecutor{}
-	if processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
-		t.Fatalf("error add miner")
+	success, msg := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil)
+	if success {
+		t.Fatalf(msg)
 	}
 
 	left := accountDB.GetBalance(common.HexToAddress("0x0003"))
@@ -56,8 +57,9 @@ func testMinerExecutorAdd1(t *testing.T) {
 	}
 
 	processor := &minerAddExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
-		t.Fatalf("error add miner")
+	success, msg := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil)
+	if !success {
+		t.Fatalf(msg)
 	}
 
 	miner2 := MinerManagerImpl.GetMiner(miner.Id, accountDB)
@@ -91,8 +93,9 @@ func testMinerExecutorAdd2(t *testing.T) {
 	}
 
 	processor := &minerAddExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
-		t.Fatalf("error add miner")
+	success, msg := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil)
+	if !success {
+		t.Fatalf(msg)
 	}
 
 	miner2 := MinerManagerImpl.GetMiner(miner.Id, accountDB)
@@ -127,8 +130,9 @@ func testMinerExecutorAdd3(t *testing.T) {
 	}
 
 	processor := &minerAddExecutor{}
-	if !processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
-		t.Fatalf("error add miner")
+	success, msg := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil)
+	if !success {
+		t.Fatalf(msg)
 	}
 
 	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
@@ -162,8 +166,9 @@ func testMinerExecutorAdd4(t *testing.T) {
 	}
 
 	processor := &minerAddExecutor{}
-	if processor.Execute(transaction, getTestBlockHeader(), accountDB, nil) {
-		t.Fatalf("error add miner")
+	success, msg := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil)
+	if success {
+		t.Fatalf(msg)
 	}
 
 	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)

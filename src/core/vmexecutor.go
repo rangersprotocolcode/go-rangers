@@ -3,16 +3,28 @@ package core
 import (
 	"time"
 	"x/src/common"
-	"x/src/middleware/types"
-	"x/src/storage/account"
-
 	"x/src/middleware"
+	"x/src/middleware/types"
+	"x/src/service"
+	"x/src/storage/account"
 )
 
 var executors map[int32]executor
 
 type executor interface {
+	BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string)
 	Execute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string)
+}
+
+type baseFeeExecutor struct {
+}
+
+func (this *baseFeeExecutor) BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	err := service.GetTransactionPool().ProcessFee(*tx, accountdb)
+	if err == nil {
+		return true, ""
+	}
+	return false, "not enough fee"
 }
 
 func initExecutors() {
@@ -78,29 +90,35 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 	for _, transaction := range this.block.Transactions {
 		executeTime := time.Now()
 		if this.situation == "casting" && executeTime.Sub(beginTime) > MaxCastBlockTime {
-			logger.Infof("Cast block execute tx time out!Tx hash:%s ", transaction.Hash.String())
+			logger.Infof("Cast block execute tx time out! Tx hash:%s ", transaction.Hash.String())
 			break
 		}
 		logger.Debugf("Execute %s, type:%d", transaction.Hash.String(), transaction.Type)
 
 		executor := executors[transaction.Type]
-		snapshot := this.accountdb.Snapshot()
 		success := false
 		msg := ""
+
 		if executor != nil {
-			success, msg = executor.Execute(transaction, this.block.Header, this.accountdb, this.context)
-		}
+			isProcessed, result := executor.BeforeExecute(transaction, this.block.Header, this.accountdb, this.context)
+			if isProcessed {
+				snapshot := this.accountdb.Snapshot()
+				success, msg = executor.Execute(transaction, this.block.Header, this.accountdb, this.context)
 
-		if !success {
-			logger.Debugf("Execute failed tx:%s, type:%d", transaction.Hash.String(), transaction.Type)
-			evictedTxs = append(evictedTxs, transaction.Hash)
-			this.accountdb.RevertToSnapshot(snapshot)
-		} else {
-			if transaction.Source != "" {
-				this.accountdb.SetNonce(common.HexToAddress(transaction.Source), transaction.Nonce)
+				if !success {
+					logger.Debugf("Execute failed tx: %s, type: %d, msg: %s", transaction.Hash.String(), transaction.Type, msg)
+					evictedTxs = append(evictedTxs, transaction.Hash)
+					this.accountdb.RevertToSnapshot(snapshot)
+				} else {
+					if transaction.Source != "" {
+						this.accountdb.SetNonce(common.HexToAddress(transaction.Source), transaction.Nonce)
+					}
+
+					logger.Debugf("Execute success %s,type:%d", transaction.Hash.String(), transaction.Type)
+				}
+			} else {
+				msg = result
 			}
-
-			logger.Debugf("Execute success %s,type:%d", transaction.Hash.String(), transaction.Type)
 		}
 
 		transactions = append(transactions, transaction)

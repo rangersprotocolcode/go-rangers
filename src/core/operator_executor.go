@@ -12,14 +12,11 @@ import (
 )
 
 type operatorExecutor struct {
+	baseFeeExecutor
 }
 
 func (this *operatorExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	logger.Debugf("Begin transaction is not nil!")
-
-	if err := service.GetTransactionPool().ProcessFee(*transaction, accountdb); err != nil {
-		return false, err.Error()
-	}
 
 	// 处理转账
 	// 支持多人转账{"address1":"value1", "address2":"value2"}

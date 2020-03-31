@@ -2,19 +2,16 @@ package core
 
 import (
 	"x/src/middleware/types"
-	"x/src/service"
 	"x/src/statemachine"
 	"x/src/storage/account"
 )
 
 type stmExecutor struct {
+	baseFeeExecutor
 }
 
-func (this *stmExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
-	if err := service.GetTransactionPool().ProcessFee(*transaction, accountdb); err != nil {
-		return false, "not enough fee"
-	}
 
+func (this *stmExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	switch transaction.Type {
 	case types.TransactionTypeAddStateMachine:
 		// todo: 经济模型，新增状态机应该要付费
