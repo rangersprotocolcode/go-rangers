@@ -18,7 +18,7 @@ type MinerPoolReader struct {
 }
 
 func NewMinerPoolReader(mp *core.MinerManager) *MinerPoolReader {
-	if logger == nil{
+	if logger == nil {
 		logger = log.GetLoggerByIndex(log.AccessLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	}
 	if minerPoolReaderInstance == nil {
@@ -106,9 +106,8 @@ func (access *MinerPoolReader) convert2MinerDO(miner *types.Miner) *model.MinerI
 		ApplyHeight: miner.ApplyHeight,
 		AbortHeight: miner.AbortHeight,
 	}
-	if !md.ID.IsValid() {
-		//access.logger.Debugf("invalid id %v, %v", miner.Id, md.ID.GetHexString())
-		panic("id not valid")
+	if !md.ID.IsValid() || !md.PubKey.IsValid() {
+		logger.Warnf("Invalid miner! id %v, %v,miner public key:%v,%v", miner.Id, md.ID.GetHexString(), md.PubKey, md.PubKey.GetHexString())
 	}
 	return md
 }

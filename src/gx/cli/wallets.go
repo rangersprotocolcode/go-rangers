@@ -10,6 +10,7 @@ import (
 	"x/src/consensus/vrf"
 	"x/src/core"
 	"x/src/middleware/types"
+	"x/src/consensus/groupsig"
 )
 
 var walletManager wallets
@@ -62,10 +63,13 @@ func (ws *wallets) newWalletByPrivateKey(privateKey string) (privKeyStr, walletA
 
 	var miner types.Miner
 	miner.Id = address.Bytes()
-	miner.PublicKey = pub.ToBytes()
 
 	secretSeed := base.RandFromBytes(address.Bytes())
+	minerSecKey := *groupsig.NewSeckeyFromRand(secretSeed)
+	minerPubKey := *groupsig.GeneratePubkey(minerSecKey)
 	vrfPK, _, _ := vrf.VRFGenerateKey(bytes.NewReader(secretSeed.Bytes()))
+
+	miner.PublicKey = minerPubKey.Serialize()
 	miner.VrfPublicKey = vrfPK
 
 	minerJson, _ := json.Marshal(miner)
