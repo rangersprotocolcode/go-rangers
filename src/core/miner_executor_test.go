@@ -629,9 +629,27 @@ func getTestAccountDB() *account.AccountDB {
 	return accountdb
 }
 
+func getTestAccountDBWithRoot(root common.Hash) *account.AccountDB {
+	db, err := db.NewLDBDatabase("test", 0, 0)
+	if err != nil {
+		panic(err)
+	}
+
+	triedb := account.NewDatabase(db)
+	accountdb, _ := account.NewAccountDB(root, triedb)
+
+	return accountdb
+}
+
+func clean() {
+	os.RemoveAll("logs")
+	os.RemoveAll("test")
+	os.RemoveAll("database")
+	os.RemoveAll("1.ini")
+}
 func setup(id string) {
 	fmt.Printf("Before %s tests\n", id)
-	os.RemoveAll("logs")
+	clean()
 	logger = log.GetLoggerByIndex(log.CoreLogConfig, "0")
 
 	chain := &groupChain{}
@@ -650,9 +668,7 @@ func setup(id string) {
 }
 
 func teardown(id string) {
-	os.RemoveAll("test")
-	os.RemoveAll("database")
-	os.RemoveAll("1.ini")
+	clean()
 	fmt.Printf("After %s test\n", id)
 }
 
