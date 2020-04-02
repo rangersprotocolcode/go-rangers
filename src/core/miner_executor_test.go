@@ -48,7 +48,7 @@ func testMinerRefundExecutor(t *testing.T) {
 		t.Fatalf("fail to getRefundInfos")
 	}
 
-	refundInfoList, ok := refundInfos[10140]
+	refundInfoList, ok := refundInfos[10136]
 	if !ok || 1 != len(refundInfoList.List) {
 		t.Fatalf("fail to getRefundInfo")
 	}
@@ -152,7 +152,7 @@ func testMinerRefundExecutor2(t *testing.T) {
 		t.Fatalf("fail to getRefundInfos")
 	}
 
-	refundInfoList, ok := refundInfos[10140]
+	refundInfoList, ok := refundInfos[10136]
 	if !ok || 1 != len(refundInfoList.List) {
 		t.Fatalf("fail to getRefundInfo")
 	}
@@ -222,7 +222,7 @@ func testMinerRefundExecutor3(t *testing.T) {
 		t.Fatalf("fail to getRefundInfos")
 	}
 
-	refundInfoList, ok := refundInfos[10140]
+	refundInfoList, ok := refundInfos[10136]
 	if !ok || 1 != len(refundInfoList.List) {
 		t.Fatalf("fail to getRefundInfo")
 	}
@@ -503,7 +503,7 @@ func testMinerRefundExecutor7(t *testing.T) {
 		t.Fatalf("fail to getRefundInfos")
 	}
 
-	refundInfoList, ok := refundInfos[10140]
+	refundInfoList, ok := refundInfos[10136]
 	if !ok || 1 != len(refundInfoList.List) {
 		t.Fatalf("fail to getRefundInfo")
 	}
@@ -555,7 +555,7 @@ func testMinerRefundExecutor8(t *testing.T) {
 		t.Fatalf("fail to getRefundInfos")
 	}
 
-	refundInfoList, ok := refundInfos[10140]
+	refundInfoList, ok := refundInfos[10136]
 	if !ok || 1 != len(refundInfoList.List) {
 		t.Fatalf("fail to getRefundInfo")
 	}
@@ -625,18 +625,6 @@ func getTestAccountDB() *account.AccountDB {
 	db, _ := db.NewLDBDatabase("test", 0, 0)
 	triedb := account.NewDatabase(db)
 	accountdb, _ := account.NewAccountDB(common.Hash{}, triedb)
-
-	return accountdb
-}
-
-func getTestAccountDBWithRoot(root common.Hash) *account.AccountDB {
-	db, err := db.NewLDBDatabase("test", 0, 0)
-	if err != nil {
-		panic(err)
-	}
-
-	triedb := account.NewDatabase(db)
-	accountdb, _ := account.NewAccountDB(root, triedb)
 
 	return accountdb
 }

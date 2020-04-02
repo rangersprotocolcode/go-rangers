@@ -42,9 +42,11 @@ func testMinerExecutorApply1(t *testing.T) {
 	accountDB := getTestAccountDB()
 	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(1000000000000000))
 	miner := &types.Miner{
-		Id:    common.FromHex("0x0003"),
-		Type:  common.MinerTypeValidator,
-		Stake: common.ValidatorStake * 3,
+		Id:           common.FromHex("0x0003"),
+		Type:         common.MinerTypeValidator,
+		Stake:        common.ValidatorStake * 3,
+		PublicKey:    []byte{0, 1, 2, 3},
+		VrfPublicKey: []byte{4, 5, 6, 7},
 	}
 	data, _ := json.Marshal(miner)
 
@@ -54,9 +56,9 @@ func testMinerExecutorApply1(t *testing.T) {
 	}
 
 	processor := &minerApplyExecutor{}
-	succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil)
+	succ, msg := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil)
 	if !succ {
-		t.Fatalf("error apply miner")
+		t.Fatalf(msg)
 	}
 
 	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
@@ -106,6 +108,8 @@ func testMinerExecutorApply3(t *testing.T) {
 		Id:    common.FromHex("0x0003"),
 		Type:  common.MinerTypeValidator,
 		Stake: common.ValidatorStake * 3,
+		PublicKey:    []byte{0, 1, 2, 3},
+		VrfPublicKey: []byte{4, 5, 6, 7},
 	}
 	data, _ := json.Marshal(miner)
 
@@ -115,8 +119,8 @@ func testMinerExecutorApply3(t *testing.T) {
 	}
 
 	processor := &minerApplyExecutor{}
-	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); !succ {
-		t.Fatalf("error apply miner")
+	if succ, msg := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); !succ {
+		t.Fatalf(msg)
 	}
 
 	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
@@ -175,11 +179,13 @@ func testMinerExecutorApply4(t *testing.T) {
 // 正常流程
 func testMinerExecutorApply5(t *testing.T) {
 	accountDB := getTestAccountDB()
-	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(10000000000000000))
+	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(100000000000000000))
 	miner := &types.Miner{
 		Id:    common.FromHex("0x0003"),
 		Type:  common.MinerTypeProposer,
 		Stake: common.ProposerStake * 3,
+		PublicKey:    []byte{0, 1, 2, 3},
+		VrfPublicKey: []byte{4, 5, 6, 7},
 	}
 	data, _ := json.Marshal(miner)
 
@@ -189,8 +195,8 @@ func testMinerExecutorApply5(t *testing.T) {
 	}
 
 	processor := &minerApplyExecutor{}
-	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); !succ {
-		t.Fatalf("error apply miner")
+	if succ, msg := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); !succ {
+		t.Fatalf(msg)
 	}
 
 	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
@@ -199,7 +205,7 @@ func testMinerExecutorApply5(t *testing.T) {
 	}
 
 	left := accountDB.GetBalance(common.HexToAddress("0x0003"))
-	if left == nil || 0 != left.Cmp(big.NewInt(7000000000000000)) {
+	if left == nil || 0 != left.Cmp(big.NewInt(85000000000000000)) {
 		t.Fatalf("error money")
 	}
 }
@@ -235,11 +241,13 @@ func testMinerExecutorApply6(t *testing.T) {
 // 重复申请
 func testMinerExecutorApply7(t *testing.T) {
 	accountDB := getTestAccountDB()
-	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(10000000000000000))
+	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(100000000000000000))
 	miner := &types.Miner{
 		Id:    common.FromHex("0x0003"),
 		Type:  common.MinerTypeProposer,
 		Stake: common.ProposerStake * 3,
+		PublicKey:    []byte{0, 1, 2, 3},
+		VrfPublicKey: []byte{4, 5, 6, 7},
 	}
 	data, _ := json.Marshal(miner)
 
@@ -249,8 +257,8 @@ func testMinerExecutorApply7(t *testing.T) {
 	}
 
 	processor := &minerApplyExecutor{}
-	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); !succ {
-		t.Fatalf("error apply miner")
+	if succ, msg := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); !succ {
+		t.Fatalf(msg)
 	}
 
 	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
@@ -259,7 +267,7 @@ func testMinerExecutorApply7(t *testing.T) {
 	}
 
 	left := accountDB.GetBalance(common.HexToAddress("0x0003"))
-	if left == nil || 0 != left.Cmp(big.NewInt(7000000000000000)) {
+	if left == nil || 0 != left.Cmp(big.NewInt(85000000000000000)) {
 		t.Fatalf("error money")
 	}
 
@@ -272,7 +280,7 @@ func testMinerExecutorApply7(t *testing.T) {
 	}
 
 	left2 := accountDB.GetBalance(common.HexToAddress("0x0003"))
-	if left2 == nil || 0 != left2.Cmp(big.NewInt(7000000000000000)) {
+	if left2 == nil || 0 != left2.Cmp(big.NewInt(85000000000000000)) {
 		t.Fatalf("error money")
 	}
 }
@@ -281,11 +289,13 @@ func testMinerExecutorApply7(t *testing.T) {
 // 重复申请
 func testMinerExecutorApply8(t *testing.T) {
 	accountDB := getTestAccountDB()
-	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(10000000000000000))
+	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(100000000000000000))
 	miner := &types.Miner{
 		Id:    common.FromHex("0x0003"),
 		Type:  common.MinerTypeProposer,
 		Stake: common.ProposerStake * 3,
+		PublicKey:    []byte{0, 1, 2, 3},
+		VrfPublicKey: []byte{4, 5, 6, 7},
 	}
 	data, _ := json.Marshal(miner)
 
@@ -295,8 +305,8 @@ func testMinerExecutorApply8(t *testing.T) {
 	}
 
 	processor := &minerApplyExecutor{}
-	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); !succ {
-		t.Fatalf("error apply miner")
+	if succ, msg := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); !succ {
+		t.Fatalf(msg)
 	}
 
 	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
@@ -305,7 +315,7 @@ func testMinerExecutorApply8(t *testing.T) {
 	}
 
 	left := accountDB.GetBalance(common.HexToAddress("0x0003"))
-	if left == nil || 0 != left.Cmp(big.NewInt(7000000000000000)) {
+	if left == nil || 0 != left.Cmp(big.NewInt(85000000000000000)) {
 		t.Fatalf("error money")
 	}
 
@@ -330,7 +340,7 @@ func testMinerExecutorApply8(t *testing.T) {
 	}
 
 	left2 := accountDB.GetBalance(common.HexToAddress("0x0003"))
-	if left2 == nil || 0 != left2.Cmp(big.NewInt(7000000000000000)) {
+	if left2 == nil || 0 != left2.Cmp(big.NewInt(85000000000000000)) {
 		t.Fatalf("error money")
 	}
 }
@@ -343,6 +353,8 @@ func testMinerExecutorApply9(t *testing.T) {
 	miner := &types.Miner{
 		Type:  common.MinerTypeValidator,
 		Stake: common.ValidatorStake * 3,
+		PublicKey:    []byte{0, 1, 2, 3},
+		VrfPublicKey: []byte{4, 5, 6, 7},
 	}
 	data, _ := json.Marshal(miner)
 
@@ -352,8 +364,8 @@ func testMinerExecutorApply9(t *testing.T) {
 	}
 
 	processor := &minerApplyExecutor{}
-	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); !succ {
-		t.Fatalf("error apply miner")
+	if succ, msg := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); !succ {
+		t.Fatalf(msg)
 	}
 
 	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)

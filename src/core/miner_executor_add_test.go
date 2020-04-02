@@ -41,7 +41,7 @@ func testMinerExecutorAdd(t *testing.T) {
 // 正常流程
 func testMinerExecutorAdd1(t *testing.T) {
 	accountDB := getTestAccountDB()
-	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(10000000000000000))
+	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(100000000000000000))
 
 	miner := &types.Miner{
 		Id:    common.FromHex("0x0003"),
@@ -68,7 +68,7 @@ func testMinerExecutorAdd1(t *testing.T) {
 	}
 
 	left := accountDB.GetBalance(common.HexToAddress("0x0003"))
-	if nil == left || 0 != left.Cmp(big.NewInt(7000000000000000)) {
+	if nil == left || 0 != left.Cmp(big.NewInt(85000000000000000)) {
 		t.Fatalf("error add value, %d", left)
 	}
 }
@@ -77,7 +77,7 @@ func testMinerExecutorAdd1(t *testing.T) {
 // 代质押
 func testMinerExecutorAdd2(t *testing.T) {
 	accountDB := getTestAccountDB()
-	accountDB.SetBalance(common.HexToAddress("0x00a3"), big.NewInt(10000000000000000))
+	accountDB.SetBalance(common.HexToAddress("0x00a3"), big.NewInt(100000000000000000))
 
 	miner := &types.Miner{
 		Id:    common.FromHex("0x0003"),
@@ -104,7 +104,7 @@ func testMinerExecutorAdd2(t *testing.T) {
 	}
 
 	left := accountDB.GetBalance(common.HexToAddress("0x00a3"))
-	if nil == left || 0 != left.Cmp(big.NewInt(7000000000000000)) {
+	if nil == left || 0 != left.Cmp(big.NewInt(85000000000000000)) {
 		t.Fatalf("error add value, %d", left)
 	}
 }
@@ -113,7 +113,7 @@ func testMinerExecutorAdd2(t *testing.T) {
 // 缺少minerId
 func testMinerExecutorAdd3(t *testing.T) {
 	accountDB := getTestAccountDB()
-	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(10000000000000000))
+	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(100000000000000000))
 
 	miner := &types.Miner{
 		Id:    common.FromHex("0x0003"),
@@ -141,7 +141,7 @@ func testMinerExecutorAdd3(t *testing.T) {
 	}
 
 	left := accountDB.GetBalance(common.HexToAddress("0x0003"))
-	if nil == left || 0 != left.Cmp(big.NewInt(7000000000000000)) {
+	if nil == left || 0 != left.Cmp(big.NewInt(85000000000000000)) {
 		t.Fatalf("error add value, %d", left)
 	}
 }
