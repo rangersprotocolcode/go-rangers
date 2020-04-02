@@ -9,6 +9,8 @@ import (
 	"bytes"
 	"encoding/hex"
 	"io/ioutil"
+	"strings"
+	"math/big"
 )
 
 func TestKeyLength(test *testing.T) {
@@ -174,7 +176,6 @@ func TestGenComparisonData(test *testing.T) {
 		buffer.WriteString("privateKey:")
 		privateKeyHex := hex.EncodeToString(key.PrivKey.D.Bytes())
 		buffer.WriteString(privateKeyHex)
-		//buffer.WriteString(key.GetHexString())
 
 		buffer.WriteString("|publicKey:")
 		buffer.WriteString(key.GetPubKey().GetHexString())
@@ -188,27 +189,69 @@ func TestGenComparisonData(test *testing.T) {
 		sign := key.Sign(messageByte)
 		buffer.WriteString(sign.GetHexString())
 		buffer.WriteString("\n")
-
-		//fmt.Printf("private binary:")
-		//for _, b := range key.PrivKey.D.Bytes() {
-		//	fmt.Printf("%b,", b)
-		//}
-		//fmt.Printf("\n")
-		//fmt.Printf("privatekey hex:%s\n\n", privateKeyHex)
-
-		//fmt.Printf("message binary:")
-		//for _, b := range messageByte {
-		//	fmt.Printf("%b,", b)
-		//}
-		//fmt.Printf("\n")
-		//fmt.Printf("message hex:%s\n\n", message)
-		//
-		//fmt.Printf("sign binary:")
-		//for _, b := range sign.Bytes() {
-		//	fmt.Printf("%b,", b)
-		//}
-		//fmt.Printf("\n")
-		//fmt.Printf("sign hex:%s\n\n", sign.GetHexString())
 	}
 	ioutil.WriteFile(fileName, buffer.Bytes(), 0644)
+}
+
+func TestValidateComparisonData(test *testing.T) {
+	fileName := "secp256_comparisonData_java.txt"
+
+	bytes, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		panic("read secp256_comparisonData_java info  file error:" + err.Error())
+	}
+	records := strings.Split(string(bytes), "\n")
+
+	for _, record := range records {
+		fmt.Println(record)
+		elements := strings.Split(record, "|")
+		//fmt.Println(elements[0])
+		//fmt.Println(elements[1])
+		//fmt.Println(elements[2])
+		//fmt.Println(elements[3])
+
+		privateKey := strings.Replace(elements[0], "privateKey:", "", 1)
+		publicKey := strings.Replace(elements[1], "publicKey:", "", 1)
+		message := strings.Replace(elements[2], "message:", "", 1)
+		sign := strings.Replace(elements[3], "sign:", "", 1)
+
+		//fmt.Println(privateKey)
+		//fmt.Println(publicKey)
+		//fmt.Println(message)
+		//fmt.Println(sign)
+
+		validateFunction(privateKey, publicKey, message, sign, test)
+	}
+}
+
+func validateFunction(privateKeyStr, publicKeyStr, message, signStr string, test *testing.T) {
+
+	privateKeyBuf, _ := hex.DecodeString(privateKeyStr[len(PREFIX):])
+	fmt.Printf("privateKeyBuf len:%d\n", len(privateKeyBuf))
+	var privateKey PrivateKey
+	privateKey.PrivKey.D = new(big.Int).SetBytes(privateKeyBuf)
+
+	publicKeyBuf, _ := hex.DecodeString(publicKeyStr[len(PREFIX):])
+	privateKey.PrivKey.PublicKey = BytesToPublicKey(publicKeyBuf).PubKey
+
+	//get public key by private key
+	publicKey := privateKey.GetPubKey()
+	assert.Equal(test, publicKeyStr, publicKey.GetHexString())
+
+	//Recover public key from sign
+	sign := HexStringToSign(signStr)
+	messageBytes, _ := hex.DecodeString(message[len(PREFIX):])
+	recoveredPublicKey, err := sign.RecoverPubkey(messageBytes)
+	if err != nil {
+		panic("Recover publicKey from sign error:" + err.Error())
+	}
+	assert.Equal(test, publicKeyStr, recoveredPublicKey.GetHexString())
+
+	//Sign
+	expectedSign := privateKey.Sign(messageBytes)
+	assert.Equal(test, signStr, expectedSign.GetHexString())
+
+	//verify sign
+	verifyResult := publicKey.Verify(messageBytes, sign)
+	assert.Equal(test, verifyResult, true)
 }
