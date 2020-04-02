@@ -109,18 +109,18 @@ func (self *NFTManager) PublishNFTSet(nftSet *types.NFTSet, accountDB *account.A
 	}
 
 	// 检查setId是否存在
-	if nftSet.MaxSupply < 0 && 0 == len(nftSet.SetID) || self.contains(nftSet.SetID, accountDB) {
-		return "SetId or maxSupply Wrong", false
+	if nftSet.MaxSupply < 0 || 0 == len(nftSet.SetID) || self.contains(nftSet.SetID, accountDB) {
+		return fmt.Sprintf("setId or maxSupply wrong, setId: %s, maxSupply: %d", nftSet.SetID, nftSet.MaxSupply), false
 	}
 
 	self.updateNFTSet(nftSet, accountDB)
-	return "Nft Publish Successful", true
+	return fmt.Sprintf("nft publish successful, setId: %s", nftSet.SetID), true
 }
 
 // L2创建NFT
 // 状态机调用
 func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner common.Address, accountDB *account.AccountDB) (string, bool) {
-	txLogger.Debugf("Mint NFT! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, createTime, owner.String())
+	txLogger.Debugf("Mint NFT! appId: %s, setId: %s, id: %s, data: %s, createTime: %s, owner: %s", appId, setId, id, data, createTime, owner.String())
 	self.lock.Lock()
 	defer self.lock.Unlock()
 

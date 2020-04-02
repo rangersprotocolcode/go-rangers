@@ -1,6 +1,7 @@
 package core
 
 import (
+	"strings"
 	"time"
 	"x/src/common"
 	"x/src/middleware"
@@ -64,6 +65,7 @@ type VMExecutor struct {
 	block     *types.Block
 	situation string
 	context   map[string]interface{}
+	mode      bool
 }
 
 func newVMExecutor(accountdb *account.AccountDB, block *types.Block, situation string) *VMExecutor {
@@ -141,6 +143,10 @@ func (executor *VMExecutor) prepare() {
 }
 
 func (executor *VMExecutor) after() {
+	if 0 == strings.Compare("testing", executor.situation) {
+		return
+	}
+
 	height := executor.block.Header.Height
 
 	// 计算定时任务（冻结、退款等等）

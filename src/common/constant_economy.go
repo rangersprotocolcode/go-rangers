@@ -10,7 +10,7 @@ const (
 
 	// 10个小时，单位ms
 	// 计算一次奖励的时间间隔
-	RewardTime = 5 * 1000
+	RewardTime = 1 * 1000
 
 	RefundTime = 50 * 1000
 
@@ -20,7 +20,8 @@ const (
 	RefundBlocks = uint64(RefundTime / CastingInterval)
 
 	// 一年，单位ms
-	OneYear = 365 * 24 * 3600 * 1000
+	//OneYear = 365 * 24 * 3600 * 1000
+	OneYear = 100 * 1000
 
 	// 一年出得块数量
 	BlocksPerYear = uint64(OneYear / CastingInterval)

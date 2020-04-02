@@ -16,7 +16,7 @@ type NFTSet struct {
 	SetID       string `json:"setId,omitempty"`
 	Name        string `json:"name,omitempty"`
 	Symbol      string `json:"symbol,omitempty"`
-	MaxSupply   int    `json:"maxSupply,omitempty"`   // 最大发行量
+	MaxSupply   int    `json:"maxSupply,omitempty"`   // 最大发行量，等于0则表示无限量
 	TotalSupply int    `json:"totalSupply,omitempty"` // 历史上发行量
 	Creator     string `json:"creator,omitempty"`
 	Owner       string `json:"owner,omitempty"`

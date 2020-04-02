@@ -1,16 +1,16 @@
 package service
 
 import (
+	"encoding/json"
+	"fmt"
+	"math/big"
+	"strings"
+	"sync"
 	"x/src/common"
 	"x/src/middleware/types"
-	"math/big"
-	"encoding/json"
-	"x/src/storage/account"
-	"sync"
-	"fmt"
-	"strings"
-	"x/src/utility"
 	"x/src/network"
+	"x/src/storage/account"
+	"x/src/utility"
 )
 
 type FTManager struct {
@@ -164,21 +164,21 @@ func (self *FTManager) MintFT(owner, ftId, target, supply string, accountDB *acc
 	txLogger.Tracef("MintFT ftId %s,target:%s,supply:%s", ftId, target, supply)
 	if 0 == len(target) || 0 == len(ftId) || 0 == len(supply) {
 		logger.Debugf("wrong params")
-		return "Wrong Params", false
+		return "wrong params", false
 	}
 
 	balance := self.convert(supply)
 	if !self.SubFTSet(owner, ftId, balance, accountDB) {
 		txLogger.Tracef("Mint ft not enough FT!ftId %s,target:%s,supply:%s", ftId, target, supply)
-		return "Not Enough FT", false
+		return "not enough FT", false
 	}
 
 	targetAddress := common.HexToAddress(target)
 	if accountDB.AddFT(targetAddress, ftId, balance) {
-		return "MintFT successful", true
+		return fmt.Sprintf("mintFT successful. ftId: %s, supply: %s, target: %s", ftId, supply, target), true
 	} else {
 		txLogger.Tracef("Mint ft overflow!ftId %s,target:%s,supply:%s", ftId, target, supply)
-		return "Overflow", false
+		return fmt.Sprintf("mint ft overflow! ftId: %s, target: %s, supply: %s", ftId, target, supply), false
 	}
 
 }
