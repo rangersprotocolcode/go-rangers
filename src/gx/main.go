@@ -1,9 +1,9 @@
 package main
 
 import (
-	"runtime/debug"
-	"runtime"
 	"fmt"
+	"runtime"
+	"runtime/debug"
 	"x/src/gx/cli"
 )
 

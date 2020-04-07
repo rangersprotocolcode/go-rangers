@@ -79,6 +79,11 @@ func (reward *RewardCalculator) calculateReward(height uint64) map[common.Addres
 		}
 
 		bh := reward.blockChain.queryBlockHeaderByHeight(i, true)
+		if nil == bh {
+			reward.logger.Errorf("fail to get blockHeader. height: %d", i)
+			continue
+		}
+
 		piece := reward.calculateRewardPerBlock(bh)
 		if nil == piece {
 			continue
@@ -94,10 +99,6 @@ func (reward *RewardCalculator) calculateReward(height uint64) map[common.Addres
 
 // 计算某一块的奖励
 func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) map[common.Address]*big.Int {
-	if nil == bh {
-		return nil
-	}
-
 	result := make(map[common.Address]*big.Int)
 
 	height := bh.Height
@@ -149,7 +150,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) m
 		return nil
 	}
 
-	totalValidatorStake, validatorStake := reward.minerManager.GetValidatorsStake(height, group.Members, accountDB)
+	totalValidatorStake, validatorStake := reward.minerManager.GetValidatorsStake(group.Members, accountDB)
 	if totalValidatorStake != 0 {
 		rewardValidators := total * common.ValidatorsReward
 		for addr, stake := range validatorStake {

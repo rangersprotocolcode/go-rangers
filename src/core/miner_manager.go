@@ -37,8 +37,8 @@ type MinerCountOperation struct {
 func initMinerManager() {
 	MinerManagerImpl = &MinerManager{heavyMinerNetTrigger: time.NewTimer(heavyMinerNetTriggerInterval)}
 	MinerManagerImpl.lock = sync.RWMutex{}
-	//go MinerManagerImpl.loop()
 }
+
 func (mm *MinerManager) GetMiner(minerId []byte, accountdb *account.AccountDB) *types.Miner {
 	miner := MinerManagerImpl.GetMinerById(minerId, common.MinerTypeProposer, accountdb)
 	if nil == miner {
@@ -63,7 +63,7 @@ func (mm *MinerManager) GetMinerById(id []byte, kind byte, accountdb *account.Ac
 	return nil
 }
 
-func (mm *MinerManager) GetValidatorsStake(height uint64, members [][]byte, accountDB *account.AccountDB) (uint64, map[common.Address]uint64) {
+func (mm *MinerManager) GetValidatorsStake(members [][]byte, accountDB *account.AccountDB) (uint64, map[common.Address]uint64) {
 	total := uint64(0)
 	membersDetail := make(map[common.Address]uint64, len(members))
 	for _, member := range members {
