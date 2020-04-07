@@ -72,9 +72,10 @@ func (vrf *vrfWorker) getStatus() int32 {
 }
 
 func (vrf *vrfWorker) workingOn(bh *types.BlockHeader, castHeight uint64) bool {
-	return bh.Hash == vrf.baseBH.Hash && castHeight == vrf.castHeight && !time.Now().After(vrf.expire)
+	return bh.Hash == vrf.baseBH.Hash && castHeight == vrf.castHeight && !vrf.timeout()
 }
 
 func (vrf *vrfWorker) timeout() bool {
-	return time.Now().After(vrf.expire)
+	//return time.Now().After(vrf.expire)
+	return false
 }
