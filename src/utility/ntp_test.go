@@ -7,13 +7,9 @@ import (
 )
 
 func TestQuery(t *testing.T) {
-	offset, err := NTPOffset()
-	if err != nil {
-		fmt.Println(err)
-	}
-
+	offset := ntpOffset(true)
 	fmt.Println(offset)
-	time := time.Now().Add(offset)
-	fmt.Println(time)
 
+	fmt.Println(GetTime())
+	fmt.Println(time.Now())
 }

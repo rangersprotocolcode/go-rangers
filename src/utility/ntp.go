@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"sync"
 	"time"
 )
 
@@ -39,7 +40,11 @@ const (
 
 // Internal variables
 var (
-	ntpEpoch = time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
+	ntpEpoch    = time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
+	ntpServers  = []string{"time.nist.gov", "time.windows.com"}
+	timeOffset  time.Duration
+	ntpInit     sync.Once
+	ntpInitFlag = false
 )
 
 type mode uint8
@@ -276,13 +281,13 @@ func (r *Response) Validate() error {
 // Query returns a response from the remote NTP server host. It contains
 // the time at which the server transmitted the response as well as other
 // useful information about the time and the remote server.
-func query(host string) (*Response, error) {
-	return QueryWithOptions(host, QueryOptions{})
+func queryNTP(host string) (*Response, error) {
+	return queryNTPWithOptions(host, QueryOptions{})
 }
 
 // QueryWithOptions performs the same function as Query but allows for the
 // customization of several query options.
-func QueryWithOptions(host string, opt QueryOptions) (*Response, error) {
+func queryNTPWithOptions(host string, opt QueryOptions) (*Response, error) {
 	m, now, err := getTime(host, opt)
 	if err != nil {
 		return nil, err
@@ -551,11 +556,33 @@ func kissCode(id uint32) string {
 	return string(b)
 }
 
-func NTPOffset() (time.Duration, error) {
-	response, err := query("time.windows.com")
-	if err != nil {
-		return 0, err
+func ntpOffset(ensure bool) time.Duration {
+	for {
+		response, err := queryNTP(ntpServers[1])
+		if err == nil {
+			return response.ClockOffset
+		}
+
+		if !ensure {
+			break
+		}
 	}
 
-	return response.ClockOffset, nil
+	return 0
+}
+
+func GetTime() time.Time {
+	if !ntpInitFlag {
+		timeOffset = ntpOffset(true)
+		ntpInitFlag = true
+		ntpInit.Do(func() {
+			timer := time.NewTimer(time.Second * 30)
+			go func() {
+				<-timer.C
+				timeOffset = ntpOffset(false)
+			}()
+		})
+	}
+
+	return time.Now().Add(timeOffset)
 }
