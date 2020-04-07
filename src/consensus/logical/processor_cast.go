@@ -307,7 +307,7 @@ func (p *Processor) blockProposal() {
 
 	totalStake := p.minerReader.GetTotalStake(worker.baseBH.Height, false)
 	blog.log("totalStake height=%v, stake=%v", height, totalStake)
-	pi, qn, err := worker.genProve(totalStake)
+	pi, qn, err := worker.genProve(start, totalStake)
 	if err != nil {
 		blog.log("vrf prove not ok! %v", err)
 		return

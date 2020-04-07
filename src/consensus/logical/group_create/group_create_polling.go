@@ -117,7 +117,19 @@ func (p *groupCreateProcessor) selectKing(theBH *types.BlockHeader, group *model
 // selectParentGroup determine the parent group randomly and the result is deterministic because of the base BlockHeader
 //获取父亲组
 func (p *groupCreateProcessor) selectParentGroup(baseBH *types.BlockHeader, preGroupID []byte) (*model.GroupInfo, error) {
-	return p.groupAccessor.GetGenesisGroup(), nil
+	//return p.groupAccessor.GetGenesisGroup(), nil
+	rand := baseBH.Random
+	rand = append(rand, preGroupID...)
+	gid, err := p.groupAccessor.SelectVerifyGroupFromChain(base.Data2CommonHash(rand), baseBH.Height)
+	if err != nil {
+		return nil, err
+	}
+	groupInfo, err := p.groupAccessor.GetGroupByID(gid)
+	if err != nil {
+		return nil, err
+	}
+	groupCreateLogger.Debugf("Get Parent group:%s", groupInfo.GroupID.GetHexString())
+	return groupInfo, nil
 }
 
 //生成 CreateGroupContext

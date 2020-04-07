@@ -34,8 +34,9 @@ func newVRFWorker(miner *model.SelfMinerInfo, bh *types.BlockHeader, castHeight 
 	}
 }
 
-func (vrfWorker *vrfWorker) genProve(totalStake uint64) (vrf.VRFProve, uint64, error) {
-	vrfMsg := genVrfMsg(vrfWorker.baseBH.Random, vrfWorker.castHeight-vrfWorker.baseBH.Height)
+func (vrfWorker *vrfWorker) genProve(castTime time.Time, totalStake uint64) (vrf.VRFProve, uint64, error) {
+	delta := int(castTime.Sub(vrfWorker.baseBH.CurTime).Seconds()) / model.MAX_GROUP_BLOCK_TIME
+	vrfMsg := genVrfMsg(vrfWorker.baseBH.Random, delta)
 	prove, err := vrf.VRFGenProve(vrfWorker.miner.VrfPK, vrfWorker.miner.VrfSK, vrfMsg)
 	if err != nil {
 		return nil, 0, err
@@ -72,9 +73,10 @@ func (vrf *vrfWorker) getStatus() int32 {
 }
 
 func (vrf *vrfWorker) workingOn(bh *types.BlockHeader, castHeight uint64) bool {
-	return bh.Hash == vrf.baseBH.Hash && castHeight == vrf.castHeight && !time.Now().After(vrf.expire)
+	return bh.Hash == vrf.baseBH.Hash && castHeight == vrf.castHeight && !vrf.timeout()
 }
 
 func (vrf *vrfWorker) timeout() bool {
-	return time.Now().After(vrf.expire)
+	//return time.Now().After(vrf.expire)
+	return false
 }

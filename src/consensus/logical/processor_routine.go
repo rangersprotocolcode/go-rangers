@@ -43,12 +43,13 @@ func (p *Processor) checkSelfCastRoutine() bool {
 		return false
 	}
 
-	deltaHeight = uint64(d.Seconds())/uint64(model.Param.MaxGroupCastTime) + 1
-	if top.Height > 0 {
-		castHeight = top.Height + deltaHeight
-	} else {
-		castHeight = uint64(1)
-	}
+	//deltaHeight = uint64(d.Seconds())/uint64(model.Param.MaxGroupCastTime) + 1
+	//if top.Height > 0 {
+	//	castHeight = top.Height + deltaHeight
+	//} else {
+	//	castHeight = uint64(1)
+	//}
+	castHeight = top.Height + 1
 	if !p.canProposalAt(castHeight) {
 		blog.log("can not proposal at%d", castHeight)
 		return false
