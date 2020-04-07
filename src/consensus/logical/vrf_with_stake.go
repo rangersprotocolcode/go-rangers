@@ -24,7 +24,8 @@ func init() {
 
 func verifyBlockVRF(bh *types.BlockHeader, preBH *types.BlockHeader, castor *model.MinerInfo, totalStake uint64) (bool, error) {
 	prove := vrf.VRFProve(bh.ProveValue.Bytes())
-	ok, err := vrf.VRFVerify(castor.VrfPK, prove, genVrfMsg(preBH.Random, bh.Height-preBH.Height))
+	delta := int(bh.CurTime.Sub(preBH.CurTime).Seconds()) / model.MAX_GROUP_BLOCK_TIME
+	ok, err := vrf.VRFVerify(castor.VrfPK, prove, genVrfMsg(preBH.Random, delta))
 	if !ok {
 		return ok, err
 	}
@@ -37,10 +38,19 @@ func verifyBlockVRF(bh *types.BlockHeader, preBH *types.BlockHeader, castor *mod
 	return false, errors.New("proof not satisfy")
 }
 
-func genVrfMsg(random []byte, deltaHeight uint64) []byte {
+//func genVrfMsg(random []byte, deltaHeight uint64) []byte {
+//	msg := random
+//	for deltaHeight > 1 {
+//		deltaHeight--
+//		msg = base.Data2CommonHash(msg).Bytes()
+//	}
+//	return msg
+//}
+
+func genVrfMsg(random []byte, delta int) []byte {
 	msg := random
-	for deltaHeight > 1 {
-		deltaHeight--
+	for delta > 1 {
+		delta--
 		msg = base.Data2CommonHash(msg).Bytes()
 	}
 	return msg
