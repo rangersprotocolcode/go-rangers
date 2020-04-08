@@ -10,6 +10,7 @@ import (
 	"x/src/consensus/ticker"
 	"fmt"
 	"github.com/hashicorp/golang-lru"
+	"x/src/utility"
 )
 
 type stateHandleFunc func(msg interface{})
@@ -97,7 +98,7 @@ func newStateNode(st uint32, lr, mr int, h stateHandleFunc) *stateNode {
 func newStateMachine(id string) *StateMachine {
 	return &StateMachine{
 		Id:   id,
-		Time: time.Now(),
+		Time: utility.GetTime(),
 	}
 }
 

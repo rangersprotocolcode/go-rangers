@@ -3,6 +3,7 @@ package group_create
 import (
 	"sync"
 	"time"
+	"x/src/utility"
 
 	"fmt"
 	"x/src/consensus/groupsig"
@@ -112,7 +113,7 @@ type signPKReqRecord struct {
 }
 
 func (r *signPKReqRecord) reqTimeout() bool {
-	return time.Now().After(r.reqTime.Add(60 * time.Second))
+	return utility.GetTime().After(r.reqTime.Add(60 * time.Second))
 }
 
 //recordMap mapping idHex to signPKReqRecord
@@ -120,7 +121,7 @@ var recordMap sync.Map
 
 func addSignPkReq(id groupsig.ID) bool {
 	r := &signPKReqRecord{
-		reqTime:    time.Now(),
+		reqTime:    utility.GetTime(),
 		reqMinerID: id,
 	}
 	_, load := recordMap.LoadOrStore(id.GetHexString(), r)

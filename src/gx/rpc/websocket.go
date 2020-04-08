@@ -9,7 +9,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"time"
+	"x/src/utility"
 
 	"golang.org/x/net/websocket"
 	"gopkg.in/fatih/set.v0"
@@ -130,7 +130,7 @@ func contextDialer(ctx context.Context) *net.Dialer {
 	if deadline, ok := ctx.Deadline(); ok {
 		dialer.Deadline = deadline
 	} else {
-		dialer.Deadline = time.Now().Add(defaultDialTimeout)
+		dialer.Deadline = utility.GetTime().Add(defaultDialTimeout)
 	}
 	return dialer
 }

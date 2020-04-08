@@ -8,6 +8,7 @@ import (
 	xdb "x/src/middleware/db"
 	"x/src/common"
 	"x/src/storage/rlp"
+	"x/src/utility"
 )
 
 
@@ -402,7 +403,7 @@ func (db *NodeDatabase) Dereference(root common.Hash) {
 	db.lock.Lock()
 	defer db.lock.Unlock()
 
-	nodes, storage, start := len(db.nodes), db.nodesSize, time.Now()
+	nodes, storage, start := len(db.nodes), db.nodesSize, utility.GetTime()
 	db.dereference(root, common.Hash{})
 
 	db.gcnodes += uint64(nodes - len(db.nodes))
@@ -465,7 +466,7 @@ func (db *NodeDatabase) Cap(limit common.StorageSize) error {
 	// by only uncaching existing data when the database write finalizes.
 	db.lock.RLock()
 
-	nodes, storage, start := len(db.nodes), db.nodesSize, time.Now()
+	nodes, storage, start := len(db.nodes), db.nodesSize, utility.GetTime()
 	batch := db.diskdb.NewBatch()
 
 	// db.nodesSize only contains the useful data in the cache, but when reporting

@@ -7,6 +7,7 @@ import (
 	"x/src/consensus/groupsig"
 	"x/src/consensus/model"
 	"x/src/consensus/net"
+	"x/src/utility"
 
 	"x/src/middleware/types"
 	"sync"
@@ -253,7 +254,7 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 	vctx.markBroadcast()
 	slot.setSlotStatus(SS_SUCCESS)
 
-	blog.log("After BroadcastNewBlock hash=%v:%v", bh.Hash.ShortS(), time.Now().Format(TIMESTAMP_LAYOUT))
+	blog.log("After BroadcastNewBlock hash=%v:%v", bh.Hash.ShortS(), utility.GetTime().Format(TIMESTAMP_LAYOUT))
 	return
 }
 
@@ -289,7 +290,7 @@ func (p *Processor) GenProveHashs(heightLimit uint64, rand []byte, ids []groupsi
 }
 
 func (p *Processor) blockProposal() {
-	start := time.Now()
+	start := utility.GetTime()
 	blog := newBizLog("blockProposal")
 	top := p.MainChain.TopBlock()
 
@@ -377,7 +378,7 @@ func (p *Processor) blockProposal() {
 
 		middleware.PerfLogger.Infof("fin block, last: %v, hash: %v, height: %v", time.Since(start), bh.Hash.String(), bh.Height)
 		//statistics.AddBlockLog(common.BootId, statistics.SendCast, ccm.BH.Height, ccm.BH.ProveValue.Uint64(), -1, -1,
-		//	time.Now().UnixNano(), p.GetMinerID().ShortS(), gid.ShortS(), common.InstanceIndex, ccm.BH.CurTime.UnixNano())
+		//	utility.GetTime().UnixNano(), p.GetMinerID().ShortS(), gid.ShortS(), common.InstanceIndex, ccm.BH.CurTime.UnixNano())
 	} else {
 		blog.log("bh/prehash Error or sign Error, bh=%v, real height=%v. bc.prehash=%v, bh.prehash=%v", height, bh.Height, worker.baseBH.Hash, bh.PreHash)
 	}

@@ -1,12 +1,12 @@
 package group_create
 
 import (
-	"x/src/consensus/model"
-	"fmt"
-	"time"
-	"x/src/consensus/groupsig"
-	"x/src/consensus/access"
 	"bytes"
+	"fmt"
+	"x/src/consensus/access"
+	"x/src/consensus/groupsig"
+	"x/src/consensus/model"
+	"x/src/utility"
 )
 
 //发送PING 信息
@@ -55,7 +55,7 @@ func (p *groupCreateProcessor) OnMessageCreateGroupPing(msg *model.CreateGroupPi
 		}
 		pongMsg := &model.CreateGroupPongMessage{
 			PingID:    msg.PingID,
-			Timestamp: time.Now(),
+			Timestamp: utility.GetTime(),
 		}
 
 		if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, pongMsg); ok {

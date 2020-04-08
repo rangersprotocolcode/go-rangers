@@ -17,6 +17,7 @@ import (
 	"crypto/md5"
 	"github.com/ipfs/go-ipfs-api"
 	"sort"
+	"x/src/utility"
 )
 
 const containerPrefix = "rp-"
@@ -213,7 +214,7 @@ func (c *StateMachine) runByConfig() (string, Ports) {
 		PortBindings: pts,
 		NetworkMode:  container.NetworkMode(mode),
 		AutoRemove:   c.AutoRemove,
-	}, nil, fmt.Sprintf("%s%s-%d", containerPrefix, c.Game, time.Now().UnixNano()))
+	}, nil, fmt.Sprintf("%s%s-%d", containerPrefix, c.Game, utility.GetTime().UnixNano()))
 	if err != nil {
 		panic(err)
 	}

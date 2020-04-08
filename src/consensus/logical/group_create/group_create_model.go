@@ -4,6 +4,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"x/src/utility"
 
 	"github.com/hashicorp/golang-lru"
 	"x/src/common"
@@ -62,7 +63,7 @@ func newGroupInitContext(groupInitInfo *model.GroupInitInfo, candidates []groups
 		}
 	}
 	context := new(groupInitContext)
-	context.createTime = time.Now()
+	context.createTime = utility.GetTime()
 	context.status = GisInit
 	context.groupInitInfo = groupInitInfo
 	context.candidates = candidates

@@ -87,8 +87,8 @@ func (d *StateMachineManager) updateSTMStorage(message notify.Message) {
 	cid := nameSplit[1]
 	zipFile := nameSplit[2]
 
-	//zipFile := fmt.Sprintf("%s-%d-%d.zip", c.Game, c.RequestId, time.Now().UnixNano())
-	//fmt.Sprintf("%s-%d-%s-%d.zip", c.Game, c.RequestId, hex.EncodeToString(c.StorageStatus[:]), time.Now().UnixNano())
+	//zipFile := fmt.Sprintf("%s-%d-%d.zip", c.Game, c.RequestId, utility.GetTime().UnixNano())
+	//fmt.Sprintf("%s-%d-%s-%d.zip", c.Game, c.RequestId, hex.EncodeToString(c.StorageStatus[:]), utility.GetTime().UnixNano())
 	zipFileSplit := strings.Split(zipFile, "-")
 	appId := zipFileSplit[0]
 	requestId := zipFileSplit[1]

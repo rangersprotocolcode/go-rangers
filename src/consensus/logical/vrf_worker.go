@@ -77,6 +77,6 @@ func (vrf *vrfWorker) workingOn(bh *types.BlockHeader, castHeight uint64) bool {
 }
 
 func (vrf *vrfWorker) timeout() bool {
-	//return time.Now().After(vrf.expire)
+	//return utility.GetTime().After(vrf.expire)
 	return false
 }

@@ -45,7 +45,7 @@ func (bpm *peerManager) markEvil(id string) {
 		evilCount ++
 		//if evilCount > evilMaxCount {
 		//	delete(bpm.badPeerMeter, id)
-		//	bpm.badPeers[id] = time.Now()
+		//	bpm.badPeers[id] = utility.GetTime()
 		//	logger.Debugf("[PeerManager]Add bad peer:%s", id)
 		//} else {
 		//	bpm.badPeerMeter[id] = evilCount

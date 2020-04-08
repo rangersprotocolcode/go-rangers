@@ -6,6 +6,7 @@ import (
 	"x/src/consensus/model"
 	"x/src/common"
 	"x/src/consensus/base"
+	"x/src/utility"
 )
 
 func GetCastExpireTime(base time.Time, deltaHeight uint64, castHeight uint64) time.Time {
@@ -31,7 +32,7 @@ func DeltaHeightByTime(bh *types.BlockHeader, preBH *types.BlockHeader) uint64 {
 
 func VerifyBHExpire(bh *types.BlockHeader, preBH *types.BlockHeader) (time.Time, bool) {
 	expire := GetCastExpireTime(preBH.CurTime, DeltaHeightByTime(bh, preBH), bh.Height)
-	return expire, time.Now().After(expire)
+	return expire, utility.GetTime().After(expire)
 }
 func CalcRandomHash(preBH *types.BlockHeader, height uint64) common.Hash {
 	data := preBH.Random

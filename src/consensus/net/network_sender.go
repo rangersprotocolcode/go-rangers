@@ -6,6 +6,7 @@ import (
 	"x/src/network"
 	"x/src/consensus/model"
 	"time"
+	"x/src/utility"
 )
 
 type NetworkServerImpl struct {
@@ -101,7 +102,7 @@ func (ns *NetworkServerImpl) SendKeySharePiece(spm *model.SharePieceMessage) {
 		return
 	}
 
-	begin := time.Now()
+	begin := utility.GetTime()
 	go ns.net.SendToStranger(spm.ReceiverId.Serialize(), m)
 	logger.Debugf("SendKeySharePiece to id:%s,hash:%s, gHash:%v, cost time:%v", spm.ReceiverId.GetHexString(), m.Hash(), spm.GroupHash.Hex(), time.Since(begin))
 }
@@ -118,7 +119,7 @@ func (ns *NetworkServerImpl) SendSignPubKey(spkm *model.SignPubKeyMessage) {
 	//给自己发
 	ns.send2Self(spkm.SignInfo.GetSignerID(), m)
 
-	begin := time.Now()
+	begin := utility.GetTime()
 	go ns.net.SpreadToGroup(spkm.GroupHash.Hex(), m)
 	logger.Debugf("SendSignPubKey hash:%s, dummyId:%v, cost time:%v", m.Hash(), spkm.GroupHash.Hex(), time.Since(begin))
 }
@@ -151,7 +152,7 @@ func (ns *NetworkServerImpl) SendCastVerify(ccm *model.ConsensusCastMessage, gro
 		return
 	}
 	timeFromCast := time.Since(ccm.BH.CurTime)
-	begin := time.Now()
+	begin := utility.GetTime()
 
 	ccMsg, e := marshalConsensusCastMessage(ccm)
 	if e != nil {
@@ -179,7 +180,7 @@ func (ns *NetworkServerImpl) SendVerifiedCast(cvm *model.ConsensusVerifyMessage,
 	go ns.net.SpreadToGroup(receiver.GetHexString(), m)
 	logger.Debugf("[peer]send VARIFIED_CAST_MSG,hash:%s", cvm.BlockHash.String())
 	//statistics.AddBlockLog(common.BootId, statistics.SendVerified, cvm.BH.Height, cvm.BH.ProveValue.Uint64(), -1, -1,
-	//	time.Now().UnixNano(), "", "", common.InstanceIndex, cvm.BH.CurTime.UnixNano())
+	//	utility.GetTime().UnixNano(), "", "", common.InstanceIndex, cvm.BH.CurTime.UnixNano())
 }
 
 //对外广播经过组签名的block 全网广播
@@ -196,7 +197,7 @@ func (ns *NetworkServerImpl) BroadcastNewBlock(cbm *model.ConsensusBlockMessage,
 
 	//core.Logger.Debugf("Broad new block %d-%d,hash:%v,tx count:%d,msg size:%d, time from cast:%v,spread over group:%s", cbm.Block.Header.Height, cbm.Block.Header.TotalQN, cbm.Block.Header.Hash.Hex(), len(cbm.Block.Header.Transactions), len(blockMsg.Body), timeFromCast, nextVerifyGroupId)
 	//statistics.AddBlockLog(common.BootId, statistics.BroadBlock, cbm.Block.Header.Height, cbm.Block.Header.ProveValue.Uint64(), len(cbm.Block.Transactions), len(body),
-	//	time.Now().UnixNano(), "", "", common.InstanceIndex, cbm.Block.Header.CurTime.UnixNano())
+	//	utility.GetTime().UnixNano(), "", "", common.InstanceIndex, cbm.Block.Header.CurTime.UnixNano())
 }
 
 //-----------------------------------------------------------------密钥请求----------------------------------------------
@@ -209,7 +210,7 @@ func (ns *NetworkServerImpl) AskSignPkMessage(msg *model.SignPubkeyReqMessage, r
 
 	m := network.Message{Code: network.AskSignPkMsg, Body: body}
 
-	begin := time.Now()
+	begin := utility.GetTime()
 	go ns.net.SendToStranger(receiver.Serialize(), m)
 	logger.Debugf("AskSignPkMessage %v, hash:%s, cost time:%v", receiver.GetHexString(), m.Hash(), time.Since(begin))
 }
@@ -223,7 +224,7 @@ func (ns *NetworkServerImpl) AnswerSignPkMessage(msg *model.SignPubKeyMessage, r
 
 	m := network.Message{Code: network.AnswerSignPkMsg, Body: body}
 
-	begin := time.Now()
+	begin := utility.GetTime()
 	go ns.net.SendToStranger(receiver.Serialize(), m)
 	logger.Debugf("AnswerSignPkMessage %v, hash:%s, dummyId:%v, cost time:%v", receiver.GetHexString(), m.Hash(), msg.GroupHash.Hex(), time.Since(begin))
 }

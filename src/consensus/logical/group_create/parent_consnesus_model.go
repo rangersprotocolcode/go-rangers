@@ -9,6 +9,7 @@ import (
 	"x/src/consensus/model"
 	"x/src/consensus/base"
 	"bytes"
+	"x/src/utility"
 )
 
 // status enum of the CreatingGroupContext
@@ -81,7 +82,7 @@ func newCreateGroupContext(baseCtx *createGroupBaseInfo, kings []groupsig.ID, is
 		createGroupBaseInfo: *baseCtx,
 		kings:               kings,
 		status:              waitingPong,
-		createTime:          time.Now(),
+		createTime:          utility.GetTime(),
 		belongKings:         isKing,
 		createTopHeight:     top,
 		pingID:              base.Data2CommonHash(pingIDBytes).Hex(),

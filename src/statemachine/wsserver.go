@@ -1,17 +1,17 @@
 package statemachine
 
 import (
+	"encoding/json"
 	"fmt"
+	"github.com/gorilla/websocket"
+	"math/rand"
 	"net"
 	"net/http"
-	"github.com/gorilla/websocket"
-	"x/src/middleware/log"
-	"x/src/common"
 	"strings"
-	"math/rand"
-	"time"
-	"encoding/json"
+	"x/src/common"
+	"x/src/middleware/log"
 	"x/src/middleware/types"
+	"x/src/utility"
 )
 
 type wsServer struct {
@@ -234,7 +234,7 @@ func (self *wsServer) Start() (err error) {
 }
 
 func (self *wsServer) randomPort() int {
-	rand.Seed(int64(time.Now().UnixNano()))
+	rand.Seed(utility.GetTime().UnixNano())
 	port := 9000 + int(rand.Float32()*1000)
 	return port
 }

@@ -1,13 +1,13 @@
 package core
 
 import (
-	"testing"
-	"fmt"
 	"encoding/json"
-	"x/src/statemachine"
-	"x/src/middleware/types"
-	"time"
+	"fmt"
+	"testing"
 	"x/src/common"
+	"x/src/middleware/types"
+	"x/src/statemachine"
+	"x/src/utility"
 )
 
 func TestStartStateMachineTx(t *testing.T) {
@@ -33,7 +33,7 @@ func TestStartStateMachineTx(t *testing.T) {
 func TestProposerApplyTx(t *testing.T) {
 	source := "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"
 	target := "0x9a5adc4b83ed4272f8af0c46686a938701391ae3576b77891e2ab4e7438f442e"
-	tx := types.Transaction{Type: 2, Source: source, Target: target, Time: time.Now().String()}
+	tx := types.Transaction{Type: 2, Source: source, Target: target, Time: utility.GetTime().String()}
 
 	data := `{"id":"mlrcS4PtQnL4rwxGaGqThwE5GuNXa3eJHiq050OPRC4=","publicKey":"BOu0RbvBDBlVUySzb+ojoE7BTO67yhYQWdOvqClYG+Qu11SFY79i1lDou9VkPfnpX0KPhlvtpTIIK3IIR2K1meM=","vrfPublicKey":"Dw7zNJeE4wj+diK2c/P+9raL6R72SY1ySbleYVihJtU="}`
 	var obj = types.Miner{}
@@ -62,7 +62,7 @@ func TestProposerApplyTx(t *testing.T) {
 func TestVerifierApplyTx(t *testing.T) {
 	source := "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"
 	target := "0x4788022fee69b8bf287c0b69b90d40773fb1a3a4251faf3f5c0181cdc3fb78ab"
-	tx := types.Transaction{Type: 2, Source: source, Target: target, Time: time.Now().String()}
+	tx := types.Transaction{Type: 2, Source: source, Target: target, Time: utility.GetTime().String()}
 
 	data := `{"id":"R4gCL+5puL8ofAtpuQ1Adz+xo6QlH68/XAGBzcP7eKs=","publicKey":"BCOds4TtM4LySN+jiKVUU7T18Yu5KHXKdu+mloMB2H//NNgeREOtzdPI5XxGug+eo+WTAkdIjBhjD7cKOjEaTWo=","vrfPublicKey":"2jtqai9hfhcBNzHrxiYUOisiHdMTKM9Xr5yILDQ9uvs="}`
 	var obj = types.Miner{}

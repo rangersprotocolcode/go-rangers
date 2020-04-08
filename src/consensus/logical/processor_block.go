@@ -10,6 +10,7 @@ import (
 	"bytes"
 	"time"
 	"x/src/consensus/logical/group_create"
+	"x/src/utility"
 )
 
 type FutureMessageHolder struct {
@@ -83,7 +84,7 @@ func (holder *FutureMessageHolder) size() int {
 //}
 
 func (p *Processor) doAddOnChain(block *types.Block) (result int8) {
-	//begin := time.Now()
+	//begin := utility.GetTime()
 	//defer func() {
 	//	log.Printf("doAddOnChain begin at %v, cost %v\n", begin.String(), time.Since(begin).String())
 	//}()
@@ -114,7 +115,7 @@ func (p *Processor) blockOnChain(h common.Hash) bool {
 }
 
 func (p *Processor) getBlockHeaderByHash(hash common.Hash) *types.BlockHeader {
-	begin := time.Now()
+	begin := utility.GetTime()
 	defer func() {
 		if time.Since(begin).Seconds() > 0.5 {
 			slowLogger.Warnf("slowQueryBlockHeaderByHash: cost %v, hash=%v", time.Since(begin).String(), hash.ShortS())

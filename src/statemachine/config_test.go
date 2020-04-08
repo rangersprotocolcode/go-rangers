@@ -1,14 +1,14 @@
 package statemachine
 
 import (
-	"testing"
-	"fmt"
-	"strconv"
 	"encoding/json"
-	"runtime"
-	"strings"
+	"fmt"
 	"math/rand"
-	"time"
+	"runtime"
+	"strconv"
+	"strings"
+	"testing"
+	"x/src/utility"
 )
 
 func TestConfig(t *testing.T) {
@@ -52,12 +52,12 @@ func TestString(t *testing.T) {
 }
 
 func TestRand64(t *testing.T) {
-	rand.Seed(int64(time.Now().Unix()))
+	rand.Seed(int64(utility.GetTime().Unix()))
 	i := rand.Int()
 
 	fmt.Printf("%s", strconv.Itoa(i))
 }
 
 func TestFormatTime(t *testing.T){
-	fmt.Println(time.Now().Format("2006-01-02 15:04:05.999 -0700 MST"))
+	fmt.Println(utility.GetTime().Format("2006-01-02 15:04:05.999 -0700 MST"))
 }

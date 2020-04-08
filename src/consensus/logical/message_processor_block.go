@@ -103,12 +103,12 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 	//} else if bh.Height > 1 {
 	//	//设置为2倍的最大时间，防止由于时间不同步导致的跳块
 	//	beginTime := expireTime.Add(-2 * time.Second * time.Duration(model.Param.MaxGroupCastTime))
-	//	if !time.Now().After(beginTime) {
+	//	if !utility.GetTime().After(beginTime) {
 	//		return fmt.Errorf("cast begin time illegal, expectBegin at %v, expire at %v", beginTime, expireTime)
 	//	}
 	//
 	//}
-	timeNow := time.Now()
+	timeNow := utility.GetTime()
 	if !bh.CurTime.After(preBH.CurTime) || !timeNow.After(bh.CurTime) {
 		return fmt.Errorf("cast  time illegal! current block cast time %v, pre block cast time %v,time now %v", bh.CurTime, preBH.CurTime, timeNow)
 	}
@@ -364,7 +364,7 @@ func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 //收到组内成员的出块验证通过消息（组内成员消息）
 func (p *Processor) OnMessageVerify(cvm *model.ConsensusVerifyMessage) {
 	//statistics.AddBlockLog(common.BootId, statistics.RcvVerified, cvm.BH.Height, cvm.BH.ProveValue.Uint64(), -1, -1,
-	//	time.Now().UnixNano(), "", "", common.InstanceIndex, cvm.BH.CurTime.UnixNano())
+	//	utility.GetTime().UnixNano(), "", "", common.InstanceIndex, cvm.BH.CurTime.UnixNano())
 	if p.blockOnChain(cvm.BlockHash) {
 		return
 	}
@@ -400,7 +400,7 @@ func (p *Processor) cleanVerifyContext(currentHeight uint64) {
 //收到铸块上链消息(组外矿工节点处理)
 func (p *Processor) OnMessageBlock(cbm *model.ConsensusBlockMessage) {
 	//statistics.AddBlockLog(common.BootId,statistics.RcvNewBlock,cbm.Block.Header.Height,cbm.Block.Header.ProveValue.Uint64(),len(cbm.Block.Transactions),-1,
-	//	time.Now().UnixNano(),"","",common.InstanceIndex,cbm.Block.Header.CurTime.UnixNano())
+	//	utility.GetTime().UnixNano(),"","",common.InstanceIndex,cbm.Block.Header.CurTime.UnixNano())
 	//bh := cbm.Block.Header
 	//blog := newBizLog("OMB")
 	//tlog := newHashTraceLog("OMB", bh.Hash, groupsig.DeserializeId(bh.Castor))

@@ -8,6 +8,7 @@ import (
 	"x/src/middleware/types"
 	"x/src/service"
 	"x/src/storage/account"
+	"x/src/utility"
 )
 
 var executors map[int32]executor
@@ -80,7 +81,7 @@ func newVMExecutor(accountdb *account.AccountDB, block *types.Block, situation s
 }
 
 func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transaction, []*types.Receipt) {
-	beginTime := time.Now()
+	beginTime := utility.GetTime()
 
 	receipts := make([]*types.Receipt, 0)
 	transactions := make([]*types.Transaction, 0)
@@ -89,7 +90,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 	this.prepare()
 
 	for _, transaction := range this.block.Transactions {
-		executeTime := time.Now()
+		executeTime := utility.GetTime()
 		if this.situation == "casting" && executeTime.Sub(beginTime) > MaxCastBlockTime {
 			logger.Infof("Cast block execute tx time out! Tx hash:%s ", transaction.Hash.String())
 			break

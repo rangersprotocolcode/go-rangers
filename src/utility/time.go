@@ -1,6 +1,7 @@
 package utility
 
 import (
+	"fmt"
 	"sync"
 	"time"
 )
@@ -22,6 +23,7 @@ func GetTime() time.Time {
 			go func() {
 				<-timer.C
 				timeOffset = ntpOffset(false)
+				fmt.Printf("refresh ntp, timeOffset: %s\n", timeOffset)
 			}()
 		})
 	}

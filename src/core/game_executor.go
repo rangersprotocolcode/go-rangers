@@ -13,6 +13,7 @@ import (
 	"x/src/service"
 	"x/src/statemachine"
 	"x/src/storage/account"
+	"x/src/utility"
 )
 
 // 客户端web socket 请求的返回数据结构
@@ -247,7 +248,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 	message := ""
 	result := true
 
-	start := time.Now()
+	start := utility.GetTime()
 	accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
 	if err := service.GetTransactionPool().ProcessFee(txRaw, accountDB); err != nil {
 		return false, err.Error()

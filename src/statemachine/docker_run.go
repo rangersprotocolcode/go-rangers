@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"strconv"
+	"x/src/utility"
 )
 
 // 加载STM
@@ -94,6 +95,6 @@ func (s *StateMachineManager) callInit(dockerPortInt PortInt, wsUrl, authCode st
 }
 
 func (s *StateMachineManager) generateAuthcode() string {
-	rand.Seed(int64(time.Now().UnixNano()))
+	rand.Seed(utility.GetTime().UnixNano())
 	return strconv.Itoa(rand.Int())
 }

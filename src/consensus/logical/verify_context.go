@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"x/src/consensus/groupsig"
 	"x/src/consensus/vrf"
+	"x/src/utility"
 )
 
 const (
@@ -121,7 +122,7 @@ func newVerifyContext(bc *BlockContext, castHeight uint64, expire time.Time, pre
 		castHeight:      castHeight,
 		blockCtx:        bc,
 		expireTime:      expire,
-		createTime:      time.Now(),
+		createTime:      utility.GetTime(),
 		consensusStatus: CBCS_CASTING,
 		signedMaxQN:     0,
 		slots:           make(map[common.Hash]*SlotContext),
@@ -162,12 +163,12 @@ func (vc *VerifyContext) markBroadcast() bool {
 
 //铸块是否过期
 func (vc *VerifyContext) castExpire() bool {
-	return time.Now().After(vc.expireTime)
+	return utility.GetTime().After(vc.expireTime)
 }
 
 //分红交易签名是否过期
 func (vc *VerifyContext) castRewardSignExpire() bool {
-	return time.Now().After(vc.expireTime.Add(time.Duration(30*model.Param.MaxGroupCastTime) * time.Second))
+	return utility.GetTime().After(vc.expireTime.Add(time.Duration(30*model.Param.MaxGroupCastTime) * time.Second))
 }
 
 func (vc *VerifyContext) findSlot(hash common.Hash) *SlotContext {
@@ -397,7 +398,7 @@ func (vc *VerifyContext) checkBroadcast() (*SlotContext) {
 		return nil
 	}
 	if time.Since(vc.createTime).Seconds() < float64(model.Param.MaxWaitBlockTime) {
-		//blog.log("not the time, creatTime %v, now %v, since %v", vc.createTime, time.Now(), time.Since(vc.createTime).String())
+		//blog.log("not the time, creatTime %v, now %v, since %v", vc.createTime, utility.GetTime(), time.Since(vc.createTime).String())
 		return nil
 	}
 	var maxQNSlot *SlotContext

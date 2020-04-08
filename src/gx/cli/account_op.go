@@ -7,6 +7,7 @@ import (
 	"os"
 	"sync"
 	"time"
+	"x/src/utility"
 
 	"x/src/common"
 	"x/src/consensus/model"
@@ -324,11 +325,11 @@ func passwordSha(password string) string {
 }
 
 func (ai *AccountInfo) unlocked() bool {
-	return time.Now().Before(ai.UnLockExpire) && ai.Status == statusUnLocked
+	return utility.GetTime().Before(ai.UnLockExpire) && ai.Status == statusUnLocked
 }
 
 func (ai *AccountInfo) resetExpireTime() {
-	ai.UnLockExpire = time.Now().Add(accountUnLockTime)
+	ai.UnLockExpire = utility.GetTime().Add(accountUnLockTime)
 }
 
 func dirExists(dir string) bool {
