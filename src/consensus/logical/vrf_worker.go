@@ -8,6 +8,7 @@ import (
 	"x/src/consensus/model"
 	"x/src/middleware/types"
 	"x/src/consensus/vrf"
+	"x/src/utility"
 )
 
 const (
@@ -72,11 +73,7 @@ func (vrf *vrfWorker) getStatus() int32 {
 	return atomic.LoadInt32(&vrf.status)
 }
 
-func (vrf *vrfWorker) workingOn(bh *types.BlockHeader, castHeight uint64) bool {
-	return bh.Hash == vrf.baseBH.Hash && castHeight == vrf.castHeight && !vrf.timeout()
-}
 
 func (vrf *vrfWorker) timeout() bool {
-	//return utility.GetTime().After(vrf.expire)
-	return false
+	return utility.GetTime().After(vrf.expire)
 }

@@ -29,27 +29,12 @@ func (p *Processor) checkSelfCastRoutine() bool {
 	blog := newBizLog("checkSelfCastRoutine")
 	top := p.MainChain.TopBlock()
 
-	var (
-		castHeight  uint64
-		deltaHeight uint64
-	)
-	d := time.Since(top.CurTime)
-	if d < 0 {
-		return false
-	}
-
 	if time.Since(top.CurTime).Seconds() < common.CastingInterval/1000 {
 		blog.log("time cost %vs from chain casting last block,less than %vs,do not proposal.last block cast time:%v ", time.Since(top.CurTime).Seconds(), common.CastingInterval/1000, top.CurTime)
 		return false
 	}
 
-	//deltaHeight = uint64(d.Seconds())/uint64(model.Param.MaxGroupCastTime) + 1
-	//if top.Height > 0 {
-	//	castHeight = top.Height + deltaHeight
-	//} else {
-	//	castHeight = uint64(1)
-	//}
-	castHeight = top.Height + 1
+	castHeight := top.Height + 1
 	if !p.canProposalAt(castHeight) {
 		blog.log("can not proposal at%d", castHeight)
 		return false
@@ -59,12 +44,12 @@ func (p *Processor) checkSelfCastRoutine() bool {
 	defer p.lock.Unlock()
 
 	worker := p.GetVrfWorker()
-	if worker != nil && worker.workingOn(top, castHeight) {
+	if worker != nil && !worker.timeout() {
 		blog.log("already working on that block height=%v, status=%v", castHeight, worker.getStatus())
 		return false
 	}
 
-	expireTime := GetCastExpireTime(top.CurTime, deltaHeight, castHeight)
+	expireTime := worker.expire.Add(time.Second * time.Duration(uint64(model.Param.MaxGroupCastTime)))
 	blog.log("topHeight=%v, topHash=%v, topCurTime=%v, castHeight=%v, expireTime=%v", top.Height, top.Hash.ShortS(), top.CurTime, castHeight, expireTime)
 	worker = newVRFWorker(p.GetSelfMinerDO(), top, castHeight, expireTime)
 	p.setVrfWorker(worker)

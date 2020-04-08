@@ -109,8 +109,9 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 	//
 	//}
 	timeNow := utility.GetTime()
-	if !bh.CurTime.After(preBH.CurTime) || !timeNow.After(bh.CurTime) {
-		return fmt.Errorf("cast  time illegal! current block cast time %v, pre block cast time %v,time now %v", bh.CurTime, preBH.CurTime, timeNow)
+	deviationTime := bh.CurTime.Add(time.Second * -1)
+	if !bh.CurTime.After(preBH.CurTime) || !timeNow.After(deviationTime) {
+		return fmt.Errorf("cast  time illegal! current block cast time %v, pre block cast time %v,deviation time:%v,time now %v", bh.CurTime, preBH.CurTime, deviationTime, timeNow)
 	}
 
 	if !p.belongGroups.BelongGroup(gid) {
