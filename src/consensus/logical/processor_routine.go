@@ -45,7 +45,7 @@ func (p *Processor) checkSelfCastRoutine() bool {
 	defer p.lock.Unlock()
 
 	worker := p.GetVrfWorker()
-	if worker != nil && !worker.timeout() {
+	if worker != nil && worker.workingOn(top, castHeight)  {
 		blog.log("already working on that block height=%v, status=%v", castHeight, worker.getStatus())
 		return false
 	}
