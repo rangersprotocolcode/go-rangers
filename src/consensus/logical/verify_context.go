@@ -163,7 +163,8 @@ func (vc *VerifyContext) markBroadcast() bool {
 
 //铸块是否过期
 func (vc *VerifyContext) castExpire() bool {
-	return utility.GetTime().After(vc.expireTime)
+	//return utility.GetTime().After(vc.expireTime)
+	return false
 }
 
 //分红交易签名是否过期
