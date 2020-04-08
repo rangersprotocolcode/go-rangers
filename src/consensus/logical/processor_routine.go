@@ -6,6 +6,7 @@ import (
 	"x/src/common"
 	"x/src/consensus/groupsig"
 	"x/src/consensus/logical/group_create"
+	"x/src/utility"
 )
 
 func (p *Processor) getCastCheckRoutineName() string {
@@ -49,7 +50,12 @@ func (p *Processor) checkSelfCastRoutine() bool {
 		return false
 	}
 
-	expireTime := worker.expire.Add(time.Second * time.Duration(uint64(model.Param.MaxGroupCastTime)))
+	var expireTime time.Time
+	if worker == nil {
+		expireTime = utility.GetTime().Add(time.Second * time.Duration(uint64(model.Param.MaxGroupCastTime)))
+	} else {
+		expireTime = worker.expire.Add(time.Second * time.Duration(uint64(model.Param.MaxGroupCastTime)))
+	}
 	blog.log("topHeight=%v, topHash=%v, topCurTime=%v, castHeight=%v, expireTime=%v", top.Height, top.Hash.ShortS(), top.CurTime, castHeight, expireTime)
 	worker = newVRFWorker(p.GetSelfMinerDO(), top, castHeight, expireTime)
 	p.setVrfWorker(worker)
