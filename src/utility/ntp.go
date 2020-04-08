@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"sync"
 	"time"
 )
 
@@ -40,11 +39,7 @@ const (
 
 // Internal variables
 var (
-	ntpEpoch    = time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
-	ntpServers  = []string{"time.nist.gov", "time.windows.com"}
-	timeOffset  time.Duration
-	ntpInit     sync.Once
-	ntpInitFlag = false
+	ntpEpoch = time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)
 )
 
 type mode uint8
@@ -569,20 +564,4 @@ func ntpOffset(ensure bool) time.Duration {
 	}
 
 	return 0
-}
-
-func GetTime() time.Time {
-	if !ntpInitFlag {
-		timeOffset = ntpOffset(true)
-		ntpInitFlag = true
-		ntpInit.Do(func() {
-			timer := time.NewTimer(time.Second * 30)
-			go func() {
-				<-timer.C
-				timeOffset = ntpOffset(false)
-			}()
-		})
-	}
-
-	return time.Now().Add(timeOffset)
 }
