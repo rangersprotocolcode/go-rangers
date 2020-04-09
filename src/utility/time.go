@@ -19,10 +19,9 @@ func GetTime() time.Time {
 		timeOffset = ntpOffset(true)
 		ntpInitFlag = true
 		ntpInit.Do(func() {
-			timer := time.NewTimer(time.Second * 30)
+			ticker := time.NewTicker(time.Second * 30)
 			go func() {
-				for {
-					<-timer.C
+				for _ = range ticker.C {
 					timeOffset = ntpOffset(false)
 					fmt.Printf("refresh ntp, timeOffset: %s\n", timeOffset)
 				}
