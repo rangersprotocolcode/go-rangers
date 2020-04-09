@@ -1,15 +1,15 @@
 package logical
 
 import (
+	"bytes"
+	"fmt"
+	"sync"
+	"time"
 	"x/src/common"
 	"x/src/consensus/groupsig"
-	"x/src/consensus/model"
-	"fmt"
-	"x/src/middleware/types"
-	"sync"
-	"bytes"
-	"time"
 	"x/src/consensus/logical/group_create"
+	"x/src/consensus/model"
+	"x/src/middleware/types"
 	"x/src/utility"
 )
 
@@ -117,7 +117,7 @@ func (p *Processor) blockOnChain(h common.Hash) bool {
 func (p *Processor) getBlockHeaderByHash(hash common.Hash) *types.BlockHeader {
 	begin := utility.GetTime()
 	defer func() {
-		if time.Since(begin).Seconds() > 0.5 {
+		if utility.GetTime().Sub(begin).Seconds() > 0.5 {
 			slowLogger.Warnf("slowQueryBlockHeaderByHash: cost %v, hash=%v", time.Since(begin).String(), hash.ShortS())
 		}
 	}()

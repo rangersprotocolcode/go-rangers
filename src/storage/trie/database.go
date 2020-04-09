@@ -5,12 +5,11 @@ import (
 	"io"
 	"sync"
 	"time"
-	xdb "x/src/middleware/db"
 	"x/src/common"
+	xdb "x/src/middleware/db"
 	"x/src/storage/rlp"
 	"x/src/utility"
 )
-
 
 // secureKeyPrefix is the database key prefix used to store trie node preimages.
 var secureKeyPrefix = []byte("secure-key-")
@@ -408,7 +407,7 @@ func (db *NodeDatabase) Dereference(root common.Hash) {
 
 	db.gcnodes += uint64(nodes - len(db.nodes))
 	db.gcsize += storage - db.nodesSize
-	db.gctime += time.Since(start)
+	db.gctime += utility.GetTime().Sub(start)
 
 	//memcacheGCTimeTimer.Update(time.Since(start))
 	//memcacheGCSizeMeter.Mark(int64(storage - db.nodesSize))
@@ -544,12 +543,11 @@ func (db *NodeDatabase) Cap(limit common.StorageSize) error {
 	}
 	db.flushnodes += uint64(nodes - len(db.nodes))
 	db.flushsize += storage - db.nodesSize
-	db.flushtime += time.Since(start)
+	db.flushtime += utility.GetTime().Sub(start)
 
 	//memcacheFlushTimeTimer.Update(time.Since(start))
 	//memcacheFlushSizeMeter.Mark(int64(storage - db.nodesSize))
 	//memcacheFlushNodesMeter.Mark(int64(nodes - len(db.nodes)))
-
 
 	return nil
 }
@@ -607,7 +605,6 @@ func (db *NodeDatabase) Commit(node common.Hash, report bool) error {
 	//memcacheCommitTimeTimer.Update(time.Since(start))
 	//memcacheCommitSizeMeter.Mark(int64(storage - db.nodesSize))
 	//memcacheCommitNodesMeter.Mark(int64(nodes - len(db.nodes)))
-
 
 	// Reset the garbage collection statistics
 	db.gcnodes, db.gcsize, db.gctime = 0, 0, 0
@@ -720,4 +717,3 @@ func (db *NodeDatabase) accumulate(hash common.Hash, reachable map[common.Hash]s
 		db.accumulate(child, reachable)
 	}
 }
-
