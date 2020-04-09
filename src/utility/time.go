@@ -19,7 +19,7 @@ func GetTime() time.Time {
 		timeOffset = ntpOffset(true)
 		ntpInitFlag = true
 		ntpInit.Do(func() {
-			ticker := time.NewTicker(time.Second * 30)
+			ticker := time.NewTicker(time.Second * 10)
 			go func() {
 				for _ = range ticker.C {
 					timeOffset = ntpOffset(false)
