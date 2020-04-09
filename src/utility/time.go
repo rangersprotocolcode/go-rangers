@@ -21,9 +21,12 @@ func GetTime() time.Time {
 		ntpInit.Do(func() {
 			timer := time.NewTimer(time.Second * 30)
 			go func() {
-				<-timer.C
-				timeOffset = ntpOffset(false)
-				fmt.Printf("refresh ntp, timeOffset: %s\n", timeOffset)
+				for {
+					<-timer.C
+					timeOffset = ntpOffset(false)
+					fmt.Printf("refresh ntp, timeOffset: %s\n", timeOffset)
+				}
+
 			}()
 		})
 	}
