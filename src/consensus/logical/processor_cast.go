@@ -221,9 +221,6 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 
 	r := p.doAddOnChain(block)
 
-	if r == int8(types.AddBlockSucc) {
-		p.setVrfWorker(nil)
-	}
 
 	if r != int8(types.AddBlockSucc) { //分叉调整或 上链失败都不走下面的逻辑
 		if r != int8(types.Forking) {
