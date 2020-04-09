@@ -1,11 +1,11 @@
 package net
 
 import (
+	"time"
 	"x/src/consensus/groupsig"
+	"x/src/consensus/model"
 	"x/src/middleware/types"
 	"x/src/network"
-	"x/src/consensus/model"
-	"time"
 	"x/src/utility"
 )
 
@@ -152,8 +152,8 @@ func (ns *NetworkServerImpl) SendCastVerify(ccm *model.ConsensusCastMessage, gro
 		logger.Errorf("[peer]Discard send ConsensusCurrentMessage because of Deserialize groupsig id error::%s", e1.Error())
 		return
 	}
-	timeFromCast := time.Since(ccm.BH.CurTime)
 	begin := utility.GetTime()
+	timeFromCast := begin.Sub(ccm.BH.CurTime)
 
 	ccMsg, e := marshalConsensusCastMessage(ccm)
 	if e != nil {
@@ -162,7 +162,7 @@ func (ns *NetworkServerImpl) SendCastVerify(ccm *model.ConsensusCastMessage, gro
 	}
 	m := network.Message{Code: network.CastVerifyMsg, Body: ccMsg}
 	go ns.net.SpreadToGroup(groupId.GetHexString(), m)
-	logger.Debugf("send CAST_VERIFY_MSG,%d-%d to group:%s,invoke SpreadToGroup cost time:%v,time from cast:%v,hash:%s", ccm.BH.Height, ccm.BH.TotalQN, groupId.GetHexString(), time.Since(begin), timeFromCast, ccm.BH.Hash.String())
+	logger.Debugf("send CAST_VERIFY_MSG,%d-%d to group:%s,invoke SpreadToGroup cost time:%v,time from cast:%v,hash:%s", ccm.BH.Height, ccm.BH.TotalQN, groupId.GetHexString(), utility.GetTime().Sub(begin), timeFromCast, ccm.BH.Hash.String())
 }
 
 // 组内节点  验证通过后 自身签名 广播验证块 组内广播

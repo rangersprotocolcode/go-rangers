@@ -1,15 +1,15 @@
 package net
 
 import (
-	"x/src/network"
-	"sync"
-	"x/src/middleware/log"
-	"x/src/common"
-	"x/src/consensus/model"
-	"time"
-	"x/src/consensus/ticker"
 	"fmt"
 	"github.com/hashicorp/golang-lru"
+	"sync"
+	"time"
+	"x/src/common"
+	"x/src/consensus/model"
+	"x/src/consensus/ticker"
+	"x/src/middleware/log"
+	"x/src/network"
 	"x/src/utility"
 )
 
@@ -51,6 +51,7 @@ type StateMachines struct {
 }
 
 var GroupInsideMachines StateMachines
+
 //var GroupOutsideMachines StateMachines
 
 var logger log.Logger
@@ -195,7 +196,7 @@ func (m *StateMachine) allFinished() bool {
 }
 
 func (m *StateMachine) expire() bool {
-	return int(time.Since(m.Time).Seconds()) >= model.Param.GroupInitMaxSeconds
+	return int(utility.GetTime().Sub(m.Time).Seconds()) >= model.Param.GroupInitMaxSeconds
 }
 
 func (m *StateMachine) transform() {
