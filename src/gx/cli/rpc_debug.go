@@ -122,11 +122,6 @@ func (s *GroupVerifySummary) fillGroupInfo(g *types.Group, top uint64) {
 	s.Dissmissed = s.DissmissHeight <= top
 }
 
-func (api *GtasAPI) DebugContextSummary() (*Result, error) {
-	s := consensus.Proc.BlockContextSummary()
-	return successResult(s)
-}
-
 func getAllGroup() map[string]*types.Group {
 	iterator := consensus.Proc.GroupChain.Iterator()
 	gs := make(map[string]*types.Group)

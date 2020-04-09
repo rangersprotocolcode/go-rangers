@@ -160,8 +160,7 @@ func (p *Processor) prepareForCast(sgi *model.GroupInfo) {
 
 	bc := NewBlockContext(p, sgi)
 
-	bc.pos = sgi.GetMemberPosition(p.GetMinerID())
-	stdLogger.Debugf("prepareForCast current ID %v in group pos=%v.\n", p.GetMinerID().ShortS(), bc.pos)
+	stdLogger.Debugf("prepareForCast current ID %v.\n", p.GetMinerID().ShortS())
 	//to do:只有自己属于这个组的节点才需要调用AddBlockConext
 	b := p.AddBlockContext(bc)
 	stdLogger.Infof("(proc:%v) prepareForCast Add BlockContext result = %v, bc_size=%v.\n", p.getPrefix(), b, p.blockContexts.blockContextSize())

@@ -1,16 +1,16 @@
 package logical
 
 import (
+	"fmt"
+	"time"
 	"x/src/common"
 	"x/src/consensus/groupsig"
 	"x/src/consensus/model"
-	"fmt"
 	"x/src/middleware/types"
-	"time"
 
+	"x/src/consensus/logical/group_create"
 	"x/src/middleware"
 	"x/src/utility"
-	"x/src/consensus/logical/group_create"
 )
 
 func (p *Processor) genCastGroupSummary(bh *types.BlockHeader) *model.CastGroupSummary {
@@ -35,23 +35,24 @@ func (p *Processor) genCastGroupSummary(bh *types.BlockHeader) *model.CastGroupS
 
 // 已经恢复出组签名
 // 出块
-func (p *Processor) thresholdPieceVerify(mtype string, sender string, gid groupsig.ID, vctx *VerifyContext, slot *SlotContext, traceLog *msgTraceLog) {
+func (p *Processor) thresholdPieceVerify(vctx *VerifyContext) {
 	blog := newBizLog("thresholdPieceVerify")
-	bh := slot.BH
+
+	bh := vctx.slot.BH
 	if vctx.castSuccess() {
 		blog.debug("already cast success, height=%v", bh.Height)
 		return
 	}
 
-	p.reserveBlock(vctx, slot)
-
+	p.reserveBlock(vctx)
 }
 
-func (p *Processor) normalPieceVerify(mtype string, sender string, gid groupsig.ID, vctx *VerifyContext, slot *SlotContext, traceLog *msgTraceLog) {
+// 收集签名
+func (p *Processor) normalPieceVerify(gid groupsig.ID, vctx *VerifyContext, traceLog *msgTraceLog) {
+	slot := vctx.slot
 	bh := slot.BH
 	castor := groupsig.DeserializeID(bh.Castor)
 	if slot.StatusTransform(SS_WAITING, SS_SIGNED) && !castor.IsEqual(p.GetMinerID()) {
-		vctx.updateSignedMaxQN(bh.TotalQN)
 		vctx.increaseSignedNum()
 		skey := p.getSignKey(gid)
 		var cvm model.ConsensusVerifyMessage
@@ -72,15 +73,16 @@ func (p *Processor) normalPieceVerify(mtype string, sender string, gid groupsig.
 	}
 }
 
+// mtype 输出日志用的
 func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, traceLog *msgTraceLog, blog *bizLog, slog *slowLog) (err error) {
 	bh := &msg.BH
+	bh.CurTime = utility.FormatTime(bh.CurTime)
 	si := &msg.SignInfo
-
-	sender := si.GetSignerID().ShortS()
 
 	gid := groupsig.DeserializeID(bh.GroupId)
 	castor := groupsig.DeserializeID(bh.Castor)
 
+	// step1
 	slog.addStage("checkOnChain")
 	if p.blockOnChain(bh.Hash) {
 		slog.endStage()
@@ -89,25 +91,18 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 	}
 	slog.endStage()
 
+	// step2
 	slog.addStage("checkPreBlock")
 	preBH := p.getBlockHeaderByHash(bh.PreHash)
 	slog.endStage()
 
+	// step3
 	slog.addStage("baseCheck")
 	if preBH == nil {
 		p.addFutureVerifyMsg(msg)
 		return fmt.Errorf("父块未到达")
 	}
-	//if expireTime, expire := VerifyBHExpire(bh, preBH); expire {
-	//	return fmt.Errorf("cast verify expire, gid=%v, preTime %v, expire %v", gid.ShortS(), preBH.CurTime, expireTime)
-	//} else if bh.Height > 1 {
-	//	//设置为2倍的最大时间，防止由于时间不同步导致的跳块
-	//	beginTime := expireTime.Add(-2 * time.Second * time.Duration(model.Param.MaxGroupCastTime))
-	//	if !utility.GetTime().After(beginTime) {
-	//		return fmt.Errorf("cast begin time illegal, expectBegin at %v, expire at %v", beginTime, expireTime)
-	//	}
-	//
-	//}
+
 	timeNow := utility.GetTime()
 	deviationTime := bh.CurTime.Add(time.Second * -1)
 	if !bh.CurTime.After(preBH.CurTime) || !timeNow.After(deviationTime) {
@@ -124,9 +119,13 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 		return
 	}
 
-	if _, same := bc.IsHeightCasted(bh.Height, bh.PreHash); same {
-		err = fmt.Errorf("该高度已铸过 %v", bh.Height)
+	if _, same := bc.IsHashCasted(bh.Hash, bh.PreHash); same {
+		err = fmt.Errorf("该hash已铸过 %v", bh.Hash)
 		return
+	}
+
+	if err = bc.CheckQN(bh); err != nil {
+		return err
 	}
 
 	vctx := bc.GetOrNewVerifyContext(bh, preBH)
@@ -177,21 +176,6 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 			return
 		}
 
-		//校验提案者是否有全量账本
-		//slog.addStage("sampleCheck")
-		//sampleHeight := p.sampleBlockHeight(bh.Height, preBH.Random, p.GetMinerID())
-		//realHeight, existHash := p.getNearestVerifyHashByHeight(sampleHeight)
-		//if realHeight > 0 {
-		//	if !existHash.IsValid() {
-		//		err = fmt.Errorf("MainChain GetCheckValue error, height=%v, err=%v", sampleHeight, err)
-		//		return
-		//	}
-		//	vHash := msg.ProveHash[p.getMinerPos(gid, p.GetMinerID())]
-		//	if vHash != existHash {
-		//		err = fmt.Errorf("check p rove hash fail, sampleHeight=%v, realHeight=%v, receive hash=%v, exist hash=%v", sampleHeight, realHeight, vHash.String(), existHash.String())
-		//		return
-		//	}
-		//}
 		slog.endStage()
 	}
 
@@ -208,23 +192,18 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 		return
 	}
 
-	slot = vctx.GetSlotByHash(bh.Hash)
-	if slot == nil {
-		err = fmt.Errorf("找不到合适的验证槽, 放弃验证")
-		return
-	}
-
+	slot = vctx.slot
 	err = fmt.Errorf("%v, %v, %v", CBMR_RESULT_DESC(verifyResult), slot.gSignGenerator.String(), slot.TransBrief())
 
 	switch verifyResult {
 	case CBMR_THRESHOLD_SUCCESS:
 		if !slot.HasTransLost() {
-			p.thresholdPieceVerify(mtype, sender, gid, vctx, slot, traceLog)
+			p.thresholdPieceVerify(vctx)
 		}
 
 	case CBMR_PIECE_NORMAL:
 		slog.addStage("normPiece")
-		p.normalPieceVerify(mtype, sender, gid, vctx, slot, traceLog)
+		p.normalPieceVerify(gid, vctx, traceLog)
 		slog.endStage()
 
 	case CBMR_PIECE_LOSINGTRANS: //交易缺失
@@ -281,7 +260,7 @@ func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMess
 		result = fmt.Sprintf("未获取到blockcontext, gid=" + groupId.ShortS())
 		return
 	}
-	vctx := bc.GetVerifyContextByHeight(bh.Height)
+	vctx := bc.GetVerifyContextByHash(bh.Hash)
 	if vctx != nil {
 		_, err := vctx.baseCheck(bh, si.GetSignerID())
 		if err != nil {
@@ -320,31 +299,13 @@ func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 		slog.log("hash=%v, sender=%v, height=%v, preHash=%v", bh.Hash.ShortS(), ccm.SignInfo.GetSignerID().ShortS(), bh.Height, bh.PreHash.ShortS())
 	}()
 
-	//le := &monitor.LogEntry{
-	//	LogType:  monitor.LogTypeProposal,
-	//	Height:   bh.Height,
-	//	Hash:     bh.Hash.Hex(),
-	//	PreHash:  bh.PreHash.Hex(),
-	//	Proposer: ccm.SI.GetID().GetHexString(),
-	//	Verifier: groupsig.DeserializeId(bh.GroupId).GetHexString(),
-	//	Ext:      fmt.Sprintf("external:qn:%v,totalQN:%v", 0, bh.TotalQN),
-	//}
-	slog.addStage("getGroup")
-	slog.endStage()
-	slog.addStage("addLog")
-	//detalHeight := int(bh.Height - p.MainChain.Height())
-	//group := p.GetGroup(groupsig.DeserializeId(bh.GroupId))
-	//if mathext.AbsInt(detalHeight) < 100 && monitor.Instance.IsFirstNInternalNodesInGroup(group.GetMembers(), 10) {
-	//	monitor.Instance.AddLogIfNotInternalNodes(le)
-	//}
-	slog.endStage()
-
 	slog.addStage("addtoCache")
 	p.addCastMsgToCache(ccm)
 	cache := p.getVerifyMsgCache(ccm.BH.Hash)
 	slog.endStage()
 
 	slog.addStage("OMC")
+
 	// 主要耗时点
 	p.verifyCastMessage("OMC", ccm)
 	slog.endStage()
@@ -369,83 +330,24 @@ func (p *Processor) OnMessageVerify(cvm *model.ConsensusVerifyMessage) {
 	if p.blockOnChain(cvm.BlockHash) {
 		return
 	}
+
 	cache := p.getVerifyMsgCache(cvm.BlockHash)
 	if cache != nil && cache.castMsg != nil {
 		p.verifyWithCache(cache, cvm)
 	} else {
 		stdLogger.Infof("OMV:no cast msg, cached, hash=%v", cvm.BlockHash.ShortS())
+
+		// 块没收到，验证消息先到？？？
+		// 那为啥不触发校验？
 		p.addVerifyMsgToCache(cvm)
 	}
 }
-
-//func (p *Processor) receiveBlock(block *types.Block, preBH *types.BlockHeader) bool {
-//	if ok, err := p.isCastLegal(block.Header, preBH); ok { //铸块组合法
-//		result := p.doAddOnChain(block)
-//		if result == 0 || result == 1 {
-//			return true
-//		}
-//	} else {
-//		//丢弃该块
-//		newBizLog("receiveBlock").log("received invalid new block, height=%v, err=%v", block.Header.Height, err.Error())
-//	}
-//	return false
-//}
 
 func (p *Processor) cleanVerifyContext(currentHeight uint64) {
 	p.blockContexts.forEachBlockContext(func(bc *BlockContext) bool {
 		bc.CleanVerifyContext(currentHeight)
 		return true
 	})
-}
-
-//收到铸块上链消息(组外矿工节点处理)
-func (p *Processor) OnMessageBlock(cbm *model.ConsensusBlockMessage) {
-	//statistics.AddBlockLog(common.BootId,statistics.RcvNewBlock,cbm.Block.Header.Height,cbm.Block.Header.ProveValue.Uint64(),len(cbm.Block.Transactions),-1,
-	//	utility.GetTime().UnixNano(),"","",common.InstanceIndex,cbm.Block.Header.CurTime.UnixNano())
-	//bh := cbm.Block.Header
-	//blog := newBizLog("OMB")
-	//tlog := newHashTraceLog("OMB", bh.Hash, groupsig.DeserializeId(bh.Castor))
-	//tlog.logStart("height=%v, preHash=%v", bh.Height, bh.PreHash.ShortS())
-	//result := ""
-	//defer func() {
-	//	tlog.logEnd("height=%v, preHash=%v, result=%v", bh.Height, bh.PreHash.ShortS(), result)
-	//}()
-	//
-	//if p.getBlockHeaderByHash(cbm.Block.Header.Hash) != nil {
-	//	//blog.log("OMB receive block already on chain! bh=%v", p.blockPreview(cbm.Block.Header))
-	//	result = "已经在链上"
-	//	return
-	//}
-	//var gid = groupsig.DeserializeId(cbm.Block.Header.GroupId)
-	//
-	//blog.log("proc(%v) begin OMB, group=%v, height=%v, hash=%v...", p.getPrefix(),
-	//	gid.ShortS(), cbm.Block.Header.Height, bh.Hash.ShortS())
-	//
-	//block := &cbm.Block
-	//
-	//preHeader := p.MainChain.GetTraceHeader(block.Header.PreHash.Bytes())
-	//if preHeader == nil {
-	//	p.addFutureBlockMsg(cbm)
-	//	result = "父块未到达"
-	//	return
-	//}
-	////panic("isBHCastLegal: cannot find pre block header!,ignore block")
-	//verify := p.verifyGroupSign(cbm, preHeader)
-	//if !verify {
-	//	result = "组签名未通过"
-	//	blog.log("OMB verifyGroupSign result=%v.", verify)
-	//	return
-	//}
-	//
-	//ret := p.receiveBlock(block, preHeader)
-	//if ret {
-	//	result = "上链成功"
-	//} else {
-	//	result = "上链失败"
-	//}
-
-	//blog.log("proc(%v) end OMB, group=%v, sender=%v...", p.getPrefix(), GetIDPrefix(cbm.GroupID), GetIDPrefix(cbm.SI.GetID()))
-	return
 }
 
 //新的交易到达通知（用于处理大臣验证消息时缺失的交易）
@@ -462,30 +364,29 @@ func (p *Processor) OnMessageNewTransactions(ths []common.Hashes) {
 
 	p.blockContexts.forEachBlockContext(func(bc *BlockContext) bool {
 		for _, vctx := range bc.SafeGetVerifyContexts() {
-			for _, slot := range vctx.GetSlots() {
-				acceptRet := vctx.AcceptTrans(slot, ths)
-				tlog := newHashTraceLog(mtype, slot.BH.Hash, groupsig.ID{})
-				switch acceptRet {
-				case TRANS_INVALID_SLOT, TRANS_DENY:
+			slot := vctx.slot
+			acceptRet := vctx.AcceptTrans(slot, ths)
+			tlog := newHashTraceLog(mtype, slot.BH.Hash, groupsig.ID{})
+			switch acceptRet {
+			case TRANS_INVALID_SLOT, TRANS_DENY:
 
-				case TRANS_ACCEPT_NOT_FULL:
-					blog.debug("accept trans bh=%v, ret %v", p.blockPreview(slot.BH), acceptRet)
-					tlog.log("preHash=%v, height=%v, %v,收到 %v, 总交易数 %v, 仍缺失数 %v", slot.BH.PreHash.ShortS(), slot.BH.Height, TRANS_ACCEPT_RESULT_DESC(acceptRet), len(ths), len(slot.BH.Transactions), slot.lostTransSize())
+			case TRANS_ACCEPT_NOT_FULL:
+				blog.debug("accept trans bh=%v, ret %v", p.blockPreview(slot.BH), acceptRet)
+				tlog.log("preHash=%v, height=%v, %v,收到 %v, 总交易数 %v, 仍缺失数 %v", slot.BH.PreHash.ShortS(), slot.BH.Height, TRANS_ACCEPT_RESULT_DESC(acceptRet), len(ths), len(slot.BH.Transactions), slot.lostTransSize())
 
-				case TRANS_ACCEPT_FULL_PIECE:
-					blog.debug("accept trans bh=%v, ret %v", p.blockPreview(slot.BH), acceptRet)
-					tlog.log("preHash=%v, height=%v %v, 当前分片数%v", slot.BH.PreHash.ShortS(), slot.BH.Height, TRANS_ACCEPT_RESULT_DESC(acceptRet), slot.MessageSize())
+			case TRANS_ACCEPT_FULL_PIECE:
+				blog.debug("accept trans bh=%v, ret %v", p.blockPreview(slot.BH), acceptRet)
+				tlog.log("preHash=%v, height=%v %v, 当前分片数%v", slot.BH.PreHash.ShortS(), slot.BH.Height, TRANS_ACCEPT_RESULT_DESC(acceptRet), slot.MessageSize())
 
-				case TRANS_ACCEPT_FULL_THRESHOLD:
-					blog.debug("accept trans bh=%v, ret %v", p.blockPreview(slot.BH), acceptRet)
-					tlog.log("preHash=%v, height=%v, %v", slot.BH.PreHash.ShortS(), slot.BH.Height, TRANS_ACCEPT_RESULT_DESC(acceptRet))
-					if len(slot.BH.Signature) == 0 {
-						blog.log("slot bh sign is empty hash=%v", slot.BH.Hash.ShortS())
-					}
-					p.thresholdPieceVerify(mtype, p.getPrefix(), bc.MinerID.Gid, vctx, slot, tlog)
+			case TRANS_ACCEPT_FULL_THRESHOLD:
+				blog.debug("accept trans bh=%v, ret %v", p.blockPreview(slot.BH), acceptRet)
+				tlog.log("preHash=%v, height=%v, %v", slot.BH.PreHash.ShortS(), slot.BH.Height, TRANS_ACCEPT_RESULT_DESC(acceptRet))
+				if len(slot.BH.Signature) == 0 {
+					blog.log("slot bh sign is empty hash=%v", slot.BH.Hash.ShortS())
 				}
-
+				p.thresholdPieceVerify(vctx)
 			}
+
 		}
 		return true
 	})

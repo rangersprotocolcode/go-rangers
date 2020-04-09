@@ -59,8 +59,9 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	if p.belongGroups.BelongGroup(gid) {
 		bc := p.GetBlockContext(gid)
 		if bc != nil {
-			bc.AddCastedHeight(bh.Height, bh.PreHash)
-			vctx := bc.GetVerifyContextByHeight(bh.Height)
+			bc.AddCastedHeight(bh.Hash, bh.PreHash)
+			bc.updateSignedMaxQN(bh.TotalQN)
+			vctx := bc.GetVerifyContextByHash(bh.Hash)
 			if vctx != nil && vctx.prevBH.Hash == bh.PreHash {
 				//如果本地没有广播准备，说明是其他节点广播过来的块，则标记为已广播
 				vctx.markBroadcast()
@@ -103,16 +104,6 @@ func (p *Processor) onGroupAddSuccess(message notify.Message) {
 	p.acceptGroup(sgi)
 
 	group_create.GroupCreateProcessor.OnGroupAddSuccess(sgi)
-}
-
-func (p *Processor) onNewBlockReceive(message notify.Message) {
-	if !p.Ready() {
-		return
-	}
-	msg := &model.ConsensusBlockMessage{
-		Block: message.GetData().(types.Block),
-	}
-	p.OnMessageBlock(msg)
 }
 
 func (p *Processor) onMissTxAddSucc(message notify.Message) {

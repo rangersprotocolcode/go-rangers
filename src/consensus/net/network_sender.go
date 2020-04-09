@@ -143,7 +143,8 @@ func (ns *NetworkServerImpl) BroadcastGroupInfo(cgm *model.GroupInitedMessage) {
 
 //-----------------------------------------------------------------组铸币----------------------------------------------
 
-//铸币节点完成铸币，将blockheader  签名后发送至组内其他节点进行验证。组内广播
+// 提案节点完成铸币，将blockheader签名后发送至验证组内节点进行验证
+// 组内广播
 func (ns *NetworkServerImpl) SendCastVerify(ccm *model.ConsensusCastMessage, group *GroupBrief, body []*types.Transaction) {
 	var groupId groupsig.ID
 	e1 := groupId.Deserialize(ccm.BH.GroupId)
@@ -164,14 +165,15 @@ func (ns *NetworkServerImpl) SendCastVerify(ccm *model.ConsensusCastMessage, gro
 	logger.Debugf("send CAST_VERIFY_MSG,%d-%d to group:%s,invoke SpreadToGroup cost time:%v,time from cast:%v,hash:%s", ccm.BH.Height, ccm.BH.TotalQN, groupId.GetHexString(), time.Since(begin), timeFromCast, ccm.BH.Hash.String())
 }
 
-//组内节点  验证通过后 自身签名 广播验证块 组内广播  验证不通过 保持静默
+// 组内节点  验证通过后 自身签名 广播验证块 组内广播
+// 验证不通过 保持静默
 func (ns *NetworkServerImpl) SendVerifiedCast(cvm *model.ConsensusVerifyMessage, receiver groupsig.ID) {
 	body, e := marshalConsensusVerifyMessage(cvm)
 	if e != nil {
 		logger.Errorf("[peer]Discard send ConsensusVerifyMessage because of marshal error:%s", e.Error())
 		return
 	}
-	m := network.Message{Code: network.VerifiedCastMsg2, Body: body}
+	m := network.Message{Code: network.VerifiedCastMsg, Body: body}
 
 	// 验证消息需要给自己也发一份，否则自己的分片中将不包含自己的签名，导致分红没有
 	// 深井冰

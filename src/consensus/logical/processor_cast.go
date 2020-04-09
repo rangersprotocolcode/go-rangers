@@ -9,17 +9,17 @@ import (
 	"x/src/consensus/net"
 	"x/src/utility"
 
-	"x/src/middleware/types"
+	"runtime/debug"
 	"sync"
 	"time"
-	"runtime/debug"
+	"x/src/middleware/types"
 
 	"x/src/middleware"
 )
 
 type CastBlockContexts struct {
 	blockCtxs    sync.Map //string -> *BlockContext
-	reservedVctx sync.Map //uint64 -> *VerifyContext 存储已经有签出块的verifyContext，待广播
+	reservedVctx sync.Map //blockHash -> *VerifyContext 存储已经有签出块的verifyContext，待广播
 }
 
 func NewCastBlockContexts() *CastBlockContexts {
@@ -56,7 +56,7 @@ func (bctx *CastBlockContexts) removeBlockContexts(gids []groupsig.ID) {
 		if bc != nil {
 			//bc.removeTicker()
 			for _, vctx := range bc.SafeGetVerifyContexts() {
-				bctx.removeReservedVctx(vctx.castHeight)
+				bctx.removeReservedVctx(vctx.blockHash)
 			}
 			bctx.blockCtxs.Delete(id.GetHexString())
 		}
@@ -70,12 +70,12 @@ func (bctx *CastBlockContexts) forEachBlockContext(f func(bc *BlockContext) bool
 	})
 }
 
-func (bctx *CastBlockContexts) removeReservedVctx(height uint64) {
-	bctx.reservedVctx.Delete(height)
+func (bctx *CastBlockContexts) removeReservedVctx(hash common.Hash) {
+	bctx.reservedVctx.Delete(hash)
 }
 
 func (bctx *CastBlockContexts) addReservedVctx(vctx *VerifyContext) bool {
-	_, load := bctx.reservedVctx.LoadOrStore(vctx.castHeight, vctx)
+	_, load := bctx.reservedVctx.LoadOrStore(vctx.blockHash, vctx)
 	return !load
 }
 
@@ -105,7 +105,7 @@ func (p *Processor) triggerCastCheck() {
 	p.Ticker.StartAndTriggerRoutine(p.getCastCheckRoutineName())
 }
 
-func (p *Processor) CalcVerifyGroupFromCache(preBH *types.BlockHeader, height uint64) (*groupsig.ID) {
+func (p *Processor) CalcVerifyGroupFromCache(preBH *types.BlockHeader, height uint64) *groupsig.ID {
 	var hash = CalcRandomHash(preBH, height)
 
 	selectGroup, err := p.globalGroups.SelectVerifyGroupFromCache(hash, height)
@@ -116,7 +116,7 @@ func (p *Processor) CalcVerifyGroupFromCache(preBH *types.BlockHeader, height ui
 	return &selectGroup
 }
 
-func (p *Processor) CalcVerifyGroupFromChain(preBH *types.BlockHeader, height uint64) (*groupsig.ID) {
+func (p *Processor) CalcVerifyGroupFromChain(preBH *types.BlockHeader, height uint64) *groupsig.ID {
 	var hash = CalcRandomHash(preBH, height)
 
 	selectGroup, err := p.globalGroups.SelectVerifyGroupFromChain(hash, height)
@@ -140,7 +140,8 @@ func (p *Processor) spreadGroupBrief(bh *types.BlockHeader, height uint64) *net.
 	return g
 }
 
-func (p *Processor) reserveBlock(vctx *VerifyContext, slot *SlotContext) {
+func (p *Processor) reserveBlock(vctx *VerifyContext) {
+	slot := vctx.slot
 	bh := slot.BH
 	blog := newBizLog("reserveBLock")
 	blog.log("height=%v, totalQN=%v, hash=%v, slotStatus=%v", bh.Height, bh.TotalQN, bh.Hash.ShortS(), slot.GetSlotStatus())
@@ -148,12 +149,10 @@ func (p *Processor) reserveBlock(vctx *VerifyContext, slot *SlotContext) {
 		vctx.markCastSuccess() //onBlockAddSuccess方法中也mark了，该处调用是异步的
 		p.blockContexts.addReservedVctx(vctx)
 		if !p.tryBroadcastBlock(vctx) {
-			blog.log("reserved, height=%v", vctx.castHeight)
+			blog.log("reserved, hash=%v", vctx.blockHash)
 		}
 
 	}
-
-	return
 }
 
 func (p *Processor) tryBroadcastBlock(vctx *VerifyContext) bool {
@@ -165,7 +164,7 @@ func (p *Processor) tryBroadcastBlock(vctx *VerifyContext) bool {
 		//异步进行，使得请求快速返回，防止消息积压
 		go p.successNewBlock(vctx, sc) //上链和组外广播
 
-		p.blockContexts.removeReservedVctx(vctx.castHeight)
+		p.blockContexts.removeReservedVctx(vctx.blockHash)
 		return true
 	}
 	return false

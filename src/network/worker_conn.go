@@ -57,7 +57,7 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 
 	code := message.Code
 	switch code {
-	case CurrentGroupCastMsg, CastVerifyMsg, VerifiedCastMsg2, AskSignPkMsg, AnswerSignPkMsg, ReqSharePiece, ResponseSharePiece,
+	case CurrentGroupCastMsg, CastVerifyMsg, VerifiedCastMsg, AskSignPkMsg, AnswerSignPkMsg, ReqSharePiece, ResponseSharePiece,
 		GroupInitMsg, KeyPieceMsg, SignPubkeyMsg, GroupInitDoneMsg, CreateGroupaRaw, CreateGroupSign, GroupPing, GroupPong:
 		if nil != workerConn.consensusHandler {
 			workerConn.consensusHandler.Handle(from, *message)

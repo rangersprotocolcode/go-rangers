@@ -16,9 +16,11 @@ const (
 	//-----------组铸币---------------------------------
 	CurrentGroupCastMsg uint32 = 5
 
+	// 提案者发送候选块，待验证
 	CastVerifyMsg uint32 = 6
 
-	VerifiedCastMsg uint32 = 7
+	// 验证组内，验证完块后，发送签名片段
+	VerifiedCastMsg uint32 = 36
 
 	NewBlockMsg uint32 = 8
 	//--------------交易-----------------------------
@@ -57,8 +59,6 @@ const (
 	//===================请求组内成员签名公钥======
 	AskSignPkMsg    uint32 = 34
 	AnswerSignPkMsg uint32 = 35
-
-	VerifiedCastMsg2 uint32 = 36
 
 	//建组时ping pong
 	GroupPing uint32 = 37

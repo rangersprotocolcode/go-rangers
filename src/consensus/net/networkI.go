@@ -34,17 +34,11 @@ type GroupCreateMessageProcessor interface {
 type MiningMessageProcessor interface {
 	Ready() bool
 
-	//GetMinerID() groupsig.ID
-	//
-	//ExistInGroup(gHash common.Hash) bool
-
 	OnMessageCast(msg *model.ConsensusCastMessage)
 
 	OnMessageVerify(msg *model.ConsensusVerifyMessage)
 
 	OnMessageNewTransactions(txs []common.Hashes)
-
-	OnMessageBlock(msg *model.ConsensusBlockMessage)
 }
 
 type GroupBrief struct {
