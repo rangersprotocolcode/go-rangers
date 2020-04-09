@@ -3,7 +3,7 @@ package common
 // 时间
 const (
 	// 检查出块间隔，单位ms
-	CastingCheckInterval = 100
+	CastingCheckInterval = 50
 
 	// 出块间隔，单位ms
 	CastingInterval = 1000
