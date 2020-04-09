@@ -2,10 +2,10 @@ package logical
 
 import (
 	"time"
-	"x/src/consensus/model"
 	"x/src/common"
 	"x/src/consensus/groupsig"
 	"x/src/consensus/logical/group_create"
+	"x/src/consensus/model"
 	"x/src/utility"
 )
 
@@ -30,7 +30,7 @@ func (p *Processor) checkSelfCastRoutine() bool {
 	blog := newBizLog("checkSelfCastRoutine")
 	top := p.MainChain.TopBlock()
 
-	if time.Since(top.CurTime).Seconds() < common.CastingInterval/1000 {
+	if utility.GetTime().Sub(top.CurTime).Milliseconds() < common.CastingInterval {
 		blog.log("time cost %vs from chain casting last block,less than %vs,do not proposal.last block cast time:%v ", time.Since(top.CurTime).Seconds(), common.CastingInterval/1000, top.CurTime)
 		return false
 	}
@@ -45,7 +45,7 @@ func (p *Processor) checkSelfCastRoutine() bool {
 	defer p.lock.Unlock()
 
 	worker := p.GetVrfWorker()
-	if worker != nil && worker.workingOn(top, castHeight)  {
+	if worker != nil && worker.workingOn(top, castHeight) {
 		blog.log("already working on that block height=%v, status=%v", castHeight, worker.getStatus())
 		return false
 	}
