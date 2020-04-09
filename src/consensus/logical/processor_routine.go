@@ -30,7 +30,7 @@ func (p *Processor) checkSelfCastRoutine() bool {
 	blog := newBizLog("checkSelfCastRoutine")
 	top := p.MainChain.TopBlock()
 
-	delta:=utility.GetTime().Sub(top.CurTime)
+	delta := utility.GetTime().Sub(top.CurTime)
 	if delta.Seconds() < common.CastingInterval/1000 {
 		blog.log("time cost %vs from chain casting last block,less than %vs,do not proposal.last block cast time:%v ", time.Since(top.CurTime).Seconds(), common.CastingInterval/1000, top.CurTime)
 		return false
@@ -57,7 +57,7 @@ func (p *Processor) checkSelfCastRoutine() bool {
 	} else {
 		expireTime = worker.expire.Add(time.Second * time.Duration(uint64(model.Param.MaxGroupCastTime)))
 	}
-	blog.log("topHeight=%v, topHash=%v, topCurTime=%v, castHeight=%v, expireTime=%v", top.Height, top.Hash.ShortS(), top.CurTime, castHeight, expireTime)
+	blog.log("topHeight=%v, topHash=%v, topCurTime=%v, castHeight=%v, expireTime=%v,current time:%v", top.Height, top.Hash.ShortS(), top.CurTime, castHeight, expireTime, utility.GetTime())
 	worker = newVRFWorker(p.GetSelfMinerDO(), top, castHeight, expireTime)
 	p.setVrfWorker(worker)
 	p.blockProposal()
