@@ -63,7 +63,7 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 	}
 	blog := newBizLog("vrfSatisfy")
 	vrfValueRatio := vrfValueRatio(prove)
-	stakeRatio := stakeRatio(1, totalStake)
+	stakeRatio := stakeRatio(stake, totalStake)
 	ok = vrfValueRatio.Cmp(stakeRatio) < 0
 
 	//cal qn
@@ -78,7 +78,7 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 
 	s1, _ := vrfValueRatio.Float64()
 	s2, _ := stakeRatio.Float64()
-	blog.log("miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v, step %v, qn %v", 1, totalStake, s1, s2, st, qn)
+	blog.log("miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v, step %v, qn %v", stake, totalStake, s1, s2, st, qn)
 	return
 }
 

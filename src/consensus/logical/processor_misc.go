@@ -184,16 +184,6 @@ func (p *Processor) GenVerifyHash(b *types.Block, id groupsig.ID) common.Hash {
 	return h
 }
 
-func (p *Processor) GetVrfThreshold(stake uint64) float64 {
-	totalStake := p.minerReader.GetTotalStake(p.MainChain.Height(), true)
-	if totalStake == 0 {
-		return 0
-	}
-	vs := stakeRatio(stake, totalStake)
-	f, _ := vs.Float64()
-	return f
-}
-
 func (p *Processor) GetJoinGroupInfo(gid string) *model.JoinedGroupInfo {
 	var id groupsig.ID
 	id.SetHexString(gid)

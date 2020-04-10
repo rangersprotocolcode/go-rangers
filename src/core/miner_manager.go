@@ -115,9 +115,9 @@ func (mm *MinerManager) GetProposerTotalStake(height uint64) uint64 {
 		return 0
 	}
 
-	_, proposers := mm.GetProposerTotalStakeWithDetail(height, accountDB)
+	total, _ := mm.GetProposerTotalStakeWithDetail(height, accountDB)
 
-	return uint64(len(proposers))
+	return total
 }
 
 func (mm *MinerManager) MinerIterator(minerType byte, height uint64) *MinerIterator {
