@@ -69,11 +69,7 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 		}
 		p.removeVerifyMsgCache(bh.Hash)
 	}
-
-	vrf := p.GetVrfWorker()
-	if vrf != nil && vrf.baseBH.Hash == bh.PreHash && vrf.castHeight == bh.Height {
-		vrf.markSuccess()
-	}
+	p.setVrfWorker(nil)
 
 	//p.triggerFutureBlockMsg(bh)
 	p.triggerFutureVerifyMsg(bh.Hash)
