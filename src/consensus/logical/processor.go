@@ -134,7 +134,7 @@ func (p Processor) GetMinerInfo() *model.MinerInfo {
 //	return true
 //}
 
-//检查铸块组是否合法
+//检查提案节点是否合法
 func (p *Processor) isCastLegal(bh *types.BlockHeader, preHeader *types.BlockHeader) (ok bool, group *model.GroupInfo, err error) {
 	blog := newBizLog("isCastLegal")
 	castor := groupsig.DeserializeID(bh.Castor)
