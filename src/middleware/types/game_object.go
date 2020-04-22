@@ -1,11 +1,11 @@
 package types
 
 import (
-	"math/big"
-	"fmt"
-	"x/src/common"
 	"encoding/json"
+	"fmt"
+	"math/big"
 	"strconv"
+	"x/src/common"
 )
 
 // NFT 数据结构综述
@@ -208,7 +208,7 @@ func (self *NFTMap) SetNFT(nft *NFT) bool {
 	}
 
 	self.NFTList[index] = nft
-	return false
+	return true
 }
 
 func (self *NFTMap) GetAllNFT() []*NFT {
