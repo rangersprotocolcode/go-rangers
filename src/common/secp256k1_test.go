@@ -12,7 +12,7 @@ import (
 	"strings"
 	"math/big"
 )
-
+//---------------------------------------Function Test-----------------------------------------------------------------
 func TestKeyLength(test *testing.T) {
 	key := genRandomKey()
 	privateKey := key.PrivKey.D.Bytes()
@@ -100,7 +100,7 @@ func runSigAndVerifyOnce(test *testing.T) {
 	verifyResult := secp256k1.VerifySignature(recoveredPubKey, msg, sign.Bytes())
 	assert.Equal(test, verifyResult, true)
 }
-
+//---------------------------------------Benchmark Test-----------------------------------------------------------------
 var testCount = 1000
 var privateList = make([]PrivateKey, testCount)
 var messageList = make([][]byte, testCount)
@@ -166,7 +166,7 @@ func prepareData() {
 		messageList[i] = genRandomMessage(32)
 	}
 }
-
+//---------------------------------------Comparison Test---------------------------------------------------------------
 func TestGenComparisonData(test *testing.T) {
 	fileName := "secp256_comparisonData_go.txt"
 
