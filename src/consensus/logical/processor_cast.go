@@ -221,7 +221,6 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 
 	r := p.doAddOnChain(block)
 
-
 	if r != int8(types.AddBlockSucc) { //分叉调整或 上链失败都不走下面的逻辑
 		if r != int8(types.Forking) {
 			slot.setSlotStatus(SS_FAILED)
@@ -290,11 +289,13 @@ func (p *Processor) GenProveHashs(heightLimit uint64, rand []byte, ids []groupsi
 }
 
 func (p *Processor) blockProposal() {
-	start := utility.GetTime()
+	worker := p.GetVrfWorker()
+	if nil == worker {
+		return
+	}
+
 	blog := newBizLog("blockProposal")
 	top := p.MainChain.TopBlock()
-
-	worker := p.GetVrfWorker()
 	if worker.getBaseBH().Hash != top.Hash {
 		blog.log("vrf baseBH differ from top!")
 		return
@@ -308,6 +309,7 @@ func (p *Processor) blockProposal() {
 
 	totalStake := p.minerReader.GetTotalStake(worker.baseBH.Height, false)
 	blog.log("totalStake height=%v, stake=%v", height, totalStake)
+	start := utility.GetTime()
 	pi, qn, err := worker.genProve(start, totalStake)
 	if err != nil {
 		blog.log("vrf prove not ok! %v", err)

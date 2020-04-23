@@ -138,9 +138,6 @@ func initBlockChain() error {
 }
 
 func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValue *big.Int, proveRoot common.Hash, qn uint64, castor []byte, groupid []byte) *types.Block {
-	chain.lock.Lock("CastBlock")
-	defer chain.lock.Unlock("CastBlock")
-
 	latestBlock := chain.latestBlock
 	if latestBlock == nil {
 		logger.Errorf("Block chain lastest block is nil!")
