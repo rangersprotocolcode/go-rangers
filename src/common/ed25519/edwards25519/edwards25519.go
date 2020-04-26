@@ -1,6 +1,8 @@
 package edwards25519
 
-import "encoding/binary"
+import (
+	"encoding/binary"
+)
 
 // This code is a port of the public domain, “ref10” implementation of ed25519
 // from SUPERCOP.
@@ -125,8 +127,10 @@ func FeFromBytes(dst *FieldElement, src *[32]byte) {
 //
 //   Have q+2^(-255)x = 2^(-255)(h + 19 2^(-25) h9 + 2^(-1))
 //   so floor(2^(-255)(h + 19 2^(-25) h9 + 2^(-1))) = q.
-func FeToBytes(s *[32]byte, h *FieldElement) {
+func FeToBytes(s *[32]byte, hh *FieldElement) {
 	var carry [10]int32
+	var h [10]int32
+	copy(h[:], hh[:])
 
 	q := (19*h[9] + (1 << 24)) >> 25
 	q = (h[0] + q) >> 26
@@ -504,51 +508,51 @@ func FeInvert(out, z *FieldElement) {
 	var t0, t1, t2, t3 FieldElement
 	var i int
 
-	FeSquare(&t0, z)        // 2^1
-	FeSquare(&t1, &t0)      // 2^2
+	FeSquare(&t0, z)   // 2^1
+	FeSquare(&t1, &t0) // 2^2
 	for i = 1; i < 2; i++ { // 2^3
 		FeSquare(&t1, &t1)
 	}
-	FeMul(&t1, z, &t1)      // 2^3 + 2^0
-	FeMul(&t0, &t0, &t1)    // 2^3 + 2^1 + 2^0
-	FeSquare(&t2, &t0)      // 2^4 + 2^2 + 2^1
-	FeMul(&t1, &t1, &t2)    // 2^4 + 2^3 + 2^2 + 2^1 + 2^0
-	FeSquare(&t2, &t1)      // 5,4,3,2,1
+	FeMul(&t1, z, &t1)   // 2^3 + 2^0
+	FeMul(&t0, &t0, &t1) // 2^3 + 2^1 + 2^0
+	FeSquare(&t2, &t0)   // 2^4 + 2^2 + 2^1
+	FeMul(&t1, &t1, &t2) // 2^4 + 2^3 + 2^2 + 2^1 + 2^0
+	FeSquare(&t2, &t1)   // 5,4,3,2,1
 	for i = 1; i < 5; i++ { // 9,8,7,6,5
 		FeSquare(&t2, &t2)
 	}
-	FeMul(&t1, &t2, &t1)     // 9,8,7,6,5,4,3,2,1,0
-	FeSquare(&t2, &t1)       // 10..1
+	FeMul(&t1, &t2, &t1) // 9,8,7,6,5,4,3,2,1,0
+	FeSquare(&t2, &t1)   // 10..1
 	for i = 1; i < 10; i++ { // 19..10
 		FeSquare(&t2, &t2)
 	}
-	FeMul(&t2, &t2, &t1)     // 19..0
-	FeSquare(&t3, &t2)       // 20..1
+	FeMul(&t2, &t2, &t1) // 19..0
+	FeSquare(&t3, &t2)   // 20..1
 	for i = 1; i < 20; i++ { // 39..20
 		FeSquare(&t3, &t3)
 	}
-	FeMul(&t2, &t3, &t2)     // 39..0
-	FeSquare(&t2, &t2)       // 40..1
+	FeMul(&t2, &t3, &t2) // 39..0
+	FeSquare(&t2, &t2)   // 40..1
 	for i = 1; i < 10; i++ { // 49..10
 		FeSquare(&t2, &t2)
 	}
-	FeMul(&t1, &t2, &t1)     // 49..0
-	FeSquare(&t2, &t1)       // 50..1
+	FeMul(&t1, &t2, &t1) // 49..0
+	FeSquare(&t2, &t1)   // 50..1
 	for i = 1; i < 50; i++ { // 99..50
 		FeSquare(&t2, &t2)
 	}
-	FeMul(&t2, &t2, &t1)      // 99..0
-	FeSquare(&t3, &t2)        // 100..1
+	FeMul(&t2, &t2, &t1) // 99..0
+	FeSquare(&t3, &t2)   // 100..1
 	for i = 1; i < 100; i++ { // 199..100
 		FeSquare(&t3, &t3)
 	}
-	FeMul(&t2, &t3, &t2)     // 199..0
-	FeSquare(&t2, &t2)       // 200..1
+	FeMul(&t2, &t3, &t2) // 199..0
+	FeSquare(&t2, &t2)   // 200..1
 	for i = 1; i < 50; i++ { // 249..50
 		FeSquare(&t2, &t2)
 	}
-	FeMul(&t1, &t2, &t1)    // 249..0
-	FeSquare(&t1, &t1)      // 250..1
+	FeMul(&t1, &t2, &t1) // 249..0
+	FeSquare(&t1, &t1)   // 250..1
 	for i = 1; i < 5; i++ { // 254..5
 		FeSquare(&t1, &t1)
 	}
@@ -624,7 +628,6 @@ func fePow22523(out, z *FieldElement) {
 //   ExtendedGroupElement: (X:Y:Z:T) satisfying x=X/Z, y=Y/Z, XY=ZT
 //   CompletedGroupElement: ((X:Z),(Y:T)) satisfying x=X/Z, y=Y/T
 //   PreComputedGroupElement: (y+x,y-x,2dxy)
-
 type ProjectiveGroupElement struct {
 	X, Y, Z FieldElement
 }
@@ -642,7 +645,7 @@ type PreComputedGroupElement struct {
 }
 
 type CachedGroupElement struct {
-	yPlusX, yMinusX, Z, T2d FieldElement
+	YPlusX, YMinusX, Z, T2d FieldElement
 }
 
 func (p *ProjectiveGroupElement) Zero() {
@@ -689,8 +692,8 @@ func (p *ExtendedGroupElement) Double(r *CompletedGroupElement) {
 }
 
 func (p *ExtendedGroupElement) ToCached(r *CachedGroupElement) {
-	FeAdd(&r.yPlusX, &p.Y, &p.X)
-	FeSub(&r.yMinusX, &p.Y, &p.X)
+	FeAdd(&r.YPlusX, &p.Y, &p.X)
+	FeSub(&r.YMinusX, &p.Y, &p.X)
 	FeCopy(&r.Z, &p.Z)
 	FeMul(&r.T2d, &p.T, &d2)
 }
@@ -712,6 +715,43 @@ func (p *ExtendedGroupElement) ToBytes(s *[32]byte) {
 }
 
 func (p *ExtendedGroupElement) FromBytes(s *[32]byte) bool {
+	var u, v, v3, vxx, mRootCheck, pRootCheck, xSqrtm1, negx FieldElement
+
+	FeFromBytes(&p.Y, s)
+	FeOne(&p.Z)
+	FeSquare(&u, &p.Y)
+	FeMul(&v, &u, &d)
+	FeSub(&u, &u, &p.Z) // y = y^2-1
+	FeAdd(&v, &v, &p.Z) // v = dy^2+1
+
+	FeSquare(&v3, &v)
+	FeMul(&v3, &v3, &v) // v3 = v^3
+	FeSquare(&p.X, &v3)
+	FeMul(&p.X, &p.X, &v)
+	FeMul(&p.X, &p.X, &u) // x = uv^7
+
+	fePow22523(&p.X, &p.X) // x = (uv^7)^((q-5)/8)
+	FeMul(&p.X, &p.X, &v3)
+	FeMul(&p.X, &p.X, &u) // x = uv^3(uv^7)^((q-5)/8)
+
+	FeSquare(&vxx, &p.X)
+	FeMul(&vxx, &vxx, &v)
+	FeSub(&mRootCheck, &vxx, &u) // vx^2-u
+	FeAdd(&pRootCheck, &vxx, &u)
+
+	hasMRoot := 1 - FeIsNonZero(&mRootCheck)
+	hasPRoot := 1 - FeIsNonZero(&pRootCheck)
+	FeMul(&xSqrtm1, &p.X, &SqrtM1)
+	FeCMove(&p.X, &xSqrtm1, 1-hasMRoot)
+
+	FeNeg(&negx, &p.X)
+	FeCMove(&p.X, &negx, int32(FeIsNegative(&p.X)^(s[31]>>7)))
+
+	FeMul(&p.T, &p.X, &p.Y)
+	return (hasMRoot|hasPRoot)-1 == 0
+}
+
+func (p *ExtendedGroupElement) FromBytesNegateVartime(s *[32]byte) bool {
 	var u, v, v3, vxx, check FieldElement
 
 	FeFromBytes(&p.Y, s)
@@ -749,7 +789,7 @@ func (p *ExtendedGroupElement) FromBytes(s *[32]byte) bool {
 		}
 	}
 
-	if FeIsNegative(&p.X) != (s[31] >> 7) {
+	if FeIsNegative(&p.X) == (s[31] >> 7) {
 		FeNeg(&p.X, &p.X)
 	}
 
@@ -773,7 +813,15 @@ func (p *CompletedGroupElement) ToExtended(r *ExtendedGroupElement) {
 func (p *PreComputedGroupElement) Zero() {
 	FeOne(&p.yPlusX)
 	FeOne(&p.yMinusX)
+	FeOne(&p.yMinusX)
 	FeZero(&p.xy2d)
+}
+
+func (c *CachedGroupElement) Zero() {
+	FeOne(&c.YPlusX)
+	FeOne(&c.YMinusX)
+	FeOne(&c.Z)
+	FeZero(&c.T2d)
 }
 
 func geAdd(r *CompletedGroupElement, p *ExtendedGroupElement, q *CachedGroupElement) {
@@ -781,8 +829,8 @@ func geAdd(r *CompletedGroupElement, p *ExtendedGroupElement, q *CachedGroupElem
 
 	FeAdd(&r.X, &p.Y, &p.X)
 	FeSub(&r.Y, &p.Y, &p.X)
-	FeMul(&r.Z, &r.X, &q.yPlusX)
-	FeMul(&r.Y, &r.Y, &q.yMinusX)
+	FeMul(&r.Z, &r.X, &q.YPlusX)
+	FeMul(&r.Y, &r.Y, &q.YMinusX)
 	FeMul(&r.T, &q.T2d, &p.T)
 	FeMul(&r.X, &p.Z, &q.Z)
 	FeAdd(&t0, &r.X, &r.X)
@@ -792,13 +840,13 @@ func geAdd(r *CompletedGroupElement, p *ExtendedGroupElement, q *CachedGroupElem
 	FeSub(&r.T, &t0, &r.T)
 }
 
-func geSub(r *CompletedGroupElement, p *ExtendedGroupElement, q *CachedGroupElement) {
+func GeSub(r *CompletedGroupElement, p *ExtendedGroupElement, q *CachedGroupElement) {
 	var t0 FieldElement
 
 	FeAdd(&r.X, &p.Y, &p.X)
 	FeSub(&r.Y, &p.Y, &p.X)
-	FeMul(&r.Z, &r.X, &q.yMinusX)
-	FeMul(&r.Y, &r.Y, &q.yPlusX)
+	FeMul(&r.Z, &r.X, &q.YMinusX)
+	FeMul(&r.Y, &r.Y, &q.YPlusX)
 	FeMul(&r.T, &q.T2d, &p.T)
 	FeMul(&r.X, &p.Z, &q.Z)
 	FeAdd(&t0, &r.X, &r.X)
@@ -908,7 +956,7 @@ func GeDoubleScalarMultVartime(r *ProjectiveGroupElement, a *[32]byte, A *Extend
 			geAdd(&t, &u, &Ai[aSlide[i]/2])
 		} else if aSlide[i] < 0 {
 			t.ToExtended(&u)
-			geSub(&t, &u, &Ai[(-aSlide[i])/2])
+			GeSub(&t, &u, &Ai[(-aSlide[i])/2])
 		}
 
 		if bSlide[i] > 0 {
@@ -955,6 +1003,25 @@ func selectPoint(t *PreComputedGroupElement, pos int32, b int32) {
 	FeCopy(&minusT.yMinusX, &t.yPlusX)
 	FeNeg(&minusT.xy2d, &t.xy2d)
 	PreComputedGroupElementCMove(t, &minusT, bNegative)
+}
+
+/*
+ h = a * p
+ where a = a[0]+256*a[1]+...+256^31 a[31]
+
+ Preconditions:
+ a[31] <= 127
+
+ p is public
+ */
+func GeScalarMult(h *ExtendedGroupElement, a *[32]byte) *ExtendedGroupElement {
+	r := new(ExtendedGroupElement)
+	var pg ProjectiveGroupElement
+	GeDoubleScalarMultVartime(&pg, a, h, &[32]byte{}) // h^a * g^0
+	var t [32]byte
+	pg.ToBytes(&t)
+	r.FromBytes(&t)
+	return r
 }
 
 // GeScalarMultBase computes h = a*B, where
