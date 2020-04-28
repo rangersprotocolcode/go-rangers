@@ -97,6 +97,7 @@ func BenchmarkGenProve(b *testing.B) {
 }
 
 func BenchmarkVerifyProof(b *testing.B) {
+	prepareData()
 	b.ResetTimer()
 
 	for i := 0; i < testCount; i++ {
@@ -113,6 +114,7 @@ func BenchmarkVerifyProof(b *testing.B) {
 }
 
 func BenchmarkSignAndVerifySign(b *testing.B) {
+	prepareData()
 	b.ResetTimer()
 
 	for i := 0; i < testCount; i++ {
@@ -145,6 +147,12 @@ func prepareData() {
 		privateKeyList[i] = privateKey
 		publicKeyList[i] = publicKey
 		messageList[i] = genRandomMessage(32)
+
+		proof, err := ECVRFProve(privateKey, messageList[i])
+		if err != nil {
+			panic("ECVRFProve error!" + err.Error())
+		}
+		proofList[i] = proof
 	}
 }
 

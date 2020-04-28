@@ -18,7 +18,7 @@ type VRFPrivateKey ed25519.PrivateKey
 type VRFRandomValue []byte //RandomValueSize = 32 in bytes
 
 // VRFProve is the output prove of VRF_Ed25519.
-type VRFProve ed25519.VRFProve //ProveSize = 81 in bytes
+type VRFProve ed25519.VRFProve //ProveSize = 80 in bytes
 
 // GenerateKey generates a public/private key pair using entropy from rand.
 // If rand is nil, crypto/rand.Reader will be used.

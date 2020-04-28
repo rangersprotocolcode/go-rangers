@@ -315,6 +315,8 @@ func (p *Processor) blockProposal() {
 		blog.log("vrf prove not ok! %v", err)
 		return
 	}
+	blog.log("gen vrf prove:%v", pi)
+
 
 	if worker.timeout() {
 		blog.log("vrf worker timeout")

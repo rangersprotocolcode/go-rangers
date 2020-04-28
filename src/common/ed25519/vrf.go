@@ -6,13 +6,14 @@ import (
 	"x/src/common/ed25519/edwards25519"
 	"crypto/sha512"
 	"encoding/hex"
+	"fmt"
+	"strconv"
 )
 
 const (
 	N2 = 32 // ceil(log2(q) / 8)
 	N  = N2 / 2
 )
-
 
 var (
 	ErrMalformedSK = errors.New("ECVRF: malformed sk")
@@ -90,6 +91,11 @@ func ECVRFProve(sk PrivateKey, m []byte) (pi VRFProve, err error) {
 	buf.Write(provePart1[:]) // 2N
 	buf.Write(provePart2[:])
 	buf.Write(provePart3[:])
+
+	if len(buf.Bytes()) != 80 {
+		piStr := fmt.Sprintf("%v", pi)
+		panic("vrf gen prove bad format! pi length:" + strconv.Itoa(len(pi)) + "pi:" + piStr)
+	}
 	return buf.Bytes(), nil
 }
 
@@ -101,6 +107,10 @@ func ECVRFProve(sk PrivateKey, m []byte) (pi VRFProve, err error) {
  *
  */
 func ECVRFVerify(pk PublicKey, pi VRFProve, m []byte) (bool, error) {
+	if len(pi) != 80 {
+		piStr := fmt.Sprintf("%v", pi)
+		panic("vrf verify bad format! pi length:" + strconv.Itoa(len(pi)) + "pi:" + piStr)
+	}
 	gamma, cScalar, sScalar, err := decodeProof(pi)
 	if err != nil {
 		return false, err
