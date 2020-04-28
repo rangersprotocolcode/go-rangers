@@ -176,8 +176,7 @@ func (ns *NetworkServerImpl) SendVerifiedCast(cvm *model.ConsensusVerifyMessage,
 	m := network.Message{Code: network.VerifiedCastMsg, Body: body}
 
 	// 验证消息需要给自己也发一份，否则自己的分片中将不包含自己的签名，导致分红没有
-	// 深井冰
-	//go ns.send2Self(cvm.SI.GetID(), m)
+	go ns.send2Self(cvm.SignInfo.GetSignerID(), m)
 
 	go ns.net.SpreadToGroup(receiver.GetHexString(), m)
 	logger.Debugf("[peer]send VARIFIED_CAST_MSG,hash:%s", cvm.BlockHash.String())
