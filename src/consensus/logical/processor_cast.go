@@ -207,11 +207,11 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 		return
 	}
 	//下一块的验证组
-	gb := p.spreadGroupBrief(bh, bh.CurTime, bh.Height+1)
-	if gb == nil {
-		blog.log("spreadGroupBrief nil, bh=%v, height=%v", bh.Hash.ShortS(), bh.Height)
-		return
-	}
+	//gb := p.spreadGroupBrief(bh, bh.CurTime, bh.Height+1)
+	//if gb == nil {
+	//	blog.log("spreadGroupBrief nil, bh=%v, height=%v", bh.Hash.ShortS(), bh.Height)
+	//	return
+	//}
 
 	gpk := p.getGroupPubKey(groupsig.DeserializeID(bh.GroupId))
 	if !slot.VerifyGroupSigns(gpk, vctx.prevBH.Random) { //组签名验证通过
@@ -236,7 +236,7 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 		Block: *block,
 	}
 
-	p.NetServer.BroadcastNewBlock(cbm, gb)
+	p.NetServer.BroadcastNewBlock(cbm)
 	tlog.log("broadcasted height=%v, 耗时%v秒", bh.Height, time.Since(bh.CurTime).Seconds())
 
 	//发送日志

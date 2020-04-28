@@ -67,7 +67,7 @@ type NetworkServer interface {
 
 	SendVerifiedCast(cvm *model.ConsensusVerifyMessage, receiver groupsig.ID)
 
-	BroadcastNewBlock(cbm *model.ConsensusBlockMessage, group *GroupBrief)
+	BroadcastNewBlock(cbm *model.ConsensusBlockMessage)
 
 	JoinGroupNet(groupId string)
 
