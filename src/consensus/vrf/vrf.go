@@ -34,7 +34,7 @@ func VRFGenProve(pk VRFPublicKey, sk VRFPrivateKey, m []byte) (pi VRFProve, err 
 }
 
 func VRFProof2Hash(pi VRFProve) VRFRandomValue {
-	return VRFRandomValue(pi[1 : 32+1])
+	return VRFRandomValue(pi[:32])
 }
 
 func VRFVerify(pk VRFPublicKey, pi VRFProve, m []byte) (bool, error) {

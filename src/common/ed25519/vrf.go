@@ -6,13 +6,13 @@ import (
 	"x/src/common/ed25519/edwards25519"
 	"crypto/sha512"
 	"encoding/hex"
-	"fmt"
-	"strconv"
 )
 
 const (
 	N2 = 32 // ceil(log2(q) / 8)
 	N  = N2 / 2
+
+	ProveSize = 80
 )
 
 var (
@@ -92,10 +92,6 @@ func ECVRFProve(sk PrivateKey, m []byte) (pi VRFProve, err error) {
 	buf.Write(provePart2[:])
 	buf.Write(provePart3[:])
 
-	if len(buf.Bytes()) != 80 {
-		piStr := fmt.Sprintf("%v", pi)
-		panic("vrf gen prove bad format! pi length:" + strconv.Itoa(len(pi)) + "pi:" + piStr)
-	}
 	return buf.Bytes(), nil
 }
 
@@ -107,10 +103,7 @@ func ECVRFProve(sk PrivateKey, m []byte) (pi VRFProve, err error) {
  *
  */
 func ECVRFVerify(pk PublicKey, pi VRFProve, m []byte) (bool, error) {
-	if len(pi) != 80 {
-		piStr := fmt.Sprintf("%v", pi)
-		panic("vrf verify bad format! pi length:" + strconv.Itoa(len(pi)) + "pi:" + piStr)
-	}
+	pi = tryZeroPadding(pi)
 	gamma, cScalar, sScalar, err := decodeProof(pi)
 	if err != nil {
 		return false, err
@@ -409,4 +402,13 @@ func isCanonical(s [32]byte) byte {
 	d := (0xed - 1 - s[0]) >> 8
 
 	return 1 - (c & d & 1)
+}
+
+func tryZeroPadding(pi VRFProve) VRFProve {
+	if len(pi) >= ProveSize {
+		return pi
+	}
+	piPadding := make([]byte, ProveSize)
+	copy(piPadding[ProveSize-len(pi):], pi[:])
+	return piPadding
 }
