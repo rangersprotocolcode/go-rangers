@@ -54,5 +54,5 @@ func IsGroupWorkQualifiedAt(gh *types.GroupHeader, h uint64) bool {
 }
 
 func CalDeltaByTime(after time.Time, before time.Time) int {
-	return int(after.Sub(before).Seconds()) / model.MAX_GROUP_BLOCK_TIME
+	return int(after.Sub(before).Seconds())/model.MAX_GROUP_BLOCK_TIME + 1
 }
