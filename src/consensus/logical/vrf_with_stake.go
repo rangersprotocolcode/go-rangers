@@ -24,7 +24,7 @@ func init() {
 
 func verifyBlockVRF(bh *types.BlockHeader, preBH *types.BlockHeader, castor *model.MinerInfo, totalStake uint64) (bool, error) {
 	prove := vrf.VRFProve(bh.ProveValue.Bytes())
-	delta := int(bh.CurTime.Sub(preBH.CurTime).Seconds()) / model.MAX_GROUP_BLOCK_TIME
+	delta := CalDeltaByTime(bh.CurTime, preBH.CurTime)
 	ok, err := vrf.VRFVerify(castor.VrfPK, prove, genVrfMsg(preBH.Random, delta))
 	if !ok {
 		return ok, err

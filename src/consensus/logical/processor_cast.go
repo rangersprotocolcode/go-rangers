@@ -105,8 +105,8 @@ func (p *Processor) triggerCastCheck() {
 	p.Ticker.StartAndTriggerRoutine(p.getCastCheckRoutineName())
 }
 
-func (p *Processor) CalcVerifyGroupFromCache(preBH *types.BlockHeader, height uint64) *groupsig.ID {
-	var hash = CalcRandomHash(preBH, height)
+func (p *Processor) CalcVerifyGroupFromCache(preBH *types.BlockHeader, castTime time.Time, height uint64) *groupsig.ID {
+	var hash = CalcRandomHash(preBH, castTime)
 
 	selectGroup, err := p.globalGroups.SelectVerifyGroupFromCache(hash, height)
 	if err != nil {
@@ -116,8 +116,8 @@ func (p *Processor) CalcVerifyGroupFromCache(preBH *types.BlockHeader, height ui
 	return &selectGroup
 }
 
-func (p *Processor) CalcVerifyGroupFromChain(preBH *types.BlockHeader, height uint64) *groupsig.ID {
-	var hash = CalcRandomHash(preBH, height)
+func (p *Processor) CalcVerifyGroupFromChain(preBH *types.BlockHeader, castTime time.Time, height uint64) *groupsig.ID {
+	var hash = CalcRandomHash(preBH, castTime)
 
 	selectGroup, err := p.globalGroups.SelectVerifyGroupFromChain(hash, height)
 	if err != nil {
@@ -127,8 +127,8 @@ func (p *Processor) CalcVerifyGroupFromChain(preBH *types.BlockHeader, height ui
 	return &selectGroup
 }
 
-func (p *Processor) spreadGroupBrief(bh *types.BlockHeader, height uint64) *net.GroupBrief {
-	nextId := p.CalcVerifyGroupFromCache(bh, height)
+func (p *Processor) spreadGroupBrief(bh *types.BlockHeader, castTime time.Time, height uint64) *net.GroupBrief {
+	nextId := p.CalcVerifyGroupFromCache(bh, castTime, height)
 	if nextId == nil {
 		return nil
 	}
@@ -206,7 +206,8 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 		blog.log("core.GenerateBlock is nil! won't broadcast block!")
 		return
 	}
-	gb := p.spreadGroupBrief(bh, bh.Height+1)
+	//下一块的验证组
+	gb := p.spreadGroupBrief(bh, bh.CurTime, bh.Height+1)
 	if gb == nil {
 		blog.log("spreadGroupBrief nil, bh=%v, height=%v", bh.Hash.ShortS(), bh.Height)
 		return
@@ -317,14 +318,13 @@ func (p *Processor) blockProposal() {
 	}
 	blog.log("gen vrf prove:%v", pi)
 
-
 	if worker.timeout() {
 		blog.log("vrf worker timeout")
 		return
 	}
 	middleware.PerfLogger.Debugf("after genProve, last: %v, height: %v", time.Since(start), height)
 
-	gb := p.spreadGroupBrief(top, height)
+	gb := p.spreadGroupBrief(top, start, height)
 	if gb == nil {
 		blog.log("spreadGroupBrief nil, bh=%v, height=%v", top.Hash.ShortS(), height)
 		return

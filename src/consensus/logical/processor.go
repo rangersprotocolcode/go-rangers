@@ -156,7 +156,7 @@ func (p *Processor) isCastLegal(bh *types.BlockHeader, preHeader *types.BlockHea
 
 	var gid = groupsig.DeserializeID(bh.GroupId)
 
-	selectGroupIdFromCache := p.CalcVerifyGroupFromCache(preHeader, bh.Height)
+	selectGroupIdFromCache := p.CalcVerifyGroupFromCache(preHeader, bh.CurTime, bh.Height)
 
 	if selectGroupIdFromCache == nil {
 		err = common.ErrSelectGroupNil
@@ -166,7 +166,7 @@ func (p *Processor) isCastLegal(bh *types.BlockHeader, preHeader *types.BlockHea
 	var verifyGid = *selectGroupIdFromCache
 
 	if !selectGroupIdFromCache.IsEqual(gid) { //有可能组已经解散，需要再从链上取
-		selectGroupIdFromChain := p.CalcVerifyGroupFromChain(preHeader, bh.Height)
+		selectGroupIdFromChain := p.CalcVerifyGroupFromChain(preHeader, bh.CurTime, bh.Height)
 		if selectGroupIdFromChain == nil {
 			err = common.ErrSelectGroupNil
 			return

@@ -34,11 +34,11 @@ func VerifyBHExpire(bh *types.BlockHeader, preBH *types.BlockHeader) (time.Time,
 	expire := GetCastExpireTime(preBH.CurTime, DeltaHeightByTime(bh, preBH), bh.Height)
 	return expire, utility.GetTime().After(expire)
 }
-func CalcRandomHash(preBH *types.BlockHeader, height uint64) common.Hash {
+func CalcRandomHash(preBH *types.BlockHeader, castTime time.Time) common.Hash {
 	data := preBH.Random
 	var hash common.Hash
 
-	deltaHeight := height - preBH.Height
+	deltaHeight := CalDeltaByTime(castTime, preBH.CurTime)
 	for ; deltaHeight > 0; deltaHeight-- {
 		hash = base.Data2CommonHash(data)
 		data = hash.Bytes()
@@ -51,4 +51,8 @@ func IsGroupDissmisedAt(gh *types.GroupHeader, h uint64) bool {
 }
 func IsGroupWorkQualifiedAt(gh *types.GroupHeader, h uint64) bool {
 	return !IsGroupDissmisedAt(gh, h) && gh.WorkHeight <= h
+}
+
+func CalDeltaByTime(after time.Time, before time.Time) int {
+	return int(after.Sub(before).Seconds()) / model.MAX_GROUP_BLOCK_TIME
 }
