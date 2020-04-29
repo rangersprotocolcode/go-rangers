@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	GXVersion = "0.0.7.5"
+	GXVersion = "0.0.7.6"
 	// Section 默认section配置
 	Section = "gx"
 
