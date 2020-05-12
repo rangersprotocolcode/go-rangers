@@ -14,7 +14,7 @@ import (
 	"x/src/middleware/notify"
 	"x/src/middleware"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 const (

@@ -17,7 +17,6 @@ require (
 	github.com/docker/spdystream v0.0.0-20170912183627-bc6354cbbc29 // indirect
 	github.com/fd/go-nat v0.0.0-20150508093758-dcaf50131e48 // indirect
 	github.com/glacjay/goini v0.0.0-20161120062552-fd3024d87ee2
-	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.3.1
 	github.com/gorilla/websocket v1.2.1-0.20180306181548-eb925808374e
 	github.com/gxed/hashland v0.0.0-20180221191214-d9f6b97f8db2 // indirect

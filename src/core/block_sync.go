@@ -12,7 +12,7 @@ import (
 	"x/src/middleware/types"
 	"x/src/middleware"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 const (

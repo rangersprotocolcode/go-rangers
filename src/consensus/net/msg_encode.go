@@ -3,7 +3,7 @@ package net
 import (
 	"x/src/middleware/pb"
 	"x/src/consensus/model"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"x/src/middleware/types"
 )
 

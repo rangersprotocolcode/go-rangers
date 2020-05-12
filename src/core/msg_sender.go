@@ -9,7 +9,7 @@ import (
 	"x/src/middleware/pb"
 	"x/src/middleware/types"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 type transactionRequestMessage struct {

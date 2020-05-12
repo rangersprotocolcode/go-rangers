@@ -2,7 +2,7 @@ package types
 
 import (
 	"fmt"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"x/src/middleware/pb"
 
 	"x/src/common"

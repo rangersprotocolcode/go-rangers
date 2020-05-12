@@ -12,7 +12,7 @@ import (
 	"x/src/middleware/types"
 	"x/src/middleware/pb"
 
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 )
 
 const forkTimeOut = 3 * time.Second

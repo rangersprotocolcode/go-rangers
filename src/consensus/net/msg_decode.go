@@ -6,7 +6,7 @@ import (
 	"time"
 	"x/src/consensus/model"
 	"x/src/network"
-	"github.com/gogo/protobuf/proto"
+	"github.com/golang/protobuf/proto"
 	"x/src/common"
 	"x/src/middleware/types"
 )
