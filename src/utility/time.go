@@ -22,8 +22,14 @@ func GetTime() time.Time {
 			ticker := time.NewTicker(time.Second * 10)
 			go func() {
 				for _ = range ticker.C {
-					timeOffset = ntpOffset(false)
-					fmt.Printf("refresh ntp, timeOffset: %s\n", timeOffset)
+					offsetResult := ntpOffset(false)
+					if offsetResult != 0 {
+						timeOffset = offsetResult
+						fmt.Printf("refresh ntp, timeOffset: %s\n", timeOffset)
+					} else {
+						fmt.Printf("refresh ntp failed, use last timeOffset: %s\n", timeOffset)
+					}
+
 				}
 
 			}()
