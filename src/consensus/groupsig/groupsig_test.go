@@ -1,11 +1,11 @@
 package groupsig
 
-import (
-	"testing"
-	"x/src/consensus/model"
-	"x/src/common"
-	"fmt"
-)
+//import (
+//	"testing"
+//	"x/src/consensus/model"
+//	"x/src/common"
+//	"fmt"
+//)
 
 //
 //import (

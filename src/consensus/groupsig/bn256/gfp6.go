@@ -1,4 +1,4 @@
-package bn_curve
+package bn256
 
 // For details of the algorithms used, see "Multiplication and Squaring on
 // Pairing-Friendly Fields, Devegili et al.

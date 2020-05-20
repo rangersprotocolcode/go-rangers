@@ -3,7 +3,8 @@ package groupsig
 import (
 	"math/big"
 
-	"x/src/consensus/groupsig/bn_curve"
+	//"x/src/consensus/groupsig/bn_curve"
+	bn_curve "x/src/consensus/groupsig/bn256"
 	"fmt"
 )
 

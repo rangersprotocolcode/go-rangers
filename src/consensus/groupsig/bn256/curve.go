@@ -1,4 +1,4 @@
-package bn_curve
+package bn256
 
 import (
 	"math/big"
@@ -15,7 +15,7 @@ var curveB = newGFp(3)
 // curveGen is the generator of G₁.
 var curveGen = &curvePoint{
 	x: *newGFp(1),
-	y: *newGFp(2),
+	y: *newGFp(-2),
 	z: *newGFp(1),
 	t: *newGFp(1),
 }
@@ -171,38 +171,30 @@ func (c *curvePoint) Double(a *curvePoint) {
 	gfpAdd(t, d, d)
 	gfpSub(&c.x, f, t)
 
+	gfpMul(&c.z, &a.y, &a.z)
+	gfpAdd(&c.z, &c.z, &c.z)
+
 	gfpAdd(t, C, C)
 	gfpAdd(t2, t, t)
 	gfpAdd(t, t2, t2)
 	gfpSub(&c.y, d, &c.x)
 	gfpMul(t2, e, &c.y)
 	gfpSub(&c.y, t2, t)
-
-	gfpMul(t, &a.y, &a.z)
-	gfpAdd(&c.z, t, t)
 }
 
 func (c *curvePoint) Mul(a *curvePoint, scalar *big.Int) {
-	precomp := [1 << 2]*curvePoint{nil, {}, {}, {}}
-	precomp[1].Set(a)
-	precomp[2].Set(a)
-	gfpMul(&precomp[2].x, &precomp[2].x, xiTo2PSquaredMinus2Over3)
-	precomp[3].Add(precomp[1], precomp[2])
-
-	multiScalar := curveLattice.Multi(scalar)
-
-	sum := &curvePoint{}
+	sum, t := &curvePoint{}, &curvePoint{}
 	sum.SetInfinity()
-	t := &curvePoint{}
 
-	for i := len(multiScalar) - 1; i >= 0; i-- {
+	for i := scalar.BitLen(); i >= 0; i-- {
 		t.Double(sum)
-		if multiScalar[i] == 0 {
-			sum.Set(t)
+		if scalar.Bit(i) != 0 {
+			sum.Add(t, a)
 		} else {
-			sum.Add(t, precomp[multiScalar[i]])
+			sum.Set(t)
 		}
 	}
+
 	c.Set(sum)
 }
 
