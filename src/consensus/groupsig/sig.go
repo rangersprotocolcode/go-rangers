@@ -7,7 +7,6 @@ import (
 	"math/big"
 
 	"x/src/common"
-	//"x/src/consensus/groupsig/bn_curve"
 	bn_curve "x/src/consensus/groupsig/bn256"
 	"x/src/consensus/base"
 )
