@@ -97,9 +97,9 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 func getGenesisProposer() []*types.Miner {
 	genesisProposers := make([]GenesisProposer, 1)
 	genesisProposer := GenesisProposer{}
-	genesisProposer.MinerId = "0xa5e8b9ec9da40f9efbca10fb5255ca6f1d01d26243252d68a8c13416c60f0a37"
-	genesisProposer.MinerPubKey = "0x2209aac94b5f1eee89abd8260fb41b01a5dcdc75b94f81d0cb62227dcab165cb0acb61932491a896558b7a2120471c8d4dbd4219963b55ae215d20411011ee91245dde1f76e98937b2602951998b68e3baa2c1cb666c6893c5dfe4e62685f7fa0fad2195d91edd0a88ae2cf73839c4536dd293a4733832f826687b821815cfec"
-	genesisProposer.VRFPubkey = "0x832cb19963192fbf5d4f0f3c308247c06abd7ab12baea734527c73f81ee10f9d"
+	genesisProposer.MinerId = "0xe059d17139e2915d270ef8f3eee2f3e1438546ba2f06eb674dda0967846b6951"
+	genesisProposer.MinerPubKey 	="0x5540fcfe2c3c24eb6026fc9e051fd696eb14fcbefef63b1a7b8cf5b3841864737a7c655aa9f64e2382e5521698e7ed793342708592fe7428ccc7ccc96b4abfe88ae2a2b78f69e0ac8c6b75953457626852cc266f79b2f834ffe8474f730ce4d23f7f3859cc991ec57630c448eccf8ad8bdc53ba24b23ebbd8c801ade98074391"
+	genesisProposer.VRFPubkey = "0xa20f5cda3ecb124910c10a52a6354043d8e465afdeae206536b39125d84c7bff"
 	genesisProposers[0] = genesisProposer
 
 	miners := make([]*types.Miner, 0)
