@@ -22,6 +22,7 @@ import (
 	"x/src/network"
 	"x/src/service"
 	"x/src/statemachine"
+	"encoding/json"
 )
 
 const (
@@ -210,6 +211,13 @@ func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerInfo) {
 		common.DefaultLogger.Infof("VRF PrivateKey: %s", minerDO.VrfSK.GetHexString())
 		common.DefaultLogger.Infof("VRF PubKey: %s", minerDO.VrfPK.GetHexString())
 		common.DefaultLogger.Infof("Miner ID: %s", minerDO.ID.GetHexString())
+
+		miner := types.Miner{}
+		miner.Id = minerDO.ID.Serialize()
+		miner.PublicKey = minerDO.PubKey.Serialize()
+		miner.VrfPublicKey = minerDO.VrfPK
+		minerBytes, _ := json.Marshal(miner)
+		common.DefaultLogger.Infof("Miner apply info:%s|%s", minerDO.ID.GetHexString(), string(minerBytes))
 	}
 
 }
