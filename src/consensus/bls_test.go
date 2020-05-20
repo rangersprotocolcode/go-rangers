@@ -147,11 +147,11 @@ func genSharePiece(threshold int, minerInfo testMinerInfo, groupMemberList []*te
 		fmt.Printf("%s\n", seckey.GetHexString())
 	}
 
-	fmt.Printf("deri 0:%v:\n",minerInfo.SecretSeed.Deri(0).Bytes())
+	fmt.Printf("deri 0:%v:\n", minerInfo.SecretSeed.Deri(0).Bytes())
 	seedSecKey := groupsig.NewSeckeyFromRand(minerInfo.SecretSeed.Deri(0))
 	seedPubkey := groupsig.GeneratePubkey(*seedSecKey)
-	fmt.Printf("seed seckey:%v,seed seckey bytes:%v:\n",seedSecKey.GetHexString(),seedSecKey.Serialize())
-	fmt.Printf("seed pubkey:%v:\n",seedPubkey.GetHexString())
+	fmt.Printf("seed seckey:%v,seed seckey bytes:%v:\n", seedSecKey.GetHexString(), seedSecKey.Serialize())
+	fmt.Printf("seed pubkey:%v:\n", seedPubkey.GetHexString())
 
 	for i := 0; i < len(groupMemberList); i++ {
 		miner := groupMemberList[i]
@@ -198,13 +198,13 @@ func BenchmarkSign(b *testing.B) {
 	prepareData()
 	b.ResetTimer()
 
-	begin:= time.Now()
+	begin := time.Now()
 	for i := 0; i < testCount; i++ {
 		secKey := privateKeyList[i]
 		message := messageList[i]
 		signList[i] = groupsig.Sign(secKey, message)
 	}
-	fmt.Printf("cost:%v\n",time.Since(begin).Seconds())
+	fmt.Printf("cost:%v\n", time.Since(begin).Seconds())
 }
 
 func BenchmarkVerify(b *testing.B) {
@@ -396,5 +396,5 @@ func TestSign(t *testing.T) {
 	secKey := new(groupsig.Seckey)
 	secKey.Deserialize(secKeyBytes)
 	sign := groupsig.Sign(*secKey, message)
-	fmt.Printf("sign:%s\n",sign.GetHexString())
+	fmt.Printf("sign:%s\n", sign.GetHexString())
 }

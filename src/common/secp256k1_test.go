@@ -11,7 +11,9 @@ import (
 	"io/ioutil"
 	"strings"
 	"math/big"
+	"time"
 )
+
 //---------------------------------------Function Test-----------------------------------------------------------------
 func TestKeyLength(test *testing.T) {
 	key := genRandomKey()
@@ -85,6 +87,7 @@ func genRandomMessage(length uint64) []byte {
 func runSigAndVerifyOnce(test *testing.T) {
 	key := genRandomKey()
 	msg := genRandomMessage(32)
+	fmt.Printf("privatekey:%v,length:%d\n", key.ToBytes(), len(key.ToBytes()))
 
 	sign := key.Sign(msg)
 	assert.Equal(test, len(sign.Bytes()), 65)
@@ -100,6 +103,7 @@ func runSigAndVerifyOnce(test *testing.T) {
 	verifyResult := secp256k1.VerifySignature(recoveredPubKey, msg, sign.Bytes())
 	assert.Equal(test, verifyResult, true)
 }
+
 //---------------------------------------Benchmark Test-----------------------------------------------------------------
 var testCount = 1000
 var privateList = make([]PrivateKey, testCount)
@@ -110,11 +114,13 @@ func BenchmarkPrivateSign(b *testing.B) {
 	prepareData()
 	b.ResetTimer()
 
+	begin := time.Now()
 	for i := 0; i < testCount; i++ {
 		privateKey := privateList[i]
 		message := messageList[i]
 		signList[i] = privateKey.Sign(message)
 	}
+	fmt.Printf("cost:%v\n", time.Since(begin).Seconds())
 }
 
 func BenchmarkRecoverPubKey(b *testing.B) {
@@ -166,6 +172,7 @@ func prepareData() {
 		messageList[i] = genRandomMessage(32)
 	}
 }
+
 //---------------------------------------Comparison Test---------------------------------------------------------------
 func TestGenComparisonData(test *testing.T) {
 	fileName := "secp256_comparisonData_go.txt"

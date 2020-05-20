@@ -11,6 +11,7 @@ import (
 	"encoding/hex"
 	"io/ioutil"
 	"strings"
+	"time"
 )
 
 //---------------------------------------Function Test-----------------------------------------------------------------
@@ -84,6 +85,7 @@ func BenchmarkGenProve(b *testing.B) {
 	prepareData()
 	b.ResetTimer()
 
+	begin := time.Now()
 	for i := 0; i < testCount; i++ {
 		privateKey := privateKeyList[i]
 		message := messageList[i]
@@ -94,6 +96,7 @@ func BenchmarkGenProve(b *testing.B) {
 		}
 		proofList[i] = proof
 	}
+	fmt.Printf("cost:%v\n", time.Since(begin).Seconds())
 }
 
 func BenchmarkVerifyProof(b *testing.B) {
