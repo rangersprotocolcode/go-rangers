@@ -11,16 +11,17 @@ import (
 	"x/src/consensus/model"
 	"x/src/core"
 	"x/src/middleware/types"
+	"encoding/hex"
 )
 
 const (
 	SS_INITING  int32 = iota
-	SS_WAITING        //等待签名片段达到阈值
-	SS_SIGNED         //自己是否签名过
-	SS_RECOVERD       //恢复出组签名
-	SS_VERIFIED       //组签名用组公钥验证通过
-	SS_SUCCESS        //已上链广播
-	SS_FAILED         //铸块过程中失败，不可逆
+	SS_WAITING   //等待签名片段达到阈值
+	SS_SIGNED    //自己是否签名过
+	SS_RECOVERD  //恢复出组签名
+	SS_VERIFIED  //组签名用组公钥验证通过
+	SS_SUCCESS   //已上链广播
+	SS_FAILED    //铸块过程中失败，不可逆
 )
 
 //铸块槽结构，和某个KING的共识数据一一对应
@@ -138,6 +139,8 @@ func (sc *SlotContext) VerifyGroupSigns(pk groupsig.Pubkey, preRandom []byte) bo
 		}
 	}
 	if !b {
+		stdLogger.Debugf("Group sign verify failed!group pub key=%v, block hash=%v, group sign=%v, group sign1=%v .",
+			pk.GetHexString(), sc.BH.Hash.String(), hex.EncodeToString(sc.BH.Signature), sc.gSignGenerator.GetGroupSign().GetHexString())
 		sc.setSlotStatus(SS_FAILED)
 	}
 	return b
