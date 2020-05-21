@@ -194,6 +194,7 @@ func (sc *SlotContext) AcceptVerifyPiece(bh *types.BlockHeader, si *model.SignIn
 			sc.setSlotStatus(SS_RECOVERD)
 			sc.BH.Signature = sc.gSignGenerator.GetGroupSign().Serialize()
 			sc.BH.Random = sc.rSignGenerator.GetGroupSign().Serialize()
+			stdLogger.Debugf("Recovered group sign.Block hash:%v,group sign:%v", sc.BH.Hash.String(), hex.EncodeToString(sc.BH.Signature))
 			if len(sc.BH.Signature) == 0 {
 				newBizLog("AcceptVerifyPiece").log("slot bh sign is empty hash=%v, sign=%v", sc.BH.Hash.ShortS(), sc.gSignGenerator.GetGroupSign().ShortS())
 			}
