@@ -33,6 +33,23 @@ func TestSignAndVerifyOnce(test *testing.T) {
 	runSignAndVerifyOnce(test)
 }
 
+func TestByFixKey(t *testing.T) {
+	secKey := new(groupsig.Seckey)
+	secKey.SetHexString("0x1c072ed882b56e42c34791586829d8f0805b306fb933c29bd727e9343a914596")
+	pubkey := groupsig.GeneratePubkey(*secKey)
+	message, _ := hex.DecodeString("524f1d03d1d81e94a099042736d40bd9681b867321443ff58a4568e274dbd83b")
+
+	sig := groupsig.Sign(*secKey, message)
+	verifyResult := groupsig.VerifySig(*pubkey, message, sig)
+	assert.Equal(t, verifyResult, true)
+
+	fmt.Printf("seckey:%v\n", secKey.GetHexString())
+	fmt.Printf("pubkey:%v\n", pubkey.GetHexString())
+	fmt.Printf("pubkey bytes:%v\n", pubkey.Serialize())
+	fmt.Printf("message:%v\n", "0x"+hex.EncodeToString(message))
+	fmt.Printf("sig:%v\n", sig.GetHexString())
+}
+
 func TestSignAndVerifyRepeatedly(test *testing.T) {
 	var testCount = 1000
 	for i := 0; i < testCount; i++ {
@@ -72,7 +89,7 @@ func runSignAndVerifyOnce(test *testing.T) {
 }
 
 func TestMockGroupSign(test *testing.T) {
-	groupSignAndVerify(3)
+	groupSignAndVerify(17)
 }
 
 type testMinerInfo struct {
@@ -147,7 +164,6 @@ func genSharePiece(threshold int, minerInfo testMinerInfo, groupMemberList []*te
 		fmt.Printf("%s\n", seckey.GetHexString())
 	}
 
-	fmt.Printf("deri 0:%v:\n", minerInfo.SecretSeed.Deri(0).Bytes())
 	seedSecKey := groupsig.NewSeckeyFromRand(minerInfo.SecretSeed.Deri(0))
 	seedPubkey := groupsig.GeneratePubkey(*seedSecKey)
 	fmt.Printf("seed seckey:%v,seed seckey bytes:%v:\n", seedSecKey.GetHexString(), seedSecKey.Serialize())
