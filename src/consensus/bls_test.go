@@ -227,6 +227,7 @@ func BenchmarkVerify(b *testing.B) {
 	prepareData()
 	b.ResetTimer()
 
+	begin := time.Now()
 	for i := 0; i < testCount; i++ {
 		publicKey := publicKeyList[i]
 		message := messageList[i]
@@ -236,6 +237,7 @@ func BenchmarkVerify(b *testing.B) {
 			panic("Verify sign failed!")
 		}
 	}
+	fmt.Printf("cost:%v\n", time.Since(begin).Seconds())
 }
 
 func BenchmarkSignAndVerify(b *testing.B) {

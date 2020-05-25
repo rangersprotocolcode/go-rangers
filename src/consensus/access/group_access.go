@@ -10,6 +10,7 @@ import (
 	"x/src/middleware/types"
 	"x/src/core"
 	"x/src/common"
+	"encoding/hex"
 )
 
 var groupAccessorInstance *GroupAccessor
@@ -161,7 +162,7 @@ func (groupAccessor *GroupAccessor) SelectVerifyGroupFromCache(hash common.Hash,
 	if hash.Big().BitLen() > 0 && len(qualifiedGS) > 0 {
 		index := groupAccessor.selectIndex(len(qualifiedGS), hash)
 		ga = qualifiedGS[index].GroupID
-		logger.Debugf("SelectVerifyGroupFromCache! Height:%v,Qualified groups:%v, index:%v\n", height, gids, index)
+		logger.Debugf("SelectVerifyGroupFromCache! Height:%v,Hash:%s,Qualified groups:%v, index:%v\n", height, hash.String(), gids, index)
 		return ga, nil
 	}
 	return ga, fmt.Errorf("SelectVerifyGroupFromCache failed, hash %v, qualified groups %v", hash.ShortS(), gids)
@@ -294,10 +295,12 @@ func (groupAccessor *GroupAccessor) GetCastQualifiedGroupFromChains(height uint6
 			break
 		}
 	}
+	logger.Debugf("GetCastQualifiedGroupFromChains height:%d", height)
 	n := len(groups)
 	reverseGroups := make([]*types.Group, n)
 	for i := 0; i < n; i++ {
 		reverseGroups[n-i-1] = groups[i]
+		logger.Debugf("GetCastQualifiedGroupFromChains group id:%s", hex.EncodeToString(groups[i].Id))
 	}
 	return reverseGroups
 }
@@ -309,6 +312,7 @@ func (groupAccessor *GroupAccessor) RemoveGroupsFromCache(gids []groupsig.ID) {
 	removeIDMap := make(map[string]bool)
 	for _, gid := range gids {
 		removeIDMap[gid.GetHexString()] = true
+		logger.Debugf("Remove group from cache!Group id:%s", gid.GetHexString())
 	}
 	newGS := make([]*model.GroupInfo, 0)
 	for _, g := range groupAccessor.groups {

@@ -15,6 +15,7 @@ import (
 	"x/src/core"
 	"x/src/middleware/notify"
 	"x/src/middleware/types"
+	"encoding/hex"
 )
 
 //见证人处理器
@@ -177,7 +178,7 @@ func (p *Processor) isCastLegal(bh *types.BlockHeader, preHeader *types.BlockHea
 		}
 		if !selectGroupIdFromChain.IsEqual(gid) {
 			err = common.ErrSelectGroupInequal
-			stdLogger.Debugf("selectGroupId from both cache and chain not equal, expect %v, receive %v", selectGroupIdFromChain.ShortS(), gid.ShortS())
+			stdLogger.Debugf("selectGroupId from both cache and chain not equal, expect %v, receive %v.bh hash:%s,height:%d,castor:%s", selectGroupIdFromChain.ShortS(), gid.ShortS(), bh.Hash.String(), bh.Height, hex.EncodeToString(bh.Castor))
 			return
 		}
 		verifyGid = *selectGroupIdFromChain

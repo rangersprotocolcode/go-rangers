@@ -12,6 +12,7 @@ import (
 	"x/src/middleware/notify"
 	"x/src/middleware/types"
 	"x/src/utility"
+	"encoding/hex"
 )
 
 const (
@@ -204,6 +205,7 @@ func (chain *groupChain) save(group *types.Group) error {
 	chain.count++
 	chain.groups.Put([]byte(groupCountKey), utility.UInt64ToByte(chain.count))
 	chain.lastGroup = group
+	logger.Debugf("Add group on chain success! Group id:%s,group pubkey:%s", hex.EncodeToString(group.Id), hex.EncodeToString(group.PubKey))
 
 	if nil != notify.BUS {
 		notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group,})
