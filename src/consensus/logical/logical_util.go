@@ -35,6 +35,7 @@ func VerifyBHExpire(bh *types.BlockHeader, preBH *types.BlockHeader) (time.Time,
 	return expire, utility.GetTime().After(expire)
 }
 func CalcRandomHash(preBH *types.BlockHeader, castTime time.Time) common.Hash {
+	stdLogger.Debugf("cal random.cast time:%s,pre time:%s,pre hash:%s", castTime.String(), preBH.CurTime.String(), preBH.Hash.String())
 	data := preBH.Random
 	var hash common.Hash
 
