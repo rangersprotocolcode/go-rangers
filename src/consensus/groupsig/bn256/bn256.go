@@ -333,10 +333,11 @@ func (e *G2) Unmarshal(m []byte) ([]byte, error) {
 		e.p = &twistPoint{}
 	}
 
-	if len(m) > 0 && m[0] == 0x00 {
-		e.p.SetInfinity()
-		return m[1:], nil
-	} else if len(m) <4*numBytes {
+	//if len(m) > 0 && m[0] == 0x00 {
+	//	e.p.SetInfinity()
+	//	return m[1:], nil
+	//} else
+	if len(m) < 4*numBytes {
 		return nil, errors.New("bn256: not enough data")
 	}
 	//} else if len(m) > 0 && m[0] != 0x01 {
