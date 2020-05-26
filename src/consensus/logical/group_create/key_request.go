@@ -67,7 +67,7 @@ func (p *groupCreateProcessor) askSignPK(minerId groupsig.ID, groupId groupsig.I
 // responses own public key
 func (p *groupCreateProcessor) OnMessageSignPKReq(msg *model.SignPubkeyReqMessage) {
 	sender := msg.SignInfo.GetSignerID()
-	groupCreateLogger.Debugf("Rcv sign pk req! sender:%s", sender)
+	groupCreateLogger.Debugf("Rcv sign pk req! sender:%s", sender.GetHexString())
 	var err error
 	defer func() {
 		groupCreateLogger.Debugf("sender=%v, gid=%v, result=%v", sender.ShortS(), msg.GroupID.ShortS(), err)
@@ -100,7 +100,7 @@ func (p *groupCreateProcessor) OnMessageSignPKReq(msg *model.SignPubkeyReqMessag
 	}
 	if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, msg); ok {
 		resp.SignInfo = signInfo
-		groupCreateLogger.Debugf("answer signPKReq Message, receiver %v, gid %v", sender.ShortS(), msg.GroupID.ShortS())
+		groupCreateLogger.Debugf("answer signPKReq Message, receiver %v, groupId:%v,groupHash:%v,signPK:%s,msg hash:%s", sender.ShortS(), msg.GroupID.GetHexString(),)
 		p.NetServer.AnswerSignPkMessage(resp, sender)
 	} else {
 		err = fmt.Errorf("gen Sign fail, ski=%v,%v", p.minerInfo.ID.ShortS(), p.minerInfo.SecKey.GetHexString())
