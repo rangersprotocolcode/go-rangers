@@ -61,7 +61,7 @@ func (p *Processor) normalPieceVerify(gid groupsig.ID, vctx *VerifyContext, trac
 		blog := newBizLog("normalPieceVerify")
 		if signInfo, ok := model.NewSignInfo(skey, p.mi.ID, &cvm); ok {
 			cvm.SignInfo = signInfo
-			blog.debug("SendVerifiedCast seckey=%v, miner id=%v,data hash:%v,sig:%v", p.mi.SecKey.GetHexString(), p.mi.ID.GetHexString(), cvm.SignInfo.GetDataHash().String(), cvm.SignInfo.GetSignature().GetHexString())
+			blog.debug("SendVerifiedCast seckey=%v, miner id=%v,data hash:%v,sig:%v", skey.GetHexString(), p.mi.ID.GetHexString(), cvm.SignInfo.GetDataHash().String(), cvm.SignInfo.GetSignature().GetHexString())
 			cvm.GenRandomSign(skey, vctx.prevBH.Random)
 			blog.debug("call network service SendVerifiedCast hash=%v, height=%v", bh.Hash.ShortS(), bh.Height)
 			traceLog.log("SendVerifiedCast height=%v, castor=%v", bh.Height, slot.castor.ShortS())
