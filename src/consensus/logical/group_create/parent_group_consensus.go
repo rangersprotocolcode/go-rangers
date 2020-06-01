@@ -186,9 +186,9 @@ func (p *groupCreateProcessor) OnMessageParentGroupConsensus(msg *model.ParentGr
 	groupCreateDebugLogger.Debugf("Effective candidate:%s num:%d", candidateBuff.String(), len(msg.GroupInitInfo.GroupMembers))
 	p.createGroupCache.Add(msg.GroupInitInfo.GroupHash(), msg.GroupInitInfo.GroupHeader.CreateHeight)
 
-	if p.minerInfo.GetMinerID().IsEqual(msg.SignInfo.GetSignerID()) {
-		return
-	}
+	//if p.minerInfo.GetMinerID().IsEqual(msg.SignInfo.GetSignerID()) {
+	//	return
+	//}
 	parentGid := msg.GroupInitInfo.ParentGroupID()
 
 	gpk, ok := p.GetMemberSignPubKey(parentGid, msg.SignInfo.GetSignerID())
