@@ -148,7 +148,10 @@ func (gs *groupSyncer) groupHandler(msg notify.Message) {
 
 	sourceId := groupInfoMsg.Peer
 	groups := groupInfo.Groups
-	addGroupResult := true
+	if len(groups) == 0 {
+		return
+	}
+
 	gs.logger.Debugf("Rcv groups ,from:%s,groups len %d", sourceId, len(groups))
 	for _, group := range groupInfo.Groups {
 		gs.logger.Debugf("AddGroup Id:%s,pre id:%s", common.BytesToAddress(group.Id).GetHexString(), common.BytesToAddress(group.Header.Parent).GetHexString())
@@ -157,18 +160,11 @@ func (gs *groupSyncer) groupHandler(msg notify.Message) {
 		if e != nil {
 			gs.logger.Errorf("[GroupSyncer]add group on chain error:%s", e.Error())
 			if e != common.ErrGroupAlreadyExist {
-				addGroupResult = false
-				break
+				return
 			}
 		}
 	}
-	if len(groups) == 0 {
-		addGroupResult = false
-	}
 
-	if !addGroupResult {
-		return
-	}
 	gs.logger.Debugf("Group sync finished! Set syncing false.Set candidate nil!")
 	gs.lock.Lock("groupHandler")
 	gs.candidate = ""
