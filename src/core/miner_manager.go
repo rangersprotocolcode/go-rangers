@@ -1,13 +1,13 @@
 package core
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"sync"
 	"time"
 	"x/src/common"
 
-	"github.com/vmihailenco/msgpack"
 	"x/src/middleware/types"
 	"x/src/service"
 	"x/src/storage/account"
@@ -57,7 +57,7 @@ func (mm *MinerManager) GetMinerById(id []byte, kind byte, accountdb *account.Ac
 	data := accountdb.GetData(db, id)
 	if data != nil && len(data) > 0 {
 		var miner types.Miner
-		msgpack.Unmarshal(data, &miner)
+		json.Unmarshal(data, &miner)
 		return &miner
 	}
 	return nil
@@ -254,7 +254,7 @@ func (mm *MinerManager) AddMiner(addr common.Address, miner *types.Miner, accoun
 func (mm *MinerManager) UpdateMiner(miner *types.Miner, accountdb *account.AccountDB) {
 	id := miner.Id
 	db := mm.getMinerDatabase(miner.Type)
-	data, _ := msgpack.Marshal(miner)
+	data, _ := json.Marshal(miner)
 
 	accountdb.SetData(db, id, data)
 }
@@ -341,7 +341,7 @@ type MinerIterator struct {
 
 func (mi *MinerIterator) Current() (*types.Miner, error) {
 	var miner types.Miner
-	err := msgpack.Unmarshal(mi.iterator.Value, &miner)
+	err := json.Unmarshal(mi.iterator.Value, &miner)
 	if err != nil {
 		logger.Debugf("MinerIterator Unmarshal Error %+v %+v %+v", mi.iterator.Key, err, mi.iterator.Value)
 	}
