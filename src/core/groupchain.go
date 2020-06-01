@@ -3,8 +3,8 @@ package core
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"sync"
 	"x/src/common"
@@ -12,7 +12,6 @@ import (
 	"x/src/middleware/notify"
 	"x/src/middleware/types"
 	"x/src/utility"
-	"encoding/hex"
 )
 
 const (
@@ -82,8 +81,8 @@ func (chain *groupChain) AddGroup(group *types.Group) error {
 		logger.Debugf("Group chain add group %+v", group)
 	}
 	if exist, _ := chain.groups.Has(group.Id); exist {
-		notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group,})
-		return errors.New("group already exist")
+		notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group})
+		return common.ErrGroupAlreadyExist
 	}
 
 	ok, err := consensusHelper.CheckGroup(group)
@@ -210,7 +209,7 @@ func (chain *groupChain) save(group *types.Group) error {
 	logger.Debugf("Add group on chain success! Group id:%s,group pubkey:%s", hex.EncodeToString(group.Id), hex.EncodeToString(group.PubKey))
 
 	if nil != notify.BUS {
-		notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group,})
+		notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group})
 	}
 	if GroupSyncer != nil {
 		GroupSyncer.sendGroupHeightToNeighbor(chain.count)

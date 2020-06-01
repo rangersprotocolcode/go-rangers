@@ -1,8 +1,9 @@
 package core
 
 import (
-	"time"
 	"sync"
+	"time"
+	"x/src/utility"
 )
 
 const (
@@ -42,15 +43,15 @@ func (bpm *peerManager) markEvil(id string) {
 		bpm.badPeerMeter[id] = 1
 		return
 	} else {
-		evilCount ++
-		//if evilCount > evilMaxCount {
-		//	delete(bpm.badPeerMeter, id)
-		//	bpm.badPeers[id] = utility.GetTime()
-		//	logger.Debugf("[PeerManager]Add bad peer:%s", id)
-		//} else {
-		//	bpm.badPeerMeter[id] = evilCount
-		//	logger.Debugf("[PeerManager]EvilCount:%s,%d", id, evilCount)
-		//}
+		evilCount++
+		if evilCount > evilMaxCount {
+			delete(bpm.badPeerMeter, id)
+			bpm.badPeers[id] = utility.GetTime()
+			logger.Debugf("[PeerManager]Add bad peer:%s", id)
+		} else {
+			bpm.badPeerMeter[id] = evilCount
+			logger.Debugf("[PeerManager]EvilCount:%s,%d", id, evilCount)
+		}
 	}
 }
 
@@ -72,7 +73,7 @@ func (bpm *peerManager) loop() {
 			logger.Debugf("[PeerManager]Bad peers cleaner time up!")
 			cleanIds := make([]string, 0, len(bpm.badPeers))
 			for id, markTime := range bpm.badPeers {
-				if time.Since(markTime) >= badPeersCleanInterval {
+				if utility.GetTime().Sub(markTime) >= badPeersCleanInterval {
 					cleanIds = append(cleanIds, id)
 				}
 			}
