@@ -2,9 +2,10 @@ package access
 
 import (
 	"github.com/hashicorp/golang-lru"
-	"x/src/consensus/groupsig"
-	"x/src/middleware/log"
 	"x/src/common"
+	"x/src/consensus/groupsig"
+	"x/src/core"
+	"x/src/middleware/log"
 )
 
 var logger log.Logger
@@ -36,7 +37,7 @@ func GetMinerPubKey(id groupsig.ID) *groupsig.Pubkey {
 	}
 	miner := pkPool.minerAccess.GetLightMiner(id)
 	if miner == nil {
-		miner = pkPool.minerAccess.GetProposeMiner(id)
+		miner = pkPool.minerAccess.GetProposeMiner(id, core.EmptyHash)
 	}
 	if miner != nil {
 		pkPool.pkCache.Add(id.GetHexString(), &miner.PubKey)

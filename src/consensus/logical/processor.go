@@ -3,6 +3,7 @@ package logical
 import (
 	"x/src/consensus/groupsig"
 
+	"encoding/hex"
 	"fmt"
 	"github.com/hashicorp/golang-lru"
 	"sync"
@@ -15,7 +16,6 @@ import (
 	"x/src/core"
 	"x/src/middleware/notify"
 	"x/src/middleware/types"
-	"encoding/hex"
 )
 
 //见证人处理器
@@ -139,7 +139,7 @@ func (p Processor) GetMinerInfo() *model.MinerInfo {
 func (p *Processor) isCastLegal(bh *types.BlockHeader, preHeader *types.BlockHeader) (ok bool, group *model.GroupInfo, err error) {
 	blog := newBizLog("isCastLegal")
 	castor := groupsig.DeserializeID(bh.Castor)
-	minerDO := p.minerReader.GetProposeMiner(castor)
+	minerDO := p.minerReader.GetProposeMiner(castor, preHeader.StateTree)
 	if minerDO == nil {
 		err = fmt.Errorf("minerDO is nil, id=%v", castor.ShortS())
 		return

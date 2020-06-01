@@ -6,7 +6,6 @@ import (
 	"x/src/consensus/base"
 	"x/src/consensus/groupsig"
 	"x/src/consensus/model"
-	"x/src/consensus/vrf"
 	"x/src/middleware/types"
 )
 
@@ -104,21 +103,22 @@ func (p *Processor) setVrfWorker(vrf *vrfWorker) {
 	p.vrf.Store(vrf)
 }
 
-func (p *Processor) GetSelfMinerDO() *model.SelfMinerInfo {
-	md := p.minerReader.GetProposeMiner(p.GetMinerID())
+func (p *Processor) GetSelfMinerDO(pre *types.BlockHeader) *model.SelfMinerInfo {
+	md := p.minerReader.GetProposeMiner(p.GetMinerID(), pre.StateTree)
 	if md != nil {
 		p.mi.MinerInfo = *md
 	}
 	return p.mi
 }
 
-func (p *Processor) canProposalAt(h uint64) bool {
-	miner := p.minerReader.GetProposeMiner(p.GetMinerID())
+func (p *Processor) canProposalAt(pre *types.BlockHeader) bool {
+	miner := p.minerReader.GetProposeMiner(p.GetMinerID(), pre.StateTree)
 	if miner == nil {
 		//		stdLogger.Errorf("get nil proposeMiner:%s", p.GetMinerID().String())
 		return false
 	}
-	return miner.CanCastAt(h)
+
+	return miner.CanCastAt(pre.Height + 1)
 }
 
 func (p *Processor) GetJoinedWorkGroupNums() (work, avail int) {
@@ -134,23 +134,6 @@ func (p *Processor) GetJoinedWorkGroupNums() (work, avail int) {
 		avail++
 	}
 	return
-}
-
-func (p *Processor) CalcBlockHeaderQN(bh *types.BlockHeader) uint64 {
-	pi := vrf.VRFProve(bh.ProveValue.Bytes())
-	castor := groupsig.DeserializeID(bh.Castor)
-	miner := p.minerReader.GetProposeMiner(castor)
-	if miner == nil {
-		stdLogger.Infof("CalcBHQN getMiner nil id=%v, bh=%v", castor.ShortS(), bh.Hash.ShortS())
-		return 0
-	}
-	pre := p.MainChain.QueryBlockByHash(bh.PreHash)
-	if pre == nil {
-		return 0
-	}
-	totalStake := p.minerReader.GetTotalStake(pre.Header.Height, false)
-	_, qn := validateProve(pi, miner.Stake, totalStake)
-	return qn
 }
 
 //func marshalBlock(b types.Block) ([]byte, error) {

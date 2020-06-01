@@ -37,8 +37,8 @@ func (p *Processor) checkSelfCastRoutine() bool {
 	}
 
 	castHeight := top.Height + 1
-	if !p.canProposalAt(castHeight) {
-		blog.log("can not proposal at%d", castHeight)
+	if !p.canProposalAt(top) {
+		blog.log("can not proposal at %d", castHeight)
 		return false
 	}
 
@@ -58,7 +58,7 @@ func (p *Processor) checkSelfCastRoutine() bool {
 		expireTime = worker.expire.Add(time.Second * time.Duration(uint64(model.Param.MaxGroupCastTime)))
 	}
 	blog.log("topHeight=%v, topHash=%v, topCurTime=%v, castHeight=%v, expireTime=%v,current time:%v", top.Height, top.Hash.ShortS(), top.CurTime, castHeight, expireTime, utility.GetTime())
-	worker = newVRFWorker(p.GetSelfMinerDO(), top, castHeight, expireTime)
+	worker = newVRFWorker(p.GetSelfMinerDO(top), top, castHeight, expireTime)
 	p.setVrfWorker(worker)
 	p.blockProposal()
 	return true

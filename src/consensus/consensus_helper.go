@@ -36,10 +36,6 @@ func (helper *ConsensusHelperImpl) VRFProve2Value(prove *big.Int) *big.Int {
 	return vrf.VRFProof2Hash(vrf.VRFProve(prove.Bytes())).Big()
 }
 
-func (helper *ConsensusHelperImpl) CalculateQN(bh *types.BlockHeader) uint64 {
-	return Proc.CalcBlockHeaderQN(bh)
-}
-
 func (helper *ConsensusHelperImpl) VerifyHash(b *types.Block) common.Hash {
 	return Proc.GenVerifyHash(b, helper.ID)
 }

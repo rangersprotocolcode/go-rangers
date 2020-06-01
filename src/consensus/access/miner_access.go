@@ -1,13 +1,15 @@
 package access
 
 import (
-	"x/src/consensus/groupsig"
-	"x/src/middleware/types"
-	"x/src/core"
-	"x/src/consensus/vrf"
-	"x/src/consensus/model"
-	"x/src/middleware/log"
 	"x/src/common"
+	"x/src/consensus/groupsig"
+	"x/src/consensus/model"
+	"x/src/consensus/vrf"
+	"x/src/core"
+	"x/src/middleware/log"
+	"x/src/middleware/types"
+	"x/src/service"
+	"x/src/storage/account"
 )
 
 var minerPoolReaderInstance *MinerPoolReader
@@ -42,12 +44,19 @@ func (access *MinerPoolReader) GetLightMiner(id groupsig.ID) *model.MinerInfo {
 	return access.convert2MinerDO(miner)
 }
 
-func (access *MinerPoolReader) GetProposeMiner(id groupsig.ID) *model.MinerInfo {
+func (access *MinerPoolReader) GetProposeMiner(id groupsig.ID, hash common.Hash) *model.MinerInfo {
 	minerPool := access.minerPool
 	if minerPool == nil {
 		return nil
 	}
-	miner := minerPool.GetMinerById(id.Serialize(), common.MinerTypeProposer, nil)
+
+	var accountDB *account.AccountDB
+	accountDB = nil
+	if hash != core.EmptyHash {
+		accountDB, _ = service.AccountDBManagerInstance.GetAccountDBByHash(hash)
+	}
+
+	miner := minerPool.GetMinerById(id.Serialize(), common.MinerTypeProposer, accountDB)
 	if miner == nil {
 		//access.blog.log("getMinerById error id %v", id.ShortS())
 		return nil

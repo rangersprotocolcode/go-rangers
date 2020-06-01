@@ -145,7 +145,7 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 
 	slog.addStage("getPK")
 	if isProposal { //提案者
-		castorDO := p.minerReader.GetProposeMiner(castor)
+		castorDO := p.minerReader.GetProposeMiner(castor, preBH.StateTree)
 		if castorDO == nil {
 			err = fmt.Errorf("castorDO nil id=%v", castor.ShortS())
 			return
