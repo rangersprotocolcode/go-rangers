@@ -98,8 +98,8 @@ func getGenesisProposer() []*types.Miner {
 	genesisProposers := make([]GenesisProposer, 1)
 	genesisProposer := GenesisProposer{}
 	genesisProposer.MinerId = "0xe059d17139e2915d270ef8f3eee2f3e1438546ba2f06eb674dda0967846b6951"
-	genesisProposer.MinerPubKey 	="0x5540fcfe2c3c24eb6026fc9e051fd696eb14fcbefef63b1a7b8cf5b3841864737a7c655aa9f64e2382e5521698e7ed793342708592fe7428ccc7ccc96b4abfe88ae2a2b78f69e0ac8c6b75953457626852cc266f79b2f834ffe8474f730ce4d23f7f3859cc991ec57630c448eccf8ad8bdc53ba24b23ebbd8c801ade98074391"
-	genesisProposer.VRFPubkey = "0xa20f5cda3ecb124910c10a52a6354043d8e465afdeae206536b39125d84c7bff"
+	genesisProposer.MinerPubKey = "0x16d0b0a106e2de32b42ea4096c9e80c883c6ffa9e3f19f09cb45dfff2b02d09a3bcf95f2d0c33b7caf5db42d55d3459395c1b8d6a5d315a113edc39c4ce3a3d5269ab4a9514a998fdcc693d90a42505185270a184a07ddfb553b181be13e968480ef0df4c06cf657957b07118776a38fea3bcf758ea4491a4213719e2f6537b5"
+	genesisProposer.VRFPubkey = "0x009f3b76f3e49dcdd6d2ee8421f077fd4c68c176b18e1e602a3c1f09f9272250"
 	genesisProposers[0] = genesisProposer
 
 	miners := make([]*types.Miner, 0)

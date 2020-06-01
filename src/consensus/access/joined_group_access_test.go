@@ -49,7 +49,7 @@ type genesisGroup struct {
 	Pubkeys   []groupsig.Pubkey
 }
 
-func load(gid groupsig.ID, address string) *model.JoinedGroupInfo {
+func load(gid groupsig.ID, privateKeyStr string) *model.JoinedGroupInfo {
 	db, err := db.NewLDBDatabase("/Users/daijia/go/src/x/deploy/daily/groupstore3", 1, 1)
 	if err != nil {
 		panic("newLDBDatabase fail, file=" + "" + "err=" + err.Error())
@@ -65,7 +65,8 @@ func load(gid groupsig.ID, address string) *model.JoinedGroupInfo {
 		return nil
 	}
 	//logger.Debugf("load bs:%v,privateKey:%v",bs,storage.privateKey.GetHexString())
-	minerInfo := model.NewSelfMinerInfo(common.FromHex(address))
+	sk := common.HexStringToSecKey(privateKeyStr)
+	minerInfo := model.NewSelfMinerInfo(*sk)
 	privateKey := getEncryptPrivateKey(minerInfo)
 	m, err := privateKey.Decrypt(rand.Reader, bs)
 	if err != nil {

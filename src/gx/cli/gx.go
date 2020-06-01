@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"gopkg.in/alecthomas/kingpin.v2"
 	"net/http"
@@ -22,7 +23,6 @@ import (
 	"x/src/network"
 	"x/src/service"
 	"x/src/statemachine"
-	"encoding/json"
 )
 
 const (
@@ -129,7 +129,8 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 	gx.getAccountInfo(privateKey)
 	fmt.Println("Your Miner Address:", gx.account.Address)
 
-	minerInfo := model.NewSelfMinerInfo(gx.account.Miner.ID[:])
+	sk := common.HexStringToSecKey(gx.account.Sk)
+	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 	minerId := "0x" + common.Bytes2Hex(gx.account.Miner.ID[:])
 	network.InitNetwork(cnet.MessageHandler, minerId, env, gateAddr)

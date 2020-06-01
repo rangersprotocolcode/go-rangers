@@ -2,8 +2,8 @@ package model
 
 import (
 	"x/src/common"
-	"x/src/consensus/groupsig"
 	"x/src/consensus/base"
+	"x/src/consensus/groupsig"
 	"x/src/consensus/vrf"
 )
 
@@ -31,13 +31,14 @@ type SelfMinerInfo struct {
 	MinerInfo
 }
 
-func NewSelfMinerInfo(address []byte) SelfMinerInfo {
+func NewSelfMinerInfo(privateKey common.PrivateKey) SelfMinerInfo {
 	var mi SelfMinerInfo
-	mi.SecretSeed = base.RandFromBytes(address)
+	mi.SecretSeed = base.RandFromBytes(privateKey.PrivKey.D.Bytes())
 	mi.SecKey = *groupsig.NewSeckeyFromRand(mi.SecretSeed)
 	mi.PubKey = *groupsig.GeneratePubkey(mi.SecKey)
 	mi.Stake = minerStake
-	mi.ID = groupsig.DeserializeID(address)
+	idBytes := privateKey.GetPubKey().GetID()
+	mi.ID = groupsig.DeserializeID(idBytes[:])
 
 	var err error
 	mi.VrfPK, mi.VrfSK, err = vrf.VRFGenerateKey(&mi)

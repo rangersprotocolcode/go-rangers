@@ -75,7 +75,7 @@ func getAccountByPrivateKey(pk string) Account {
 	}
 
 	id := publicKey.GetID()
-	minerDO := model.NewSelfMinerInfo(id[:])
+	minerDO := model.NewSelfMinerInfo(*privateKey)
 	minerRaw := &MinerRaw{
 		BPk:   minerDO.PubKey.GetHexString(),
 		BSk:   minerDO.SecKey.GetHexString(),
@@ -102,7 +102,7 @@ func (am *AccountManager) NewAccount(password string, miner bool) *Result {
 
 	if miner {
 		id := publicKey.GetID()
-		minerDO := model.NewSelfMinerInfo(id[:])
+		minerDO := model.NewSelfMinerInfo(privateKey)
 		minerRaw := &MinerRaw{
 			BPk:   minerDO.PubKey.GetHexString(),
 			BSk:   minerDO.SecKey.GetHexString(),
