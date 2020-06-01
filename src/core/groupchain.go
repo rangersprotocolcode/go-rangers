@@ -86,13 +86,15 @@ func (chain *groupChain) AddGroup(group *types.Group) error {
 		return errors.New("group already exist")
 	}
 
-	//ok, err := consensusHelper.CheckGroup(group)
-	//if !ok {
-	//	if err == common.ErrCreateBlockNil {
-	//		logger.Infof("Add group failed:depend on block!")
-	//	}
-	//	return err
-	//}
+	ok, err := consensusHelper.CheckGroup(group)
+	if !ok {
+		if err == common.ErrCreateBlockNil {
+			logger.Infof("Add group failed:depend on block!")
+		} else {
+			logger.Infof("Add group failed:%v", err.Error())
+		}
+		return err
+	}
 
 	chain.lock.Lock()
 	defer chain.lock.Unlock()

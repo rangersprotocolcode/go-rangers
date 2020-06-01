@@ -7,6 +7,7 @@ import (
 
 	"crypto/sha256"
 	"strconv"
+	"encoding/hex"
 )
 
 func TestPrivateKey(test *testing.T) {
@@ -156,10 +157,10 @@ func BenchmarkRecover(b *testing.B) {
 func TestAccount(test *testing.T) {
 	privateKey := GenerateKey("")
 	pubkey := privateKey.GetPubKey()
-	address := pubkey.GetAddress()
+	id := pubkey.GetID()
 	fmt.Printf("sk:%s\n", privateKey.GetHexString())
 	fmt.Printf("pk:%s\n", pubkey.GetHexString())
-	fmt.Printf("address:%s\n", address.GetHexString())
+	fmt.Printf("id:%s\n", hex.EncodeToString(id[:]))
 }
 
 func TestGenerateKey(t *testing.T) {

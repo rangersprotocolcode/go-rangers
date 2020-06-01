@@ -18,7 +18,7 @@ const (
 	CANDIDATES_MIN_RATIO     = 1  //最小的候选人相对于组成员数量的倍数
 
 	EPOCH                 int = 5
-	Group_Create_Gap          = EPOCH * 2
+	Group_Create_Gap          = 50
 	Group_Wait_Pong_Gap       = Group_Create_Gap + EPOCH*2
 	GROUP_Ready_GAP           = Group_Create_Gap + EPOCH*6                  //组准备就绪(建成组)的间隔为1个epoch
 	GROUP_Work_GAP            = Group_Create_Gap + EPOCH*8                  //组准备就绪后, 等待可以铸块的间隔为4个epoch
