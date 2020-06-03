@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	MAX_GROUP_BLOCK_TIME   int = 5           //组铸块最大允许时间=5s
+	MAX_GROUP_BLOCK_TIME   int = 5            //组铸块最大允许时间=5s
 	MAX_WAIT_BLOCK_TIME    int = 0            //广播出块前等待最大时间=2s
 	CONSENSUS_VERSION          = 1            //共识版本号
 	MAX_UNKNOWN_BLOCKS         = 5            //内存保存最大不能上链的未来块（中间块没有收到）
@@ -17,12 +17,11 @@ const (
 	GROUP_MIN_MEMBERS    int = 3  //一个组最大的成员数量
 	CANDIDATES_MIN_RATIO     = 1  //最小的候选人相对于组成员数量的倍数
 
-
-	Group_Wait_Pong_Gap       = common.Group_Create_Gap + common.EPOCH*2
-	GROUP_Ready_GAP           = common.Group_Create_Gap + common.EPOCH*6                  //组准备就绪(建成组)的间隔为1个epoch
-	GROUP_Work_GAP            = common.Group_Create_Gap + common.EPOCH*8                  //组准备就绪后, 等待可以铸块的间隔为4个epoch
-	GROUP_Work_DURATION       = 2 * 60 * 60 * 1000 / common.CastingInterval //组铸块的周期为100个epoch
-	Group_Create_Interval     = common.EPOCH * 10
+	Group_Wait_Pong_Gap   = common.Group_Create_Gap + common.EPOCH*2
+	GROUP_Ready_GAP       = common.Group_Create_Gap + common.EPOCH*6    //组准备就绪(建成组)的间隔为1个epoch
+	GROUP_Work_GAP        = common.Group_Create_Gap + common.EPOCH*8    //组准备就绪后, 等待可以铸块的间隔为4个epoch
+	GROUP_Work_DURATION   = 2 * 60 * 60 * 1000 / common.CastingInterval //组铸块的周期为100个epoch
+	Group_Create_Interval = common.EPOCH * 10
 )
 
 type ConsensusParam struct {
@@ -65,7 +64,7 @@ func InitParam(cc common.SectionConfManager) {
 		MaxQN:               5,
 		MaxFutureBlock:      MAX_UNKNOWN_BLOCKS,
 		GroupInitMaxSeconds: GROUP_INIT_MAX_SECONDS,
-		Epoch:               uint64(cc.GetInt("epoch", EPOCH)),
+		Epoch:               uint64(cc.GetInt("epoch", common.EPOCH)),
 		CandidatesMinRatio:  cc.GetInt("candidates_min_ratio", CANDIDATES_MIN_RATIO),
 		GroupReadyGap:       uint64(cc.GetInt("group_ready_gap", GROUP_Ready_GAP)),
 		GroupWorkGap:        uint64(cc.GetInt("group_cast_qualify_gap", GROUP_Work_GAP)),
@@ -73,7 +72,7 @@ func InitParam(cc common.SectionConfManager) {
 		//EffectGapAfterApply: EPOCH,
 		PotentialProposal:   5,
 		CreateGroupInterval: uint64(Group_Create_Interval),
-		GroupCreateGap:      uint64(Group_Create_Gap),
+		GroupCreateGap:      uint64(common.Group_Create_Gap),
 		GroupWaitPongGap:    uint64(Group_Wait_Pong_Gap),
 	}
 }
