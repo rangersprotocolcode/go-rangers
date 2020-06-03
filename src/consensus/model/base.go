@@ -47,10 +47,6 @@ func GenGroupMemberRoot(ids []groupsig.ID) common.Hash {
 	return base.Data2CommonHash(data.Bytes())
 }
 
-func (gi *GroupInitInfo) CheckMemberHash(mems []groupsig.ID) bool {
-	return gi.GroupHeader.MemberRoot == GenGroupMemberRoot(mems)
-}
-
 func (gi *GroupInitInfo) ReadyTimeout(height uint64) bool {
 	return gi.GroupHeader.CreateHeight+Param.GroupReadyGap <= height
 }

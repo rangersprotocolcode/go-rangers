@@ -58,8 +58,10 @@ const maxWriteSize = 100000
 type GameExecutor struct {
 	chain *blockChain
 
-	requestIds map[string]uint64
-	conds      sync.Map
+	requestIds    map[string]uint64
+	requestIdLock sync.RWMutex
+
+	conds sync.Map
 
 	debug     bool // debug 为true，则不开启requestId校验
 	writeChan chan notify.Message
@@ -77,6 +79,7 @@ func initGameExecutor(blockChainImpl *blockChain) {
 		gameExecutor.requestIds = make(map[string]uint64)
 	}
 
+	gameExecutor.requestIdLock = sync.RWMutex{}
 	gameExecutor.conds = sync.Map{}
 
 	if nil != common.GlobalConf {
@@ -103,6 +106,9 @@ func (executor *GameExecutor) getCond(gameId string) *sync.Cond {
 func (executor *GameExecutor) onBlockAddSuccess(message notify.Message) {
 	block := message.GetData().(types.Block)
 	bh := block.Header
+
+	executor.requestIdLock.Lock()
+	defer executor.requestIdLock.Unlock()
 
 	for key, value := range bh.RequestIds {
 		if executor.requestIds[key] < value {
@@ -285,7 +291,11 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 		if nil != service.TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw) {
 			// bingo
 			executor.logger.Infof("Tx is executed!")
-			executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
+			if !executor.debug{
+				executor.requestIdLock.Lock()
+				executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
+				executor.requestIdLock.Unlock()
+			}
 			return false, "Tx Is Executed"
 		}
 
@@ -417,9 +427,13 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 	executor.sendTransaction(&txRaw)
 
 	// bingo
-	executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
+	if !executor.debug {
+		executor.requestIdLock.Lock()
+		executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
+		executor.requestIdLock.Unlock()
+	}
 
-	executor.logger.Debugf("finish tx. result: %t, message: %s, cost time : %v, txhash: %s, requestId: %d", result, message, time.Since(start), txhash, executor.requestIds[txRaw.Target])
+	executor.logger.Debugf("finish tx. result: %t, message: %s, cost time : %v, txhash: %s, requestId: %d", result, message, time.Since(start), txhash, executor.getRequestId(txRaw.Target))
 	return result, message
 }
 
@@ -513,18 +527,18 @@ func (executor *GameExecutor) RunWrite(msg notify.Message) {
 	// 校验 requestId
 	if !executor.debug {
 		requestId := message.Nonce
-		if requestId <= executor.requestIds[gameId] {
+		if requestId <= executor.getRequestId(gameId) {
 			// 已经执行过的消息，忽略
-			executor.logger.Errorf("%s requestId :%d skipped, current requestId: %d", gameId, requestId, executor.requestIds[gameId])
+			executor.logger.Errorf("%s requestId :%d skipped, current requestId: %d", gameId, requestId, executor.getRequestId(gameId))
 			return
 		}
 
 		// requestId 按序执行
 		executor.getCond(gameId).L.Lock()
-		for ; requestId != (executor.requestIds[gameId] + 1); {
+		for ; requestId != (executor.getRequestId(gameId) + 1); {
 
 			// waiting until the right requestId
-			executor.logger.Infof("%s requestId :%d is waiting, current requestId: %d", gameId, requestId, executor.requestIds[gameId])
+			executor.logger.Infof("%s requestId :%d is waiting, current requestId: %d", gameId, requestId, executor.getRequestId(gameId))
 
 			// todo 超时放弃
 			executor.getCond(gameId).Wait()
@@ -553,4 +567,11 @@ func (executor *GameExecutor) RunWrite(msg notify.Message) {
 		executor.getCond(gameId).Broadcast()
 		executor.getCond(gameId).L.Unlock()
 	}
+}
+
+func (executor *GameExecutor) getRequestId(gameId string) uint64 {
+	executor.requestIdLock.RLock()
+	defer executor.requestIdLock.RUnlock()
+
+	return executor.requestIds[gameId]
 }
