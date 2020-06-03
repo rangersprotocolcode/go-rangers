@@ -19,8 +19,6 @@ const (
 
 	Group_Wait_Pong_Gap   = common.Group_Create_Gap + common.EPOCH*2
 	GROUP_Ready_GAP       = common.Group_Create_Gap + common.EPOCH*6    //组准备就绪(建成组)的间隔为1个epoch
-	GROUP_Work_GAP        = common.Group_Create_Gap + common.EPOCH*8    //组准备就绪后, 等待可以铸块的间隔为4个epoch
-	GROUP_Work_DURATION   = 2 * 60 * 60 * 1000 / common.CastingInterval //组铸块的周期为100个epoch
 	Group_Create_Interval = common.EPOCH * 10
 )
 
@@ -67,8 +65,6 @@ func InitParam(cc common.SectionConfManager) {
 		Epoch:               uint64(cc.GetInt("epoch", common.EPOCH)),
 		CandidatesMinRatio:  cc.GetInt("candidates_min_ratio", CANDIDATES_MIN_RATIO),
 		GroupReadyGap:       uint64(cc.GetInt("group_ready_gap", GROUP_Ready_GAP)),
-		GroupWorkGap:        uint64(cc.GetInt("group_cast_qualify_gap", GROUP_Work_GAP)),
-		GroupworkDuration:   uint64(cc.GetInt("group_cast_duration", GROUP_Work_DURATION)),
 		//EffectGapAfterApply: EPOCH,
 		PotentialProposal:   5,
 		CreateGroupInterval: uint64(Group_Create_Interval),
