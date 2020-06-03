@@ -99,7 +99,7 @@ func (chain *blockChain) validateTxRoot(txMerkleTreeRoot common.Hash, txs []*typ
 
 func calcTxTree(txs []*types.Transaction) common.Hash {
 	if nil == txs || 0 == len(txs) {
-		return EmptyHash
+		return emptyHash
 	}
 
 	buf := new(bytes.Buffer)
@@ -112,7 +112,7 @@ func calcTxTree(txs []*types.Transaction) common.Hash {
 //todo: performance. this function costs too much
 func calcReceiptsTree(receipts types.Receipts) common.Hash {
 	if nil == receipts || 0 == len(receipts) {
-		return EmptyHash
+		return emptyHash
 	}
 
 	//keybuf := new(bytes.Buffer)

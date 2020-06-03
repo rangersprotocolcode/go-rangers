@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"sync"
-	"time"
+	"strconv"
 	"x/src/common"
+	"x/src/middleware/db"
 
 	"x/src/middleware/types"
 	"x/src/service"
@@ -15,28 +15,22 @@ import (
 	"x/src/utility"
 )
 
-const (
-	heavyMinerNetTriggerInterval = time.Second * 10
-)
-
 var (
 	emptyValue       [0]byte
 	MinerManagerImpl *MinerManager
 )
 
 type MinerManager struct {
-	heavyMinerNetTrigger *time.Timer
-
-	lock sync.RWMutex
-}
-
-type MinerCountOperation struct {
-	Code int
+	pkCache *db.LDBDatabase
 }
 
 func initMinerManager() {
-	MinerManagerImpl = &MinerManager{heavyMinerNetTrigger: time.NewTimer(heavyMinerNetTriggerInterval)}
-	MinerManagerImpl.lock = sync.RWMutex{}
+	pkp, err := db.NewLDBDatabase("pkp"+strconv.Itoa(common.InstanceIndex), 1, 1)
+	if err != nil {
+		panic("newLDBDatabase fail, file=" + "" + "err=" + err.Error())
+	}
+
+	MinerManagerImpl = &MinerManager{pkCache: pkp}
 }
 
 func (mm *MinerManager) GetMiner(minerId []byte, accountdb *account.AccountDB) *types.Miner {
@@ -53,7 +47,7 @@ func (mm *MinerManager) GetMinerById(id []byte, kind byte, accountdb *account.Ac
 		accountdb = service.AccountDBManagerInstance.GetLatestStateDB()
 	}
 
-	db := mm.getMinerDatabase(kind)
+	db := mm.getMinerDatabaseAddress(kind)
 	data := accountdb.GetData(db, id)
 	if data != nil && len(data) > 0 {
 		var miner types.Miner
@@ -129,48 +123,7 @@ func (mm *MinerManager) MinerIterator(minerType byte, height uint64) *MinerItera
 	return mm.minerIterator(minerType, accountDB)
 }
 
-//func (mm *MinerManager) HeavyMinerCount(height uint64) uint64 {
-//	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
-//	if err != nil {
-//		logger.Error("Get account db by height %d error:%s", height, err.Error())
-//		return 0
-//	}
-//	heavyMinerCountByte := accountDB.GetData(common.MinerCountDBAddress, []byte(proposerCountKey))
-//	return utility.ByteToUInt64(heavyMinerCountByte)
-//
-//}
-//
-//func (mm *MinerManager) LightMinerCount(height uint64) uint64 {
-//	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
-//	if err != nil {
-//		logger.Error("Get account db by height %d error:%s", height, err.Error())
-//		return 0
-//	}
-//	lightMinerCountByte := accountDB.GetData(common.MinerCountDBAddress, []byte(validatorCountKey))
-//	return utility.ByteToUInt64(lightMinerCountByte)
-//}
-
-//func (mm *MinerManager) loop() {
-//	for {
-//		<-mm.heavyMinerNetTrigger.C
-//		if mm.hasNewHeavyMiner {
-//			iterator := mm.minerIterator(common.MinerTypeProposer, nil)
-//			array := make([]string, 0)
-//			for iterator.Next() {
-//				miner, _ := iterator.Current()
-//				gid := groupsig.DeserializeId(miner.Id)
-//				array = append(array, gid.String())
-//			}
-//			mm.heavyMiners = array
-//			network.GetNetInstance().BuildGroupNet(network.FullNodeVirtualGroupId, array)
-//			logger.Infof("MinerManager HeavyMinerUpdate Size:%d", len(array))
-//			mm.hasNewHeavyMiner = false
-//		}
-//		mm.heavyMinerNetTrigger.Reset(heavyMinerNetTriggerInterval)
-//	}
-//}
-
-func (mm *MinerManager) getMinerDatabase(minerType byte) common.Address {
+func (mm *MinerManager) getMinerDatabaseAddress(minerType byte) common.Address {
 	switch minerType {
 	case common.MinerTypeValidator:
 		return common.ValidatorDBAddress
@@ -248,12 +201,18 @@ func (mm *MinerManager) AddMiner(addr common.Address, miner *types.Miner, accoun
 	accountdb.SubBalance(addr, stake)
 	mm.UpdateMiner(miner, accountdb)
 	logger.Debugf("add miner: %v", miner)
+
+	mm.pkCache.Put(miner.Id, miner.PublicKey)
 	return true, ""
+}
+
+func (mm *MinerManager) GetPubkey(id []byte) ([]byte, error) {
+	return mm.pkCache.Get(id)
 }
 
 func (mm *MinerManager) UpdateMiner(miner *types.Miner, accountdb *account.AccountDB) {
 	id := miner.Id
-	db := mm.getMinerDatabase(miner.Type)
+	db := mm.getMinerDatabaseAddress(miner.Type)
 	data, _ := json.Marshal(miner)
 
 	accountdb.SetData(db, id, data)
@@ -263,23 +222,19 @@ func (mm *MinerManager) addMiner(miner *types.Miner, accountdb *account.AccountD
 	logger.Debugf("Miner manager add miner, %v", miner)
 
 	id := miner.Id
-	db := mm.getMinerDatabase(miner.Type)
+	db := mm.getMinerDatabaseAddress(miner.Type)
 
 	if accountdb.GetData(db, id) != nil {
 		return -1
 	} else {
 		mm.UpdateMiner(miner, accountdb)
-		//if miner.Type == common.MinerTypeProposer {
-		//	mm.hasNewHeavyMiner = true
-		//}
-		//mm.updateMinerCount(miner.Type, minerCountIncrease, accountdb)
 		return 1
 	}
 }
 
 func (mm *MinerManager) removeMiner(id []byte, ttype byte, accountdb *account.AccountDB) {
 	logger.Debugf("Miner manager remove miner %d", ttype)
-	db := mm.getMinerDatabase(ttype)
+	db := mm.getMinerDatabaseAddress(ttype)
 	accountdb.SetData(db, id, emptyValue[:])
 }
 
@@ -299,41 +254,13 @@ func (mm *MinerManager) abortMiner(id []byte, ttype byte, height uint64, account
 }
 
 func (mm *MinerManager) minerIterator(minerType byte, accountdb *account.AccountDB) *MinerIterator {
-	db := mm.getMinerDatabase(minerType)
+	db := mm.getMinerDatabaseAddress(minerType)
 	if accountdb == nil {
 		accountdb = service.AccountDBManagerInstance.GetLatestStateDB()
 	}
 	iterator := &MinerIterator{iterator: accountdb.DataIterator(db, []byte(""))}
 	return iterator
 }
-
-//func (mm *MinerManager) updateMinerCount(minerType byte, operation MinerCountOperation, accountdb *account.AccountDB) {
-//	if minerType == common.MinerTypeProposer {
-//		heavyMinerCountByte := accountdb.GetData(common.MinerCountDBAddress, []byte(proposerCountKey))
-//		heavyMinerCount := utility.ByteToUInt64(heavyMinerCountByte)
-//		if operation == minerCountIncrease {
-//			heavyMinerCount++
-//		} else if operation == minerCountDecrease {
-//			heavyMinerCount--
-//		}
-//		accountdb.SetData(common.MinerCountDBAddress, []byte(proposerCountKey), utility.UInt64ToByte(heavyMinerCount))
-//		return
-//	}
-//
-//	if minerType == types.MinerTypeLight {
-//		lightMinerCountByte := accountdb.GetData(common.MinerCountDBAddress, []byte(validatorCountKey))
-//		lightMinerCount := utility.ByteToUInt64(lightMinerCountByte)
-//		if operation == minerCountIncrease {
-//			lightMinerCount++
-//		} else if operation == minerCountDecrease {
-//			lightMinerCount--
-//		}
-//		accountdb.SetData(common.MinerCountDBAddress, []byte(validatorCountKey), utility.UInt64ToByte(lightMinerCount))
-//		return
-//	}
-//
-//	logger.Error("Unknown miner type:%d", minerType)
-//}
 
 type MinerIterator struct {
 	iterator *trie.Iterator

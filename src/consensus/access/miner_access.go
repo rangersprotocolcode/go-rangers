@@ -9,7 +9,6 @@ import (
 	"x/src/middleware/log"
 	"x/src/middleware/types"
 	"x/src/service"
-	"x/src/storage/account"
 )
 
 var minerPoolReaderInstance *MinerPoolReader
@@ -30,17 +29,8 @@ func NewMinerPoolReader(mp *core.MinerManager) *MinerPoolReader {
 	return minerPoolReaderInstance
 }
 
-func (reader *MinerPoolReader) GetLightMiner(id groupsig.ID) *model.MinerInfo {
-	minerManager := reader.minerManager
-	if minerManager == nil {
-		return nil
-	}
-	miner := minerManager.GetMinerById(id.Serialize(), common.MinerTypeValidator, nil)
-	if miner == nil {
-		//access.blog.log("getMinerById error id %v", id.ShortS())
-		return nil
-	}
-	return reader.convert2MinerDO(miner)
+func (reader *MinerPoolReader) GetPubkey(id groupsig.ID) ([]byte, error) {
+	return reader.minerManager.GetPubkey(id.Serialize())
 }
 
 func (reader *MinerPoolReader) GetProposeMiner(id groupsig.ID, hash common.Hash) *model.MinerInfo {
@@ -49,17 +39,13 @@ func (reader *MinerPoolReader) GetProposeMiner(id groupsig.ID, hash common.Hash)
 		return nil
 	}
 
-	var accountDB *account.AccountDB
-	accountDB = nil
-	if hash != core.EmptyHash {
-		accountDB, _ = service.AccountDBManagerInstance.GetAccountDBByHash(hash)
-	}
-
+	accountDB, _ := service.AccountDBManagerInstance.GetAccountDBByHash(hash)
 	miner := minerManager.GetMinerById(id.Serialize(), common.MinerTypeProposer, accountDB)
 	if miner == nil {
 		//access.blog.log("getMinerById error id %v", id.ShortS())
 		return nil
 	}
+
 	return reader.convert2MinerDO(miner)
 }
 

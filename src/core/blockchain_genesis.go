@@ -15,7 +15,7 @@ import (
 
 const ChainDataVersion = 2
 
-var EmptyHash = common.Hash{}
+var emptyHash = common.Hash{}
 
 type GenesisProposer struct {
 	MinerId     string `yaml:"minerId"`
