@@ -2,11 +2,11 @@ package group_create
 
 import (
 	"fmt"
-	"x/src/consensus/model"
-	"x/src/consensus/groupsig"
+	"time"
 	"x/src/common"
 	"x/src/consensus/access"
-	"time"
+	"x/src/consensus/groupsig"
+	"x/src/consensus/model"
 	"x/src/middleware/notify"
 )
 
@@ -37,7 +37,7 @@ func (p *groupCreateProcessor) OnMessageGroupInit(msg *model.GroupInitMessage) {
 
 	topHeight := p.blockChain.TopBlock().Height
 	if groupInitInfo.ReadyTimeout(topHeight) {
-		groupCreateLogger.Debugf("on group init message ready timeout, readyHeight=%v, now=%v", groupHeader.ReadyHeight, topHeight)
+		groupCreateLogger.Debugf("on group init message ready timeout, readyHeight=%v, now=%v", groupHeader.CreateHeight+model.Param.GroupReadyGap, topHeight)
 		return
 	}
 
@@ -103,9 +103,12 @@ func (p *groupCreateProcessor) ValidateGroupInfo(groupInitInfo *model.GroupInitI
 	if !validateHeight(groupHeader.CreateHeight) {
 		return nil, false, fmt.Errorf("cannot create at the height %v", groupHeader.CreateHeight)
 	}
-	baseBH := p.blockChain.QueryBlock(groupHeader.CreateHeight)
+	baseBH := p.blockChain.QueryBlockByHash(common.BytesToHash(groupHeader.CreateBlockHash))
 	if baseBH == nil {
 		return nil, false, common.ErrCreateBlockNil
+	}
+	if baseBH.Header.Height != groupHeader.CreateHeight {
+		return nil, false, fmt.Errorf("group base block height diff %v-%v", baseBH.Header.Height, groupHeader.CreateHeight)
 	}
 	// The previous group, whether the parent group exists
 	preGroup := p.groupChain.GetGroupById(groupHeader.PreGroup)
@@ -195,7 +198,7 @@ func (p *groupCreateProcessor) handleSharePieceMessage(groupHash common.Hash, sh
 	topHeight := p.blockChain.TopBlock().Height
 
 	if !isShareReqResponse && context.groupInitInfo.ReadyTimeout(topHeight) {
-		err = fmt.Errorf("ready timeout, readyHeight=%v, now=%v", groupHeader.ReadyHeight, topHeight)
+		err = fmt.Errorf("ready timeout, readyHeight=%v, now=%v", groupHeader.CreateHeight+model.Param.GroupReadyGap, topHeight)
 		return
 	}
 
@@ -436,7 +439,7 @@ func (p *groupCreateProcessor) addGroupOnChain(groupInfo *model.GroupInfo) {
 			groupCreateLogger.Infof("addGroupOnChain success, ID=%v, height=%v\n", groupInfo.GroupID.ShortS(), p.groupChain.Count())
 		} else {
 			err = fmt.Errorf("ready timeout, currentHeight %v", top)
-			groupCreateLogger.Infof("addGroupOnChain group ready timeout, gid %v, timeout height %v, top %v\n", groupInfo.GroupID.ShortS(), groupInfo.GroupInitInfo.GroupHeader.ReadyHeight, top)
+			groupCreateLogger.Infof("addGroupOnChain group ready timeout, gid %v, timeout height %v, top %v\n", groupInfo.GroupID.ShortS(), groupInfo.GroupInitInfo.GroupHeader.CreateHeight+model.Param.GroupReadyGap, top)
 		}
 	}
 

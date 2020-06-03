@@ -152,23 +152,16 @@ message GroupHeader{
 
     required bytes PreGroup = 3;
 
-    optional uint64 Authority = 4;
+    required bytes CreateBlockHash = 4;
 
-    optional string Name = 5;
+    optional bytes BeginTime = 5;
 
-    optional bytes BeginTime = 6;
+    required bytes MemberRoot = 6;
 
-    optional bytes MemberRoot = 7;
+    required uint64 CreateHeight = 7;
 
-    optional uint64 CreateHeight = 8;
+    optional string Extends = 8;
 
-    optional uint64 ReadyHeight = 9;
-
-    optional uint64 WorkHeight = 10;
-
-    optional uint64 DismissHeight = 11;
-
-    optional string Extends = 12;
 }
 
 message Group{

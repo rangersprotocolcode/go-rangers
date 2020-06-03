@@ -1,12 +1,12 @@
 package model
 
 import (
-	"x/src/common"
-	"x/src/consensus/groupsig"
-	"time"
 	"bytes"
-	"x/src/middleware/types"
+	"time"
+	"x/src/common"
 	"x/src/consensus/base"
+	"x/src/consensus/groupsig"
+	"x/src/middleware/types"
 )
 
 //ConsensusGroupInitInfo
@@ -52,7 +52,7 @@ func (gi *GroupInitInfo) CheckMemberHash(mems []groupsig.ID) bool {
 }
 
 func (gi *GroupInitInfo) ReadyTimeout(height uint64) bool {
-	return gi.GroupHeader.ReadyHeight <= height
+	return gi.GroupHeader.CreateHeight+Param.GroupReadyGap <= height
 }
 func (gi *GroupInitInfo) MemberExists(id groupsig.ID) bool {
 	for _, mem := range gi.GroupMembers {

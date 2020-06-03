@@ -1,14 +1,14 @@
 package group_create
 
 import (
+	"bytes"
 	"fmt"
 	"sync"
 	"time"
-	"x/src/middleware/types"
+	"x/src/consensus/base"
 	"x/src/consensus/groupsig"
 	"x/src/consensus/model"
-	"x/src/consensus/base"
-	"bytes"
+	"x/src/middleware/types"
 	"x/src/utility"
 )
 
@@ -202,24 +202,18 @@ func (ctx *createGroupBaseInfo) recoverMemberSet(mask []byte) (ids []groupsig.ID
 	return
 }
 func (ctx *createGroupBaseInfo) createGroupHeader(memIds []groupsig.ID) *types.GroupHeader {
-	pid := ctx.parentGroupInfo.GroupID
 	theBH := ctx.baseBlockHeader
-	gn := fmt.Sprintf("%s-%v", pid.GetHexString(), theBH.Height)
 	extends := fmt.Sprintf("baseBlock:%v|%v|%v", theBH.Hash.Hex(), theBH.CurTime, theBH.Height)
 
 	gh := &types.GroupHeader{
-		Parent:       ctx.parentGroupInfo.GroupID.Serialize(),
-		PreGroup:     ctx.baseGroup.Id,
-		Name:         gn,
-		Authority:    777,
-		BeginTime:    theBH.CurTime,
-		CreateHeight: theBH.Height,
-		ReadyHeight:  ctx.readyHeight(),
-		WorkHeight:   theBH.Height + model.Param.GroupWorkGap,
-		MemberRoot:   model.GenGroupMemberRoot(memIds),
-		Extends:      extends,
+		Parent:          ctx.parentGroupInfo.GroupID.Serialize(),
+		PreGroup:        ctx.baseGroup.Id,
+		CreateBlockHash: theBH.Hash.Bytes(),
+		BeginTime:       theBH.CurTime,
+		CreateHeight:    theBH.Height,
+		MemberRoot:      model.GenGroupMemberRoot(memIds),
+		Extends:         extends,
 	}
-	gh.DismissHeight = gh.WorkHeight + model.Param.GroupworkDuration
 
 	gh.Hash = gh.GenHash()
 	return gh

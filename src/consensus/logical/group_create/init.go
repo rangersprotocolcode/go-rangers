@@ -1,16 +1,16 @@
 package group_create
 
 import (
-	"x/src/middleware/log"
-	"x/src/core"
-	"x/src/common"
-	"x/src/consensus/groupsig"
+	"github.com/hashicorp/golang-lru"
 	"sync"
+	"time"
+	"x/src/common"
+	"x/src/consensus/access"
+	"x/src/consensus/groupsig"
 	"x/src/consensus/model"
 	"x/src/consensus/net"
-	"x/src/consensus/access"
-	"time"
-	"github.com/hashicorp/golang-lru"
+	"x/src/core"
+	"x/src/middleware/log"
 )
 
 var groupCreateLogger log.Logger
@@ -140,7 +140,7 @@ func (p *groupCreateProcessor) ReleaseGroups(topHeight uint64) (needDimissGroups
 		gHash := groupInitInfo.GroupHash()
 		//已经达到组可以开始工作的高度，但是组还没建成
 		if groupInitInfo.ReadyTimeout(topHeight) {
-			if topHeight < groupInitInfo.GroupHeader.ReadyHeight+model.Param.CreateGroupInterval {
+			if topHeight < groupInitInfo.GroupHeader.CreateHeight+model.Param.GroupReadyGap+model.Param.CreateGroupInterval {
 				p.tryReqSharePiece(gc)
 			} else {
 				invalidDummyGroups = append(invalidDummyGroups, gHash)

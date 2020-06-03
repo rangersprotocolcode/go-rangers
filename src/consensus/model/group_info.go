@@ -122,7 +122,7 @@ func (groupInfo *GroupInfo) NeedDismiss(height uint64) bool {
 }
 
 func (groupInfo *GroupInfo) GetReadyTimeout(height uint64) bool {
-	return groupInfo.GetGroupHeader().ReadyHeight <= height
+	return groupInfo.GetGroupHeader().CreateHeight+Param.GroupReadyGap <= height
 }
 
 func (groupInfo *GroupInfo) BuildMemberIndex() {
