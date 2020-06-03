@@ -42,6 +42,7 @@ func (ns *NetworkServerImpl) SendGroupPongMessage(msg *model.CreateGroupPongMess
 	if belongGroup {
 		ns.send2Self(msg.GetSignerID(), m)
 	}
+	logger.Debug("SendGroupPongMessage to group:%s,ping id:%d", groupId, msg.PingID)
 }
 
 func (ns *NetworkServerImpl) SendCreateGroupSignMessage(msg *model.ParentGroupConsensusSignMessage, parentGid groupsig.ID) {

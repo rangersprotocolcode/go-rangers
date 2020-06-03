@@ -45,6 +45,7 @@ func (p *groupCreateProcessor) OnMessageCreateGroupPing(msg *model.CreateGroupPi
 	}()
 	pk := access.GetMinerPubKey(msg.SignInfo.GetSignerID())
 	if pk == nil {
+		err = fmt.Errorf("get miner pubkey nil.Id:%s", msg.SignInfo.GetSignerID().GetHexString())
 		return
 	}
 	if msg.VerifySign(*pk) {
@@ -215,7 +216,7 @@ func (p *groupCreateProcessor) OnMessageParentGroupConsensus(msg *model.ParentGr
 		if signInfo, ok := model.NewSignInfo(inGroupSignSecKey, p.minerInfo.ID, signMsg); ok {
 			signMsg.SignInfo = signInfo
 			p.NetServer.SendCreateGroupSignMessage(signMsg, parentGid)
-			groupCreateLogger.Debugf("Send create group sign to: sender=%v,groupHash=%v", msg.SignInfo.GetSignerID().ShortS(), gh.Hash.ShortS(), )
+			groupCreateLogger.Debugf("Send create group sign to: sender=%v,groupHash=%v", msg.SignInfo.GetSignerID().ShortS(), gh.Hash.ShortS())
 		} else {
 			groupCreateLogger.Errorf("ParentGroupConsensusSignMessage sign fail, signer id=%v,seckey=%v", p.minerInfo.ID.ShortS(), p.minerInfo.SecKey.ShortS())
 		}
