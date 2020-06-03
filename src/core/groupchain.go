@@ -18,11 +18,6 @@ const (
 	lastGroupKey     = "gcurrent"
 	groupCountKey    = "gcount"
 	groupChainPrefix = "group"
-
-	EPOCH               int = 5
-	Group_Create_Gap        = 50
-	GROUP_Work_GAP          = Group_Create_Gap + EPOCH*8                  //组准备就绪后, 等待可以铸块的间隔为4个epoch
-	GROUP_Work_DURATION     = 2 * 60 * 60 * 1000 / common.CastingInterval //组铸块的周期为100个epoch
 )
 
 var groupChainImpl GroupChain
@@ -111,8 +106,8 @@ func (chain *groupChain) AddGroup(group *types.Group) error {
 		return fmt.Errorf("pre not equal lastgroup!Pre group id:%v,local last group id:%v", group.Header.PreGroup, chain.lastGroup.Id)
 	}
 	header := group.Header
-	header.WorkHeight = header.CreateHeight + uint64(GROUP_Work_GAP)
-	header.DismissHeight = header.CreateHeight + uint64(GROUP_Work_DURATION)
+	header.WorkHeight = header.CreateHeight + uint64(common.GROUP_Work_GAP)
+	header.DismissHeight = header.CreateHeight + uint64(common.GROUP_Work_DURATION)
 	return chain.save(group)
 }
 
