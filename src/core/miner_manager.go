@@ -227,6 +227,7 @@ func (mm *MinerManager) addMiner(miner *types.Miner, accountdb *account.AccountD
 	if accountdb.GetData(db, id) != nil {
 		return -1
 	} else {
+		mm.pkCache.Put(miner.Id, miner.PublicKey)
 		mm.UpdateMiner(miner, accountdb)
 		return 1
 	}
