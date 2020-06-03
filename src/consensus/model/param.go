@@ -17,13 +17,12 @@ const (
 	GROUP_MIN_MEMBERS    int = 3  //一个组最大的成员数量
 	CANDIDATES_MIN_RATIO     = 1  //最小的候选人相对于组成员数量的倍数
 
-	EPOCH                 int = 5
-	Group_Create_Gap          = 50
-	Group_Wait_Pong_Gap       = Group_Create_Gap + EPOCH*2
-	GROUP_Ready_GAP           = Group_Create_Gap + EPOCH*6                  //组准备就绪(建成组)的间隔为1个epoch
-	GROUP_Work_GAP            = Group_Create_Gap + EPOCH*8                  //组准备就绪后, 等待可以铸块的间隔为4个epoch
+
+	Group_Wait_Pong_Gap       = common.Group_Create_Gap + common.EPOCH*2
+	GROUP_Ready_GAP           = common.Group_Create_Gap + common.EPOCH*6                  //组准备就绪(建成组)的间隔为1个epoch
+	GROUP_Work_GAP            = common.Group_Create_Gap + common.EPOCH*8                  //组准备就绪后, 等待可以铸块的间隔为4个epoch
 	GROUP_Work_DURATION       = 2 * 60 * 60 * 1000 / common.CastingInterval //组铸块的周期为100个epoch
-	Group_Create_Interval     = EPOCH * 10
+	Group_Create_Interval     = common.EPOCH * 10
 )
 
 type ConsensusParam struct {
