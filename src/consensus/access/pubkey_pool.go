@@ -14,14 +14,14 @@ var pkPool pubkeyPool
 
 // pubkeyPool is the cache stores public keys of miners which is used for accelerated calculation
 type pubkeyPool struct {
-	pkCache     *lru.Cache
-	minerAccess *MinerPoolReader
+	pkCache         *lru.Cache
+	minerPoolReader *MinerPoolReader
 }
 
 func InitPubkeyPool(minerPoolReader *MinerPoolReader) {
 	pkPool = pubkeyPool{
-		pkCache:     common.CreateLRUCache(100),
-		minerAccess: minerPoolReader,
+		pkCache:         common.CreateLRUCache(100),
+		minerPoolReader: minerPoolReader,
 	}
 }
 
@@ -35,9 +35,9 @@ func GetMinerPubKey(id groupsig.ID) *groupsig.Pubkey {
 	if v, ok := pkPool.pkCache.Get(id.GetHexString()); ok {
 		return v.(*groupsig.Pubkey)
 	}
-	miner := pkPool.minerAccess.GetLightMiner(id)
+	miner := pkPool.minerPoolReader.GetLightMiner(id)
 	if miner == nil {
-		miner = pkPool.minerAccess.GetProposeMiner(id, core.EmptyHash)
+		miner = pkPool.minerPoolReader.GetProposeMiner(id, core.EmptyHash)
 	}
 	if miner != nil {
 		pkPool.pkCache.Add(id.GetHexString(), &miner.PubKey)
@@ -47,5 +47,5 @@ func GetMinerPubKey(id groupsig.ID) *groupsig.Pubkey {
 }
 
 func ready() bool {
-	return pkPool.minerAccess != nil
+	return pkPool.minerPoolReader != nil
 }

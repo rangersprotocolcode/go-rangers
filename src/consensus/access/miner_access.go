@@ -15,8 +15,7 @@ import (
 var minerPoolReaderInstance *MinerPoolReader
 
 type MinerPoolReader struct {
-	minerPool       *core.MinerManager
-	totalStakeCache uint64
+	minerManager *core.MinerManager
 }
 
 func NewMinerPoolReader(mp *core.MinerManager) *MinerPoolReader {
@@ -25,28 +24,28 @@ func NewMinerPoolReader(mp *core.MinerManager) *MinerPoolReader {
 	}
 	if minerPoolReaderInstance == nil {
 		minerPoolReaderInstance = &MinerPoolReader{
-			minerPool: mp,
+			minerManager: mp,
 		}
 	}
 	return minerPoolReaderInstance
 }
 
-func (access *MinerPoolReader) GetLightMiner(id groupsig.ID) *model.MinerInfo {
-	minerPool := access.minerPool
-	if minerPool == nil {
+func (reader *MinerPoolReader) GetLightMiner(id groupsig.ID) *model.MinerInfo {
+	minerManager := reader.minerManager
+	if minerManager == nil {
 		return nil
 	}
-	miner := minerPool.GetMinerById(id.Serialize(), common.MinerTypeValidator, nil)
+	miner := minerManager.GetMinerById(id.Serialize(), common.MinerTypeValidator, nil)
 	if miner == nil {
 		//access.blog.log("getMinerById error id %v", id.ShortS())
 		return nil
 	}
-	return access.convert2MinerDO(miner)
+	return reader.convert2MinerDO(miner)
 }
 
-func (access *MinerPoolReader) GetProposeMiner(id groupsig.ID, hash common.Hash) *model.MinerInfo {
-	minerPool := access.minerPool
-	if minerPool == nil {
+func (reader *MinerPoolReader) GetProposeMiner(id groupsig.ID, hash common.Hash) *model.MinerInfo {
+	minerManager := reader.minerManager
+	if minerManager == nil {
 		return nil
 	}
 
@@ -56,16 +55,16 @@ func (access *MinerPoolReader) GetProposeMiner(id groupsig.ID, hash common.Hash)
 		accountDB, _ = service.AccountDBManagerInstance.GetAccountDBByHash(hash)
 	}
 
-	miner := minerPool.GetMinerById(id.Serialize(), common.MinerTypeProposer, accountDB)
+	miner := minerManager.GetMinerById(id.Serialize(), common.MinerTypeProposer, accountDB)
 	if miner == nil {
 		//access.blog.log("getMinerById error id %v", id.ShortS())
 		return nil
 	}
-	return access.convert2MinerDO(miner)
+	return reader.convert2MinerDO(miner)
 }
 
-func (access *MinerPoolReader) GetCandidateMiners(h uint64) []model.MinerInfo {
-	miners := access.getAllMiner(common.MinerTypeValidator, h)
+func (reader *MinerPoolReader) GetCandidateMiners(h uint64) []model.MinerInfo {
+	miners := reader.getAllMiner(common.MinerTypeValidator, h)
 	rets := make([]model.MinerInfo, 0)
 	logger.Debugf("all light nodes size %v", len(miners))
 	for _, md := range miners {
@@ -77,24 +76,19 @@ func (access *MinerPoolReader) GetCandidateMiners(h uint64) []model.MinerInfo {
 	return rets
 }
 
-func (access *MinerPoolReader) GetTotalStake(h uint64, cache bool) uint64 {
-	if cache && access.totalStakeCache > 0 {
-		return access.totalStakeCache
-	}
-	st := access.minerPool.GetProposerTotalStake(h)
-	access.totalStakeCache = st
-	return st
+func (reader *MinerPoolReader) GetTotalStake(h uint64) uint64 {
+	return reader.minerManager.GetProposerTotalStake(h)
 }
 
-func (access *MinerPoolReader) getAllMiner(minerType byte, height uint64) []*model.MinerInfo {
-	iter := access.minerPool.MinerIterator(minerType, height)
+func (reader *MinerPoolReader) getAllMiner(minerType byte, height uint64) []*model.MinerInfo {
+	iter := reader.minerManager.MinerIterator(minerType, height)
 	mds := make([]*model.MinerInfo, 0)
 	for iter.Next() {
 		if curr, err := iter.Current(); err != nil {
 			continue
 			logger.Errorf("minerManager iterator error %v", err)
 		} else {
-			md := access.convert2MinerDO(curr)
+			md := reader.convert2MinerDO(curr)
 			mds = append(mds, md)
 		}
 	}
@@ -102,7 +96,7 @@ func (access *MinerPoolReader) getAllMiner(minerType byte, height uint64) []*mod
 }
 
 //convert2MinerDO
-func (access *MinerPoolReader) convert2MinerDO(miner *types.Miner) *model.MinerInfo {
+func (reader *MinerPoolReader) convert2MinerDO(miner *types.Miner) *model.MinerInfo {
 	if miner == nil {
 		return nil
 	}
@@ -120,7 +114,3 @@ func (access *MinerPoolReader) convert2MinerDO(miner *types.Miner) *model.MinerI
 	}
 	return md
 }
-
-//func (access *MinerPoolReader) genesisMiner(miners []*types.Miner)  {
-//    access.minerPool.AddGenesesMiner(miners)
-//}
