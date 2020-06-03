@@ -78,7 +78,7 @@ func (chain *groupChain) AddGroup(group *types.Group) error {
 	}
 
 	if logger != nil {
-		logger.Debugf("Group chain add group %+v", group)
+		logger.Debugf("Group chain add group %+v", common.Bytes2Hex(group.Id))
 	}
 	if exist, _ := chain.groups.Has(group.Id); exist {
 		notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group})

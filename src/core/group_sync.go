@@ -283,7 +283,7 @@ func (gs *groupSyncer) sendGroupHeightToNeighbor(localCount uint64) {
 }
 
 func (gs *groupSyncer) requestGroupByGroupId(id string, groupId []byte) {
-	gs.logger.Debugf("Req group for %s,id:%v!", id, groupId)
+	gs.logger.Debugf("Req group for %s,id:%v!", id, common.Bytes2Hex(groupId))
 	message := network.Message{Code: network.ReqGroupMsg, Body: groupId}
 	network.GetNetInstance().Send(id, message)
 }
