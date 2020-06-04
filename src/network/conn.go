@@ -104,6 +104,7 @@ func (base *baseConn) getWSConn() *websocket.Conn {
 		return nil
 	}
 
+	base.logger.Debugf("connected to %s", base.url)
 	return conn
 }
 
