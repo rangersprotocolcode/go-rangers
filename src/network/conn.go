@@ -41,9 +41,10 @@ type wsHeader struct {
 
 type baseConn struct {
 	// 链接
-	url  string
-	path string
-	conn *websocket.Conn
+	url      string
+	path     string
+	conn     *websocket.Conn
+	connLock sync.Mutex
 
 	// 读写缓冲区
 	rcvChan  chan []byte
@@ -72,6 +73,7 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 
 	url := url.URL{Scheme: "ws", Host: ipPort, Path: path}
 	base.url = url.String()
+	base.connLock = sync.Mutex{}
 
 	// 初始化读写缓存
 	if 0 == base.rcvSize {
@@ -130,9 +132,15 @@ func (base *baseConn) loop() {
 			}
 
 		case message := <-base.sendChan:
-			err := base.conn.WriteMessage(websocket.BinaryMessage, message)
+			conn := base.getConn()
+			if nil == conn {
+				continue
+			}
+
+			err := conn.WriteMessage(websocket.BinaryMessage, message)
 			if err != nil {
 				base.logger.Errorf("Send binary msg error:%s", err.Error())
+				base.closeConn()
 			}
 		}
 	}
@@ -141,25 +149,45 @@ func (base *baseConn) loop() {
 // 读消息
 func (base *baseConn) receiveMessage() {
 	for {
-		if nil != base.conn {
-			_, message, err := base.conn.ReadMessage()
-			if err != nil {
-				base.logger.Errorf("%s Rcv msg error:%s", base.url, err.Error())
-				base.conn.Close()
-				base.conn = nil
-				continue
-			}
+		conn := base.getConn()
+		if nil == conn {
+			continue
+		}
 
-			if base.rcv == nil {
-				base.rcvChan <- message
-			} else {
-				base.rcv(message)
-			}
+		_, message, err := conn.ReadMessage()
+		if err != nil {
+			base.logger.Errorf("%s Rcv msg error:%s", base.url, err.Error())
+			base.closeConn()
+			continue
+		}
+
+		if base.rcv == nil {
+			base.rcvChan <- message
 		} else {
-			base.conn = base.getWSConn()
+			base.rcv(message)
 		}
 
 	}
+}
+
+func (base *baseConn) getConn() *websocket.Conn {
+	if nil != base.conn {
+		return base.conn
+	}
+
+	base.connLock.Lock()
+	defer base.connLock.Unlock()
+
+	if nil != base.conn {
+		return base.conn
+	}
+	base.conn = base.getWSConn()
+	return base.conn
+}
+
+func (base *baseConn) closeConn() {
+	base.conn.Close()
+	base.conn = nil
 }
 
 // 发送消息
