@@ -1,10 +1,10 @@
 package types
 
 import (
-	"testing"
+	"com.tuntun.rocket/node/src/common"
 	"encoding/json"
 	"fmt"
-	"x/src/common"
+	"testing"
 )
 
 func TestCoinerVerifySign(t *testing.T) {

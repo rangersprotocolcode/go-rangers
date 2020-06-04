@@ -3,8 +3,8 @@ package utility
 import (
 	"fmt"
 	"runtime"
-	"strings"
 	"strconv"
+	"strings"
 )
 
 func GetGoroutineId() int {

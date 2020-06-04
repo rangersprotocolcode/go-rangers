@@ -3,6 +3,7 @@ package statemachine
 import (
 	"bufio"
 	"bytes"
+	"com.tuntun.rocket/node/src/utility"
 	"context"
 	"crypto/md5"
 	"encoding/hex"
@@ -10,7 +11,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"x/src/utility"
 )
 
 // 获取当前状态机的存储状态

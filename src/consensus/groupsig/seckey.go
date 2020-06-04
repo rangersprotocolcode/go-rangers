@@ -4,9 +4,9 @@ import (
 	"log"
 	"math/big"
 
-	"x/src/common"
-	bn_curve "x/src/consensus/groupsig/bn256"
-	"x/src/consensus/base"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/base"
+	bn_curve "com.tuntun.rocket/node/src/consensus/groupsig/bn256"
 )
 
 // Curve and Field order

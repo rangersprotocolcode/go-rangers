@@ -2,12 +2,12 @@ package statemachine
 
 import (
 	"fmt"
-	"strings"
 	"os"
+	"strings"
 
+	"context"
 	"github.com/ipfs/go-ipfs-api"
 	"testing"
-	"context"
 )
 
 func TestGetLocalId(t *testing.T) {
@@ -67,7 +67,7 @@ func TestGetFile(t *testing.T) {
 	//genesisImageId := "Qmeof3ShtuG5yt9jqx6xVV9RZjwVFb3PFddjyxaNg2YRMK"
 	//snakeImageId:="QmXFNy9ADTR2Ljw7tTpWLPsWEFR21h8DbZBb1X9zdzBST2"
 	mixmarvelImageId := "QmZCxfCbBkCYwYa5vt7YG3ctS19jVYSer3vc3f9b6pVJhk"
-	err = sh.Get(mixmarvelImageId, "/Users/daijia/go/src/x/src/statemachine/logs/mixmarvel_image.tar")
+	err = sh.Get(mixmarvelImageId, "/Users/daijia/go/src/com.tuntun.rocket/node/src/statemachine/logs/mixmarvel_image.tar")
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %s", err)
 		os.Exit(1)

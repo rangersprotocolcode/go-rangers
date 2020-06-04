@@ -1,9 +1,9 @@
 package common
 
 import (
-	"encoding/hex"
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 )
 
 func ToHex(b []byte) string {

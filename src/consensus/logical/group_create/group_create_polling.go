@@ -2,13 +2,13 @@ package group_create
 
 import (
 	"bytes"
-	"math"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/base"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"fmt"
-	"x/src/consensus/model"
-	"x/src/middleware/types"
-	"x/src/consensus/base"
-	"x/src/consensus/groupsig"
-	"x/src/common"
+	"math"
 )
 
 //检查建组

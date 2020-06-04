@@ -10,13 +10,13 @@ package ed25519
 
 import (
 	"bytes"
+	"com.tuntun.rocket/node/src/common/ed25519/edwards25519"
 	"crypto"
+	cryptorand "crypto/rand"
+	"crypto/sha512"
 	"errors"
 	"io"
 	"strconv"
-	"crypto/sha512"
-	"x/src/common/ed25519/edwards25519"
-	cryptorand "crypto/rand"
 )
 
 const (

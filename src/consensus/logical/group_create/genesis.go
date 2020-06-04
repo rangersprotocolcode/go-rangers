@@ -1,14 +1,14 @@
 package group_create
 
 import (
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rocket/node/src/consensus/vrf"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"encoding/json"
 	"io/ioutil"
 	"strings"
-	"x/src/common"
-	"x/src/consensus/groupsig"
-	"x/src/consensus/model"
-	"x/src/consensus/vrf"
-	"x/src/middleware/types"
 )
 
 type genesisGroup struct {

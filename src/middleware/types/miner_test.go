@@ -1,11 +1,11 @@
 package types
 
 import (
-	"testing"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"fmt"
-	"x/src/utility"
-	"x/src/common"
+	"testing"
 )
 
 func TestJSONMiner(t *testing.T) {

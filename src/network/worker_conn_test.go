@@ -1,11 +1,11 @@
 package network
 
 import (
-	"testing"
-	"x/src/middleware/log"
+	"com.tuntun.rocket/node/src/middleware/log"
 	"fmt"
-	"strconv"
 	"hash/fnv"
+	"strconv"
+	"testing"
 )
 
 func TestWorkerConn_Init(t *testing.T) {

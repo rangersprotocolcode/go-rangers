@@ -1,9 +1,9 @@
 package serialize
 
 import (
-	"io"
-	"encoding/gob"
 	"bytes"
+	"encoding/gob"
+	"io"
 )
 
 type Encoder interface {

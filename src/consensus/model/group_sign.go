@@ -1,9 +1,9 @@
 package model
 
 import (
-	"x/src/consensus/groupsig"
-	"sync"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
 	"fmt"
+	"sync"
 )
 
 type GroupSignGenerator struct {

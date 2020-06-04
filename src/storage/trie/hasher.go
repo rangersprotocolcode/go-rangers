@@ -1,12 +1,12 @@
 package trie
 
 import (
-	"x/src/storage/sha3"
+	"com.tuntun.rocket/node/src/storage/sha3"
 	"hash"
 	"sync"
 
-	"x/src/common"
-	"x/src/storage/rlp"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/storage/rlp"
 )
 type hasher struct {
 	tmp        sliceBuffer

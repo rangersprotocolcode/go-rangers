@@ -1,10 +1,10 @@
 package utility
 
 import (
-	"fmt"
-	"testing"
 	"encoding/hex"
+	"fmt"
 	"strconv"
+	"testing"
 )
 
 func TestByteToInt(t *testing.T) {

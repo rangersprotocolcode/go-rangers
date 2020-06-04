@@ -1,13 +1,13 @@
 package consensus
 
 import (
-	"x/src/common"
-	"x/src/consensus/access"
-	"x/src/consensus/logical"
-	"x/src/consensus/logical/group_create"
-	"x/src/consensus/model"
-	"x/src/consensus/net"
-	"x/src/network"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/access"
+	"com.tuntun.rocket/node/src/consensus/logical"
+	"com.tuntun.rocket/node/src/consensus/logical/group_create"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rocket/node/src/consensus/net"
+	"com.tuntun.rocket/node/src/network"
 )
 
 ///////////////////////////////////////////////////////////////////////////////

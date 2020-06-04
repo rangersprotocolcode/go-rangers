@@ -4,7 +4,7 @@ package trie
 import (
 	"fmt"
 
-	"x/src/common"
+	"com.tuntun.rocket/node/src/common"
 )
 
 // MissingNodeError is returned by the trie functions (TryGet, TryUpdate, TryDelete)

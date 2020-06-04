@@ -1,8 +1,8 @@
 package cli
 
 import (
+	"com.tuntun.rocket/node/src/gx/rpc"
 	"fmt"
-	"x/src/gx/rpc"
 )
 
 type WalletServer struct {

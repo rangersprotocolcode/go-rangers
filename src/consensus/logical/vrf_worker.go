@@ -1,14 +1,14 @@
 package logical
 
 import (
+	"errors"
 	"sync/atomic"
 	"time"
-	"errors"
 
-	"x/src/consensus/model"
-	"x/src/middleware/types"
-	"x/src/consensus/vrf"
-	"x/src/utility"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rocket/node/src/consensus/vrf"
+	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/utility"
 )
 
 const (

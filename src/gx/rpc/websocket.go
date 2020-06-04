@@ -1,6 +1,7 @@
 package rpc
 
 import (
+	"com.tuntun.rocket/node/src/utility"
 	"context"
 	"crypto/tls"
 	"fmt"
@@ -9,11 +10,10 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"x/src/utility"
 
+	"com.tuntun.rocket/node/src/common"
 	"golang.org/x/net/websocket"
 	"gopkg.in/fatih/set.v0"
-	"x/src/common"
 )
 
 func (srv *Server) WebsocketHandler(allowedOrigins []string) http.Handler {

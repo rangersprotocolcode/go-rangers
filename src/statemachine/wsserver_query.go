@@ -1,10 +1,10 @@
 package statemachine
 
 import (
-	"x/src/service"
-	"x/src/common"
-	"x/src/utility"
-	"x/src/network"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/network"
+	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rocket/node/src/utility"
 	"strconv"
 )
 

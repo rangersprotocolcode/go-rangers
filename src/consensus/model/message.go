@@ -1,13 +1,13 @@
 package model
 
 import (
-	"x/src/common"
-	"x/src/consensus/groupsig"
-	"x/src/consensus/base"
+	"bytes"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/base"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"strconv"
 	"time"
-	"x/src/middleware/types"
-	"bytes"
 )
 
 type Hasher interface {

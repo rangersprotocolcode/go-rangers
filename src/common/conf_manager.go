@@ -1,9 +1,9 @@
 package common
 
 import (
-	"sync"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/glacjay/goini"
 )

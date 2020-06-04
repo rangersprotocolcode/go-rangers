@@ -1,9 +1,9 @@
 package cli
 
 import (
-	"x/src/middleware/types"
-	"x/src/consensus/groupsig"
-	"x/src/common"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"encoding/json"
 )
 

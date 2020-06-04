@@ -1,8 +1,8 @@
 package types
 
 import (
-	"fmt"
 	"crypto/sha256"
+	"fmt"
 	"math/big"
 	"reflect"
 )

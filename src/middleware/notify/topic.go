@@ -1,8 +1,8 @@
 package notify
 
 import (
-	"sync"
 	"reflect"
+	"sync"
 )
 
 type Message interface {

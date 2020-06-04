@@ -14,9 +14,9 @@ import (
 	"sync"
 	"time"
 
+	"com.tuntun.rocket/node/src/asset"
 	"github.com/rs/cors"
 	"strings"
-	"x/src/asset"
 )
 
 const (

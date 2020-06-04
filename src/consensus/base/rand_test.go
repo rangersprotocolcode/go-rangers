@@ -1,13 +1,13 @@
 package base
 
 import (
-	"testing"
-	"math/big"
-	"math/rand"
-	"unsafe"
-	"sync/atomic"
 	"log"
 	"math"
+	"math/big"
+	"math/rand"
+	"sync/atomic"
+	"testing"
+	"unsafe"
 )
 
 func TestRandSeed(t *testing.T) {

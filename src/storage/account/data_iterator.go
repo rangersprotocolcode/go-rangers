@@ -1,7 +1,7 @@
 package account
 
 import (
-	"x/src/storage/trie"
+	"com.tuntun.rocket/node/src/storage/trie"
 	"strings"
 )
 

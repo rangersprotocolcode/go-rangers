@@ -1,9 +1,9 @@
 package common
 
 import (
-	"testing"
 	"fmt"
 	"math/big"
+	"testing"
 )
 
 func TestRewardBlocks(test *testing.T) {

@@ -1,10 +1,10 @@
 package net
 
 import (
-	"x/src/consensus/model"
-	"x/src/common"
-	"x/src/consensus/groupsig"
-	"x/src/middleware/types"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rocket/node/src/middleware/types"
 )
 
 type GroupCreateMessageProcessor interface {

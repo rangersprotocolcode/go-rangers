@@ -1,12 +1,12 @@
 package core
 
 import (
-	"x/src/middleware/types"
-	"x/src/common"
 	"bytes"
-	"x/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/statemachine"
 	"encoding/json"
-	"x/src/statemachine"
 )
 
 func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transaction) ([]common.Hashes, int8) {

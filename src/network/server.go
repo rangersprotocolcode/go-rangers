@@ -1,8 +1,8 @@
 package network
 
 import (
-	"x/src/middleware/notify"
-	"x/src/middleware/log"
+	"com.tuntun.rocket/node/src/middleware/log"
+	"com.tuntun.rocket/node/src/middleware/notify"
 )
 
 var instance server

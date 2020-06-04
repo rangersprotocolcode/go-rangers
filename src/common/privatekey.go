@@ -9,8 +9,8 @@ import (
 	"math/big"
 	"strings"
 
-	"x/src/common/secp256k1"
-	"x/src/common/ecies"
+	"com.tuntun.rocket/node/src/common/ecies"
+	"com.tuntun.rocket/node/src/common/secp256k1"
 )
 
 type PrivateKey struct {

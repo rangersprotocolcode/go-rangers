@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"unsafe"
 
-	"x/src/common"
+	"com.tuntun.rocket/node/src/common"
 )
 
 //go:generate gencodec -type Receipt -field-override receiptMarshaling -out gen_receipt_json.go

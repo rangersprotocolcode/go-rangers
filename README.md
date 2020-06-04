@@ -31,6 +31,6 @@ Check official documents before add or update any third party packages:
 - [https://blog.golang.org/using-go-modules](https://blog.golang.org/using-go-modules)
 
 bash_profile
-- export GOPROXY="https://mirrors.aliyun.com/goproxy/" 
+- export GOPROXY="http://goproxy.cn" 
 
 - export GO111MODULE=on

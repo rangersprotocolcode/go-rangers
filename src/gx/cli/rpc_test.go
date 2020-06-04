@@ -2,6 +2,10 @@ package cli
 
 import (
 	"bytes"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/base"
+	"com.tuntun.rocket/node/src/consensus/vrf"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/json"
@@ -10,10 +14,6 @@ import (
 	"strconv"
 	"testing"
 	"time"
-	"x/src/common"
-	"x/src/consensus/base"
-	"x/src/consensus/vrf"
-	"x/src/middleware/types"
 )
 
 func TestRPC(t *testing.T) {

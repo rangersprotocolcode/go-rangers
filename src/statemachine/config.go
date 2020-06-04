@@ -1,12 +1,12 @@
 package statemachine
 
 import (
-	"fmt"
-	"log"
-	"io/ioutil"
-	"gopkg.in/yaml.v2"
 	"encoding/json"
+	"fmt"
 	"github.com/docker/docker/api/types"
+	"gopkg.in/yaml.v2"
+	"io/ioutil"
+	"log"
 )
 
 //PortInt: 端口号类型

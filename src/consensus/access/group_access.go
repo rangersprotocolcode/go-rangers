@@ -5,11 +5,11 @@ import (
 	"math/big"
 	"sync"
 
-	"x/src/consensus/groupsig"
-	"x/src/consensus/model"
-	"x/src/middleware/types"
-	"x/src/core"
-	"x/src/common"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rocket/node/src/core"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"encoding/hex"
 )
 

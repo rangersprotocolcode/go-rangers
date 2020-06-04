@@ -1,10 +1,10 @@
 package log
 
 import (
+	"crypto/sha256"
 	"fmt"
 	"strings"
 	"sync"
-	"crypto/sha256"
 
 	"github.com/cihub/seelog"
 )

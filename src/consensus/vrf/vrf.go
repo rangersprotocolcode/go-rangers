@@ -4,8 +4,8 @@ import (
 	"io"
 	"math/big"
 
-	"x/src/common/ed25519"
-	"x/src/common"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/common/ed25519"
 )
 
 // PublicKey is the type of Ed25519 public keys.

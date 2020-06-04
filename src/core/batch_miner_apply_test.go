@@ -1,16 +1,16 @@
 package core
 
 import (
-	"io/ioutil"
-	"strings"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"encoding/json"
 	"fmt"
-	"time"
-	"x/src/common"
-	"x/src/middleware/types"
-	"testing"
 	"github.com/gorilla/websocket"
+	"io/ioutil"
 	"net/url"
+	"strings"
+	"testing"
+	"time"
 )
 
 const minerApplyInfoFile = "batch_miner_apply_info.txt"

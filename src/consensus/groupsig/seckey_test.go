@@ -1,10 +1,10 @@
 package groupsig
 
 import (
-	"testing"
+	"com.tuntun.rocket/node/src/consensus/base"
 	"fmt"
 	"math/big"
-	"x/src/consensus/base"
+	"testing"
 )
 
 //测试从big.Int生成私钥，以及私钥的序列化

@@ -30,5 +30,7 @@ src/gopkg.in
 main
 
 venv/
-/vendor/
-/src/statemachine/logs/
+vendor/
+src/statemachine/logs/
+
+rocket-node

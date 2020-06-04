@@ -1,6 +1,6 @@
 package core
 
-import "x/src/middleware/types"
+import "com.tuntun.rocket/node/src/middleware/types"
 
 func (chain *blockChain) markAddBlock(blockByte []byte) bool {
 	err := chain.hashDB.Put([]byte(addBlockMark), blockByte)

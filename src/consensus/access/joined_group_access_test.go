@@ -1,16 +1,16 @@
 package access
 
 import (
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rocket/node/src/consensus/vrf"
+	"com.tuntun.rocket/node/src/middleware/db"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"testing"
-	"x/src/common"
-	"x/src/consensus/groupsig"
-	"x/src/consensus/model"
-	"x/src/consensus/vrf"
-	"x/src/middleware/db"
 )
 
 func TestGetJoinedGroupInfo(t *testing.T) {

@@ -2,8 +2,8 @@ package trie
 
 import (
 	"bytes"
-	"x/src/common"
-	"x/src/storage/rlp"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/storage/rlp"
 	"errors"
 )
 

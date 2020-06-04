@@ -2,12 +2,12 @@
 package statemachine
 
 import (
-	"strings"
-	"os"
 	"bufio"
-	"io/ioutil"
 	"github.com/docker/docker/api/types"
 	"io"
+	"io/ioutil"
+	"os"
+	"strings"
 )
 
 func (s *StateMachine) download() bool {

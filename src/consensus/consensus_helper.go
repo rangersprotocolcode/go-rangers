@@ -1,15 +1,15 @@
 package consensus
 
 import (
-	"x/src/common"
-	"x/src/consensus/vrf"
-	"x/src/consensus/groupsig"
-	"x/src/consensus/model"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/consensus/logical/group_create"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rocket/node/src/consensus/vrf"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"errors"
 	"fmt"
 	"math/big"
-	"x/src/middleware/types"
-	"x/src/consensus/logical/group_create"
 )
 
 type ConsensusHelperImpl struct {

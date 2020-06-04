@@ -2,10 +2,10 @@ package ed25519
 
 import (
 	"bytes"
-	"errors"
-	"x/src/common/ed25519/edwards25519"
+	"com.tuntun.rocket/node/src/common/ed25519/edwards25519"
 	"crypto/sha512"
 	"encoding/hex"
+	"errors"
 )
 
 const (

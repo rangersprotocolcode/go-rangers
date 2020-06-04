@@ -1,9 +1,9 @@
 package ticker
 
 import (
+	"log"
 	"testing"
 	"time"
-	"log"
 )
 
 func handler(str string) RoutineFunc {

@@ -1,8 +1,8 @@
 package types
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 )
 
 func TestECC_Sign(t *testing.T) {

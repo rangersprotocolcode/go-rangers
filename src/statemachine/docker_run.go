@@ -1,14 +1,14 @@
 package statemachine
 
 import (
+	"com.tuntun.rocket/node/src/utility"
 	"fmt"
-	"net/url"
-	"net/http"
-	"time"
 	"io/ioutil"
 	"math/rand"
+	"net/http"
+	"net/url"
 	"strconv"
-	"x/src/utility"
+	"time"
 )
 
 // 加载STM

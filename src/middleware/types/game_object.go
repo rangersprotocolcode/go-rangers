@@ -1,11 +1,11 @@
 package types
 
 import (
+	"com.tuntun.rocket/node/src/common"
 	"encoding/json"
 	"fmt"
 	"math/big"
 	"strconv"
-	"x/src/common"
 )
 
 // NFT 数据结构综述

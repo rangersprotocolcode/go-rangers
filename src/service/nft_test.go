@@ -1,11 +1,11 @@
 package service
 
 import (
-	"testing"
-	"x/src/common"
-	"x/src/storage/account"
-	"x/src/middleware/db"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/db"
+	"com.tuntun.rocket/node/src/storage/account"
 	"fmt"
+	"testing"
 )
 
 func TestNFTManager_MintNFT(t *testing.T) {

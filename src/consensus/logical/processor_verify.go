@@ -1,11 +1,11 @@
 package logical
 
 import (
-	"x/src/consensus/model"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rocket/node/src/utility"
 	"sync"
-	"x/src/common"
 	"time"
-	"x/src/utility"
 )
 
 

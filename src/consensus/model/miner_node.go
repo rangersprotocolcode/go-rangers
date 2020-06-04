@@ -1,10 +1,10 @@
 package model
 
 import (
-	"x/src/common"
-	"x/src/consensus/base"
-	"x/src/consensus/groupsig"
-	"x/src/consensus/vrf"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/base"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/consensus/vrf"
 )
 
 const minerStake = 1

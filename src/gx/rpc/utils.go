@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"bufio"
+	"com.tuntun.rocket/node/src/utility"
 	"context"
 	crand "crypto/rand"
 	"encoding/binary"
@@ -13,7 +14,6 @@ import (
 	"sync"
 	"unicode"
 	"unicode/utf8"
-	"x/src/utility"
 )
 
 var (

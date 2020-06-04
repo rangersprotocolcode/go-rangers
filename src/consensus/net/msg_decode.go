@@ -1,14 +1,14 @@
 package net
 
 import (
-	"x/src/consensus/groupsig"
-	"x/src/middleware/pb"
-	"time"
-	"x/src/consensus/model"
-	"x/src/network"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rocket/node/src/middleware/pb"
+	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/network"
 	"github.com/gogo/protobuf/proto"
-	"x/src/common"
-	"x/src/middleware/types"
+	"time"
 )
 
 //todo

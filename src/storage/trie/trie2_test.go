@@ -16,10 +16,10 @@
 package trie
 
 import (
-	"testing"
-	"x/src/middleware/db"
-	"x/src/common"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/db"
 	"fmt"
+	"testing"
 )
 
 func TestDatabase_Insert(t *testing.T) {

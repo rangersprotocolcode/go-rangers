@@ -1,16 +1,16 @@
 package common
 
 import (
-	"fmt"
-	"testing"
-	"math/rand"
-	"github.com/stretchr/testify/assert"
-	"x/src/common/secp256k1"
 	"bytes"
+	"com.tuntun.rocket/node/src/common/secp256k1"
 	"encoding/hex"
+	"fmt"
+	"github.com/stretchr/testify/assert"
 	"io/ioutil"
-	"strings"
 	"math/big"
+	"math/rand"
+	"strings"
+	"testing"
 	"time"
 )
 

@@ -3,7 +3,7 @@ package groupsig
 import (
 	"math/big"
 
-	bn_curve "x/src/consensus/groupsig/bn256"
+	bn_curve "com.tuntun.rocket/node/src/consensus/groupsig/bn256"
 	"fmt"
 )
 

@@ -1,15 +1,15 @@
 package logical
 
 import (
-	"fmt"
 	"errors"
-	"math/big"
+	"fmt"
 	"math"
+	"math/big"
 
-	"x/src/consensus/base"
-	"x/src/consensus/model"
-	"x/src/middleware/types"
-	"x/src/consensus/vrf"
+	"com.tuntun.rocket/node/src/consensus/base"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rocket/node/src/consensus/vrf"
+	"com.tuntun.rocket/node/src/middleware/types"
 )
 
 var rat1 *big.Rat

@@ -3,8 +3,8 @@ package utility
 import (
 	"bytes"
 	"encoding/binary"
-	"math/big"
 	"fmt"
+	"math/big"
 	"strings"
 )
 

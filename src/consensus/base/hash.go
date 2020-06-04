@@ -3,7 +3,7 @@ package base
 import (
 	"hash"
 
-	"x/src/common"
+	"com.tuntun.rocket/node/src/common"
 
 	"golang.org/x/crypto/sha3"
 )

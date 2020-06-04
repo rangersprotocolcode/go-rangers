@@ -1,20 +1,20 @@
 package consensus
 
 import (
-	"testing"
-	"x/src/consensus/base"
+	"bytes"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/base"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"encoding/hex"
 	"fmt"
 	"github.com/stretchr/testify/assert"
-	"encoding/hex"
-	"math"
-	"x/src/consensus/groupsig"
-	"x/src/consensus/model"
-	"math/rand"
-	"bytes"
 	"io/ioutil"
+	"math"
+	"math/rand"
 	"strings"
+	"testing"
 	"time"
-	"x/src/common"
 )
 
 //---------------------------------------Function Test-----------------------------------------------------------------

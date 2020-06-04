@@ -1,11 +1,11 @@
 package account
 
 import (
-	"testing"
-	"x/src/middleware/db"
-	"x/src/common"
-	"math/big"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/db"
 	"fmt"
+	"math/big"
+	"testing"
 )
 
 func TestAccountDB_AddFT(t *testing.T) {

@@ -1,10 +1,10 @@
 package common
 
 import (
-	"sync"
-	"hash"
-	"crypto/sha256"
 	"bytes"
+	"crypto/sha256"
+	"hash"
+	"sync"
 )
 
 var hasherPool = sync.Pool{

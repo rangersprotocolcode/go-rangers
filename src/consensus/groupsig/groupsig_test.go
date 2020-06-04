@@ -2,8 +2,8 @@ package groupsig
 
 //import (
 //	"testing"
-//	"x/src/consensus/model"
-//	"x/src/common"
+//	"com.tuntun.rocket/node/src/consensus/model"
+//	"com.tuntun.rocket/node/src/common"
 //	"fmt"
 //)
 
@@ -14,8 +14,8 @@ package groupsig
 //	"bytes"
 //	"testing"
 //
-//	"x/src/consensus/base"
-//	"x/src/common"
+//	"com.tuntun.rocket/node/src/consensus/base"
+//	"com.tuntun.rocket/node/src/common"
 //)
 //
 ////用big.Int生成私钥，取得公钥和签名。然后对私钥、公钥和签名各复制一份后测试加法后的验证是否正确。

@@ -1,8 +1,8 @@
 package core
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 )
 
 func TestSwtich(t *testing.T) {

@@ -1,10 +1,10 @@
 package vrf
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 
-	"x/src/consensus/base"
+	"com.tuntun.rocket/node/src/consensus/base"
 )
 
 func TestVRF_prove(t *testing.T) {

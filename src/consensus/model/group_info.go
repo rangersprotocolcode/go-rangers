@@ -1,8 +1,8 @@
 package model
 
 import (
-	"x/src/consensus/groupsig"
-	"x/src/middleware/types"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/middleware/types"
 )
 
 //StaticGroupInfo

@@ -1,12 +1,12 @@
 package account
 
 import (
-	"testing"
-	"math/big"
-	"x/src/common"
-	"x/src/middleware/types"
-	"x/src/storage/rlp"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/storage/rlp"
 	"fmt"
+	"math/big"
+	"testing"
 )
 
 func Test_RLP_account(t *testing.T) {

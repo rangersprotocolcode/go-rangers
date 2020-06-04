@@ -1,15 +1,15 @@
 package statemachine
 
 import (
-	"testing"
-	"github.com/docker/docker/client"
 	"context"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types"
-	"io"
-	"os"
 	"encoding/json"
 	"fmt"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
+	"io"
+	"os"
+	"testing"
 	"time"
 )
 

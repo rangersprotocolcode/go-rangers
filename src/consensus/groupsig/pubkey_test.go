@@ -1,9 +1,9 @@
 package groupsig
 
 import (
-	"testing"
+	"com.tuntun.rocket/node/src/consensus/base"
 	"fmt"
-	"x/src/consensus/base"
+	"testing"
 )
 
 //测试用衍生随机数生成私钥，从私钥萃取公钥，以及公钥的序列化

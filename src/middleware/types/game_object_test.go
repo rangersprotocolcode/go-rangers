@@ -1,12 +1,12 @@
 package types
 
 import (
-	"testing"
-	"math/big"
-	"x/src/storage/rlp"
-	"fmt"
+	"com.tuntun.rocket/node/src/storage/rlp"
 	"encoding/json"
+	"fmt"
+	"math/big"
 	"strings"
+	"testing"
 )
 
 func TestFT_EncodeRLP(t *testing.T) {

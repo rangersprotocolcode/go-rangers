@@ -1,17 +1,17 @@
 package utility
 
 import (
+	"archive/zip"
 	"crypto/md5"
-	"io/ioutil"
-	"sync"
-	"path/filepath"
-	"os"
+	"encoding/json"
 	"errors"
+	"io"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
-	"encoding/json"
-	"archive/zip"
-	"io"
+	"sync"
 )
 
 type result struct {

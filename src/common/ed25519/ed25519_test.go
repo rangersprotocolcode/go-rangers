@@ -1,16 +1,16 @@
 package ed25519
 
 import (
-	"testing"
-	"crypto/rand"
-	"crypto"
-	"bytes"
-	"os"
 	"bufio"
-	"strings"
-	"encoding/hex"
-	"x/src/common/ed25519/edwards25519"
+	"bytes"
+	"com.tuntun.rocket/node/src/common/ed25519/edwards25519"
 	"compress/gzip"
+	"crypto"
+	"crypto/rand"
+	"encoding/hex"
+	"os"
+	"strings"
+	"testing"
 )
 
 type zeroReader struct{}

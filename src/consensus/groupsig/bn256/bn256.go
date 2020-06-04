@@ -17,12 +17,12 @@
 package bn256
 
 import (
+	"bytes"
 	"crypto/rand"
 	"errors"
+	"github.com/minio/sha256-simd"
 	"io"
 	"math/big"
-	"github.com/minio/sha256-simd"
-	"bytes"
 )
 
 func randomK(r io.Reader) (k *big.Int, err error) {

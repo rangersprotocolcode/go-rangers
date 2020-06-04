@@ -1,10 +1,10 @@
 package net
 
 import (
-	"x/src/middleware/pb"
-	"x/src/consensus/model"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rocket/node/src/middleware/pb"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"github.com/gogo/protobuf/proto"
-	"x/src/middleware/types"
 )
 
 func marshalGroupInfo(gInfo *model.GroupInitInfo) *middleware_pb.ConsensusGroupInitInfo {

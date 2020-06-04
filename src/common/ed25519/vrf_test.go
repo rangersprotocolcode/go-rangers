@@ -1,16 +1,16 @@
 package ed25519
 
 import (
-	"github.com/stretchr/testify/assert"
-	"testing"
-	"fmt"
-	"io"
-	mathRand "crypto/rand"
-	"math/rand"
 	"bytes"
+	mathRand "crypto/rand"
 	"encoding/hex"
+	"fmt"
+	"github.com/stretchr/testify/assert"
+	"io"
 	"io/ioutil"
+	"math/rand"
 	"strings"
+	"testing"
 	"time"
 )
 

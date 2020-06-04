@@ -1,12 +1,12 @@
 package groupsig
 
 import (
+	"bytes"
 	"fmt"
 	"log"
-	"bytes"
 
-	"x/src/common"
-	bn_curve "x/src/consensus/groupsig/bn256"
+	"com.tuntun.rocket/node/src/common"
+	bn_curve "com.tuntun.rocket/node/src/consensus/groupsig/bn256"
 
 	"golang.org/x/crypto/sha3"
 )

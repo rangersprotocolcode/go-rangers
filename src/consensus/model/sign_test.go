@@ -1,10 +1,10 @@
 package model
 
 import (
-	"testing"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
 	"fmt"
-	"x/src/common"
-	"x/src/consensus/groupsig"
+	"testing"
 )
 
 var m msg

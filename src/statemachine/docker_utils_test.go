@@ -1,14 +1,14 @@
 package statemachine
 
 import (
-	"testing"
-	"x/src/common"
-	"time"
-	"fmt"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/notify"
 	"encoding/json"
+	"fmt"
 	"gopkg.in/yaml.v2"
 	"strings"
-	"x/src/middleware/notify"
+	"testing"
+	"time"
 )
 
 func TestDockerInit(t *testing.T) {

@@ -1,6 +1,7 @@
 package statemachine
 
 import (
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"fmt"
 	"math/rand"
@@ -8,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 	"testing"
-	"x/src/utility"
 )
 
 func TestConfig(t *testing.T) {

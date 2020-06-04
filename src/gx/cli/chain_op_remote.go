@@ -1,14 +1,13 @@
 package cli
 
 import (
-	"x/src/common"
-	"x/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/consensus/vrf"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"encoding/json"
 	"fmt"
 	"github.com/astaxie/beego/httplib"
-	"github.com/vmihailenco/msgpack"
-	"x/src/middleware/types"
-	"x/src/consensus/vrf"
 )
 
 type RemoteChainOpImpl struct {
@@ -184,15 +183,15 @@ func (ca *RemoteChainOpImpl) ApplyMiner(mtype int, stake uint64, gas, gasprice u
 		Stake:        st,
 		Type:         byte(mtype),
 	}
-	data, err := msgpack.Marshal(miner)
+	data, err := json.Marshal(miner)
 	if err != nil {
 		return opError(err)
 	}
 
 	tx := &txRawData{
 
-		TxType:   types.TransactionTypeMinerApply,
-		Data:     common.ToHex(data),
+		TxType: types.TransactionTypeMinerApply,
+		Data:   common.ToHex(data),
 	}
 	ca.aop.(*AccountManager).resetExpireTime(aci.Address)
 	return ca.SendRaw(tx)

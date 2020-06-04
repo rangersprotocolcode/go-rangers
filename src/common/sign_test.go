@@ -6,8 +6,8 @@ import (
 	"testing"
 
 	"crypto/sha256"
-	"strconv"
 	"encoding/hex"
+	"strconv"
 )
 
 func TestPrivateKey(test *testing.T) {

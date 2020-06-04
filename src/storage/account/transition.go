@@ -1,8 +1,8 @@
 package account
 
 import (
+	"com.tuntun.rocket/node/src/common"
 	"math/big"
-	"x/src/common"
 )
 
 type transitionEntry interface {

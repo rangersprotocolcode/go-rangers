@@ -1,14 +1,14 @@
 package access
 
 import (
-	"x/src/common"
-	"x/src/consensus/groupsig"
-	"x/src/consensus/model"
-	"x/src/consensus/vrf"
-	"x/src/core"
-	"x/src/middleware/log"
-	"x/src/middleware/types"
-	"x/src/service"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rocket/node/src/consensus/vrf"
+	"com.tuntun.rocket/node/src/core"
+	"com.tuntun.rocket/node/src/middleware/log"
+	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/service"
 )
 
 var minerPoolReaderInstance *MinerPoolReader

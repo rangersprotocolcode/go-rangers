@@ -2,14 +2,14 @@ package cli
 
 import (
 	"bytes"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
-	"x/src/common"
-	"x/src/utility"
 )
 
 // 获取rpc接口的message,如果发生错误，error返回result中的错误提示

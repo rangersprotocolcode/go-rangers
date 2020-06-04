@@ -3,7 +3,7 @@ package types
 import (
 	"math/big"
 
-	"x/src/common"
+	"com.tuntun.rocket/node/src/common"
 )
 
 type GenesisInfo struct {

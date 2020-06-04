@@ -1,14 +1,14 @@
 package logical
 
 import (
-	"x/src/common"
-	"x/src/consensus/groupsig"
-	"x/src/consensus/model"
-	"x/src/middleware/notify"
-	"x/src/middleware/types"
-	"x/src/middleware"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/consensus/logical/group_create"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rocket/node/src/middleware"
+	"com.tuntun.rocket/node/src/middleware/notify"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"time"
-	"x/src/consensus/logical/group_create"
 )
 
 func (p *Processor) triggerFutureVerifyMsg(hash common.Hash) {

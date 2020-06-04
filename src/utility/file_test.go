@@ -1,12 +1,12 @@
 package utility
 
 import (
-	"testing"
 	"fmt"
+	"testing"
 )
 
 func TestMd5SumFolder(t *testing.T) {
-	result, err := checkFolderDetail("/Users/daijia/go/src/x/src/statemachine", 10)
+	result, err := checkFolderDetail("/Users/daijia/go/src/com.tuntun.rocket/node/src/statemachine", 10)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -29,7 +29,7 @@ func TestCheckFolder(t *testing.T) {
 }
 
 func TestZip(t *testing.T) {
-	err := Zip("/Users/daijia/go/src/x/src/statemachine/logs", "1111.zip")
+	err := Zip("/Users/daijia/go/src/com.tuntun.rocket/node/src/statemachine/logs", "1111.zip")
 	if err != nil {
 		panic(err)
 	}

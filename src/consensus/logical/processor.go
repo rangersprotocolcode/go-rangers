@@ -1,21 +1,21 @@
 package logical
 
 import (
-	"x/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
 
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/access"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rocket/node/src/consensus/net"
+	"com.tuntun.rocket/node/src/consensus/ticker"
+	"com.tuntun.rocket/node/src/core"
+	"com.tuntun.rocket/node/src/middleware/notify"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"encoding/hex"
 	"fmt"
 	"github.com/hashicorp/golang-lru"
 	"sync"
 	"sync/atomic"
-	"x/src/common"
-	"x/src/consensus/access"
-	"x/src/consensus/model"
-	"x/src/consensus/net"
-	"x/src/consensus/ticker"
-	"x/src/core"
-	"x/src/middleware/notify"
-	"x/src/middleware/types"
 )
 
 //见证人处理器

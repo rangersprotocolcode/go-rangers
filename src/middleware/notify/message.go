@@ -1,7 +1,7 @@
 package notify
 
 import (
-	"x/src/middleware/types"
+	"com.tuntun.rocket/node/src/middleware/types"
 )
 
 type NewBlockMessage struct {

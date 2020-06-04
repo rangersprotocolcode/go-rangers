@@ -1,9 +1,9 @@
 package types
 
 import (
-	"testing"
 	"fmt"
 	"math/big"
+	"testing"
 )
 
 func TestJSONObject_Put(t *testing.T) {

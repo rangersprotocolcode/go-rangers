@@ -3,10 +3,10 @@ package groupsig
 import (
 	"math/big"
 
-	"x/src/common"
+	"com.tuntun.rocket/node/src/common"
+	"fmt"
 	"golang.org/x/crypto/sha3"
 	"log"
-	"fmt"
 )
 
 const ID_LENGTH = 32 //ID字节长度(256位，同私钥长度)

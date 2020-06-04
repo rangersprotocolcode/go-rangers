@@ -1,9 +1,9 @@
 package account
 
 import (
-	"x/src/common"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"math/big"
-	"x/src/middleware/types"
 )
 
 func (self *AccountDB) GetFT(addr common.Address, ftName string) *big.Int {

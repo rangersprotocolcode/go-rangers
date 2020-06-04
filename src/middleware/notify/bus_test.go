@@ -1,10 +1,10 @@
 package notify
 
 import (
-	"testing"
 	"fmt"
-	"time"
 	"sync"
+	"testing"
+	"time"
 )
 
 func TestBus_Publish(t *testing.T) {

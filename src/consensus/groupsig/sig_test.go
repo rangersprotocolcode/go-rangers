@@ -3,11 +3,11 @@ package groupsig
 import (
 	"testing"
 
-	"x/src/common"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/base"
+	"encoding/hex"
 	"fmt"
 	"strconv"
-	"x/src/consensus/base"
-	"encoding/hex"
 )
 
 func TestPubkeyToAddress(t *testing.T) {

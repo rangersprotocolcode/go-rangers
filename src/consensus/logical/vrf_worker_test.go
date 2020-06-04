@@ -1,8 +1,8 @@
 package logical
 
 import (
-	"testing"
 	"math/big"
+	"testing"
 )
 
 func TestBigInt(t *testing.T) {

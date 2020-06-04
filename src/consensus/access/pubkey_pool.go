@@ -1,8 +1,8 @@
 package access
 
 import (
-	"x/src/consensus/groupsig"
-	"x/src/middleware/log"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/middleware/log"
 )
 
 var logger log.Logger

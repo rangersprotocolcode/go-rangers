@@ -1,9 +1,9 @@
 package logical
 
 import (
-	"x/src/middleware/log"
-	"x/src/common"
-	"x/src/consensus/model"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rocket/node/src/middleware/log"
 )
 
 const NORMAL_FAILED int = -1

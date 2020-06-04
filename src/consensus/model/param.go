@@ -1,8 +1,8 @@
 package model
 
 import (
+	"com.tuntun.rocket/node/src/common"
 	"math"
-	"x/src/common"
 )
 
 const (
