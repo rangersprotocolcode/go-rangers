@@ -34,3 +34,4 @@ venv/
 src/statemachine/logs/
 
 rocket-node
+/vendor/

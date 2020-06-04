@@ -57,6 +57,9 @@ type baseConn struct {
 	// 处理消息的业务逻辑
 	doRcv func(wsHeader wsHeader, msg []byte)
 
+	//断线重连后的处理
+	afterReconnected func()
+
 	// 处理[]byte原始消息，用于流控
 	rcv func(msg []byte)
 
@@ -183,6 +186,9 @@ func (base *baseConn) getConn() *websocket.Conn {
 		return base.conn
 	}
 	base.conn = base.getWSConn()
+	if nil != base.conn && nil != base.afterReconnected {
+		go base.afterReconnected()
+	}
 	return base.conn
 }
 

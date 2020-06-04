@@ -7,6 +7,7 @@ import (
 	"encoding/hex"
 	"hash/fnv"
 	"strconv"
+	"sync"
 )
 
 var (
@@ -23,6 +24,9 @@ type WorkerConn struct {
 	baseConn
 	consensusHandler MsgHandler
 	selfId           string
+
+	joinedGroup     map[string]byte
+	joinedGroupLock sync.Mutex
 }
 
 func (workerConn *WorkerConn) Init(ipPort, selfId string, consensusHandler MsgHandler, logger log.Logger) {
@@ -30,6 +34,9 @@ func (workerConn *WorkerConn) Init(ipPort, selfId string, consensusHandler MsgHa
 	workerConn.sendSize = 1000
 	workerConn.consensusHandler = consensusHandler
 	workerConn.selfId = selfId
+	workerConn.joinedGroup = make(map[string]byte)
+	workerConn.joinedGroupLock = sync.Mutex{}
+
 	workerConn.doRcv = func(wsHeader wsHeader, body []byte) {
 		method := wsHeader.method
 		if !bytes.Equal(method, methodCodeSend) && !bytes.Equal(method, methodCodeBroadcast) && !bytes.Equal(method, methodCodeSendToGroup) && !bytes.Equal(method, methodSendToManager) {
@@ -43,6 +50,15 @@ func (workerConn *WorkerConn) Init(ipPort, selfId string, consensusHandler MsgHa
 		workerConn.handleMessage(body, strconv.FormatUint(wsHeader.sourceId, 10))
 	}
 
+	workerConn.afterReconnected = func() {
+		workerConn.joinedGroupLock.Lock()
+		defer workerConn.joinedGroupLock.Unlock()
+
+		for key := range workerConn.joinedGroup {
+			workerConn.logger.Warnf("rejoin group: %s", key)
+			workerConn.joinGroupNet(key)
+		}
+	}
 	workerConn.init(ipPort, "/srv/worker_worker", logger)
 }
 
@@ -150,6 +166,14 @@ func (workerConn *WorkerConn) SendToEveryone(msg Message) {
 
 //加入组网络
 func (workerConn *WorkerConn) JoinGroupNet(groupId string) {
+	workerConn.joinedGroupLock.Lock()
+	defer workerConn.joinedGroupLock.Unlock()
+	workerConn.joinedGroup[groupId] = 0
+
+	workerConn.joinGroupNet(groupId)
+}
+
+func (workerConn *WorkerConn) joinGroupNet(groupId string) {
 	header := wsHeader{method: methodCodeJoinGroup, targetId: workerConn.generateTargetForGroup(groupId)}
 	workerConn.sendChan <- workerConn.headerToBytes(header)
 	workerConn.logger.Debugf("Join group: %v,targetId:%v,hex:%v", groupId, header.targetId, strconv.FormatUint(header.targetId, 16))
@@ -157,6 +181,10 @@ func (workerConn *WorkerConn) JoinGroupNet(groupId string) {
 
 //退出组网络
 func (workerConn *WorkerConn) QuitGroupNet(groupId string) {
+	workerConn.joinedGroupLock.Lock()
+	defer workerConn.joinedGroupLock.Unlock()
+	delete(workerConn.joinedGroup, groupId)
+
 	header := wsHeader{method: methodCodeQuitGroup, targetId: workerConn.generateTargetForGroup(groupId)}
 	workerConn.sendChan <- workerConn.headerToBytes(header)
 	workerConn.logger.Debugf("Quit group: %v,targetId:%v,hex:%v", groupId, header.targetId, strconv.FormatUint(header.targetId, 16))
