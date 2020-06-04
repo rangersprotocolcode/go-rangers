@@ -1,20 +1,20 @@
 package network
 
 import (
-	"github.com/gorilla/websocket"
-	"x/src/utility"
-	"net/url"
-	"strconv"
-	"encoding/hex"
 	"bytes"
-	"x/src/middleware/types"
-	"encoding/json"
-	"x/src/middleware/notify"
-	"sync"
 	"crypto/md5"
 	"encoding/binary"
-	"x/src/middleware/log"
+	"encoding/hex"
+	"encoding/json"
+	"github.com/gorilla/websocket"
+	"net/url"
+	"strconv"
+	"sync"
 	"time"
+	"x/src/middleware/log"
+	"x/src/middleware/notify"
+	"x/src/middleware/types"
+	"x/src/utility"
 )
 
 const (
@@ -73,9 +73,6 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 	url := url.URL{Scheme: "ws", Host: ipPort, Path: path}
 	base.url = url.String()
 
-	// 获取链接
-	base.conn = base.getWSConn()
-
 	// 初始化读写缓存
 	if 0 == base.rcvSize {
 		base.rcvSize = defaultRcvSize
@@ -93,10 +90,12 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 // 建立ws连接
 func (base *baseConn) getWSConn() *websocket.Conn {
 	base.logger.Debugf("connecting to %s", base.url)
-	d := websocket.Dialer{ReadBufferSize: defaultBufferSize, WriteBufferSize: defaultBufferSize,}
+	d := websocket.Dialer{ReadBufferSize: defaultBufferSize, WriteBufferSize: defaultBufferSize}
 	conn, _, err := d.Dial(base.url, nil)
 	if err != nil {
-		panic("Dial to" + base.url + " err:" + err.Error())
+		base.logger.Errorf("Dial to" + base.url + " err:" + err.Error())
+		time.Sleep(100 * time.Millisecond)
+		return nil
 	}
 
 	return conn
@@ -142,16 +141,22 @@ func (base *baseConn) loop() {
 // 读消息
 func (base *baseConn) receiveMessage() {
 	for {
-		_, message, err := base.conn.ReadMessage()
-		if err != nil {
-			base.logger.Errorf("%s Rcv msg error:%s", base.url, err.Error())
-			continue
-		}
+		if nil != base.conn {
+			_, message, err := base.conn.ReadMessage()
+			if err != nil {
+				base.logger.Errorf("%s Rcv msg error:%s", base.url, err.Error())
+				base.conn.Close()
+				base.conn = nil
+				continue
+			}
 
-		if base.rcv == nil {
-			base.rcvChan <- message
+			if base.rcv == nil {
+				base.rcvChan <- message
+			} else {
+				base.rcv(message)
+			}
 		} else {
-			base.rcv(message)
+			base.conn = base.getWSConn()
 		}
 
 	}
