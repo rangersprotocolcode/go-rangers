@@ -74,6 +74,7 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 	url := url.URL{Scheme: "ws", Host: ipPort, Path: path}
 	base.url = url.String()
 	base.connLock = sync.Mutex{}
+	base.conn = base.getWSConn()
 
 	// 初始化读写缓存
 	if 0 == base.rcvSize {
