@@ -1,15 +1,15 @@
 package account
 
 import (
-	"math/big"
-	"fmt"
-	"x/src/common"
-	"sync"
 	"bytes"
-	"x/src/storage/trie"
+	"fmt"
 	"golang.org/x/crypto/sha3"
-	"x/src/middleware/types"
+	"math/big"
+	"sync"
+	"x/src/common"
 	"x/src/middleware"
+	"x/src/middleware/types"
+	"x/src/storage/trie"
 )
 
 var emptyCodeHash = sha3.Sum256(nil)
@@ -176,7 +176,12 @@ func (ao *accountObject) GetData(db AccountDatabase, key []byte) []byte {
 		return value
 	}
 	// Otherwise load the value from the database
-	value, err := ao.getTrie(db).TryGet(key)
+	trie := ao.getTrie(db)
+	if nil == trie {
+		common.DefaultLogger.Errorf("Account Obj get date nil! address:%s,key:%s", ao.address.GetHexString(), common.ToHex(key))
+		return nil
+	}
+	value, err := trie.TryGet(key)
 	if err != nil {
 		ao.setError(err)
 		return nil

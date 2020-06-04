@@ -8,7 +8,7 @@ import (
 //默认
 const (
 	gateAddrProduction = "47.96.99.105:8848"
-	gateAddrDaily      = "47.96.99.105:8848"
+	gateAddrDaily      = "47.96.99.105:80"
 )
 
 var Logger log.Logger
@@ -24,10 +24,10 @@ func InitNetwork(consensusHandler MsgHandler, selfMinerId, env, gate string) {
 		}
 	}
 
-	getNetMemberInfo("")
 
 	var s server
 	s.Init(Logger, gateAddr, selfMinerId, consensusHandler)
 
 	instance = s
+	Logger.Warnf("connected gate: %s, env: %s", gateAddr, env)
 }

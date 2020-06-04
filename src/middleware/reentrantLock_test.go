@@ -11,14 +11,14 @@ import (
 func TestReentrantLock_Lock(t *testing.T) {
 	lock := NewReentrantLock()
 
-	fmt.Println(time.Now().String())
+	fmt.Println(utility.GetTime().String())
 
 	for i := 0; i < 10; i++ {
 		go method(lock, strconv.Itoa(i))
 	}
 
 	time.Sleep(1000 * time.Second)
-	fmt.Println(time.Now().String())
+	fmt.Println(utility.GetTime().String())
 }
 
 func method(lock *ReentrantLock, name string) {

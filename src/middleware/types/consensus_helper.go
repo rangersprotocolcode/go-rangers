@@ -28,10 +28,6 @@ type ConsensusHelper interface {
 	//bonus for packing one bonus transaction
 	PackBonus() *big.Int
 
-	//calcaulate the blockheader's qn
-	//it needs to be equal to the blockheader's totalQN - preHeader's totalQN
-	CalculateQN(bh *BlockHeader) uint64
-
 	//generate verify hash of the block for current node
 	VerifyHash(b *Block) common.Hash
 

@@ -1,15 +1,16 @@
 package net
 
 import (
-	"x/src/network"
-	"sync"
-	"x/src/middleware/log"
-	"x/src/common"
-	"x/src/consensus/model"
-	"time"
-	"x/src/consensus/ticker"
 	"fmt"
 	"github.com/hashicorp/golang-lru"
+	"sync"
+	"time"
+	"x/src/common"
+	"x/src/consensus/model"
+	"x/src/consensus/ticker"
+	"x/src/middleware/log"
+	"x/src/network"
+	"x/src/utility"
 )
 
 type stateHandleFunc func(msg interface{})
@@ -17,12 +18,12 @@ type stateHandleFunc func(msg interface{})
 type stateNode struct {
 	code        uint32
 	leastRepeat int32
-	mostRepeat 	int32
+	mostRepeat  int32
 	handler     stateHandleFunc
 	next        *stateNode
 
 	currentIdx int32
-	execNum 	int32
+	execNum    int32
 	queue      []*StateMsg
 	//lock       sync.RWMutex
 }
@@ -50,6 +51,7 @@ type StateMachines struct {
 }
 
 var GroupInsideMachines StateMachines
+
 //var GroupOutsideMachines StateMachines
 
 var logger log.Logger
@@ -88,7 +90,7 @@ func newStateNode(st uint32, lr, mr int, h stateHandleFunc) *stateNode {
 	return &stateNode{
 		code:        st,
 		leastRepeat: int32(lr),
-		mostRepeat: 	int32(mr),
+		mostRepeat:  int32(mr),
 		queue:       make([]*StateMsg, 0),
 		handler:     h,
 	}
@@ -97,7 +99,7 @@ func newStateNode(st uint32, lr, mr int, h stateHandleFunc) *stateNode {
 func newStateMachine(id string) *StateMachine {
 	return &StateMachine{
 		Id:   id,
-		Time: time.Now(),
+		Time: utility.GetTime(),
 	}
 }
 
@@ -194,7 +196,7 @@ func (m *StateMachine) allFinished() bool {
 }
 
 func (m *StateMachine) expire() bool {
-	return int(time.Since(m.Time).Seconds()) >= model.Param.GroupInitMaxSeconds
+	return int(utility.GetTime().Sub(m.Time).Seconds()) >= model.Param.GroupInitMaxSeconds
 }
 
 func (m *StateMachine) transform() {
@@ -295,16 +297,16 @@ func (m *groupInsideMachineGenerator) Generate(id string, cnt int) *StateMachine
 	machine := newStateMachine(id)
 	memNum := cnt
 	machine.appendNode(newStateNode(network.GroupInitMsg, 1, 1, func(msg interface{}) {
-		MessageHandler.processor.OnMessageGroupInit(msg.(*model.ConsensusGroupRawMessage))
+		MessageHandler.groupCreateMessageProcessor.OnMessageGroupInit(msg.(*model.GroupInitMessage))
 	}))
 	machine.appendNode(newStateNode(network.KeyPieceMsg, memNum, memNum, func(msg interface{}) {
-		MessageHandler.processor.OnMessageSharePiece(msg.(*model.ConsensusSharePieceMessage))
+		MessageHandler.groupCreateMessageProcessor.OnMessageSharePiece(msg.(*model.SharePieceMessage))
 	}))
 	machine.appendNode(newStateNode(network.SignPubkeyMsg, 1, memNum, func(msg interface{}) {
-		MessageHandler.processor.OnMessageSignPK(msg.(*model.ConsensusSignPubKeyMessage))
+		MessageHandler.groupCreateMessageProcessor.OnMessageSignPK(msg.(*model.SignPubKeyMessage))
 	}))
 	machine.appendNode(newStateNode(network.GroupInitDoneMsg, model.Param.GetGroupK(memNum), model.Param.GetGroupK(memNum), func(msg interface{}) {
-		MessageHandler.processor.OnMessageGroupInited(msg.(*model.ConsensusGroupInitedMessage))
+		MessageHandler.groupCreateMessageProcessor.OnMessageGroupInited(msg.(*model.GroupInitedMessage))
 	}))
 	return machine
 }

@@ -22,9 +22,10 @@ func init() {
 	rat1 = new(big.Rat).SetInt64(1)
 }
 
-func verifyBlockVRF(bh *types.BlockHeader, preBH *types.BlockHeader, castor *model.MinerDO, totalStake uint64) (bool, error) {
+func verifyBlockVRF(bh *types.BlockHeader, preBH *types.BlockHeader, castor *model.MinerInfo, totalStake uint64) (bool, error) {
 	prove := vrf.VRFProve(bh.ProveValue.Bytes())
-	ok, err := vrf.VRFVerify(castor.VrfPK, prove, genVrfMsg(preBH.Random, bh.Height-preBH.Height))
+	delta := CalDeltaByTime(bh.CurTime, preBH.CurTime)
+	ok, err := vrf.VRFVerify(castor.VrfPK, prove, genVrfMsg(preBH.Random, delta))
 	if !ok {
 		return ok, err
 	}
@@ -37,10 +38,19 @@ func verifyBlockVRF(bh *types.BlockHeader, preBH *types.BlockHeader, castor *mod
 	return false, errors.New("proof not satisfy")
 }
 
-func genVrfMsg(random []byte, deltaHeight uint64) []byte {
+//func genVrfMsg(random []byte, deltaHeight uint64) []byte {
+//	msg := random
+//	for deltaHeight > 1 {
+//		deltaHeight--
+//		msg = base.Data2CommonHash(msg).Bytes()
+//	}
+//	return msg
+//}
+
+func genVrfMsg(random []byte, delta int) []byte {
 	msg := random
-	for deltaHeight > 1 {
-		deltaHeight--
+	for delta > 1 {
+		delta--
 		msg = base.Data2CommonHash(msg).Bytes()
 	}
 	return msg
@@ -53,7 +63,7 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 	}
 	blog := newBizLog("vrfSatisfy")
 	vrfValueRatio := vrfValueRatio(prove)
-	stakeRatio := stakeRatio(stake, totalStake)
+	stakeRatio := stakeRatio(1, totalStake)
 	ok = vrfValueRatio.Cmp(stakeRatio) < 0
 
 	//cal qn
@@ -68,7 +78,7 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 
 	s1, _ := vrfValueRatio.Float64()
 	s2, _ := stakeRatio.Float64()
-	blog.log("miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v, step %v, qn %v", stake, totalStake, s1, s2, st, qn)
+	blog.log("miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v, step %v, qn %v", 1, totalStake, s1, s2, st, qn)
 	return
 }
 

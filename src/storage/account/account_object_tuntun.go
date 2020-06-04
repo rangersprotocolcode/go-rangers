@@ -51,6 +51,9 @@ func (c *accountObject) AddFT(amount *big.Int, name string) bool {
 func (c *accountObject) SubFT(amount *big.Int, name string) (*big.Int, bool) {
 	if amount.Sign() == 0 {
 		raw := c.getFT(c.data.Ft, name)
+		if nil == raw {
+			return big.NewInt(0), true
+		}
 		return raw.Balance, true
 	}
 

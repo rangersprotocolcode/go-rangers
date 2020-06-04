@@ -22,18 +22,17 @@ const (
 )
 
 type Receipt struct {
-	PostState         []byte `json:"-"`
-	Status            uint   `json:"status"`
-	CumulativeGasUsed uint64 `json:"cumulativeGasUsed"`
-	Bloom             Bloom  `json:"-"`
-	Logs              []*Log `json:"logs"`
-
-	TxHash          common.Hash    `json:"transactionHash" gencodec:"required"`
-	ContractAddress common.Address `json:"contractAddress"`
+	PostState         []byte      `json:"-"`
+	Status            uint        `json:"status"`
+	CumulativeGasUsed uint64      `json:"cumulativeGasUsed"`
+	Height            uint64      `json:"height"`
+	TxHash            common.Hash `json:"transactionHash" gencodec:"required"`
+	Msg               string      `json:"-"`
+	Source            string      `json:"-"`
 }
 
-func NewReceipt(root []byte, failed bool, cumulativeGasUsed uint64) *Receipt {
-	r := &Receipt{PostState: common.CopyBytes(root), CumulativeGasUsed: cumulativeGasUsed}
+func NewReceipt(root []byte, failed bool, cumulativeGasUsed uint64, height uint64, msg, source string) *Receipt {
+	r := &Receipt{PostState: common.CopyBytes(root), CumulativeGasUsed: cumulativeGasUsed, Height: height, Msg: msg, Source: source}
 	if failed {
 		r.Status = ReceiptStatusFailed
 	} else {
@@ -68,9 +67,9 @@ func (r *Receipt) Size() common.StorageSize {
 
 func (r *Receipt) String() string {
 	if len(r.PostState) == 0 {
-		return fmt.Sprintf("receipt{status=%d cgas=%v bloom=%x}", r.Status, r.CumulativeGasUsed, r.Bloom)
+		return fmt.Sprintf("receipt{status=%d cgas=%v}", r.Status, r.CumulativeGasUsed)
 	}
-	return fmt.Sprintf("receipt{med=%x cgas=%v bloom=%x}", r.PostState, r.CumulativeGasUsed, r.Bloom)
+	return fmt.Sprintf("receipt{med=%x cgas=%v}", r.PostState, r.CumulativeGasUsed)
 }
 
 type Receipts []*Receipt

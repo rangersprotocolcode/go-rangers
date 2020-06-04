@@ -6,6 +6,7 @@ import (
 	"sync"
 	"fmt"
 	"time"
+	"x/src/utility"
 
 	"x/src/common"
 	"x/src/middleware/log"
@@ -37,9 +38,9 @@ func (lock *Loglock) Lock(msg string) {
 	if 0 != len(msg) {
 		lockLogger.Debugf("try to lock: %s, with msg: %s", lock.addr, msg)
 	}
-	begin := time.Now()
+	begin := utility.GetTime()
 	lock.lock.Lock()
-	lock.begin = time.Now()
+	lock.begin = utility.GetTime()
 	cost := time.Since(begin)
 
 	lockLogger.Debugf("locked: %s, with msg: %s wait: %v", lock.addr, msg, cost)
@@ -49,7 +50,7 @@ func (lock *Loglock) RLock(msg string) {
 	if 0 != len(msg) {
 		lockLogger.Debugf("try to Rlock: %s, with msg: %s", lock.addr, msg)
 	}
-	begin := time.Now()
+	begin := utility.GetTime()
 	lock.lock.RLock()
 	cost := time.Since(begin)
 
@@ -60,7 +61,7 @@ func (lock *Loglock) Unlock(msg string) {
 	if 0 != len(msg) {
 		lockLogger.Debugf("try to UnLock: %s, with msg: %s", lock.addr, msg)
 	}
-	begin := time.Now()
+	begin := utility.GetTime()
 	lock.lock.Unlock()
 	duration := time.Since(lock.begin)
 	cost := time.Since(begin)
@@ -72,7 +73,7 @@ func (lock *Loglock) RUnlock(msg string) {
 	if 0 != len(msg) {
 		lockLogger.Debugf("try to UnRLock: %s, with msg: %s", lock.addr, msg)
 	}
-	begin := time.Now()
+	begin := utility.GetTime()
 	lock.lock.RUnlock()
 	cost := time.Since(begin)
 

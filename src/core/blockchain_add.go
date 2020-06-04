@@ -1,12 +1,17 @@
 package core
 
 import (
-	"x/src/middleware/types"
-	"x/src/storage/account"
-	"x/src/common"
-	"x/src/utility"
-	"x/src/middleware/notify"
+	"encoding/json"
 	"errors"
+	"strconv"
+	"time"
+	"x/src/common"
+	"x/src/middleware/notify"
+	"x/src/middleware/types"
+	"x/src/service"
+	"x/src/statemachine"
+	"x/src/storage/account"
+	"x/src/utility"
 )
 
 func (chain *blockChain) consensusVerify(source string, b *types.Block) (types.AddBlockResult, bool) {
@@ -123,13 +128,14 @@ func (chain *blockChain) executeTransaction(block *types.Block) (bool, *account.
 	if len(block.Transactions) > 0 {
 		logger.Debugf("NewAccountDB height:%d StateTree:%s preHash:%s preRoot:%s", block.Header.Height, block.Header.StateTree.Hex(), preBlock.Hash.Hex(), preRoot.Hex())
 	}
-	state, err := account.NewAccountDB(preRoot, chain.stateDB)
+	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(preRoot)
 	if err != nil {
 		logger.Errorf("Fail to new statedb, error:%s", err)
 		return false, state, nil
 	}
 
-	stateRoot, _, _, receipts, err, _ := chain.executor.Execute(state, block, block.Header.Height, "fullverify")
+	vmExecutor := newVMExecutor(state, block, "fullverify")
+	stateRoot, _, _, receipts := vmExecutor.Execute()
 	if common.ToHex(stateRoot.Bytes()) != common.ToHex(block.Header.StateTree.Bytes()) {
 		logger.Errorf("Fail to verify state tree, hash1:%x hash2:%x", stateRoot.Bytes(), block.Header.StateTree.Bytes())
 		return false, state, receipts
@@ -145,7 +151,7 @@ func (chain *blockChain) executeTransaction(block *types.Block) (bool, *account.
 }
 
 func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockResult, []byte) {
-	logger.Debugf("Insert block hash:%s,height:%d", remoteBlock.Header.Hash.Hex(), remoteBlock.Header.Height)
+	logger.Debugf("Insert block hash:%s,height:%d,evicted tx len:%d", remoteBlock.Header.Hash.Hex(), remoteBlock.Header.Height, len(remoteBlock.Header.EvictedTxs))
 	blockByte, err := types.MarshalBlock(remoteBlock)
 	if err != nil {
 		logger.Errorf("Fail to json Marshal, error:%s", err.Error())
@@ -172,7 +178,7 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 		return types.AddBlockFailed, nil
 	}
 
-	if !chain.updateLastBlock(accountDB, remoteBlock.Header, headerByte) {
+	if !chain.updateLastBlock(accountDB, remoteBlock, headerByte) {
 		return types.AddBlockFailed, headerByte
 	}
 
@@ -183,7 +189,7 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 
 	dumpTxs(remoteBlock.Transactions, remoteBlock.Header.Height)
 	chain.eraseAddBlockMark()
-	chain.successOnChainCallBack(remoteBlock, headerByte)
+	chain.successOnChainCallBack(remoteBlock)
 	return types.AddBlockSucc, headerByte
 }
 
@@ -229,7 +235,7 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 		return false, state, receipts
 	}
 
-	trieDB := chain.stateDB.TrieDB()
+	trieDB := service.AccountDBManagerInstance.GetTrieDB()
 	err = trieDB.Commit(root, false)
 	if err != nil {
 		logger.Errorf("Trie commit error:%s", err.Error())
@@ -238,16 +244,19 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 	return true, state, receipts
 }
 
-func (chain *blockChain) updateLastBlock(state *account.AccountDB, header *types.BlockHeader, headerJson []byte) bool {
+func (chain *blockChain) updateLastBlock(state *account.AccountDB, block *types.Block, headerJson []byte) bool {
+	header := block.Header
 	err := chain.heightDB.Put([]byte(latestBlockKey), headerJson)
 	if err != nil {
 		logger.Errorf("Fail to put %s, error:%s", latestBlockKey, err.Error())
 		return false
 	}
-	chain.latestStateDB = state
+
+	chain.currentBlock = block
 	chain.latestBlock = header
 	chain.requestIds = header.RequestIds
 
+	service.AccountDBManagerInstance.SetLatestStateDB(state)
 	logger.Debugf("Update latestStateDB:%s height:%d", header.StateTree.Hex(), header.Height)
 
 	return true
@@ -260,10 +269,11 @@ func (chain *blockChain) updateVerifyHash(block *types.Block) {
 }
 
 func (chain *blockChain) updateTxPool(block *types.Block, receipts types.Receipts) {
+	go chain.notifyReceipts(receipts)
 	chain.transactionPool.MarkExecuted(receipts, block.Transactions, block.Header.EvictedTxs)
 }
 
-func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block, headerJson []byte) {
+func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block) {
 	logger.Infof("ON chain succ! height=%d,hash=%s", remoteBlock.Header.Height, remoteBlock.Header.Hash.Hex())
 	notify.BUS.Publish(notify.BlockAddSucc, &notify.BlockOnChainSuccMessage{Block: *remoteBlock,})
 	if value, _ := chain.futureBlocks.Get(remoteBlock.Header.Hash); value != nil {
@@ -276,6 +286,89 @@ func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block, header
 	if BlockSyncer != nil {
 		topBlockInfo := TopBlockInfo{Hash: chain.latestBlock.Hash, TotalQn: chain.latestBlock.TotalQN, Height: chain.latestBlock.Height, PreHash: chain.latestBlock.PreHash}
 		go BlockSyncer.sendTopBlockInfoToNeighbor(topBlockInfo)
+	}
+
+	go chain.notifyWallet(remoteBlock)
+	//check txs
+	go chain.publishSet(remoteBlock.Transactions)
+}
+
+// 块上链成功之后，调用Connector
+func (chain *blockChain) publishSet(txs []*types.Transaction) {
+	if 0 == len(txs) {
+		return
+	}
+
+	for _, tx := range txs {
+		appId := tx.Source
+
+		// 直接发交易的nftSet publish
+		if tx.Type == types.TransactionTypePublishNFTSet {
+			var nftSet types.NFTSet
+			if err := json.Unmarshal([]byte(tx.Data), &nftSet); nil != err {
+				logger.Errorf("Unmarshal data error:%s", err.Error())
+				continue
+			}
+
+			set := service.NFTManagerInstance.GenerateNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime)
+			service.NFTManagerInstance.SendPublishNFTSetToConnector(set)
+			continue
+		}
+
+		// 直接发交易的ftSet publish
+		if tx.Type == types.TransactionTypePublishFT {
+			var ftSetMap map[string]string
+			if err := json.Unmarshal([]byte(tx.Data), &ftSetMap); nil != err {
+				logger.Errorf("Unmarshal data error:%s", err.Error())
+				continue
+			}
+
+			appId := tx.Source
+			createTime := ftSetMap["createTime"]
+			ftSet := service.FTManagerInstance.GenerateFTSet(ftSetMap["name"], ftSetMap["symbol"], appId, ftSetMap["maxSupply"], appId, createTime, 1)
+			service.FTManagerInstance.SendPublishFTSetToConnector(ftSet)
+			continue
+		}
+
+		if tx.Type == types.TransactionTypeImportNFT {
+			appId := tx.Source
+			if !statemachine.STMManger.IsAppId(appId) {
+				txLogger.Errorf("fail to import NFTSetAndNFT, appId: %s", appId)
+				continue
+			}
+
+			var data map[string]string
+			err := json.Unmarshal([]byte(tx.Data), &data)
+			if err != nil {
+				txLogger.Errorf("fail to import NFTSetAndNFT, error: %s", err)
+				continue
+			}
+
+			service.NFTManagerInstance.ImportNFTSet(data["setId"], data["contract"], data["chainType"])
+		}
+
+		// 状态机内调用
+		if 0 != len(tx.SubTransactions) {
+			for _, user := range tx.SubTransactions {
+				if user.Address == "StartFT" {
+					ftSet := service.FTManagerInstance.GenerateFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], user.Assets["createTime"], 1)
+					service.FTManagerInstance.SendPublishFTSetToConnector(ftSet)
+					continue
+				}
+
+				if user.Address == "PublishNFTSet" {
+					maxSupplyString := user.Assets["maxSupply"]
+					maxSupply, err := strconv.Atoi(maxSupplyString)
+					if err != nil {
+						logger.Errorf("Publish nft set! MaxSupply bad format:%s", maxSupplyString)
+						continue
+					}
+					appId := user.Assets["appId"]
+					nftSet := service.NFTManagerInstance.GenerateNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"])
+					service.NFTManagerInstance.SendPublishNFTSetToConnector(nftSet)
+				}
+			}
+		}
 	}
 }
 
@@ -317,6 +410,10 @@ func (chain *blockChain) removeFromCommonAncestor(commonAncestor *types.BlockHea
 
 // 找到commonAncestor在本地链的下一块，然后与remoteHeader比较
 func (chain *blockChain) compareValue(commonAncestor *types.BlockHeader, remoteHeader *types.BlockHeader) bool {
+	if commonAncestor == nil || chain.latestBlock == nil {
+		logger.Debugf("Debug2:compareValue commonAncestor:%v,chain.latestBlock:%v", commonAncestor, chain.latestBlock)
+		time.Sleep(time.Second * 3)
+	}
 	if commonAncestor.Height == chain.latestBlock.Height {
 		return false
 	}

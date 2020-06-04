@@ -3,6 +3,7 @@ package logical
 import (
 	"fmt"
 	"time"
+	"x/src/utility"
 
 	"x/src/common"
 	"x/src/consensus/groupsig"
@@ -37,7 +38,7 @@ type rtLog struct {
 
 func newRtLog(key string) *rtLog {
 	return &rtLog{
-		start: time.Now(),
+		start: utility.GetTime(),
 		key:   key,
 	}
 }
@@ -50,7 +51,7 @@ func (r *rtLog) log(format string, p ...interface{}) {
 }
 
 func (r *rtLog) end() {
-	stdLogger.Debugf(fmt.Sprintf("%v:%v cost ", time.Now().Format(TIMESTAMP_LAYOUT), r.key))
+	stdLogger.Debugf(fmt.Sprintf("%v:%v cost ", utility.GetTime().Format(TIMESTAMP_LAYOUT), r.key))
 }
 
 //消息追踪日志，记录到文件
@@ -110,7 +111,7 @@ type slowLog struct {
 func newSlowLog(key string, thresholdSecs float64) *slowLog {
 	return &slowLog{
 		lts:       make([]*stageLogTime, 0),
-		begin:     time.Now(),
+		begin:     utility.GetTime(),
 		key:       key,
 		threshold: thresholdSecs,
 	}
@@ -118,7 +119,7 @@ func newSlowLog(key string, thresholdSecs float64) *slowLog {
 
 func (log *slowLog) addStage(key string) {
 	st := &stageLogTime{
-		begin: time.Now(),
+		begin: utility.GetTime(),
 		stage: key,
 	}
 	log.lts = append(log.lts, st)
@@ -127,7 +128,7 @@ func (log *slowLog) addStage(key string) {
 func (log *slowLog) endStage() {
 	if len(log.lts) > 0 {
 		st := log.lts[len(log.lts)-1]
-		st.end = time.Now()
+		st.end = utility.GetTime()
 	}
 }
 

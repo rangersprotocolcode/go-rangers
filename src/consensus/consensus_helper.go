@@ -4,12 +4,12 @@ import (
 	"x/src/common"
 	"x/src/consensus/vrf"
 	"x/src/consensus/groupsig"
-	"x/src/consensus/logical"
 	"x/src/consensus/model"
 	"errors"
 	"fmt"
 	"math/big"
 	"x/src/middleware/types"
+	"x/src/consensus/logical/group_create"
 )
 
 type ConsensusHelperImpl struct {
@@ -29,15 +29,11 @@ func (helper *ConsensusHelperImpl) PackBonus() *big.Int {
 }
 
 func (helper *ConsensusHelperImpl) GenerateGenesisInfo() []*types.GenesisInfo {
-	return logical.GenerateGenesis()
+	return group_create.GetGenesisInfo()
 }
 
 func (helper *ConsensusHelperImpl) VRFProve2Value(prove *big.Int) *big.Int {
 	return vrf.VRFProof2Hash(vrf.VRFProve(prove.Bytes())).Big()
-}
-
-func (helper *ConsensusHelperImpl) CalculateQN(bh *types.BlockHeader) uint64 {
-	return Proc.CalcBlockHeaderQN(bh)
 }
 
 func (helper *ConsensusHelperImpl) VerifyHash(b *types.Block) common.Hash {
@@ -49,7 +45,7 @@ func (helper *ConsensusHelperImpl) CheckProveRoot(bh *types.BlockHeader) (bool, 
 	if preBlock == nil {
 		return false, errors.New(fmt.Sprintf("preBlock is nil,hash %v", bh.PreHash.ShortS()))
 	}
-	gid := groupsig.DeserializeId(bh.GroupId)
+	gid := groupsig.DeserializeID(bh.GroupId)
 	group := Proc.GetGroup(gid)
 	if !group.GroupID.IsValid() {
 		return false, errors.New(fmt.Sprintf("group is invalid, gid %v", gid))

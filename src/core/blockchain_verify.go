@@ -6,14 +6,10 @@ import (
 	"bytes"
 	"x/src/consensus/groupsig"
 	"encoding/json"
+	"x/src/statemachine"
 )
 
 func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transaction) ([]common.Hashes, int8) {
-	// use cache before verify
-	if chain.verifiedBlocks.Contains(bh.Hash) {
-		return nil, 0
-	}
-
 	logger.Infof("verifyBlock hash:%v,height:%d,totalQn:%d,preHash:%v,len header tx:%d,len tx:%d", bh.Hash.String(), bh.Height, bh.TotalQN, bh.PreHash.String(), len(bh.Transactions), len(txs))
 	if bh.Hash != bh.GenHash() {
 		logger.Debugf("Validate block hash error!")
@@ -27,8 +23,10 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 		return nil, 2
 	}
 
-
-
+	// use cache before verify
+	if chain.verifiedBlocks.Contains(bh.Hash) {
+		return nil, 0
+	}
 
 	miss, missingTx, transactions := chain.missTransaction(bh, txs)
 	if miss {
@@ -56,10 +54,14 @@ func (chain *blockChain) hasPreBlock(bh types.BlockHeader) bool {
 }
 
 func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Transaction) (bool, []common.Hashes, []*types.Transaction) {
-	var missing []common.Hashes
-	var transactions []*types.Transaction
+	var (
+		missing      []common.Hashes
+		transactions []*types.Transaction
+		abnormal     map[string]bool
+	)
+
 	if nil == txs {
-		transactions, missing, _ = chain.queryTxsByBlockHash(bh.Hash, bh.Transactions)
+		transactions, missing, abnormal, _ = chain.queryTxsByBlockHash(bh.Hash, bh.Transactions)
 	} else {
 		transactions = txs
 	}
@@ -75,8 +77,12 @@ func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Tran
 		}
 		//向CASTOR索取交易
 		m := &transactionRequestMessage{TransactionHashes: missing, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue,}
-		go requestTransaction(*m, castorId.String())
+		go requestTransaction(*m, castorId.GetHexString())
 		return true, missing, transactions
+	}
+
+	if 0 != len(abnormal) {
+		statemachine.STMManger.SetAsyncApps(abnormal)
 	}
 	return false, missing, transactions
 }

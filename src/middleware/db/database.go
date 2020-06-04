@@ -1,24 +1,25 @@
 package db
 
 import (
-	"sync"
-	"os"
 	"bytes"
+	"os"
+	"sync"
 
 	"x/src/common"
 
+	"github.com/hashicorp/golang-lru"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
-	"github.com/hashicorp/golang-lru"
 )
 
 const (
-	CONFIG_SEC   = "chain"
-	DEFAULT_FILE = "database"
+	ConfigSec                     = "chain"
+	DefaultDatabase               = "database"
+	DefaultJoinedGroupDatabaseKey = "joinedGroupDatabase"
 )
 
 var (
@@ -63,15 +64,15 @@ func getInstance() (*LDBDatabase, error) {
 	}
 
 	defaultConfig := &databaseConfig{
-		database: DEFAULT_FILE,
-		cache:    512,
+		database: DefaultDatabase,
+		cache:    256,
 		handler:  2048,
 	}
 
 	if nil == common.GlobalConf {
 		instanceInner, err = NewLDBDatabase(defaultConfig.database, defaultConfig.cache, defaultConfig.handler)
 	} else {
-		instanceInner, err = NewLDBDatabase(common.GlobalConf.GetString(CONFIG_SEC, "database", defaultConfig.database), common.GlobalConf.GetInt(CONFIG_SEC, "cache", defaultConfig.cache), common.GlobalConf.GetInt(CONFIG_SEC, "handler", defaultConfig.handler))
+		instanceInner, err = NewLDBDatabase(common.GlobalConf.GetString(ConfigSec, DefaultDatabase, defaultConfig.database), common.GlobalConf.GetInt(ConfigSec, "cache", defaultConfig.cache), common.GlobalConf.GetInt(ConfigSec, "handler", defaultConfig.handler))
 	}
 
 	if nil == err {
@@ -202,7 +203,7 @@ func newLevelDBInstance(file string, cache int, handles int) (*leveldb.DB, error
 		OpenFilesCacheCapacity: handles,
 		BlockCacheCapacity:     200 * opt.MiB,
 		WriteBuffer:            cache * opt.MiB, // Two of these are used internally
-		Filter:                 filter.NewBloomFilter(15),
+		Filter:                 filter.NewBloomFilter(20),
 	})
 
 	if _, corrupted := err.(*errors.ErrCorrupted); corrupted {

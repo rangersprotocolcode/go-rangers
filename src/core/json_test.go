@@ -71,13 +71,6 @@ func TestResponse(t *testing.T) {
 	fmt.Printf("data:%s", data)
 }
 
-func TestFloatConvert(t *testing.T) {
-	var str = "-15000.0"
-	b := convert(str)
-	fmt.Printf("result:%v", b)
-	fmt.Printf("result:%v", b.Sign())
-}
-
 func TestAddr(t *testing.T) {
 	s := "TAD5ZbvETHrNobKa41hGkCkB37jEXCEQss"
 	addr := common.HexToAddress(s)
@@ -93,33 +86,6 @@ func TestJSONTransferData(t *testing.T) {
 
 	fmt.Printf("length: %d\n", len(mm))
 	fmt.Printf("length: %s", mm)
-}
-
-func TestJSONWithDepositData(t *testing.T) {
-	w := types.DepositData{ChainType: "ETH", Amount: "12.56", TxId: "1213r43qr"}
-	ft := make(map[string]string, 0)
-	ft["ft1"] = "23.55"
-	ft["ft2"] = "125.68"
-	w.FT = ft
-
-	nft := make(map[string]string, 0)
-	nft["nft1"] = "dafjls;djfa"
-	nft["nft2"] = "{'key':'v'}"
-	w.NFT = nft
-
-	b, err := json.Marshal(w)
-	if err != nil {
-		fmt.Printf("json marshal err: %s\n", err.Error())
-	}
-	fmt.Printf("marshal result:%s\n", b)
-
-	s := "{\"chainType\":\"ETH\",\"amount\":\"12.56\",\"txId\":\"1213r43qr\",\"ft\":{\"ft1\":\"23.55\",\"ft2\":\"125.68\"},\"nft\":{\"nft1\":\"dafjls;djfa\",\"nft2\":\"{'key':'v'}\"}}"
-	a := types.DepositData{}
-	err1 := json.Unmarshal([]byte(s), &a)
-	if err1 != nil {
-		fmt.Printf("json unmarshal err: %s\n", err.Error())
-	}
-	fmt.Printf("unmarshal result:%v\n", a)
 }
 
 func TestJSONNFTID(t *testing.T) {
@@ -141,22 +107,4 @@ func TestJSONNFTID(t *testing.T) {
 		fmt.Printf("Unmarshal error:%s\n", err.Error())
 	}
 	fmt.Printf("m2:%v\n", m2)
-}
-
-func TestWithdrawData(t *testing.T) {
-	w := types.WithDrawData{ChainType: "ETH", Address: "address1", Balance: "2.33"}
-	ftInfo := make(map[string]string)
-	ftInfo ["setId1"] = "ft-balance1"
-	ftInfo ["setId2"] = "ft-balance2"
-	w.FT = ftInfo
-
-	nftInfo := make([]types.NFTID, 0)
-	nftId1 := types.NFTID{SetId: "nft set a", Id: "token id 1", Data: "data1"}
-	nftId2 := types.NFTID{SetId: "nft set b", Id: "token id 2", Data: "data2"}
-	nftInfo = append(nftInfo, nftId1)
-	nftInfo = append(nftInfo, nftId2)
-	w.NFT = nftInfo
-
-	b, _ := json.Marshal(w)
-	fmt.Printf("%s\n", b)
 }

@@ -6,15 +6,18 @@ import (
 	"encoding/json"
 	"fmt"
 	"x/src/middleware/types"
+	dockerTypes "github.com/docker/docker/api/types"
 	"time"
 	"net"
-	"strings"
 	"github.com/docker/docker/client"
 	"context"
-	"net/url"
 	"x/src/common"
-	"math/rand"
+	"x/src/middleware/log"
+	"sync"
 	"strconv"
+	"strings"
+	"os"
+	"x/src/middleware/notify"
 )
 
 const (
@@ -41,114 +44,114 @@ func createHTTPClient() *http.Client {
 	return client
 }
 
-var Docker *StateMachineManager
+var STMManger *StateMachineManager
 
 type StateMachineManager struct {
 	// stm config
-	Config   YAMLConfig
-	Filename string
+	Config YAMLConfig
 
-	// stm entities
-	StateMachines map[string]StateMachine
+	StorageRoot string
 
 	// tool for connecting stm
-	httpClient  *http.Client
-	Mapping     map[string]PortInt // key 为appId， value为端口号
-	AuthMapping map[string]string  // key 为appId， value为authCode
+	httpClient *http.Client
+
+	// stm entities
+	StateMachines map[string]*StateMachine // key 为appId
+	Mapping       map[string]PortInt       // key 为appId， value为端口号
+	AuthMapping   map[string]string        // key 为appId， value为authCode
+	lock          sync.RWMutex
 
 	// docker client
-	cli *client.Client
-	ctx context.Context
+	cli *client.Client  //cli:  用于访问 docker 守护进程
+	ctx context.Context //ctx:  传递本次操作的上下文信息
+
+	logger log.Logger
+
+	minerId string
 }
 
-func DockerInit(filename string, port uint) *StateMachineManager {
-	if nil != Docker {
-		return Docker
+// docker
+func InitSTMManager(filename, minerId string) *StateMachineManager {
+	if nil != STMManger {
+		return STMManger
 	}
 
-	Docker = &StateMachineManager{
-		Filename:      filename,
-		StateMachines: make(map[string]StateMachine),
+	STMManger = &StateMachineManager{
+		StateMachines: make(map[string]*StateMachine),
 	}
-	Docker.httpClient = createHTTPClient()
-	Docker.ctx = context.Background()
-	Docker.cli, _ = client.NewClientWithOpts(client.FromEnv)
-	Docker.cli.NegotiateAPIVersion(Docker.ctx)
+	STMManger.httpClient = createHTTPClient()
+	STMManger.ctx = context.Background()
+	STMManger.cli, _ = client.NewClientWithOpts(client.FromEnv)
+	STMManger.cli.NegotiateAPIVersion(STMManger.ctx)
 
-	Docker.init(port)
+	STMManger.logger = log.GetLoggerByIndex(log.STMLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	STMManger.Mapping = make(map[string]PortInt)
+	STMManger.AuthMapping = make(map[string]string)
+	STMManger.minerId = minerId
 
-	return Docker
+	pwd, _ := os.Getwd()
+	STMManger.StorageRoot = pwd + "/storage"
+	STMManger.init(filename)
+
+	// 订阅状态更新消息
+	notify.BUS.Subscribe(notify.STMStorageReady, STMManger.updateSTMStorage)
+
+	STMManger.logger.Infof("start success, minerId: %s", minerId)
+	return STMManger
 }
 
-func (d *StateMachineManager) init(layer2Port uint) {
-	d.Config.InitFromFile(d.Filename)
-	d.Mapping, d.AuthMapping = d.runStateMachines(layer2Port)
+func (d *StateMachineManager) init(filename string) {
+	d.buildConfig(filename)
+
+	if 0 != len(d.Config.Services) {
+		//todo : 根据Priority排序
+		for _, service := range d.Config.Services {
+			// 异步启动
+			go d.loadStateMachine(service)
+		}
+	}
 }
 
-//RunContainers: 从配置运行容器
-//cli:  用于访问 docker 守护进程
-//ctx:  传递本次操作的上下文信息
-func (d *StateMachineManager) runStateMachines(port uint) (map[string]PortInt, map[string]string) {
-	if 0 == len(d.Config.Services) {
-		return nil, nil
+func (d *StateMachineManager) buildConfig(filename string) {
+	// 加载配置文件
+	// 配置文件的方式应该逐步废除
+	if 0 != len(filename) {
+		d.Config.InitFromFile(filename)
 	}
 
-	mapping := make(map[string]PortInt)
-	authCodeMapping := make(map[string]string)
+	d.logger.Infof("get stm configs from file, %s", d.Config.TOJSONString())
 
-	//todo : 根据Priority排序
-	for _, service := range d.Config.Services {
-		stateMachine := buildStateMachine(service, d.cli, d.ctx)
+	// 获取当前机器上已有的容器
+	containers, _ := d.cli.ContainerList(d.ctx, dockerTypes.ContainerListOptions{All: true})
+	if 0 == len(containers) {
+		return
+	}
 
-		name, ports := stateMachine.Run()
-		if name == "" || ports == nil {
+	for _, container := range containers {
+		name := container.Names[0]
+		if !strings.HasPrefix(name, "/"+containerPrefix) {
 			continue
 		}
 
-		d.StateMachines[name] = stateMachine
-		mapping[name] = ports[0].Host
-		authCode := d.generateAuthcode()
-		authCodeMapping[name] = authCode
-
-		//需要等到docker镜像启动完成
-		d.callInit(ports[0].Host, port, authCode)
-	}
-
-	return mapping, authCodeMapping
-}
-
-func (d *StateMachineManager) callInit(dockerPortInt PortInt, layer2Port uint, authCode string) {
-	path := fmt.Sprintf("http://0.0.0.0:%d/api/v1/%s", dockerPortInt, "init")
-	values := url.Values{}
-	values["url"] = []string{fmt.Sprintf("http://%s:%d", "172.17.0.1", layer2Port)}
-	values["authCode"] = []string{authCode}
-	if nil != common.DefaultLogger {
-		common.DefaultLogger.Errorf("Send post req:path:%s,values:%v", path, values)
-	}
-
-	for {
-		resp, err := http.PostForm(path, values)
-		if err != nil {
-			if nil != common.DefaultLogger {
-				common.DefaultLogger.Infof(err.Error())
+		index := -1
+		for i, service := range d.Config.Services {
+			if service.Image == container.Image {
+				index = i
+				break
 			}
-
-			time.Sleep(200 * time.Millisecond)
-		} else {
-			body, _ := ioutil.ReadAll(resp.Body)
-			resp.Body.Close()
-			if common.DefaultLogger != nil {
-				common.DefaultLogger.Error(fmt.Sprintf("start success: %s", string(body)))
-			}
-
-			return
 		}
-	}
-}
+		if -1 != index {
+			d.Config.Services = append(d.Config.Services[:index], d.Config.Services[index+1:]...)
+		}
 
-func (d *StateMachineManager) generateAuthcode() string {
-	rand.Seed(int64(time.Now().UnixNano()))
-	return strconv.Itoa(rand.Int())
+		var config ContainerConfig
+		nameSplited := strings.Split(name, "-")
+		config.Game = nameSplited[1]
+		config.This = container
+		d.Config.Services = append(d.Config.Services, config)
+	}
+
+	d.logger.Infof("get stm configs, merged by existing containers, %s", d.Config.TOJSONString())
 }
 
 func (d *StateMachineManager) Nonce(name string) int {
@@ -180,45 +183,17 @@ func (d *StateMachineManager) Nonce(name string) int {
 }
 
 func (d *StateMachineManager) getUrlPrefix(name string) string {
-	port := d.Mapping[name]
-	if 0 == port {
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+
+	port, ok := d.Mapping[name]
+	if !ok {
+		d.logger.Errorf("fail to find appId: %s", name)
 		return ""
 	}
 
 	//call local container
 	return fmt.Sprintf("http://0.0.0.0:%d/api/v1/", port)
-}
-
-func (d *StateMachineManager) GetType(gameId string) string {
-	configs := d.Config.Services
-	if 0 == len(configs) {
-		return ""
-	}
-
-	for _, value := range configs {
-		if 0 == strings.Compare(value.Game, gameId) {
-			return value.Type
-		}
-	}
-
-	return ""
-}
-
-// 判断是否是游戏地址
-// todo: 这里只判断了本地运行的statemachine，会有漏洞
-func (d *StateMachineManager) IsGame(address string) bool {
-	configs := d.Config.Services
-	if 0 == len(configs) {
-		return false
-	}
-
-	for _, value := range configs {
-		if 0 == strings.Compare(value.Game, address) {
-			return true
-		}
-	}
-
-	return false
 }
 
 // 检查authCode是否合法
@@ -227,13 +202,64 @@ func (d *StateMachineManager) ValidateAppId(appId, authCode string) bool {
 		return false
 	}
 
+	d.lock.RLock()
+	defer d.lock.RUnlock()
+
 	expect := d.AuthMapping[appId]
 	if 0 == len(expect) {
-		common.DefaultLogger.Debugf("Validate wrong")
+		d.logger.Debugf("Validate wrong")
 		return false
 	}
 	if expect != authCode {
-		common.DefaultLogger.Debugf("Validate authCode error! appid:%s,authCode:%s,expect:%s", appId, authCode, expect)
+		d.logger.Errorf("Validate authCode error! appId:%s,authCode:%s,expect:%s", appId, authCode, expect)
 	}
 	return expect == authCode
+}
+
+// 获取当前STM状态
+func (s *StateMachineManager) GetStmStatus() map[string]map[string]string {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	result := make(map[string]map[string]string)
+	for appId, stm := range s.StateMachines {
+		status := make(map[string]string, 3)
+		status["status"] = stm.Status
+		status["nonce"] = strconv.FormatUint(stm.RequestId, 10)
+		status["storage"] = common.Bytes2Hex(stm.StorageStatus[:])
+		result[appId] = status
+	}
+
+	return result
+}
+
+func (s *StateMachineManager) IsAppId(appId string) bool {
+	if 0 == len(appId) {
+		return false
+	}
+
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	_, ok := s.AuthMapping[appId]
+
+	return ok
+}
+
+func (s *StateMachineManager) SetAsyncApps(appIds map[string]bool) {
+	if 0 == len(appIds) {
+		return
+	}
+	s.logger.Errorf("setAsyncApps: %s", appIds)
+
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+
+	for appId := range appIds {
+		stateMachine := s.StateMachines[appId]
+		if nil == stateMachine {
+			continue
+		}
+		stateMachine.async()
+	}
 }

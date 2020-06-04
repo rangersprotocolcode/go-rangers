@@ -1,11 +1,16 @@
 package cli
 
 import (
+	"bytes"
 	"encoding/json"
 	"log"
 	"sync"
 	"x/src/common"
+	"x/src/consensus/base"
+	"x/src/consensus/vrf"
 	"x/src/core"
+	"x/src/middleware/types"
+	"x/src/consensus/groupsig"
 )
 
 var walletManager wallets
@@ -42,16 +47,33 @@ func (ws *wallets) deleteWallet(key string) {
 }
 
 // newWallet 新建钱包并存储到config文件中
-func (ws *wallets) newWallet() (privKeyStr, walletAddress string) {
+func (ws *wallets) newWallet() (privKeyStr, walletAddress, minerString string) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	priv := common.GenerateKey("")
+
+	return ws.newWalletByPrivateKey(priv.GetHexString())
+}
+
+func (ws *wallets) newWalletByPrivateKey(privateKey string) (privKeyStr, walletAddress, minerString string) {
+	priv := common.HexStringToSecKey(privateKey)
 	pub := priv.GetPubKey()
 	address := pub.GetAddress()
 	privKeyStr, walletAddress = pub.GetHexString(), address.GetHexString()
-	// 加入本地钱包
-	//*ws = append(*ws, wallet{privKeyStr, walletAddress})
-	//ws.store()
+
+	var miner types.Miner
+	miner.Id = address.Bytes()
+
+	secretSeed := base.RandFromBytes(address.Bytes())
+	minerSecKey := *groupsig.NewSeckeyFromRand(secretSeed)
+	minerPubKey := *groupsig.GeneratePubkey(minerSecKey)
+	vrfPK, _, _ := vrf.VRFGenerateKey(bytes.NewReader(secretSeed.Bytes()))
+
+	miner.PublicKey = minerPubKey.Serialize()
+	miner.VrfPublicKey = vrfPK
+
+	minerJson, _ := json.Marshal(miner)
+	minerString = string(minerJson)
 	return
 }
 

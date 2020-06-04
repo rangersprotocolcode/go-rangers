@@ -5,12 +5,12 @@ import (
 	"github.com/gogo/protobuf/proto"
 	"x/src/middleware/pb"
 
-	"x/src/common"
 	"math/big"
 	"time"
+	"x/src/common"
 
-	"x/src/middleware/log"
 	"encoding/json"
+	"x/src/middleware/log"
 )
 
 var logger log.Logger
@@ -274,18 +274,14 @@ func PbToGroupHeader(g *middleware_pb.GroupHeader) *GroupHeader {
 	var beginTime time.Time
 	beginTime.UnmarshalBinary(g.BeginTime)
 	header := GroupHeader{
-		Hash:          common.BytesToHash(g.Hash),
-		Parent:        g.Parent,
-		PreGroup:      g.PreGroup,
-		Authority:     *g.Authority,
-		Name:          *g.Name,
-		BeginTime:     beginTime,
-		MemberRoot:    common.BytesToHash(g.MemberRoot),
-		CreateHeight:  *g.CreateHeight,
-		ReadyHeight:   *g.ReadyHeight,
-		WorkHeight:    *g.WorkHeight,
-		DismissHeight: *g.DismissHeight,
-		Extends:       *g.Extends,
+		Hash:            common.BytesToHash(g.Hash),
+		Parent:          g.Parent,
+		PreGroup:        g.PreGroup,
+		BeginTime:       beginTime,
+		MemberRoot:      common.BytesToHash(g.MemberRoot),
+		CreateHeight:    *g.CreateHeight,
+		Extends:         *g.Extends,
+		CreateBlockHash: g.CreateBlockHash,
 	}
 	return &header
 }
@@ -429,18 +425,14 @@ func BlockToPb(b *Block) *middleware_pb.Block {
 func GroupToPbHeader(g *GroupHeader) *middleware_pb.GroupHeader {
 	beginTime, _ := g.BeginTime.MarshalBinary()
 	header := middleware_pb.GroupHeader{
-		Hash:          g.Hash.Bytes(),
-		Parent:        g.Parent,
-		PreGroup:      g.PreGroup,
-		Authority:     &g.Authority,
-		Name:          &g.Name,
-		BeginTime:     beginTime,
-		MemberRoot:    g.MemberRoot.Bytes(),
-		CreateHeight:  &g.CreateHeight,
-		ReadyHeight:   &g.ReadyHeight,
-		WorkHeight:    &g.WorkHeight,
-		DismissHeight: &g.DismissHeight,
-		Extends:       &g.Extends,
+		Hash:            g.Hash.Bytes(),
+		Parent:          g.Parent,
+		PreGroup:        g.PreGroup,
+		BeginTime:       beginTime,
+		MemberRoot:      g.MemberRoot.Bytes(),
+		CreateHeight:    &g.CreateHeight,
+		Extends:         &g.Extends,
+		CreateBlockHash: g.CreateBlockHash,
 	}
 	return &header
 }

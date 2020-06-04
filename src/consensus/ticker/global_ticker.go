@@ -6,6 +6,7 @@ import (
 	"sync"
 	"runtime/debug"
 	"x/src/common"
+	"x/src/utility"
 )
 
 const (
@@ -133,7 +134,7 @@ func (gt *GlobalTicker) StopTickerRoutine(name string) {
 func newGlobalTicker(id string) *GlobalTicker {
 	ticker := &GlobalTicker{
 		id:        id,
-		beginTime: time.Now(),
+		beginTime: utility.GetTime(),
 	}
 	go ticker.routine()
 	return ticker

@@ -11,9 +11,9 @@ import (
 	"reflect"
 	"strings"
 	"sync"
-	"time"
 	"unicode"
 	"unicode/utf8"
+	"x/src/utility"
 )
 
 var (
@@ -196,7 +196,7 @@ func idGenerator() *rand.Rand {
 	if seed, err := binary.ReadVarint(bufio.NewReader(crand.Reader)); err == nil {
 		return rand.New(rand.NewSource(seed))
 	}
-	return rand.New(rand.NewSource(int64(time.Now().Nanosecond())))
+	return rand.New(rand.NewSource(int64(utility.GetTime().Nanosecond())))
 }
 
 // NewID generates a identifier that can be used as an identifier in the RPC interface.

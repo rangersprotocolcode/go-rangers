@@ -8,6 +8,7 @@ import (
 	"x/src/middleware/types"
 	"x/src/middleware"
 	"time"
+	"x/src/consensus/logical/group_create"
 )
 
 func (p *Processor) triggerFutureVerifyMsg(hash common.Hash) {
@@ -18,7 +19,7 @@ func (p *Processor) triggerFutureVerifyMsg(hash common.Hash) {
 	p.removeFutureVerifyMsgs(hash)
 	mtype := "FUTURE_VERIFY"
 	for _, msg := range futures {
-		tlog := newHashTraceLog(mtype, msg.BH.Hash, msg.SI.GetID())
+		tlog := newHashTraceLog(mtype, msg.BH.Hash, msg.SignInfo.GetSignerID())
 		tlog.logStart("size %v", len(futures))
 		slog := newSlowLog(mtype, 0.5)
 		err := p.doVerify(mtype, msg, tlog, newBizLog(mtype), slog)
@@ -51,15 +52,16 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	block := message.GetData().(types.Block)
 	bh := block.Header
 
-	tlog := newMsgTraceLog("OnBlockAddSuccess", bh.Hash.ShortS(), "")
-	tlog.log("preHash=%v, height=%v", bh.PreHash.ShortS(), bh.Height)
+	//tlog := newMsgTraceLog("OnBlockAddSuccess", bh.Hash.ShortS(), "")
+	//tlog.log("preHash=%v, height=%v", bh.PreHash.ShortS(), bh.Height)
 
-	gid := groupsig.DeserializeId(bh.GroupId)
-	if p.IsMinerGroup(gid) {
+	gid := groupsig.DeserializeID(bh.GroupId)
+	if p.belongGroups.BelongGroup(gid) {
 		bc := p.GetBlockContext(gid)
 		if bc != nil {
-			bc.AddCastedHeight(bh.Height, bh.PreHash)
-			vctx := bc.GetVerifyContextByHeight(bh.Height)
+			bc.AddCastedHeight(bh.Hash, bh.PreHash)
+			bc.updateSignedMaxQN(bh.TotalQN)
+			vctx := bc.GetVerifyContextByHash(bh.Hash)
 			if vctx != nil && vctx.prevBH.Hash == bh.PreHash {
 				//如果本地没有广播准备，说明是其他节点广播过来的块，则标记为已广播
 				vctx.markBroadcast()
@@ -67,16 +69,12 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 		}
 		p.removeVerifyMsgCache(bh.Hash)
 	}
-
-	vrf := p.GetVrfWorker()
-	if vrf != nil && vrf.baseBH.Hash == bh.PreHash && vrf.castHeight == bh.Height {
-		vrf.markSuccess()
-	}
+	p.setVrfWorker(nil)
 
 	//p.triggerFutureBlockMsg(bh)
 	p.triggerFutureVerifyMsg(bh.Hash)
 
-	p.groupManager.CreateNextGroupRoutine()
+	group_create.GroupCreateProcessor.StartCreateGroupPolling()
 
 	p.cleanVerifyContext(bh.Height)
 
@@ -94,27 +92,14 @@ func (p *Processor) isTriggerCastImmediately() bool {
 
 func (p *Processor) onGroupAddSuccess(message notify.Message) {
 	group := message.GetData().(types.Group)
-	stdLogger.Infof("groupAddEventHandler receive message, groupId=%v, workheight=%v\n", groupsig.DeserializeId(group.Id).GetHexString(), group.Header.WorkHeight)
+	stdLogger.Infof("groupAddEventHandler receive message, groupId=%v, workheight=%v\n", groupsig.DeserializeID(group.Id).GetHexString(), group.Header.WorkHeight)
 	if group.Id == nil || len(group.Id) == 0 {
 		return
 	}
-	sgi := NewSGIFromCoreGroup(&group)
+	sgi := model.ConvertToGroupInfo(&group)
 	p.acceptGroup(sgi)
 
-	p.groupManager.onGroupAddSuccess(sgi)
-	p.joiningGroups.Clean(sgi.GInfo.GroupHash())
-	p.globalGroups.removeInitedGroup(sgi.GInfo.GroupHash())
-
-}
-
-func (p *Processor) onNewBlockReceive(message notify.Message) {
-	if !p.Ready() {
-		return
-	}
-	msg := &model.ConsensusBlockMessage{
-		Block: message.GetData().(types.Block),
-	}
-	p.OnMessageBlock(msg)
+	group_create.GroupCreateProcessor.OnGroupAddSuccess(sgi)
 }
 
 func (p *Processor) onMissTxAddSucc(message notify.Message) {
@@ -136,4 +121,23 @@ func (p *Processor) onMissTxAddSucc(message notify.Message) {
 
 	}
 	p.OnMessageNewTransactions(txHashes)
+}
+
+func (p *Processor) onGroupAccept(message notify.Message) {
+	group := message.GetData().(types.Group)
+	stdLogger.Infof("groupAcceptHandler receive message, groupId=%v, workheight=%v\n", groupsig.DeserializeID(group.Id).GetHexString(), group.Header.WorkHeight)
+	if group.Id == nil || len(group.Id) == 0 {
+		return
+	}
+	sgi := model.ConvertToGroupInfo(&group)
+	p.acceptGroup(sgi)
+}
+
+func (p *Processor) acceptGroup(staticGroup *model.GroupInfo) {
+	add := p.globalGroups.AddGroupInfo(staticGroup)
+	blog := newBizLog("acceptGroup")
+	blog.debug("Add to Global static groups, result=%v, groups=%v.", add, p.globalGroups.GroupSize())
+	if staticGroup.MemExist(p.GetMinerID()) {
+		p.prepareForCast(staticGroup)
+	}
 }

@@ -170,7 +170,7 @@ func (ca *RemoteChainOpImpl) ApplyMiner(mtype int, stake uint64, gas, gasprice u
 	bpk.SetHexString(aci.Miner.BPk)
 
 	st := uint64(0)
-	if mtype == types.MinerTypeLight {
+	if mtype == common.MinerTypeValidator {
 		fmt.Println("stake of applying verify node is hardened as 100 Tas")
 		st = 1
 	} else {

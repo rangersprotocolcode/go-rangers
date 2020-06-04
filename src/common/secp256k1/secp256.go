@@ -55,8 +55,13 @@ func Sign(msg []byte, seckey []byte) ([]byte, error) {
 	//if len(msg) != 32 {
 	//	return nil, ErrInvalidMsgLen
 	//}
+	//if len(seckey) != 32 {
+	//	return nil, ErrInvalidKey
+	//}
 	if len(seckey) != 32 {
-		return nil, ErrInvalidKey
+		privateKey := make([]byte, 32)
+		copy( privateKey[32-len(seckey):32],seckey)
+		seckey = privateKey
 	}
 	seckeydata := (*C.uchar)(unsafe.Pointer(&seckey[0]))
 	if C.secp256k1_ec_seckey_verify(context, seckeydata) != 1 {

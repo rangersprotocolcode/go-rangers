@@ -1,18 +1,18 @@
 package core
 
 import (
-	"time"
 	"bytes"
 	"math"
+	"time"
 
 	"x/src/common"
-	"x/src/utility"
+	"x/src/middleware"
 	"x/src/middleware/log"
+	"x/src/middleware/notify"
 	"x/src/middleware/pb"
 	"x/src/middleware/types"
 	"x/src/network"
-	"x/src/middleware/notify"
-	"x/src/middleware"
+	"x/src/utility"
 
 	"github.com/gogo/protobuf/proto"
 )
@@ -46,7 +46,7 @@ type groupSyncer struct {
 }
 
 func InitGroupSyncer() {
-	GroupSyncer = &groupSyncer{syncing: false, candidate: "", candidatePool: make(map[string]uint64), lock: middleware.NewLoglock(""), init: false,}
+	GroupSyncer = &groupSyncer{syncing: false, candidate: "", candidatePool: make(map[string]uint64), lock: middleware.NewLoglock(""), init: false}
 	GroupSyncer.logger = log.GetLoggerByIndex(log.GroupSyncLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	GroupSyncer.reqTimeoutTimer = time.NewTimer(groupSyncReqTimeout)
 	GroupSyncer.syncTimer = time.NewTimer(groupSyncInterval)
@@ -116,13 +116,12 @@ func (gs *groupSyncer) groupReqHandler(msg notify.Message) {
 	sourceId := groupReqMsg.Peer
 	groupId := groupReqMsg.GroupIdByte
 	gs.logger.Debugf("Rcv group req from:%s,id:%v\n", sourceId, groupId)
-	group := groupChainImpl.GetGroupById(groupId)
+	groups := groupChainImpl.GetSyncGroupsById(groupId)
 
-	groups := []*types.Group{group}
 	l := len(groups)
 	if l == 0 {
 		gs.logger.Errorf("Get nil group by id:%v", groupId)
-		gs.sendGroups(sourceId, []*types.Group{}, true)
+		//gs.sendGroups(sourceId, []*types.Group{}, true)
 		return
 	} else {
 		var isTop bool
@@ -149,14 +148,20 @@ func (gs *groupSyncer) groupHandler(msg notify.Message) {
 
 	sourceId := groupInfoMsg.Peer
 	groups := groupInfo.Groups
+	if len(groups) == 0 {
+		return
+	}
+
 	gs.logger.Debugf("Rcv groups ,from:%s,groups len %d", sourceId, len(groups))
 	for _, group := range groupInfo.Groups {
 		gs.logger.Debugf("AddGroup Id:%s,pre id:%s", common.BytesToAddress(group.Id).GetHexString(), common.BytesToAddress(group.Header.Parent).GetHexString())
-		gs.logger.Debugf("Local height:%d,local top group id:%s", groupChainImpl.Count(), common.BytesToAddress(groupChainImpl.LastGroup().Id).GetHexString(), )
+		gs.logger.Debugf("Local height:%d,local top group id:%s", groupChainImpl.Count(), common.BytesToAddress(groupChainImpl.LastGroup().Id).GetHexString())
 		e := groupChainImpl.AddGroup(group)
 		if e != nil {
 			gs.logger.Errorf("[GroupSyncer]add group on chain error:%s", e.Error())
-			break
+			if e != common.ErrGroupAlreadyExist {
+				return
+			}
 		}
 	}
 
@@ -278,7 +283,7 @@ func (gs *groupSyncer) sendGroupHeightToNeighbor(localCount uint64) {
 }
 
 func (gs *groupSyncer) requestGroupByGroupId(id string, groupId []byte) {
-	gs.logger.Debugf("Req group for %s,id:%v!", id, groupId)
+	gs.logger.Debugf("Req group for %s,id:%v!", id, common.Bytes2Hex(groupId))
 	message := network.Message{Code: network.ReqGroupMsg, Body: groupId}
 	network.GetNetInstance().Send(id, message)
 }

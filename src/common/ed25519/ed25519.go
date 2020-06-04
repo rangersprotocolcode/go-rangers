@@ -15,9 +15,8 @@ import (
 	"io"
 	"strconv"
 	"crypto/sha512"
-	cryptorand "crypto/rand"
-
 	"x/src/common/ed25519/edwards25519"
+	cryptorand "crypto/rand"
 )
 
 const (
@@ -34,26 +33,6 @@ type PublicKey []byte
 
 // PrivateKey is the type of Ed25519 private keys. It implements crypto.Signer.
 type PrivateKey []byte
-
-// Public returns the PublicKey corresponding to priv.
-func (priv PrivateKey) Public() crypto.PublicKey {
-	publicKey := make([]byte, PublicKeySize)
-	copy(publicKey, priv[32:])
-	return PublicKey(publicKey)
-}
-
-// Sign signs the given message with priv.
-// Ed25519 performs two passes over messages to be signed and therefore cannot
-// handle pre-hashed messages. Thus opts.HashFunc() must return zero to
-// indicate the message hasn't been hashed. This can be achieved by passing
-// crypto.Hash(0) as the value for opts.
-func (priv PrivateKey) Sign(rand io.Reader, message []byte, opts crypto.SignerOpts) (signature []byte, err error) {
-	if opts.HashFunc() != crypto.Hash(0) {
-		return nil, errors.New("ed25519: cannot sign hashed message")
-	}
-
-	return Sign(priv, message), nil
-}
 
 // GenerateKey generates a public/private key pair using entropy from rand.
 // If rand is nil, crypto/rand.Reader will be used.
@@ -85,6 +64,26 @@ func GenerateKey(rand io.Reader) (publicKey PublicKey, privateKey PrivateKey, er
 	copy(publicKey, publicKeyBytes[:])
 
 	return publicKey, privateKey, nil
+}
+
+// Public returns the PublicKey corresponding to priv.
+func (priv PrivateKey) Public() crypto.PublicKey {
+	publicKey := make([]byte, PublicKeySize)
+	copy(publicKey[:], priv[32:])
+	return PublicKey(publicKey)
+}
+
+// Sign signs the given message with priv.
+// Ed25519 performs two passes over messages to be signed and therefore cannot
+// handle pre-hashed messages. Thus opts.HashFunc() must return zero to
+// indicate the message hasn't been hashed. This can be achieved by passing
+// crypto.Hash(0) as the value for opts.
+func (priv PrivateKey) Sign(rand io.Reader, message []byte, opts crypto.SignerOpts) (signature []byte, err error) {
+	if opts.HashFunc() != crypto.Hash(0) {
+		return nil, errors.New("ed25519: cannot sign hashed message")
+	}
+
+	return Sign(priv, message), nil
 }
 
 // Sign signs the message with privateKey and returns a signature. It will
@@ -149,12 +148,10 @@ func Verify(publicKey PublicKey, message, sig []byte) bool {
 
 	var A edwards25519.ExtendedGroupElement
 	var publicKeyBytes [32]byte
-	copy(publicKeyBytes[:], publicKey)
-	if !A.FromBytes(&publicKeyBytes) {
+	copy(publicKeyBytes[:], publicKey[:])
+	if !A.FromBytesNegateVartime(&publicKeyBytes) {
 		return false
 	}
-	edwards25519.FeNeg(&A.X, &A.X)
-	edwards25519.FeNeg(&A.T, &A.T)
 
 	h := sha512.New()
 	h.Write(sig[:32])

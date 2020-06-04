@@ -1,14 +1,14 @@
 package statemachine
 
 import (
-	"testing"
-	"fmt"
-	"strconv"
 	"encoding/json"
-	"runtime"
-	"strings"
+	"fmt"
 	"math/rand"
-	"time"
+	"runtime"
+	"strconv"
+	"strings"
+	"testing"
+	"x/src/utility"
 )
 
 func TestConfig(t *testing.T) {
@@ -22,13 +22,13 @@ func TestConfig(t *testing.T) {
 }
 
 func TestDocker(t *testing.T) {
-	var tom = DockerInit("test.yaml",8080)
+	var tom = InitSTMManager("test.yaml","daijia")
 
 	nonce := tom.Nonce("j")
 	fmt.Println(nonce)
 
 	//fmt.Println(tom.Validate("j1", "0x1fc2119a6255817f8fe01f9200d0afbc3490fece0d1788901806cd6c7bf3e03b", "111"))
-	output := tom.Process("j", "operator", strconv.Itoa(nonce+1),
+	output := tom.Process("j", "operator", 2222,
 		"{\"timestamp\": 1537056003, \"msg_name\": \"arena_init\", \"msg_data\": {\"match_level\": 1, \"match_type\": 3, \"spec_type\": 0}}", nil)
 
 	data, _ := json.Marshal(output)
@@ -52,8 +52,12 @@ func TestString(t *testing.T) {
 }
 
 func TestRand64(t *testing.T) {
-	rand.Seed(int64(time.Now().Unix()))
+	rand.Seed(int64(utility.GetTime().Unix()))
 	i := rand.Int()
 
 	fmt.Printf("%s", strconv.Itoa(i))
+}
+
+func TestFormatTime(t *testing.T){
+	fmt.Println(utility.GetTime().Format("2006-01-02 15:04:05.999 -0700 MST"))
 }

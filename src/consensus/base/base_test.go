@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"x/src/utility"
 
 	"x/src/common"
 )
@@ -59,7 +60,7 @@ func TestRegex(t *testing.T) {
 }
 
 func TestTimeAdd(t *testing.T) {
-	now := time.Now()
+	now := utility.GetTime()
 	b := now.Add(-time.Second * time.Duration(10))
 	t.Log(b)
 }

@@ -1,13 +1,13 @@
 package cli
 
 import (
-	"x/src/gx/rpc"
 	"net"
+	"x/src/gx/rpc"
 
-	"x/src/common"
 	"fmt"
 	"strings"
 	"sync"
+	"x/src/common"
 	"x/src/middleware/log"
 )
 
@@ -47,9 +47,10 @@ func startHTTP(endpoint string, apis []rpc.API, modules []string, cors []string,
 var GtasAPIImpl *GtasAPI
 
 // StartRPC RPC 功能
-func StartRPC(host string, port uint) error {
+func StartRPC(host string, port uint, privateKey string) error {
 	var err error
 	GtasAPIImpl = &GtasAPI{}
+	GtasAPIImpl.privateKey = privateKey
 	GtasAPIImpl.logger = log.GetLoggerByIndex(log.RPCLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
 	gxLock = &sync.RWMutex{}

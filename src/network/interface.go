@@ -16,9 +16,11 @@ const (
 	//-----------组铸币---------------------------------
 	CurrentGroupCastMsg uint32 = 5
 
+	// 提案者发送候选块，待验证
 	CastVerifyMsg uint32 = 6
 
-	VerifiedCastMsg uint32 = 7
+	// 验证组内，验证完块后，发送签名片段
+	VerifiedCastMsg uint32 = 36
 
 	NewBlockMsg uint32 = 8
 	//--------------交易-----------------------------
@@ -58,14 +60,15 @@ const (
 	AskSignPkMsg    uint32 = 34
 	AnswerSignPkMsg uint32 = 35
 
-	VerifiedCastMsg2 uint32 = 36
-
 	//建组时ping pong
 	GroupPing uint32 = 37
 	GroupPong uint32 = 38
 
 	ReqSharePiece      uint32 = 39
 	ResponseSharePiece uint32 = 40
+
+	//-----------stm状态通知---------------------------------
+	STMStorageReady uint32 = 50
 )
 
 //与coin connector 通信的消息CODE
@@ -93,6 +96,14 @@ type Network interface {
 	Notify(isunicast bool, gameId string, userid string, msg string)
 
 	Init(logger log.Logger, gateAddr, selfMinerId string, consensusHandler MsgHandler)
+
+	JoinGroupNet(groupId string)
+
+	QuitGroupNet(groupId string)
+
+	SetNetId(netId []byte)
+
+	SendToStranger(strangerId []byte, msg Message)
 }
 
 func GetNetInstance() Network {

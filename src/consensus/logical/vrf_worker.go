@@ -8,6 +8,7 @@ import (
 	"x/src/consensus/model"
 	"x/src/middleware/types"
 	"x/src/consensus/vrf"
+	"x/src/utility"
 )
 
 const (
@@ -17,14 +18,14 @@ const (
 )
 
 type vrfWorker struct {
-	miner      *model.SelfMinerDO
+	miner      *model.SelfMinerInfo
 	baseBH     *types.BlockHeader
 	castHeight uint64
 	expire     time.Time
 	status     int32
 }
 
-func newVRFWorker(miner *model.SelfMinerDO, bh *types.BlockHeader, castHeight uint64, expire time.Time) *vrfWorker {
+func newVRFWorker(miner *model.SelfMinerInfo, bh *types.BlockHeader, castHeight uint64, expire time.Time) *vrfWorker {
 	return &vrfWorker{
 		miner:      miner,
 		baseBH:     bh,
@@ -34,8 +35,9 @@ func newVRFWorker(miner *model.SelfMinerDO, bh *types.BlockHeader, castHeight ui
 	}
 }
 
-func (vrfWorker *vrfWorker) genProve(totalStake uint64) (vrf.VRFProve, uint64, error) {
-	vrfMsg := genVrfMsg(vrfWorker.baseBH.Random, vrfWorker.castHeight-vrfWorker.baseBH.Height)
+func (vrfWorker *vrfWorker) genProve(castTime time.Time, totalStake uint64) (vrf.VRFProve, uint64, error) {
+	delta := CalDeltaByTime(castTime, vrfWorker.baseBH.CurTime)
+	vrfMsg := genVrfMsg(vrfWorker.baseBH.Random, delta)
 	prove, err := vrf.VRFGenProve(vrfWorker.miner.VrfPK, vrfWorker.miner.VrfSK, vrfMsg)
 	if err != nil {
 		return nil, 0, err
@@ -72,9 +74,9 @@ func (vrf *vrfWorker) getStatus() int32 {
 }
 
 func (vrf *vrfWorker) workingOn(bh *types.BlockHeader, castHeight uint64) bool {
-	return bh.Hash == vrf.baseBH.Hash && castHeight == vrf.castHeight && !time.Now().After(vrf.expire)
+	return bh.Hash == vrf.baseBH.Hash && castHeight == vrf.castHeight && !vrf.timeout()
 }
 
 func (vrf *vrfWorker) timeout() bool {
-	return time.Now().After(vrf.expire)
+	return utility.GetTime().After(vrf.expire)
 }

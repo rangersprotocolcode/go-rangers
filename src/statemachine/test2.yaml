@@ -1,0 +1,12 @@
+title: test
+services:
+  - priority: 0
+    game: "j"
+    name: "j1"
+    image: "tequiladj/stm:v1.0"
+    ports:
+      - host: 8888
+        target: 80
+    detached: true
+    downloadUrl: "/Users/daijia/code/container.tar"
+    downloadProtocol: "fileContainer"
