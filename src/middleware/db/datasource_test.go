@@ -130,3 +130,30 @@ func TestClearLDB(t *testing.T) {
 	//	fmt.Printf("get key : testkey, value: null")
 	//}
 }
+
+func TestLDB(t *testing.T) {
+
+	ldb:= newLDB()
+	// 测试put
+	//err = ldb.Put([]byte("testkey"), []byte("testvalue"))
+	//if err != nil {
+	//	fmt.Printf("failed to put key in testldb\n")
+	//}
+
+	// 测试put
+	byte, err := ldb.Get([]byte("testkey"))
+	if err != nil {
+		fmt.Printf("failed to put key in testldb\n")
+	}
+	fmt.Printf("got byte:%v\n", byte)
+}
+
+func newLDB()*LDBDatabase{
+	// 创建ldb实例
+	ldb, err := NewLDBDatabase("testldb", 128, 128)
+	if err != nil {
+		fmt.Printf("error to create ldb : %s\n", "testldb")
+		return nil
+	}
+	return ldb
+}

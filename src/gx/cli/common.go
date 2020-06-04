@@ -2,14 +2,14 @@ package cli
 
 import (
 	"bytes"
-	"x/src/common"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"math/rand"
 	"net/http"
-	"time"
+	"x/src/common"
+	"x/src/utility"
 )
 
 // 获取rpc接口的message,如果发生错误，error返回result中的错误提示
@@ -66,7 +66,7 @@ func getRandomString(l int) string {
 	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	bytess := []byte(str)
 	result := []byte{}
-	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	r := rand.New(rand.NewSource(utility.GetTime().UnixNano()))
 	for i := 0; i < l; i++ {
 		result = append(result, bytess[r.Intn(len(bytess))])
 	}

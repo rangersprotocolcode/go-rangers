@@ -20,7 +20,19 @@ func TestPbToBlockHeader(t *testing.T) {
 
 	fmt.Println(header2.RequestIds["1"])
 
-	fmt.Println(header2.RequestIds["2"]<2)
+	fmt.Println(header2.RequestIds["2"] < 2)
 
+}
+
+func TestNFT(t *testing.T) {
+	nft := NFT{SetID: "111", ID: "fdd", Name: "nftName", Symbol: "nftSymbol", Creator: "testman", CreateTime: "4644646546464", Owner: "abc",
+		Renter: "dbd", Status: 0, Condition: 0, AppId: "0xdafawe"}
+
+	dataValue := []string{"data1", "data2"}
+	dataKey := []string{"key1", "key2"}
+	nft.DataKey = dataKey
+	nft.DataValue = dataValue
+
+	fmt.Printf("%s\n", nft.ToJSONString())
 
 }

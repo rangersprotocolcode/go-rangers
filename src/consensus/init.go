@@ -1,10 +1,13 @@
 package consensus
 
 import (
+	"x/src/common"
+	"x/src/consensus/access"
 	"x/src/consensus/logical"
+	"x/src/consensus/logical/group_create"
 	"x/src/consensus/model"
 	"x/src/consensus/net"
-	"x/src/common"
+	"x/src/network"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -14,15 +17,18 @@ import (
 
 var Proc logical.Processor
 
-
 //共识初始化
 //mid: 矿工ID
 //返回：true初始化成功，可以启动铸块。内部会和链进行交互，进行初始数据加载和预处理。失败返回false。
-func ConsensusInit(mi model.SelfMinerDO, conf common.ConfManager) bool {
+func ConsensusInit(mi model.SelfMinerInfo, conf common.ConfManager) bool {
 	logical.InitConsensus()
-	//groupsig.Init(1)
-	ret := Proc.Init(mi, conf)
-	net.MessageHandler.Init(&Proc)
+	joinedGroupStorage := initJoinedGroupStorage()
+
+	group_create.GroupCreateProcessor.Init(mi, joinedGroupStorage)
+	ret := Proc.Init(mi, conf, joinedGroupStorage)
+	net.MessageHandler.Init(&group_create.GroupCreateProcessor, &Proc)
+
+	network.GetNetInstance().SetNetId(mi.ID.Serialize())
 	return ret
 }
 
@@ -37,4 +43,8 @@ func StopMiner() {
 	Proc.Stop()
 	Proc.Finalize()
 	return
+}
+
+func initJoinedGroupStorage() *access.JoinedGroupStorage {
+	return access.NewJoinedGroupStorage()
 }

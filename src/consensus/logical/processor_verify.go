@@ -5,6 +5,7 @@ import (
 	"sync"
 	"x/src/common"
 	"time"
+	"x/src/utility"
 )
 
 
@@ -18,12 +19,12 @@ type verifyMsgCache struct {
 func newVerifyMsgCache() *verifyMsgCache {
 	return &verifyMsgCache{
 		verifyMsgs: make([]*model.ConsensusVerifyMessage, 0),
-		expire: time.Now().Add(30*time.Second),
+		expire: utility.GetTime().Add(30*time.Second),
 	}
 }
 
 func (c *verifyMsgCache) expired() bool {
-    return time.Now().After(c.expire)
+    return utility.GetTime().After(c.expire)
 }
 
 func (c *verifyMsgCache) addVerifyMsg(msg *model.ConsensusVerifyMessage)  {

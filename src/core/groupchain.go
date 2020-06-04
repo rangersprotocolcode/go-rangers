@@ -1,16 +1,17 @@
 package core
 
 import (
-	"sync"
+	"bytes"
+	"encoding/binary"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"encoding/binary"
+	"sync"
+	"x/src/common"
 	"x/src/middleware/db"
-	"x/src/middleware/types"
 	"x/src/middleware/notify"
+	"x/src/middleware/types"
 	"x/src/utility"
-	"bytes"
-	"errors"
 )
 
 const (
@@ -29,6 +30,8 @@ type groupChain struct {
 	lastGroup *types.Group
 
 	groups db.Database // key:id, value:group && key:number, value:id
+
+	joinedGroups *db.LDBDatabase
 }
 
 func initGroupChain() {
@@ -38,6 +41,11 @@ func initGroupChain() {
 	chain.groups, err = db.NewDatabase(groupChainPrefix)
 	if err != nil {
 		panic("Init group chain error:" + err.Error())
+	}
+
+	chain.joinedGroups, err = db.NewLDBDatabase(common.GlobalConf.GetString(db.ConfigSec, db.DefaultJoinedGroupDatabaseKey, "jgs"), 1, 1)
+	if err != nil {
+		panic("newLDBDatabase fail, file=" + "" + "err=" + err.Error())
 	}
 
 	lastGroupId, _ := chain.groups.Get([]byte(lastGroupKey))
@@ -70,20 +78,22 @@ func (chain *groupChain) AddGroup(group *types.Group) error {
 	}
 
 	if logger != nil {
-		logger.Debugf("Group chain add group %+v", group)
+		logger.Debugf("Group chain add group %+v", common.Bytes2Hex(group.Id))
 	}
 	if exist, _ := chain.groups.Has(group.Id); exist {
-		notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group,})
-		return errors.New("group already exist")
+		notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group})
+		return common.ErrGroupAlreadyExist
 	}
 
-	//ok, err := consensusHelper.CheckGroup(group)
-	//if !ok {
-	//	if err == common.ErrCreateBlockNil {
-	//		logger.Infof("Add group failed:depend on block!")
-	//	}
-	//	return err
-	//}
+	ok, err := consensusHelper.CheckGroup(group)
+	if !ok {
+		if err == common.ErrCreateBlockNil {
+			logger.Infof("Add group failed:depend on block!")
+		} else {
+			logger.Infof("Add group failed:%v", err.Error())
+		}
+		return err
+	}
 
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
@@ -95,6 +105,9 @@ func (chain *groupChain) AddGroup(group *types.Group) error {
 	if !bytes.Equal(chain.lastGroup.Id, group.Header.PreGroup) {
 		return fmt.Errorf("pre not equal lastgroup!Pre group id:%v,local last group id:%v", group.Header.PreGroup, chain.lastGroup.Id)
 	}
+	header := group.Header
+	header.WorkHeight = header.CreateHeight + uint64(common.GROUP_Work_GAP)
+	header.DismissHeight = header.CreateHeight + uint64(common.GROUP_Work_DURATION)
 	return chain.save(group)
 }
 
@@ -105,7 +118,7 @@ func (chain *groupChain) GetGroupById(id []byte) *types.Group {
 	return chain.getGroupById(id)
 }
 
-func (chain *groupChain) GetGroupByHeight(height uint64) (*types.Group) {
+func (chain *groupChain) GetGroupByHeight(height uint64) *types.Group {
 	chain.lock.RLock()
 	defer chain.lock.RUnlock()
 	return chain.getGroupByHeight(height)
@@ -125,6 +138,37 @@ func (chain *groupChain) Close() {
 
 func (chain *groupChain) Iterator() *GroupIterator {
 	return &GroupIterator{current: chain.lastGroup}
+}
+
+func (chain *groupChain) availableGroupsAt(h uint64) []*types.Group {
+	iter := chain.Iterator()
+	gs := make([]*types.Group, 0)
+	for g := iter.Current(); g != nil; g = iter.MovePre() {
+		if g.Header.DismissHeight > h {
+			gs = append(gs, g)
+		} else {
+			genesis := chain.GetGroupByHeight(0)
+			gs = append(gs, genesis)
+			break
+		}
+	}
+	return gs
+}
+
+func (chain *groupChain) GetAvailableGroupsByMinerId(height uint64, minerId []byte) []*types.Group {
+	allGroups := chain.availableGroupsAt(height)
+	group := make([]*types.Group, 0)
+
+	for _, g := range allGroups {
+		for _, mem := range g.Members {
+			if bytes.Equal(mem, minerId) {
+				group = append(group, g)
+				break
+			}
+		}
+	}
+
+	return group
 }
 
 func (chain *groupChain) getGroupByHeight(height uint64) *types.Group {
@@ -164,8 +208,11 @@ func (chain *groupChain) save(group *types.Group) error {
 	chain.count++
 	chain.groups.Put([]byte(groupCountKey), utility.UInt64ToByte(chain.count))
 	chain.lastGroup = group
+	logger.Debugf("Add group on chain success! Group id:%s,group pubkey:%s", hex.EncodeToString(group.Id), hex.EncodeToString(group.PubKey))
 
-	notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group,})
+	if nil != notify.BUS {
+		notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group})
+	}
 	if GroupSyncer != nil {
 		GroupSyncer.sendGroupHeightToNeighbor(chain.count)
 	}
@@ -189,4 +236,47 @@ func (iterator *GroupIterator) Current() *types.Group {
 func (iterator *GroupIterator) MovePre() *types.Group {
 	iterator.current = groupChainImpl.GetGroupById(iterator.current.Header.PreGroup)
 	return iterator.current
+}
+
+func (chain *groupChain) GetSyncGroupsById(id []byte) []*types.Group {
+	result := make([]*types.Group, 0)
+	group := chain.getGroupById(id)
+	if group == nil {
+		return result
+	}
+	return chain.GetSyncGroupsByHeight(group.GroupHeight+1, 5)
+}
+
+func (chain *groupChain) GetSyncGroupsByHeight(height uint64, limit int) []*types.Group {
+	chain.lock.RLock()
+	defer chain.lock.RUnlock()
+	return chain.getSyncGroupsByHeight(height, limit)
+}
+
+func (chain *groupChain) getSyncGroupsByHeight(height uint64, limit int) []*types.Group {
+	result := make([]*types.Group, 0)
+	for i := 0; i < limit; i++ {
+		groupId, _ := chain.groups.Get(generateKey(height + uint64(i)))
+		if nil != groupId {
+			result = append(result, chain.getGroupById(groupId))
+		} else {
+			break
+		}
+	}
+
+	return result
+}
+
+func (chain *groupChain) SaveJoinedGroup(id []byte, value []byte) bool {
+	err := chain.joinedGroups.Put(id, value)
+	return err == nil
+}
+
+func (chain *groupChain) GetJoinedGroup(id []byte) ([]byte, error) {
+	return chain.joinedGroups.Get(id)
+}
+
+func (chain *groupChain) DeleteJoinedGroup(id []byte) bool {
+	err := chain.joinedGroups.Delete(id)
+	return err == nil
 }

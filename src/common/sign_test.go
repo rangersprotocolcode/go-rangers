@@ -1,14 +1,13 @@
 package common
 
 import (
-	"crypto/rand"
+	"bytes"
 	"fmt"
 	"testing"
-	"bytes"
 
 	"crypto/sha256"
-	"go-ethereum/common"
 	"strconv"
+	"encoding/hex"
 )
 
 func TestPrivateKey(test *testing.T) {
@@ -67,54 +66,19 @@ func TestSign(test *testing.T) {
 	fmt.Printf("end TestSign.\n")
 }
 
-func TestEncryptDecrypt(t *testing.T) {
-	fmt.Printf("\nbegin TestEncryptDecrypt...\n")
-	sk1 := GenerateKey("")
-	pk1 := sk1.GetPubKey()
-
-	t.Log(sk1.GetHexString())
-	t.Log(pk1.GetHexString())
-
-	sk2 := GenerateKey("")
-
-	message := []byte("Hello, world.")
-	ct, err := Encrypt(rand.Reader, &pk1, message)
-	if err != nil {
-		fmt.Println(err.Error())
-		t.FailNow()
-	}
-
-	pt, err := sk1.Decrypt(rand.Reader, ct)
-	if err != nil {
-		fmt.Println(err.Error())
-		t.FailNow()
-	}
-
-	fmt.Println(message)
-	fmt.Println(ct)
-	fmt.Println(pt)
-
-	if !bytes.Equal(pt, message) {
-		fmt.Println("ecies: plaintext doesn't match message")
-		t.FailNow()
-	}
-
-	_, err = sk2.Decrypt(rand.Reader, ct)
-	if err == nil {
-		fmt.Println("ecies: encryption should not have succeeded")
-		t.FailNow()
-	}
-	fmt.Printf("end TestEncryptDecrypt.\n")
-}
 func TestSignBytes(test *testing.T) {
-	plain_txt := "Sign bytes convert."
+	plain_txt := "dafaefaewfef"
 	buf := []byte(plain_txt)
 
 	pri_k := GenerateKey("")
 
-	sha3_hash := sha256.Sum256(buf)
+	sha3_hash := Sha256(buf)
+	s := BytesToHash(sha3_hash).Hex()
+	fmt.Printf("hash:%s\n", s)
 	sign := pri_k.Sign(sha3_hash[:]) //私钥签名
 
+	address := pri_k.GetPubKey().GetAddress()
+	fmt.Printf("Address:%s\n", address.GetHexString())
 	//测试签名十六进制转换
 	h := sign.GetHexString() //签名十六进制表示
 	fmt.Println(h)
@@ -193,10 +157,10 @@ func BenchmarkRecover(b *testing.B) {
 func TestAccount(test *testing.T) {
 	privateKey := GenerateKey("")
 	pubkey := privateKey.GetPubKey()
-	address := pubkey.GetAddress()
+	id := pubkey.GetID()
 	fmt.Printf("sk:%s\n", privateKey.GetHexString())
 	fmt.Printf("pk:%s\n", pubkey.GetHexString())
-	fmt.Printf("address:%s\n", address.GetHexString())
+	fmt.Printf("id:%s\n", hex.EncodeToString(id[:]))
 }
 
 func TestGenerateKey(t *testing.T) {
@@ -221,10 +185,10 @@ func TestHashFromBytes(t *testing.T) {
 
 func TestAddress(t *testing.T) {
 	s := "0xb253748a50c78ead4c472a8912ba614f12e9d94a"
-	hex := common.FromHex(s)
+	hex := FromHex(s)
 	fmt.Printf("from hex %v", hex)
 
-	addr := common.HexToAddress(s)
+	addr := HexToAddress(s)
 	fmt.Printf("addr %v", addr)
 }
 
@@ -237,4 +201,13 @@ func TestStrToBigInt(t *testing.T) {
 	fmt.Printf("%v\n", f)
 	i := int64(f * 1000000000)
 	fmt.Printf("%v\n", i)
+}
+
+
+func TestKey(t *testing.T) {
+	privateKey := GenerateKey("")
+	publicKey := privateKey.GetPubKey()
+	address := publicKey.GetAddress()
+	fmt.Printf("Private key:%s\n",privateKey.GetHexString())
+	fmt.Printf("Address:%s\n",address.String())
 }

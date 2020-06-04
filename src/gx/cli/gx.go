@@ -1,42 +1,38 @@
 package cli
 
 import (
+	"encoding/json"
 	"fmt"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"os"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"runtime"
 	"strconv"
 	"time"
 	"x/src/common"
-	"x/src/middleware/types"
-	"x/src/network"
-	"x/src/core"
-	"x/src/middleware"
 	"x/src/consensus"
+	"x/src/consensus/logical/group_create"
 	"x/src/consensus/model"
 	cnet "x/src/consensus/net"
+	"x/src/core"
+	"x/src/middleware"
+	"x/src/middleware/db"
 	"x/src/middleware/log"
+	"x/src/middleware/types"
+	"x/src/network"
+	"x/src/service"
 	"x/src/statemachine"
 )
 
 const (
-	GXVersion = "0.0.1"
+	GXVersion = "0.0.8"
 	// Section 默认section配置
 	Section = "gx"
-	// RemoteHost 默认host
-	RemoteHost = "127.0.0.1"
-	// RemotePort 默认端口
-	RemotePort = 8088
 
 	instanceSection = "instance"
 
 	indexKey = "index"
-
-	chainSection = "chain"
-
-	databaseKey = "database"
 )
 
 type GX struct {
@@ -61,7 +57,7 @@ func (gx *GX) Run() {
 	_ = app.Flag("metrics", "enable metrics").Bool()
 	_ = app.Flag("dashboard", "enable metrics dashboard").Bool()
 	pprofPort := app.Flag("pprof", "enable pprof").Default("23333").Uint()
-	keystore := app.Flag("keystore", "the keystore path, default is current path").Default("keystore").Short('k').String()
+
 	//控制台
 	consoleCmd := app.Command("console", "start RocketProtocol console")
 	showRequest := consoleCmd.Flag("show", "show the request json").Short('v').Bool()
@@ -77,7 +73,6 @@ func (gx *GX) Run() {
 	addrRpc := mineCmd.Flag("rpcaddr", "rpc host").Short('r').Default("0.0.0.0").IP()
 	portRpc := mineCmd.Flag("rpcport", "rpc port").Short('p').Default("8088").Uint()
 	instanceIndex := mineCmd.Flag("instance", "instance index").Short('i').Default("0").Int()
-	apply := mineCmd.Flag("apply", "apply heavy or light miner").String()
 	env := mineCmd.Flag("env", "the environment application run in").String()
 
 	//自定义网关
@@ -89,19 +84,16 @@ func (gx *GX) Run() {
 
 	common.InitConf(*configFile)
 	walletManager = newWallets()
-	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString("instance", "index", ""))
+	common.GlobalConf.SetInt(instanceSection, indexKey, *instanceIndex)
+	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString(instanceSection, indexKey, ""))
 
-	if *apply == "heavy" {
-		fmt.Println("Welcom to be a tas propose miner!")
-	} else if *apply == "light" {
-		fmt.Println("Welcom to be a tas verify miner!")
-	}
+	fmt.Println("Welcome to be a rocketProtocol miner!")
 	switch command {
 	case versionCmd.FullCommand():
 		fmt.Println("GX Version:", GXVersion)
 		os.Exit(0)
 	case consoleCmd.FullCommand():
-		err := ConsoleInit(*keystore, *remoteHost, *remotePort, *showRequest, *rpcPort)
+		err := ConsoleInit(*remoteHost, *remotePort, *showRequest, *rpcPort)
 		if err != nil {
 			fmt.Errorf(err.Error())
 		}
@@ -111,9 +103,9 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(*instanceIndex, *apply, *keystore, *portRpc, *env, *gateAddr)
+		gx.initMiner(*instanceIndex, *env, *gateAddr)
 		if *rpc {
-			err = StartRPC(addrRpc.String(), *portRpc)
+			err = StartRPC(addrRpc.String(), *portRpc, gx.account.Sk)
 			if err != nil {
 				common.DefaultLogger.Infof(err.Error())
 				return
@@ -123,36 +115,34 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port uint, env string, gateAddr string) {
+func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	databaseValue := "d" + strconv.Itoa(instanceIndex)
-	common.GlobalConf.SetString(chainSection, databaseKey, databaseValue)
+	common.GlobalConf.SetString(db.ConfigSec, db.DefaultDatabase, databaseValue)
+	joinedGroupDatabaseValue := "jgs" + strconv.Itoa(instanceIndex)
+	common.GlobalConf.SetString(db.ConfigSec, db.DefaultJoinedGroupDatabaseKey, joinedGroupDatabaseValue)
 
 	middleware.InitMiddleware()
-	statemachine.DockerInit(common.GlobalConf.GetString("docker", "config", ""), port)
 
-	minerAddr := common.GlobalConf.GetString(Section, "miner", "")
-	err := gx.getAccountInfo(keystore, minerAddr)
-	if err != nil {
-		panic("Init miner get account info error:" + err.Error())
-	}
+	privateKey := common.GlobalConf.GetString(Section, "privateKey", "")
+	gx.getAccountInfo(privateKey)
 	fmt.Println("Your Miner Address:", gx.account.Address)
 
-	minerInfo := model.NewSelfMinerDO(gx.account.Miner.ID[:])
+	sk := common.HexStringToSecKey(gx.account.Sk)
+	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
+	minerId := "0x" + common.Bytes2Hex(gx.account.Miner.ID[:])
+	network.InitNetwork(cnet.MessageHandler, minerId, env, gateAddr)
+	service.InitService()
 
-	if apply == "light" {
-		minerInfo.NType = types.MinerTypeLight
-	} else if apply == "heavy" {
-		minerInfo.NType = types.MinerTypeHeavy
-	}
-	err = core.InitCore(consensus.NewConsensusHelper(minerInfo.ID))
+	err := core.InitCore(consensus.NewConsensusHelper(minerInfo.ID))
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
 	}
 
-	network.InitNetwork(cnet.MessageHandler, "0x"+common.Bytes2Hex(gx.account.Miner.ID[:]), env, gateAddr)
+	//todo: 刷新requestId
+	statemachine.InitSTMManager(common.GlobalConf.GetString("docker", "config", ""), minerId)
 
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
 	if !ok {
@@ -160,7 +150,9 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 
 	}
 	gx.dumpAccountInfo(minerInfo)
-	consensus.Proc.BeginGenesisGroupMember()
+
+	//consensus.Proc.BeginGenesisGroupMember()
+	group_create.GroupCreateProcessor.BeginGenesisGroupMember()
 
 	ok = consensus.StartMiner()
 	if !ok {
@@ -170,34 +162,14 @@ func (gx *GX) initMiner(instanceIndex int, apply string, keystore string, port u
 	gx.init = true
 }
 
-func (gx *GX) getAccountInfo(keystore, address string) error {
-	aop, err := initAccountManager(keystore, true)
-	if err != nil {
-		fmt.Printf("initAccountManager:%s\n", err.Error())
-		return err
+func (gx *GX) getAccountInfo(sk string) {
+	if 0 == len(sk) {
+		privateKey := common.GenerateKey("")
+		sk = privateKey.GetHexString()
+		common.GlobalConf.SetString(Section, "privateKey", sk)
 	}
-	defer aop.Close()
 
-	acm := aop.(*AccountManager)
-	if address != "" {
-		if aci, err := acm.getAccountInfo(address); err != nil {
-			return fmt.Errorf("cannot get miner, err:%v", err.Error())
-		} else {
-			if aci.Miner == nil {
-				return fmt.Errorf("the address is not a miner account: %v", address)
-			}
-			gx.account = aci.Account
-			return nil
-		}
-	} else {
-		aci := acm.getFirstMinerAccount()
-		if aci != nil {
-			gx.account = *aci
-			return nil
-		} else {
-			return fmt.Errorf("please create a miner account first")
-		}
-	}
+	gx.account = getAccountByPrivateKey(sk)
 }
 
 func syncChainInfo() {
@@ -218,6 +190,10 @@ func syncChainInfo() {
 					core.BlockSyncer.Lock.Unlock("trySync")
 				}
 				localBlockHeight := core.GetBlockChain().Height()
+				jsonObject := types.NewJSONObject()
+				jsonObject.Put("candidateHeight", candicateHeight)
+				jsonObject.Put("localHeight", localBlockHeight)
+				middleware.HeightLogger.Debugf(jsonObject.TOJSONString())
 				fmt.Printf("Sync candidate block height:%d,local block height:%d\n", candicateHeight, localBlockHeight)
 				timer.Reset(time.Second * 5)
 			}
@@ -227,15 +203,22 @@ func syncChainInfo() {
 	}()
 }
 
-func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerDO) {
+func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerInfo) {
 	if nil != common.DefaultLogger {
 		common.DefaultLogger.Infof("SecKey: %s", gx.account.Sk)
 		common.DefaultLogger.Infof("PubKey: %s", gx.account.Pk)
-		common.DefaultLogger.Infof("Miner SecKey: %s", minerDO.SK.GetHexString())
-		common.DefaultLogger.Infof("Miner PubKey: %s", minerDO.PK.GetHexString())
+		common.DefaultLogger.Infof("Miner SecKey: %s", minerDO.SecKey.GetHexString())
+		common.DefaultLogger.Infof("Miner PubKey: %s", minerDO.PubKey.GetHexString())
 		common.DefaultLogger.Infof("VRF PrivateKey: %s", minerDO.VrfSK.GetHexString())
 		common.DefaultLogger.Infof("VRF PubKey: %s", minerDO.VrfPK.GetHexString())
 		common.DefaultLogger.Infof("Miner ID: %s", minerDO.ID.GetHexString())
+
+		miner := types.Miner{}
+		miner.Id = minerDO.ID.Serialize()
+		miner.PublicKey = minerDO.PubKey.Serialize()
+		miner.VrfPublicKey = minerDO.VrfPK
+		minerBytes, _ := json.Marshal(miner)
+		common.DefaultLogger.Infof("Miner apply info:%s|%s", minerDO.ID.GetHexString(), string(minerBytes))
 	}
 
 }

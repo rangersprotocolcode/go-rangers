@@ -1,16 +1,16 @@
 package logical
 
 import (
-	"x/src/common"
-	"x/src/consensus/model"
-	"x/src/middleware/types"
+	"fmt"
 	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
-	"fmt"
+	"x/src/common"
 	"x/src/consensus/groupsig"
-	"x/src/consensus/vrf"
+	"x/src/consensus/model"
+	"x/src/middleware/types"
+	"x/src/utility"
 )
 
 const (
@@ -102,12 +102,11 @@ type QN_QUERY_SLOT_RESULT int //根据QN查找插槽结果枚举
 
 type VerifyContext struct {
 	prevBH          *types.BlockHeader
-	castHeight      uint64
-	signedMaxQN     uint64
+	blockHash       common.Hash
 	createTime      time.Time
 	expireTime      time.Time //铸块超时时间
 	consensusStatus int32     //铸块状态
-	slots           map[common.Hash]*SlotContext
+	slot            *SlotContext
 	broadcastSlot   *SlotContext
 	//castedQNs []int64 //自己铸过的qn
 	blockCtx  *BlockContext
@@ -115,17 +114,14 @@ type VerifyContext struct {
 	lock      sync.RWMutex
 }
 
-func newVerifyContext(bc *BlockContext, castHeight uint64, expire time.Time, preBH *types.BlockHeader) *VerifyContext {
+func newVerifyContext(bc *BlockContext, expire time.Time, preBH *types.BlockHeader, blockHash common.Hash) *VerifyContext {
 	ctx := &VerifyContext{
 		prevBH:          preBH,
-		castHeight:      castHeight,
+		blockHash:       blockHash,
 		blockCtx:        bc,
 		expireTime:      expire,
-		createTime:      time.Now(),
+		createTime:      utility.GetTime(),
 		consensusStatus: CBCS_CASTING,
-		signedMaxQN:     0,
-		slots:           make(map[common.Hash]*SlotContext),
-		//castedQNs:       make([]int64, 0),
 	}
 	return ctx
 }
@@ -162,44 +158,11 @@ func (vc *VerifyContext) markBroadcast() bool {
 
 //铸块是否过期
 func (vc *VerifyContext) castExpire() bool {
-	return time.Now().After(vc.expireTime)
-}
-
-//分红交易签名是否过期
-func (vc *VerifyContext) castRewardSignExpire() bool {
-	return time.Now().After(vc.expireTime.Add(time.Duration(30*model.Param.MaxGroupCastTime) * time.Second))
-}
-
-func (vc *VerifyContext) findSlot(hash common.Hash) *SlotContext {
-	if sc, ok := vc.slots[hash]; ok {
-		return sc
-	}
-	return nil
-}
-
-func (vc *VerifyContext) getSignedMaxQN() uint64 {
-	return atomic.LoadUint64(&vc.signedMaxQN)
-}
-
-func (vc *VerifyContext) hasSignedBiggerQN(totalQN uint64) bool {
-	return vc.getSignedMaxQN() > totalQN
-}
-
-func (vc *VerifyContext) updateSignedMaxQN(totalQN uint64) bool {
-	if vc.getSignedMaxQN() < totalQN {
-		atomic.StoreUint64(&vc.signedMaxQN, totalQN)
-		return true
-	}
+	//return utility.GetTime().After(vc.expireTime)
 	return false
 }
 
 func (vc *VerifyContext) baseCheck(bh *types.BlockHeader, sender groupsig.ID) (slot *SlotContext, err error) {
-	//只签qn不小于已签出的最高块的块
-	if vc.hasSignedBiggerQN(bh.TotalQN) {
-		err = fmt.Errorf("已签过更高qn块%v,本块qn%v", vc.getSignedMaxQN(), bh.TotalQN)
-		return
-	}
-
 	if vc.castSuccess() || vc.broadCasted() {
 		err = fmt.Errorf("已出块")
 		return
@@ -209,13 +172,13 @@ func (vc *VerifyContext) baseCheck(bh *types.BlockHeader, sender groupsig.ID) (s
 		err = fmt.Errorf("已超时" + vc.expireTime.String())
 		return
 	}
-	slot = vc.GetSlotByHash(bh.Hash)
+	slot = vc.slot
 	if slot != nil {
 		if slot.GetSlotStatus() >= SS_RECOVERD {
 			err = fmt.Errorf("slot不接受piece，状态%v", slot.slotStatus)
 			return
 		}
-		if _, ok := slot.gSignGenerator.GetWitness(sender); ok {
+		if _, ok := slot.gSignGenerator.GetWitnessSign(sender); ok {
 			err = fmt.Errorf("重复消息%v", sender.ShortS())
 			return
 		}
@@ -224,48 +187,23 @@ func (vc *VerifyContext) baseCheck(bh *types.BlockHeader, sender groupsig.ID) (s
 	return
 }
 
-func (vc *VerifyContext) GetSlotByHash(hash common.Hash) *SlotContext {
-	vc.lock.RLock()
-	defer vc.lock.RUnlock()
-
-	return vc.findSlot(hash)
-}
-
 func (vc *VerifyContext) prepareSlot(bh *types.BlockHeader, blog *bizLog) (*SlotContext, error) {
 	vc.lock.Lock()
 	defer vc.lock.Unlock()
 
-	if sc := vc.findSlot(bh.Hash); sc != nil {
+	if sc := vc.slot; sc != nil {
 		blog.log("prepareSlot find exist, status %v", sc.GetSlotStatus())
 		return sc, nil
 	} else {
-		if vc.hasSignedBiggerQN(bh.TotalQN) {
-			return nil, fmt.Errorf("hasSignedBiggerQN")
-		}
-
 		sc = createSlotContext(bh, vc.blockCtx.threshold())
-		if len(vc.slots) >= model.Param.MaxSlotSize {
-			minQN := uint64(10000)
-			minQNHash := common.Hash{}
-			for hash, slot := range vc.slots {
-				if slot.BH.TotalQN < minQN {
-					minQN = slot.BH.TotalQN
-					minQNHash = hash
-				}
-			}
-			delete(vc.slots, minQNHash)
-			blog.log("prepreSlot replace slotHash %v, qn %v, commingQN %v, commingHash %v", minQNHash.ShortS(), minQN, bh.TotalQN, bh.Hash.ShortS())
-		} else {
-			blog.log("prepareSlot add slot")
-		}
 		//sc.init(bh)
-		vc.slots[bh.Hash] = sc
+		vc.slot = sc
 		return sc, nil
 	}
 }
 
 //收到某个验证人的验证完成消息（可能会比铸块完成消息先收到）
-func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.SignData, pk groupsig.Pubkey, slog *slowLog) (ret CAST_BLOCK_MESSAGE_RESULT, err error) {
+func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.SignInfo, pk groupsig.Pubkey, slog *slowLog) (ret CAST_BLOCK_MESSAGE_RESULT, err error) {
 	blog := newBizLog("UserVerified")
 
 	slog.addStage("prePareSlot")
@@ -284,11 +222,11 @@ func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.Sig
 	if slot.IsFailed() {
 		return CBMR_STATUS_FAIL, fmt.Errorf("slot fail")
 	}
-	if _, err2 := vc.baseCheck(bh, signData.GetID()); err2 != nil {
+	if _, err2 := vc.baseCheck(bh, signData.GetSignerID()); err2 != nil {
 		err = err2
 		return
 	}
-	isProposal := slot.castor.IsEqual(signData.GetID())
+	isProposal := slot.castor.IsEqual(signData.GetSignerID())
 
 	if isProposal { //提案者 // 不可能是提案者了
 		slog.addStage("vCastorSign")
@@ -296,7 +234,7 @@ func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.Sig
 		slog.endStage()
 
 		if !b {
-			err = fmt.Errorf("verify castorsign fail, id %v, pk %v", signData.GetID().ShortS(), pk.ShortS())
+			err = fmt.Errorf("verify castorsign fail, id %v, pk %v", signData.GetSignerID().ShortS(), pk.ShortS())
 			return
 		}
 
@@ -306,7 +244,7 @@ func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.Sig
 		slog.endStage()
 
 		if !b {
-			err = fmt.Errorf("verify sign fail, id %v, pk %v, sig %v hash %v", signData.GetID().ShortS(), pk.GetHexString(), signData.DataSign.GetHexString(), signData.DataHash.Hex())
+			err = fmt.Errorf("verify sign fail, id %v, pk %v, sig %v hash %v", signData.GetSignerID().ShortS(), pk.GetHexString(), signData.GetSignature().GetHexString(), signData.GetDataHash().Hex())
 			return
 		}
 		sig := groupsig.DeserializeSign(bh.Random)
@@ -357,76 +295,56 @@ func (vc *VerifyContext) Clear() {
 	vc.lock.Lock()
 	defer vc.lock.Unlock()
 
-	vc.slots = nil
+	vc.slot = nil
 	vc.broadcastSlot = nil
 }
 
-//判断该context是否可以删除，主要考虑是否发送了分红交易
+//判断该context是否可以删除
 func (vc *VerifyContext) shouldRemove(topHeight uint64) bool {
-	//交易签名超时, 可以删除
-	if vc.castRewardSignExpire() {
-		return true
-	}
-
-	//自己广播的且已经发送过分红交易，可以删除
-	if vc.broadcastSlot != nil && vc.broadcastSlot.IsRewardSent() {
-		return true
-	}
-
 	//未出过块, 但高度已经低于200块, 可以删除
-	if vc.castHeight+200 < topHeight {
-		return true
-	}
-	return false
+	return vc.prevBH == nil || vc.prevBH.Height+200 < topHeight
 }
 
-func (vc *VerifyContext) GetSlots() []*SlotContext {
-	vc.lock.RLock()
-	defer vc.lock.RUnlock()
-	slots := make([]*SlotContext, 0)
-	for _, slot := range vc.slots {
-		slots = append(slots, slot)
-	}
-	return slots
-}
-
-func (vc *VerifyContext) checkBroadcast() (*SlotContext) {
-	blog := newBizLog("checkBroadcast")
+func (vc *VerifyContext) checkBroadcast() *SlotContext {
 	if !vc.castSuccess() {
 		//blog.log("not success st=%v", vc.consensusStatus)
 		return nil
 	}
-	if time.Since(vc.createTime).Seconds() < float64(model.Param.MaxWaitBlockTime) {
-		//blog.log("not the time, creatTime %v, now %v, since %v", vc.createTime, time.Now(), time.Since(vc.createTime).String())
+
+	now := utility.GetTime()
+	if now.Sub(vc.createTime).Seconds() < float64(model.Param.MaxWaitBlockTime) {
+		//blog.log("not the time, creatTime %v, now %v, since %v", vc.createTime, utility.GetTime(), time.Since(vc.createTime).String())
 		return nil
 	}
-	var maxQNSlot *SlotContext
 
-	vc.lock.RLock()
-	defer vc.lock.RUnlock()
-	qns := make([]uint64, 0)
-
-	for _, slot := range vc.slots {
-		if !slot.IsRecovered() {
-			continue
-		}
-		qns = append(qns, slot.BH.TotalQN)
-		if maxQNSlot == nil {
-			maxQNSlot = slot
-		} else {
-			if maxQNSlot.BH.TotalQN < slot.BH.TotalQN {
-				maxQNSlot = slot
-			} else if maxQNSlot.BH.TotalQN == slot.BH.TotalQN {
-				v1 := vrf.VRFProof2Hash(maxQNSlot.BH.ProveValue.Bytes()).Big()
-				v2 := vrf.VRFProof2Hash(slot.BH.ProveValue.Bytes()).Big()
-				if v1.Cmp(v2) < 0 {
-					maxQNSlot = slot
-				}
-			}
-		}
-	}
-	if maxQNSlot != nil {
-		blog.log("select max qn=%v, hash=%v, height=%v, hash=%v, all qn=%v", maxQNSlot.BH.TotalQN, maxQNSlot.BH.Hash.ShortS(), maxQNSlot.BH.Height, maxQNSlot.BH.Hash.ShortS(), qns)
-	}
-	return maxQNSlot
+	return vc.slot
+	//var maxQNSlot *SlotContext
+	//
+	//vc.lock.RLock()
+	//defer vc.lock.RUnlock()
+	//qns := make([]uint64, 0)
+	//
+	//slot := vc.slot
+	//if !slot.IsRecovered() {
+	//	continue
+	//}
+	//qns = append(qns, slot.BH.TotalQN)
+	//if maxQNSlot == nil {
+	//	maxQNSlot = slot
+	//} else {
+	//	if maxQNSlot.BH.TotalQN < slot.BH.TotalQN {
+	//		maxQNSlot = slot
+	//	} else if maxQNSlot.BH.TotalQN == slot.BH.TotalQN {
+	//		v1 := vrf.VRFProof2Hash(maxQNSlot.BH.ProveValue.Bytes()).Big()
+	//		v2 := vrf.VRFProof2Hash(slot.BH.ProveValue.Bytes()).Big()
+	//		if v1.Cmp(v2) < 0 {
+	//			maxQNSlot = slot
+	//		}
+	//	}
+	//}
+	//
+	//if maxQNSlot != nil {
+	//	blog.log("select max qn=%v, hash=%v, height=%v, hash=%v, all qn=%v", maxQNSlot.BH.TotalQN, maxQNSlot.BH.Hash.ShortS(), maxQNSlot.BH.Height, maxQNSlot.BH.Hash.ShortS(), qns)
+	//}
+	//return maxQNSlot
 }

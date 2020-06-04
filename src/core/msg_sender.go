@@ -1,13 +1,13 @@
 package core
 
 import (
-	"time"
 	"math/big"
+	"x/src/utility"
 
 	"x/src/common"
-	"x/src/network"
 	"x/src/middleware/pb"
 	"x/src/middleware/types"
+	"x/src/network"
 
 	"github.com/gogo/protobuf/proto"
 )
@@ -39,7 +39,7 @@ func requestTransaction(m transactionRequestMessage, castorId string) {
 		logger.Errorf("Discard MarshalTransactionRequestMessage because of marshal error:%s!", e.Error())
 		return
 	}
-	logger.Debugf("send REQ_TRANSACTION_MSG to %s,height:%d,tx_len:%d,hash:%s,time at:%v", castorId, m.BlockHeight, m.CurrentBlockHash.String(), len(m.TransactionHashes), time.Now())
+	logger.Debugf("send REQ_TRANSACTION_MSG to %s,height:%d,tx_len:%d,hash:%s,time at:%v", castorId, m.BlockHeight, m.CurrentBlockHash.String(), len(m.TransactionHashes), utility.GetTime())
 	message := network.Message{Code: network.ReqTransactionMsg, Body: body}
 	network.GetNetInstance().Broadcast(message)
 }

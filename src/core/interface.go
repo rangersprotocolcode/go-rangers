@@ -1,17 +1,11 @@
 package core
 
 import (
-	"x/src/common"
 	"math/big"
-	"x/src/middleware/types"
-	"x/src/storage/account"
 	"time"
+	"x/src/common"
+	"x/src/middleware/types"
 )
-
-type ExecutedTransaction struct {
-	Receipt     *types.Receipt
-	Transaction *types.Transaction
-}
 
 type GroupIterator struct {
 	current *types.Group
@@ -43,29 +37,21 @@ type BlockChain interface {
 
 	TopBlock() *types.BlockHeader
 
+	CurrentBlock() *types.Block
+
 	QueryBlockByHash(hash common.Hash) *types.Block
 
 	QueryBlock(height uint64) *types.Block
 
 	GetBalance(address common.Address) *big.Int
 
-	GetNonce(address common.Address, gameId string) uint64
-
 	GetTransaction(txHash common.Hash) (*types.Transaction, error)
-
-	GetTransactionPool() TransactionPool
 
 	Remove(block *types.Block) bool
 
-	Clear() error
-
 	Close()
 
-	GetAccountDBByHash(hash common.Hash) (*account.AccountDB, error)
-
 	GetVerifyHash(height uint64) (common.Hash, error)
-
-	GetAccountDB() *account.AccountDB
 
 	HasBlockByHash(hash common.Hash) bool
 }
@@ -75,7 +61,7 @@ type GroupChain interface {
 
 	GetGroupById(id []byte) *types.Group
 
-	GetGroupByHeight(height uint64) (*types.Group)
+	GetGroupByHeight(height uint64) *types.Group
 
 	LastGroup() *types.Group
 
@@ -84,41 +70,14 @@ type GroupChain interface {
 	Close()
 
 	Iterator() *GroupIterator
-}
 
-type TransactionPool interface {
-	PackForCast() []*types.Transaction
+	GetAvailableGroupsByMinerId(height uint64, minerId []byte) []*types.Group
 
-	//add new transaction to the transaction pool
-	AddTransaction(tx *types.Transaction) (bool, error)
+	GetSyncGroupsById(id []byte) []*types.Group
 
-	//rcv transactions broadcast from other nodes
-	AddBroadcastTransactions(txs []*types.Transaction)
+	SaveJoinedGroup(id []byte, value []byte) bool
 
-	//add  local miss transactions while verifying blocks to the transaction pool
-	AddMissTransactions(txs []*types.Transaction)
+	GetJoinedGroup(id []byte) ([]byte, error)
 
-	GetTransaction(hash common.Hash) (*types.Transaction, error)
-
-	GetTransactionStatus(hash common.Hash) (uint, error)
-
-	GetExecuted(hash common.Hash) *ExecutedTransaction
-
-	GetReceived() []*types.Transaction
-
-	TxNum() int
-
-	MarkExecuted(receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash)
-
-	UnMarkExecuted(txs []*types.Transaction)
-
-	AddExecuted(tx *types.Transaction) error
-
-	Clear()
-
-	IsExisted(hash common.Hash) bool
-
-	IsGameData(hash common.Hash) bool
-
-	PutGameData(hash common.Hash)
+	DeleteJoinedGroup(id []byte) bool
 }

@@ -1,17 +1,16 @@
 package ed25519
 
 import (
-	"bufio"
-	"bytes"
-	"compress/gzip"
-	"crypto"
-	"crypto/rand"
-	"encoding/hex"
-	"os"
-	"strings"
 	"testing"
-
+	"crypto/rand"
+	"crypto"
+	"bytes"
+	"os"
+	"bufio"
+	"strings"
+	"encoding/hex"
 	"x/src/common/ed25519/edwards25519"
+	"compress/gzip"
 )
 
 type zeroReader struct{}
@@ -28,7 +27,7 @@ func TestUnmarshalMarshal(t *testing.T) {
 
 	var A edwards25519.ExtendedGroupElement
 	var pubBytes [32]byte
-	copy(pubBytes[:], pub)
+	copy(pubBytes[:], pub[:])
 	if !A.FromBytes(&pubBytes) {
 		t.Fatalf("ExtendedGroupElement.FromBytes failed")
 	}
@@ -69,7 +68,7 @@ func TestCryptoSigner(t *testing.T) {
 		t.Fatalf("expected PublicKey from Public() but got %T", publicInterface)
 	}
 
-	if !bytes.Equal(public, public2) {
+	if !bytes.Equal(public[:], public2[:]) {
 		t.Errorf("public keys do not match: original:%x vs Public():%x", public, public2)
 	}
 
@@ -124,6 +123,7 @@ func TestGolden(t *testing.T) {
 		}
 
 		var priv [PrivateKeySize]byte
+
 		copy(priv[:], privBytes)
 		copy(priv[32:], pubKey)
 

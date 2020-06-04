@@ -15,6 +15,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+	"x/src/utility"
 
 	"x/src/common"
 )
@@ -338,7 +339,7 @@ func (c *Client) send(ctx context.Context, op *requestOp, msg interface{}) error
 func (c *Client) write(ctx context.Context, msg interface{}) error {
 	deadline, ok := ctx.Deadline()
 	if !ok {
-		deadline = time.Now().Add(defaultWriteTimeout)
+		deadline = utility.GetTime().Add(defaultWriteTimeout)
 	}
 	// The previous write failed. Try to establish a new connection.
 	if c.writeConn == nil {

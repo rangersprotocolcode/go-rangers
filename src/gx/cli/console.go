@@ -274,11 +274,10 @@ func genSendTxCmd() *sendTxCmd {
 
 func (c *sendTxCmd) toTxRaw() *txRawData {
 	return &txRawData{
-		Target:   c.to,
-		Value:    uint64((c.value) * float64(1000000000)),
-		TxType:   c.txType,
-		Data:     c.data,
-
+		Target: c.to,
+		Value:  uint64((c.value) * float64(1000000000)),
+		TxType: c.txType,
+		Data:   c.data,
 	}
 }
 
@@ -584,8 +583,8 @@ func Usage() {
 	}
 }
 
-func ConsoleInit(keystore, host string, port int, show bool, rpcport int) error {
-	aop, err := initAccountManager(keystore, false)
+func ConsoleInit(host string, port int, show bool, rpcport int) error {
+	aop, err := initAccountManager(false)
 	if err != nil {
 		return err
 	}

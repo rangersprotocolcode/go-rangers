@@ -1,362 +1,163 @@
 package core
 
 import (
+	"strings"
 	"time"
 	"x/src/common"
-	"x/src/middleware/types"
-	"x/src/storage/account"
-
-	"encoding/json"
-	"x/src/utility"
-	"x/src/statemachine"
-	"strconv"
-	"math/big"
-	"fmt"
 	"x/src/middleware"
+	"x/src/middleware/types"
+	"x/src/service"
+	"x/src/storage/account"
+	"x/src/utility"
 )
+
+var executors map[int32]executor
+
+type executor interface {
+	BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string)
+	Execute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string)
+}
+
+type baseFeeExecutor struct {
+}
+
+func (this *baseFeeExecutor) BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	err := service.GetTransactionPool().ProcessFee(*tx, accountdb)
+	if err == nil {
+		return true, ""
+	}
+	return false, err.Error()
+}
+
+func initExecutors() {
+	executors = make(map[int32]executor, 20)
+
+	executors[types.TransactionTypeOperatorEvent] = &operatorExecutor{}
+	executors[types.TransactionTypeWithdraw] = &withdrawExecutor{}
+	executors[types.TransactionTypeCoinDepositAck] = &coinDepositExecutor{}
+	executors[types.TransactionTypeFTDepositAck] = &ftDepositExecutor{}
+	executors[types.TransactionTypeNFTDepositAck] = &nftDepositExecutor{}
+	executors[types.TransactionTypeMinerApply] = &minerApplyExecutor{}
+	executors[types.TransactionTypeMinerAdd] = &minerAddExecutor{}
+	executors[types.TransactionTypeMinerRefund] = &minerRefundExecutor{}
+
+	executors[types.TransactionTypePublishFT] = &ftExecutor{}
+	executors[types.TransactionTypePublishNFTSet] = &ftExecutor{}
+	executors[types.TransactionTypeMintFT] = &ftExecutor{}
+	executors[types.TransactionTypeMintNFT] = &ftExecutor{}
+	executors[types.TransactionTypeShuttleNFT] = &ftExecutor{}
+	executors[types.TransactionTypeUpdateNFT] = &ftExecutor{}
+	executors[types.TransactionTypeApproveNFT] = &ftExecutor{}
+	executors[types.TransactionTypeRevokeNFT] = &ftExecutor{}
+
+	executors[types.TransactionTypeAddStateMachine] = &stmExecutor{}
+	executors[types.TransactionTypeUpdateStorage] = &stmExecutor{}
+	executors[types.TransactionTypeStartSTM] = &stmExecutor{}
+	executors[types.TransactionTypeStopSTM] = &stmExecutor{}
+	executors[types.TransactionTypeUpgradeSTM] = &stmExecutor{}
+	executors[types.TransactionTypeQuitSTM] = &stmExecutor{}
+	executors[types.TransactionTypeImportNFT] = &stmExecutor{}
+}
 
 const MaxCastBlockTime = time.Second * 3
 
 type VMExecutor struct {
-	bc BlockChain
+	accountdb *account.AccountDB
+	block     *types.Block
+	situation string
+	context   map[string]interface{}
+	mode      bool
 }
 
-func NewVMExecutor(bc BlockChain) *VMExecutor {
-	return &VMExecutor{
-		bc: bc,
+func newVMExecutor(accountdb *account.AccountDB, block *types.Block, situation string) *VMExecutor {
+	vm := &VMExecutor{
+		accountdb: accountdb,
+		block:     block,
+		situation: situation,
+		context:   make(map[string]interface{}),
 	}
+
+	return vm
 }
 
-func (executor *VMExecutor) Execute(accountdb *account.AccountDB, block *types.Block, height uint64, situation string) (common.Hash, []common.Hash, []*types.Transaction, []*types.Receipt, error, []*types.TransactionError) {
-	beginTime := time.Now()
+func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transaction, []*types.Receipt) {
+	beginTime := utility.GetTime()
+
 	receipts := make([]*types.Receipt, 0)
 	transactions := make([]*types.Transaction, 0)
 	evictedTxs := make([]common.Hash, 0)
-	errs := make([]*types.TransactionError, len(block.Transactions))
 
-	for _, transaction := range block.Transactions {
-		executeTime := time.Now()
-		if situation == "casting" && executeTime.Sub(beginTime) > MaxCastBlockTime {
-			logger.Infof("Cast block execute tx time out!Tx hash:%s ", transaction.Hash.String())
+	this.prepare()
+
+	for _, transaction := range this.block.Transactions {
+		executeTime := utility.GetTime()
+		if this.situation == "casting" && executeTime.Sub(beginTime) > MaxCastBlockTime {
+			logger.Infof("Cast block execute tx time out! Tx hash:%s ", transaction.Hash.String())
 			break
 		}
-		logger.Debugf("VMExecutor Execute %s,type:%d", transaction.Hash.String(), transaction.Type)
-		var success = false
-		snapshot := accountdb.Snapshot()
+		logger.Debugf("Execute %s, type:%d", transaction.Hash.String(), transaction.Type)
 
-		switch transaction.Type {
-		case types.TransactionTypeOperatorEvent:
-			logger.Debugf("Begin transaction is not nil!")
-			// 处理转账
-			// 支持多人转账{"address1":"value1", "address2":"value2"}
-			// 理论上这里不应该失败，nonce保证了这一点
-			if 0 != len(transaction.ExtraData) {
-				mm := make(map[string]types.TransferData, 0)
-				if err := json.Unmarshal([]byte(transaction.ExtraData), &mm); nil != err {
-					success = false
-					break
-				}
-				_, ok := changeAssets(transaction.Source, mm, accountdb)
-				if !ok {
-					success = false
-					break
-				}
+		executor := executors[transaction.Type]
+		success := false
+		msg := ""
 
-			}
+		if executor != nil {
+			success, msg = executor.BeforeExecute(transaction, this.block.Header, this.accountdb, this.context)
+			if success {
+				snapshot := this.accountdb.Snapshot()
+				success, msg = executor.Execute(transaction, this.block.Header, this.accountdb, this.context)
 
-			// 在交易池里，表示game_executor已经执行过状态机了
-			// 只要处理交易里的subTransaction即可
-			if nil != TxManagerInstance.BeginTransaction(transaction.Target, accountdb, transaction) {
-				success = true
-				if 0 != len(transaction.SubTransactions) {
-					logger.Debugf("Is not game data")
-					for _, user := range transaction.SubTransactions {
-						logger.Debugf("Execute sub tx:%v", user)
-
-						// 发币
-						if user.Address == "StartFT" {
-							createTime, _ := user.Assets["createTime"]
-							_, flag := FTManagerInstance.PublishFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], createTime, 1, accountdb)
-							if !flag {
-								success = false
-								break
-							}
-
-							continue
-						}
-
-						if user.Address == "MintFT" {
-							owner := user.Assets["appId"]
-							ftId := user.Assets["ftId"]
-							target := user.Assets["target"]
-							supply := user.Assets["balance"]
-							_, flag := FTManagerInstance.MintFT(owner, ftId, target, supply, accountdb)
-
-							if !flag {
-								success = false
-								break
-							}
-
-							continue
-						}
-
-						// 给用户币
-						if user.Address == "TransferFT" {
-							_, _, flag := FTManagerInstance.TransferFT(user.Assets["gameId"], user.Assets["symbol"], user.Assets["target"], user.Assets["supply"], accountdb)
-							if !flag {
-								success = false
-								break
-							}
-							continue
-						}
-
-						// 修改NFT属性
-						if user.Address == "UpdateNFT" {
-							addr := common.HexToAddress(user.Assets["addr"])
-							flag := NFTManagerInstance.UpdateNFT(addr, user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], accountdb)
-							if !flag {
-								success = false
-								break
-							}
-							continue
-						}
-
-						// NFT
-						if user.Address == "TransferNFT" {
-							appId := user.Assets["appId"]
-							_, ok := NFTManagerInstance.Transfer(user.Assets["setId"], user.Assets["id"], common.HexToAddress(appId), common.HexToAddress(user.Assets["target"]), accountdb)
-							if !ok {
-								success = false
-								break
-							}
-							continue
-						}
-
-						// 将状态机持有的NFT的使用权授予某地址
-						if user.Address == "ApproveNFT" {
-							appId := user.Assets["appId"]
-							ok := accountdb.ApproveNFT(common.HexToAddress(appId), appId, user.Assets["setId"], user.Assets["id"], user.Assets["target"])
-							if !ok {
-								success = false
-								break
-							}
-							continue
-						}
-
-						if user.Address == "changeNFTStatus" {
-							appId := user.Assets["appId"]
-							status, _ := strconv.Atoi(user.Assets["status"])
-							ok := accountdb.ChangeNFTStatus(common.HexToAddress(appId), appId, user.Assets["setId"], user.Assets["id"], byte(status))
-							if !ok {
-								success = false
-								break
-							}
-							continue
-						}
-
-						if user.Address == "PublishNFTSet" {
-							maxSupplyString := user.Assets["maxSupply"]
-							maxSupply, err := strconv.Atoi(maxSupplyString)
-							if err != nil {
-								logger.Errorf("Publish nft set!MaxSupply bad format:%s", maxSupplyString)
-								success = false
-								break
-							}
-							appId := user.Assets["appId"]
-
-							_, ok, _ := NFTManagerInstance.PublishNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"], accountdb)
-							if !ok {
-								success = false
-								break
-							}
-							continue
-						}
-
-						if user.Address == "MintNFT" {
-							_, ok := NFTManagerInstance.MintNFT(user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], user.Assets["createTime"], common.HexToAddress(user.Assets["target"]), accountdb)
-							if !ok {
-								success = false
-								break
-							}
-							continue
-						}
-
-						// 用户之间转账
-						if !UpdateAsset(user, transaction.Target, accountdb) {
-							success = false
-							break
-						}
-
-						//address := common.HexToAddress(user.Address)
-						//accountdb.SetNonce(address, 1)
-
-					}
-				}
-			} else if 0 != len(transaction.Target) {
-				// 本地没有执行过状态机(game_executor还没有收到消息)，则需要调用状态机
-				transaction.SubTransactions = make([]types.UserData, 0)
-				outputMessage := statemachine.Docker.Process(transaction.Target, "operator", strconv.FormatUint(transaction.Nonce, 10), transaction.Data, transaction)
-				GetBlockChain().GetTransactionPool().PutGameData(transaction.Hash)
-				result := ""
-				if outputMessage != nil {
-					result = outputMessage.Payload
-				}
-
-				if 0 == len(result) || result == "fail to transfer" || outputMessage == nil || outputMessage.Status == 1 {
-					TxManagerInstance.RollBack(transaction.Target)
+				if !success {
+					logger.Debugf("Execute failed tx: %s, type: %d, msg: %s", transaction.Hash.String(), transaction.Type, msg)
+					evictedTxs = append(evictedTxs, transaction.Hash)
+					this.accountdb.RevertToSnapshot(snapshot)
 				} else {
-					TxManagerInstance.Commit(transaction.Target)
-					success = true
+					if transaction.Source != "" {
+						this.accountdb.SetNonce(common.HexToAddress(transaction.Source), transaction.Nonce)
+					}
+
+					logger.Debugf("Execute success %s,type:%d", transaction.Hash.String(), transaction.Type)
 				}
-
-			}
-			break
-		case types.TransactionTypePublishFT:
-			_, success = PublishFT(accountdb, transaction)
-			break
-		case types.TransactionTypePublishNFTSet:
-			success, _ = PublishNFTSet(accountdb, transaction)
-			break
-		case types.TransactionTypeMintFT:
-			success, _ = MintFT(accountdb, transaction)
-			break
-		case types.TransactionTypeMintNFT:
-			success, _ = MintNFT(accountdb, transaction)
-			break
-		case types.TransactionTypeWithdraw:
-			_, success = Withdraw(accountdb, transaction, true)
-			break
-		case types.TransactionTypeCoinDepositAck:
-			success = executor.executeCoinDepositNotify(accountdb, transaction)
-			break
-		case types.TransactionTypeFTDepositAck:
-			success = executor.executeFTDepositNotify(accountdb, transaction)
-			break
-		case types.TransactionTypeNFTDepositAck:
-			success = executor.executeNFTDepositNotify(accountdb, transaction)
-			break
-		case types.TransactionTypeShuttleNFT:
-			success, _ = ShuttleNFT(accountdb, transaction)
-			break
-		}
-
-		if !success {
-			logger.Debugf("Execute failed tx:%s", transaction.Hash.String())
-			evictedTxs = append(evictedTxs, transaction.Hash)
-			accountdb.RevertToSnapshot(snapshot)
-		}
-
-		if success || transaction.Type != types.TransactionTypeBonus {
-			transactions = append(transactions, transaction)
-			receipt := types.NewReceipt(nil, !success, 0)
-			receipt.TxHash = transaction.Hash
-			receipts = append(receipts, receipt)
-			if transaction.Source != "" {
-				accountdb.SetNonce(common.HexToAddress(transaction.Source), transaction.Nonce)
 			}
 		}
 
+		transactions = append(transactions, transaction)
+		receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height, msg, transaction.Source)
+		receipt.TxHash = transaction.Hash
+		receipts = append(receipts, receipt)
 	}
 
-	accountdb.AddBalance(common.BytesToAddress(block.Header.Castor), consensusHelper.ProposalBonus())
-	state := accountdb.IntermediateRoot(true)
+	this.after()
 
-	middleware.PerfLogger.Debugf("VMExecutor End. %s height: %d, cost: %v, txs: %d", situation, block.Header.Height, time.Since(beginTime), len(block.Transactions))
-	return state, evictedTxs, transactions, receipts, nil, errs
+	state := this.accountdb.IntermediateRoot(true)
+
+	middleware.PerfLogger.Debugf("VMExecutor End. %s height: %d, cost: %v, txs: %d", this.situation, this.block.Header.Height, time.Since(beginTime), len(this.block.Transactions))
+	return state, evictedTxs, transactions, receipts
 }
 
 func (executor *VMExecutor) validateNonce(accountdb *account.AccountDB, transaction *types.Transaction) bool {
 	return true
 }
 
-//主链币充值确认
-func (executor *VMExecutor) executeCoinDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	txLogger.Tracef("Execute coin deposit ack tx:%s", transaction.ToTxJson().ToString())
-	if transaction.Data == "" {
-		return false
-	}
-	var depositCoinData types.DepositCoinData
-	err := json.Unmarshal([]byte(transaction.Data), &depositCoinData)
-	if err != nil {
-		txLogger.Errorf("Deposit coin data unmarshal error:%s", err.Error())
-		return false
-	}
-	txLogger.Tracef("deposit coin data:%v,target address:%s", depositCoinData, transaction.Source)
-	if depositCoinData.Amount == "" || depositCoinData.ChainType == "" {
-		return false
-	}
-
-	value, _ := utility.StrToBigInt(depositCoinData.Amount)
-	return accountdb.AddFT(common.HexToAddress(transaction.Source), fmt.Sprintf("official-%s", depositCoinData.ChainType), value)
+func (executor *VMExecutor) prepare() {
+	executor.context["refund"] = make(map[uint64]RefundInfoList)
 }
 
-//FT充值确认
-func (executor *VMExecutor) executeFTDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	txLogger.Tracef("Execute ft deposit ack tx:%s", transaction.ToTxJson().ToString())
-	if transaction.Data == "" {
-		return false
+func (executor *VMExecutor) after() {
+	if 0 == strings.Compare("testing", executor.situation) {
+		return
 	}
-	var depositFTData types.DepositFTData
-	err := json.Unmarshal([]byte(transaction.Data), &depositFTData)
-	if err != nil {
-		txLogger.Errorf("Deposit ft data unmarshal error:%s", err.Error())
-		return false
-	}
-	txLogger.Tracef("deposit ft data:%v, address:%s", depositFTData, transaction.Source)
-	if depositFTData.Amount == "" || depositFTData.FTId == "" {
-		return false
-	}
-	//todo 先不检查此ft是否存在
-	value, _ := utility.StrToBigInt(depositFTData.Amount)
-	return accountdb.AddFT(common.HexToAddress(transaction.Source), depositFTData.FTId, value)
+
+	height := executor.block.Header.Height
+
+	// 计算定时任务（冻结、退款等等）
+	RefundManagerImpl.Add(getRefundInfo(executor.context), executor.accountdb)
+	RefundManagerImpl.CheckAndMove(height, executor.accountdb)
+
+	// 计算出块奖励
+	RewardCalculatorImpl.CalculateReward(height, executor.accountdb)
 }
-
-//NFT充值确认
-func (executor *VMExecutor) executeNFTDepositNotify(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	txLogger.Tracef("Execute nft deposit ack tx:%s", transaction.ToTxJson().ToString())
-	if transaction.Data == "" {
-		return false
-	}
-	var depositNFTData types.DepositNFTData
-	err := json.Unmarshal([]byte(transaction.Data), &depositNFTData)
-	if err != nil {
-		txLogger.Errorf("Deposit nft data unmarshal error:%s", err.Error())
-		return false
-	}
-	txLogger.Tracef("deposit nft data:%v,target address:%s", depositNFTData, transaction.Source)
-	if depositNFTData.SetId == "" || depositNFTData.ID == "" || depositNFTData.Value == "" {
-		return false
-	}
-
-	// 检查setId
-	nftSet := NFTManagerInstance.GetNFTSet(depositNFTData.SetId, accountdb)
-	if nil == nftSet {
-		_, _, nftSet = NFTManagerInstance.PublishNFTSet(depositNFTData.SetId, depositNFTData.Name, depositNFTData.Symbol, depositNFTData.Creator, depositNFTData.Owner, 0, depositNFTData.CreateTime, accountdb)
-	}
-
-	appId := transaction.Target
-	str, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, depositNFTData.Value, depositNFTData.Creator, depositNFTData.CreateTime, common.HexToAddress(transaction.Source), accountdb)
-	txLogger.Debugf("GenerateNFT result:%s,%t", str, ok)
-	return ok
-}
-
-/**
-字符串的余额比较
-withDrawAmount金额大于等于ftValue 返回TRUE 否则返回FALSE
-withDrawAmount 是浮点数的STRING "11.256"
-ftValue 是bigInt的STRING "56631"
-如果格式有错误返回FALSE
-返回为true的话 返回二者的差值string
-*/
-func canWithDraw(withDrawAmount string, ftValue *big.Int) (bool, *big.Int) {
-	b1, err1 := utility.StrToBigInt(withDrawAmount)
-	if err1 != nil {
-		return false, nil
-	}
-
-	if b1.Cmp(ftValue) > 0 {
-		return false, nil
-	}
-
-	return true, ftValue.Sub(ftValue, b1)
+func getRefundInfo(context map[string]interface{}) map[uint64]RefundInfoList {
+	raw := context["refund"]
+	return raw.(map[uint64]RefundInfoList)
 }

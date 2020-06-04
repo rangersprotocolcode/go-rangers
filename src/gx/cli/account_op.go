@@ -1,16 +1,17 @@
 package cli
 
 import (
-	"time"
-	"sync"
+	"crypto/rand"
 	"encoding/json"
 	"fmt"
 	"os"
-	"crypto/rand"
+	"sync"
+	"time"
+	"x/src/utility"
 
 	"x/src/common"
-	"x/src/middleware/db"
 	"x/src/consensus/model"
+	"x/src/middleware/db"
 )
 
 const accountUnLockTime = time.Second * 120
@@ -62,6 +63,31 @@ type MinerRaw struct {
 	ID    [32]byte
 }
 
+func getAccountByPrivateKey(pk string) Account {
+	privateKey := common.HexStringToSecKey(pk)
+	publicKey := privateKey.GetPubKey()
+	address := publicKey.GetAddress()
+
+	account := Account{
+		Address: address.GetHexString(),
+		Pk:      publicKey.GetHexString(),
+		Sk:      privateKey.GetHexString(),
+	}
+
+	id := publicKey.GetID()
+	minerDO := model.NewSelfMinerInfo(*privateKey)
+	minerRaw := &MinerRaw{
+		BPk:   minerDO.PubKey.GetHexString(),
+		BSk:   minerDO.SecKey.GetHexString(),
+		VrfPk: minerDO.VrfPK.GetHexString(),
+		VrfSk: minerDO.VrfSK.GetHexString(),
+		ID:    id,
+	}
+	account.Miner = minerRaw
+
+	return account
+}
+
 func (am *AccountManager) NewAccount(password string, miner bool) *Result {
 	privateKey := common.GenerateKey("")
 	publicKey := privateKey.GetPubKey()
@@ -76,10 +102,10 @@ func (am *AccountManager) NewAccount(password string, miner bool) *Result {
 
 	if miner {
 		id := publicKey.GetID()
-		minerDO := model.NewSelfMinerDO(id[:])
+		minerDO := model.NewSelfMinerInfo(privateKey)
 		minerRaw := &MinerRaw{
-			BPk:   minerDO.PK.GetHexString(),
-			BSk:   minerDO.SK.GetHexString(),
+			BPk:   minerDO.PubKey.GetHexString(),
+			BSk:   minerDO.SecKey.GetHexString(),
 			VrfPk: minerDO.VrfPK.GetHexString(),
 			VrfSk: minerDO.VrfSK.GetHexString(),
 			ID:    id,
@@ -169,12 +195,14 @@ func (am *AccountManager) Close() {
 	am.db.Close()
 }
 
-func initAccountManager(keystore string, readyOnly bool) (accountOp, error) {
+func initAccountManager(readyOnly bool) (*AccountManager, error) {
+	keystore := "keystore"
 	if readyOnly && !dirExists(keystore) {
 		accountManager, err := newAccountManager(keystore)
 		if err != nil {
 			panic(err)
 		}
+
 		ret := accountManager.NewAccount(defaultPassword, true)
 		if !ret.IsSuccess() {
 			fmt.Println(ret.Message)
@@ -184,7 +212,7 @@ func initAccountManager(keystore string, readyOnly bool) (accountOp, error) {
 	}
 
 	if accountManager, err := newAccountManager(keystore); err != nil {
-		fmt.Printf("new lelvel db error:%s\n",err.Error())
+		fmt.Printf("new lelvel db error:%s\n", err.Error())
 		return nil, err
 	} else {
 		return accountManager, nil
@@ -194,16 +222,18 @@ func initAccountManager(keystore string, readyOnly bool) (accountOp, error) {
 func newAccountManager(ks string) (*AccountManager, error) {
 	accountManagerDB, err := db.NewLDBDatabase(ks, 128, 128)
 	if err != nil {
+		fmt.Printf("new ldb failed:%v", err.Error())
 		return nil, fmt.Errorf("new ldb fail:%v", err.Error())
 	}
 	return &AccountManager{db: accountManagerDB}, nil
 }
 
 func (am *AccountManager) loadAccount(addr string) (*Account, error) {
-	//fmt.Printf("key:%v\n",[]byte(addr))
+	//fmt.Printf("load account.addr:%v,key:%v", addr, common.FromHex(addr))
 	v, err := am.db.Get(common.FromHex(addr))
 	//v, err := am.db.Get([]byte(addr))
 	if err != nil {
+		fmt.Printf("load account err:%v\n", err.Error())
 		return nil, err
 	}
 
@@ -217,6 +247,14 @@ func (am *AccountManager) loadAccount(addr string) (*Account, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	pk := common.HexStringToPubKey(acc.Pk)
+	address := pk.GetAddress()
+	acc.Address = address.String()
+
+	bs, _ = json.Marshal(acc)
+	fmt.Println("accout info:" + string(bs))
+
 	return acc, nil
 }
 
@@ -232,14 +270,14 @@ func (am *AccountManager) storeAccount(account *Account) error {
 	}
 
 	err = am.db.Put(account.Miner.ID[:], ct)
-	fmt.Printf("store account:%v\n",account.Miner.ID[:])
+	//fmt.Printf("store account:%v,key:%v,err:%v\n", account.Miner.ID[:], account.Miner.ID[:], err)
 	return err
 }
 
 func (am *AccountManager) getFirstMinerAccount() *Account {
 	iter := am.db.NewIterator()
 	for iter.Next() {
-		if ac, err := am.getAccountInfo(string(iter.Key())); err != nil {
+		if ac, err := am.getAccountInfo(common.Bytes2Hex(iter.Key())); err != nil {
 			panic(fmt.Sprintf("getAccountInfo err,addr=%v,err=%v", iter.Key(), err.Error()))
 		} else {
 			if ac.Miner != nil {
@@ -287,11 +325,11 @@ func passwordSha(password string) string {
 }
 
 func (ai *AccountInfo) unlocked() bool {
-	return time.Now().Before(ai.UnLockExpire) && ai.Status == statusUnLocked
+	return utility.GetTime().Before(ai.UnLockExpire) && ai.Status == statusUnLocked
 }
 
 func (ai *AccountInfo) resetExpireTime() {
-	ai.UnLockExpire = time.Now().Add(accountUnLockTime)
+	ai.UnLockExpire = utility.GetTime().Add(accountUnLockTime)
 }
 
 func dirExists(dir string) bool {

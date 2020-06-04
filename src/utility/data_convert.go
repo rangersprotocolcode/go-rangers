@@ -4,7 +4,14 @@ import (
 	"bytes"
 	"encoding/binary"
 	"math/big"
-	"strconv"
+	"fmt"
+	"strings"
+)
+
+const (
+	zeroString = "0"
+	prec       = 256
+	baseNumber = 1000000000
 )
 
 func UInt32ToByte(i uint32) []byte {
@@ -46,8 +53,90 @@ func ByteToUInt64(b []byte) uint64 {
 	return x
 }
 
-//"11.22"
+//"11.22"->11220000000
 func StrToBigInt(s string) (*big.Int, error) {
-	f, err := strconv.ParseFloat(s, 64)
-	return big.NewInt(int64(f * 1000000000)), err
+	// 空字符串，默认返回0
+	if 0 == len(s) {
+		return big.NewInt(0), nil
+	}
+
+	target, _, err := big.ParseFloat(s, 10, prec, big.ToNearestEven)
+	if err != nil {
+		return nil, err
+	}
+
+	base := new(big.Float)
+	base.SetInt(big.NewInt(baseNumber))
+
+	target.Mul(target, base)
+	result := new(big.Int)
+	target.Int(result)
+
+	return result, nil
+}
+
+// 11220000000->"11.220000000"
+func BigIntToStr(number *big.Int) string {
+	if nil == number || 0 == number.Sign() {
+		return zeroString
+	}
+
+	// 默认保留小数点9位
+	return bigIntToStr(number, 9)
+}
+
+func bigIntToStr(n *big.Int, precision int) string {
+	if nil == n || precision < 0 {
+		return zeroString
+	}
+
+	// 绝对值字符串
+	number := n.Abs(n).String()
+
+	var starter, first, last string
+
+	// 负数
+	if n.Sign() < 0 {
+		starter = "-"
+	}
+
+	length := len(number)
+	// 小于1的数
+	if length <= precision {
+		first = zeroString
+		last = fmt.Sprintf("%s%s", strings.Repeat(zeroString, precision-length), number)
+	} else {
+		first = number[:length-precision]
+		last = number[length-precision : length]
+	}
+
+	if 0 == precision {
+		return fmt.Sprintf("%s%s", starter, first)
+	}
+	return fmt.Sprintf("%s%s.%s", starter, first, last)
+}
+
+//11.22->11220000000
+func Float64ToBigInt(number float64) *big.Int {
+	base := new(big.Float)
+	base.SetInt(big.NewInt(baseNumber))
+
+	target := new(big.Float)
+	target.SetPrec(prec)
+	target.SetFloat64(number)
+	target.Mul(target, base)
+
+	result := new(big.Int)
+	target.Int(result)
+
+	return result
+}
+
+func Uint64ToBigInt(number uint64) *big.Int {
+	base := big.NewInt(baseNumber)
+	result := new(big.Int)
+	result.SetUint64(number)
+	result.Mul(result, base)
+
+	return result
 }

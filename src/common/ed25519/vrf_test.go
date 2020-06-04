@@ -1,101 +1,304 @@
 package ed25519
 
 import (
-	"encoding/hex"
+	"github.com/stretchr/testify/assert"
 	"testing"
-	"crypto/rand"
-	"io"
 	"fmt"
-
-	"x/src/common/ed25519/edwards25519"
+	"io"
+	mathRand "crypto/rand"
+	"math/rand"
+	"bytes"
+	"encoding/hex"
+	"io/ioutil"
+	"strings"
+	"time"
 )
 
-const message = "This is a' testing message"
+//---------------------------------------Function Test-----------------------------------------------------------------
+func TestKeyLength(test *testing.T) {
+	privateKey, publicKey := genRandomKey(nil)
+	fmt.Printf("privateKey:%v,len:%d\n", privateKey, len(privateKey))
+	fmt.Printf("pubkey :%v,len:%d\n", publicKey, len(publicKey))
+	assert.Equal(test, len(privateKey), 64)
+	assert.Equal(test, len(publicKey), 32)
+}
 
-func DoTestECVRF(t *testing.T, pk PublicKey, sk PrivateKey, msg []byte, verbose bool) {
-	pi, err := ECVRFProve(pk, sk, msg[:])
-	if err != nil {
-		t.Fatal(err)
-	}
-	res, err := ECVRFVerify(pk, pi, msg[:])
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !res {
-		t.Errorf("VRF failed")
-	}
+func TestGenProveAndVerifyOnce(test *testing.T) {
+	runGenProveAndVerifyOnce(test, nil)
+}
 
-	// when everything get through
-	if verbose {
-		fmt.Printf("alpha: %s\n", hex.EncodeToString(msg))
-		fmt.Printf("x: %s\n", hex.EncodeToString(sk))
-		fmt.Printf("P: %s\n", hex.EncodeToString(pk))
-		fmt.Printf("pi: %s\n", hex.EncodeToString(pi))
-		fmt.Printf("vrf: %s\n", hex.EncodeToString(ECVRFProof2hash(pi)))
-
-		r, c, s, err := ecVRFDecodeProof(pi)
-		if err != nil {
-			t.Fatal(err)
+func TestSignAndVerifyRepeatedly(test *testing.T) {
+	var testCount = 1000
+	for i := 0; i < testCount; i++ {
+		if i%2 == 0 {
+			runGenProveAndVerifyOnce(test, mathRand.Reader)
+		} else {
+			runGenProveAndVerifyOnce(test, nil)
 		}
-		// u = (g^x)^c * g^s = P^c * g^s
-		var u edwards25519.ProjectiveGroupElement
-		P := os2ecp(pk, pk[31]>>7)
-		edwards25519.GeDoubleScalarMultVartime(&u, c, P, s)
-		fmt.Printf("r: %s\n", hex.EncodeToString(ecp2os(r)))
-		fmt.Printf("c: %s\n", hex.EncodeToString(c[:]))
-		fmt.Printf("s: %s\n", hex.EncodeToString(s[:]))
-		fmt.Printf("u: %s\n", hex.EncodeToString(ecp2osProj(&u)))
 	}
 }
 
-const howMany = 1000
+func genRandomKey(random io.Reader) (privateKey PrivateKey, publicKey PublicKey) {
+	publicKey, privateKey, err := GenerateKey(random)
+	if err != nil {
+		panic("Ed25519 generate key error!" + err.Error())
+	}
+	return
+}
 
-func TestECVRF(t *testing.T) {
-	for i := howMany; i > 0; i-- {
-		pk, sk, err := GenerateKey(nil)
+func genRandomMessage(length uint64) []byte {
+	msg := make([]byte, length)
+
+	var i uint64 = 0
+	for ; i < length; i++ {
+		msg[i] = byte(rand.Uint64() % 256)
+	}
+	return msg
+}
+
+func runGenProveAndVerifyOnce(test *testing.T, random io.Reader) {
+	privateKey, publicKey := genRandomKey(random)
+	msg := genRandomMessage(32)
+
+	proof, err := ECVRFProve(privateKey, msg)
+	if err != nil {
+		panic("ECVRFProve error!" + err.Error())
+	}
+	//fmt.Printf("proof:%v\n", proof)
+	//fmt.Printf("proof size:%v\n", len(proof))
+
+	verifyResult, err := ECVRFVerify(publicKey, proof, msg)
+	if err != nil {
+		panic("ECVRFVerify error!" + err.Error())
+	}
+	assert.Equal(test, verifyResult, true)
+}
+
+//---------------------------------------Benchmark Test-----------------------------------------------------------------
+var testCount = 1000
+var privateKeyList = make([]PrivateKey, testCount)
+var publicKeyList = make([]PublicKey, testCount)
+var messageList = make([][]byte, testCount)
+var proofList = make([]VRFProve, testCount)
+
+func BenchmarkGenProve(b *testing.B) {
+	prepareData()
+	b.ResetTimer()
+
+	begin := time.Now()
+	for i := 0; i < testCount; i++ {
+		privateKey := privateKeyList[i]
+		message := messageList[i]
+
+		proof, err := ECVRFProve(privateKey, message)
 		if err != nil {
-			t.Fatal(err)
+			panic("ECVRFProve error!" + err.Error())
 		}
-		var msg [32]byte
-		io.ReadFull(rand.Reader, msg[:])
-		DoTestECVRF(t, pk, sk, msg[:], false)
+		proofList[i] = proof
 	}
+	fmt.Printf("cost:%v\n", time.Since(begin).Seconds())
 }
 
-const pks = "885f642c8390293eb74d08cf38d3333771e9e319cfd12a21429eeff2eddeebd2"
-const sks = "1fcce948db9fc312902d49745249cfd287de1a764fd48afb3cd0bdd0a8d74674885f642c8390293eb74d08cf38d3333771e9e319cfd12a21429eeff2eddeebd2"
-
-func TestECVRFOnce(t *testing.T) {
-	pk, _ := hex.DecodeString(pks)
-	sk, _ := hex.DecodeString(sks)
-	m := []byte(message)
-	DoTestECVRF(t, pk, sk, m, true)
-
-	h := ecVRFHashToCurve(m, pk)
-	fmt.Printf("h: %s\n", hex.EncodeToString(ecp2os(h)))
-}
-
-func BenchmarkProve(b *testing.B) {
-	pk, sk, err := GenerateKey(nil)
-	if err != nil {
-		b.Fatal(err)
-	}
-	m := []byte(message)
+func BenchmarkVerifyProof(b *testing.B) {
+	prepareData()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		ECVRFProve(pk, sk, m)
+
+	for i := 0; i < testCount; i++ {
+		proof := proofList[i]
+		message := messageList[i]
+		publicKey := publicKeyList[i]
+
+		verifyResult, err := ECVRFVerify(publicKey, proof, message)
+		if err != nil {
+			panic("ECVRFVerify error!" + err.Error())
+		}
+		assert.Equal(b, verifyResult, true)
 	}
 }
 
-func BenchmarkVRFVerify(b *testing.B) {
-	pk, sk, err := GenerateKey(nil)
-	if err != nil {
-		b.Fatal(err)
-	}
-	m := []byte(message)
-	pi, err := ECVRFProve(pk, sk, m)
+func BenchmarkSignAndVerifySign(b *testing.B) {
+	prepareData()
 	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		ECVRFVerify(pk, pi, m)
+
+	for i := 0; i < testCount; i++ {
+		privateKey := privateKeyList[i]
+		publicKey := publicKeyList[i]
+		message := messageList[i]
+
+		proof, err := ECVRFProve(privateKey, message)
+		if err != nil {
+			panic("ECVRFProve error!" + err.Error())
+		}
+
+		verifyResult, err := ECVRFVerify(publicKey, proof, message)
+		if err != nil {
+			panic("ECVRFVerify error!" + err.Error())
+		}
+		assert.Equal(b, verifyResult, true)
 	}
+}
+
+func prepareData() {
+	for i := 0; i < testCount; i++ {
+		var privateKey PrivateKey
+		var publicKey PublicKey
+		if i%2 == 0 {
+			privateKey, publicKey = genRandomKey(mathRand.Reader)
+		} else {
+			privateKey, publicKey = genRandomKey(nil)
+		}
+		privateKeyList[i] = privateKey
+		publicKeyList[i] = publicKey
+		messageList[i] = genRandomMessage(32)
+
+		proof, err := ECVRFProve(privateKey, messageList[i])
+		if err != nil {
+			panic("ECVRFProve error!" + err.Error())
+		}
+		proofList[i] = proof
+	}
+}
+
+//---------------------------------------Standard Data Test---------------------------------------------------------------
+func TestVRFStandard(test *testing.T) {
+
+	fileName := "vrf_standard_data.txt"
+
+	bytes, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		panic("read vrf_standard_data info  file error:" + err.Error())
+	}
+	records := strings.Split(string(bytes), "\n")
+
+	for _, record := range records {
+		elements := strings.Split(record, "|")
+		fmt.Println(elements[0])
+		fmt.Println(elements[1])
+		fmt.Println(elements[2])
+		fmt.Println(elements[3])
+		fmt.Println("")
+
+		var privateKey PrivateKey
+		var publicKey PublicKey
+
+		privateKey, _ = hex.DecodeString(elements[0])
+		publicKey, _ = hex.DecodeString(elements[1])
+		messageByte, _ := hex.DecodeString(elements[2])
+		exceptedProve := elements[3]
+		prove, err := ECVRFProve(privateKey, messageByte)
+		if err != nil {
+			panic(err)
+		}
+		proveStr := hex.EncodeToString(prove)
+		assert.Equal(test, exceptedProve, proveStr)
+
+		var pi VRFProve
+		pi, _ = hex.DecodeString(proveStr)
+
+		verifyResult, err := ECVRFVerify(publicKey, pi, messageByte)
+		if err != nil {
+			panic(err)
+		}
+		assert.Equal(test, verifyResult, true)
+	}
+}
+
+//---------------------------------------Comparison Test---------------------------------------------------------------
+const prefix = "0x"
+
+func TestGenComparisonData(test *testing.T) {
+	fileName := "vrf_comparisonData_go.txt"
+
+	var buffer bytes.Buffer
+	var privateKey PrivateKey
+	var publicKey PublicKey
+	privateKey, publicKey = genRandomKey(nil)
+	messageByte := genRandomMessage(32)
+
+	for i := 0; i < testCount; i++ {
+		if i%2 == 0 {
+			privateKey, publicKey = genRandomKey(mathRand.Reader)
+		} else {
+			privateKey, publicKey = genRandomKey(nil)
+		}
+
+		buffer.WriteString("privateKey:")
+		privateKeyHex := prefix + hex.EncodeToString(privateKey[:])
+		buffer.WriteString(privateKeyHex)
+
+		buffer.WriteString("|publicKey:")
+		buffer.WriteString(prefix + hex.EncodeToString(publicKey[:]))
+		buffer.WriteString("|message:")
+
+		message := prefix + hex.EncodeToString(messageByte)
+		buffer.WriteString(message)
+
+		buffer.WriteString("|proof:")
+		proofByte, err := ECVRFProve(privateKey, messageByte)
+		if err != nil {
+			panic("ECVRFProve error!" + err.Error())
+		}
+		buffer.WriteString(prefix + hex.EncodeToString(proofByte))
+		buffer.WriteString("\n")
+	}
+	ioutil.WriteFile(fileName, buffer.Bytes(), 0644)
+}
+
+func TestValidateComparisonData(test *testing.T) {
+	fileName := "vrf_comparisonData_java.txt"
+
+	bytes, err := ioutil.ReadFile(fileName)
+	if err != nil {
+		panic("read vrf_comparisonData_java info  file error:" + err.Error())
+	}
+	records := strings.Split(string(bytes), "\n")
+
+	for _, record := range records {
+		fmt.Println(record)
+		elements := strings.Split(record, "|")
+		//fmt.Println(elements[0])
+		//fmt.Println(elements[1])
+		//fmt.Println(elements[2])
+		//fmt.Println(elements[3])
+
+		privateKey := strings.Replace(elements[0], "privateKey:", "", 1)
+		publicKey := strings.Replace(elements[1], "publicKey:", "", 1)
+		message := strings.Replace(elements[2], "message:", "", 1)
+		proof := strings.Replace(elements[3], "proof:", "", 1)
+
+		//fmt.Println(privateKey)
+		//fmt.Println(publicKey)
+		//fmt.Println(message)
+		//fmt.Println(sign)
+		validateFunction(privateKey, publicKey, message, proof, test)
+	}
+}
+
+func validateFunction(privateKeyStr, publicKeyStr, message, proofStr string, test *testing.T) {
+
+	var privateKey PrivateKey
+	privateKey, _ = hex.DecodeString(privateKeyStr[len(prefix):])
+
+	var publicKey PublicKey
+	publicKey, _ = hex.DecodeString(publicKeyStr[len(prefix):])
+
+	messageByte, _ := hex.DecodeString(message[len(prefix):])
+
+	proofByte, _ := hex.DecodeString(proofStr[len(prefix):])
+
+	//validate gen prove
+	expectedProof, err := ECVRFProve(privateKey, messageByte)
+	if err != nil {
+		panic("ECVRFProve error!" + err.Error())
+	}
+	expectedProveStr := prefix + hex.EncodeToString(expectedProof)
+
+	assert.Equal(test, expectedProveStr, proofStr)
+
+	//validate prove
+	verifyResult, err := ECVRFVerify(publicKey, proofByte, messageByte)
+	if err != nil {
+		panic("ECVRFVerify error!" + err.Error())
+	}
+	assert.Equal(test, verifyResult, true)
 }

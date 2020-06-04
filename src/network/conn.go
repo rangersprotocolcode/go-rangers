@@ -1,20 +1,20 @@
 package network
 
 import (
-	"github.com/gorilla/websocket"
-	"x/src/utility"
-	"net/url"
-	"strconv"
-	"encoding/hex"
 	"bytes"
-	"x/src/middleware/types"
-	"encoding/json"
-	"x/src/middleware/notify"
-	"sync"
 	"crypto/md5"
 	"encoding/binary"
-	"x/src/middleware/log"
+	"encoding/hex"
+	"encoding/json"
+	"github.com/gorilla/websocket"
+	"net/url"
+	"strconv"
+	"sync"
 	"time"
+	"x/src/middleware/log"
+	"x/src/middleware/notify"
+	"x/src/middleware/types"
+	"x/src/utility"
 )
 
 const (
@@ -22,11 +22,14 @@ const (
 	protocolHeaderSize = 28
 
 	// 默认等待队列大小
-	defaultRcvSize  = 1000
+	defaultRcvSize  = 10000
 	defaultSendSize = 100
 
 	// ws读写缓存
 	defaultBufferSize = 1024 * 1024 * 16
+
+	//追加在HEADER之后的网络id的大小
+	netIdSize = 32
 )
 
 type wsHeader struct {
@@ -38,9 +41,10 @@ type wsHeader struct {
 
 type baseConn struct {
 	// 链接
-	url  string
-	path string
-	conn *websocket.Conn
+	url      string
+	path     string
+	conn     *websocket.Conn
+	connLock sync.Mutex
 
 	// 读写缓冲区
 	rcvChan  chan []byte
@@ -69,8 +73,7 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 
 	url := url.URL{Scheme: "ws", Host: ipPort, Path: path}
 	base.url = url.String()
-
-	// 获取链接
+	base.connLock = sync.Mutex{}
 	base.conn = base.getWSConn()
 
 	// 初始化读写缓存
@@ -90,10 +93,12 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 // 建立ws连接
 func (base *baseConn) getWSConn() *websocket.Conn {
 	base.logger.Debugf("connecting to %s", base.url)
-	d := websocket.Dialer{ReadBufferSize: defaultBufferSize, WriteBufferSize: defaultBufferSize,}
+	d := websocket.Dialer{ReadBufferSize: defaultBufferSize, WriteBufferSize: defaultBufferSize}
 	conn, _, err := d.Dial(base.url, nil)
 	if err != nil {
-		panic("Dial to" + base.url + " err:" + err.Error())
+		base.logger.Errorf("Dial to" + base.url + " err:" + err.Error())
+		time.Sleep(100 * time.Millisecond)
+		return nil
 	}
 
 	return conn
@@ -128,9 +133,15 @@ func (base *baseConn) loop() {
 			}
 
 		case message := <-base.sendChan:
-			err := base.conn.WriteMessage(websocket.BinaryMessage, message)
+			conn := base.getConn()
+			if nil == conn {
+				continue
+			}
+
+			err := conn.WriteMessage(websocket.BinaryMessage, message)
 			if err != nil {
 				base.logger.Errorf("Send binary msg error:%s", err.Error())
+				base.closeConn()
 			}
 		}
 	}
@@ -139,9 +150,15 @@ func (base *baseConn) loop() {
 // 读消息
 func (base *baseConn) receiveMessage() {
 	for {
-		_, message, err := base.conn.ReadMessage()
+		conn := base.getConn()
+		if nil == conn {
+			continue
+		}
+
+		_, message, err := conn.ReadMessage()
 		if err != nil {
-			base.logger.Errorf("Rcv msg error:%s", err.Error())
+			base.logger.Errorf("%s Rcv msg error:%s", base.url, err.Error())
+			base.closeConn()
 			continue
 		}
 
@@ -154,6 +171,26 @@ func (base *baseConn) receiveMessage() {
 	}
 }
 
+func (base *baseConn) getConn() *websocket.Conn {
+	if nil != base.conn {
+		return base.conn
+	}
+
+	base.connLock.Lock()
+	defer base.connLock.Unlock()
+
+	if nil != base.conn {
+		return base.conn
+	}
+	base.conn = base.getWSConn()
+	return base.conn
+}
+
+func (base *baseConn) closeConn() {
+	base.conn.Close()
+	base.conn = nil
+}
+
 // 发送消息
 func (base *baseConn) send(method []byte, target uint64, msg []byte, nonce uint64) {
 	header := wsHeader{method: method, nonce: nonce, targetId: target}
@@ -163,7 +200,20 @@ func (base *baseConn) send(method []byte, target uint64, msg []byte, nonce uint6
 	}
 
 	base.sendChan <- base.loadMsg(header, msg)
-	base.logger.Debugf("send message. wsHeader: %v, length: %d", header, len(msg))
+	base.logger.Debugf("send message. wsHeader: %v, length: %d,body:%s", header, len(msg), string(msg))
+}
+
+//新的单播接口使用
+func (base *baseConn) unicast(method []byte, strangerId []byte, msg []byte, nonce uint64) {
+	byteArray := make([]byte, protocolHeaderSize+netIdSize+len(msg))
+	copy(byteArray[0:4], method)
+	copy(byteArray[20:28], utility.UInt64ToByte(nonce))
+	copy(byteArray[protocolHeaderSize:protocolHeaderSize+netIdSize], strangerId)
+	copy(byteArray[protocolHeaderSize+netIdSize:], msg)
+
+	//todo 这里流控方法的参数不一致，暂不使用流控
+	base.sendChan <- byteArray
+	base.logger.Debugf("unicast message. strangerId:%v,msg:%v,byte: %v", strangerId, msg, byteArray)
 }
 
 // 构建网络消息
@@ -221,6 +271,7 @@ var (
 	methodNotify, _           = hex.DecodeString("20000000")
 	methodNotifyBroadcast, _  = hex.DecodeString("20000001")
 	methodNotifyGroup, _      = hex.DecodeString("20000002")
+	methodNotifyInit, _       = hex.DecodeString("20000003")
 )
 
 type ClientConn struct {
@@ -241,12 +292,18 @@ func (clientConn *ClientConn) Send(targetId string, msg []byte, nonce uint64) {
 	clientConn.send(clientConn.method, target, msg, nonce)
 }
 
-func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, logger log.Logger) {
+func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, logger log.Logger, isNotify bool) {
 	clientConn.method = method
 	clientConn.nonceLock = sync.Mutex{}
 	clientConn.notifyNonce = 0
 
 	clientConn.doRcv = func(wsHeader wsHeader, body []byte) {
+		if bytes.Equal(wsHeader.method, methodNotifyInit) {
+			clientConn.logger.Errorf("refresh notify nonce: %d", wsHeader.nonce)
+			clientConn.notifyNonce = wsHeader.nonce
+			return
+		}
+
 		if !bytes.Equal(wsHeader.method, clientConn.method) {
 			clientConn.logger.Error("%s received wrong method. wsHeader: %v", clientConn.path, wsHeader)
 			return
@@ -254,6 +311,7 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 
 		clientConn.handleClientMessage(body, strconv.FormatUint(wsHeader.sourceId, 10), wsHeader.nonce, event)
 	}
+	//流控方法
 	clientConn.rcv = func(msg []byte) {
 		if len(clientConn.rcvChan) == clientConn.rcvSize {
 			clientConn.logger.Errorf("client rcvChan full, remove it, msg size: %d", len(msg))
@@ -262,12 +320,21 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 
 		clientConn.rcvChan <- msg
 	}
-
+	// 流控方法
 	clientConn.isSend = func(method []byte, target uint64, msg []byte, nonce uint64) bool {
 		return len(clientConn.sendChan) < clientConn.sendSize
 	}
 
 	clientConn.init(ipPort, path, logger)
+
+	if isNotify {
+		clientConn.initNotify()
+	}
+}
+
+func (clientConn *ClientConn) initNotify() {
+	clientConn.logger.Errorf("initNotify")
+	clientConn.send(methodNotifyInit, 0, []byte{}, 0)
 }
 
 func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, nonce uint64, event string) {
@@ -277,8 +344,11 @@ func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, no
 		clientConn.logger.Errorf("Json unmarshal client message error:%s", err.Error())
 		return
 	}
+	clientConn.logger.Debugf("Rcv from client.Tx json:%s", txJson.ToString())
+
 	tx := txJson.ToTransaction()
-	clientConn.logger.Debugf("Rcv from client.Tx info:%s", txJson.ToString())
+	tx.RequestId = nonce
+	clientConn.logger.Debugf("Rcv from client.Tx info:%s", tx.ToTxJson().ToString())
 
 	msg := notify.ClientTransactionMessage{Tx: tx, UserId: userId, Nonce: nonce}
 	notify.BUS.Publish(event, &msg)
@@ -324,40 +394,45 @@ var (
 	methodRcvFromCoinConnector, _ = hex.DecodeString("30000002")
 )
 
-type CoinerConn struct {
+type ConnectorConn struct {
 	baseConn
 }
 
-func (coinerConn *CoinerConn) Send(msg []byte) {
-	coinerConn.send(methodSendToCoinConnector, 0, msg, 0)
+func (connectorConn *ConnectorConn) Send(msg []byte) {
+	connectorConn.send(methodSendToCoinConnector, 0, msg, 0)
 }
 
-func (coinerConn *CoinerConn) Init(ipPort string, logger log.Logger) {
-	coinerConn.doRcv = func(wsHeader wsHeader, body []byte) {
+func (connectorConn *ConnectorConn) Init(ipPort string, logger log.Logger) {
+	connectorConn.doRcv = func(wsHeader wsHeader, body []byte) {
 		if !bytes.Equal(wsHeader.method, methodRcvFromCoinConnector) {
-			coinerConn.logger.Error("%s received wrong method. wsHeader: %v", coinerConn.path, wsHeader)
+			connectorConn.logger.Error("%s received wrong method. wsHeader: %v", connectorConn.path, wsHeader)
 			return
 		}
-		coinerConn.handleCoinConnectorMessage(body, wsHeader.nonce)
+		connectorConn.handleConnectorMessage(body, wsHeader.nonce)
 	}
 
-	coinerConn.init(ipPort, "/srv/worker_coiner", logger)
+	connectorConn.init(ipPort, "/srv/worker_coiner", logger)
 }
 
-func (coinerConn *CoinerConn) handleCoinConnectorMessage(data []byte, nonce uint64) {
+func (connectorConn *ConnectorConn) handleConnectorMessage(data []byte, nonce uint64) {
 	var txJson types.TxJson
 	err := json.Unmarshal(data, &txJson)
 	if err != nil {
-		Logger.Errorf("Json unmarshal coin connector msg err:", err.Error())
+		Logger.Errorf("Json unmarshal coiner msg err:", err.Error())
 		return
 	}
-	Logger.Debugf("Rcv message from coin connector.Tx info:%s", txJson.ToString())
 	tx := txJson.ToTransaction()
 	tx.RequestId = nonce
+	Logger.Debugf("Rcv message from coiner.Tx info:%s", tx.ToTxJson().ToString())
+	if !types.CoinerSignVerifier.VerifyDeposit(txJson) {
+		Logger.Infof("Tx from coiner verify sign error!Tx Info:%s", txJson.ToString())
+		return
+	}
 
 	if tx.Type == types.TransactionTypeCoinDepositAck || tx.Type == types.TransactionTypeFTDepositAck || tx.Type == types.TransactionTypeNFTDepositAck {
 		msg := notify.CoinProxyNotifyMessage{Tx: tx}
 		notify.BUS.Publish(notify.CoinProxyNotify, &msg)
+		return
 	}
-
+	Logger.Infof("Unknown type from coiner:%d", txJson.Type)
 }

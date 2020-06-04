@@ -1,9 +1,9 @@
 package common
 
 import (
-	"reflect"
-	"math/big"
 	"errors"
+	"math/big"
+	"reflect"
 )
 
 const PREFIX = "0x"
@@ -14,9 +14,18 @@ const (
 	SecKeyLength = 97 //私钥字节长度，65 bytes pub, 32 bytes D。
 	SignLength   = 65 //签名字节长度，32 bytes r & 32 bytes s & 1 byte recid.
 	//默认曲线相关参数结束。
-	AddressLength = 20 //地址字节长度(TAS, golang.SHA3，256位)
+	AddressLength = 32 //地址字节长度(golang.SHA3，256位)
 	HashLength    = 32 //哈希字节长度(golang.SHA3, 256位)。to do : 考虑废弃，直接使用golang的hash.Hash，直接为SHA3_256位，类型一样。
 	GroupIdLength = 32
+)
+
+const (
+	MinerTypeValidator = 0
+	MinerTypeProposer  = 1
+	MinerTypeUnknown   = 2
+
+	MinerStatusNormal = 0
+	MinerStatusAbort  = 1
 )
 
 var (
@@ -26,12 +35,12 @@ var (
 
 // 地址相关常量
 var (
-	BonusStorageAddress = BigToAddress(big.NewInt(0))
-	LightDBAddress      = BigToAddress(big.NewInt(1))
-	HeavyDBAddress      = BigToAddress(big.NewInt(2))
-	MinerCountDBAddress = BigToAddress(big.NewInt(3))
-	FTSetAddress        = BigToAddress(big.NewInt(4))
-	NFTSetAddress       = BigToAddress(big.NewInt(5))
+	ValidatorDBAddress = BigToAddress(big.NewInt(1))
+	ProposerDBAddress  = BigToAddress(big.NewInt(2))
+	RefundAddress      = BigToAddress(big.NewInt(3))
+
+	FTSetAddress  = BigToAddress(big.NewInt(4))
+	NFTSetAddress = BigToAddress(big.NewInt(5))
 )
 
 var (
@@ -46,6 +55,7 @@ var (
 	ErrSelectGroupNil     = errors.New("selectGroupId is nil")
 	ErrSelectGroupInequal = errors.New("selectGroupId not equal")
 	ErrCreateBlockNil     = errors.New("createBlock is nil")
+	ErrGroupAlreadyExist  = errors.New("group already exist")
 )
 
 const (

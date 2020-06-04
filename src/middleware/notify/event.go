@@ -50,4 +50,8 @@ const (
 	ClientTransactionRead = "client_transaction_read"
 
 	CoinProxyNotify = "coin_proxy_notify"
+
+	STMStorageReady = "STMStorageReady"
+
+	AcceptGroup = "accept_group"
 )

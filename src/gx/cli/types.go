@@ -1,11 +1,10 @@
 package cli
 
 import (
+	"math/big"
 	"x/src/common"
 	"x/src/consensus/groupsig"
-	"math/big"
 	"x/src/middleware/types"
-	"time"
 )
 
 // Result rpc请求成功返回的可变参数部分
@@ -86,12 +85,12 @@ type MortGage struct {
 }
 
 func NewMortGageFromMiner(miner *types.Miner) *MortGage {
-	t := "重节点"
-	if miner.Type == types.MinerTypeLight {
-		t = "轻节点"
+	t := "提案节点"
+	if miner.Type == common.MinerTypeValidator {
+		t = "验证节点"
 	}
 	mg := &MortGage{
-		Stake:       uint64(float64(miner.Stake) / float64(1000000000)),
+		Stake:       miner.Stake,
 		ApplyHeight: miner.ApplyHeight,
 		AbortHeight: miner.AbortHeight,
 		Type:        t,
@@ -119,31 +118,30 @@ type PageObjects struct {
 }
 
 type Block struct {
-	Height      uint64          `json:"height"`
-	Hash        common.Hash     `json:"hash"`
-	PreHash     common.Hash     `json:"pre_hash"`
-	CurTime     time.Time       `json:"cur_time"`
-	PreTime     time.Time       `json:"pre_time"`
-	Castor      groupsig.ID     `json:"castor"`
-	GroupID     groupsig.ID     `json:"group_id"`
-	Prove       *big.Int        `json:"prove"`
-	TotalQN     uint64          `json:"total_qn"`
-	Qn          uint64          `json:"qn"`
-	Txs         []common.Hashes `json:"transactions"`
-	TxNum       uint64          `json:"txs"`
-	StateRoot   common.Hash     `json:"state_root"`
-	TxRoot      common.Hash     `json:"tx_root"`
-	ReceiptRoot common.Hash     `json:"receipt_root"`
-	ProveRoot   common.Hash     `json:"prove_root"`
-	Random      string          `json:"random"`
+	Version     uint64        `json:"version"`
+	Height      uint64        `json:"height"`
+	Hash        common.Hash   `json:"hash"`
+	PreHash     common.Hash   `json:"preHash"`
+	CurTime     string        `json:"curTime"`
+	PreTime     string        `json:"preTime"`
+	Castor      groupsig.ID   `json:"proposer"`
+	GroupID     groupsig.ID   `json:"groupId"`
+	Signature   string        `json:"sigature"`
+	Prove       *big.Int      `json:"prove"`
+	TotalQN     uint64        `json:"totalQn"`
+	Qn          uint64        `json:"qn"`
+	Txs         []common.Hash `json:"txs"`
+	EvictedTxs  []common.Hash `json:"wrongTxs"`
+	TxNum       uint64        `json:"txCount"`
+	StateRoot   common.Hash   `json:"stateRoot"`
+	TxRoot      common.Hash   `json:"txRoot"`
+	ReceiptRoot common.Hash   `json:"receiptRoot"`
+	Random      string        `json:"random"`
 }
 
 type BlockDetail struct {
 	Block
-	//Signature groupsig.Signature `json:"signature"`
-	//Random 	groupsig.Signature `json:"random"`
-	Trans      []Transaction `json:"trans"`
-	PreTotalQN uint64        `json:"pre_total_qn"`
+	Trans []Transaction `json:"txDetails"`
 }
 
 type BlockReceipt struct {
@@ -168,17 +166,18 @@ type Group struct {
 }
 
 type Transaction struct {
-	Data string `json:"data"`
-
-	Nonce  uint64 `json:"nonce"`
 	Source string `json:"source"`
 	Target string `json:"target"`
 	Type   int32  `json:"type"`
 
+	Signature string `json:"signature"`
+
+	SubTransactions string `json:"subTransactions"`
+
 	Hash common.Hash `json:"hash"`
 
-	ExtraData     string `json:"extra_data"`
-	ExtraDataType int32  `json:"extra_data_type"`
+	Data      string `json:"data"`
+	ExtraData string `json:"extraData"`
 }
 
 type Dashboard struct {
@@ -187,6 +186,8 @@ type Dashboard struct {
 	WorkGNum    int        `json:"work_g_num"`
 	NodeInfo    *NodeInfo  `json:"node_info"`
 	Conns       []ConnInfo `json:"conns"`
+	Miner       string     `json:"miner"`
+	Addr        string     `json:"addr"`
 }
 
 //

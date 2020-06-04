@@ -15,7 +15,7 @@ import (
 	"x/src/storage/account"
 	"encoding/binary"
 	"math"
-	"errors"
+	"x/src/service"
 )
 
 const (
@@ -29,7 +29,6 @@ const (
 
 	hashDBPrefix       = "block"
 	heightDBPrefix     = "height"
-	stateDBPrefix      = "state"
 	verifyHashDBPrefix = "verifyHash"
 
 	topBlocksCacheSize = 100
@@ -40,9 +39,9 @@ var blockChainImpl *blockChain
 type blockChain struct {
 	init bool
 
-	latestBlock   *types.BlockHeader
-	latestStateDB *account.AccountDB
-	requestIds    map[string]uint64
+	latestBlock  *types.BlockHeader
+	currentBlock *types.Block
+	requestIds   map[string]uint64
 
 	topBlocks         *lru.Cache // key：块高，value：header
 	futureBlocks      *lru.Cache // key：块hash，value：block（体积很大）
@@ -52,11 +51,9 @@ type blockChain struct {
 	hashDB       db.Database
 	heightDB     db.Database
 	verifyHashDB db.Database
-	stateDB      account.AccountDatabase
 
-	executor        *VMExecutor
 	forkProcessor   *forkProcessor
-	transactionPool TransactionPool
+	transactionPool service.TransactionPool
 
 	lock middleware.Loglock
 }
@@ -68,7 +65,7 @@ type castingBlock struct {
 
 func initBlockChain() error {
 	chain := &blockChain{lock: middleware.NewLoglock("chain")}
-	chain.transactionPool = NewTransactionPool()
+	chain.transactionPool = service.GetTransactionPool()
 
 	var err error
 	chain.topBlocks, err = lru.New(100)
@@ -111,35 +108,28 @@ func initBlockChain() error {
 		return err
 	}
 
-	db, err := db.NewDatabase(stateDBPrefix)
-	if err != nil {
-		logger.Debugf("Init block chain error! Error:%s", err.Error())
-		return err
-	}
-	chain.stateDB = account.NewDatabase(db)
-
-	chain.executor = NewVMExecutor(chain)
 	chain.forkProcessor = initForkProcessor(chain)
 
 	initMinerManager()
-	initFTManager()
-	initNFTManager()
 
 	chain.latestBlock = chain.queryBlockHeaderByHeight([]byte(latestBlockKey), false)
 	if chain.latestBlock == nil {
 		chain.insertGenesisBlock()
 	} else {
 		chain.ensureChainConsistency()
+
+		state, err := service.AccountDBManagerInstance.GetAccountDBByHash(chain.latestBlock.StateTree)
+		if nil != err {
+			panic(err)
+		}
+		service.AccountDBManagerInstance.SetLatestStateDB(state)
+		logger.Debugf("refreshed latestStateDB, state: %v, height: %d", chain.latestBlock.StateTree, chain.latestBlock.Height)
+
 		if !chain.versionValidate() {
 			fmt.Println("Illegal data version! Please delete the directory d0 and restart the program!")
 			os.Exit(0)
 		}
 		chain.buildCache(topBlocksCacheSize)
-		state, err := account.NewAccountDB(common.BytesToHash(chain.latestBlock.StateTree.Bytes()), chain.stateDB)
-		if err != nil {
-			panic("Init blockChain new state db error:" + err.Error())
-		}
-		chain.latestStateDB = state
 	}
 	chain.init = true
 	blockChainImpl = chain
@@ -148,9 +138,6 @@ func initBlockChain() error {
 }
 
 func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValue *big.Int, proveRoot common.Hash, qn uint64, castor []byte, groupid []byte) *types.Block {
-	chain.lock.Lock("CastBlock")
-	defer chain.lock.Unlock("CastBlock")
-
 	latestBlock := chain.latestBlock
 	if latestBlock == nil {
 		logger.Errorf("Block chain lastest block is nil!")
@@ -179,12 +166,14 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	middleware.PerfLogger.Infof("fin cast object. last: %v height: %v", time.Since(timestamp), height)
 
 	preStateRoot := common.BytesToHash(latestBlock.StateTree.Bytes())
-	state, err := account.NewAccountDB(preStateRoot, chain.stateDB)
+	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(preStateRoot)
 	if err != nil {
 		logger.Errorf("Fail to new account db while casting block!Latest block height:%d,error:%s", latestBlock.Height, err.Error())
 		return nil
 	}
-	stateRoot, evictedTxs, transactions, receipts, err, _ := chain.executor.Execute(state, block, height, "casting")
+
+	executor := newVMExecutor(state, block, "casting")
+	stateRoot, evictedTxs, transactions, receipts:= executor.Execute()
 	middleware.PerfLogger.Infof("fin execute txs. last: %v height: %v", time.Since(timestamp), height)
 
 	transactionHashes := make([]common.Hashes, len(transactions))
@@ -239,7 +228,7 @@ func (chain *blockChain) GenerateBlock(bh types.BlockHeader) *types.Block {
 		Header: &bh,
 	}
 
-	txs, missTxs, _ := chain.queryTxsByBlockHash(bh.Hash, bh.Transactions)
+	txs, missTxs, _, _ := chain.queryTxsByBlockHash(bh.Hash, bh.Transactions)
 
 	if len(missTxs) != 0 {
 		logger.Debugf("GenerateBlock can not get all txs,return nil block!")
@@ -326,34 +315,6 @@ func (chain *blockChain) Remove(block *types.Block) bool {
 	return chain.remove(block)
 }
 
-func (chain *blockChain) Clear() error {
-	chain.lock.Lock("Clear")
-	defer chain.lock.Unlock("Clear")
-
-	chain.init = false
-	chain.latestBlock = nil
-	chain.topBlocks, _ = lru.New(1000)
-
-	var err error
-	chain.hashDB.Close()
-	chain.heightDB.Close()
-	chain.verifyHashDB.Close()
-	os.RemoveAll(db.DEFAULT_FILE)
-
-	db, err := db.NewDatabase(stateDBPrefix)
-	if err != nil {
-		logger.Debugf("Init block chain error! Error:%s", err.Error())
-		return err
-	}
-	chain.stateDB = account.NewDatabase(db)
-	chain.executor = NewVMExecutor(chain)
-
-	chain.insertGenesisBlock()
-	chain.init = true
-	chain.transactionPool.Clear()
-	return err
-}
-
 func (chain *blockChain) GetVerifyHash(height uint64) (common.Hash, error) {
 	key := utility.UInt64ToByte(height)
 	raw, err := chain.verifyHashDB.Get(key)
@@ -366,54 +327,28 @@ func (chain *blockChain) TopBlock() *types.BlockHeader {
 	return result
 }
 
-func (chain *blockChain) GetAccountDBByHash(hash common.Hash) (*account.AccountDB, error) {
-	header := chain.queryBlockHeaderByHash(hash)
-	if header != nil {
-		return account.NewAccountDB(header.StateTree, chain.stateDB)
-	}
-	return nil, errors.New("block hash not exist")
+func (chain *blockChain) CurrentBlock() *types.Block {
+	result := chain.currentBlock
+	return result
 }
 
 func (chain *blockChain) GetTransaction(txHash common.Hash) (*types.Transaction, error) {
 	return chain.transactionPool.GetTransaction(txHash)
 }
 
-func (chain *blockChain) GetTransactionPool() TransactionPool {
-	return chain.transactionPool
-}
-
 func (chain *blockChain) GetBalance(address common.Address) *big.Int {
-	if nil == chain.latestStateDB {
+	latestStateDB := service.AccountDBManagerInstance.GetLatestStateDB()
+	if nil == latestStateDB {
 		return nil
 	}
 
-	return chain.latestStateDB.GetBalance(common.BytesToAddress(address.Bytes()))
-}
-
-func (chain *blockChain) GetAccountDB() *account.AccountDB {
-	if nil == chain.latestStateDB {
-		return nil
-	}
-
-	return chain.latestStateDB
-}
-
-func (chain *blockChain) GetNonce(address common.Address, gameId string) uint64 {
-	if nil == chain.latestStateDB {
-		return 0
-	}
-
-	return chain.latestStateDB.GetNonce(common.BytesToAddress(address.Bytes()))
+	return latestStateDB.GetBalance(common.BytesToAddress(address.Bytes()))
 }
 
 func (chain *blockChain) Close() {
 	chain.hashDB.Close()
 	chain.heightDB.Close()
 	chain.verifyHashDB.Close()
-}
-
-func (chain *blockChain) LatestStateDB() *account.AccountDB {
-	return chain.latestStateDB
 }
 
 func (chain *blockChain) queryBlockHeaderByHeight(height interface{}, cache bool) *types.BlockHeader {
@@ -458,10 +393,12 @@ func (chain *blockChain) remove(block *types.Block) bool {
 
 	chain.markRemoveBlock(block)
 
-	chain.topBlocks.Remove(height)
 	chain.hashDB.Delete(hash.Bytes())
 	chain.heightDB.Delete(generateHeightKey(height))
 	chain.verifyHashDB.Delete(utility.UInt64ToByte(height))
+
+	chain.topBlocks.Remove(height)
+	chain.verifiedBlocks.Remove(hash)
 
 	preBlock := chain.queryBlockByHash(block.Header.PreHash)
 	if preBlock == nil {
@@ -470,7 +407,6 @@ func (chain *blockChain) remove(block *types.Block) bool {
 	}
 	preHeader := preBlock.Header
 	chain.latestBlock = preHeader
-	chain.latestStateDB, _ = account.NewAccountDB(preHeader.StateTree, chain.stateDB)
 
 	preHeaderByte, _ := types.MarshalBlockHeader(preHeader)
 	chain.heightDB.Put([]byte(latestBlockKey), preHeaderByte)
@@ -521,12 +457,12 @@ func (chain *blockChain) getAccountDBByHeight(height uint64) (*account.AccountDB
 		return nil, fmt.Errorf("no data at height %v", height)
 	}
 
-	return account.NewAccountDB(header.StateTree, chain.stateDB)
+	return service.AccountDBManagerInstance.GetAccountDBByHash(header.StateTree)
 }
 
-func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList []common.Hashes) ([]*types.Transaction, []common.Hashes, error) {
+func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList []common.Hashes) ([]*types.Transaction, []common.Hashes, map[string]bool, error) {
 	if nil == txHashList || 0 == len(txHashList) {
-		return nil, nil, ErrNil
+		return nil, nil, nil, service.ErrNil
 	}
 
 	verifiedBody, _ := chain.verifiedBodyCache.Get(blockHash)
@@ -537,7 +473,9 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 
 	txs := make([]*types.Transaction, 0)
 	need := make([]common.Hashes, 0)
+	abnormal := make(map[string]bool, 0)
 	var err error
+
 	for _, hash := range txHashList {
 		var tx *types.Transaction
 		if verifiedTxs != nil {
@@ -553,13 +491,22 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 			tx, err = chain.transactionPool.GetTransaction(hash[0])
 		}
 
-		if tx != nil && tx.SubHash == hash[1] {
+		// 没有找到
+		if tx == nil {
+			need = append(need, hash)
+		}
+
+		// 找到了
+		if tx.SubHash == hash[1] {
 			txs = append(txs, tx)
 		} else {
+			// 状态机出事了，同一笔交易，执行结果不一致
+			abnormal[tx.Target] = true
+			// 为了能跑下去，先找出块人要
 			need = append(need, hash)
 		}
 	}
-	return txs, need, err
+	return txs, need, abnormal, err
 }
 
 func (chain *blockChain) versionValidate() bool {

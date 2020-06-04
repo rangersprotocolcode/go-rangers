@@ -3,37 +3,38 @@ package logical
 import (
 	"x/src/consensus/groupsig"
 
+	"encoding/hex"
+	"fmt"
+	"github.com/hashicorp/golang-lru"
+	"sync"
+	"sync/atomic"
 	"x/src/common"
+	"x/src/consensus/access"
 	"x/src/consensus/model"
 	"x/src/consensus/net"
 	"x/src/consensus/ticker"
 	"x/src/core"
-	"fmt"
 	"x/src/middleware/notify"
 	"x/src/middleware/types"
-	"sync/atomic"
-	"strings"
-	"github.com/hashicorp/golang-lru"
-	"sync"
 )
 
 //见证人处理器
 type Processor struct {
 	ready bool //是否已初始化完成
 	conf  common.ConfManager
-	mi    *model.SelfMinerDO //////和组无关的矿工信息
+	mi    *model.SelfMinerInfo //////和组无关的矿工信息
 
 	blockContexts    *CastBlockContexts   //组ID->组铸块上下文
 	futureVerifyMsgs *FutureMessageHolder //存储缺失前一块的验证消息
 
 	verifyMsgCaches *lru.Cache //缓存验证消息
 
-	joiningGroups *JoiningGroups //已加入未完成初始化的组(组初始化完成上链后，不再需要)。组内成员数据过程数据。
-	belongGroups  *BelongGroups  //当前ID参与了哪些(已上链，可铸块的)组, 组id_str->组内私密数据（组外不可见或加速缓存）
-	globalGroups  *GlobalGroups  //全网组静态信息（包括待完成组初始化的组，即还没有组ID只有DUMMY ID的组）
+	//joiningGroups *JoiningGroups //已加入未完成初始化的组(组初始化完成上链后，不再需要)。组内成员数据过程数据。
+	belongGroups *access.JoinedGroupStorage //当前ID参与了哪些(已上链，可铸块的)组, 组id_str->组内私密数据（组外不可见或加速缓存）
+	globalGroups *access.GroupAccessor      //全网组静态信息（包括待完成组初始化的组，即还没有组ID只有DUMMY ID的组）
 
-	minerReader  *MinerPoolReader
-	groupManager *GroupManager
+	minerReader *access.MinerPoolReader
+	//groupManager *GroupManager
 
 	Ticker *ticker.GlobalTicker //全局定时器, 组初始化完成后启动
 	vrf    atomic.Value         //vrfWorker
@@ -50,16 +51,16 @@ func (p Processor) getPrefix() string {
 }
 
 //私密函数，用于测试，正式版本不提供
-func (p Processor) getMinerInfo() *model.SelfMinerDO {
-	return p.mi
-}
-
-func (p Processor) GetPubkeyInfo() model.PubKeyInfo {
-	return model.NewPubKeyInfo(p.mi.GetMinerID(), p.mi.GetDefaultPubKey())
-}
+//func (p Processor) getMinerInfo() *model.SelfMinerDO {
+//	return p.mi
+//}
+//
+//func (p Processor) GetPubkeyInfo() model.PubKeyInfo {
+//	return model.NewPubKeyInfo(p.mi.GetMinerID(), p.mi.GetDefaultPubKey())
+//}
 
 //初始化矿工数据（和组无关）
-func (p *Processor) Init(mi model.SelfMinerDO, conf common.ConfManager) bool {
+func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joinedGroupStorage *access.JoinedGroupStorage) bool {
 	p.ready = false
 	p.lock = sync.Mutex{}
 	p.conf = conf
@@ -69,16 +70,16 @@ func (p *Processor) Init(mi model.SelfMinerDO, conf common.ConfManager) bool {
 	p.MainChain = core.GetBlockChain()
 	p.GroupChain = core.GetGroupChain()
 	p.mi = &mi
-	p.globalGroups = NewGlobalGroups(p.GroupChain)
-	p.joiningGroups = NewJoiningGroups()
-	p.belongGroups = NewBelongGroups(p.genBelongGroupStoreFile(), p.getEncryptPrivateKey())
+	p.globalGroups = access.NewGroupAccessor(p.GroupChain)
+	//p.joiningGroups = NewJoiningGroups()
+	p.belongGroups = joinedGroupStorage
 	p.blockContexts = NewCastBlockContexts()
 	p.NetServer = net.NewNetworkServer()
 
-	p.minerReader = newMinerPoolReader(core.MinerManagerImpl)
-	pkPoolInit(p.minerReader)
+	p.minerReader = access.NewMinerPoolReader(core.MinerManagerImpl)
+	//pkPoolInit(p.minerReader)
 
-	p.groupManager = NewGroupManager(p)
+	//p.groupManager = NewGroupManager(p)
 	p.Ticker = ticker.GetTickerInstance()
 
 	if stdLogger != nil {
@@ -95,14 +96,8 @@ func (p *Processor) Init(mi model.SelfMinerDO, conf common.ConfManager) bool {
 	notify.BUS.Subscribe(notify.BlockAddSucc, p.onBlockAddSuccess)
 	notify.BUS.Subscribe(notify.GroupAddSucc, p.onGroupAddSuccess)
 	notify.BUS.Subscribe(notify.TransactionGotAddSucc, p.onMissTxAddSucc)
+	notify.BUS.Subscribe(notify.AcceptGroup, p.onGroupAccept)
 	//notify.BUS.Subscribe(notify.NewBlock, p.onNewBlockReceive)
-
-	jgFile := conf.GetString(ConsensusConfSection, "joined_group_store", "")
-	if strings.TrimSpace(jgFile) == "" {
-		jgFile = "joined_group.config." + common.GlobalConf.GetString("instance", "index", "")
-	}
-	stdLogger.Errorf("jgFile:%s", jgFile)
-	p.belongGroups.joinedGroup2DBIfConfigExists(jgFile)
 
 	return true
 }
@@ -112,8 +107,8 @@ func (p Processor) GetMinerID() groupsig.ID {
 	return p.mi.GetMinerID()
 }
 
-func (p Processor) GetMinerInfo() *model.MinerDO {
-	return &p.mi.MinerDO
+func (p Processor) GetMinerInfo() *model.MinerInfo {
+	return &p.mi.MinerInfo
 }
 
 ////验证块的组签名是否正确
@@ -140,11 +135,11 @@ func (p Processor) GetMinerInfo() *model.MinerDO {
 //	return true
 //}
 
-//检查铸块组是否合法
-func (p *Processor) isCastLegal(bh *types.BlockHeader, preHeader *types.BlockHeader) (ok bool, group *StaticGroupInfo, err error) {
+//检查提案节点是否合法
+func (p *Processor) isCastLegal(bh *types.BlockHeader, preHeader *types.BlockHeader) (ok bool, group *model.GroupInfo, err error) {
 	blog := newBizLog("isCastLegal")
-	castor := groupsig.DeserializeId(bh.Castor)
-	minerDO := p.minerReader.getProposeMiner(castor)
+	castor := groupsig.DeserializeID(bh.Castor)
+	minerDO := p.minerReader.GetProposeMiner(castor, preHeader.StateTree)
 	if minerDO == nil {
 		err = fmt.Errorf("minerDO is nil, id=%v", castor.ShortS())
 		return
@@ -153,16 +148,16 @@ func (p *Processor) isCastLegal(bh *types.BlockHeader, preHeader *types.BlockHea
 		err = fmt.Errorf("miner can't cast at height, id=%v, height=%v(%v-%v)", castor.ShortS(), bh.Height, minerDO.ApplyHeight, minerDO.AbortHeight)
 		return
 	}
-	totalStake := p.minerReader.getTotalStake(preHeader.Height, false)
+	totalStake := p.minerReader.GetTotalStake(preHeader.Height)
 	blog.log("totalStake %v", totalStake)
 	if ok2, err2 := verifyBlockVRF(bh, preHeader, minerDO, totalStake); !ok2 {
 		err = fmt.Errorf("vrf verify block fail, err=%v", err2)
 		return
 	}
 
-	var gid = groupsig.DeserializeId(bh.GroupId)
+	var gid = groupsig.DeserializeID(bh.GroupId)
 
-	selectGroupIdFromCache := p.CalcVerifyGroupFromCache(preHeader, bh.Height)
+	selectGroupIdFromCache := p.CalcVerifyGroupFromCache(preHeader, bh.CurTime, bh.Height)
 
 	if selectGroupIdFromCache == nil {
 		err = common.ErrSelectGroupNil
@@ -172,7 +167,7 @@ func (p *Processor) isCastLegal(bh *types.BlockHeader, preHeader *types.BlockHea
 	var verifyGid = *selectGroupIdFromCache
 
 	if !selectGroupIdFromCache.IsEqual(gid) { //有可能组已经解散，需要再从链上取
-		selectGroupIdFromChain := p.CalcVerifyGroupFromChain(preHeader, bh.Height)
+		selectGroupIdFromChain := p.CalcVerifyGroupFromChain(preHeader, bh.CurTime, bh.Height)
 		if selectGroupIdFromChain == nil {
 			err = common.ErrSelectGroupNil
 			return
@@ -183,7 +178,7 @@ func (p *Processor) isCastLegal(bh *types.BlockHeader, preHeader *types.BlockHea
 		}
 		if !selectGroupIdFromChain.IsEqual(gid) {
 			err = common.ErrSelectGroupInequal
-			stdLogger.Debugf("selectGroupId from both cache and chain not equal, expect %v, receive %v", selectGroupIdFromChain.ShortS(), gid.ShortS())
+			stdLogger.Debugf("selectGroupId from both cache and chain not equal, expect %v, receive %v.bh hash:%s,height:%d,castor:%s", selectGroupIdFromChain.ShortS(), gid.ShortS(), bh.Hash.String(), bh.Height, hex.EncodeToString(bh.Castor))
 			return
 		}
 		verifyGid = *selectGroupIdFromChain
@@ -201,7 +196,7 @@ func (p *Processor) isCastLegal(bh *types.BlockHeader, preHeader *types.BlockHea
 
 func (p *Processor) getMinerPos(gid groupsig.ID, uid groupsig.ID) int32 {
 	sgi := p.GetGroup(gid)
-	return int32(sgi.GetMinerPos(uid))
+	return int32(sgi.GetMemberPosition(uid))
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -229,7 +224,7 @@ func (p *Processor) getMinerPos(gid groupsig.ID, uid groupsig.ID) int32 {
 //}
 
 //取得特定的组
-func (p Processor) GetGroup(gid groupsig.ID) *StaticGroupInfo {
+func (p Processor) GetGroup(gid groupsig.ID) *model.GroupInfo {
 	if g, err := p.globalGroups.GetGroupByID(gid); err != nil {
 		panic("GetSelfGroup failed.")
 	} else {
@@ -242,32 +237,32 @@ func (p Processor) getGroupPubKey(gid groupsig.ID) groupsig.Pubkey {
 	if g, err := p.globalGroups.GetGroupByID(gid); err != nil {
 		panic("GetSelfGroup failed.")
 	} else {
-		return g.GetPubKey()
+		return g.GetGroupPubKey()
 	}
 
 }
 
-func outputBlockHeaderAndSign(prefix string, bh *types.BlockHeader, si *model.SignData) {
-	//bbyte, _ := bh.CurTime.MarshalBinary()
-	//jbyte, _ := bh.CurTime.MarshalJSON()
-	//textbyte, _ := bh.CurTime.MarshalText()
-	//log.Printf("%v, bh.curTime %v, byte=%v, jsonByte=%v, textByte=%v, nano=%v, utc=%v, local=%v, location=%v\n", prefix, bh.CurTime, bbyte, jbyte, textbyte, bh.CurTime.UnixNano(), bh.CurTime.UTC(), bh.CurTime.Local(), bh.CurTime.Location().String())
-
-	//var castor groupsig.ID
-	//castor.Deserialize(bh.Castor)
-	//txs := ""
-	//if bh.Transactions != nil {
-	//	for _, tx := range bh.Transactions {
-	//		txs += GetHashPrefix(tx) + ","
-	//	}
-	//}
-	//txs = "[" + txs + "]"
-	//log.Printf("%v, BLOCKINFO: height= %v, castor=%v, hash=%v, txs=%v, txtree=%v, statetree=%v, receipttree=%v\n", prefix, bh.Height, GetIDPrefix(castor), GetHashPrefix(bh.Hash), txs, GetHashPrefix(bh.TxTree), GetHashPrefix(bh.StateTree), GetHashPrefix(bh.ReceiptTree))
-	//
-	//if si != nil {
-	//	log.Printf("%v, SIDATA: datahash=%v, sign=%v, signer=%v\n", prefix, GetHashPrefix(si.DataHash), si.DataSign.GetHexString(), GetIDPrefix(si.SignMember))
-	//}
-}
+//func outputBlockHeaderAndSign(prefix string, bh *types.BlockHeader, si *model.SignData) {
+//	//bbyte, _ := bh.CurTime.MarshalBinary()
+//	//jbyte, _ := bh.CurTime.MarshalJSON()
+//	//textbyte, _ := bh.CurTime.MarshalText()
+//	//log.Printf("%v, bh.curTime %v, byte=%v, jsonByte=%v, textByte=%v, nano=%v, utc=%v, local=%v, location=%v\n", prefix, bh.CurTime, bbyte, jbyte, textbyte, bh.CurTime.UnixNano(), bh.CurTime.UTC(), bh.CurTime.Local(), bh.CurTime.Location().String())
+//
+//	//var castor groupsig.ID
+//	//castor.Deserialize(bh.Castor)
+//	//txs := ""
+//	//if bh.Transactions != nil {
+//	//	for _, tx := range bh.Transactions {
+//	//		txs += GetHashPrefix(tx) + ","
+//	//	}
+//	//}
+//	//txs = "[" + txs + "]"
+//	//log.Printf("%v, BLOCKINFO: height= %v, castor=%v, hash=%v, txs=%v, txtree=%v, statetree=%v, receipttree=%v\n", prefix, bh.Height, GetIDPrefix(castor), GetHashPrefix(bh.Hash), txs, GetHashPrefix(bh.TxTree), GetHashPrefix(bh.StateTree), GetHashPrefix(bh.ReceiptTree))
+//	//
+//	//if si != nil {
+//	//	log.Printf("%v, SIDATA: datahash=%v, sign=%v, signer=%v\n", prefix, GetHashPrefix(si.DataHash), si.DataSign.GetHexString(), GetIDPrefix(si.SignMember))
+//	//}
+//}
 
 func (p *Processor) ExistInGroup(gHash common.Hash) bool {
 	//initingGroup := p.globalGroups.GetInitedGroup(gHash)
@@ -278,16 +273,14 @@ func (p *Processor) ExistInGroup(gHash common.Hash) bool {
 	return false
 }
 
-func (p *Processor) getEncryptPrivateKey() common.PrivateKey {
-	seed := p.mi.SK.GetHexString() + p.mi.ID.GetHexString()
-	encryptPrivateKey := common.GenerateKey(seed)
-	return encryptPrivateKey
+// getSignKey get the signature private key of the miner in a certain group
+func (p Processor) getSignKey(gid groupsig.ID) groupsig.Seckey {
+	if jg := p.belongGroups.GetJoinedGroupInfo(gid); jg != nil {
+		return jg.SignSecKey
+	}
+	return groupsig.Seckey{}
 }
 
-func (p *Processor) getDefaultSeckeyInfo() model.SecKeyInfo {
-	return model.NewSecKeyInfo(p.GetMinerID(), p.mi.GetDefaultSecKey())
-}
-
-func (p *Processor) getInGroupSeckeyInfo(gid groupsig.ID) model.SecKeyInfo {
-	return model.NewSecKeyInfo(p.GetMinerID(), p.getSignKey(gid))
-}
+//func (p *Processor) getInGroupSeckeyInfo(gid groupsig.ID) model.SecKeyInfo {
+//	return model.NewSecKeyInfo(p.GetMinerID(), p.getSignKey(gid))
+//}

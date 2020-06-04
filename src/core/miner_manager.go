@@ -1,96 +1,117 @@
 package core
 
 import (
+	"encoding/json"
 	"errors"
-	"sync"
-	"time"
-	"x/src/utility"
-
+	"fmt"
+	"strconv"
 	"x/src/common"
+	"x/src/middleware/db"
 
 	"x/src/middleware/types"
-	"github.com/vmihailenco/msgpack"
+	"x/src/service"
 	"x/src/storage/account"
-	"x/src/consensus/groupsig"
 	"x/src/storage/trie"
-	"github.com/hashicorp/golang-lru"
-)
-
-const (
-	heavyMinerNetTriggerInterval = time.Second * 10
-	heavyMinerCountKey           = "heavy_miner_count"
-	lightMinerCountKey           = "light_miner_count"
+	"x/src/utility"
 )
 
 var (
-	emptyValue         [0]byte
-	minerCountIncrease = MinerCountOperation{0}
-	minerCountDecrease = MinerCountOperation{1}
+	emptyValue       [0]byte
+	MinerManagerImpl *MinerManager
 )
 
-var MinerManagerImpl *MinerManager
-
 type MinerManager struct {
-	hasNewHeavyMiner     bool
-	heavyMiners          []string
-	heavyMinerNetTrigger *time.Timer
-
-	lock sync.RWMutex
-}
-
-type MinerCountOperation struct {
-	Code int
+	pkCache *db.LDBDatabase
 }
 
 func initMinerManager() {
-	MinerManagerImpl = &MinerManager{hasNewHeavyMiner: true, heavyMinerNetTrigger: time.NewTimer(heavyMinerNetTriggerInterval), heavyMiners: make([]string, 0)}
-	MinerManagerImpl.lock = sync.RWMutex{}
-	//go MinerManagerImpl.loop()
+	pkp, err := db.NewLDBDatabase("pkp"+strconv.Itoa(common.InstanceIndex), 1, 1)
+	if err != nil {
+		panic("newLDBDatabase fail, file=" + "" + "err=" + err.Error())
+	}
+
+	MinerManagerImpl = &MinerManager{pkCache: pkp}
 }
 
-func (mm *MinerManager) GetMinerById(id []byte, ttype byte, accountdb *account.AccountDB) *types.Miner {
-	if accountdb == nil {
-		accountdb = blockChainImpl.LatestStateDB()
+func (mm *MinerManager) GetMiner(minerId []byte, accountdb *account.AccountDB) *types.Miner {
+	miner := MinerManagerImpl.GetMinerById(minerId, common.MinerTypeProposer, accountdb)
+	if nil == miner {
+		miner = MinerManagerImpl.GetMinerById(minerId, common.MinerTypeValidator, accountdb)
 	}
-	db := mm.getMinerDatabase(ttype)
+
+	return miner
+}
+
+func (mm *MinerManager) GetMinerById(id []byte, kind byte, accountdb *account.AccountDB) *types.Miner {
+	if accountdb == nil {
+		accountdb = service.AccountDBManagerInstance.GetLatestStateDB()
+	}
+
+	db := mm.getMinerDatabaseAddress(kind)
 	data := accountdb.GetData(db, id)
 	if data != nil && len(data) > 0 {
 		var miner types.Miner
-		msgpack.Unmarshal(data, &miner)
+		json.Unmarshal(data, &miner)
 		return &miner
 	}
 	return nil
 }
 
-func (mm *MinerManager) GetTotalStake(height uint64) uint64 {
+func (mm *MinerManager) GetValidatorsStake(members [][]byte, accountDB *account.AccountDB) (uint64, map[common.Address]uint64) {
+	total := uint64(0)
+	membersDetail := make(map[common.Address]uint64, len(members))
+	for _, member := range members {
+		id := getAddressFromID(member)
+		miner := mm.GetMinerById(member, common.MinerTypeValidator, accountDB)
+		if nil == miner {
+			logger.Errorf("fail to get Member,id: %s", id)
+			continue
+		}
+		membersDetail[id] = miner.Stake
+		total += miner.Stake
+	}
+
+	return total, membersDetail
+}
+
+func (mm *MinerManager) GetProposerTotalStakeWithDetail(height uint64, accountDB *account.AccountDB) (uint64, map[common.Address]uint64) {
+	if accountDB == nil {
+		return 0, nil
+	}
+
+	total := uint64(0)
+	membersDetail := make(map[common.Address]uint64)
+
+	iter := mm.minerIterator(common.MinerTypeProposer, accountDB)
+	for iter.Next() {
+		miner, _ := iter.Current()
+		if height >= miner.ApplyHeight && (miner.Status == common.MinerStatusNormal || height < miner.AbortHeight) {
+			total += miner.Stake
+			membersDetail[getAddressFromID(miner.Id)] = miner.Stake
+		}
+	}
+
+	if total == 0 {
+		iter = mm.minerIterator(common.MinerTypeProposer, accountDB)
+		for iter.Next() {
+			miner, _ := iter.Current()
+			logger.Debugf("GetTotalStakeByHeight %+v", miner)
+		}
+	}
+
+	return total, membersDetail
+}
+
+func (mm *MinerManager) GetProposerTotalStake(height uint64) uint64 {
 	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
 	if err != nil {
 		logger.Errorf("Get account db by height %d error:%s", height, err.Error())
 		return 0
 	}
 
-	iter := mm.minerIterator(types.MinerTypeHeavy, accountDB)
-	var total uint64 = 0
-	for iter.Next() {
-		miner, _ := iter.Current()
-		if height >= miner.ApplyHeight {
-			if miner.Status == types.MinerStatusNormal || height < miner.AbortHeight {
-				total += miner.Stake
-			}
-		}
-	}
-	if total == 0 {
-		iter = mm.minerIterator(types.MinerTypeHeavy, accountDB)
-		for ; iter.Next(); {
-			miner, _ := iter.Current()
-			logger.Debugf("GetTotalStakeByHeight %+v", miner)
-		}
-	}
-	return total
-}
+	_, proposers := mm.GetProposerTotalStakeWithDetail(height, accountDB)
 
-func (mm *MinerManager) GetHeavyMiners() []string {
-	return mm.heavyMiners
+	return uint64(len(proposers))
 }
 
 func (mm *MinerManager) MinerIterator(minerType byte, height uint64) *MinerIterator {
@@ -102,120 +123,129 @@ func (mm *MinerManager) MinerIterator(minerType byte, height uint64) *MinerItera
 	return mm.minerIterator(minerType, accountDB)
 }
 
-func (mm *MinerManager) HeavyMinerCount(height uint64) uint64 {
-	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
-	if err != nil {
-		logger.Error("Get account db by height %d error:%s", height, err.Error())
-		return 0
-	}
-	heavyMinerCountByte := accountDB.GetData(common.MinerCountDBAddress, []byte(heavyMinerCountKey))
-	return utility.ByteToUInt64(heavyMinerCountByte)
-
-}
-
-func (mm *MinerManager) LightMinerCount(height uint64) uint64 {
-	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
-	if err != nil {
-		logger.Error("Get account db by height %d error:%s", height, err.Error())
-		return 0
-	}
-	lightMinerCountByte := accountDB.GetData(common.MinerCountDBAddress, []byte(lightMinerCountKey))
-	return utility.ByteToUInt64(lightMinerCountByte)
-}
-
-//func (mm *MinerManager) loop() {
-//	for {
-//		<-mm.heavyMinerNetTrigger.C
-//		if mm.hasNewHeavyMiner {
-//			iterator := mm.minerIterator(types.MinerTypeHeavy, nil)
-//			array := make([]string, 0)
-//			for iterator.Next() {
-//				miner, _ := iterator.Current()
-//				gid := groupsig.DeserializeId(miner.Id)
-//				array = append(array, gid.String())
-//			}
-//			mm.heavyMiners = array
-//			network.GetNetInstance().BuildGroupNet(network.FullNodeVirtualGroupId, array)
-//			logger.Infof("MinerManager HeavyMinerUpdate Size:%d", len(array))
-//			mm.hasNewHeavyMiner = false
-//		}
-//		mm.heavyMinerNetTrigger.Reset(heavyMinerNetTriggerInterval)
-//	}
-//}
-
-func (mm *MinerManager) getMinerDatabase(minerType byte) (common.Address) {
+func (mm *MinerManager) getMinerDatabaseAddress(minerType byte) common.Address {
 	switch minerType {
-	case types.MinerTypeLight:
-		return common.LightDBAddress
-	case types.MinerTypeHeavy:
-		return common.HeavyDBAddress
+	case common.MinerTypeValidator:
+		return common.ValidatorDBAddress
+	case common.MinerTypeProposer:
+		return common.ProposerDBAddress
 	}
 	return common.Address{}
 }
 
-func (mm *MinerManager) addMiner(id []byte, miner *types.Miner, accountdb *account.AccountDB) int {
-	logger.Debugf("Miner manager add miner %d", miner.Type)
-	db := mm.getMinerDatabase(miner.Type)
+func (mm *MinerManager) AddStake(addr common.Address, minerId []byte, delta uint64, accountdb *account.AccountDB) (bool, string) {
+	if delta == 0 {
+		return true, ""
+	}
+
+	stake := utility.Float64ToBigInt(float64(delta))
+	balance := accountdb.GetBalance(addr)
+	if balance.Cmp(stake) < 0 {
+		msg := fmt.Sprintf("not enough balance, addr: %s, balance: %d, stake: %d", addr.String(), balance, stake)
+		logger.Errorf(msg)
+		return false, msg
+	}
+
+	miner := mm.GetMinerById(minerId, common.MinerTypeProposer, accountdb)
+	if nil == miner {
+		miner = mm.GetMinerById(minerId, common.MinerTypeValidator, accountdb)
+		if nil == miner {
+			return false, "miner is not existed"
+		}
+	}
+
+	miner.Stake = miner.Stake + delta
+	if miner.Stake < 0 {
+		return false, "overflow"
+	}
+
+	accountdb.SubBalance(addr, stake)
+	mm.UpdateMiner(miner, accountdb)
+	return true, ""
+}
+
+func (mm *MinerManager) AddMiner(addr common.Address, miner *types.Miner, accountdb *account.AccountDB) (bool, string) {
+	if miner.Type != common.MinerTypeValidator && miner.Type != common.MinerTypeProposer {
+		msg := fmt.Sprintf("miner type error, minerId: %s, type: %d", common.ToHex(miner.Id), miner.Type)
+		logger.Errorf(msg)
+		return false, msg
+	}
+	if (miner.Type == common.MinerTypeValidator && miner.Stake < common.ValidatorStake) ||
+		(miner.Type == common.MinerTypeProposer && miner.Stake < common.ProposerStake) {
+		msg := fmt.Sprintf("not enough stake, minerId: %s, stake: %d", common.ToHex(miner.Id), miner.Stake)
+		logger.Errorf(msg)
+		return false, msg
+	}
+	if isEmptyByteSlice(miner.VrfPublicKey) || isEmptyByteSlice(miner.PublicKey) {
+		msg := fmt.Sprintf("VrfPublicKey or PublicKey is empty, minerId: %s, vrfPublicKey: %v,publicKey: %v", common.ToHex(miner.Id), miner.VrfPublicKey, miner.PublicKey)
+		logger.Errorf(msg)
+		return false, msg
+
+	}
+
+	stake := utility.Float64ToBigInt(float64(miner.Stake))
+	balance := accountdb.GetBalance(addr)
+	if balance.Cmp(stake) < 0 {
+		msg := fmt.Sprintf("not enough max, addr: %s, balance: %d, stake: %d", addr.String(), balance, stake)
+		logger.Errorf(msg)
+		return false, msg
+	}
+
+	id := miner.Id
+	if mm.GetMiner(id, accountdb) != nil {
+		msg := fmt.Sprintf("miner is existed. minerId: %s", common.ToHex(id))
+		logger.Errorf(msg)
+		return false, msg
+	}
+
+	accountdb.SubBalance(addr, stake)
+	mm.UpdateMiner(miner, accountdb)
+	logger.Debugf("add miner: %v", miner)
+
+	mm.pkCache.Put(miner.Id, miner.PublicKey)
+	return true, ""
+}
+
+func (mm *MinerManager) GetPubkey(id []byte) ([]byte, error) {
+	return mm.pkCache.Get(id)
+}
+
+func (mm *MinerManager) UpdateMiner(miner *types.Miner, accountdb *account.AccountDB) {
+	id := miner.Id
+	db := mm.getMinerDatabaseAddress(miner.Type)
+	data, _ := json.Marshal(miner)
+
+	accountdb.SetData(db, id, data)
+}
+
+func (mm *MinerManager) addMiner(miner *types.Miner, accountdb *account.AccountDB) int {
+	logger.Debugf("Miner manager add miner, %v", miner)
+
+	id := miner.Id
+	db := mm.getMinerDatabaseAddress(miner.Type)
 
 	if accountdb.GetData(db, id) != nil {
 		return -1
 	} else {
-		data, _ := msgpack.Marshal(miner)
-		accountdb.SetData(db, id, data)
-		if miner.Type == types.MinerTypeHeavy {
-			mm.hasNewHeavyMiner = true
-		}
-		mm.updateMinerCount(miner.Type, minerCountIncrease, accountdb)
+		mm.pkCache.Put(miner.Id, miner.PublicKey)
+		mm.UpdateMiner(miner, accountdb)
 		return 1
 	}
 }
 
-func (mm *MinerManager) addGenesesVerifier(miners []*types.Miner, accountdb *account.AccountDB) {
-	dbl := mm.getMinerDatabase(types.MinerTypeLight)
-
-	for _, miner := range miners {
-		if accountdb.GetData(dbl, miner.Id) == nil {
-			miner.Type = types.MinerTypeLight
-			data, _ := msgpack.Marshal(miner)
-			accountdb.SetData(dbl, miner.Id, data)
-			mm.updateMinerCount(types.MinerTypeLight, minerCountIncrease, accountdb)
-		}
-	}
-	mm.hasNewHeavyMiner = true
-}
-
-func (mm *MinerManager) addGenesesProposer(miners []*types.Miner, accountdb *account.AccountDB) {
-	dbh := mm.getMinerDatabase(types.MinerTypeHeavy)
-
-	for _, miner := range miners {
-		if accountdb.GetData(dbh, miner.Id) == nil {
-			miner.Type = types.MinerTypeHeavy
-			data, _ := msgpack.Marshal(miner)
-			logger.Debugf("Miner manager add genesis miner %v", miner.Id)
-			accountdb.SetData(dbh, miner.Id, data)
-			mm.heavyMiners = append(mm.heavyMiners, groupsig.DeserializeId(miner.Id).String())
-			mm.updateMinerCount(types.MinerTypeHeavy, minerCountIncrease, accountdb)
-		}
-	}
-	mm.hasNewHeavyMiner = true
-}
-
 func (mm *MinerManager) removeMiner(id []byte, ttype byte, accountdb *account.AccountDB) {
 	logger.Debugf("Miner manager remove miner %d", ttype)
-	db := mm.getMinerDatabase(ttype)
+	db := mm.getMinerDatabaseAddress(ttype)
 	accountdb.SetData(db, id, emptyValue[:])
 }
 
 func (mm *MinerManager) abortMiner(id []byte, ttype byte, height uint64, accountdb *account.AccountDB) bool {
 	miner := mm.GetMinerById(id, ttype, accountdb)
-	if miner != nil && miner.Status == types.MinerStatusNormal {
-		miner.Status = types.MinerStatusAbort
+	if miner != nil && miner.Status == common.MinerStatusNormal {
+		miner.Status = common.MinerStatusAbort
 		miner.AbortHeight = height
-
-		db := mm.getMinerDatabase(ttype)
-		data, _ := msgpack.Marshal(miner)
-		accountdb.SetData(db, id, data)
-		mm.updateMinerCount(ttype, minerCountDecrease, accountdb)
+		mm.UpdateMiner(miner, accountdb)
+		//mm.updateMinerCount(ttype, minerCountDecrease, accountdb)
 		logger.Debugf("Miner manager abort miner update success %+v", miner)
 		return true
 	} else {
@@ -225,54 +255,21 @@ func (mm *MinerManager) abortMiner(id []byte, ttype byte, height uint64, account
 }
 
 func (mm *MinerManager) minerIterator(minerType byte, accountdb *account.AccountDB) *MinerIterator {
-	db := mm.getMinerDatabase(minerType)
+	db := mm.getMinerDatabaseAddress(minerType)
 	if accountdb == nil {
-		accountdb = blockChainImpl.LatestStateDB()
+		accountdb = service.AccountDBManagerInstance.GetLatestStateDB()
 	}
 	iterator := &MinerIterator{iterator: accountdb.DataIterator(db, []byte(""))}
 	return iterator
 }
 
-func (mm *MinerManager) updateMinerCount(minerType byte, operation MinerCountOperation, accountdb *account.AccountDB) {
-	if minerType == types.MinerTypeHeavy {
-		heavyMinerCountByte := accountdb.GetData(common.MinerCountDBAddress, []byte(heavyMinerCountKey))
-		heavyMinerCount := utility.ByteToUInt64(heavyMinerCountByte)
-		if operation == minerCountIncrease {
-			heavyMinerCount++
-		} else if operation == minerCountDecrease {
-			heavyMinerCount--
-		}
-		accountdb.SetData(common.MinerCountDBAddress, []byte(heavyMinerCountKey), utility.UInt64ToByte(heavyMinerCount))
-		return
-	}
-
-	if minerType == types.MinerTypeLight {
-		lightMinerCountByte := accountdb.GetData(common.MinerCountDBAddress, []byte(lightMinerCountKey))
-		lightMinerCount := utility.ByteToUInt64(lightMinerCountByte)
-		if operation == minerCountIncrease {
-			lightMinerCount++
-		} else if operation == minerCountDecrease {
-			lightMinerCount--
-		}
-		accountdb.SetData(common.MinerCountDBAddress, []byte(lightMinerCountKey), utility.UInt64ToByte(lightMinerCount))
-		return
-	}
-	logger.Error("Unknown miner type:%d", minerType)
-}
-
 type MinerIterator struct {
 	iterator *trie.Iterator
-	cache    *lru.Cache
 }
 
 func (mi *MinerIterator) Current() (*types.Miner, error) {
-	if mi.cache != nil {
-		if result, ok := mi.cache.Get(string(mi.iterator.Key)); ok {
-			return result.(*types.Miner), nil
-		}
-	}
 	var miner types.Miner
-	err := msgpack.Unmarshal(mi.iterator.Value, &miner)
+	err := json.Unmarshal(mi.iterator.Value, &miner)
 	if err != nil {
 		logger.Debugf("MinerIterator Unmarshal Error %+v %+v %+v", mi.iterator.Key, err, mi.iterator.Value)
 	}
@@ -280,6 +277,11 @@ func (mi *MinerIterator) Current() (*types.Miner, error) {
 	if len(miner.Id) == 0 {
 		err = errors.New("empty miner")
 	}
+
+	if miner.Status == common.MinerStatusAbort {
+		err = errors.New("abort miner")
+	}
+
 	return &miner, err
 }
 

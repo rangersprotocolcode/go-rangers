@@ -1,15 +1,18 @@
 package logical
 
 import (
-	"x/src/consensus/model"
-	"x/src/middleware/types"
+	"bytes"
+	"fmt"
 	"sync"
+	"sync/atomic"
 	"time"
 	"x/src/common"
+	"x/src/consensus/model"
+	"x/src/middleware/types"
 )
 
 type castedBlock struct {
-	height uint64
+	hash    common.Hash
 	preHash common.Hash
 }
 
@@ -20,25 +23,27 @@ type BlockContext struct {
 	GroupMembers int                 //组成员数量
 	Proc         *Processor          //处理器
 	MinerID      *model.GroupMinerID //矿工ID和所属组ID
-	pos          int                 //矿工在组内的排位
+
+	signedMaxQN uint64
 
 	//变化
-	vctxs map[uint64]*VerifyContext //height -> *VerifyContext
+	vctxs map[common.Hash]*VerifyContext //height -> *VerifyContext
 
-	recentCasted [40]*castedBlock
-	curr          int
+	// 缓存最近cast过的信息
+	recentCasted [100]*castedBlock
+	curr         int
 
 	lock sync.RWMutex
 }
 
-func NewBlockContext(p *Processor, sgi *StaticGroupInfo) *BlockContext {
+func NewBlockContext(p *Processor, sgi *model.GroupInfo) *BlockContext {
 	bc := &BlockContext{
-		Proc:               p,
-		MinerID:            model.NewGroupMinerID(sgi.GroupID, p.GetMinerID()),
-		GroupMembers:       sgi.GetMemberCount(),
-		vctxs:              make(map[uint64]*VerifyContext),
-		Version:            model.CONSENSUS_VERSION,
-		curr:          		0,
+		Proc:         p,
+		MinerID:      model.NewGroupMinerID(sgi.GroupID, p.GetMinerID()),
+		GroupMembers: sgi.GetMemberCount(),
+		vctxs:        make(map[common.Hash]*VerifyContext),
+		Version:      model.CONSENSUS_VERSION,
+		curr:         0,
 	}
 
 	return bc
@@ -48,43 +53,44 @@ func (bc *BlockContext) threshold() int {
 	return model.Param.GetGroupK(bc.GroupMembers)
 }
 
-func (bc *BlockContext) GetVerifyContextByHeight(height uint64) *VerifyContext {
+func (bc *BlockContext) GetVerifyContextByHash(hash common.Hash) *VerifyContext {
 	bc.lock.RLock()
 	defer bc.lock.RUnlock()
 
-	return bc.getVctxByHeight(height)
+	return bc.getVctxByHash(hash)
 }
 
-func (bc *BlockContext) getVctxByHeight(height uint64) *VerifyContext {
-	if v, ok := bc.vctxs[height]; ok {
+func (bc *BlockContext) getVctxByHash(hash common.Hash) *VerifyContext {
+	if v, ok := bc.vctxs[hash]; ok {
 		return v
 	}
 	return nil
 }
 
-func (bc *BlockContext) replaceVerifyCtx(height uint64, expireTime time.Time, preBH *types.BlockHeader) *VerifyContext {
-	vctx := newVerifyContext(bc, height, expireTime, preBH)
-	bc.vctxs[vctx.castHeight] = vctx
+func (bc *BlockContext) replaceVerifyCtx(hash common.Hash, expireTime time.Time, preBH *types.BlockHeader) *VerifyContext {
+	vctx := newVerifyContext(bc, expireTime, preBH, hash)
+	bc.vctxs[hash] = vctx
 	return vctx
 }
 
-func (bc *BlockContext) getOrNewVctx(height uint64, expireTime time.Time, preBH *types.BlockHeader) *VerifyContext {
+func (bc *BlockContext) getOrNewVctx(expireTime time.Time, bh, preBH *types.BlockHeader) *VerifyContext {
 	var vctx *VerifyContext
 	blog := newBizLog("getOrNewVctx")
+	hash := bh.Hash
 
 	//若该高度还没有verifyContext， 则创建一个
-	if vctx = bc.getVctxByHeight(height); vctx == nil {
-		vctx = newVerifyContext(bc, height, expireTime, preBH)
-		bc.vctxs[vctx.castHeight] = vctx
+	if vctx = bc.getVctxByHash(hash); vctx == nil {
+		vctx = newVerifyContext(bc, expireTime, preBH, hash)
+		bc.vctxs[hash] = vctx
 		blog.log("add vctx expire %v", expireTime)
 	} else {
 		// hash不一致的情况下，
 		if vctx.prevBH.Hash != preBH.Hash {
-			blog.log("vctx pre hash diff, height=%v, existHash=%v, commingHash=%v", height, vctx.prevBH.Hash.ShortS(), preBH.Hash.ShortS())
+			blog.log("vctx pre hash diff, hash=%v, existHash=%v, commingHash=%v", hash, vctx.prevBH.Hash.ShortS(), preBH.Hash.ShortS())
 			preOld := bc.Proc.getBlockHeaderByHash(vctx.prevBH.Hash)
 			//原来的preBH可能被分叉调整干掉了，则此vctx已无效， 重新用新的preBH
 			if preOld == nil {
-				vctx = bc.replaceVerifyCtx(height, expireTime, preBH)
+				vctx = bc.replaceVerifyCtx(hash, expireTime, preBH)
 				return vctx
 			}
 			preNew := bc.Proc.getBlockHeaderByHash(preBH.Hash)
@@ -94,13 +100,13 @@ func (bc *BlockContext) getOrNewVctx(height uint64, expireTime time.Time, preBH 
 			}
 			//新旧preBH都非空， 取高度高的preBH？
 			if preOld.Height < preNew.Height {
-				vctx = bc.replaceVerifyCtx(height, expireTime, preNew)
+				vctx = bc.replaceVerifyCtx(hash, expireTime, preNew)
 			}
 		} else {
-			if height == 1 && expireTime.After(vctx.expireTime) {
+			if bh.Height == 1 && expireTime.After(vctx.expireTime) {
 				vctx.expireTime = expireTime
 			}
-			blog.log("get exist vctx height %v, expire %v", height, vctx.expireTime)
+			blog.log("get exist vctx hash %v, expire %v", hash, vctx.expireTime)
 		}
 	}
 	return vctx
@@ -126,20 +132,20 @@ func (bc *BlockContext) GetOrNewVerifyContext(bh *types.BlockHeader, preBH *type
 	bc.lock.Lock()
 	defer bc.lock.Unlock()
 
-	vctx := bc.getOrNewVctx(bh.Height, expireTime, preBH)
+	vctx := bc.getOrNewVctx(expireTime, bh, preBH)
 	return vctx
 }
 
 func (bc *BlockContext) CleanVerifyContext(height uint64) {
-	newCtxs := make(map[uint64]*VerifyContext, 0)
+	newCtxs := make(map[common.Hash]*VerifyContext, 0)
 	for _, ctx := range bc.SafeGetVerifyContexts() {
 		bRemove := ctx.shouldRemove(height)
 		if !bRemove {
-			newCtxs[ctx.castHeight] = ctx
+			newCtxs[ctx.blockHash] = ctx
 		} else {
 			ctx.Clear()
-			bc.Proc.blockContexts.removeReservedVctx(ctx.castHeight)
-			stdLogger.Debugf("CleanVerifyContext: ctx.castHeight=%v, ctx.prevHash=%v, signedMaxQN=%v, signedNum=%v\n", ctx.castHeight, ctx.prevBH.Hash.ShortS(), ctx.signedMaxQN, ctx.signedNum)
+			bc.Proc.blockContexts.removeReservedVctx(ctx.blockHash)
+			stdLogger.Debugf("CleanVerifyContext: ctx.castHash=%v, ctx.prevHash=%v, signedNum=%v\n", ctx.blockHash, ctx.prevBH.Hash.ShortS(), ctx.signedNum)
 		}
 	}
 
@@ -147,12 +153,13 @@ func (bc *BlockContext) CleanVerifyContext(height uint64) {
 	defer bc.lock.Unlock()
 	bc.vctxs = newCtxs
 }
+
 //
-func (bc *BlockContext) IsHeightCasted(height uint64, pre common.Hash) (cb *castedBlock, casted bool) {
+func (bc *BlockContext) IsHashCasted(hash, pre common.Hash) (cb *castedBlock, casted bool) {
 	bc.lock.RLock()
 	defer bc.lock.RUnlock()
 	for i, h := range bc.recentCasted {
-		if h != nil && h.height == height {
+		if h != nil && bytes.Compare(h.hash.Bytes(), hash.Bytes()) == 0 {
 			cb = bc.recentCasted[i]
 			casted = h.preHash == pre
 			return
@@ -161,8 +168,8 @@ func (bc *BlockContext) IsHeightCasted(height uint64, pre common.Hash) (cb *cast
 	return
 }
 
-func (bc *BlockContext) AddCastedHeight(height uint64, pre common.Hash) {
-	if cb, same := bc.IsHeightCasted(height, pre); same {
+func (bc *BlockContext) AddCastedHeight(hash, pre common.Hash) {
+	if cb, same := bc.IsHashCasted(hash, pre); same {
 		return
 	} else {
 		bc.lock.Lock()
@@ -171,8 +178,33 @@ func (bc *BlockContext) AddCastedHeight(height uint64, pre common.Hash) {
 		if cb != nil {
 			cb.preHash = pre
 		} else {
-			bc.recentCasted[bc.curr] = &castedBlock{height: height, preHash: pre}
-			bc.curr = (bc.curr+1)%len(bc.recentCasted)
+			bc.recentCasted[bc.curr] = &castedBlock{hash: hash, preHash: pre}
+			bc.curr = (bc.curr + 1) % len(bc.recentCasted)
 		}
 	}
+}
+
+func (bc *BlockContext) CheckQN(bh *types.BlockHeader) error {
+	//只签qn不小于已签出的最高块的块
+	if bc.hasSignedBiggerQN(bh.TotalQN) {
+		return fmt.Errorf("已签过更高qn块%v,本块qn%v", bc.getSignedMaxQN(), bh.TotalQN)
+	}
+
+	return nil
+}
+
+func (bc *BlockContext) getSignedMaxQN() uint64 {
+	return atomic.LoadUint64(&bc.signedMaxQN)
+}
+
+func (bc *BlockContext) hasSignedBiggerQN(totalQN uint64) bool {
+	return bc.getSignedMaxQN() > totalQN
+}
+
+func (bc *BlockContext) updateSignedMaxQN(totalQN uint64) bool {
+	if bc.getSignedMaxQN() < totalQN {
+		atomic.StoreUint64(&bc.signedMaxQN, totalQN)
+		return true
+	}
+	return false
 }
