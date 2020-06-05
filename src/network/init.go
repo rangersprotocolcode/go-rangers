@@ -13,7 +13,7 @@ const (
 
 var Logger log.Logger
 
-func InitNetwork(consensusHandler MsgHandler, selfMinerId, env, gate string) {
+func InitNetwork(consensusHandler MsgHandler, selfMinerId []byte, env, gate string) {
 	Logger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	gateAddr := gate
 	if len(gateAddr) == 0 {
@@ -23,7 +23,6 @@ func InitNetwork(consensusHandler MsgHandler, selfMinerId, env, gate string) {
 			gateAddr = gateAddrDaily
 		}
 	}
-
 
 	var s server
 	s.Init(Logger, gateAddr, selfMinerId, consensusHandler)

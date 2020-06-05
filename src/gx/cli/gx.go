@@ -132,8 +132,8 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 	sk := common.HexStringToSecKey(gx.account.Sk)
 	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
-	minerId := "0x" + common.Bytes2Hex(gx.account.Miner.ID[:])
-	network.InitNetwork(cnet.MessageHandler, minerId, env, gateAddr)
+
+	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr)
 	service.InitService()
 
 	err := core.InitCore(consensus.NewConsensusHelper(minerInfo.ID))
@@ -142,7 +142,7 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 	}
 
 	//todo: 刷新requestId
-	statemachine.InitSTMManager(common.GlobalConf.GetString("docker", "config", ""), minerId)
+	statemachine.InitSTMManager(common.GlobalConf.GetString("docker", "config", ""), common.ToHex(gx.account.Miner.ID[:]))
 
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
 	if !ok {

@@ -19,7 +19,7 @@ type server struct {
 	coiner ConnectorConn
 }
 
-func (s *server) Init(logger log.Logger, gateAddr, selfMinerId string, consensusHandler MsgHandler) {
+func (s *server) Init(logger log.Logger, gateAddr string, selfMinerId []byte, consensusHandler MsgHandler) {
 	s.reader.Init(gateAddr, "/srv/worker_reader", notify.ClientTransactionRead, methodCodeClientReader, logger, true)
 	s.writer.Init(gateAddr, "/srv/worker_writer", notify.ClientTransaction, methodCodeClientWriter, logger, false)
 	s.worker.Init(gateAddr, selfMinerId, consensusHandler, logger)
@@ -60,10 +60,6 @@ func (s *server) JoinGroupNet(groupId string) {
 
 func (s *server) QuitGroupNet(groupId string) {
 	s.worker.QuitGroupNet(groupId)
-}
-
-func (s *server) SetNetId(netId []byte) {
-	s.worker.SetNetId(netId)
 }
 
 func (s *server) SendToStranger(strangerId []byte, msg Message) {

@@ -7,7 +7,6 @@ import (
 	"com.tuntun.rocket/node/src/consensus/logical/group_create"
 	"com.tuntun.rocket/node/src/consensus/model"
 	"com.tuntun.rocket/node/src/consensus/net"
-	"com.tuntun.rocket/node/src/network"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -27,8 +26,7 @@ func ConsensusInit(mi model.SelfMinerInfo, conf common.ConfManager) bool {
 	group_create.GroupCreateProcessor.Init(mi, joinedGroupStorage)
 	ret := Proc.Init(mi, conf, joinedGroupStorage)
 	net.MessageHandler.Init(&group_create.GroupCreateProcessor, &Proc)
-
-	network.GetNetInstance().SetNetId(mi.ID.Serialize())
+	
 	return ret
 }
 

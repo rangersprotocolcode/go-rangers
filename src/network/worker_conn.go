@@ -23,17 +23,15 @@ var (
 type WorkerConn struct {
 	baseConn
 	consensusHandler MsgHandler
-	selfId           string
 
 	joinedGroup     map[string]byte
 	joinedGroupLock sync.Mutex
 }
 
-func (workerConn *WorkerConn) Init(ipPort, selfId string, consensusHandler MsgHandler, logger log.Logger) {
+func (workerConn *WorkerConn) Init(ipPort string, selfId []byte, consensusHandler MsgHandler, logger log.Logger) {
 	// worker 链接加大发送队列长度
 	workerConn.sendSize = 1000
 	workerConn.consensusHandler = consensusHandler
-	workerConn.selfId = selfId
 	workerConn.joinedGroup = make(map[string]byte)
 	workerConn.joinedGroupLock = sync.Mutex{}
 
@@ -51,6 +49,8 @@ func (workerConn *WorkerConn) Init(ipPort, selfId string, consensusHandler MsgHa
 	}
 
 	workerConn.afterReconnected = func() {
+		workerConn.setNetId(selfId)
+
 		workerConn.joinedGroupLock.Lock()
 		defer workerConn.joinedGroupLock.Unlock()
 
@@ -59,7 +59,9 @@ func (workerConn *WorkerConn) Init(ipPort, selfId string, consensusHandler MsgHa
 			workerConn.joinGroupNet(key)
 		}
 	}
+
 	workerConn.init(ipPort, "/srv/worker_worker", logger)
+	workerConn.setNetId(selfId)
 }
 
 func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
@@ -190,7 +192,7 @@ func (workerConn *WorkerConn) QuitGroupNet(groupId string) {
 	workerConn.logger.Debugf("Quit group: %v,targetId:%v,hex:%v", groupId, header.targetId, strconv.FormatUint(header.targetId, 16))
 }
 
-func (workerConn *WorkerConn) SetNetId(netId []byte) {
+func (workerConn *WorkerConn) setNetId(netId []byte) {
 	header := wsHeader{method: methodSetNetId}
 	bytes := workerConn.headerToBytes(header)
 
