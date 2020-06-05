@@ -154,9 +154,9 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		CurTime:    timestamp,
 		Height:     height,
 		ProveValue: proveValue, Castor: castor,
-		GroupId:    groupid,
-		TotalQN:    latestBlock.TotalQN + qn,
-		StateTree:  common.BytesToHash(latestBlock.StateTree.Bytes()),
+		GroupId:   groupid,
+		TotalQN:   latestBlock.TotalQN + qn,
+		StateTree: common.BytesToHash(latestBlock.StateTree.Bytes()),
 		//ProveRoot:  proveRoot,
 		PreHash: latestBlock.Hash,
 		PreTime: latestBlock.CurTime,
@@ -173,7 +173,7 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	}
 
 	executor := newVMExecutor(state, block, "casting")
-	stateRoot, evictedTxs, transactions, receipts:= executor.Execute()
+	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 	middleware.PerfLogger.Infof("fin execute txs. last: %v height: %v", time.Since(timestamp), height)
 
 	transactionHashes := make([]common.Hashes, len(transactions))
@@ -195,7 +195,7 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	block.Header.Hash = block.Header.GenHash()
 	middleware.PerfLogger.Infof("fin calcReceiptsTree. last: %v height: %v", time.Since(timestamp), height)
 
-	chain.verifiedBlocks.Add(block.Header.Hash, &castingBlock{state: state, receipts: receipts,})
+	chain.verifiedBlocks.Add(block.Header.Hash, &castingBlock{state: state, receipts: receipts})
 	if len(block.Transactions) != 0 {
 		chain.verifiedBodyCache.Add(block.Header.Hash, block.Transactions)
 	}
@@ -214,6 +214,9 @@ func getRequestIdFromTransactions(transactions []*types.Transaction, lastOne map
 
 	if nil != transactions && 0 != len(transactions) {
 		for _, tx := range transactions {
+			if tx.Type != types.TransactionTypeOperatorEvent {
+				continue
+			}
 			if result[tx.Target] < tx.RequestId {
 				result[tx.Target] = tx.RequestId
 			}

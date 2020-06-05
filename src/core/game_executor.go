@@ -113,7 +113,7 @@ func (executor *GameExecutor) onBlockAddSuccess(message notify.Message) {
 	for key, value := range bh.RequestIds {
 		if executor.requestIds[key] < value {
 			executor.getCond(key).L.Lock()
-			executor.logger.Infof("upgrade %s requestId, from %d to %d", key, executor.requestIds[key], value)
+			executor.logger.Infof("upgrade %s requestId, from %d to %d, height: %d, hash: %s", key, executor.requestIds[key], value, bh.Height, bh.Hash.String())
 			executor.requestIds[key] = value
 
 			executor.getCond(key).Broadcast()
@@ -291,7 +291,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 		if nil != service.TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw) {
 			// bingo
 			executor.logger.Infof("Tx is executed!")
-			if !executor.debug{
+			if !executor.debug {
 				executor.requestIdLock.Lock()
 				executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
 				executor.requestIdLock.Unlock()

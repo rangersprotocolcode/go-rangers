@@ -161,7 +161,7 @@ func (storage *JoinedGroupStorage) load(gid groupsig.ID) *model.JoinedGroupInfo 
 	// Load signature private key
 	bs, err := storage.groupChain.GetJoinedGroup(signKeySuffix(gid))
 	if err != nil {
-		logger.Errorf("get signKey fail, gid=%v, err=%v", gid.ShortS(), err.Error())
+		logger.Infof("get signKey fail, gid=%v, err=%v", gid.ShortS(), err.Error())
 		return nil
 	}
 	//logger.Debugf("load bs:%v,privateKey:%v",bs,storage.privateKey.GetHexString())
