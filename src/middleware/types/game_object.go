@@ -215,6 +215,10 @@ func (self *NFTMap) GetAllNFT() []*NFT {
 	return self.NFTList
 }
 
+func (self *NFTMap) Empty() bool {
+	return 0 == len(self.NFTIDList)
+}
+
 type GameData struct {
 	GameIDList []string
 	NFTMaps    []*NFTMap

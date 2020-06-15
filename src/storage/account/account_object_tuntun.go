@@ -192,11 +192,9 @@ func (self *accountObject) RemoveNFT(gameId, setId, id string) bool {
 // 更新nft属性值
 func (self *accountObject) SetNFTValueByGameId(gameId, setId, id, value string) bool {
 	data := self.data.GameData.GetNFTMaps(gameId)
-	if nil == data {
+	if nil == data  || data.Empty(){
 		return false
 	}
-
-	self.checkAndCreate(gameId)
 
 	change := tuntunNFTChange{
 		account: &self.address,
