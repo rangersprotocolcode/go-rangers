@@ -430,7 +430,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 	// bingo
 	if !executor.debug {
 		executor.requestIdLock.Lock()
-		executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
+		executor.requestIds["fixed"] = executor.requestIds["fixed"] + 1
 		executor.requestIdLock.Unlock()
 	}
 
