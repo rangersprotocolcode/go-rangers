@@ -214,10 +214,6 @@ func getRequestIdFromTransactions(transactions []*types.Transaction, lastOne map
 
 	if nil != transactions && 0 != len(transactions) {
 		for _, tx := range transactions {
-			if tx.Type != types.TransactionTypeOperatorEvent {
-				continue
-			}
-
 			if result["fixed"] < tx.RequestId {
 				result["fixed"] = tx.RequestId
 			}
