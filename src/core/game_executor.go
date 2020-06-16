@@ -88,6 +88,7 @@ func initGameExecutor(blockChainImpl *blockChain) {
 		gameExecutor.debug = true
 	}
 
+	//gameExecutor.debug = false
 	gameExecutor.writeChan = make(chan notify.Message, maxWriteSize)
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.Write)
 	go gameExecutor.loop()
@@ -110,16 +111,16 @@ func (executor *GameExecutor) onBlockAddSuccess(message notify.Message) {
 	executor.requestIdLock.Lock()
 	defer executor.requestIdLock.Unlock()
 
-	for key, value := range bh.RequestIds {
-		executor.logger.Warnf(" %s requestId: %d", key, executor.requestIds[key])
-		if executor.requestIds[key] < value {
-			executor.getCond(key).L.Lock()
-			executor.logger.Infof("upgrade %s requestId, from %d to %d, height: %d, hash: %s", key, executor.requestIds[key], value, bh.Height, bh.Hash.String())
-			executor.requestIds[key] = value
+	key := "fixed"
+	value := bh.RequestIds[key]
+	executor.logger.Warnf(" %s requestId: %d", key, executor.requestIds[key])
+	if executor.requestIds[key] < value {
+		executor.getCond(key).L.Lock()
+		executor.logger.Infof("upgrade %s requestId, from %d to %d, height: %d, hash: %s", key, executor.requestIds[key], value, bh.Height, bh.Hash.String())
+		executor.requestIds[key] = value
 
-			executor.getCond(key).Broadcast()
-			executor.getCond(key).L.Unlock()
-		}
+		executor.getCond(key).Broadcast()
+		executor.getCond(key).L.Unlock()
 	}
 
 }
@@ -525,6 +526,7 @@ func (executor *GameExecutor) RunWrite(msg notify.Message) {
 	//	continue
 	//}
 
+	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
 	// 校验 requestId
 	if !executor.debug {
 		requestId := message.Nonce
