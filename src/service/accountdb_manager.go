@@ -33,7 +33,7 @@ func initAccountDBManager() {
 
 //todo: 功能增强
 func (manager *AccountDBManager) GetAccountDB(gameId string, isBase bool) *account.AccountDB {
-	return manager.latestStateDB
+	return manager.GetLatestStateDB()
 }
 
 func (manager *AccountDBManager) GetAccountDBByHash(hash common.Hash) (*account.AccountDB, error) {
