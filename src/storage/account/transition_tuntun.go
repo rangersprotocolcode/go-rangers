@@ -70,8 +70,14 @@ func (ch tuntunRemoveNFTChange) undo(s *AccountDB) {
 
 func (ch tuntunNFTApproveChange) undo(s *AccountDB) {
 	object := s.getAccountObject(*ch.account, false)
-	nft := object.getNFT(ch.appId, ch.setId, ch.id)
-	nft.Renter = ch.prev
+	if 0 == len(ch.appId) {
+		nft := object.getNFTById(ch.setId, ch.id)
+		nft.Renter = ch.prev
+	} else {
+		nft := object.getNFT(ch.appId, ch.setId, ch.id)
+		nft.Renter = ch.prev
+	}
+
 }
 
 func (ch tuntunNFTStatusChange) undo(s *AccountDB) {

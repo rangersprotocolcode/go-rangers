@@ -132,5 +132,9 @@ func (self *AccountDB) ApproveNFT(owner common.Address, appId, setId, id, renter
 
 func (self *AccountDB) ChangeNFTStatus(owner common.Address, appId, setId, id string, status byte) bool {
 	stateObject := self.getOrNewAccountObject(owner)
+
+	if 0 == len(appId) {
+		return stateObject.ChangeNFTStatusById(setId, id, status)
+	}
 	return stateObject.ChangeNFTStatus(appId, setId, id, status)
 }
