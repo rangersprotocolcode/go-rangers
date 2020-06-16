@@ -217,8 +217,9 @@ func getRequestIdFromTransactions(transactions []*types.Transaction, lastOne map
 			if tx.Type != types.TransactionTypeOperatorEvent {
 				continue
 			}
-			if result[tx.Target] < tx.RequestId {
-				result[tx.Target] = tx.RequestId
+
+			if result["fixed"] < tx.RequestId {
+				result["fixed"] = tx.RequestId
 			}
 		}
 	}
