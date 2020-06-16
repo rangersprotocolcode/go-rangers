@@ -435,7 +435,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 		executor.requestIdLock.Unlock()
 	}
 
-	executor.logger.Debugf("finish tx. result: %t, message: %s, cost time : %v, txhash: %s, requestId: %d", result, message, time.Since(start), txhash, executor.getRequestId(txRaw.Target))
+	executor.logger.Debugf("finish tx. result: %t, message: %s, cost time : %v, txhash: %s, requestId: %d", result, message, time.Since(start), txhash, executor.getRequestId("fixed"))
 	return result, message
 }
 
