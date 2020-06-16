@@ -111,7 +111,7 @@ func (executor *GameExecutor) onBlockAddSuccess(message notify.Message) {
 	defer executor.requestIdLock.Unlock()
 
 	for key, value := range bh.RequestIds {
-		executor.logger.Warnf(" %s requestId: %s", key, executor.requestIds[key])
+		executor.logger.Warnf(" %s requestId: %d", key, executor.requestIds[key])
 		if executor.requestIds[key] < value {
 			executor.getCond(key).L.Lock()
 			executor.logger.Infof("upgrade %s requestId, from %d to %d, height: %d, hash: %s", key, executor.requestIds[key], value, bh.Height, bh.Hash.String())
