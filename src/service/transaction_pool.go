@@ -47,9 +47,6 @@ type TransactionPool interface {
 	//add new transaction to the transaction pool
 	AddTransaction(tx *types.Transaction) (bool, error)
 
-	//rcv transactions broadcast from other nodes
-	AddBroadcastTransactions(txs []*types.Transaction)
-
 	//add  local miss transactions while verifying blocks to the transaction pool
 	AddMissTransactions(txs []*types.Transaction)
 
@@ -120,7 +117,7 @@ func newTransactionPool() TransactionPool {
 
 	executed, err := db.NewDatabase(txDataBasePrefix)
 	if err != nil {
-		txLogger.Errorf("Init transaction pool error! Error:%s", err.Error())
+		txPoolLogger.Errorf("Init transaction pool error! Error:%s", err.Error())
 		return nil
 	}
 	pool.executed = executed
@@ -128,7 +125,7 @@ func newTransactionPool() TransactionPool {
 
 	gameData, err := db.NewDatabase(gameDataPrefix)
 	if err != nil {
-		txLogger.Errorf("Init transaction pool error! Error:%s", err.Error())
+		txPoolLogger.Errorf("Init transaction pool error! Error:%s", err.Error())
 		return nil
 	}
 	pool.gameData = gameData
@@ -138,7 +135,7 @@ func newTransactionPool() TransactionPool {
 
 func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 	if err := pool.verifyTransaction(tx); err != nil {
-		txLogger.Infof("Tx verify error:%s. Hash:%s, tx type:%d", err.Error(), tx.Hash.String(), tx.Type)
+		txPoolLogger.Infof("Tx verify error:%s. Hash:%s, tx type:%d", err.Error(), tx.Hash.String(), tx.Type)
 		return false, err
 	}
 
@@ -146,23 +143,6 @@ func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 	defer pool.lock.Unlock("AddTransaction")
 	b, err := pool.add(tx)
 	return b, err
-}
-
-// deprecated
-func (pool *TxPool) AddBroadcastTransactions(txs []*types.Transaction) {
-	if nil == txs || 0 == len(txs) {
-		return
-	}
-	pool.lock.Lock("AddBroadcastTransactions")
-	defer pool.lock.Unlock("AddBroadcastTransactions")
-
-	for _, tx := range txs {
-		if err := pool.verifyTransaction(tx); err != nil {
-			txLogger.Infof("Tx verify error:%s. Hash:%s, tx type:%d", err.Error(), tx.Hash.String(), tx.Type)
-			continue
-		}
-		pool.add(tx)
-	}
 }
 
 func (pool *TxPool) AddMissTransactions(txs []*types.Transaction) {
@@ -180,8 +160,7 @@ func (pool *TxPool) AddExecuted(tx *types.Transaction) error {
 		return nil
 	}
 
-	executedTx := &ExecutedTransaction{
-	}
+	executedTx := &ExecutedTransaction{}
 
 	txData, _ := types.MarshalTransaction(tx)
 	executedTx.Transaction = txData
@@ -425,13 +404,13 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 		tx.Type == types.TransactionTypeMinerAdd {
 
 		if tx.Type == types.TransactionTypeMinerApply {
-			txLogger.Debugf("Add TransactionTypeMinerApply,hash:%s,", tx.Hash.String())
+			txPoolLogger.Debugf("Add TransactionTypeMinerApply,hash:%s,", tx.Hash.String())
 		}
 		pool.minerTxs.Add(tx.Hash, tx)
 	} else {
 		pool.received.push(tx)
 	}
-
+	txPoolLogger.Debug("Add tx:%s.After add,received  size:%d,miner txs size:%d", tx.Hash.String(), pool.received.Len(), pool.minerTxs.Len())
 	return true, nil
 }
 
@@ -439,6 +418,7 @@ func (pool *TxPool) remove(txHash common.Hash) {
 	pool.minerTxs.Remove(txHash)
 	pool.missTxs.Remove(txHash)
 	pool.received.remove(txHash)
+	txPoolLogger.Debug("Remove tx:%s.After remove,received size:%d,miner txs size:%d", txHash.String(), pool.received.Len(), pool.minerTxs.Len())
 }
 
 func (pool *TxPool) isTransactionExisted(hash common.Hash) bool {
@@ -479,7 +459,7 @@ func (pool *TxPool) packMinerTx() []*types.Transaction {
 		if v, ok := pool.minerTxs.Get(minerTxHash); ok {
 			minerTxs = append(minerTxs, v.(*types.Transaction))
 			if v.(*types.Transaction).Type == types.TransactionTypeMinerApply {
-				txLogger.Debugf("pack miner apply tx hash:%s,", v.(*types.Transaction).Hash.String())
+				txPoolLogger.Debugf("Pack miner apply tx hash:%s,", v.(*types.Transaction).Hash.String())
 			}
 		}
 		if len(minerTxs) >= txCountPerBlock {
@@ -494,6 +474,7 @@ func (pool *TxPool) packTx(packedTxs []*types.Transaction) []*types.Transaction 
 	sort.Sort(types.Transactions(txs))
 	for _, tx := range txs {
 		packedTxs = append(packedTxs, tx)
+		txPoolLogger.Debug("Pack tx:%s", tx.Hash.String())
 		if len(packedTxs) >= txCountPerBlock {
 			return packedTxs
 		}
