@@ -25,7 +25,6 @@ func initChainHandler() {
 
 	notify.BUS.Subscribe(notify.BlockReq, handler.blockReqHandler)
 	notify.BUS.Subscribe(notify.NewBlock, handler.newBlockHandler)
-	notify.BUS.Subscribe(notify.TransactionBroadcast, handler.transactionBroadcastHandler)
 	notify.BUS.Subscribe(notify.TransactionReq, handler.transactionReqHandler)
 	notify.BUS.Subscribe(notify.TransactionGot, handler.transactionGotHandler)
 	notify.BUS.Subscribe(notify.CoinProxyNotify, handler.coinProxyHandler)
@@ -33,20 +32,6 @@ func initChainHandler() {
 
 func (c *ChainHandler) Handle(sourceId string, msg network.Message) error {
 	return nil
-}
-
-func (ch ChainHandler) transactionBroadcastHandler(msg notify.Message) {
-	mtm, ok := msg.(*notify.TransactionBroadcastMessage)
-	if !ok {
-		logger.Debugf("transactionBroadcastHandler:Message assert not ok!")
-		return
-	}
-	txs, e := types.UnMarshalTransactions(mtm.TransactionsByte)
-	if e != nil {
-		logger.Errorf("Unmarshal transactions error:%s", e.Error())
-		return
-	}
-	service.GetTransactionPool().AddBroadcastTransactions(txs)
 }
 
 func (ch ChainHandler) transactionReqHandler(msg notify.Message) {

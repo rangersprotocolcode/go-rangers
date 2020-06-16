@@ -54,28 +54,6 @@ func sendTransactions(txs []*types.Transaction, sourceId string) {
 	go network.GetNetInstance().Send(sourceId, message)
 }
 
-func broadcastTransactions(txs []*types.Transaction) {
-	defer func() {
-		if r := recover(); r != nil {
-			logger.Errorf("Runtime error caught: %v", r)
-		}
-	}()
-	if len(txs) > 0 {
-		body, e := types.MarshalTransactions(txs)
-		if e != nil {
-			logger.Errorf("Marshal txs error:%s", e.Error())
-			return
-		}
-		logger.Debugf("Broadcast transactions len:%d", len(txs))
-		message := network.Message{Code: network.TransactionBroadcastMsg, Body: body}
-
-		netInstance := network.GetNetInstance()
-		if netInstance != nil {
-			go network.GetNetInstance().Broadcast(message)
-		}
-	}
-}
-
 func sendBlock(targetId string, block *types.Block, isLastBlock bool) {
 	if block == nil {
 		logger.Debugf("Send nil block to:%s", targetId)
