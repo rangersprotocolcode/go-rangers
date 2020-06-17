@@ -12,7 +12,6 @@ import (
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"strconv"
-	"sync"
 	"time"
 )
 
@@ -56,73 +55,20 @@ const maxWriteSize = 100000
 
 // 用于处理client websocket请求
 type GameExecutor struct {
-	chain *blockChain
-
-	requestIds    map[string]uint64
-	requestIdLock sync.RWMutex
-
-	conds sync.Map
-
-	debug     bool // debug 为true，则不开启requestId校验
+	chain     *blockChain
 	writeChan chan notify.Message
-
-	logger log.Logger
+	logger    log.Logger
 }
 
 func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor := GameExecutor{chain: blockChainImpl}
 	gameExecutor.logger = log.GetLoggerByIndex(log.GameExecutorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
-	// 初始值，从已有的块中获取
-	gameExecutor.requestIds = blockChainImpl.requestIds
-	if nil == gameExecutor.requestIds {
-		gameExecutor.requestIds = make(map[string]uint64)
-	}
-
-	gameExecutor.requestIdLock = sync.RWMutex{}
-	gameExecutor.conds = sync.Map{}
-
-	if nil != common.GlobalConf {
-		gameExecutor.debug = common.GlobalConf.GetBool("gx", "debug", true)
-	} else {
-		gameExecutor.debug = true
-	}
-
-	//gameExecutor.debug = false
 	gameExecutor.writeChan = make(chan notify.Message, maxWriteSize)
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.Write)
 	go gameExecutor.loop()
 
 	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.Read)
-	notify.BUS.Subscribe(notify.BlockAddSucc, gameExecutor.onBlockAddSuccess)
-}
-
-func (executor *GameExecutor) getCond(gameId string) *sync.Cond {
-	defaultValue := sync.NewCond(new(sync.Mutex))
-	value, _ := executor.conds.LoadOrStore(gameId, defaultValue)
-
-	return value.(*sync.Cond)
-}
-
-func (executor *GameExecutor) onBlockAddSuccess(message notify.Message) {
-	block := message.GetData().(types.Block)
-	bh := block.Header
-
-	executor.requestIdLock.Lock()
-	defer executor.requestIdLock.Unlock()
-
-	key := "fixed"
-	value := bh.RequestIds[key]
-	executor.logger.Warnf(" %s requestId: %d", key, executor.requestIds[key])
-	if executor.requestIds[key] < value {
-		executor.getCond(key).L.Lock()
-		executor.logger.Infof("upgrade %s requestId, from %d to %d, height: %d, hash: %s", key, executor.requestIds[key], value, bh.Height, bh.Hash.String())
-		executor.requestIds[key] = value
-
-		executor.getCond(key).Broadcast()
-		executor.getCond(key).L.Unlock()
-	}
-
 }
 
 func (executor *GameExecutor) Read(msg notify.Message) {
@@ -244,7 +190,7 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 	executor.writeChan <- msg
 }
 
-func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId uint64) (bool, string) {
+func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw types.Transaction) (bool, string) {
 	txhash := txRaw.Hash.String()
 	executor.logger.Debugf("run tx. hash: %s", txhash)
 
@@ -257,7 +203,6 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 	result := true
 
 	start := utility.GetTime()
-	accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
 	if err := service.GetTransactionPool().ProcessFee(txRaw, accountDB); err != nil {
 		return false, err.Error()
 	}
@@ -268,7 +213,6 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 		executor.logger.Debugf("begin TransactionTypeOperatorEvent. txhash: %s, appId: %s, transferInfo: %s, payload: %s", txhash, txRaw.Target, txRaw.ExtraData, txRaw.Data)
 
 		gameId := txRaw.Target
-		accountDB := service.AccountDBManagerInstance.GetAccountDB(gameId, true)
 		isTransferOnly := 0 == len(gameId)
 
 		// 只是转账
@@ -293,11 +237,6 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 		if nil != service.TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw) {
 			// bingo
 			executor.logger.Infof("Tx is executed!")
-			if !executor.debug {
-				executor.requestIdLock.Lock()
-				executor.requestIds[txRaw.Target] = executor.requestIds[txRaw.Target] + 1
-				executor.requestIdLock.Unlock()
-			}
 			return false, "Tx Is Executed"
 		}
 
@@ -309,7 +248,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 		var outputMessage *types.OutputMessage
 		if result && len(txRaw.Data) != 0 {
 			txRaw.SubTransactions = make([]types.UserData, 0)
-			outputMessage = statemachine.STMManger.Process(txRaw.Target, "operator", requestId, txRaw.Data, &txRaw)
+			outputMessage = statemachine.STMManger.Process(txRaw.Target, "operator", txRaw.RequestId, txRaw.Data, &txRaw)
 			executor.logger.Debugf("txhash %s invoke state machine. result:%v", txhash, outputMessage)
 			if outputMessage != nil {
 				message = outputMessage.Payload
@@ -335,9 +274,6 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 		executor.logger.Debugf("end TransactionTypeOperatorEvent. txhash: %s", txhash)
 
 	case types.TransactionTypeWithdraw:
-		gameId := txRaw.Target
-		accountDB := service.AccountDBManagerInstance.GetAccountDB(gameId, true)
-
 		response, ok := service.Withdraw(accountDB, &txRaw, false)
 		if ok {
 			message = response
@@ -350,7 +286,6 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 
 	case types.TransactionTypePublishFT:
 		appId := txRaw.Source
-		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
 		id, ok := service.PublishFT(accountDB, &txRaw)
 		if ok {
 			var ftSet map[string]string
@@ -369,8 +304,6 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 		break
 
 	case types.TransactionTypePublishNFTSet:
-		appId := txRaw.Source
-		accountDB := service.AccountDBManagerInstance.GetAccountDB(appId, true)
 		flag, response := service.PublishNFTSet(accountDB, &txRaw)
 		if flag {
 			message = txRaw.Data
@@ -382,7 +315,6 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 		break
 
 	case types.TransactionTypeMintFT:
-		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
 		flag, response := service.MintFT(accountDB, &txRaw)
 
 		result = flag
@@ -390,34 +322,29 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 		break
 
 	case types.TransactionTypeMintNFT:
-		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
 		flag, response := service.MintNFT(accountDB, &txRaw)
 		message = response
 		result = flag
 		break
 
 	case types.TransactionTypeShuttleNFT:
-		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
 		ok, response := service.ShuttleNFT(accountDB, &txRaw)
 		message = response
 		result = ok
 		break
 
 	case types.TransactionTypeUpdateNFT:
-		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
 		ok, response := service.UpdateNFT(accountDB, &txRaw)
 		message = response
 		result = ok
 		break
 
 	case types.TransactionTypeApproveNFT:
-		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
 		ok, response := service.ApproveNFT(accountDB, &txRaw)
 		message = response
 		result = ok
 		break
 	case types.TransactionTypeRevokeNFT:
-		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
 		ok, response := service.RevokeNFT(accountDB, &txRaw)
 		message = response
 		result = ok
@@ -427,15 +354,7 @@ func (executor *GameExecutor) runTransaction(txRaw types.Transaction, requestId 
 	// 打包入块
 	// 入块时不再需要调用状态机，因为已经执行过了
 	executor.sendTransaction(&txRaw)
-
-	// bingo
-	if !executor.debug {
-		executor.requestIdLock.Lock()
-		executor.requestIds["fixed"] = executor.requestIds["fixed"] + 1
-		executor.requestIdLock.Unlock()
-	}
-
-	executor.logger.Debugf("finish tx. result: %t, message: %s, cost time : %v, txhash: %s, requestId: %d", result, message, time.Since(start), txhash, executor.getRequestId("fixed"))
+	executor.logger.Debugf("finish tx. result: %t, message: %s, cost time : %v, txhash: %s, requestId: %d", result, message, time.Since(start), txhash, txRaw.RequestId)
 	return result, message
 }
 
@@ -516,7 +435,6 @@ func (executor *GameExecutor) RunWrite(msg notify.Message) {
 
 	txRaw := message.Tx
 	txRaw.RequestId = message.Nonce
-	gameId := "fixed"
 
 	// 校验交易类型
 	//transactionType := txRaw.Type
@@ -527,35 +445,20 @@ func (executor *GameExecutor) RunWrite(msg notify.Message) {
 	//}
 
 	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
-	// 校验 requestId
-	if !executor.debug {
-		requestId := message.Nonce
-		if requestId <= executor.getRequestId(gameId) {
-			// 已经执行过的消息，忽略
-			executor.logger.Errorf("%s requestId :%d skipped, current requestId: %d", gameId, requestId, executor.getRequestId(gameId))
-			return
-		}
 
-		// requestId 按序执行
-		executor.getCond(gameId).L.Lock()
-		for ; requestId != (executor.getRequestId(gameId) + 1); {
-
-			// waiting until the right requestId
-			executor.logger.Infof("%s requestId :%d is waiting, current requestId: %d", gameId, requestId, executor.getRequestId(gameId))
-
-			// todo 超时放弃
-			executor.getCond(gameId).Wait()
-		}
+	accountDB := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
+	if nil == accountDB {
+		return
 	}
+	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce+1)
 
 	if err := service.GetTransactionPool().VerifyTransaction(&txRaw); err != nil {
 		response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
 		go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
 		return
-
 	}
 
-	result, execMessage := executor.runTransaction(txRaw, message.Nonce)
+	result, execMessage := executor.runTransaction(accountDB, txRaw)
 
 	// reply to the client
 	var response []byte
@@ -565,16 +468,4 @@ func (executor *GameExecutor) RunWrite(msg notify.Message) {
 		response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
 	}
 	go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
-
-	if !executor.debug {
-		executor.getCond(gameId).Broadcast()
-		executor.getCond(gameId).L.Unlock()
-	}
-}
-
-func (executor *GameExecutor) getRequestId(gameId string) uint64 {
-	executor.requestIdLock.RLock()
-	defer executor.requestIdLock.RUnlock()
-
-	return executor.requestIds[gameId]
 }

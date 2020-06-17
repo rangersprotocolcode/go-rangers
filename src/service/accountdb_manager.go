@@ -11,10 +11,12 @@ import (
 const stateDBPrefix = "state"
 
 type AccountDBManager struct {
-	lock *sync.RWMutex //用于锁定BASE
-
+	lock          *sync.RWMutex //用于锁定BASE
+	conds         sync.Map
 	stateDB       account.AccountDatabase
 	latestStateDB *account.AccountDB
+	requestId     uint64
+	debug         bool // debug 为true，则不开启requestId校验
 }
 
 var AccountDBManagerInstance AccountDBManager
@@ -22,6 +24,12 @@ var AccountDBManagerInstance AccountDBManager
 func initAccountDBManager() {
 	AccountDBManagerInstance = AccountDBManager{}
 	AccountDBManagerInstance.lock = &sync.RWMutex{}
+	AccountDBManagerInstance.conds = sync.Map{}
+	if nil != common.GlobalConf {
+		AccountDBManagerInstance.debug = common.GlobalConf.GetBool("gx", "debug", true)
+	} else {
+		AccountDBManagerInstance.debug = true
+	}
 
 	db, err := db.NewDatabase(stateDBPrefix)
 	if err != nil {
@@ -29,6 +37,30 @@ func initAccountDBManager() {
 		panic(err)
 	}
 	AccountDBManagerInstance.stateDB = account.NewDatabase(db)
+}
+
+func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *account.AccountDB {
+	// 校验 nonce
+	if !manager.debug {
+		if nonce <= manager.getRequestId() {
+			// 已经执行过的消息，忽略
+			logger.Errorf("%s requestId :%d skipped, current requestId: %d", "", nonce, manager.getRequestId())
+			return nil
+		}
+
+		// requestId 按序执行
+		manager.getCond().L.Lock()
+		for ; nonce != (manager.getRequestId() + 1); {
+
+			// waiting until the right requestId
+			logger.Infof("requestId :%d is waiting, current requestId: %d", nonce, manager.getRequestId())
+
+			// todo 超时放弃
+			manager.getCond().Wait()
+		}
+	}
+
+	return manager.GetLatestStateDB()
 }
 
 //todo: 功能增强
@@ -49,13 +81,43 @@ func (manager *AccountDBManager) GetLatestStateDB() *account.AccountDB {
 }
 
 //
-func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.AccountDB) {
+func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *account.AccountDB, nonce uint64) {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 
-	manager.latestStateDB = latestStateDB
+	logger.Warnf("accountDB set requestId: %d, current: %d", nonce, manager.requestId)
+	if nil == manager.latestStateDB || nonce > manager.requestId {
+		manager.latestStateDB = latestStateDB
+		manager.requestId = nonce
+	}
+
+	if !manager.debug {
+		manager.getCond().Broadcast()
+		manager.getCond().L.Unlock()
+	}
+}
+
+func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.AccountDB, requestIds map[string]uint64) {
+	key := "fixed"
+	value := requestIds[key]
+	manager.SetLatestStateDBWithNonce(latestStateDB, value)
 }
 
 func (manager *AccountDBManager) GetTrieDB() *trie.NodeDatabase {
 	return manager.stateDB.TrieDB()
+}
+
+func (manager *AccountDBManager) getCond() *sync.Cond {
+	gameId := "fixed"
+	defaultValue := sync.NewCond(new(sync.Mutex))
+	value, _ := manager.conds.LoadOrStore(gameId, defaultValue)
+
+	return value.(*sync.Cond)
+}
+
+func (manager *AccountDBManager) getRequestId() uint64 {
+	manager.lock.RLock()
+	defer manager.lock.RUnlock()
+
+	return manager.requestId
 }

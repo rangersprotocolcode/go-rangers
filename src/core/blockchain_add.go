@@ -64,7 +64,7 @@ func (chain *blockChain) addBlockOnChain(source string, coming *types.Block, sit
 	if _, verifyResult := chain.verifyBlock(*comingHeader, coming.Transactions); verifyResult != 0 {
 		logger.Errorf("Fail to VerifyCastingBlock, reason code:%d \n", verifyResult)
 		if verifyResult == 2 {
-			logger.Warnf("coming block has no pre on local chain.Forking...", )
+			logger.Warnf("coming block has no pre on local chain.Forking...")
 			go chain.forkProcessor.requestChainPieceInfo(source, chain.latestBlock.Height)
 		}
 		return types.AddBlockFailed
@@ -146,7 +146,7 @@ func (chain *blockChain) executeTransaction(block *types.Block) (bool, *account.
 		return false, state, receipts
 	}
 
-	chain.verifiedBlocks.Add(block.Header.Hash, &castingBlock{state: state, receipts: receipts,})
+	chain.verifiedBlocks.Add(block.Header.Hash, &castingBlock{state: state, receipts: receipts})
 	return true, state, receipts
 }
 
@@ -256,7 +256,7 @@ func (chain *blockChain) updateLastBlock(state *account.AccountDB, block *types.
 	chain.latestBlock = header
 	chain.requestIds = header.RequestIds
 
-	service.AccountDBManagerInstance.SetLatestStateDB(state)
+	service.AccountDBManagerInstance.SetLatestStateDB(state, block.Header.RequestIds)
 	logger.Debugf("Update latestStateDB:%s height:%d", header.StateTree.Hex(), header.Height)
 
 	return true
@@ -275,7 +275,7 @@ func (chain *blockChain) updateTxPool(block *types.Block, receipts types.Receipt
 
 func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block) {
 	logger.Infof("ON chain succ! height=%d,hash=%s", remoteBlock.Header.Height, remoteBlock.Header.Hash.Hex())
-	notify.BUS.Publish(notify.BlockAddSucc, &notify.BlockOnChainSuccMessage{Block: *remoteBlock,})
+	notify.BUS.Publish(notify.BlockAddSucc, &notify.BlockOnChainSuccMessage{Block: *remoteBlock})
 	if value, _ := chain.futureBlocks.Get(remoteBlock.Header.Hash); value != nil {
 		block := value.(*types.Block)
 		logger.Debugf("Get block from future blocks,hash:%s,height:%d", block.Header.Hash.String(), block.Header.Height)
