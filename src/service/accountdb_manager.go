@@ -92,7 +92,7 @@ func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *accoun
 
 	logger.Warnf("accountDB set requestId: %d, current: %d, msg: %s", nonce, manager.requestId, msg)
 	if nil == manager.latestStateDB || nonce > manager.requestId {
-		manager.closeLatestStateDB()
+		// manager.closeLatestStateDB()
 		manager.latestStateDB = latestStateDB
 		manager.requestId = nonce
 
