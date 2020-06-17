@@ -92,6 +92,7 @@ func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *accoun
 
 	logger.Warnf("accountDB set requestId: %d, current: %d, msg: %s", nonce, manager.requestId, msg)
 	if nil == manager.latestStateDB || nonce > manager.requestId {
+		manager.closeLatestStateDB()
 		manager.latestStateDB = latestStateDB
 		manager.requestId = nonce
 
@@ -117,4 +118,17 @@ func (manager *AccountDBManager) getCond() *sync.Cond {
 	value, _ := manager.conds.LoadOrStore(gameId, defaultValue)
 
 	return value.(*sync.Cond)
+}
+
+func (manager *AccountDBManager) closeLatestStateDB() {
+	root, err := manager.latestStateDB.Commit(true)
+	if err != nil {
+		logger.Errorf("State commit error: %s", err.Error())
+		return
+	}
+
+	err = manager.stateDB.TrieDB().Commit(root, false)
+	if err != nil {
+		logger.Errorf("Trie commit error: %s", err.Error())
+	}
 }
