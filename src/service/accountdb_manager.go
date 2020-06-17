@@ -81,11 +81,11 @@ func (manager *AccountDBManager) GetLatestStateDB() *account.AccountDB {
 }
 
 //
-func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *account.AccountDB, nonce uint64) {
+func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *account.AccountDB, nonce uint64, msg string) {
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 
-	logger.Warnf("accountDB set requestId: %d, current: %d", nonce, manager.requestId)
+	logger.Warnf("accountDB set requestId: %d, current: %d, msg: %s", nonce, manager.requestId, msg)
 	if nil == manager.latestStateDB || nonce > manager.requestId {
 		manager.latestStateDB = latestStateDB
 		manager.requestId = nonce
@@ -100,7 +100,7 @@ func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *accoun
 func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.AccountDB, requestIds map[string]uint64) {
 	key := "fixed"
 	value := requestIds[key]
-	manager.SetLatestStateDBWithNonce(latestStateDB, value)
+	manager.SetLatestStateDBWithNonce(latestStateDB, value, "add block")
 }
 
 func (manager *AccountDBManager) GetTrieDB() *trie.NodeDatabase {

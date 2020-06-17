@@ -450,7 +450,7 @@ func (executor *GameExecutor) RunWrite(msg notify.Message) {
 	if nil == accountDB {
 		return
 	}
-	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce+1)
+	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce+1, "gameExecutor")
 
 	if err := service.GetTransactionPool().VerifyTransaction(&txRaw); err != nil {
 		response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
