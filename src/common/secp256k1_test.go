@@ -25,11 +25,37 @@ func TestKeyLength(test *testing.T) {
 	fmt.Printf("pubkey x:%v,lenX:%d\n", pubKeyX, len(pubKeyX))
 	fmt.Printf("pubkey y:%v,lenY:%d\n", pubKeyY, len(pubKeyY))
 	//assert.Equal(test, len(privateKey), 32)
-	assert.Equal(test, len(key.GetPubKey().ToBytes()), 65)
+	assert.Equal(test, 65, len(key.GetPubKey().ToBytes()))
 }
 
 func TestSignAndVerifyOnce(test *testing.T) {
 	runSigAndVerifyOnce(test)
+}
+
+func TestSignAndVerifyOnceByFixKey(test *testing.T) {
+	sk := HexStringToSecKey("0x04008627e8037ef68a2722091ca8507e91e65ce93ab621a59ca647d1361eb8337129713294ffdbef401d609cac491c25094b34ff82190fd54e721628479095d74d4333024273384e11372c1d2ab3af8bd5ae7221ead96bfc3ee36b73c6e8e594d1")
+
+	msg := Hex2Bytes("7fd31ab615e73fc5d091238f00ad3390c651731a0dfdb8867f98b930d21af56c")
+	fmt.Printf("privatekey:%v,pubkey:%v\n", sk.GetHexString(), sk.GetPubKey().GetHexString())
+
+	sign := sk.Sign(msg)
+	assert.Equal(test, 65, len(sign.Bytes()))
+	fmt.Printf("sign:%v,length:%d\n", sign.GetHexString(), len(sign.Bytes()))
+
+	recoveredPubKey, err := secp256k1.RecoverPubkey(msg, sign.Bytes())
+	if err != nil {
+		test.Error("recover pubkey error:", err)
+	}
+	fmt.Printf("Recovered pubkey:%v,length:%d\n", Bytes2Hex(recoveredPubKey), len(recoveredPubKey))
+	assert.Equal(test, sk.GetPubKey().ToBytes(), recoveredPubKey)
+
+	verifyResult := secp256k1.VerifySignature(recoveredPubKey, msg, sign.Bytes())
+	assert.Equal(test, true, verifyResult)
+
+	pk := BytesToPublicKey(recoveredPubKey)
+	fmt.Printf("Recovered pubkey:%v\n", pk.GetHexString())
+	revoveredId := pk.GetAddress().GetHexString()
+	fmt.Printf("Recovered id:%v\n", revoveredId)
 }
 
 func TestSignAndVerifyRepeatedly(test *testing.T) {
@@ -56,7 +82,7 @@ func TestSignAndVerifyByFixedKey(test *testing.T) {
 		fmt.Printf("Recovered pubkey:%v,length:%d\n", recoveredPubKey, len(recoveredPubKey))
 
 		verifyResult := secp256k1.VerifySignature(recoveredPubKey, msg, sign.Bytes())
-		assert.Equal(test, verifyResult, true)
+		assert.Equal(test, true, verifyResult)
 	}
 }
 
@@ -90,7 +116,7 @@ func runSigAndVerifyOnce(test *testing.T) {
 	fmt.Printf("privatekey:%v,length:%d\n", key.ToBytes(), len(key.ToBytes()))
 
 	sign := key.Sign(msg)
-	assert.Equal(test, len(sign.Bytes()), 65)
+	assert.Equal(test, 65, len(sign.Bytes()))
 	//fmt.Printf("sign:%v,length:%d\n", sign.Bytes(), len(sign.Bytes()))
 
 	recoveredPubKey, err := secp256k1.RecoverPubkey(msg, sign.Bytes())
@@ -98,10 +124,10 @@ func runSigAndVerifyOnce(test *testing.T) {
 		test.Error("recover pubkey error:", err)
 	}
 	//fmt.Printf("Recovered pubkey:%v,length:%d\n", recoveredPubKey, len(recoveredPubKey))
-	assert.Equal(test, recoveredPubKey, key.GetPubKey().ToBytes())
+	assert.Equal(test, key.GetPubKey().ToBytes(), recoveredPubKey)
 
 	verifyResult := secp256k1.VerifySignature(recoveredPubKey, msg, sign.Bytes())
-	assert.Equal(test, verifyResult, true)
+	assert.Equal(test, true, verifyResult)
 }
 
 //---------------------------------------Benchmark Test-----------------------------------------------------------------
@@ -136,7 +162,7 @@ func BenchmarkRecoverPubKey(b *testing.B) {
 		}
 
 		privateKey := privateList[i]
-		assert.Equal(b, recoveredPubKey, privateKey.GetPubKey().ToBytes())
+		assert.Equal(b, privateKey.GetPubKey().ToBytes(), recoveredPubKey)
 	}
 }
 
@@ -149,7 +175,7 @@ func BenchmarkVerifySign(b *testing.B) {
 		privateKey := privateList[i]
 
 		verifyResult := privateKey.GetPubKey().Verify(message, &sign)
-		assert.Equal(b, verifyResult, true)
+		assert.Equal(b, true, verifyResult)
 	}
 }
 
@@ -162,7 +188,7 @@ func BenchmarkSignAndVerifySign(b *testing.B) {
 
 		sign := privateKey.Sign(message)
 		verifyResult := privateKey.GetPubKey().Verify(message, &sign)
-		assert.Equal(b, verifyResult, true)
+		assert.Equal(b, true, verifyResult)
 	}
 }
 
@@ -195,6 +221,11 @@ func TestGenComparisonData(test *testing.T) {
 		buffer.WriteString("|sign:")
 		sign := key.Sign(messageByte)
 		buffer.WriteString(sign.GetHexString())
+
+		buffer.WriteString("|id:")
+		id := key.GetPubKey().GetID()
+		buffer.WriteString(ToHex(id[:]))
+
 		buffer.WriteString("\n")
 	}
 	ioutil.WriteFile(fileName, buffer.Bytes(), 0644)
@@ -221,17 +252,18 @@ func TestValidateComparisonData(test *testing.T) {
 		publicKey := strings.Replace(elements[1], "publicKey:", "", 1)
 		message := strings.Replace(elements[2], "message:", "", 1)
 		sign := strings.Replace(elements[3], "sign:", "", 1)
+		id := strings.Replace(elements[4], "id:", "", 1)
 
 		//fmt.Println(privateKey)
 		//fmt.Println(publicKey)
 		//fmt.Println(message)
 		//fmt.Println(sign)
 
-		validateFunction(privateKey, publicKey, message, sign, test)
+		validateFunction(privateKey, publicKey, message, sign, id, test)
 	}
 }
 
-func validateFunction(privateKeyStr, publicKeyStr, message, signStr string, test *testing.T) {
+func validateFunction(privateKeyStr, publicKeyStr, message, signStr, idStr string, test *testing.T) {
 
 	privateKeyBuf, _ := hex.DecodeString(privateKeyStr[len(PREFIX):])
 	fmt.Printf("privateKeyBuf len:%d\n", len(privateKeyBuf))
@@ -260,5 +292,9 @@ func validateFunction(privateKeyStr, publicKeyStr, message, signStr string, test
 
 	//verify sign
 	verifyResult := publicKey.Verify(messageBytes, sign)
-	assert.Equal(test, verifyResult, true)
+	assert.Equal(test, true, verifyResult)
+
+	//verify id
+	id := publicKey.GetID()
+	assert.Equal(test, idStr, ToHex(id[:]))
 }
