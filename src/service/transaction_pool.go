@@ -410,7 +410,7 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 	} else {
 		pool.received.push(tx)
 	}
-	txPoolLogger.Debugf("Add tx:%s.After add,received  size:%d,miner txs size:%d", tx.Hash.String(), pool.received.Len(), pool.minerTxs.Len())
+	txPoolLogger.Debugf("Add tx:%s. After add,received size:%d, miner txs size: %d", tx.Hash.String(), pool.received.Len(), pool.minerTxs.Len())
 	return true, nil
 }
 
@@ -418,7 +418,7 @@ func (pool *TxPool) remove(txHash common.Hash) {
 	pool.minerTxs.Remove(txHash)
 	pool.missTxs.Remove(txHash)
 	pool.received.remove(txHash)
-	txPoolLogger.Debugf("Remove tx:%s.After remove,received size:%d,miner txs size:%d", txHash.String(), pool.received.Len(), pool.minerTxs.Len())
+	txPoolLogger.Debugf("Remove tx:%s. After remove, received size:%d, miner txs size: %d", txHash.String(), pool.received.Len(), pool.minerTxs.Len())
 }
 
 func (pool *TxPool) isTransactionExisted(hash common.Hash) bool {

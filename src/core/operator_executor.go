@@ -16,7 +16,7 @@ type operatorExecutor struct {
 }
 
 func (this *operatorExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
-	logger.Debugf("Begin transaction is not nil!")
+	logger.Debugf("txhash: %s begin transaction is not nil!", transaction.Hash.String())
 
 	// 处理转账
 	// 支持多人转账{"address1":"value1", "address2":"value2"}
@@ -28,6 +28,7 @@ func (this *operatorExecutor) Execute(transaction *types.Transaction, header *ty
 
 		}
 		msg, ok := service.ChangeAssets(transaction.Source, mm, accountdb)
+		logger.Debugf("txhash: %s, finish changeAssets. msg: %s", transaction.Hash.String(), msg)
 		if !ok {
 			return false, msg
 		}

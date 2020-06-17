@@ -116,7 +116,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 						this.accountdb.SetNonce(common.HexToAddress(transaction.Source), transaction.Nonce)
 					}
 
-					logger.Debugf("Execute success %s,type:%d", transaction.Hash.String(), transaction.Type)
+					logger.Debugf("Execute success, txhash: %s, type: %d", transaction.Hash.String(), transaction.Type)
 				}
 			}
 		}
