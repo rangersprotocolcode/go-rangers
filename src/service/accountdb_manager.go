@@ -40,20 +40,23 @@ func initAccountDBManager() {
 }
 
 func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *account.AccountDB {
+	manager.lock.RLock()
+	defer manager.lock.RUnlock()
+
 	// 校验 nonce
 	if !manager.debug {
-		if nonce <= manager.getRequestId() {
+		if nonce <= manager.requestId {
 			// 已经执行过的消息，忽略
-			logger.Errorf("%s requestId :%d skipped, current requestId: %d", "", nonce, manager.getRequestId())
+			logger.Errorf("%s requestId :%d skipped, current requestId: %d", "", nonce, manager.requestId)
 			return nil
 		}
 
 		// requestId 按序执行
 		manager.getCond().L.Lock()
-		for ; nonce != (manager.getRequestId() + 1); {
+		for ; nonce != (manager.requestId + 1); {
 
 			// waiting until the right requestId
-			logger.Infof("requestId :%d is waiting, current requestId: %d", nonce, manager.getRequestId())
+			logger.Infof("requestId :%d is waiting, current requestId: %d", nonce, manager.requestId)
 
 			// todo 超时放弃
 			manager.getCond().Wait()
@@ -113,11 +116,4 @@ func (manager *AccountDBManager) getCond() *sync.Cond {
 	value, _ := manager.conds.LoadOrStore(gameId, defaultValue)
 
 	return value.(*sync.Cond)
-}
-
-func (manager *AccountDBManager) getRequestId() uint64 {
-	manager.lock.RLock()
-	defer manager.lock.RUnlock()
-
-	return manager.requestId
 }
