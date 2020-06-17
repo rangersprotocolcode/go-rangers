@@ -37,8 +37,6 @@ const (
 
 	Group = "group"
 
-	TransactionBroadcast = "transaction_broadcast"
-
 	TransactionReq = "transaction_req"
 
 	TransactionGot = "transaction_got"

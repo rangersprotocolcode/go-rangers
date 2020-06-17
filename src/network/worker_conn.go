@@ -95,9 +95,6 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 	case TransactionGotMsg:
 		msg := notify.TransactionGotMessage{TransactionGotByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.TransactionGot, &msg)
-	case TransactionBroadcastMsg:
-		msg := notify.TransactionBroadcastMessage{TransactionsByte: message.Body, Peer: from}
-		notify.BUS.Publish(notify.TransactionBroadcast, &msg)
 	case BlockInfoNotifyMsg:
 		msg := notify.BlockInfoNotifyMessage{BlockInfo: message.Body, Peer: from}
 		notify.BUS.Publish(notify.BlockInfoNotify, &msg)

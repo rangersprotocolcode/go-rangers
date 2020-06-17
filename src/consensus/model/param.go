@@ -18,7 +18,7 @@ const (
 	CANDIDATES_MIN_RATIO     = 1  //最小的候选人相对于组成员数量的倍数
 
 	Group_Wait_Pong_Gap   = common.Group_Create_Gap + common.EPOCH*2
-	GROUP_Ready_GAP       = common.Group_Create_Gap + common.EPOCH*6    //组准备就绪(建成组)的间隔为1个epoch
+	GROUP_Ready_GAP       = common.Group_Create_Gap + common.EPOCH*6 //组准备就绪(建成组)的间隔为1个epoch
 	Group_Create_Interval = common.EPOCH * 10
 )
 
@@ -66,7 +66,7 @@ func InitParam(cc common.SectionConfManager) {
 		CandidatesMinRatio:  cc.GetInt("candidates_min_ratio", CANDIDATES_MIN_RATIO),
 		GroupReadyGap:       uint64(cc.GetInt("group_ready_gap", GROUP_Ready_GAP)),
 		//EffectGapAfterApply: EPOCH,
-		PotentialProposal:   5,
+		PotentialProposal:   8,
 		CreateGroupInterval: uint64(Group_Create_Interval),
 		GroupCreateGap:      uint64(common.Group_Create_Gap),
 		GroupWaitPongGap:    uint64(Group_Wait_Pong_Gap),

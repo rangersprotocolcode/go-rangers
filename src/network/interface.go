@@ -28,8 +28,6 @@ const (
 
 	TransactionGotMsg uint32 = 10
 
-	TransactionBroadcastMsg uint32 = 11
-
 	//-----------块同步---------------------------------
 	BlockInfoNotifyMsg uint32 = 12
 
