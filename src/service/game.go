@@ -217,6 +217,8 @@ func ChangeAssets(source string, targets map[string]types.TransferData, accountd
 		if !transferBalance(transferData.Balance, sourceAddr, targetAddr, accountdb) {
 			logger.Debugf("Transfer balance failed!")
 			return "Transfer Balance Failed", false
+		} else {
+			logger.Debugf("%s to %s, target: %s", source, address, utility.BigIntToStr(accountdb.GetBalance(targetAddr)))
 		}
 
 		// 转coin
