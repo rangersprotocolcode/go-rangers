@@ -121,6 +121,10 @@ func (manager *AccountDBManager) getCond() *sync.Cond {
 }
 
 func (manager *AccountDBManager) closeLatestStateDB() {
+	if nil == manager.latestStateDB {
+		return
+	}
+
 	root, err := manager.latestStateDB.Commit(true)
 	if err != nil {
 		logger.Errorf("State commit error: %s", err.Error())
