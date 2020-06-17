@@ -41,9 +41,6 @@ func initAccountDBManager() {
 }
 
 func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *account.AccountDB {
-	manager.lock.RLock()
-	defer manager.lock.RUnlock()
-
 	// 校验 nonce
 	if !manager.debug {
 		if nonce <= manager.requestId {
@@ -64,6 +61,9 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *accou
 		}
 		manager.getCond().L.Unlock()
 	}
+
+	manager.lock.RLock()
+	defer manager.lock.RUnlock()
 
 	return manager.latestStateDB
 }
