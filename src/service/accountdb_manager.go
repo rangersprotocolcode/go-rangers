@@ -31,7 +31,7 @@ func initAccountDBManager() {
 	//	AccountDBManagerInstance.debug = true
 	//}
 
-	AccountDBManagerInstance.debug = true
+	AccountDBManagerInstance.debug = false
 	db, err := db.NewDatabase(stateDBPrefix)
 	if err != nil {
 		logger.Errorf("Init accountDB error! Error:%s", err.Error())
