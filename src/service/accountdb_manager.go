@@ -63,7 +63,7 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *accou
 		}
 	}
 
-	return manager.GetLatestStateDB()
+	return manager.latestStateDB
 }
 
 //todo: 功能增强
