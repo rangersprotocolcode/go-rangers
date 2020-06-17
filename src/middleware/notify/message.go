@@ -2,6 +2,7 @@ package notify
 
 import (
 	"com.tuntun.rocket/node/src/middleware/types"
+	"encoding/json"
 )
 
 type NewBlockMessage struct {
@@ -289,6 +290,15 @@ func (m *ClientTransactionMessage) GetRaw() []byte {
 }
 func (m *ClientTransactionMessage) GetData() interface{} {
 	return m
+}
+
+func (m *ClientTransactionMessage) TOJSONString() string {
+	result := make(map[string]string, 0)
+	result["tx"] = m.Tx.ToTxJson().ToString()
+	result["userId"] = m.UserId
+
+	byte, _ := json.Marshal(result)
+	return string(byte)
 }
 
 type CoinProxyNotifyMessage struct {

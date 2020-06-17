@@ -56,7 +56,7 @@ const maxWriteSize = 100000
 // 用于处理client websocket请求
 type GameExecutor struct {
 	chain     *blockChain
-	writeChan chan notify.Message
+	writeChan chan notify.ClientTransactionMessage
 	logger    log.Logger
 }
 
@@ -64,7 +64,7 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor := GameExecutor{chain: blockChainImpl}
 	gameExecutor.logger = log.GetLoggerByIndex(log.GameExecutorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
-	gameExecutor.writeChan = make(chan notify.Message, maxWriteSize)
+	gameExecutor.writeChan = make(chan notify.ClientTransactionMessage, maxWriteSize)
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.Write)
 	go gameExecutor.loop()
 
@@ -182,12 +182,19 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 }
 
 func (executor *GameExecutor) Write(msg notify.Message) {
-	executor.logger.Debugf("write rcv message :%v", msg)
 	if len(executor.writeChan) == maxWriteSize {
 		executor.logger.Errorf("write rcv message error: %v", msg)
 		return
 	}
-	executor.writeChan <- msg
+
+	message, ok := msg.(*notify.ClientTransactionMessage)
+	if !ok {
+		executor.logger.Errorf("GameExecutor:Write assert not ok!")
+		return
+	}
+
+	executor.logger.Debugf("write rcv message: %s", message.TOJSONString())
+	executor.writeChan <- *message
 }
 
 func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw types.Transaction) (bool, string) {
@@ -426,13 +433,7 @@ func (executor *GameExecutor) loop() {
 	}
 }
 
-func (executor *GameExecutor) RunWrite(msg notify.Message) {
-	message, ok := msg.(*notify.ClientTransactionMessage)
-	if !ok {
-		executor.logger.Errorf("GameExecutor:Write assert not ok!")
-		return
-	}
-
+func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) {
 	txRaw := message.Tx
 	txRaw.RequestId = message.Nonce
 
