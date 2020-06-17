@@ -25,12 +25,13 @@ func initAccountDBManager() {
 	AccountDBManagerInstance = AccountDBManager{}
 	AccountDBManagerInstance.lock = &sync.RWMutex{}
 	AccountDBManagerInstance.conds = sync.Map{}
-	if nil != common.GlobalConf {
-		AccountDBManagerInstance.debug = common.GlobalConf.GetBool("gx", "debug", true)
-	} else {
-		AccountDBManagerInstance.debug = true
-	}
+	//if nil != common.GlobalConf {
+	//	AccountDBManagerInstance.debug = common.GlobalConf.GetBool("gx", "debug", true)
+	//} else {
+	//	AccountDBManagerInstance.debug = true
+	//}
 
+	AccountDBManagerInstance.debug = false
 	db, err := db.NewDatabase(stateDBPrefix)
 	if err != nil {
 		logger.Errorf("Init accountDB error! Error:%s", err.Error())
@@ -61,6 +62,7 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *accou
 			// todo 超时放弃
 			manager.getCond().Wait()
 		}
+		manager.getCond().L.Unlock()
 	}
 
 	return manager.latestStateDB
@@ -92,11 +94,10 @@ func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *accoun
 	if nil == manager.latestStateDB || nonce > manager.requestId {
 		manager.latestStateDB = latestStateDB
 		manager.requestId = nonce
-	}
 
-	if !manager.debug {
-		manager.getCond().Broadcast()
-		manager.getCond().L.Unlock()
+		if !manager.debug {
+			manager.getCond().Broadcast()
+		}
 	}
 }
 
