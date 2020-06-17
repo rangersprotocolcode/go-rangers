@@ -19,8 +19,8 @@ func TestKeyLength(test *testing.T) {
 	privateKey, publicKey := genRandomKey(nil)
 	fmt.Printf("privateKey:%v,len:%d\n", privateKey, len(privateKey))
 	fmt.Printf("pubkey :%v,len:%d\n", publicKey, len(publicKey))
-	assert.Equal(test, len(privateKey), 64)
-	assert.Equal(test, len(publicKey), 32)
+	assert.Equal(test, 64, len(privateKey))
+	assert.Equal(test, 32, len(publicKey))
 }
 
 func TestGenProveAndVerifyOnce(test *testing.T) {
@@ -71,7 +71,7 @@ func runGenProveAndVerifyOnce(test *testing.T, random io.Reader) {
 	if err != nil {
 		panic("ECVRFVerify error!" + err.Error())
 	}
-	assert.Equal(test, verifyResult, true)
+	assert.Equal(test, true, verifyResult)
 }
 
 //---------------------------------------Benchmark Test-----------------------------------------------------------------
@@ -112,7 +112,7 @@ func BenchmarkVerifyProof(b *testing.B) {
 		if err != nil {
 			panic("ECVRFVerify error!" + err.Error())
 		}
-		assert.Equal(b, verifyResult, true)
+		assert.Equal(b, true, verifyResult)
 	}
 }
 
@@ -134,7 +134,7 @@ func BenchmarkSignAndVerifySign(b *testing.B) {
 		if err != nil {
 			panic("ECVRFVerify error!" + err.Error())
 		}
-		assert.Equal(b, verifyResult, true)
+		assert.Equal(b, true, verifyResult)
 	}
 }
 
@@ -199,7 +199,7 @@ func TestVRFStandard(test *testing.T) {
 		if err != nil {
 			panic(err)
 		}
-		assert.Equal(test, verifyResult, true)
+		assert.Equal(test, true, verifyResult)
 	}
 }
 
@@ -293,12 +293,12 @@ func validateFunction(privateKeyStr, publicKeyStr, message, proofStr string, tes
 	}
 	expectedProveStr := prefix + hex.EncodeToString(expectedProof)
 
-	assert.Equal(test, expectedProveStr, proofStr)
+	assert.Equal(test, proofStr, expectedProveStr)
 
 	//validate prove
 	verifyResult, err := ECVRFVerify(publicKey, proofByte, messageByte)
 	if err != nil {
 		panic("ECVRFVerify error!" + err.Error())
 	}
-	assert.Equal(test, verifyResult, true)
+	assert.Equal(test, true, verifyResult)
 }

@@ -24,8 +24,8 @@ func TestKeyLength(test *testing.T) {
 
 	fmt.Printf("secKey:%v,len:%d\n", secKey.Serialize(), len(secKey.Serialize()))
 	fmt.Printf("pubkey :%v,len:%d\n", publicKey.Serialize(), len(publicKey.Serialize()))
-	assert.Equal(test, len(secKey.Serialize()), 32)
-	assert.Equal(test, len(publicKey.Serialize()), 128)
+	assert.Equal(test, 32, len(secKey.Serialize()))
+	assert.Equal(test, 128, len(publicKey.Serialize()))
 
 }
 
@@ -41,7 +41,7 @@ func TestByFixKey(t *testing.T) {
 
 	sig := groupsig.Sign(*secKey, message)
 	verifyResult := groupsig.VerifySig(*pubkey, message, sig)
-	assert.Equal(t, verifyResult, true)
+	assert.Equal(t, true, verifyResult)
 
 	fmt.Printf("seckey:%v\n", secKey.GetHexString())
 	fmt.Printf("pubkey:%v\n", pubkey.GetHexString())
@@ -394,7 +394,7 @@ func validateFunction(privateKeyList []string, groupPublicKey, messageStr, group
 	mockGenSharePiece(threshold, groupMemberList)
 	exceptedGroupPublicKey := mockGotAllSharePiece(groupMemberList)
 	//fmt.Printf("Group publicKey:%s\n", exceptedGroupPublicKey.GetHexString())
-	assert.Equal(test, exceptedGroupPublicKey.GetHexString(), groupPublicKey)
+	assert.Equal(test, groupPublicKey, exceptedGroupPublicKey.GetHexString())
 
 	//validate groupSign
 	message, _ := hex.DecodeString(messageStr[2:])
@@ -406,7 +406,7 @@ func validateFunction(privateKeyList []string, groupPublicKey, messageStr, group
 	}
 	exceptedGroupSign := groupsig.RecoverGroupSignature(memberSignMap, threshold)
 	//fmt.Printf("Group sign:%s\n", exceptedGroupSign.GetHexString())
-	assert.Equal(test, exceptedGroupSign.GetHexString(), groupSign)
+	assert.Equal(test, groupSign, exceptedGroupSign.GetHexString())
 
 	//verify group sign
 	verifyResult := groupsig.VerifySig(exceptedGroupPublicKey, message, *exceptedGroupSign)
