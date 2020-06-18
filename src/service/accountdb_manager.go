@@ -54,6 +54,12 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *accou
 		// requestId 按序执行
 		manager.getCond().L.Lock()
 		for ; nonce != (manager.requestId + 1); {
+			if nonce <= manager.requestId {
+				// 已经执行过的消息，忽略
+				logger.Errorf("%s requestId :%d skipped, current requestId: %d", "", nonce, manager.requestId)
+				manager.getCond().L.Unlock()
+				return nil
+			}
 
 			// waiting until the right requestId
 			logger.Infof("requestId :%d is waiting, current requestId: %d", nonce, manager.requestId)
