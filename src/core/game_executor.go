@@ -445,7 +445,7 @@ func (executor *GameExecutor) loop() {
 	for {
 		select {
 		case msg := <-executor.writeChan:
-			executor.RunWrite(msg)
+			go executor.RunWrite(msg)
 		}
 	}
 }
