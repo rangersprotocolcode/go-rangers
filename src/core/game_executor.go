@@ -65,13 +65,14 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor.logger = log.GetLoggerByIndex(log.GameExecutorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
 	gameExecutor.writeChan = make(chan notify.ClientTransactionMessage, maxWriteSize)
-	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.Write)
+	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.write)
+	notify.BUS.Subscribe(notify.CoinProxyNotify, gameExecutor.coinProxyHandler)
 	go gameExecutor.loop()
 
-	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.Read)
+	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
 }
 
-func (executor *GameExecutor) Read(msg notify.Message) {
+func (executor *GameExecutor) read(msg notify.Message) {
 	message, ok := msg.(*notify.ClientTransactionMessage)
 	if !ok {
 		executor.logger.Errorf("blockReqHandler:Message assert not ok!")
@@ -181,7 +182,7 @@ func (executor *GameExecutor) Read(msg notify.Message) {
 	return
 }
 
-func (executor *GameExecutor) Write(msg notify.Message) {
+func (executor *GameExecutor) write(msg notify.Message) {
 	if len(executor.writeChan) == maxWriteSize {
 		executor.logger.Errorf("write rcv message error: %v", msg)
 		return
@@ -189,12 +190,27 @@ func (executor *GameExecutor) Write(msg notify.Message) {
 
 	message, ok := msg.(*notify.ClientTransactionMessage)
 	if !ok {
-		executor.logger.Errorf("GameExecutor:Write assert not ok!")
+		executor.logger.Errorf("GameExecutor: Write assert not ok!")
 		return
 	}
 
 	executor.logger.Debugf("write rcv message: %s", message.TOJSONString())
 	executor.writeChan <- *message
+}
+
+func (executor *GameExecutor) coinProxyHandler(msg notify.Message) {
+	cpn, ok := msg.(*notify.CoinProxyNotifyMessage)
+	if !ok {
+		logger.Debugf("coinProxyHandler: Message assert not ok!")
+		return
+	}
+
+	message := notify.ClientTransactionMessage{
+		Tx:    cpn.Tx,
+		Nonce: cpn.Tx.RequestId,
+	}
+	executor.logger.Debugf("coinProxyHandler rcv message: %s", message.TOJSONString())
+	executor.writeChan <- message
 }
 
 func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw types.Transaction) (bool, string) {
@@ -208,10 +224,12 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw
 
 	message := ""
 	result := true
+	snapshot := accountDB.Snapshot()
 
 	start := utility.GetTime()
 	if err := service.GetTransactionPool().ProcessFee(txRaw, accountDB); err != nil {
 		executor.logger.Errorf("txhash: %s, failed. not enough max", txhash)
+		accountDB.RevertToSnapshot(snapshot)
 		return false, err.Error()
 	}
 
@@ -280,35 +298,25 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw
 		}
 
 		executor.logger.Debugf("end TransactionTypeOperatorEvent. txhash: %s", txhash)
-
+		break
 	case types.TransactionTypeWithdraw:
-		response, ok := service.Withdraw(accountDB, &txRaw, false)
-		if ok {
-			message = response
-			result = true
-		} else {
-			message = response
-			result = false
-		}
+		message, result = service.Withdraw(accountDB, &txRaw, false)
 		break
 
 	case types.TransactionTypePublishFT:
 		appId := txRaw.Source
-		id, ok := service.PublishFT(accountDB, &txRaw)
-		if ok {
+		message, result = service.PublishFT(accountDB, &txRaw)
+		if result {
 			var ftSet map[string]string
 			json.Unmarshal([]byte(txRaw.Data), &ftSet)
-			ftSet["setId"] = id
+			ftSet["setId"] = message
 			ftSet["creator"] = appId
 			ftSet["owner"] = appId
 
 			data, _ := json.Marshal(ftSet)
 			message = string(data)
-			result = true
-		} else {
-			message = id
-			result = false
 		}
+
 		break
 
 	case types.TransactionTypePublishNFTSet:
@@ -323,40 +331,48 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw
 		break
 
 	case types.TransactionTypeMintFT:
-		flag, response := service.MintFT(accountDB, &txRaw)
-
-		result = flag
-		message = response
+		result, message = service.MintFT(accountDB, &txRaw)
 		break
 
 	case types.TransactionTypeMintNFT:
-		flag, response := service.MintNFT(accountDB, &txRaw)
-		message = response
-		result = flag
+		result, message = service.MintNFT(accountDB, &txRaw)
 		break
 
 	case types.TransactionTypeShuttleNFT:
-		ok, response := service.ShuttleNFT(accountDB, &txRaw)
-		message = response
-		result = ok
+		result, message = service.ShuttleNFT(accountDB, &txRaw)
 		break
 
 	case types.TransactionTypeUpdateNFT:
-		ok, response := service.UpdateNFT(accountDB, &txRaw)
-		message = response
-		result = ok
+		result, message = service.UpdateNFT(accountDB, &txRaw)
 		break
 
 	case types.TransactionTypeApproveNFT:
-		ok, response := service.ApproveNFT(accountDB, &txRaw)
-		message = response
-		result = ok
+		result, message = service.ApproveNFT(accountDB, &txRaw)
 		break
 	case types.TransactionTypeRevokeNFT:
-		ok, response := service.RevokeNFT(accountDB, &txRaw)
-		message = response
-		result = ok
+		result, message = service.RevokeNFT(accountDB, &txRaw)
 		break
+
+	case types.TransactionTypeCoinDepositAck:
+		result, message = service.CoinDeposit(accountDB, &txRaw)
+		break
+	case types.TransactionTypeFTDepositAck:
+		result, message = service.FTDeposit(accountDB, &txRaw)
+		break
+	case types.TransactionTypeNFTDepositAck:
+		result, message = service.NFTDeposit(accountDB, &txRaw)
+		break
+
+	case types.TransactionTypeMinerApply:
+		break
+	case types.TransactionTypeMinerAdd:
+		break
+	case types.TransactionTypeMinerRefund:
+		break
+	}
+
+	if !result {
+		accountDB.RevertToSnapshot(snapshot)
 	}
 
 	// 打包入块
@@ -461,6 +477,10 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	}
 
 	result, execMessage := executor.runTransaction(accountDB, txRaw)
+
+	if 0 == len(message.UserId) {
+		return
+	}
 
 	// reply to the client
 	var response []byte

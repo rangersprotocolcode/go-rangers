@@ -27,7 +27,6 @@ func initChainHandler() {
 	notify.BUS.Subscribe(notify.NewBlock, handler.newBlockHandler)
 	notify.BUS.Subscribe(notify.TransactionReq, handler.transactionReqHandler)
 	notify.BUS.Subscribe(notify.TransactionGot, handler.transactionGotHandler)
-	notify.BUS.Subscribe(notify.CoinProxyNotify, handler.coinProxyHandler)
 }
 
 func (c *ChainHandler) Handle(sourceId string, msg network.Message) error {
@@ -131,17 +130,6 @@ func (ch ChainHandler) newBlockHandler(msg notify.Message) {
 	middleware.PerfLogger.Debugf("Rcv new block from %s,hash:%v,height:%d,totalQn:%d,tx len:%d, total cost: %v", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions), time.Since(block.Header.CurTime))
 
 	blockChainImpl.AddBlockOnChain(source, block, types.NewBlock)
-}
-
-func (ch ChainHandler) coinProxyHandler(msg notify.Message) {
-	cpn, ok := msg.(*notify.CoinProxyNotifyMessage)
-	if !ok {
-		logger.Debugf("coinProxyHandler:Message assert not ok!")
-		return
-	}
-	tx := cpn.Tx
-	logger.Debugf("coinProxyHandler rcv tx:%s", tx.Hash.String())
-	blockChainImpl.transactionPool.AddTransaction(&tx)
 }
 
 func unMarshalTransactionRequestMessage(b []byte) (*transactionRequestMessage, error) {
