@@ -41,6 +41,8 @@ func initAccountDBManager() {
 }
 
 func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *account.AccountDB {
+	waited := false
+
 	// 校验 nonce
 	if !manager.debug {
 		if nonce <= manager.requestId {
@@ -55,14 +57,21 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *accou
 
 			// waiting until the right requestId
 			logger.Infof("requestId :%d is waiting, current requestId: %d", nonce, manager.requestId)
+			waited = true
 
 			// todo 超时放弃
 			manager.getCond().Wait()
+
 		}
 	}
 
 	manager.lock.RLock()
 	defer manager.lock.RUnlock()
+
+	// waiting until the right requestId
+	if waited {
+		logger.Infof("requestId :%d waited, current requestId: %d", nonce, manager.requestId)
+	}
 
 	return manager.latestStateDB
 }
