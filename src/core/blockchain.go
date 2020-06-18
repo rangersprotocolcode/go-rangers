@@ -497,14 +497,16 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 		}
 
 		// 找到了
-		if tx.SubHash == hash[1] {
-			txs = append(txs, tx)
-		} else {
-			// 状态机出事了，同一笔交易，执行结果不一致
-			abnormal[tx.Target] = true
-			// 为了能跑下去，先找出块人要
-			need = append(need, hash)
-		}
+		//if tx.SubHash == hash[1] {
+		//	txs = append(txs, tx)
+		//} else {
+		//	// 状态机出事了，同一笔交易，执行结果不一致
+		//	abnormal[tx.Target] = true
+		//	// 为了能跑下去，先找出块人要
+		//	need = append(need, hash)
+		//}
+
+		txs = append(txs, tx)
 	}
 	return txs, need, abnormal, err
 }
