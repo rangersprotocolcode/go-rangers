@@ -477,18 +477,19 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 		return
 	}
 
-	result, execMessage := executor.runTransaction(accountDB, txRaw)
-
-	if 0 == len(message.UserId) {
-		return
-	}
-
-	// reply to the client
-	var response []byte
-	if result {
-		response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
-	} else {
-		response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
-	}
-	go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+	executor.runTransaction(accountDB, txRaw)
+	//result, execMessage := executor.runTransaction(accountDB, txRaw)
+	//
+	//if 0 == len(message.UserId) {
+	//	return
+	//}
+	//
+	//// reply to the client
+	//var response []byte
+	//if result {
+	//	response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
+	//} else {
+	//	response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
+	//}
+	//go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
 }
