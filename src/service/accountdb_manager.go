@@ -59,7 +59,6 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *accou
 			// todo 超时放弃
 			manager.getCond().Wait()
 		}
-		manager.getCond().L.Unlock()
 	}
 
 	manager.lock.RLock()
@@ -87,18 +86,24 @@ func (manager *AccountDBManager) GetLatestStateDB() *account.AccountDB {
 
 //
 func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *account.AccountDB, nonce uint64, msg string) {
+	if !manager.debug && msg == "gameExecutor" {
+		manager.getCond().L.Unlock()
+	}
+
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 
-	logger.Warnf("accountDB set requestId: %d, current: %d, msg: %s", nonce, manager.requestId, msg)
 	if nil == manager.latestStateDB || nonce > manager.requestId {
-		//manager.closeLatestStateDB()
+		logger.Warnf("accountDB set success. requestId: %d, current: %d, msg: %s", nonce, manager.requestId, msg)
+
 		manager.latestStateDB = latestStateDB
 		manager.requestId = nonce
 
 		if !manager.debug {
 			manager.getCond().Broadcast()
 		}
+	} else {
+		logger.Warnf("accountDB not set. requestId: %d, current: %d, msg: %s", nonce, manager.requestId, msg)
 	}
 }
 
@@ -118,21 +123,4 @@ func (manager *AccountDBManager) getCond() *sync.Cond {
 	value, _ := manager.conds.LoadOrStore(gameId, defaultValue)
 
 	return value.(*sync.Cond)
-}
-
-func (manager *AccountDBManager) closeLatestStateDB() {
-	if nil == manager.latestStateDB {
-		return
-	}
-
-	root, err := manager.latestStateDB.Commit(true)
-	if err != nil {
-		logger.Errorf("State commit error: %s", err.Error())
-		return
-	}
-
-	err = manager.stateDB.TrieDB().Commit(root, false)
-	if err != nil {
-		logger.Errorf("Trie commit error: %s", err.Error())
-	}
 }
