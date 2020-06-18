@@ -230,6 +230,7 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw
 	if err := service.GetTransactionPool().ProcessFee(txRaw, accountDB); err != nil {
 		executor.logger.Errorf("txhash: %s, failed. not enough max", txhash)
 		accountDB.RevertToSnapshot(snapshot)
+		executor.sendTransaction(&txRaw)
 		return false, err.Error()
 	}
 
