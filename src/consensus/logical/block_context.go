@@ -82,7 +82,7 @@ func (bc *BlockContext) getOrNewVctx(expireTime time.Time, bh, preBH *types.Bloc
 	if vctx = bc.getVctxByHash(hash); vctx == nil {
 		vctx = newVerifyContext(bc, expireTime, preBH, hash)
 		bc.vctxs[hash] = vctx
-		blog.log("add vctx expire %v", expireTime)
+		blog.log("add vctx expire %v,hash:%s", expireTime, hash.String())
 	} else {
 		// hash不一致的情况下，
 		if vctx.prevBH.Hash != preBH.Hash {
@@ -106,7 +106,7 @@ func (bc *BlockContext) getOrNewVctx(expireTime time.Time, bh, preBH *types.Bloc
 			if bh.Height == 1 && expireTime.After(vctx.expireTime) {
 				vctx.expireTime = expireTime
 			}
-			blog.log("get exist vctx hash %v, expire %v", hash, vctx.expireTime)
+			blog.log("get exist vctx hash %s, expire %v", hash.String(), vctx.expireTime)
 		}
 	}
 	return vctx

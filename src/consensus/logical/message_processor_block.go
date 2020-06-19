@@ -365,6 +365,9 @@ func (p *Processor) OnMessageNewTransactions(ths []common.Hashes) {
 	p.blockContexts.forEachBlockContext(func(bc *BlockContext) bool {
 		for _, vctx := range bc.SafeGetVerifyContexts() {
 			slot := vctx.slot
+			if slot == nil {
+				blog.debug("slot is nil! vctx hash:%s", vctx.blockHash.String())
+			}
 			acceptRet := vctx.AcceptTrans(slot, ths)
 			tlog := newHashTraceLog(mtype, slot.BH.Hash, groupsig.ID{})
 			switch acceptRet {
