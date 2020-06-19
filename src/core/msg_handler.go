@@ -56,6 +56,11 @@ func (ch ChainHandler) transactionReqHandler(msg notify.Message) {
 	}
 
 	for _, tx := range transactions {
+		if tx == nil {
+			logger.Debugf("local find nil tx")
+			continue
+		}
+
 		logger.Debugf("local find tx :%s,%v", tx.Hash.String(), tx)
 	}
 	if nil != transactions && 0 != len(transactions) {
