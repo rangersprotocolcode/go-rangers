@@ -143,7 +143,7 @@ func (bc *BlockContext) CleanVerifyContext(height uint64) {
 		if !bRemove {
 			newCtxs[ctx.blockHash] = ctx
 		} else {
-			//ctx.Clear()
+			ctx.Clear()
 			bc.Proc.blockContexts.removeReservedVctx(ctx.blockHash)
 			stdLogger.Debugf("CleanVerifyContext: ctx.castHash=%v, ctx.prevHash=%v, signedNum=%v\n", ctx.blockHash, ctx.prevBH.Hash.ShortS(), ctx.signedNum)
 		}
