@@ -8,7 +8,6 @@ import (
 	"com.tuntun.rocket/node/src/storage/trie"
 	"sync"
 	"sync/atomic"
-	"time"
 )
 
 const stateDBPrefix = "state"
@@ -25,7 +24,6 @@ type AccountDBManager struct {
 
 var (
 	AccountDBManagerInstance AccountDBManager
-	timeout                  = 500 * time.Millisecond
 )
 
 func initAccountDBManager() {
@@ -55,8 +53,6 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *accou
 		// requestId 按序执行
 		manager.getCond().L.Lock()
 
-		t := timeout
-		start := time.Now()
 		for ; nonce != (manager.getRequestId() + 1); {
 			if nonce <= manager.getRequestId() {
 				// 已经执行过的消息，忽略
@@ -68,24 +64,7 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *accou
 			// waiting until the right requestId
 			manager.logger.Infof("requestId :%d is waiting, current requestId: %d", nonce, manager.getRequestId())
 			waited = true
-
-			done := make(chan struct{})
-			go func() {
-				manager.getCond().Wait()
-				close(done)
-			}()
-
-			timer := time.NewTimer(t)
-			select {
-			case <-timer.C:
-				// timed out
-				manager.logger.Errorf("%s requestId :%d timeout skipped, current requestId: %d", "", nonce, manager.getRequestId())
-				manager.getCond().L.Unlock()
-				return nil
-			case <-done:
-				// Wait returned
-				t = t - time.Since(start)
-			}
+			manager.getCond().Wait()
 		}
 	}
 
