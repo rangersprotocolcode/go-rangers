@@ -7,6 +7,7 @@ import (
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/trie"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -49,30 +50,23 @@ func initAccountDBManager() {
 
 func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *account.AccountDB {
 	waited := false
-
 	// 校验 nonce
 	if !manager.debug {
-		if nonce <= manager.requestId {
-			// 已经执行过的消息，忽略
-			manager.logger.Errorf("%s requestId :%d skipped, current requestId: %d", "", nonce, manager.requestId)
-			return nil
-		}
-
 		// requestId 按序执行
 		manager.getCond().L.Lock()
 
 		t := timeout
 		start := time.Now()
-		for ; nonce != (manager.requestId + 1); {
-			if nonce <= manager.requestId {
+		for ; nonce != (manager.getRequestId() + 1); {
+			if nonce <= manager.getRequestId() {
 				// 已经执行过的消息，忽略
-				manager.logger.Errorf("requestId :%d skipped, current requestId: %d", nonce, manager.requestId)
+				manager.logger.Errorf("requestId :%d skipped, current requestId: %d", nonce, manager.getRequestId())
 				manager.getCond().L.Unlock()
 				return nil
 			}
 
 			// waiting until the right requestId
-			manager.logger.Infof("requestId :%d is waiting, current requestId: %d", nonce, manager.requestId)
+			manager.logger.Infof("requestId :%d is waiting, current requestId: %d", nonce, manager.getRequestId())
 			waited = true
 
 			done := make(chan struct{})
@@ -85,7 +79,7 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *accou
 			select {
 			case <-timer.C:
 				// timed out
-				manager.logger.Errorf("%s requestId :%d timeout skipped, current requestId: %d", "", nonce, manager.requestId)
+				manager.logger.Errorf("%s requestId :%d timeout skipped, current requestId: %d", "", nonce, manager.getRequestId())
 				manager.getCond().L.Unlock()
 				return nil
 			case <-done:
@@ -100,7 +94,7 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *accou
 
 	// waiting until the right requestId
 	if waited {
-		manager.logger.Infof("requestId :%d waited, current requestId: %d", nonce, manager.requestId)
+		manager.logger.Infof("requestId :%d waited, current requestId: %d", nonce, manager.getRequestId())
 	}
 
 	return manager.latestStateDB
@@ -132,17 +126,17 @@ func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *accoun
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 
-	if nil == manager.latestStateDB || nonce > manager.requestId {
-		manager.logger.Warnf("accountDB set success. requestId: %d, current: %d, msg: %s", nonce, manager.requestId, msg)
+	if nil == manager.latestStateDB || nonce > manager.getRequestId() {
+		manager.logger.Warnf("accountDB set success. requestId: %d, current: %d, msg: %s", nonce, manager.getRequestId(), msg)
 
 		manager.latestStateDB = latestStateDB
-		manager.requestId = nonce
+		manager.setRequestId(nonce)
 
 		if !manager.debug {
 			manager.getCond().Broadcast()
 		}
 	} else {
-		manager.logger.Warnf("accountDB not set. requestId: %d, current: %d, msg: %s", nonce, manager.requestId, msg)
+		manager.logger.Warnf("accountDB not set. requestId: %d, current: %d, msg: %s", nonce, manager.getRequestId(), msg)
 	}
 }
 
@@ -162,4 +156,12 @@ func (manager *AccountDBManager) getCond() *sync.Cond {
 	value, _ := manager.conds.LoadOrStore(gameId, defaultValue)
 
 	return value.(*sync.Cond)
+}
+
+func (manager *AccountDBManager) getRequestId() uint64 {
+	return atomic.LoadUint64(&manager.requestId)
+}
+
+func (manager *AccountDBManager) setRequestId(value uint64) {
+	atomic.StoreUint64(&manager.requestId, value)
 }
