@@ -7,6 +7,7 @@ import (
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/trie"
 	"sync"
+	"time"
 )
 
 const stateDBPrefix = "state"
@@ -21,7 +22,10 @@ type AccountDBManager struct {
 	logger        log.Logger
 }
 
-var AccountDBManagerInstance AccountDBManager
+var (
+	AccountDBManagerInstance AccountDBManager
+	timeout                  = 500 * time.Millisecond
+)
 
 func initAccountDBManager() {
 	AccountDBManagerInstance = AccountDBManager{}
@@ -56,10 +60,13 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *accou
 
 		// requestId 按序执行
 		manager.getCond().L.Lock()
+
+		t := timeout
+		start := time.Now()
 		for ; nonce != (manager.requestId + 1); {
 			if nonce <= manager.requestId {
 				// 已经执行过的消息，忽略
-				manager.logger.Errorf("%s requestId :%d skipped, current requestId: %d", "", nonce, manager.requestId)
+				manager.logger.Errorf("requestId :%d skipped, current requestId: %d", nonce, manager.requestId)
 				manager.getCond().L.Unlock()
 				return nil
 			}
@@ -68,9 +75,23 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *accou
 			manager.logger.Infof("requestId :%d is waiting, current requestId: %d", nonce, manager.requestId)
 			waited = true
 
-			// todo 超时放弃
-			manager.getCond().Wait()
+			done := make(chan struct{})
+			go func() {
+				manager.getCond().Wait()
+				close(done)
+			}()
 
+			timer := time.NewTimer(t)
+			select {
+			case <-timer.C:
+				// timed out
+				manager.logger.Errorf("%s requestId :%d timeout skipped, current requestId: %d", "", nonce, manager.requestId)
+				manager.getCond().L.Unlock()
+				return nil
+			case <-done:
+				// Wait returned
+				t = t - time.Since(start)
+			}
 		}
 	}
 
