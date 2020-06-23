@@ -302,7 +302,7 @@ func (vc *VerifyContext) Clear() {
 //判断该context是否可以删除
 func (vc *VerifyContext) shouldRemove(topHeight uint64) bool {
 	//未出过块, 但高度已经低于200块, 可以删除
-	return vc.prevBH == nil || vc.prevBH.Height+200 < topHeight
+	return vc.prevBH == nil || vc.prevBH.Height+10 < topHeight
 }
 
 func (vc *VerifyContext) checkBroadcast() *SlotContext {
