@@ -4,9 +4,10 @@ go implementation for layer2
 
 ## Prerequisite
 
-- Install Go binary release 1.13 from [https://golang.org/dl/](https://golang.org/dl/).
-  [https://golang.org/dl/](https://golang.org/dl/).
-  [https://studygolang.com/dl](https://studygolang.com/dl)
+- Install Go binary release 1.13 from
+  [https://studygolang.com/dl](https://studygolang.com/dl) or
+
+  [https://golang.org/dl/](https://golang.org/dl/)
 - Ensure a C compiler is working in case of cgo dependencies.
 
 ## Build & Clean
