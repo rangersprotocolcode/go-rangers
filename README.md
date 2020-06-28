@@ -5,6 +5,7 @@ go implementation for layer2
 ## Prerequisite
 
 - Install Go binary release 1.13 from
+
   [https://studygolang.com/dl](https://studygolang.com/dl) or
 
   [https://golang.org/dl/](https://golang.org/dl/)
