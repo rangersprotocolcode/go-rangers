@@ -1,22 +1,21 @@
+// Copyright 2020 The RocketProtocol Authors
+// This file is part of the RocketProtocol library.
+//
+// The RocketProtocol library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The RocketProtocol library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+
 package trie
 
-// Trie keys are dealt with in three distinct encodings:
-//
-// KEYBYTES encoding contains the actual key and nothing else. This encoding is the
-// input to most API functions.
-//
-// HEX encoding contains one byte for each nibble of the key and an optional trailing
-// 'terminator' byte of value 0x10 which indicates whether or not the node at the key
-// contains a value. Hex key encoding is used for nodes loaded in memory because it's
-// convenient to access.
-//
-// COMPACT encoding is defined by the Ethereum Yellow Paper (it's called "hex prefix
-// encoding" there) and contains the bytes of the key and a flag. The high nibble of the
-// first byte contains the flag; the lowest bit encoding the oddness of the length and
-// the second-lowest encoding whether the node at the key is a value node. The low nibble
-// of the first byte is zero in the case of an even number of nibbles and the first nibble
-// in the case of an odd number. All remaining nibbles (now an even number) fit properly
-// into the remaining bytes. Compact encoding is used for nodes stored on disk.
 func hexToCompact(hex []byte) []byte {
 	terminator := byte(0)
 	if hasTerm(hex) {

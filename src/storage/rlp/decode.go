@@ -1,3 +1,19 @@
+// Copyright 2020 The RocketProtocol Authors
+// This file is part of the RocketProtocol library.
+//
+// The RocketProtocol library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The RocketProtocol library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+
 package rlp
 
 import (
@@ -44,79 +60,11 @@ type Decoder interface {
 	DecodeRLP(*Stream) error
 }
 
-// Decode parses RLP-encoded data from r and stores the result in the
-// value pointed to by val. Val must be a non-nil pointer. If r does
-// not implement ByteReader, Decode will do its own buffering.
-//
-// Decode uses the following type-dependent decoding rules:
-//
-// If the type implements the Decoder interface, decode calls
-// DecodeRLP.
-//
-// To decode into a pointer, Decode will decode into the value pointed
-// to. If the pointer is nil, a new value of the pointer's element
-// type is allocated. If the pointer is non-nil, the existing value
-// will be reused.
-//
-// To decode into a struct, Decode expects the input to be an RLP
-// list. The decoded elements of the list are assigned to each public
-// field in the order given by the struct's definition. The input list
-// must contain an element for each decoded field. Decode returns an
-// error if there are too few or too many elements.
-//
-// The decoding of struct fields honours certain struct tags, "tail",
-// "nil" and "-".
-//
-// The "-" tag ignores fields.
-//
-// For an explanation of "tail", see the example.
-//
-// The "nil" tag applies to pointer-typed fields and changes the decoding
-// rules for the field such that input values of size zero decode as a nil
-// pointer. This tag can be useful when decoding recursive types.
-//
-//     type StructWithEmptyOK struct {
-//         Foo *[20]byte `rlp:"nil"`
-//     }
-//
-// To decode into a slice, the input must be a list and the resulting
-// slice will contain the input elements in order. For byte slices,
-// the input must be an RLP string. Array types decode similarly, with
-// the additional restriction that the number of input elements (or
-// bytes) must match the array's length.
-//
-// To decode into a Go string, the input must be an RLP string. The
-// input bytes are taken as-is and will not necessarily be valid UTF-8.
-//
-// To decode into an unsigned integer type, the input must also be an RLP
-// string. The bytes are interpreted as a big endian representation of
-// the integer. If the RLP string is larger than the bit size of the
-// type, Decode will return an error. Decode also supports *big.Int.
-// There is no size limit for big integers.
-//
-// To decode into an interface value, Decode stores one of these
-// in the value:
-//
-//	  []interface{}, for RLP lists
-//	  []byte, for RLP strings
-//
-// Non-empty interface types are not supported, nor are booleans,
-// signed integers, floating point numbers, maps, channels and
-// functions.
-//
-// Note that Decode does not set an input limit for all readers
-// and may be vulnerable to panics cause by huge value sizes. If
-// you need an input limit, use
-//
-//     NewStream(r, limit).Decode(val)
 func Decode(r io.Reader, val interface{}) error {
 	// TODO: this could use a Stream from a pool.
 	return NewStream(r, 0).Decode(val)
 }
 
-// DecodeBytes parses RLP data from b into val.
-// Please see the documentation of Decode for the decoding rules.
-// The input must contain exactly one value and no trailing data.
 func DecodeBytes(b []byte, val interface{}) error {
 	// TODO: this could use a Stream from a pool.
 	r := bytes.NewReader(b)
