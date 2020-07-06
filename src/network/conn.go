@@ -257,6 +257,7 @@ func (base *baseConn) bytesToHeader(b []byte) wsHeader {
 	header := wsHeader{}
 	header.method = b[0:4]
 	header.sourceId = utility.ByteToUInt64(b[4:12])
+	header.targetId = utility.ByteToUInt64(b[12:20]) // reader nonce
 	header.nonce = utility.ByteToUInt64(b[20:])
 	return header
 }
