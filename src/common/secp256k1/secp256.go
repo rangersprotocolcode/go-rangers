@@ -60,7 +60,7 @@ func Sign(msg []byte, seckey []byte) ([]byte, error) {
 	//}
 	if len(seckey) != 32 {
 		privateKey := make([]byte, 32)
-		copy( privateKey[32-len(seckey):32],seckey)
+		copy(privateKey[32-len(seckey):32], seckey)
 		seckey = privateKey
 	}
 	seckeydata := (*C.uchar)(unsafe.Pointer(&seckey[0]))
@@ -84,6 +84,7 @@ func Sign(msg []byte, seckey []byte) ([]byte, error) {
 	)
 	C.secp256k1_ecdsa_recoverable_signature_serialize_compact(context, sigdata, &recid, &sigstruct)
 	sig[64] = byte(recid) // add back recid to get 65 bytes sig
+	sig[64] += 27         // Transform V from 0/1 to 27/28 为了跟以太坊保持一致
 	return sig, nil
 }
 
@@ -161,6 +162,10 @@ func CompressPubkey(x, y *big.Int) []byte {
 func checkSignature(sig []byte) error {
 	if len(sig) != 65 {
 		return ErrInvalidSignatureLen
+	}
+	// Transform V from 27/28 to 0/1 为了跟以太坊保持一致
+	if sig[64] > 26 {
+		sig[64] -= 27
 	}
 	if sig[64] >= 4 {
 		return ErrInvalidRecoveryID
