@@ -1,3 +1,19 @@
+// Copyright 2020 The RocketProtocol Authors
+// This file is part of the RocketProtocol library.
+//
+// The RocketProtocol library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The RocketProtocol library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+
 package cli
 
 import (
@@ -18,13 +34,13 @@ import (
 
 func TestRPC(t *testing.T) {
 	gx := NewGX()
-	common.InitConf("tas.ini")
+	common.InitConf("rp.ini")
 	walletManager = newWallets()
-	gx.initMiner(0, "heavy", "dev", "")
+	gx.initMiner(0, "dev", "")
 
 	host := "0.0.0.0"
 	var port uint = 8989
-	if err := StartRPC(host, port,""); err != nil {
+	if err := StartRPC(host, port, ""); err != nil {
 		panic(err)
 	}
 
