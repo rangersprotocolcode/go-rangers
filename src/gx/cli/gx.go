@@ -85,7 +85,7 @@ func (gx *GX) Run() {
 	// mine
 	mineCmd := app.Command("miner", "miner start")
 	// rpc解析
-	rpc := mineCmd.Flag("rpc", "start rpc server").Bool()
+	rpc := mineCmd.Flag("rpc", "start rpc server").Default("true").Bool()
 	addrRpc := mineCmd.Flag("rpcaddr", "rpc host").Short('r').Default("0.0.0.0").IP()
 	portRpc := mineCmd.Flag("rpcport", "rpc port").Short('p').Default("8088").Uint()
 	instanceIndex := mineCmd.Flag("instance", "instance index").Short('i').Default("0").Int()
