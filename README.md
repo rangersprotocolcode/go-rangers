@@ -56,9 +56,9 @@ for example: bash_profile for linux
 - export GO111MODULE = on
 
 # 2 Running from command line
-### 2.1 for new miners
+### 2.1 for new nodes
 
-if you do not have a miner account, RocketProtocol node will generate a new one. Check rp.ini after running the following command
+if you do not have an account, RocketProtocol node will generate a new one. Check rp.ini after running the following command
 
 #### 2.1.1 connect to testnet
 ```
@@ -74,9 +74,8 @@ You can use browser, Chrome for example, to check your node status by url: http:
 
 Also you can use browser, Chrome for example, to check your node status by url: http://0.0.0.0:8088/
 
-
-### 2.2 for existing miners
-If you have your privatekey and miner address, you have to specify them in rp.ini. 
+### 2.2 for existing nodes
+If you have your privatekey and address, you have to specify them in rp.ini. 
 
 For example: 
 ```
@@ -90,6 +89,11 @@ Use config to specify your owner file. For example:
 ./rocket-node miner --config rp.ini --env production 
 ```
 
-# 3 Build your own testnet
+# 3 Start mining
+RocketProtocol has two roles: proposer and validator. You have to apply one of the two roles.
+
+Please contact us if you want to know the apply process
+
+# 4 Build your own testnet locally
 
 Check our MVP documents: [MVP documents](http://git.tuntunhz.com/tequila/rockectmvp)
