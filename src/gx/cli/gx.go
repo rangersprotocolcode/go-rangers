@@ -88,7 +88,7 @@ func (gx *GX) Run() {
 	rpc := mineCmd.Flag("rpc", "start rpc server").Default("true").Bool()
 	addrRpc := mineCmd.Flag("rpcaddr", "rpc host").Short('r').Default("0.0.0.0").IP()
 	portRpc := mineCmd.Flag("rpcport", "rpc port").Short('p').Default("8088").Uint()
-	instanceIndex := mineCmd.Flag("instance", "instance index").Short('i').Default("0").Int()
+
 	env := mineCmd.Flag("env", "the environment application run in").String()
 
 	//自定义网关
@@ -98,11 +98,21 @@ func (gx *GX) Run() {
 		kingpin.Fatalf("%s, try --help", err)
 	}
 
+	fmt.Println("Use config file: " + *configFile)
 	common.InitConf(*configFile)
-	walletManager = newWallets()
-	common.GlobalConf.SetInt(instanceSection, indexKey, *instanceIndex)
+
+	instance := 0
+	instanceIndex := mineCmd.Flag("instance", "instance index").Short('i').Default("0").Int()
+	if 0 != *instanceIndex {
+		instance = *instanceIndex
+		common.GlobalConf.SetInt(instanceSection, indexKey, *instanceIndex)
+	} else {
+		instance = common.GlobalConf.GetInt(instanceSection, indexKey, 0)
+	}
+
 	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString(instanceSection, indexKey, ""))
 
+	walletManager = newWallets()
 	fmt.Println("Welcome to be a rocketProtocol miner!")
 	switch command {
 	case versionCmd.FullCommand():
@@ -119,7 +129,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(*instanceIndex, *env, *gateAddr)
+		gx.initMiner(instance, *env, *gateAddr)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc, gx.account.Sk)
 			if err != nil {
