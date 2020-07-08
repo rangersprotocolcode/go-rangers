@@ -23,8 +23,8 @@ import (
 
 //默认
 const (
-	gateAddrProduction = "47.96.99.105:8848"
-	gateAddrDaily      = "47.96.99.105:80"
+	gateAddrProduction = "47.96.99.105:10000"
+	gateAddrDaily      = "101.37.67.214:80"
 )
 
 var Logger log.Logger
