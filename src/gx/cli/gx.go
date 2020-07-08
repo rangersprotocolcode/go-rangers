@@ -69,7 +69,7 @@ func (gx *GX) Run() {
 	app := kingpin.New("gx", "A blockchain layer 2 application.")
 	app.HelpFlag.Short('h')
 
-	configFile := app.Flag("config", "Config file").Default("tas.ini").String()
+	configFile := app.Flag("config", "Config file").Default("rp.ini").String()
 	_ = app.Flag("metrics", "enable metrics").Bool()
 	_ = app.Flag("dashboard", "enable metrics dashboard").Bool()
 	pprofPort := app.Flag("pprof", "enable pprof").Default("23333").Uint()
