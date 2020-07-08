@@ -19,12 +19,13 @@ package network
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
+	"fmt"
 )
 
 //默认
 const (
-	gateAddrProduction = "47.96.99.105:10000"
-	gateAddrDaily      = "101.37.67.214:80"
+	gateAddrProduction = "gate.tuntunhz.com:10000"
+	gateAddrDaily      = "beta.gate.tuntunhz.com:80"
 )
 
 var Logger log.Logger
@@ -39,6 +40,7 @@ func InitNetwork(consensusHandler MsgHandler, selfMinerId []byte, env, gate stri
 			gateAddr = gateAddrDaily
 		}
 	}
+	fmt.Println("Connecting to: " + gateAddr)
 
 	var s server
 	s.Init(Logger, gateAddr, selfMinerId, consensusHandler)
