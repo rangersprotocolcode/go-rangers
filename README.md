@@ -47,8 +47,10 @@ Check official documents before add or update any third party packages:
 - [https://github.com/golang/go/wiki/Modules](https://github.com/golang/go/wiki/Modules)
 - [https://blog.golang.org/using-go-modules](https://blog.golang.org/using-go-modules)
 
-You may need the proxy for downloading the go packages
+You may need the proxy for downloading the go packages.
 
-bash_profile
-- export GOPROXY="http://goproxy.cn" 
-- export GO111MODULE=on
+for example: bash_profile for linux
+- export GOPROXY = "http://goproxy.cn" 
+- export GO111MODULE = on
+
+## 2 running from command line
