@@ -98,9 +98,9 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	// 测试用
 	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("tuntun", "pig", "hz", "0", "hz", "10086", 0), stateDB)
 	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("tuntunhz", "tuntun", "t", "hz", "hz", 0, "10000"), stateDB)
-	stateDB.SetFT(common.HexToAddress("0x69564f3eccc4aedabde33bd5cb350b9829deced1"), "official-ETH.ETH", big.NewInt(10000000000))
 	stateDB.SetFT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"), "official-ETH.ETH", big.NewInt(10000000000))
 
+	stateDB.SetFT(common.HexToAddress("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"), "official-ETH.ETH", big.NewInt(10000000000))
 	stateDB.SetBalance(common.HexToAddress("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"), big.NewInt(100000000000000000))
 	root, _ := stateDB.Commit(true)
 	triedb.Commit(root, false)
