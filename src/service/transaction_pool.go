@@ -24,9 +24,8 @@ import (
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"errors"
-	"sort"
-
 	"github.com/hashicorp/golang-lru"
+	"sort"
 
 	"encoding/json"
 	"fmt"
@@ -327,9 +326,11 @@ func (p *TxPool) TxNum() int {
 func (pool *TxPool) PackForCast() []*types.Transaction {
 	minerTxs := pool.packMinerTx()
 	if len(minerTxs) >= txCountPerBlock {
+		sort.Sort(types.Transactions(minerTxs))
 		return minerTxs
 	}
 	result := pool.packTx(minerTxs)
+	sort.Sort(types.Transactions(result))
 
 	// transactions 已经根据RequestId排序
 	return result
@@ -495,7 +496,6 @@ func (pool *TxPool) packMinerTx() []*types.Transaction {
 
 func (pool *TxPool) packTx(packedTxs []*types.Transaction) []*types.Transaction {
 	txs := pool.received.asSlice()
-	sort.Sort(types.Transactions(txs))
 	for _, tx := range txs {
 		packedTxs = append(packedTxs, tx)
 		txPoolLogger.Debugf("Pack tx:%s", tx.Hash.String())
