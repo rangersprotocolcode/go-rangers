@@ -121,13 +121,13 @@ func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *accoun
 	manager.lock.Lock()
 	defer manager.lock.Unlock()
 
-	if nil == manager.latestStateDB || nonce > manager.getRequestId() {
+	if nil == manager.latestStateDB || nonce >= manager.getRequestId() {
 		manager.logger.Warnf("accountDB set success. requestId: %d, current: %d, msg: %s", nonce, manager.getRequestId(), msg)
 
 		manager.latestStateDB = latestStateDB
 		manager.setRequestId(nonce)
 
-		if !manager.debug {
+		if !manager.debug && nonce > manager.getRequestId() {
 			manager.getCond().Broadcast()
 		}
 	} else {
