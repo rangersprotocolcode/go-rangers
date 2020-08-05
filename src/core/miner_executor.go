@@ -76,6 +76,7 @@ func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *
 	}
 
 	miner.ApplyHeight = header.Height + common.HeightAfterStake
+	miner.Status = common.MinerStatusNormal
 	if isEmptyByteSlice(miner.Id) {
 		miner.Id = common.FromHex(transaction.Source)
 	}

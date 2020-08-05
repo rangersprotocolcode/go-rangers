@@ -31,5 +31,5 @@ type Miner struct {
 	AbortHeight uint64 `json:"-"`
 
 	// 当前状态
-	Status byte `json:"-"`
+	Status byte
 }
