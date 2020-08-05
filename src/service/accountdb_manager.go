@@ -69,7 +69,7 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *accou
 		// requestId 按序执行
 		manager.getCond().L.Lock()
 
-		for ; nonce != (manager.getRequestId() + 1); {
+		for nonce != (manager.getRequestId() + 1) {
 			if nonce <= manager.getRequestId() {
 				// 已经执行过的消息，忽略
 				manager.logger.Errorf("requestId :%d skipped, current requestId: %d", nonce, manager.getRequestId())
@@ -127,7 +127,7 @@ func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *accoun
 		manager.latestStateDB = latestStateDB
 		manager.setRequestId(nonce)
 
-		if !manager.debug && nonce > manager.getRequestId() {
+		if !manager.debug && nonce >= manager.getRequestId() {
 			manager.getCond().Broadcast()
 		}
 	} else {
