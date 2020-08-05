@@ -27,7 +27,7 @@ type Miner struct {
 	// 质押数
 	Stake uint64 `json:"stake,omitempty"`
 
-	ApplyHeight uint64 `json:"-"`
+	ApplyHeight uint64
 	AbortHeight uint64 `json:"-"`
 
 	// 当前状态

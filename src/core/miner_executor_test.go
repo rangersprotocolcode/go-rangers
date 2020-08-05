@@ -646,11 +646,13 @@ func getTestAccountDB() *account.AccountDB {
 }
 
 func clean() {
+	os.RemoveAll("pkp0")
 	os.RemoveAll("logs")
 	os.RemoveAll("test")
 	os.RemoveAll("database")
 	os.RemoveAll("1.ini")
 }
+
 func setup(id string) {
 	fmt.Printf("Before %s tests\n", id)
 	clean()
@@ -699,7 +701,7 @@ func TestMinerExecutorRefundAll(t *testing.T) {
 		testMinerRefundExecutor6,
 		testMinerRefundExecutor7,
 		testMinerRefundExecutor8,
-		testMinerRefundExecutor9,}
+		testMinerRefundExecutor9}
 
 	for i, f := range fs {
 		name := strconv.Itoa(i)

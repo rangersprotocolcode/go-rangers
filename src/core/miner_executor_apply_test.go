@@ -63,6 +63,7 @@ func testMinerExecutorApply1(t *testing.T) {
 		Stake:        common.ValidatorStake * 3,
 		PublicKey:    []byte{0, 1, 2, 3},
 		VrfPublicKey: []byte{4, 5, 6, 7},
+		ApplyHeight:  10000000,
 	}
 	data, _ := json.Marshal(miner)
 
@@ -121,9 +122,9 @@ func testMinerExecutorApply3(t *testing.T) {
 	accountDB := getTestAccountDB()
 	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(1000000000000000))
 	miner := &types.Miner{
-		Id:    common.FromHex("0x0003"),
-		Type:  common.MinerTypeValidator,
-		Stake: common.ValidatorStake * 3,
+		Id:           common.FromHex("0x0003"),
+		Type:         common.MinerTypeValidator,
+		Stake:        common.ValidatorStake * 3,
 		PublicKey:    []byte{0, 1, 2, 3},
 		VrfPublicKey: []byte{4, 5, 6, 7},
 	}
@@ -197,9 +198,9 @@ func testMinerExecutorApply5(t *testing.T) {
 	accountDB := getTestAccountDB()
 	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(100000000000000000))
 	miner := &types.Miner{
-		Id:    common.FromHex("0x0003"),
-		Type:  common.MinerTypeProposer,
-		Stake: common.ProposerStake * 3,
+		Id:           common.FromHex("0x0003"),
+		Type:         common.MinerTypeProposer,
+		Stake:        common.ProposerStake * 3,
 		PublicKey:    []byte{0, 1, 2, 3},
 		VrfPublicKey: []byte{4, 5, 6, 7},
 	}
@@ -259,9 +260,9 @@ func testMinerExecutorApply7(t *testing.T) {
 	accountDB := getTestAccountDB()
 	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(100000000000000000))
 	miner := &types.Miner{
-		Id:    common.FromHex("0x0003"),
-		Type:  common.MinerTypeProposer,
-		Stake: common.ProposerStake * 3,
+		Id:           common.FromHex("0x0003"),
+		Type:         common.MinerTypeProposer,
+		Stake:        common.ProposerStake * 3,
 		PublicKey:    []byte{0, 1, 2, 3},
 		VrfPublicKey: []byte{4, 5, 6, 7},
 	}
@@ -307,9 +308,9 @@ func testMinerExecutorApply8(t *testing.T) {
 	accountDB := getTestAccountDB()
 	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(100000000000000000))
 	miner := &types.Miner{
-		Id:    common.FromHex("0x0003"),
-		Type:  common.MinerTypeProposer,
-		Stake: common.ProposerStake * 3,
+		Id:           common.FromHex("0x0003"),
+		Type:         common.MinerTypeProposer,
+		Stake:        common.ProposerStake * 3,
 		PublicKey:    []byte{0, 1, 2, 3},
 		VrfPublicKey: []byte{4, 5, 6, 7},
 	}
@@ -367,8 +368,8 @@ func testMinerExecutorApply9(t *testing.T) {
 	accountDB := getTestAccountDB()
 	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(1000000000000000))
 	miner := &types.Miner{
-		Type:  common.MinerTypeValidator,
-		Stake: common.ValidatorStake * 3,
+		Type:         common.MinerTypeValidator,
+		Stake:        common.ValidatorStake * 3,
 		PublicKey:    []byte{0, 1, 2, 3},
 		VrfPublicKey: []byte{4, 5, 6, 7},
 	}
@@ -405,7 +406,7 @@ func TestMinerExecutorApplyAll(t *testing.T) {
 		testMinerExecutorApply6,
 		testMinerExecutorApply7,
 		testMinerExecutorApply8,
-		testMinerExecutorApply9,}
+		testMinerExecutorApply9}
 
 	for i, f := range fs {
 		name := strconv.Itoa(i)

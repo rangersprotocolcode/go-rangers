@@ -41,9 +41,10 @@ type MinerManager struct {
 }
 
 func initMinerManager() {
-	pkp, err := db.NewLDBDatabase("pkp"+strconv.Itoa(common.InstanceIndex), 1, 1)
+	file := "pkp" + strconv.Itoa(common.InstanceIndex)
+	pkp, err := db.NewLDBDatabase(file, 1, 1)
 	if err != nil {
-		panic("newLDBDatabase fail, file=" + "" + "err=" + err.Error())
+		panic("newLDBDatabase fail, file=" + file + ", err=" + err.Error())
 	}
 
 	MinerManagerImpl = &MinerManager{pkCache: pkp}
