@@ -133,6 +133,7 @@ type header struct {
 	ExtraData    []byte
 	ProveRoot    common.Hash
 	EvictedTxs   []common.Hash
+	ExchangeRate map[string]string
 }
 
 func (bh *BlockHeader) GenHash() common.Hash {
@@ -153,6 +154,7 @@ func (bh *BlockHeader) GenHash() common.Hash {
 		ExtraData:    bh.ExtraData,
 		//ProveRoot:    bh.ProveRoot,
 		EvictedTxs: bh.EvictedTxs,
+		ExchangeRate:bh.ExchangeRate,
 	}
 	blockByte, _ := json.Marshal(header)
 	result := common.BytesToHash(common.Sha256(blockByte))
@@ -178,6 +180,7 @@ func (bh *BlockHeader) ToString() string {
 		ExtraData:    bh.ExtraData,
 		//ProveRoot:    bh.ProveRoot,
 		EvictedTxs: bh.EvictedTxs,
+		ExchangeRate: bh.ExchangeRate,
 	}
 	blockByte, _ := json.Marshal(header)
 	return string(blockByte)
