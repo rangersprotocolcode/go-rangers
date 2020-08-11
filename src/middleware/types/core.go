@@ -111,8 +111,10 @@ type BlockHeader struct {
 	ExtraData    []byte
 	Random       []byte
 	EvictedTxs   []common.Hash
+	ExchangeRate map[string]string
 }
 
+// 辅助
 type header struct {
 	Height       uint64      // 本块的高度
 	PreHash      common.Hash //上一块哈希

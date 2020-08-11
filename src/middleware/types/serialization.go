@@ -269,6 +269,9 @@ func PbToBlockHeader(h *middleware_pb.BlockHeader) *BlockHeader {
 	if nil != h.RequestIds {
 		json.Unmarshal(h.RequestIds, &header.RequestIds)
 	}
+	if nil != h.ExchangeRate {
+		json.Unmarshal(h.ExchangeRate, &header.ExchangeRate)
+	}
 	return &header
 }
 
@@ -425,6 +428,7 @@ func BlockHeaderToPb(h *BlockHeader) *middleware_pb.BlockHeader {
 		ExtraData: h.ExtraData, TotalQN: &h.TotalQN, Random: h.Random, EvictedTxs: &evictedTxs}
 
 	header.RequestIds, _ = json.Marshal(h.RequestIds)
+	header.ExchangeRate,_ = json.Marshal(h.ExchangeRate)
 	return &header
 }
 
