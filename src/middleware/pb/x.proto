@@ -111,8 +111,6 @@ message BlockHeader{
      optional Hashes EvictedTxs = 19;
 
      optional bytes RequestIds = 20;
-
-     optional bytes ExchangeRate = 21;
 }
 
 message TransactionHash{

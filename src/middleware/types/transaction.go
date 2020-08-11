@@ -81,6 +81,9 @@ const (
 	TransactionTypeStopSTM         = 904 // 关闭状态机
 	TransactionTypeUpgradeSTM      = 905 // 更新状态机（停机->删除本地镜像->下载新镜像->启动）
 	TransactionTypeQuitSTM         = 906 // 关服（停机->删除本地镜像->删除配置项）
+
+	// 系统管理
+	TransactionTypeSetExchangeRate = 801 // 新增汇率表
 )
 
 type Transaction struct {

@@ -386,6 +386,10 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw
 		break
 	case types.TransactionTypeMinerRefund:
 		break
+
+	case types.TransactionTypeSetExchangeRate:
+		result, message = service.SetExchangeRate(accountDB, &txRaw)
+		break
 	}
 
 	if !result {
