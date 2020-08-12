@@ -42,6 +42,12 @@ func CoinDeposit(accountdb *account.AccountDB, transaction *types.Transaction) (
 		return false, fmt.Sprintf("data error, data: %s", transaction.Data)
 	}
 
+	if !IsRateExisted(depositCoinData.ChainType, accountdb) {
+		msg := fmt.Sprintf("chainType data error, data: %s", depositCoinData.ChainType)
+		txLogger.Errorf(msg)
+		return false, msg
+	}
+
 	value, _ := utility.StrToBigInt(depositCoinData.Amount)
 	result := accountdb.AddFT(common.HexToAddress(transaction.Source), fmt.Sprintf("official-%s", depositCoinData.ChainType), value)
 	if result {
@@ -67,6 +73,13 @@ func FTDeposit(accountdb *account.AccountDB, transaction *types.Transaction) (bo
 	if depositFTData.Amount == "" || depositFTData.FTId == "" {
 		return false, fmt.Sprintf("data error, data: %s", transaction.Data)
 	}
+
+	if !IsRateExisted(depositFTData.FTId, accountdb) {
+		msg := fmt.Sprintf("depositFTData data error, data: %s", depositFTData.FTId)
+		txLogger.Errorf(msg)
+		return false, msg
+	}
+
 	//todo 先不检查此ft是否存在
 	value, _ := utility.StrToBigInt(depositFTData.Amount)
 	result := accountdb.AddFT(common.HexToAddress(transaction.Source), depositFTData.FTId, value)

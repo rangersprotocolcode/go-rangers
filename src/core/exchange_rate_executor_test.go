@@ -19,6 +19,7 @@ package core
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"encoding/json"
 	"strconv"
@@ -256,8 +257,8 @@ func testExchangeRateExecutor4(t *testing.T) {
 
 	accountDB, _ = account.NewAccountDB(root, triedb)
 	rate = accountDB.GetData(common.ExchangeRateAddress, []byte("ETH.ETH"))
-	if rate != nil || 0 != len(rate) {
-		t.Fatalf("fail to update ETH.ETH")
+	if service.IsRateExisted("ETH.ETH", accountDB) {
+		t.Fatalf("fail to delete ETH.ETH: %s", rate)
 	}
 	rate = accountDB.GetData(common.ExchangeRateAddress, []byte("MIX"))
 	if strings.Compare("1", string(rate)) != 0 {

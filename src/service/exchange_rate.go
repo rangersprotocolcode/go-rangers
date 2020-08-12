@@ -45,3 +45,12 @@ func SetExchangeRate(accountdb *account.AccountDB, transaction *types.Transactio
 func checkAuth(source string) bool {
 	return 0 == strings.Compare(source, "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443")
 }
+
+func IsRateExisted(id string, accountdb *account.AccountDB) bool {
+	if 0 == len(id) || nil == accountdb {
+		return false
+	}
+
+	rate := accountdb.GetData(common.ExchangeRateAddress, []byte(id))
+	return nil != rate && 0 != len(rate)
+}
