@@ -30,7 +30,21 @@ import (
 	"testing"
 )
 
-var groupChainImplLocal *groupChain
+var (
+	groupChainImplLocal *groupChain
+	leveldb             *db.LDBDatabase
+	triedb              account.AccountDatabase
+)
+
+func getTestAccountDB() *account.AccountDB {
+	if nil == leveldb {
+		leveldb, _ = db.NewLDBDatabase("test", 0, 0)
+		triedb = account.NewDatabase(leveldb)
+	}
+
+	accountdb, _ := account.NewAccountDB(common.Hash{}, triedb)
+	return accountdb
+}
 
 // 正常流程
 // 没加入组，退款不影响建组
@@ -637,20 +651,13 @@ func getTestBlockHeader() *types.BlockHeader {
 	return header
 }
 
-func getTestAccountDB() *account.AccountDB {
-	db, _ := db.NewLDBDatabase("test", 0, 0)
-	triedb := account.NewDatabase(db)
-	accountdb, _ := account.NewAccountDB(common.Hash{}, triedb)
-
-	return accountdb
-}
-
 func clean() {
 	os.RemoveAll("pkp0")
 	os.RemoveAll("logs")
 	os.RemoveAll("test")
 	os.RemoveAll("database")
 	os.RemoveAll("1.ini")
+	leveldb = nil
 }
 
 func setup(id string) {
