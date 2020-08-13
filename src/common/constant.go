@@ -57,16 +57,12 @@ var (
 
 	FTSetAddress  = BigToAddress(big.NewInt(4))
 	NFTSetAddress = BigToAddress(big.NewInt(5))
+
+	ExchangeRateAddress = BigToAddress(big.NewInt(6))
 )
 
 var (
-	Big1   = big.NewInt(1)
-	Big2   = big.NewInt(2)
-	Big3   = big.NewInt(3)
 	Big0   = big.NewInt(0)
-	Big32  = big.NewInt(32)
-	Big256 = big.NewInt(0xff)
-	Big257 = big.NewInt(257)
 
 	ErrSelectGroupNil     = errors.New("selectGroupId is nil")
 	ErrSelectGroupInequal = errors.New("selectGroupId not equal")

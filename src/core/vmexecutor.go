@@ -46,7 +46,7 @@ func (this *baseFeeExecutor) BeforeExecute(tx *types.Transaction, header *types.
 }
 
 func initExecutors() {
-	executors = make(map[int32]executor, 20)
+	executors = make(map[int32]executor, 21)
 
 	executors[types.TransactionTypeOperatorEvent] = &operatorExecutor{}
 	executors[types.TransactionTypeWithdraw] = &withdrawExecutor{}
@@ -73,6 +73,8 @@ func initExecutors() {
 	executors[types.TransactionTypeUpgradeSTM] = &stmExecutor{}
 	executors[types.TransactionTypeQuitSTM] = &stmExecutor{}
 	executors[types.TransactionTypeImportNFT] = &stmExecutor{}
+
+	executors[types.TransactionTypeSetExchangeRate] = &exchangeRateExecutor{}
 }
 
 const MaxCastBlockTime = time.Second * 3
