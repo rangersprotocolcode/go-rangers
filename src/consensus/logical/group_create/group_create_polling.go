@@ -55,7 +55,9 @@ func (p *groupCreateProcessor) StartCreateGroupPolling() {
 	}
 
 	groupHashList := p.createGroupCache.Keys()
+	groupCreateDebugLogger.Infof("createGroupCache keys size:%d,top:%d.", len(groupHashList), topHeight)
 	for _, hash := range groupHashList {
+		groupCreateDebugLogger.Infof("createGroupCache key:%s.", hash.(common.Hash).String())
 		createHeight, _ := p.createGroupCache.Get(hash)
 		if createHeight == nil {
 			groupCreateDebugLogger.Infof("createGroupCache get createHeight nil. Hash:%s\n", hash.(common.Hash).String())
