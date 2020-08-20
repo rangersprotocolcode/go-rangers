@@ -56,7 +56,7 @@ func (p *groupCreateProcessor) StartCreateGroupPolling() {
 	groupHashList := p.createGroupCache.Keys()
 	for _, hash := range groupHashList {
 		createHeight, _ := p.createGroupCache.Get(hash)
-		if createHeight != nil {
+		if createHeight == nil {
 			groupCreateDebugLogger.Infof("createGroupCache get nil. Hash:%s\n", hash.(common.Hash).String())
 		}
 		if topHeight > createHeight.(uint64)+model.Param.GroupReadyGap {
