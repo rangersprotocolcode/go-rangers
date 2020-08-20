@@ -112,7 +112,7 @@ func vmExecutorSetup(name string) {
 	service.InitService()
 	setup(name)
 	initExecutors()
-	initRewardCalculator(MinerManagerImpl, blockChainImpl, groupChainImpl)
+	initRewardCalculator(service.MinerManagerImpl, blockChainImpl, groupChainImpl)
 }
 
 func testFee(kind int32, t *testing.T) {

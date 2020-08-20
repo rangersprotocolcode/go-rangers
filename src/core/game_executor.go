@@ -80,12 +80,12 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor := GameExecutor{chain: blockChainImpl}
 	gameExecutor.logger = log.GetLoggerByIndex(log.GameExecutorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
+	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
+
 	gameExecutor.writeChan = make(chan notify.ClientTransactionMessage, maxWriteSize)
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.write)
 	notify.BUS.Subscribe(notify.CoinProxyNotify, gameExecutor.coinProxyHandler)
 	go gameExecutor.loop()
-
-	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
 }
 
 func (executor *GameExecutor) read(msg notify.Message) {
@@ -229,6 +229,59 @@ func (executor *GameExecutor) coinProxyHandler(msg notify.Message) {
 	executor.writeChan <- message
 }
 
+func (executor *GameExecutor) loop() {
+	for {
+		select {
+		case msg := <-executor.writeChan:
+			go executor.RunWrite(msg)
+		}
+	}
+}
+
+func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) {
+	txRaw := message.Tx
+	txRaw.RequestId = message.Nonce
+
+	// 校验交易类型
+	//transactionType := txRaw.Type
+	//if transactionType != types.TransactionTypeOperatorEvent &&
+	//	transactionType != types.TransactionTypeWithdraw && transactionType != types.TransactionTypePublishFT {
+	//	logger.Debugf("GameExecutor:Write transactionType: %d, not ok!", transactionType)
+	//	continue
+	//}
+
+	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
+
+	accountDB := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
+	if nil == accountDB {
+		return
+	}
+	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor")
+
+	if err := service.GetTransactionPool().VerifyTransaction(&txRaw); err != nil {
+		response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
+		go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+		return
+	}
+
+	executor.runTransaction(accountDB, txRaw)
+	//result, execMessage := executor.runTransaction(accountDB, txRaw)
+	//
+	//if 0 == len(message.UserId) {
+	//	return
+	//}
+	//
+	//// reply to the client
+	//var response []byte
+	//if result {
+	//	response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
+	//} else {
+	//	response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
+	//}
+	//go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+}
+
+
 func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw types.Transaction) (bool, string) {
 	txhash := txRaw.Hash.String()
 	executor.logger.Debugf("run tx. hash: %s", txhash)
@@ -260,11 +313,6 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw
 
 		// 只是转账
 		if isTransferOnly {
-			// 交易已经执行过了
-			if executor.isExisted(txRaw) {
-				return true, ""
-			}
-
 			snapshot := accountDB.Snapshot()
 			msg, ok := executor.doTransfer(txRaw, accountDB)
 			if !ok {
@@ -442,7 +490,6 @@ func (executor *GameExecutor) doTransfer(txRaw types.Transaction, accountDB *acc
 	}
 
 	return response, ok
-
 }
 
 func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {
@@ -460,56 +507,4 @@ func (executor *GameExecutor) markExecuted(trans *types.Transaction) {
 
 func (executor *GameExecutor) isExisted(tx types.Transaction) bool {
 	return service.GetTransactionPool().IsExisted(tx.Hash)
-}
-
-func (executor *GameExecutor) loop() {
-	for {
-		select {
-		case msg := <-executor.writeChan:
-			go executor.RunWrite(msg)
-		}
-	}
-}
-
-func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) {
-	txRaw := message.Tx
-	txRaw.RequestId = message.Nonce
-
-	// 校验交易类型
-	//transactionType := txRaw.Type
-	//if transactionType != types.TransactionTypeOperatorEvent &&
-	//	transactionType != types.TransactionTypeWithdraw && transactionType != types.TransactionTypePublishFT {
-	//	logger.Debugf("GameExecutor:Write transactionType: %d, not ok!", transactionType)
-	//	continue
-	//}
-
-	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
-
-	accountDB := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
-	if nil == accountDB {
-		return
-	}
-	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor")
-
-	if err := service.GetTransactionPool().VerifyTransaction(&txRaw); err != nil {
-		response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
-		go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
-		return
-	}
-
-	executor.runTransaction(accountDB, txRaw)
-	//result, execMessage := executor.runTransaction(accountDB, txRaw)
-	//
-	//if 0 == len(message.UserId) {
-	//	return
-	//}
-	//
-	//// reply to the client
-	//var response []byte
-	//if result {
-	//	response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
-	//} else {
-	//	response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
-	//}
-	//go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
 }

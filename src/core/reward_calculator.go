@@ -31,7 +31,7 @@ import (
 )
 
 type RewardCalculator struct {
-	minerManager *MinerManager
+	minerManager *service.MinerManager
 	blockChain   *blockChain
 	groupChain   GroupChain
 	logger       log.Logger
@@ -39,7 +39,7 @@ type RewardCalculator struct {
 
 var RewardCalculatorImpl *RewardCalculator
 
-func initRewardCalculator(minerManager *MinerManager, blockChainImpl *blockChain, groupChain GroupChain) {
+func initRewardCalculator(minerManager *service.MinerManager, blockChainImpl *blockChain, groupChain GroupChain) {
 	RewardCalculatorImpl = &RewardCalculator{minerManager: minerManager, blockChain: blockChainImpl, groupChain: groupChain}
 	RewardCalculatorImpl.logger = log.GetLoggerByIndex(log.RewardLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 }

@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
+	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
@@ -104,7 +105,7 @@ func (refund *RefundManager) Add(data map[uint64]RefundInfoList, db *account.Acc
 
 func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint64, accountdb *account.AccountDB) (uint64, *big.Int, error) {
 	this.logger.Debugf("getRefund, minerId:%s, height: %d, money: %d", common.ToHex(minerId), now, money)
-	miner := MinerManagerImpl.GetMiner(minerId, accountdb)
+	miner := service.MinerManagerImpl.GetMiner(minerId, accountdb)
 	if nil == miner {
 		this.logger.Debugf("getRefund error, minerId:%s, height: %d, money: %d, miner not existed", common.ToHex(minerId), now, money)
 		return 0, nil, errors.New("miner not existed")
@@ -121,12 +122,12 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint
 	// 验证小于最小质押量，则退出矿工
 	if miner.Type == common.MinerTypeProposer && left < common.ProposerStake ||
 		miner.Type == common.MinerTypeValidator && left < common.ValidatorStake {
-		MinerManagerImpl.removeMiner(minerId, miner.Type, accountdb)
+		service.MinerManagerImpl.RemoveMiner(minerId, miner.Type, accountdb)
 		refund = miner.Stake
 	} else {
 		// update miner
 		miner.Stake = left
-		MinerManagerImpl.UpdateMiner(miner, accountdb)
+		service.MinerManagerImpl.UpdateMiner(miner, accountdb)
 	}
 
 	// 计算解锁高度

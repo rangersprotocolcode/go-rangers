@@ -22,6 +22,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"fmt"
 	"math/big"
@@ -59,7 +60,7 @@ func testMinerRefundExecutor(t *testing.T) {
 		Type:  common.MinerTypeValidator,
 		Stake: common.ValidatorStake * 3,
 	}
-	MinerManagerImpl.addMiner(miner, accountDB)
+	service.MinerManagerImpl.InsertMiner(miner, accountDB)
 
 	transaction := &types.Transaction{
 		Source: "0x0003",
@@ -105,7 +106,7 @@ func testMinerRefundExecutor1(t *testing.T) {
 		Type:  common.MinerTypeValidator,
 		Stake: common.ValidatorStake * 3,
 	}
-	MinerManagerImpl.addMiner(miner, accountDB)
+	service.MinerManagerImpl.InsertMiner(miner, accountDB)
 
 	transaction := &types.Transaction{
 		Source: "0x0003",
@@ -124,7 +125,7 @@ func testMinerRefundExecutor1(t *testing.T) {
 		t.Fatalf("fail to getRefundInfos")
 	}
 
-	miner2 := MinerManagerImpl.GetMiner(miner.Id, accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(miner.Id, accountDB)
 	if miner2.Stake != miner.Stake {
 		t.Fatalf("fail to miner stake")
 	}
@@ -144,7 +145,7 @@ func testMinerRefundExecutor2(t *testing.T) {
 		Type:  common.MinerTypeValidator,
 		Stake: common.ValidatorStake * 3,
 	}
-	MinerManagerImpl.addMiner(miner, accountDB)
+	service.MinerManagerImpl.InsertMiner(miner, accountDB)
 
 	group := &types.Group{}
 	group.Id = common.FromHex("01")
@@ -194,7 +195,7 @@ func testMinerRefundExecutor2(t *testing.T) {
 	if 0 != refundInfo.Value.Cmp(big.NewInt(100000000000)) {
 		t.Fatalf("fail to refundInfo.Value, %d", refundInfo.Value)
 	}
-	miner2 := MinerManagerImpl.GetMiner(miner.Id, accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(miner.Id, accountDB)
 	if miner2.Stake != miner.Stake-100 {
 		t.Fatalf("fail to miner stake")
 	}
@@ -214,7 +215,7 @@ func testMinerRefundExecutor3(t *testing.T) {
 		Type:  common.MinerTypeValidator,
 		Stake: common.ValidatorStake * 3,
 	}
-	MinerManagerImpl.addMiner(miner, accountDB)
+	service.MinerManagerImpl.InsertMiner(miner, accountDB)
 
 	group := &types.Group{}
 	group.Id = common.FromHex("01")
@@ -264,7 +265,7 @@ func testMinerRefundExecutor3(t *testing.T) {
 	if 0 != refundInfo.Value.Cmp(big.NewInt(200000000000000)) {
 		t.Fatalf("fail to refundInfo.Value, %d", refundInfo.Value)
 	}
-	miner2 := MinerManagerImpl.GetMiner(miner.Id, accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(miner.Id, accountDB)
 	if miner2.Stake != miner.Stake-200000 {
 		t.Fatalf("fail to miner stake")
 	}
@@ -284,7 +285,7 @@ func testMinerRefundExecutor4(t *testing.T) {
 		Type:  common.MinerTypeValidator,
 		Stake: common.ValidatorStake * 3,
 	}
-	MinerManagerImpl.addMiner(miner, accountDB)
+	service.MinerManagerImpl.InsertMiner(miner, accountDB)
 
 	group := &types.Group{}
 	group.Id = common.FromHex("01")
@@ -334,7 +335,7 @@ func testMinerRefundExecutor4(t *testing.T) {
 	if 0 != refundInfo.Value.Cmp(big.NewInt(300000000000000)) {
 		t.Fatalf("fail to refundInfo.Value, %d", refundInfo.Value)
 	}
-	miner2 := MinerManagerImpl.GetMiner(miner.Id, accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(miner.Id, accountDB)
 	if miner2 != nil {
 		t.Fatalf("fail to miner stake")
 	}
@@ -354,7 +355,7 @@ func testMinerRefundExecutor5(t *testing.T) {
 		Type:  common.MinerTypeValidator,
 		Stake: common.ValidatorStake * 3,
 	}
-	MinerManagerImpl.addMiner(miner, accountDB)
+	service.MinerManagerImpl.InsertMiner(miner, accountDB)
 
 	group := &types.Group{}
 	group.Id = common.FromHex("01")
@@ -414,7 +415,7 @@ func testMinerRefundExecutor5(t *testing.T) {
 	if 0 != refundInfo.Value.Cmp(big.NewInt(300000000000000)) {
 		t.Fatalf("fail to refundInfo.Value, %d", refundInfo.Value)
 	}
-	miner2 := MinerManagerImpl.GetMiner(miner.Id, accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(miner.Id, accountDB)
 	if miner2 != nil {
 		t.Fatalf("fail to miner stake")
 	}
@@ -434,7 +435,7 @@ func testMinerRefundExecutor6(t *testing.T) {
 		Type:  common.MinerTypeValidator,
 		Stake: common.ValidatorStake * 3,
 	}
-	MinerManagerImpl.addMiner(miner, accountDB)
+	service.MinerManagerImpl.InsertMiner(miner, accountDB)
 
 	group := &types.Group{}
 	group.Id = common.FromHex("01")
@@ -494,7 +495,7 @@ func testMinerRefundExecutor6(t *testing.T) {
 	if 0 != refundInfo.Value.Cmp(big.NewInt(100110000000000)) {
 		t.Fatalf("fail to refundInfo.Value, %d", refundInfo.Value)
 	}
-	miner2 := MinerManagerImpl.GetMiner(miner.Id, accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(miner.Id, accountDB)
 	if miner2 != nil && miner2.Stake != miner.Stake-100110 {
 		t.Fatalf("fail to miner stake")
 	}
@@ -514,7 +515,7 @@ func testMinerRefundExecutor7(t *testing.T) {
 		Type:  common.MinerTypeProposer,
 		Stake: common.ProposerStake * 3,
 	}
-	MinerManagerImpl.addMiner(miner, accountDB)
+	service.MinerManagerImpl.InsertMiner(miner, accountDB)
 
 	transaction := &types.Transaction{
 		Source: "0xdd03",
@@ -546,7 +547,7 @@ func testMinerRefundExecutor7(t *testing.T) {
 		t.Fatalf("fail to refundInfo.Value, %d", refundInfo.Value)
 	}
 
-	miner2 := MinerManagerImpl.GetMiner(miner.Id, accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(miner.Id, accountDB)
 	if miner2 != nil && miner2.Stake != miner.Stake-100 {
 		t.Fatalf("fail to miner stake")
 	}
@@ -566,7 +567,7 @@ func testMinerRefundExecutor8(t *testing.T) {
 		Type:  common.MinerTypeProposer,
 		Stake: common.ProposerStake * 3,
 	}
-	MinerManagerImpl.addMiner(miner, accountDB)
+	service.MinerManagerImpl.InsertMiner(miner, accountDB)
 
 	transaction := &types.Transaction{
 		Source: "0xdd03",
@@ -598,7 +599,7 @@ func testMinerRefundExecutor8(t *testing.T) {
 		t.Fatalf("fail to refundInfo.Value, %d", refundInfo.Value)
 	}
 
-	miner2 := MinerManagerImpl.GetMiner(miner.Id, accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(miner.Id, accountDB)
 	if miner2 != nil {
 		t.Fatalf("fail to miner stake")
 	}
@@ -618,7 +619,7 @@ func testMinerRefundExecutor9(t *testing.T) {
 		Type:  common.MinerTypeValidator,
 		Stake: common.ValidatorStake * 3,
 	}
-	MinerManagerImpl.addMiner(miner, accountDB)
+	service.MinerManagerImpl.InsertMiner(miner, accountDB)
 
 	transaction := &types.Transaction{
 		Source: "0x0003",
@@ -637,7 +638,7 @@ func testMinerRefundExecutor9(t *testing.T) {
 		t.Fatalf("fail to getRefundInfos")
 	}
 
-	miner2 := MinerManagerImpl.GetMiner(miner.Id, accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(miner.Id, accountDB)
 	if miner2.Stake != miner.Stake {
 		t.Fatalf("fail to miner stake")
 	}

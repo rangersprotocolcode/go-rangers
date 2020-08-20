@@ -18,6 +18,7 @@ package logical
 
 import (
 	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/service"
 
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/consensus/access"
@@ -92,7 +93,7 @@ func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joined
 	p.blockContexts = NewCastBlockContexts()
 	p.NetServer = net.NewNetworkServer()
 
-	p.minerReader = access.NewMinerPoolReader(core.MinerManagerImpl)
+	p.minerReader = access.NewMinerPoolReader(service.MinerManagerImpl)
 	//pkPoolInit(p.minerReader)
 
 	//p.groupManager = NewGroupManager(p)
@@ -164,7 +165,7 @@ func (p *Processor) isCastLegal(bh *types.BlockHeader, preHeader *types.BlockHea
 		err = fmt.Errorf("miner can't cast at height, id=%v, height=%v(%v-%v)", castor.ShortS(), bh.Height, minerDO.ApplyHeight, minerDO.AbortHeight)
 		return
 	}
-	totalStake := p.minerReader.GetTotalStake(preHeader.Height)
+	totalStake := p.minerReader.GetTotalStake(preHeader.Height, preHeader.StateTree)
 	blog.log("totalStake %v", totalStake)
 	if ok2, err2 := verifyBlockVRF(bh, preHeader, minerDO, totalStake); !ok2 {
 		err = fmt.Errorf("vrf verify block fail, err=%v", err2)

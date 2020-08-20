@@ -14,24 +14,18 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package service
+package utility
 
-import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/log"
-)
+func IsEmptyByteSlice(data []byte) bool {
+	if nil == data || 0 == len(data) {
+		return true
+	}
 
-var logger, txLogger, txPoolLogger log.Logger
+	for _, item := range data {
+		if 0 != item {
+			return false
+		}
+	}
 
-func InitService() {
-	logger = log.GetLoggerByIndex(log.CoreLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	txLogger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	txPoolLogger = log.GetLoggerByIndex(log.TxPoolLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-
-	initMinerManager()
-	initTransactionPool()
-	initTxManager()
-	initFTManager()
-	initNFTManager()
-	initAccountDBManager()
+	return true
 }

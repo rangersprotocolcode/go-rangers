@@ -125,9 +125,6 @@ func initBlockChain() error {
 	}
 
 	chain.forkProcessor = initForkProcessor(chain)
-
-	initMinerManager()
-
 	chain.latestBlock = chain.queryBlockHeaderByHeight([]byte(latestBlockKey), false)
 	if chain.latestBlock == nil {
 		chain.insertGenesisBlock()
@@ -462,18 +459,6 @@ func (chain *blockChain) queryBlockHeaderByHash(hash common.Hash) *types.BlockHe
 		return nil
 	}
 	return block.Header
-}
-
-func (chain *blockChain) getAccountDBByHeight(height uint64) (*account.AccountDB, error) {
-	chain.lock.RLock("getAccountDBByHeight")
-	defer chain.lock.RUnlock("getAccountDBByHeight")
-
-	header := chain.queryBlockHeaderByHeight(height, false)
-	if header == nil {
-		return nil, fmt.Errorf("no data at height %v", height)
-	}
-
-	return service.AccountDBManagerInstance.GetAccountDBByHash(header.StateTree)
 }
 
 func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList []common.Hashes) ([]*types.Transaction, []common.Hashes, map[string]bool, error) {

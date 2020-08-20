@@ -324,7 +324,7 @@ func (p *Processor) blockProposal() {
 	}
 	height := worker.castHeight
 
-	totalStake := p.minerReader.GetTotalStake(worker.baseBH.Height)
+	totalStake := p.minerReader.GetTotalStake(worker.baseBH.Height, worker.baseBH.StateTree)
 	blog.log("totalStake height=%v, stake=%v", height, totalStake)
 	start := utility.GetTime()
 	pi, qn, err := worker.genProve(start, totalStake)

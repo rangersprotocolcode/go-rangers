@@ -19,6 +19,7 @@ package core
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/service"
 	"encoding/json"
 	"math/big"
 	"strconv"
@@ -64,7 +65,7 @@ func testMinerExecutorAdd1(t *testing.T) {
 		Type:  common.MinerTypeProposer,
 		Stake: common.ProposerStake * 3,
 	}
-	MinerManagerImpl.addMiner(miner, accountDB)
+	service.MinerManagerImpl.InsertMiner(miner, accountDB)
 
 	data, _ := json.Marshal(miner)
 	transaction := &types.Transaction{
@@ -78,7 +79,7 @@ func testMinerExecutorAdd1(t *testing.T) {
 		t.Fatalf(msg)
 	}
 
-	miner2 := MinerManagerImpl.GetMiner(miner.Id, accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(miner.Id, accountDB)
 	if nil == miner2 || miner2.Stake != common.ProposerStake*6 {
 		t.Fatalf("error add miner")
 	}
@@ -100,7 +101,7 @@ func testMinerExecutorAdd2(t *testing.T) {
 		Type:  common.MinerTypeProposer,
 		Stake: common.ProposerStake * 3,
 	}
-	MinerManagerImpl.addMiner(miner, accountDB)
+	service.MinerManagerImpl.InsertMiner(miner, accountDB)
 
 	data, _ := json.Marshal(miner)
 	transaction := &types.Transaction{
@@ -114,7 +115,7 @@ func testMinerExecutorAdd2(t *testing.T) {
 		t.Fatalf(msg)
 	}
 
-	miner2 := MinerManagerImpl.GetMiner(miner.Id, accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(miner.Id, accountDB)
 	if nil == miner2 || miner2.Stake != common.ProposerStake*6 {
 		t.Fatalf("error add miner")
 	}
@@ -136,7 +137,7 @@ func testMinerExecutorAdd3(t *testing.T) {
 		Type:  common.MinerTypeProposer,
 		Stake: common.ProposerStake * 3,
 	}
-	MinerManagerImpl.addMiner(miner, accountDB)
+	service.MinerManagerImpl.InsertMiner(miner, accountDB)
 
 	miner.Id = []byte{}
 	data, _ := json.Marshal(miner)
@@ -151,7 +152,7 @@ func testMinerExecutorAdd3(t *testing.T) {
 		t.Fatalf(msg)
 	}
 
-	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
 	if nil == miner2 || miner2.Stake != common.ProposerStake*6 {
 		t.Fatalf("error add miner")
 	}
@@ -173,7 +174,7 @@ func testMinerExecutorAdd4(t *testing.T) {
 		Type:  common.MinerTypeProposer,
 		Stake: common.ProposerStake * 3,
 	}
-	MinerManagerImpl.addMiner(miner, accountDB)
+	service.MinerManagerImpl.InsertMiner(miner, accountDB)
 
 	data, _ := json.Marshal(miner)
 	transaction := &types.Transaction{
@@ -187,7 +188,7 @@ func testMinerExecutorAdd4(t *testing.T) {
 		t.Fatalf(msg)
 	}
 
-	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
 	if nil == miner2 || miner2.Stake != common.ProposerStake*3 {
 		t.Fatalf("error add miner")
 	}

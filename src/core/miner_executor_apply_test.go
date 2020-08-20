@@ -19,6 +19,7 @@ package core
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/service"
 	"encoding/json"
 	"math/big"
 	"strconv"
@@ -47,7 +48,7 @@ func testMinerExecutorApply(t *testing.T) {
 	if succ {
 		t.Fatalf("error apply miner")
 	}
-	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
 	if miner2 != nil {
 		t.Fatalf("error apply miner")
 	}
@@ -78,7 +79,7 @@ func testMinerExecutorApply1(t *testing.T) {
 		t.Fatalf(msg)
 	}
 
-	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
 	if miner2 == nil || miner2.Stake != miner.Stake || miner2.ApplyHeight != 10086+common.HeightAfterStake {
 		t.Fatalf("error apply miner")
 	}
@@ -110,7 +111,7 @@ func testMinerExecutorApply2(t *testing.T) {
 	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); succ {
 		t.Fatalf("error apply miner")
 	}
-	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
 	if miner2 != nil {
 		t.Fatalf("error apply miner")
 	}
@@ -140,7 +141,7 @@ func testMinerExecutorApply3(t *testing.T) {
 		t.Fatalf(msg)
 	}
 
-	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
 	if miner2 == nil || miner2.Stake != miner.Stake || miner2.ApplyHeight != 10086+common.HeightAfterStake {
 		t.Fatalf("error apply miner")
 	}
@@ -153,7 +154,7 @@ func testMinerExecutorApply3(t *testing.T) {
 	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); succ {
 		t.Fatalf("error apply miner twice")
 	}
-	miner3 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
+	miner3 := service.MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
 	if miner3 == nil || miner3.Stake != miner.Stake || miner3.ApplyHeight != 10086+common.HeightAfterStake {
 		t.Fatalf("error apply miner")
 	}
@@ -187,7 +188,7 @@ func testMinerExecutorApply4(t *testing.T) {
 	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); succ {
 		t.Fatalf("error apply miner")
 	}
-	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
 	if miner2 != nil {
 		t.Fatalf("error apply miner")
 	}
@@ -216,7 +217,7 @@ func testMinerExecutorApply5(t *testing.T) {
 		t.Fatalf(msg)
 	}
 
-	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
 	if miner2 == nil || miner2.Stake != miner.Stake || miner2.ApplyHeight != 10086+common.HeightAfterStake {
 		t.Fatalf("error apply miner")
 	}
@@ -248,7 +249,7 @@ func testMinerExecutorApply6(t *testing.T) {
 	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); succ {
 		t.Fatalf("error apply miner")
 	}
-	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
 	if miner2 != nil {
 		t.Fatalf("error apply miner")
 	}
@@ -278,7 +279,7 @@ func testMinerExecutorApply7(t *testing.T) {
 		t.Fatalf(msg)
 	}
 
-	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
 	if miner2 == nil || miner2.Stake != miner.Stake || miner2.ApplyHeight != 10086+common.HeightAfterStake {
 		t.Fatalf("error apply miner")
 	}
@@ -291,7 +292,7 @@ func testMinerExecutorApply7(t *testing.T) {
 	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); succ {
 		t.Fatalf("error apply miner twice")
 	}
-	miner3 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
+	miner3 := service.MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
 	if miner3 == nil || miner3.Stake != miner.Stake || miner3.ApplyHeight != 10086+common.HeightAfterStake {
 		t.Fatalf("error apply miner")
 	}
@@ -326,7 +327,7 @@ func testMinerExecutorApply8(t *testing.T) {
 		t.Fatalf(msg)
 	}
 
-	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
 	if miner2 == nil || miner2.Stake != miner.Stake || miner2.ApplyHeight != 10086+common.HeightAfterStake {
 		t.Fatalf("error apply miner")
 	}
@@ -351,7 +352,7 @@ func testMinerExecutorApply8(t *testing.T) {
 	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, nil); succ {
 		t.Fatalf("error apply miner twice")
 	}
-	miner3 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
+	miner3 := service.MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
 	if miner3 == nil || miner3.Stake != miner2.Stake || miner3.ApplyHeight != 10086+common.HeightAfterStake {
 		t.Fatalf("error apply miner")
 	}
@@ -385,7 +386,7 @@ func testMinerExecutorApply9(t *testing.T) {
 		t.Fatalf(msg)
 	}
 
-	miner2 := MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
+	miner2 := service.MinerManagerImpl.GetMiner(common.FromHex("0x0003"), accountDB)
 	if miner2 == nil || miner2.Stake != miner.Stake || miner2.ApplyHeight != 10086+common.HeightAfterStake {
 		t.Fatalf("error apply miner")
 	}

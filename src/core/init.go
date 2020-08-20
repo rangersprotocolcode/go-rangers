@@ -20,6 +20,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/service"
 )
 
 var (
@@ -48,7 +49,7 @@ func InitCore(helper types.ConsensusHelper) error {
 	}
 
 	initExecutors()
-	initRewardCalculator(MinerManagerImpl, blockChainImpl, groupChainImpl)
+	initRewardCalculator(service.MinerManagerImpl, blockChainImpl, groupChainImpl)
 	initRefundManager()
 
 	initChainHandler()

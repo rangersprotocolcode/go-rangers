@@ -14,18 +14,18 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package core
+package service
 
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/db"
+	"com.tuntun.rocket/node/src/middleware/log"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
 
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/trie"
 	"com.tuntun.rocket/node/src/utility"
@@ -38,6 +38,7 @@ var (
 
 type MinerManager struct {
 	pkCache *db.LDBDatabase
+	logger  log.Logger
 }
 
 func initMinerManager() {
@@ -48,6 +49,7 @@ func initMinerManager() {
 	}
 
 	MinerManagerImpl = &MinerManager{pkCache: pkp}
+	MinerManagerImpl.logger = log.GetLoggerByIndex(log.CoreLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 }
 
 func (mm *MinerManager) GetMiner(minerId []byte, accountdb *account.AccountDB) *types.Miner {
@@ -61,7 +63,7 @@ func (mm *MinerManager) GetMiner(minerId []byte, accountdb *account.AccountDB) *
 
 func (mm *MinerManager) GetMinerById(id []byte, kind byte, accountdb *account.AccountDB) *types.Miner {
 	if accountdb == nil {
-		accountdb = service.AccountDBManagerInstance.GetLatestStateDB()
+		accountdb = AccountDBManagerInstance.GetLatestStateDB()
 	}
 
 	db := mm.getMinerDatabaseAddress(kind)
@@ -81,7 +83,7 @@ func (mm *MinerManager) GetValidatorsStake(members [][]byte, accountDB *account.
 		id := getAddressFromID(member)
 		miner := mm.GetMinerById(member, common.MinerTypeValidator, accountDB)
 		if nil == miner {
-			logger.Errorf("fail to get Member,id: %s", id)
+			mm.logger.Errorf("fail to get Member,id: %s", id)
 			continue
 		}
 		membersDetail[id] = miner.Stake
@@ -112,17 +114,17 @@ func (mm *MinerManager) GetProposerTotalStakeWithDetail(height uint64, accountDB
 		iter = mm.minerIterator(common.MinerTypeProposer, accountDB)
 		for iter.Next() {
 			miner, _ := iter.Current()
-			logger.Debugf("GetTotalStakeByHeight %+v", miner)
+			mm.logger.Debugf("GetTotalStakeByHeight %+v", miner)
 		}
 	}
 
 	return total, membersDetail
 }
 
-func (mm *MinerManager) GetProposerTotalStake(height uint64) uint64 {
-	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
+func (mm *MinerManager) GetProposerTotalStake(height uint64, hash common.Hash) uint64 {
+	accountDB, err := AccountDBManagerInstance.GetAccountDBByHash(hash)
 	if err != nil {
-		logger.Errorf("Get account db by height %d error:%s", height, err.Error())
+		mm.logger.Errorf("Get account db by height %d error:%s", height, err.Error())
 		return 0
 	}
 
@@ -131,12 +133,13 @@ func (mm *MinerManager) GetProposerTotalStake(height uint64) uint64 {
 	return uint64(len(proposers))
 }
 
-func (mm *MinerManager) MinerIterator(minerType byte, height uint64) *MinerIterator {
-	accountDB, err := blockChainImpl.getAccountDBByHeight(height)
+func (mm *MinerManager) MinerIterator(minerType byte, hash common.Hash) *MinerIterator {
+	accountDB, err := AccountDBManagerInstance.GetAccountDBByHash(hash)
 	if err != nil {
-		logger.Error("Get account db by height %d error:%s", height, err.Error())
+		mm.logger.Error("Get account db by hash %d error:%s", hash.Hex(), err.Error())
 		return nil
 	}
+
 	return mm.minerIterator(minerType, accountDB)
 }
 
@@ -159,7 +162,7 @@ func (mm *MinerManager) AddStake(addr common.Address, minerId []byte, delta uint
 	balance := accountdb.GetBalance(addr)
 	if balance.Cmp(stake) < 0 {
 		msg := fmt.Sprintf("not enough balance, addr: %s, balance: %d, stake: %d", addr.String(), balance, stake)
-		logger.Errorf(msg)
+		mm.logger.Errorf(msg)
 		return false, msg
 	}
 
@@ -184,18 +187,20 @@ func (mm *MinerManager) AddStake(addr common.Address, minerId []byte, delta uint
 func (mm *MinerManager) AddMiner(addr common.Address, miner *types.Miner, accountdb *account.AccountDB) (bool, string) {
 	if miner.Type != common.MinerTypeValidator && miner.Type != common.MinerTypeProposer {
 		msg := fmt.Sprintf("miner type error, minerId: %s, type: %d", common.ToHex(miner.Id), miner.Type)
-		logger.Errorf(msg)
+		mm.logger.Errorf(msg)
 		return false, msg
 	}
+
 	if (miner.Type == common.MinerTypeValidator && miner.Stake < common.ValidatorStake) ||
 		(miner.Type == common.MinerTypeProposer && miner.Stake < common.ProposerStake) {
 		msg := fmt.Sprintf("not enough stake, minerId: %s, stake: %d", common.ToHex(miner.Id), miner.Stake)
-		logger.Errorf(msg)
+		mm.logger.Errorf(msg)
 		return false, msg
 	}
-	if isEmptyByteSlice(miner.VrfPublicKey) || isEmptyByteSlice(miner.PublicKey) {
+
+	if utility.IsEmptyByteSlice(miner.VrfPublicKey) || utility.IsEmptyByteSlice(miner.PublicKey) {
 		msg := fmt.Sprintf("VrfPublicKey or PublicKey is empty, minerId: %s, vrfPublicKey: %v,publicKey: %v", common.ToHex(miner.Id), miner.VrfPublicKey, miner.PublicKey)
-		logger.Errorf(msg)
+		mm.logger.Errorf(msg)
 		return false, msg
 
 	}
@@ -204,20 +209,20 @@ func (mm *MinerManager) AddMiner(addr common.Address, miner *types.Miner, accoun
 	balance := accountdb.GetBalance(addr)
 	if balance.Cmp(stake) < 0 {
 		msg := fmt.Sprintf("not enough max, addr: %s, balance: %d, stake: %d", addr.String(), balance, stake)
-		logger.Errorf(msg)
+		mm.logger.Errorf(msg)
 		return false, msg
 	}
 
 	id := miner.Id
 	if mm.GetMiner(id, accountdb) != nil {
 		msg := fmt.Sprintf("miner is existed. minerId: %s", common.ToHex(id))
-		logger.Errorf(msg)
+		mm.logger.Errorf(msg)
 		return false, msg
 	}
 
 	accountdb.SubBalance(addr, stake)
 	mm.UpdateMiner(miner, accountdb)
-	logger.Debugf("add miner: %v", miner)
+	mm.logger.Debugf("add miner: %v", miner)
 
 	mm.pkCache.Put(miner.Id, miner.PublicKey)
 	return true, ""
@@ -235,8 +240,9 @@ func (mm *MinerManager) UpdateMiner(miner *types.Miner, accountdb *account.Accou
 	accountdb.SetData(db, id, data)
 }
 
-func (mm *MinerManager) addMiner(miner *types.Miner, accountdb *account.AccountDB) int {
-	logger.Debugf("Miner manager add miner, %v", miner)
+// 创世矿工用
+func (mm *MinerManager) InsertMiner(miner *types.Miner, accountdb *account.AccountDB) int {
+	mm.logger.Debugf("Miner manager add miner, %v", miner)
 
 	id := miner.Id
 	db := mm.getMinerDatabaseAddress(miner.Type)
@@ -250,8 +256,8 @@ func (mm *MinerManager) addMiner(miner *types.Miner, accountdb *account.AccountD
 	}
 }
 
-func (mm *MinerManager) removeMiner(id []byte, ttype byte, accountdb *account.AccountDB) {
-	logger.Debugf("Miner manager remove miner %d", ttype)
+func (mm *MinerManager) RemoveMiner(id []byte, ttype byte, accountdb *account.AccountDB) {
+	mm.logger.Debugf("Miner manager remove miner %d", ttype)
 	db := mm.getMinerDatabaseAddress(ttype)
 	accountdb.SetData(db, id, emptyValue[:])
 }
@@ -263,10 +269,10 @@ func (mm *MinerManager) abortMiner(id []byte, ttype byte, height uint64, account
 		miner.AbortHeight = height
 		mm.UpdateMiner(miner, accountdb)
 		//mm.updateMinerCount(ttype, minerCountDecrease, accountdb)
-		logger.Debugf("Miner manager abort miner update success %+v", miner)
+		mm.logger.Debugf("Miner manager abort miner update success %+v", miner)
 		return true
 	} else {
-		logger.Debugf("Miner manager abort miner update fail %+v", miner)
+		mm.logger.Debugf("Miner manager abort miner update fail %+v", miner)
 		return false
 	}
 }
@@ -274,21 +280,22 @@ func (mm *MinerManager) abortMiner(id []byte, ttype byte, height uint64, account
 func (mm *MinerManager) minerIterator(minerType byte, accountdb *account.AccountDB) *MinerIterator {
 	db := mm.getMinerDatabaseAddress(minerType)
 	if accountdb == nil {
-		accountdb = service.AccountDBManagerInstance.GetLatestStateDB()
+		accountdb = AccountDBManagerInstance.GetLatestStateDB()
 	}
-	iterator := &MinerIterator{iterator: accountdb.DataIterator(db, []byte(""))}
+	iterator := &MinerIterator{iterator: accountdb.DataIterator(db, []byte("")), logger: mm.logger}
 	return iterator
 }
 
 type MinerIterator struct {
 	iterator *trie.Iterator
+	logger   log.Logger
 }
 
 func (mi *MinerIterator) Current() (*types.Miner, error) {
 	var miner types.Miner
 	err := json.Unmarshal(mi.iterator.Value, &miner)
 	if err != nil {
-		logger.Debugf("MinerIterator Unmarshal Error %+v %+v %+v", mi.iterator.Key, err, mi.iterator.Value)
+		mi.logger.Debugf("MinerIterator Unmarshal Error %+v %+v %+v", mi.iterator.Key, err, mi.iterator.Value)
 	}
 
 	if len(miner.Id) == 0 {
@@ -304,4 +311,8 @@ func (mi *MinerIterator) Current() (*types.Miner, error) {
 
 func (mi *MinerIterator) Next() bool {
 	return mi.iterator.Next()
+}
+
+func getAddressFromID(id []byte) common.Address {
+	return common.BytesToAddress(id)
 }

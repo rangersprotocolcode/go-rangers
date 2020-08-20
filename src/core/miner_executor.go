@@ -19,7 +19,9 @@ package core
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -77,10 +79,10 @@ func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *
 
 	miner.ApplyHeight = header.Height + common.HeightAfterStake
 	miner.Status = common.MinerStatusNormal
-	if isEmptyByteSlice(miner.Id) {
+	if utility.IsEmptyByteSlice(miner.Id) {
 		miner.Id = common.FromHex(transaction.Source)
 	}
-	return MinerManagerImpl.AddMiner(common.HexToAddress(transaction.Source), &miner, accountdb)
+	return service.MinerManagerImpl.AddMiner(common.HexToAddress(transaction.Source), &miner, accountdb)
 }
 
 type minerAddExecutor struct {
@@ -97,22 +99,10 @@ func (this *minerAddExecutor) Execute(transaction *types.Transaction, header *ty
 		return false, msg
 	}
 
-	if isEmptyByteSlice(miner.Id) {
+	if utility.IsEmptyByteSlice(miner.Id) {
 		miner.Id = common.FromHex(transaction.Source)
 	}
-	return MinerManagerImpl.AddStake(common.HexToAddress(transaction.Source), miner.Id, miner.Stake, accountdb)
+	return service.MinerManagerImpl.AddStake(common.HexToAddress(transaction.Source), miner.Id, miner.Stake, accountdb)
 }
 
-func isEmptyByteSlice(data []byte) bool {
-	if nil == data || 0 == len(data) {
-		return true
-	}
 
-	for _, item := range data {
-		if 0 != item {
-			return false
-		}
-	}
-
-	return true
-}

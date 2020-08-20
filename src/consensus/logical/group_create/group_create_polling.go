@@ -174,7 +174,7 @@ func (p *groupCreateProcessor) genCreateGroupBaseInfo(baseHeight uint64) (*creat
 func (p *groupCreateProcessor) selectCandidates(theBH *types.BlockHeader) (enough bool, cands []groupsig.ID) {
 	min := model.Param.CreateGroupMinCandidates()
 	height := theBH.Height
-	allCandidates := p.minerReader.GetCandidateMiners(height)
+	allCandidates := p.minerReader.GetCandidateMiners(height, theBH.StateTree)
 
 	ids := make([]string, len(allCandidates))
 	for idx, can := range allCandidates {
