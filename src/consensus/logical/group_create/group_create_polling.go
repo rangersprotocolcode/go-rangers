@@ -25,6 +25,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"fmt"
 	"math"
+	"time"
 )
 
 //检查建组
@@ -57,7 +58,8 @@ func (p *groupCreateProcessor) StartCreateGroupPolling() {
 	for _, hash := range groupHashList {
 		createHeight, _ := p.createGroupCache.Get(hash)
 		if createHeight == nil {
-			groupCreateDebugLogger.Infof("createGroupCache get nil. Hash:%s\n", hash.(common.Hash).String())
+			groupCreateDebugLogger.Infof("createGroupCache get createHeight nil. Hash:%s\n", hash.(common.Hash).String())
+			time.Sleep(time.Second * 3)
 		}
 		if topHeight > createHeight.(uint64)+model.Param.GroupReadyGap {
 			groupCreateDebugLogger.Infof("Group create time out. Hash:%s\n", hash.(common.Hash).String())
