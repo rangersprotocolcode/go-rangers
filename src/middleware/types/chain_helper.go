@@ -14,24 +14,16 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package service
+package types
 
-import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/log"
-)
+/*
+	组接口合集
+*/
+type GroupChainHelper interface {
+	GetAvailableGroupsByMinerId(height uint64, minerId []byte) []*Group
+	GetGroupById(id []byte) *Group
+}
 
-var logger, txLogger, txPoolLogger log.Logger
-
-func InitService() {
-	logger = log.GetLoggerByIndex(log.CoreLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	txLogger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	txPoolLogger = log.GetLoggerByIndex(log.TxPoolLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-
-	InitMinerManager()
-	initTransactionPool()
-	initTxManager()
-	initFTManager()
-	initNFTManager()
-	initAccountDBManager()
+type BlockChainHelper interface {
+	QueryBlockHeaderByHeight(height interface{}, cache bool) *BlockHeader
 }

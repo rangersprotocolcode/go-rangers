@@ -36,7 +36,7 @@ func testVMExecutorCoinDeposit(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("14497f95a55d510e738040dd23ed6de069ca795823bf6397e94b25cc596fc411", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 0 != len(evictedTxs) {
@@ -81,7 +81,7 @@ func testVMExecutorFtDepositExecutor(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("cb3684d14734e676961db43c2b7a44f5161594de5db4fad90cea2236d53c4398", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 0 != len(evictedTxs) {
@@ -230,4 +230,3 @@ func testVMExecutorNFTDepositExecutorWithAppId(t *testing.T) {
 		t.Fatalf("fail to get all nft by null gameId")
 	}
 }
-

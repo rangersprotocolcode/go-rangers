@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package core
+package executor
 
 import (
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -22,11 +22,14 @@ import (
 	"com.tuntun.rocket/node/src/storage/account"
 )
 
-type withdrawExecutor struct {
-	baseFeeExecutor
+type exchangeRateExecutor struct {
 }
 
-func (this *withdrawExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
-	msg, success := service.Withdraw(accountdb, transaction, true)
-	return success, msg
+// 不扣手续费
+func (this *exchangeRateExecutor) BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	return true, ""
+}
+
+func (this *exchangeRateExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	return service.SetExchangeRate(accountdb, transaction)
 }

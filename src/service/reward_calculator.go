@@ -14,14 +14,13 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package core
+package service
 
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
-	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
@@ -31,16 +30,16 @@ import (
 )
 
 type RewardCalculator struct {
-	minerManager *service.MinerManager
-	blockChain   *blockChain
-	groupChain   GroupChain
+	minerManager *MinerManager
+	blockChain   types.BlockChainHelper
+	groupChain   types.GroupChainHelper
 	logger       log.Logger
 }
 
 var RewardCalculatorImpl *RewardCalculator
 
-func initRewardCalculator(minerManager *service.MinerManager, blockChainImpl *blockChain, groupChain GroupChain) {
-	RewardCalculatorImpl = &RewardCalculator{minerManager: minerManager, blockChain: blockChainImpl, groupChain: groupChain}
+func InitRewardCalculator(blockChainImpl types.BlockChainHelper, groupChain types.GroupChainHelper) {
+	RewardCalculatorImpl = &RewardCalculator{minerManager: MinerManagerImpl, blockChain: blockChainImpl, groupChain: groupChain}
 	RewardCalculatorImpl.logger = log.GetLoggerByIndex(log.RewardLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 }
 
@@ -94,7 +93,7 @@ func (reward *RewardCalculator) calculateReward(height uint64) map[common.Addres
 			continue
 		}
 
-		bh := reward.blockChain.queryBlockHeaderByHeight(i, true)
+		bh := reward.blockChain.QueryBlockHeaderByHeight(i, true)
 		if nil == bh {
 			reward.logger.Errorf("fail to get blockHeader. height: %d", i)
 			continue
@@ -123,7 +122,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) m
 	reward.logger.Debugf("start to calculate, height: %d, hash: %s, proposer: %s, groupId: %s, totalReward %f", height, hashString, common.ToHex(bh.Castor), common.ToHex(bh.GroupId), total)
 	defer reward.logger.Warnf("end to calculate, height %d, hash: %s, result: %v", height, hashString, result)
 
-	accountDB, err := service.AccountDBManagerInstance.GetAccountDBByHash(bh.StateTree)
+	accountDB, err := AccountDBManagerInstance.GetAccountDBByHash(bh.StateTree)
 	if err != nil {
 		reward.logger.Errorf("get account db by height: %d error:%s", height, err.Error())
 		return nil
@@ -193,10 +192,6 @@ func getYear(height uint64) uint64 {
 
 func getTotalReward(height uint64) float64 {
 	return common.FirstYearRewardPerBlock * math.Pow(common.Inflation, float64(getYear(height)))
-}
-
-func getAddressFromID(id []byte) common.Address {
-	return common.BytesToAddress(id)
 }
 
 func addReward(all map[common.Address]*big.Int, addr common.Address, delta *big.Int) {

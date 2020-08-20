@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package core
+package executor
 
 import (
 	"com.tuntun.rocket/node/src/common"
@@ -48,7 +48,7 @@ func testExchangeRateExecutor(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
 	context := make(map[string]interface{})
-	context["refund"] = make(map[uint64]RefundInfoList)
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 
 	transaction := &types.Transaction{
 		Source: "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443",
@@ -79,7 +79,7 @@ func testExchangeRateExecutor1(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
 	context := make(map[string]interface{})
-	context["refund"] = make(map[uint64]RefundInfoList)
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 
 	transaction := &types.Transaction{
 		Source: "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443",
@@ -110,7 +110,7 @@ func testExchangeRateExecutor2(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
 	context := make(map[string]interface{})
-	context["refund"] = make(map[uint64]RefundInfoList)
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 
 	transaction := &types.Transaction{
 		Source: "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443",
@@ -147,7 +147,7 @@ func testExchangeRateExecutor3(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
 	context := make(map[string]interface{})
-	context["refund"] = make(map[uint64]RefundInfoList)
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 
 	transaction := &types.Transaction{
 		Source: "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443",
@@ -213,7 +213,7 @@ func testExchangeRateExecutor4(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
 	context := make(map[string]interface{})
-	context["refund"] = make(map[uint64]RefundInfoList)
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 
 	transaction := &types.Transaction{
 		Source: "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443",

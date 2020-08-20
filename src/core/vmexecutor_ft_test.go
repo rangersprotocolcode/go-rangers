@@ -333,4 +333,3 @@ func testVMExecutorMintFTGoodAndEvil(t *testing.T) {
 		t.Fatalf("fee error, %s", balance)
 	}
 }
-

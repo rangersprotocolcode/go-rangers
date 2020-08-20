@@ -14,13 +14,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package core
+package service
 
 import (
-	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
@@ -31,14 +30,16 @@ import (
 )
 
 type RefundManager struct {
-	logger log.Logger
+	logger           log.Logger
+	groupChainHelper types.GroupChainHelper
 }
 
 var RefundManagerImpl *RefundManager
 
-func initRefundManager() {
+func InitRefundManager(groupChainHelper types.GroupChainHelper) {
 	RefundManagerImpl = &RefundManager{}
 	RefundManagerImpl.logger = log.GetLoggerByIndex(log.RefundLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	RefundManagerImpl.groupChainHelper = groupChainHelper
 }
 
 func (refund *RefundManager) CheckAndMove(height uint64, db *account.AccountDB) {
@@ -53,7 +54,7 @@ func (refund *RefundManager) CheckAndMove(height uint64, db *account.AccountDB) 
 		return
 	}
 
-	var refundInfoList RefundInfoList
+	var refundInfoList types.RefundInfoList
 	err := json.Unmarshal(data, &refundInfoList)
 	if err != nil {
 		refund.logger.Errorf("fail to unmarshal", err.Error())
@@ -69,7 +70,7 @@ func (refund *RefundManager) CheckAndMove(height uint64, db *account.AccountDB) 
 	db.RemoveData(common.RefundAddress, key)
 }
 
-func (refund *RefundManager) Add(data map[uint64]RefundInfoList, db *account.AccountDB) {
+func (refund *RefundManager) Add(data map[uint64]types.RefundInfoList, db *account.AccountDB) {
 	if nil == db {
 		return
 	}
@@ -88,7 +89,7 @@ func (refund *RefundManager) Add(data map[uint64]RefundInfoList, db *account.Acc
 		}
 
 		// 已有数据，需要叠加
-		var refundInfoList RefundInfoList
+		var refundInfoList types.RefundInfoList
 		err := json.Unmarshal(existedBytes, &refundInfoList)
 		if err != nil {
 			refund.logger.Errorf("fail to unmarshal", err.Error())
@@ -105,7 +106,7 @@ func (refund *RefundManager) Add(data map[uint64]RefundInfoList, db *account.Acc
 
 func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint64, accountdb *account.AccountDB) (uint64, *big.Int, error) {
 	this.logger.Debugf("getRefund, minerId:%s, height: %d, money: %d", common.ToHex(minerId), now, money)
-	miner := service.MinerManagerImpl.GetMiner(minerId, accountdb)
+	miner := MinerManagerImpl.GetMiner(minerId, accountdb)
 	if nil == miner {
 		this.logger.Debugf("getRefund error, minerId:%s, height: %d, money: %d, miner not existed", common.ToHex(minerId), now, money)
 		return 0, nil, errors.New("miner not existed")
@@ -122,12 +123,12 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint
 	// 验证小于最小质押量，则退出矿工
 	if miner.Type == common.MinerTypeProposer && left < common.ProposerStake ||
 		miner.Type == common.MinerTypeValidator && left < common.ValidatorStake {
-		service.MinerManagerImpl.RemoveMiner(minerId, miner.Type, accountdb)
+		MinerManagerImpl.RemoveMiner(minerId, miner.Type, accountdb)
 		refund = miner.Stake
 	} else {
 		// update miner
 		miner.Stake = left
-		service.MinerManagerImpl.UpdateMiner(miner, accountdb)
+		MinerManagerImpl.UpdateMiner(miner, accountdb)
 	}
 
 	// 计算解锁高度
@@ -136,7 +137,7 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint
 	// 验证节点，计算最多能加入的组数，来确定解锁块高
 	if miner.Type == common.MinerTypeValidator {
 		// 检查当前加入了多少组
-		groups := groupChainImpl.GetAvailableGroupsByMinerId(now, minerId)
+		groups := this.groupChainHelper.GetAvailableGroupsByMinerId(now, minerId)
 		// 扣完质押之后，还能加入多少组
 		leftGroups := int(left / common.ValidatorStake)
 		delta := len(groups) - leftGroups
@@ -169,45 +170,4 @@ func (c DismissHeightList) Swap(i, j int) {
 }
 func (c DismissHeightList) Less(i, j int) bool {
 	return c[i] < c[j]
-}
-
-type RefundInfo struct {
-	Value *big.Int
-	Id    []byte
-}
-
-type RefundInfoList struct {
-	List []*RefundInfo
-}
-
-func (refundInfoList *RefundInfoList) AddRefundInfo(id []byte, value *big.Int) {
-	found := false
-	i := 0
-
-	for ; i < len(refundInfoList.List); i++ {
-		target := refundInfoList.List[i]
-		if bytes.Compare(id, target.Id) == 0 {
-			found = true
-			break
-		}
-	}
-
-	if found {
-		target := refundInfoList.List[i]
-		target.Value.Add(target.Value, value)
-	} else {
-		nb := &big.Int{}
-		nb.SetBytes(value.Bytes())
-		refundInfo := &RefundInfo{Value: nb, Id: id}
-		refundInfoList.List = append(refundInfoList.List, refundInfo)
-	}
-}
-
-func (refundInfoList *RefundInfoList) TOJSON() []byte {
-	data, _ := json.Marshal(refundInfoList)
-	return data
-}
-
-func (refundInfoList *RefundInfoList) IsEmpty() bool {
-	return 0 == len(refundInfoList.List)
 }

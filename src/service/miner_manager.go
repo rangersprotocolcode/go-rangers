@@ -41,7 +41,7 @@ type MinerManager struct {
 	logger  log.Logger
 }
 
-func initMinerManager() {
+func InitMinerManager() {
 	file := "pkp" + strconv.Itoa(common.InstanceIndex)
 	pkp, err := db.NewLDBDatabase(file, 1, 1)
 	if err != nil {

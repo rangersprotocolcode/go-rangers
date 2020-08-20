@@ -410,7 +410,7 @@ func (chain *blockChain) removeFromCommonAncestor(commonAncestor *types.BlockHea
 	consensusLogger.Infof("%v#%s#%d,%d", "ForkAdjustRemoveCommonAncestor", commonAncestor.Hash.ShortS(), commonAncestor.Height, chain.latestBlock.Height)
 
 	for height := chain.latestBlock.Height; height > commonAncestor.Height; height-- {
-		header := chain.queryBlockHeaderByHeight(height, true)
+		header := chain.QueryBlockHeaderByHeight(height, true)
 		if header == nil {
 			logger.Debugf("removeFromCommonAncestor nil height:%d", height)
 			continue
@@ -441,7 +441,7 @@ func (chain *blockChain) compareValue(commonAncestor *types.BlockHeader, remoteH
 	var target *types.BlockHeader
 	for height := commonAncestor.Height + 1; height <= chain.latestBlock.Height; height++ {
 		logger.Debugf("compareValue queryBlockHeaderByHeight height:%d ", height)
-		header := chain.queryBlockHeaderByHeight(height, true)
+		header := chain.QueryBlockHeaderByHeight(height, true)
 		// 跳块时，高度会不连续
 		if header == nil {
 			logger.Debugf("compareValue queryBlockHeaderByHeight nil !height:%d ", height)

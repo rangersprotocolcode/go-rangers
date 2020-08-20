@@ -14,24 +14,19 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package service
+package executor
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/log"
+	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rocket/node/src/storage/account"
 )
 
-var logger, txLogger, txPoolLogger log.Logger
+type withdrawExecutor struct {
+	baseFeeExecutor
+}
 
-func InitService() {
-	logger = log.GetLoggerByIndex(log.CoreLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	txLogger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	txPoolLogger = log.GetLoggerByIndex(log.TxPoolLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-
-	InitMinerManager()
-	initTransactionPool()
-	initTxManager()
-	initFTManager()
-	initNFTManager()
-	initAccountDBManager()
+func (this *withdrawExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	msg, success := service.Withdraw(accountdb, transaction, true)
+	return success, msg
 }

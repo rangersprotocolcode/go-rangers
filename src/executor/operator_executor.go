@@ -14,10 +14,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package core
+package executor
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/statemachine"
@@ -29,10 +30,11 @@ import (
 
 type operatorExecutor struct {
 	baseFeeExecutor
+	logger log.Logger
 }
 
 func (this *operatorExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
-	logger.Debugf("txhash: %s begin transaction is not nil!", transaction.Hash.String())
+	this.logger.Debugf("txhash: %s begin transaction is not nil!", transaction.Hash.String())
 
 	// 处理转账
 	// 支持多人转账{"address1":"value1", "address2":"value2"}
@@ -44,7 +46,7 @@ func (this *operatorExecutor) Execute(transaction *types.Transaction, header *ty
 
 		}
 		msg, ok := service.ChangeAssets(transaction.Source, mm, accountdb)
-		logger.Debugf("txhash: %s, finish changeAssets. msg: %s", transaction.Hash.String(), msg)
+		this.logger.Debugf("txhash: %s, finish changeAssets. msg: %s", transaction.Hash.String(), msg)
 		if !ok {
 			return false, msg
 		}
@@ -58,10 +60,10 @@ func (this *operatorExecutor) Execute(transaction *types.Transaction, header *ty
 	// 在交易池里，表示game_executor已经执行过状态机了
 	// 只要处理交易里的subTransaction即可
 	if nil != service.TxManagerInstance.BeginTransaction(transaction.Target, accountdb, transaction) {
-		logger.Debugf("Is not game data")
+		this.logger.Debugf("Is not game data")
 		if 0 != len(transaction.SubTransactions) {
 			for _, user := range transaction.SubTransactions {
-				logger.Debugf("Execute sub tx:%v", user)
+				this.logger.Debugf("Execute sub tx:%v", user)
 
 				// 发币
 				if user.Address == "StartFT" {
@@ -142,7 +144,7 @@ func (this *operatorExecutor) Execute(transaction *types.Transaction, header *ty
 					maxSupply, err := strconv.Atoi(maxSupplyString)
 					if err != nil {
 						msg := fmt.Sprintf("publish nft set! maxSupply bad format: %s", maxSupplyString)
-						logger.Errorf(msg)
+						this.logger.Errorf(msg)
 						return false, msg
 					}
 					appId := user.Assets["appId"]

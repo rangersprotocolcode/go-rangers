@@ -14,10 +14,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package core
+package executor
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
@@ -29,33 +30,34 @@ import (
 
 type minerRefundExecutor struct {
 	baseFeeExecutor
+	logger log.Logger
 }
 
 func (this *minerRefundExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	value, err := strconv.ParseUint(transaction.Data, 10, 64)
 	if err != nil {
 		msg := fmt.Sprintf("fail to refund %s", transaction.Data)
-		logger.Errorf(msg)
+		this.logger.Errorf(msg)
 		return false, msg
 	}
 
 	minerId := common.FromHex(transaction.Source)
-	logger.Debugf("before refund, addr: %s, money: %d, minerId: %v", transaction.Source, value, minerId)
-	refundHeight, money, refundErr := RefundManagerImpl.GetRefundStake(header.Height, minerId, value, accountdb)
+	this.logger.Debugf("before refund, addr: %s, money: %d, minerId: %v", transaction.Source, value, minerId)
+	refundHeight, money, refundErr := service.RefundManagerImpl.GetRefundStake(header.Height, minerId, value, accountdb)
 	if refundErr != nil {
 		msg := fmt.Sprintf("fail to refund %s, err: %s", transaction.Data, refundErr.Error())
-		logger.Errorf(msg)
+		this.logger.Errorf(msg)
 		return false, msg
 	}
 
 	msg := fmt.Sprintf("refund, minerId: %s, height: %d, money: %d", transaction.Source, refundHeight, money)
-	logger.Infof(msg)
-	refundInfos := getRefundInfo(context)
+	this.logger.Infof(msg)
+	refundInfos := types.GetRefundInfo(context)
 	refundInfo, ok := refundInfos[refundHeight]
 	if ok {
 		refundInfo.AddRefundInfo(minerId, money)
 	} else {
-		refundInfo = RefundInfoList{}
+		refundInfo = types.RefundInfoList{}
 		refundInfo.AddRefundInfo(minerId, money)
 		refundInfos[refundHeight] = refundInfo
 	}
@@ -65,6 +67,7 @@ func (this *minerRefundExecutor) Execute(transaction *types.Transaction, header 
 
 type minerApplyExecutor struct {
 	baseFeeExecutor
+	logger log.Logger
 }
 
 func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
@@ -73,7 +76,7 @@ func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *
 	err := json.Unmarshal([]byte(data), &miner)
 	if err != nil {
 		msg := fmt.Sprintf("json Unmarshal error, %s", err.Error())
-		logger.Errorf(msg)
+		this.logger.Errorf(msg)
 		return false, msg
 	}
 
@@ -87,6 +90,7 @@ func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *
 
 type minerAddExecutor struct {
 	baseFeeExecutor
+	logger log.Logger
 }
 
 func (this *minerAddExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
@@ -95,7 +99,7 @@ func (this *minerAddExecutor) Execute(transaction *types.Transaction, header *ty
 	err := json.Unmarshal([]byte(data), &miner)
 	if err != nil {
 		msg := fmt.Sprintf("json Unmarshal error, %s", err.Error())
-		logger.Errorf(msg)
+		this.logger.Errorf(msg)
 		return false, msg
 	}
 
@@ -104,5 +108,3 @@ func (this *minerAddExecutor) Execute(transaction *types.Transaction, header *ty
 	}
 	return service.MinerManagerImpl.AddStake(common.HexToAddress(transaction.Source), miner.Id, miner.Stake, accountdb)
 }
-
-

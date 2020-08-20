@@ -125,7 +125,7 @@ func initBlockChain() error {
 	}
 
 	chain.forkProcessor = initForkProcessor(chain)
-	chain.latestBlock = chain.queryBlockHeaderByHeight([]byte(latestBlockKey), false)
+	chain.latestBlock = chain.QueryBlockHeaderByHeight([]byte(latestBlockKey), false)
 	if chain.latestBlock == nil {
 		chain.insertGenesisBlock()
 	} else {
@@ -305,7 +305,7 @@ func (chain *blockChain) QueryBlock(height uint64) *types.Block {
 
 	var b *types.Block
 	for i := height; i <= chain.Height(); i++ {
-		bh := chain.queryBlockHeaderByHeight(i, true)
+		bh := chain.QueryBlockHeaderByHeight(i, true)
 		if nil == bh {
 			continue
 		}
@@ -364,7 +364,7 @@ func (chain *blockChain) Close() {
 	chain.verifyHashDB.Close()
 }
 
-func (chain *blockChain) queryBlockHeaderByHeight(height interface{}, cache bool) *types.BlockHeader {
+func (chain *blockChain) QueryBlockHeaderByHeight(height interface{}, cache bool) *types.BlockHeader {
 	var key []byte
 	switch height.(type) {
 	case []byte:
@@ -513,7 +513,7 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 }
 
 func (chain *blockChain) versionValidate() bool {
-	genesisHeader := chain.queryBlockHeaderByHeight(uint64(0), true)
+	genesisHeader := chain.QueryBlockHeaderByHeight(uint64(0), true)
 	if genesisHeader == nil {
 		return false
 	}
@@ -533,7 +533,7 @@ func (chain *blockChain) buildCache(size uint64) {
 	}
 
 	for i := start; i < chain.latestBlock.Height; i++ {
-		chain.topBlocks.Add(i, chain.queryBlockHeaderByHeight(i, false))
+		chain.topBlocks.Add(i, chain.QueryBlockHeaderByHeight(i, false))
 	}
 }
 

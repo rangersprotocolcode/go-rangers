@@ -18,6 +18,7 @@ package core
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/executor"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
@@ -48,9 +49,9 @@ func InitCore(helper types.ConsensusHelper) error {
 		initGroupChain()
 	}
 
-	initExecutors()
-	initRewardCalculator(service.MinerManagerImpl, blockChainImpl, groupChainImpl)
-	initRefundManager()
+	executor.InitExecutors()
+	service.InitRewardCalculator(blockChainImpl, groupChainImpl)
+	service.InitRefundManager(groupChainImpl)
 
 	initChainHandler()
 

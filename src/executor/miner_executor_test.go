@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package core
+package executor
 
 import (
 	"bytes"
@@ -32,9 +32,10 @@ import (
 )
 
 var (
-	groupChainImplLocal *groupChain
+	groupChainImplLocal dummyGroupChain
 	leveldb             *db.LDBDatabase
 	triedb              account.AccountDatabase
+	logger              log.Logger
 )
 
 func getTestAccountDB() *account.AccountDB {
@@ -53,7 +54,7 @@ func testMinerRefundExecutor(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
 	context := make(map[string]interface{})
-	context["refund"] = make(map[uint64]RefundInfoList)
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 
 	miner := &types.Miner{
 		Id:    common.FromHex("0x0003"),
@@ -68,13 +69,13 @@ func testMinerRefundExecutor(t *testing.T) {
 	}
 
 	// run
-	processor := minerRefundExecutor{}
+	processor := minerRefundExecutor{logger: logger}
 	if succ, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); !succ {
 		t.Fatalf("fail to refund")
 	}
 
 	// check result
-	refundInfos := getRefundInfo(context)
+	refundInfos := types.GetRefundInfo(context)
 	if nil == refundInfos || 1 != len(refundInfos) {
 		t.Fatalf("fail to getRefundInfos")
 	}
@@ -99,7 +100,7 @@ func testMinerRefundExecutor1(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
 	context := make(map[string]interface{})
-	context["refund"] = make(map[uint64]RefundInfoList)
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 
 	miner := &types.Miner{
 		Id:    common.FromHex("0x0003"),
@@ -114,13 +115,13 @@ func testMinerRefundExecutor1(t *testing.T) {
 	}
 
 	// run
-	processor := minerRefundExecutor{}
+	processor := minerRefundExecutor{logger: logger}
 	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); s {
 		t.Fatalf("fail to refund")
 	}
 
 	// check result
-	refundInfos := getRefundInfo(context)
+	refundInfos := types.GetRefundInfo(context)
 	if 0 != len(refundInfos) {
 		t.Fatalf("fail to getRefundInfos")
 	}
@@ -138,7 +139,7 @@ func testMinerRefundExecutor2(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
 	context := make(map[string]interface{})
-	context["refund"] = make(map[uint64]RefundInfoList)
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 
 	miner := &types.Miner{
 		Id:    common.FromHex("0x0003"),
@@ -172,13 +173,13 @@ func testMinerRefundExecutor2(t *testing.T) {
 	}
 
 	// run
-	processor := minerRefundExecutor{}
+	processor := minerRefundExecutor{logger: logger}
 	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); !s {
 		t.Fatalf("fail to refund")
 	}
 
 	// check result
-	refundInfos := getRefundInfo(context)
+	refundInfos := types.GetRefundInfo(context)
 	if nil == refundInfos || 1 != len(refundInfos) {
 		t.Fatalf("fail to getRefundInfos")
 	}
@@ -208,7 +209,7 @@ func testMinerRefundExecutor3(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
 	context := make(map[string]interface{})
-	context["refund"] = make(map[uint64]RefundInfoList)
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 
 	miner := &types.Miner{
 		Id:    common.FromHex("0x0003"),
@@ -242,13 +243,13 @@ func testMinerRefundExecutor3(t *testing.T) {
 	}
 
 	// run
-	processor := minerRefundExecutor{}
+	processor := minerRefundExecutor{logger: logger}
 	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); !s {
 		t.Fatalf("fail to refund")
 	}
 
 	// check result
-	refundInfos := getRefundInfo(context)
+	refundInfos := types.GetRefundInfo(context)
 	if nil == refundInfos || 1 != len(refundInfos) {
 		t.Fatalf("fail to getRefundInfos")
 	}
@@ -278,7 +279,7 @@ func testMinerRefundExecutor4(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
 	context := make(map[string]interface{})
-	context["refund"] = make(map[uint64]RefundInfoList)
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 
 	miner := &types.Miner{
 		Id:    common.FromHex("0x0003"),
@@ -312,13 +313,13 @@ func testMinerRefundExecutor4(t *testing.T) {
 	}
 
 	// run
-	processor := minerRefundExecutor{}
+	processor := minerRefundExecutor{logger: logger}
 	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); !s {
 		t.Fatalf("fail to refund")
 	}
 
 	// check result
-	refundInfos := getRefundInfo(context)
+	refundInfos := types.GetRefundInfo(context)
 	if nil == refundInfos || 1 != len(refundInfos) {
 		t.Fatalf("fail to getRefundInfos")
 	}
@@ -348,7 +349,7 @@ func testMinerRefundExecutor5(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
 	context := make(map[string]interface{})
-	context["refund"] = make(map[uint64]RefundInfoList)
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 
 	miner := &types.Miner{
 		Id:    common.FromHex("0x0003"),
@@ -392,13 +393,13 @@ func testMinerRefundExecutor5(t *testing.T) {
 	}
 
 	// run
-	processor := minerRefundExecutor{}
+	processor := minerRefundExecutor{logger: logger}
 	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); !s {
 		t.Fatalf("fail to refund")
 	}
 
 	// check result
-	refundInfos := getRefundInfo(context)
+	refundInfos := types.GetRefundInfo(context)
 	if nil == refundInfos || 1 != len(refundInfos) {
 		t.Fatalf("fail to getRefundInfos")
 	}
@@ -428,7 +429,7 @@ func testMinerRefundExecutor6(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
 	context := make(map[string]interface{})
-	context["refund"] = make(map[uint64]RefundInfoList)
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 
 	miner := &types.Miner{
 		Id:    common.FromHex("0x0003"),
@@ -472,13 +473,13 @@ func testMinerRefundExecutor6(t *testing.T) {
 	}
 
 	// run
-	processor := minerRefundExecutor{}
+	processor := minerRefundExecutor{logger: logger}
 	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); !s {
 		t.Fatalf("fail to refund")
 	}
 
 	// check result
-	refundInfos := getRefundInfo(context)
+	refundInfos := types.GetRefundInfo(context)
 	if nil == refundInfos || 1 != len(refundInfos) {
 		t.Fatalf("fail to getRefundInfos")
 	}
@@ -508,7 +509,7 @@ func testMinerRefundExecutor7(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
 	context := make(map[string]interface{})
-	context["refund"] = make(map[uint64]RefundInfoList)
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 
 	miner := &types.Miner{
 		Id:    common.FromHex("0xdd03"),
@@ -523,13 +524,13 @@ func testMinerRefundExecutor7(t *testing.T) {
 	}
 
 	// run
-	processor := minerRefundExecutor{}
+	processor := minerRefundExecutor{logger: logger}
 	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); !s {
 		t.Fatalf("fail to refund")
 	}
 
 	// check result
-	refundInfos := getRefundInfo(context)
+	refundInfos := types.GetRefundInfo(context)
 	if nil == refundInfos || 1 != len(refundInfos) {
 		t.Fatalf("fail to getRefundInfos")
 	}
@@ -560,7 +561,7 @@ func testMinerRefundExecutor8(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
 	context := make(map[string]interface{})
-	context["refund"] = make(map[uint64]RefundInfoList)
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 
 	miner := &types.Miner{
 		Id:    common.FromHex("0xdd03"),
@@ -575,13 +576,13 @@ func testMinerRefundExecutor8(t *testing.T) {
 	}
 
 	// run
-	processor := minerRefundExecutor{}
+	processor := minerRefundExecutor{logger: logger}
 	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); !s {
 		t.Fatalf("fail to refund")
 	}
 
 	// check result
-	refundInfos := getRefundInfo(context)
+	refundInfos := types.GetRefundInfo(context)
 	if nil == refundInfos || 1 != len(refundInfos) {
 		t.Fatalf("fail to getRefundInfos")
 	}
@@ -612,7 +613,7 @@ func testMinerRefundExecutor9(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
 	context := make(map[string]interface{})
-	context["refund"] = make(map[uint64]RefundInfoList)
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 
 	miner := &types.Miner{
 		Id:    common.FromHex("0x0003"),
@@ -627,13 +628,13 @@ func testMinerRefundExecutor9(t *testing.T) {
 	}
 
 	// run
-	processor := minerRefundExecutor{}
+	processor := minerRefundExecutor{logger: logger}
 	if s, _ := processor.Execute(transaction, getTestBlockHeader(), accountDB, context); s {
 		t.Fatalf("fail to refund")
 	}
 
 	// check result
-	refundInfos := getRefundInfo(context)
+	refundInfos := types.GetRefundInfo(context)
 	if 0 != len(refundInfos) {
 		t.Fatalf("fail to getRefundInfos")
 	}
@@ -664,21 +665,12 @@ func clean() {
 func setup(id string) {
 	fmt.Printf("Before %s tests\n", id)
 	clean()
-	logger = log.GetLoggerByIndex(log.CoreLogConfig, "0")
+	common.InitConf("1.ini")
+	logger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
-	chain := &groupChain{}
-	var err error
-	chain.groups, err = db.NewDatabase(groupChainPrefix)
-	if err != nil {
-		panic("Init group chain error:" + err.Error())
-	}
-	groupChainImplLocal = chain
-	groupChainImpl = chain
-
-	RefundManagerImpl = &RefundManager{}
-	RefundManagerImpl.logger = log.GetLoggerByIndex(log.RefundLogConfig, "0")
-
-	initMinerManager()
+	groupChainImplLocal = dummyGroupChain{}
+	service.InitMinerManager()
+	service.InitRefundManager(&groupChainImplLocal)
 }
 
 func teardown(id string) {
@@ -717,4 +709,37 @@ func TestMinerExecutorRefundAll(t *testing.T) {
 		t.Run(name, f)
 		teardown(name)
 	}
+}
+
+type dummyGroupChain struct {
+	groups map[string]*types.Group
+}
+
+func (this *dummyGroupChain) GetAvailableGroupsByMinerId(height uint64, minerId []byte) []*types.Group {
+	result := make([]*types.Group, 0)
+	for _, group := range this.groups {
+		if group.Header.DismissHeight < height {
+			continue
+		}
+
+		for _, mem := range group.Members {
+			if bytes.Equal(mem, minerId) {
+				result = append(result, group)
+				break
+			}
+		}
+	}
+	return result
+}
+
+func (this *dummyGroupChain) GetGroupById(id []byte) *types.Group {
+	return this.groups[common.Bytes2Hex(id)]
+}
+
+func (this *dummyGroupChain) save(group *types.Group) {
+	if nil == this.groups {
+		this.groups = make(map[string]*types.Group)
+	}
+
+	this.groups[common.Bytes2Hex(group.Id)] = group
 }

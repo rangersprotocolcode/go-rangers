@@ -18,13 +18,17 @@ package core
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/executor"
 	"com.tuntun.rocket/node/src/middleware"
+	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rocket/node/src/storage/account"
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"os"
 	"strconv"
 	"strings"
 	"testing"
@@ -32,7 +36,7 @@ import (
 
 func TestVMExecutor_Execute(t *testing.T) {
 	context := make(map[string]interface{})
-	context["refund"] = make(map[uint64]RefundInfoList)
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 	data, _ := json.Marshal(context)
 	fmt.Printf("before test, context: %s\n", string(data))
 
@@ -41,7 +45,7 @@ func TestVMExecutor_Execute(t *testing.T) {
 	data, _ = json.Marshal(context)
 	fmt.Printf("after test, context: %s\n", context)
 
-	refundInfos := getRefundInfo(context)
+	refundInfos := types.GetRefundInfo(context)
 	refundHeight := uint64(999)
 	minerId := common.FromHex("0x0001")
 	money := big.NewInt(100)
@@ -50,12 +54,12 @@ func TestVMExecutor_Execute(t *testing.T) {
 		fmt.Println(string(refundInfo.TOJSON()))
 		refundInfo.AddRefundInfo(minerId, money)
 	} else {
-		refundInfo = RefundInfoList{}
+		refundInfo = types.RefundInfoList{}
 		refundInfo.AddRefundInfo(minerId, money)
 		refundInfos[refundHeight] = refundInfo
 	}
 
-	a := getRefundInfo(context)
+	a := types.GetRefundInfo(context)
 	refundInfo, ok = a[refundHeight]
 	if ok {
 		fmt.Println(string(refundInfo.TOJSON()))
@@ -64,7 +68,7 @@ func TestVMExecutor_Execute(t *testing.T) {
 }
 
 func testMap(context map[string]interface{}) {
-	refundInfos := getRefundInfo(context)
+	refundInfos := types.GetRefundInfo(context)
 	refundHeight := uint64(999)
 	minerId := common.FromHex("0x0001")
 	money := big.NewInt(100)
@@ -72,7 +76,7 @@ func testMap(context map[string]interface{}) {
 	if ok {
 		refundInfo.AddRefundInfo(minerId, money)
 	} else {
-		refundInfo = RefundInfoList{}
+		refundInfo = types.RefundInfoList{}
 		refundInfo.AddRefundInfo(minerId, money)
 		refundInfos[refundHeight] = refundInfo
 	}
@@ -87,6 +91,14 @@ func generateBlock() *types.Block {
 	block.Transactions = make([]*types.Transaction, 0)
 
 	return block
+}
+
+func getTestBlockHeader() *types.BlockHeader {
+	header := &types.BlockHeader{
+		Height: 10086,
+	}
+
+	return header
 }
 
 func TestVMExecutorAll(t *testing.T) {
@@ -111,8 +123,8 @@ func vmExecutorSetup(name string) {
 	middleware.InitMiddleware()
 	service.InitService()
 	setup(name)
-	initExecutors()
-	initRewardCalculator(service.MinerManagerImpl, blockChainImpl, groupChainImpl)
+	executor.InitExecutors()
+	service.InitRewardCalculator(blockChainImpl, groupChainImpl)
 }
 
 func testFee(kind int32, t *testing.T) {
@@ -155,4 +167,43 @@ func testVMExecutorFeeFail(t *testing.T) {
 		testFee(kind, t)
 	}
 
+}
+var (
+	leveldb             *db.LDBDatabase
+	triedb              account.AccountDatabase
+)
+
+func getTestAccountDB() *account.AccountDB {
+	if nil == leveldb {
+		leveldb, _ = db.NewLDBDatabase("test", 0, 0)
+		triedb = account.NewDatabase(leveldb)
+	}
+
+	accountdb, _ := account.NewAccountDB(common.Hash{}, triedb)
+	return accountdb
+}
+
+
+func clean() {
+	os.RemoveAll("pkp0")
+	os.RemoveAll("logs")
+	os.RemoveAll("test")
+	os.RemoveAll("database")
+	os.RemoveAll("1.ini")
+	leveldb = nil
+}
+
+func setup(id string) {
+	fmt.Printf("Before %s tests\n", id)
+	clean()
+	common.InitConf("1.ini")
+	logger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+
+	service.InitMinerManager()
+	service.InitRefundManager(groupChainImpl)
+}
+
+func teardown(id string) {
+	clean()
+	fmt.Printf("After %s test\n", id)
 }

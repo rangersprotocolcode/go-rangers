@@ -14,10 +14,11 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package core
+package service
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"fmt"
@@ -30,7 +31,7 @@ import (
 )
 
 func TestRefundInfoList_AddRefundInfo(t *testing.T) {
-	list := RefundInfoList{}
+	list := types.RefundInfoList{}
 
 	list.AddRefundInfo(utility.UInt64ToByte(100), big.NewInt(2000))
 	fmt.Println(string(list.TOJSON()))
@@ -47,7 +48,7 @@ func TestRefundInfoList_AddRefundInfo(t *testing.T) {
 func TestRefundInfoList_TOJSON(t *testing.T) {
 	str := `{"List":[{"Value":6000,"Id":"AAAAAAAAAGQ="},{"Value":9999,"Id":"AAAAAAAAAMg="}]}`
 
-	var refundInfoList RefundInfoList
+	var refundInfoList types.RefundInfoList
 	err := json.Unmarshal([]byte(str), &refundInfoList)
 	if err != nil {
 		fmt.Println(err.Error())
