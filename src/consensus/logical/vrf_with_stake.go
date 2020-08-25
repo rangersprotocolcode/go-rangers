@@ -92,8 +92,8 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 	r, _ := vrfValueRatio.Quo(vrfValueRatio, step).Float64()
 	qn = uint64(math.Floor(r) + 1)
 
-	s1, _ := vrfValueRatio.Float64()
-	s2, _ := stakeRatio.Float64()
+	s1 := vrfValueRatio.String()
+	s2 := stakeRatio.String()
 	blog.log("miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v, step %v, qn %v", 1, totalStake, s1, s2, st, qn)
 	return
 }
