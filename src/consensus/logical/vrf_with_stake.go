@@ -30,14 +30,12 @@ import (
 
 var rat1 *big.Rat
 var max256 *big.Rat
-var maxQn *big.Rat
 
 func init() {
 	t := new(big.Int)
 	t.SetString("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16)
 	max256 = new(big.Rat).SetInt(t)
 	rat1 = new(big.Rat).SetInt64(1)
-	maxQn = new(big.Rat).SetInt64(int64(model.Param.MaxQN))
 }
 
 func verifyBlockVRF(bh *types.BlockHeader, preBH *types.BlockHeader, castor *model.MinerInfo, totalStake uint64) (bool, error) {
@@ -84,29 +82,10 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 	stakeRatio := stakeRatio(1, totalStake)
 	ok = vrfValueRatio.Cmp(stakeRatio) < 0
 
-	f1, _ := vrfValueRatio.Float64()
-	f2, _ := stakeRatio.Float64()
-	p := prove[:]
-	blog.log("totalStake:%v,vrf value ratio %v, stake ratio %v, ok:%v,prove:%V", totalStake, f1, f2, ok, p)
-
-	//cal qn
-	if stakeRatio.Cmp(rat1) > 0 {
-		stakeRatio.Set(rat1)
-	}
-	step := stakeRatio.Quo(stakeRatio, new(big.Rat).SetInt64(int64(model.Param.MaxQN)))
-	st, _ := step.Float64()
-
-	r, _ := vrfValueRatio.Quo(vrfValueRatio, step).Float64()
-	qn = uint64(math.Floor(r) + 1)
-
-	s1, _ := vrfValueRatio.Float64()
-	s2, _ := stakeRatio.Float64()
-	blog.log("miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v, step %v, qn %v", 1, totalStake, s1, s2, st, qn)
-	//qn = calQn(vrfValueRatio, stakeRatio)
-	//
-	//vrfValueRatioFloat, _ := vrfValueRatio.Float64()
-	//stakeRatioFloat, _ := stakeRatio.Float64()
-	//blog.log("Vrf validate result:%v! miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v,  qn %v", ok, 1, totalStake, vrfValueRatioFloat, stakeRatioFloat, qn)
+	qn = calQn(vrfValueRatio, stakeRatio)
+	vrfValueRatioFloat, _ := vrfValueRatio.Float64()
+	stakeRatioFloat, _ := stakeRatio.Float64()
+	blog.log("Vrf validate result:%v! miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v,  qn %v", ok, 1, totalStake, vrfValueRatioFloat, stakeRatioFloat, qn)
 	return
 }
 
@@ -126,6 +105,7 @@ func calQn(vrfValueRatio, stakeRatio *big.Rat) uint64 {
 	if stakeRatio.Cmp(rat1) > 0 {
 		stakeRatio.Set(rat1)
 	}
+	maxQn := new(big.Rat).SetInt64(int64(model.Param.MaxQN))
 	step := new(big.Rat).Quo(stakeRatio, maxQn)
 	r, _ := new(big.Rat).Quo(vrfValueRatio, step).Float64()
 	qn := uint64(math.Floor(r) + 1)
