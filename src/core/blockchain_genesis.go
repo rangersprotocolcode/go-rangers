@@ -101,6 +101,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	stateDB.SetFT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"), "official-ETH.ETH", big.NewInt(10000000000))
 
 	stateDB.SetFT(common.HexToAddress("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"), "official-ETH.ETH", big.NewInt(10000000000))
+	stateDB.SetFT(common.HexToAddress("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"), "SYSTEM-ETH.USDT", big.NewInt(10000000000))
 	stateDB.SetBalance(common.HexToAddress("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"), big.NewInt(1000000000000000000))
 	root, _ := stateDB.Commit(true)
 	triedb.Commit(root, false)
