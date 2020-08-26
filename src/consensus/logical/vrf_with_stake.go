@@ -82,6 +82,10 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 	stakeRatio := stakeRatio(1, totalStake)
 	ok = vrfValueRatio.Cmp(stakeRatio) < 0
 
+	f1, _ := vrfValueRatio.Float64()
+	f2, _ := stakeRatio.Float64()
+	blog.log("totalStake:%v,vrf value ratio %v, stake ratio %v, ok,%v,prove:%V", totalStake, ok, f1, f2, prove[:])
+
 	//cal qn
 	if stakeRatio.Cmp(rat1) > 0 {
 		stakeRatio.Set(rat1)
