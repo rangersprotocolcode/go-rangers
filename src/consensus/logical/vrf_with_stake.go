@@ -84,11 +84,29 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 	stakeRatio := stakeRatio(1, totalStake)
 	ok = vrfValueRatio.Cmp(stakeRatio) < 0
 
-	qn = calQn(vrfValueRatio, stakeRatio)
+	f1, _ := vrfValueRatio.Float64()
+	f2, _ := stakeRatio.Float64()
+	p := prove[:]
+	blog.log("totalStake:%v,vrf value ratio %v, stake ratio %v, ok:%v,prove:%V", totalStake, f1, f2, ok, p)
 
-	vrfValueRatioFloat, _ := vrfValueRatio.Float64()
-	stakeRatioFloat, _ := stakeRatio.Float64()
-	blog.log("Vrf validate result:%v! miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v,  qn %v", ok, 1, totalStake, vrfValueRatioFloat, stakeRatioFloat, qn)
+	//cal qn
+	if stakeRatio.Cmp(rat1) > 0 {
+		stakeRatio.Set(rat1)
+	}
+	step := stakeRatio.Quo(stakeRatio, new(big.Rat).SetInt64(int64(model.Param.MaxQN)))
+	st, _ := step.Float64()
+
+	r, _ := vrfValueRatio.Quo(vrfValueRatio, step).Float64()
+	qn = uint64(math.Floor(r) + 1)
+
+	s1, _ := vrfValueRatio.Float64()
+	s2, _ := stakeRatio.Float64()
+	blog.log("miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v, step %v, qn %v", 1, totalStake, s1, s2, st, qn)
+	//qn = calQn(vrfValueRatio, stakeRatio)
+	//
+	//vrfValueRatioFloat, _ := vrfValueRatio.Float64()
+	//stakeRatioFloat, _ := stakeRatio.Float64()
+	//blog.log("Vrf validate result:%v! miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v,  qn %v", ok, 1, totalStake, vrfValueRatioFloat, stakeRatioFloat, qn)
 	return
 }
 
