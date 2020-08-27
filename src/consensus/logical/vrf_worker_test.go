@@ -17,6 +17,10 @@
 package logical
 
 import (
+	"com.tuntun.rocket/node/src/consensus/vrf"
+	cryptorand "crypto/rand"
+	"fmt"
+	"io"
 	"math/big"
 	"testing"
 )
@@ -51,4 +55,22 @@ func TestCMP(t *testing.T) {
 		}
 		t.Log(v.Quo(v, new(big.Rat).SetFloat64(0.5)), rat)
 	}
+}
+
+func TestMax256(t *testing.T) {
+	t1 := new(big.Int)
+	t1.SetString("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 16)
+	m := new(big.Rat).SetInt(t1)
+	f, _ := m.Float64()
+	fmt.Printf("%v,%v", m.String(), f)
+}
+
+func TestVrfValueRatio(t *testing.T) {
+	b := make([]byte, 80)
+	io.ReadFull(cryptorand.Reader, b[:])
+	fmt.Printf("%v\n", b)
+
+	rat := vrfValueRatio(vrf.VRFProve(b))
+	f, e := rat.Float64()
+	fmt.Printf("%v,%v\n", f, e)
 }
