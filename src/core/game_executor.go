@@ -85,6 +85,8 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor.writeChan = make(chan notify.ClientTransactionMessage, maxWriteSize)
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.write)
 	notify.BUS.Subscribe(notify.CoinProxyNotify, gameExecutor.coinProxyHandler)
+	notify.BUS.Subscribe(notify.WrongTxNonce, gameExecutor.wrongTxNonceHandler)
+
 	go gameExecutor.loop()
 }
 
@@ -199,19 +201,31 @@ func (executor *GameExecutor) read(msg notify.Message) {
 }
 
 func (executor *GameExecutor) write(msg notify.Message) {
-	if len(executor.writeChan) == maxWriteSize {
-		executor.logger.Errorf("write rcv message error: %v", msg)
-		return
-	}
-
 	message, ok := msg.(*notify.ClientTransactionMessage)
 	if !ok {
 		executor.logger.Errorf("GameExecutor: Write assert not ok!")
 		return
 	}
 
+	if len(executor.writeChan) == maxWriteSize {
+		executor.logger.Errorf("write rcv message error: %v", msg)
+		return
+	}
+
 	executor.logger.Debugf("write rcv message: %s", message.TOJSONString())
 	executor.writeChan <- *message
+}
+
+func (executor *GameExecutor) wrongTxNonceHandler(msg notify.Message) {
+	cpn, ok := msg.(*notify.NonceNotifyMessage)
+	if !ok {
+		logger.Debugf("wrongTxNonceHandler: Message assert not ok!")
+		return
+	}
+
+	tx := types.Transaction{Type: types.TransactionTypeWrongTxNonce}
+	writeMessage := notify.ClientTransactionMessage{Nonce: cpn.Nonce, Tx: tx}
+	executor.writeChan <- writeMessage
 }
 
 func (executor *GameExecutor) coinProxyHandler(msg notify.Message) {
@@ -253,7 +267,7 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
 
 	accountDB := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
-	if nil == accountDB {
+	if nil == accountDB || types.TransactionTypeWrongTxNonce == txRaw.Type {
 		return
 	}
 	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor")
@@ -280,7 +294,6 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	//}
 	//go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
 }
-
 
 func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw types.Transaction) (bool, string) {
 	txhash := txRaw.Hash.String()
