@@ -68,4 +68,6 @@ const (
 	STMStorageReady = "STMStorageReady"
 
 	AcceptGroup = "accept_group"
+
+	WrongTxNonce = "wrongTxNonce"
 )

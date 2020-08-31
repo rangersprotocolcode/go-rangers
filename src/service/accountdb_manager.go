@@ -50,6 +50,7 @@ func initAccountDBManager() {
 		panic(err)
 	}
 	AccountDBManagerInstance.stateDB = account.NewDatabase(db)
+
 }
 
 //todo: 功能增强
@@ -114,7 +115,10 @@ func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *accoun
 	}
 
 	if nil == manager.latestStateDB || nonce >= manager.requestId {
-		manager.latestStateDB = latestStateDB
+		if nil != latestStateDB {
+			manager.latestStateDB = latestStateDB
+		}
+
 		manager.requestId = nonce
 		manager.logger.Warnf("accountDB set success. requestId: %d, current: %d, msg: %s", nonce, manager.requestId, msg)
 

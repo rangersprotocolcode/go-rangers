@@ -288,6 +288,10 @@ func (base *baseConn) generateTarget(targetId string) (uint64, error) {
 	return target, nil
 }
 
+func (base *baseConn) sendWrongNonce(nonce uint64) {
+	notify.BUS.Publish(notify.WrongTxNonce, &notify.NonceNotifyMessage{Nonce: nonce})
+}
+
 // 处理客户端的read/write请求
 var (
 	methodCodeClientReader, _ = hex.DecodeString("60000000")
@@ -330,11 +334,13 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 
 		if !bytes.Equal(wsHeader.method, clientConn.method) {
 			clientConn.logger.Error("%s received wrong method. wsHeader: %v", clientConn.path, wsHeader)
+			clientConn.sendWrongNonce(wsHeader.nonce)
 			return
 		}
 
 		clientConn.handleClientMessage(body, strconv.FormatUint(wsHeader.sourceId, 10), wsHeader.nonce, event)
 	}
+
 	//流控方法
 	clientConn.rcv = func(msg []byte) {
 		if len(clientConn.rcvChan) == clientConn.rcvSize {
@@ -344,6 +350,7 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 
 		clientConn.rcvChan <- msg
 	}
+
 	// 流控方法
 	clientConn.isSend = func(method []byte, target uint64, msg []byte, nonce uint64) bool {
 		return len(clientConn.sendChan) < clientConn.sendSize
@@ -366,6 +373,7 @@ func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, no
 	err := json.Unmarshal(body, &txJson)
 	if nil != err {
 		clientConn.logger.Errorf("Json unmarshal client message error:%s", err.Error())
+		clientConn.sendWrongNonce(nonce)
 		return
 	}
 
@@ -442,20 +450,25 @@ func (connectorConn *ConnectorConn) handleConnectorMessage(data []byte, nonce ui
 	err := json.Unmarshal(data, &txJson)
 	if err != nil {
 		Logger.Errorf("Json unmarshal coiner msg err:", err.Error())
+		connectorConn.sendWrongNonce(nonce)
 		return
 	}
+
 	tx := txJson.ToTransaction()
 	tx.RequestId = nonce
 	Logger.Debugf("Rcv message from coiner.Tx info:%s", tx.ToTxJson().ToString())
 	if !types.CoinerSignVerifier.VerifyDeposit(txJson) {
 		Logger.Infof("Tx from coiner verify sign error!Tx Info:%s", txJson.ToString())
+		connectorConn.sendWrongNonce(nonce)
 		return
 	}
 
 	if tx.Type == types.TransactionTypeCoinDepositAck || tx.Type == types.TransactionTypeFTDepositAck || tx.Type == types.TransactionTypeNFTDepositAck {
 		msg := notify.CoinProxyNotifyMessage{Tx: tx}
 		notify.BUS.Publish(notify.CoinProxyNotify, &msg)
-		return
+	} else {
+		connectorConn.sendWrongNonce(nonce)
+		Logger.Infof("Unknown type from coiner:%d", txJson.Type)
 	}
-	Logger.Infof("Unknown type from coiner:%d", txJson.Type)
+
 }
