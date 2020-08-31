@@ -210,7 +210,12 @@ func (base *baseConn) getConn() *websocket.Conn {
 }
 
 func (base *baseConn) closeConn() {
-	base.conn.Close()
+	base.connLock.Lock()
+	defer base.connLock.Unlock()
+
+	if base.conn != nil {
+		base.conn.Close()
+	}
 	base.conn = nil
 }
 
