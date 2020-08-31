@@ -228,7 +228,7 @@ func (base *baseConn) send(method []byte, target uint64, msg []byte, nonce uint6
 	}
 
 	base.sendChan <- base.loadMsg(header, msg)
-	base.logger.Debugf("send message. wsHeader: %v, length: %d,body:%s", header, len(msg), string(msg))
+	base.logger.Debugf("send message. wsHeader: %v, body length: %d", header, len(msg))
 }
 
 //新的单播接口使用
