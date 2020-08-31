@@ -294,6 +294,9 @@ func (base *baseConn) generateTarget(targetId string) (uint64, error) {
 }
 
 func (base *baseConn) sendWrongNonce(nonce uint64) {
+	if 0 == nonce {
+		return
+	}
 	notify.BUS.Publish(notify.WrongTxNonce, &notify.NonceNotifyMessage{Nonce: nonce})
 }
 
