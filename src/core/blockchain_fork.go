@@ -192,7 +192,7 @@ func (chain *blockChain) mergeFork(blockChainPiece []*types.Block, topHeader *ty
 		return
 	}
 
-	if (blockChainPiece[len(blockChainPiece)-1].Header.TotalQN == localTopHeader.TotalQN) {
+	if blockChainPiece[len(blockChainPiece)-1].Header.TotalQN == localTopHeader.TotalQN {
 		if !chain.compareNextBlockPv(blockChainPiece[0].Header) {
 			return
 		}
