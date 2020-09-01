@@ -129,6 +129,19 @@ func TestStrToBigInt7(t *testing.T) {
 	fmt.Println(bigIntToStr(value, 9))
 }
 
+func TestStrToBigInt8(t *testing.T) {
+	str := "2.0E-8"
+	value, err := StrToBigInt(str)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(str)
+	fmt.Println(value.String())
+
+	fmt.Println(bigIntToStr(value, 9))
+}
+
 func TestFloat64ToBigInt(t *testing.T) {
 	number := float64(11.2222222222222222)
 	result := Float64ToBigInt(number)

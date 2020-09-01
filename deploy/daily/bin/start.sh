@@ -30,6 +30,6 @@ do
 		kill -9 `cat $pid_file`
 	fi
 
-	nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port --gateaddr 47.96.99.105:80 > $stdout_log 2>&1 & echo $! > $pid_file
+	nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port --env production > $stdout_log 2>&1 & echo $! > $pid_file
 	sleep 1
 done
