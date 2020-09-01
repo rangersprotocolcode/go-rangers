@@ -18,6 +18,7 @@ package core
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -26,7 +27,9 @@ import (
 	"com.tuntun.rocket/node/src/statemachine"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
+	"encoding/binary"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"time"
 )
@@ -74,20 +77,47 @@ type GameExecutor struct {
 	chain     *blockChain
 	writeChan chan notify.ClientTransactionMessage
 	logger    log.Logger
+	tempTx *db.LDBDatabase
 }
 
 func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor := GameExecutor{chain: blockChainImpl}
 	gameExecutor.logger = log.GetLoggerByIndex(log.GameExecutorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	gameExecutor.writeChan = make(chan notify.ClientTransactionMessage, maxWriteSize)
+
+	file := "tempTx" + strconv.Itoa(common.InstanceIndex)
+	tempTxLDB, err := db.NewLDBDatabase(file, 10, 10)
+	if err != nil {
+		panic("newLDBDatabase fail, file=" + file + ", err=" + err.Error())
+	}
+	gameExecutor.tempTx = tempTxLDB
+	gameExecutor.recover()
 
 	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
-
-	gameExecutor.writeChan = make(chan notify.ClientTransactionMessage, maxWriteSize)
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.write)
 	notify.BUS.Subscribe(notify.CoinProxyNotify, gameExecutor.coinProxyHandler)
 	notify.BUS.Subscribe(notify.WrongTxNonce, gameExecutor.wrongTxNonceHandler)
+	notify.BUS.Subscribe(notify.BlockAddSucc, gameExecutor.onBlockAddSuccess)
 
 	go gameExecutor.loop()
+}
+
+func (executor *GameExecutor) recover() {
+	iterator := executor.tempTx.NewIterator()
+	for iterator.Next() {
+		txBytes := iterator.Value()
+		tx, err := types.UnMarshalTransaction(txBytes)
+		if err != nil {
+			continue
+		}
+
+		msg := notify.ClientTransactionMessage{
+			Tx:     tx,
+			UserId: "",
+			Nonce:  binary.BigEndian.Uint64(iterator.Key()),
+		}
+		go executor.RunWrite(msg)
+	}
 }
 
 func (executor *GameExecutor) read(msg notify.Message) {
@@ -229,6 +259,25 @@ func (executor *GameExecutor) wrongTxNonceHandler(msg notify.Message) {
 	executor.writeChan <- writeMessage
 }
 
+func (executor *GameExecutor) onBlockAddSuccess(message notify.Message) {
+	block := message.GetData().(types.Block)
+	msg := fmt.Sprintf("height: %d, hash: %s", block.Header.Height, block.Header.Hash.ShortS())
+	defer executor.logger.Info("onBlockAddSuccess, " + msg)
+
+	transactions := block.Transactions
+	if nil == transactions || 0 == len(transactions) {
+		msg += ", without txs"
+		return
+	}
+
+	count := 0
+	for _, tx := range transactions {
+		count++
+		executor.tempTx.Delete(common.Uint64ToByte(tx.RequestId))
+	}
+	msg += fmt.Sprintf(", deleted %d txs", count)
+}
+
 func (executor *GameExecutor) coinProxyHandler(msg notify.Message) {
 	cpn, ok := msg.(*notify.CoinProxyNotifyMessage)
 	if !ok {
@@ -257,21 +306,21 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	txRaw := message.Tx
 	txRaw.RequestId = message.Nonce
 
-	// 校验交易类型
-	//transactionType := txRaw.Type
-	//if transactionType != types.TransactionTypeOperatorEvent &&
-	//	transactionType != types.TransactionTypeWithdraw && transactionType != types.TransactionTypePublishFT {
-	//	logger.Debugf("GameExecutor:Write transactionType: %d, not ok!", transactionType)
-	//	continue
-	//}
-
 	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
 
 	accountDB := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
-	if nil == accountDB || types.TransactionTypeWrongTxNonce == txRaw.Type {
+	if nil == accountDB {
 		return
 	}
-	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor")
+
+	defer func() {
+		go executor.after(txRaw)
+		service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor")
+	}()
+
+	if types.TransactionTypeWrongTxNonce == txRaw.Type {
+		return
+	}
 
 	if err := service.GetTransactionPool().VerifyTransaction(&txRaw); err != nil {
 		response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
@@ -294,6 +343,11 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	//	response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
 	//}
 	//go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+}
+
+func (executor *GameExecutor) after(txRaw types.Transaction) {
+	txBytes, _ := types.MarshalTransaction(&txRaw)
+	executor.tempTx.Put(common.Uint64ToByte(txRaw.RequestId), txBytes)
 }
 
 func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw types.Transaction) (bool, string) {

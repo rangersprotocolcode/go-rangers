@@ -32,9 +32,10 @@ var (
 )
 
 func InitCore(helper types.ConsensusHelper) error {
-	logger = log.GetLoggerByIndex(log.CoreLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	txLogger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	consensusLogger = log.GetLoggerByIndex(log.ConsensusLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	index := common.GlobalConf.GetString("instance", "index", "")
+	logger = log.GetLoggerByIndex(log.CoreLogConfig, index)
+	txLogger = log.GetLoggerByIndex(log.TxLogConfig, index)
+	consensusLogger = log.GetLoggerByIndex(log.ConsensusLogConfig, index)
 	consensusHelper = helper
 
 	initPeerManager()

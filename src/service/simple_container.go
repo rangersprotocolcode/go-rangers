@@ -26,8 +26,7 @@ type simpleContainer struct {
 	limit  int
 	txs    types.Transactions
 	txsMap map[common.Hash]*types.Transaction
-
-	lock sync.RWMutex
+	lock   sync.RWMutex
 }
 
 func newSimpleContainer(l int) *simpleContainer {
@@ -76,6 +75,7 @@ func (c *simpleContainer) push(tx *types.Transaction) {
 	if c.txs.Len() < c.limit {
 		c.txs = append(c.txs, tx)
 		c.txsMap[tx.Hash] = tx
+
 		return
 	}
 }
