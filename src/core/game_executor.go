@@ -77,13 +77,15 @@ type GameExecutor struct {
 	chain     *blockChain
 	writeChan chan notify.ClientTransactionMessage
 	logger    log.Logger
-	tempTx *db.LDBDatabase
+	tempTx    *db.LDBDatabase
+	cleaner   *time.Ticker
 }
 
 func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor := GameExecutor{chain: blockChainImpl}
 	gameExecutor.logger = log.GetLoggerByIndex(log.GameExecutorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	gameExecutor.writeChan = make(chan notify.ClientTransactionMessage, maxWriteSize)
+	gameExecutor.cleaner = time.NewTicker(time.Minute * 10)
 
 	file := "tempTx" + strconv.Itoa(common.InstanceIndex)
 	tempTxLDB, err := db.NewLDBDatabase(file, 10, 10)
@@ -100,6 +102,7 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	notify.BUS.Subscribe(notify.BlockAddSucc, gameExecutor.onBlockAddSuccess)
 
 	go gameExecutor.loop()
+	go gameExecutor.cleanLoop()
 }
 
 func (executor *GameExecutor) recover() {
@@ -298,6 +301,24 @@ func (executor *GameExecutor) loop() {
 		select {
 		case msg := <-executor.writeChan:
 			go executor.RunWrite(msg)
+		}
+	}
+}
+
+func (executor *GameExecutor) cleanLoop() {
+	for {
+		select {
+		case <-executor.cleaner.C:
+			nonce := service.AccountDBManagerInstance.GetLatestNonce()
+			iter := executor.tempTx.NewIterator()
+			for iter.Next() {
+				key := iter.Key()
+				currentNonce := binary.BigEndian.Uint64(key)
+				if currentNonce <= nonce {
+					executor.tempTx.Delete(key)
+					executor.logger.Infof("clean tx: %d", currentNonce)
+				}
+			}
 		}
 	}
 }

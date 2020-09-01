@@ -145,3 +145,10 @@ func (manager *AccountDBManager) getCond() *sync.Cond {
 
 	return value.(*sync.Cond)
 }
+
+func (manager *AccountDBManager) GetLatestNonce() uint64 {
+	manager.getCond().L.Lock()
+	defer manager.getCond().L.Unlock()
+
+	return manager.requestId
+}
