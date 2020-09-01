@@ -428,7 +428,7 @@ func (clientConn *ClientConn) generateNotifyId(gameId string, userId string) uin
 
 	md5Result := md5.Sum(data)
 	idBytes := md5Result[4:12]
-	return uint64(binary.BigEndian.Uint64(idBytes))
+	return binary.BigEndian.Uint64(idBytes)
 }
 
 // 处理coiner的请求
@@ -462,17 +462,17 @@ func (connectorConn *ConnectorConn) handleConnectorMessage(data []byte, nonce ui
 	err := json.Unmarshal(data, &txJson)
 	if err != nil {
 		msg := fmt.Sprintf("handleConnectorMessage json unmarshal coiner msg err: %s", err.Error())
-		Logger.Errorf(msg)
+		connectorConn.logger.Errorf(msg)
 		connectorConn.sendWrongNonce(nonce, msg)
 		return
 	}
 
 	tx := txJson.ToTransaction()
 	tx.RequestId = nonce
-	Logger.Debugf("Rcv message from coiner.Tx info:%s", tx.ToTxJson().ToString())
+	connectorConn.logger.Debugf("Rcv message from coiner.Tx info:%s", tx.ToTxJson().ToString())
 	if !types.CoinerSignVerifier.VerifyDeposit(txJson) {
 		msg := fmt.Sprintf("tx from coiner verify sign error! Tx Info: %s", txJson.ToString())
-		Logger.Infof(msg)
+		connectorConn.logger.Infof(msg)
 		connectorConn.sendWrongNonce(nonce, msg)
 		return
 	}
@@ -483,7 +483,7 @@ func (connectorConn *ConnectorConn) handleConnectorMessage(data []byte, nonce ui
 	} else {
 		msg := fmt.Sprintf("unknown type from coiner:%d", txJson.Type)
 		connectorConn.sendWrongNonce(nonce, msg)
-		Logger.Infof(msg)
+		connectorConn.logger.Infof(msg)
 	}
 
 }
