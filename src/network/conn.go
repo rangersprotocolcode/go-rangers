@@ -297,7 +297,8 @@ func (base *baseConn) sendWrongNonce(nonce uint64) {
 	if 0 == nonce {
 		return
 	}
-	notify.BUS.Publish(notify.WrongTxNonce, &notify.NonceNotifyMessage{Nonce: nonce})
+
+	go notify.BUS.Publish(notify.WrongTxNonce, &notify.NonceNotifyMessage{Nonce: nonce})
 }
 
 // 处理客户端的read/write请求
