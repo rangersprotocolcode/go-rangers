@@ -41,7 +41,7 @@ func TestBatchMinerApply(t *testing.T) {
 	txList := make([]string, 0)
 
 	for i := 0; i < len(pieceList); i++ {
-		if (i < 4) {
+		if i < 4 {
 			continue
 		}
 		piece := pieceList[i]
@@ -110,8 +110,8 @@ func genMinerApplyTx(target string, data string) string {
 }
 
 func sendTxToGate(txList []string) {
-	d := websocket.Dialer{ReadBufferSize: 1024 * 1024 * 16, WriteBufferSize: 1024 * 1024 * 16,}
-	url := url.URL{Scheme: "ws", Host: "47.96.99.105:10000", Path: "/api/writer/1"}
+	d := websocket.Dialer{ReadBufferSize: 1024 * 1024 * 16, WriteBufferSize: 1024 * 1024 * 16}
+	url := url.URL{Scheme: "ws", Host: "gate.tuntunhz.com:10000", Path: "/api/writer/1"}
 
 	conn, _, err := d.Dial(url.String(), nil)
 	if err != nil {
