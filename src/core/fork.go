@@ -107,13 +107,19 @@ func (fh *forkProcessor) sendChainPieceInfo(targetNode string, chainPieceInfo ch
 		return
 	}
 	fh.logger.Debugf("Send chain piece %d-%d to:%s", chainPiece[len(chainPiece)-1].Height, chainPiece[0].Height, targetNode)
-	body, e := marshalChainPieceInfo(chainPieceInfo)
-	if e != nil {
-		fh.logger.Errorf("Marshal chain piece info error:%s!", e.Error())
-		return
+
+	for i := 0; i < len(chainPiece); i++ {
+		block := chainPiece[i]
+		chainPieceInfo.ChainPiece = []*types.BlockHeader{block}
+
+		body, e := marshalChainPieceInfo(chainPieceInfo)
+		if e != nil {
+			fh.logger.Errorf("Marshal chain piece info error:%s!", e.Error())
+			return
+		}
+		message := network.Message{Code: network.ChainPieceInfo, Body: body}
+		network.GetNetInstance().Send(targetNode, message)
 	}
-	message := network.Message{Code: network.ChainPieceInfo, Body: body}
-	network.GetNetInstance().Send(targetNode, message)
 }
 
 func (fh *forkProcessor) chainPieceInfoHandler(msg notify.Message) {
