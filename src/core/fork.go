@@ -107,19 +107,13 @@ func (fh *forkProcessor) sendChainPieceInfo(targetNode string, chainPieceInfo ch
 		return
 	}
 	fh.logger.Debugf("Send chain piece %d-%d to:%s", chainPiece[len(chainPiece)-1].Height, chainPiece[0].Height, targetNode)
-
-	for i := 0; i < len(chainPiece); i++ {
-		block := chainPiece[i]
-		chainPieceInfo.ChainPiece = []*types.BlockHeader{block}
-
-		body, e := marshalChainPieceInfo(chainPieceInfo)
-		if e != nil {
-			fh.logger.Errorf("Marshal chain piece info error:%s!", e.Error())
-			return
-		}
-		message := network.Message{Code: network.ChainPieceInfo, Body: body}
-		network.GetNetInstance().Send(targetNode, message)
+	body, e := marshalChainPieceInfo(chainPieceInfo)
+	if e != nil {
+		fh.logger.Errorf("Marshal chain piece info error:%s!", e.Error())
+		return
 	}
+	message := network.Message{Code: network.ChainPieceInfo, Body: body}
+	network.GetNetInstance().Send(targetNode, message)
 }
 
 func (fh *forkProcessor) chainPieceInfoHandler(msg notify.Message) {
@@ -183,13 +177,16 @@ func (fh *forkProcessor) chainPieceBlockReqHandler(msg notify.Message) {
 
 func (fh *forkProcessor) sendChainPieceBlock(targetId string, blocks []*types.Block, topHeader *types.BlockHeader) {
 	fh.logger.Debugf("Send chain piece blocks %d-%d to:%s", blocks[len(blocks)-1].Header.Height, blocks[0].Header.Height, targetId)
-	body, e := fh.marshalChainPieceBlockMsg(ChainPieceBlockMsg{Blocks: blocks, TopHeader: topHeader})
-	if e != nil {
-		fh.logger.Errorf("Marshal chain piece block msg error:%s", e.Error())
-		return
+	for i := 0; i < len(blocks); i++ {
+		block := blocks[i]
+		body, e := fh.marshalChainPieceBlockMsg(ChainPieceBlockMsg{Blocks: []*types.Block{block}, TopHeader: topHeader})
+		if e != nil {
+			fh.logger.Errorf("Marshal chain piece block msg error:%s", e.Error())
+			return
+		}
+		message := network.Message{Code: network.ChainPieceBlock, Body: body}
+		go network.GetNetInstance().Send(targetId, message)
 	}
-	message := network.Message{Code: network.ChainPieceBlock, Body: body}
-	go network.GetNetInstance().Send(targetId, message)
 }
 
 func (fh *forkProcessor) chainPieceBlockHandler(msg notify.Message) {
