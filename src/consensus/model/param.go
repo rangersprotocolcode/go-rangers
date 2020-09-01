@@ -82,7 +82,7 @@ func InitParam(cc common.SectionConfManager) {
 		CandidatesMinRatio:  cc.GetInt("candidates_min_ratio", CANDIDATES_MIN_RATIO),
 		GroupReadyGap:       uint64(cc.GetInt("group_ready_gap", GROUP_Ready_GAP)),
 		//EffectGapAfterApply: EPOCH,
-		PotentialProposal:   8,
+		PotentialProposal:   3,
 		CreateGroupInterval: uint64(Group_Create_Interval),
 		GroupCreateGap:      uint64(common.Group_Create_Gap),
 		GroupWaitPongGap:    uint64(Group_Wait_Pong_Gap),
