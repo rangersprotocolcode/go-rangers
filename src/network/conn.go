@@ -26,6 +26,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"net/url"
 	"strconv"
@@ -293,12 +294,12 @@ func (base *baseConn) generateTarget(targetId string) (uint64, error) {
 	return target, nil
 }
 
-func (base *baseConn) sendWrongNonce(nonce uint64) {
+func (base *baseConn) sendWrongNonce(nonce uint64, msg string) {
 	if 0 == nonce {
 		return
 	}
 
-	go notify.BUS.Publish(notify.WrongTxNonce, &notify.NonceNotifyMessage{Nonce: nonce})
+	go notify.BUS.Publish(notify.WrongTxNonce, &notify.NonceNotifyMessage{Nonce: nonce, Msg: msg})
 }
 
 // 处理客户端的read/write请求
@@ -342,8 +343,9 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 		}
 
 		if !bytes.Equal(wsHeader.method, clientConn.method) {
-			clientConn.logger.Error("%s received wrong method. wsHeader: %v", clientConn.path, wsHeader)
-			clientConn.sendWrongNonce(wsHeader.nonce)
+			msg := fmt.Sprintf("%s received wrong method. wsHeader: %v", clientConn.path, wsHeader)
+			clientConn.logger.Error(msg)
+			clientConn.sendWrongNonce(wsHeader.nonce, msg)
 			return
 		}
 
@@ -381,8 +383,9 @@ func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, no
 	var txJson types.TxJson
 	err := json.Unmarshal(body, &txJson)
 	if nil != err {
-		clientConn.logger.Errorf("Json unmarshal client message error:%s", err.Error())
-		clientConn.sendWrongNonce(nonce)
+		msg := fmt.Sprintf("handleClientMessage json unmarshal client message error:%s", err.Error())
+		clientConn.logger.Errorf(msg)
+		clientConn.sendWrongNonce(nonce, msg)
 		return
 	}
 
@@ -458,8 +461,9 @@ func (connectorConn *ConnectorConn) handleConnectorMessage(data []byte, nonce ui
 	var txJson types.TxJson
 	err := json.Unmarshal(data, &txJson)
 	if err != nil {
-		Logger.Errorf("Json unmarshal coiner msg err:", err.Error())
-		connectorConn.sendWrongNonce(nonce)
+		msg := fmt.Sprintf("handleConnectorMessage json unmarshal coiner msg err: %s", err.Error())
+		Logger.Errorf(msg)
+		connectorConn.sendWrongNonce(nonce, msg)
 		return
 	}
 
@@ -467,8 +471,9 @@ func (connectorConn *ConnectorConn) handleConnectorMessage(data []byte, nonce ui
 	tx.RequestId = nonce
 	Logger.Debugf("Rcv message from coiner.Tx info:%s", tx.ToTxJson().ToString())
 	if !types.CoinerSignVerifier.VerifyDeposit(txJson) {
-		Logger.Infof("Tx from coiner verify sign error!Tx Info:%s", txJson.ToString())
-		connectorConn.sendWrongNonce(nonce)
+		msg := fmt.Sprintf("tx from coiner verify sign error! Tx Info: %s", txJson.ToString())
+		Logger.Infof(msg)
+		connectorConn.sendWrongNonce(nonce, msg)
 		return
 	}
 
@@ -476,8 +481,9 @@ func (connectorConn *ConnectorConn) handleConnectorMessage(data []byte, nonce ui
 		msg := notify.CoinProxyNotifyMessage{Tx: tx}
 		notify.BUS.Publish(notify.CoinProxyNotify, &msg)
 	} else {
-		connectorConn.sendWrongNonce(nonce)
-		Logger.Infof("Unknown type from coiner:%d", txJson.Type)
+		msg := fmt.Sprintf("unknown type from coiner:%d", txJson.Type)
+		connectorConn.sendWrongNonce(nonce, msg)
+		Logger.Infof(msg)
 	}
 
 }

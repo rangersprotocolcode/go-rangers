@@ -342,6 +342,7 @@ func (s *STMStorageReadyMessage) GetData() interface{} {
 
 type NonceNotifyMessage struct {
 	Nonce uint64
+	Msg   string
 }
 
 func (m *NonceNotifyMessage) GetRaw() []byte {

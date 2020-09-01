@@ -223,6 +223,7 @@ func (executor *GameExecutor) wrongTxNonceHandler(msg notify.Message) {
 		return
 	}
 
+	executor.logger.Warnf("process wrong nonce: %d, reason: %s", cpn.Nonce, cpn.Msg)
 	tx := types.Transaction{Type: types.TransactionTypeWrongTxNonce}
 	writeMessage := notify.ClientTransactionMessage{Nonce: cpn.Nonce, Tx: tx}
 	executor.writeChan <- writeMessage
