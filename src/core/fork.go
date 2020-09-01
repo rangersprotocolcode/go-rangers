@@ -177,16 +177,13 @@ func (fh *forkProcessor) chainPieceBlockReqHandler(msg notify.Message) {
 
 func (fh *forkProcessor) sendChainPieceBlock(targetId string, blocks []*types.Block, topHeader *types.BlockHeader) {
 	fh.logger.Debugf("Send chain piece blocks %d-%d to:%s", blocks[len(blocks)-1].Header.Height, blocks[0].Header.Height, targetId)
-	for i := 0; i < len(blocks); i++ {
-		block := blocks[i]
-		body, e := fh.marshalChainPieceBlockMsg(ChainPieceBlockMsg{Blocks: []*types.Block{block}, TopHeader: topHeader})
-		if e != nil {
-			fh.logger.Errorf("Marshal chain piece block msg error:%s", e.Error())
-			return
-		}
-		message := network.Message{Code: network.ChainPieceBlock, Body: body}
-		go network.GetNetInstance().Send(targetId, message)
+	body, e := fh.marshalChainPieceBlockMsg(ChainPieceBlockMsg{Blocks: blocks, TopHeader: topHeader})
+	if e != nil {
+		fh.logger.Errorf("Marshal chain piece block msg error:%s", e.Error())
+		return
 	}
+	message := network.Message{Code: network.ChainPieceBlock, Body: body}
+	go network.GetNetInstance().Send(targetId, message)
 }
 
 func (fh *forkProcessor) chainPieceBlockHandler(msg notify.Message) {
