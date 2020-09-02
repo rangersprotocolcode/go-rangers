@@ -111,7 +111,7 @@ func genMinerApplyTx(target string, data string) string {
 
 func sendTxToGate(txList []string) {
 	d := websocket.Dialer{ReadBufferSize: 1024 * 1024 * 16, WriteBufferSize: 1024 * 1024 * 16}
-	url := url.URL{Scheme: "ws", Host: "gate.tuntunhz.com:10000", Path: "/api/writer/1"}
+	url := url.URL{Scheme: "ws", Host: "gate.tuntunhz.com:8888", Path: "/api/writer/1"}
 
 	conn, _, err := d.Dial(url.String(), nil)
 	if err != nil {
