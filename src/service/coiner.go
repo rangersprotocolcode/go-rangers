@@ -23,6 +23,7 @@ import (
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"fmt"
+	"strings"
 )
 
 //主链币充值确认
@@ -82,7 +83,16 @@ func FTDeposit(accountdb *account.AccountDB, transaction *types.Transaction) (bo
 
 	//todo 先不检查此ft是否存在
 	value, _ := utility.StrToBigInt(depositFTData.Amount)
-	result := accountdb.AddFT(common.HexToAddress(transaction.Source), depositFTData.FTId, value)
+	result := false
+
+	// ERC20的max，特殊处理
+	if 0 == strings.Compare(strings.ToLower(depositFTData.FTId), "max") {
+		accountdb.AddBalance(common.HexToAddress(transaction.Source), value)
+		result = true
+	} else {
+		result = accountdb.AddFT(common.HexToAddress(transaction.Source), depositFTData.FTId, value)
+	}
+
 	if result {
 		return result, fmt.Sprintf("coin: %s, deposit %s", depositFTData.FTId, value)
 	}

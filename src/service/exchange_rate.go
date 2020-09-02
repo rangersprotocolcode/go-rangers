@@ -53,6 +53,8 @@ func IsRateExisted(id string, accountdb *account.AccountDB) bool {
 	//
 	//rate := accountdb.GetData(common.ExchangeRateAddress, []byte(id))
 	//return nil != rate && 0 != len(rate)
-
+	if 0 == strings.Compare(strings.ToLower(id), "max") {
+		return true
+	}
 	return true
 }
