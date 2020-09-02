@@ -31,11 +31,11 @@ do
 	fi
 
 	if [ $instance_index -le 3 ];then
-		nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --env production > $stdout_log 2>&1 & echo $! > $pid_file
+		nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --gateaddr gate.tuntunhz.com:8888 > $stdout_log 2>&1 & echo $! > $pid_file
     elif [ $instance_index -eq 4 ];then
-		nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --env production > $stdout_log 2>&1 & echo $! > $pid_file
+		nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --gateaddr gate.tuntunhz.com:8888 > $stdout_log 2>&1 & echo $! > $pid_file
 	else
-		nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --env production > $stdout_log 2>&1 & echo $! > $pid_file
+		nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --gateaddr gate.tuntunhz.com:8888 > $stdout_log 2>&1 & echo $! > $pid_file
 	fi
 	sleep 1
 done
