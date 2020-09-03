@@ -329,15 +329,12 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 
 	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
 
+	go executor.after(txRaw)
 	accountDB := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
 	if nil == accountDB {
 		return
 	}
-
-	defer func() {
-		go executor.after(txRaw)
-		service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor")
-	}()
+	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor")
 
 	if types.TransactionTypeWrongTxNonce == txRaw.Type {
 		return
