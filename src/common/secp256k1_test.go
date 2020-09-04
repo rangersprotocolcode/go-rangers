@@ -314,3 +314,20 @@ func validateFunction(privateKeyStr, publicKeyStr, message, signStr, idStr strin
 	id := publicKey.GetID()
 	assert.Equal(test, idStr, ToHex(id[:]))
 }
+
+//------------------------------fix key -------------------------------------------------------------------------------
+func TestRecoverSanity(t *testing.T) {
+	msg, _ := hex.DecodeString("f4e13f7ac3be5bb16ca36afbe5f4f58bc908abda1f536bd131207e00ab9555f4")
+	sig, _ := hex.DecodeString("c81da60b590a289e631173a03ef5c0d38048bfe2a03b3a75f8205defa5cbce58184b1de78acffeffb806ff70b89f6c6e68f0cd1cd4bf7b90331fb0ffbf9117111c")
+	pubkey, err := secp256k1.RecoverPubkey(msg, sig)
+	if err != nil {
+		t.Fatalf("recover error: %s", err)
+	}
+	p := BytesToPublicKey(pubkey)
+	fmt.Printf("pubkey:%s\n", p.GetHexString())
+	fmt.Printf("addr:%s\n", p.GetAddress().GetHexString())
+
+	id := p.GetID()
+	fmt.Printf("addr:%s\n", ToHex(id[:]))
+
+}

@@ -41,9 +41,12 @@ func (pk PublicKey) Verify(hash []byte, s *Sign) bool {
 func (pk PublicKey) GetAddress() Address {
 	x := pk.PubKey.X.Bytes()
 	y := pk.PubKey.Y.Bytes()
-	x = append(x, y...)
 
-	addr_buf := sha3.Sum256(x)
+	digest := make([]byte, 64)
+	copy(digest[32-len(x):], x)
+	copy(digest[64-len(y):], y)
+
+	addr_buf := sha3.Sum256(digest)
 	Addr := BytesToAddress(addr_buf[:])
 	return Addr
 }
@@ -52,9 +55,12 @@ func (pk PublicKey) GetAddress() Address {
 func (pk PublicKey) GetID() [32]byte {
 	x := pk.PubKey.X.Bytes()
 	y := pk.PubKey.Y.Bytes()
-	x = append(x, y...)
 
-	addr_buf := sha3.Sum256(x)
+	digest := make([]byte, 64)
+	copy(digest[32-len(x):], x)
+	copy(digest[64-len(y):], y)
+
+	addr_buf := sha3.Sum256(digest)
 
 	return addr_buf
 }
