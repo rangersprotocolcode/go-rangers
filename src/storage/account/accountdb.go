@@ -233,11 +233,12 @@ func (adb *AccountDB) AddBalance(addr common.Address, amount *big.Int) {
 }
 
 // SubBalance subtracts amount from the account associated with addr.
-func (adb *AccountDB) SubBalance(addr common.Address, amount *big.Int) {
+func (adb *AccountDB) SubBalance(addr common.Address, amount *big.Int) (left *big.Int) {
 	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {
-		stateObject.SubBalance(amount)
+		left = stateObject.SubBalance(amount)
 	}
+	return
 }
 
 func (adb *AccountDB) SetBalance(addr common.Address, amount *big.Int) {

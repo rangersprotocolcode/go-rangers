@@ -45,6 +45,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 
 	source := common.HexToAddress(transaction.Source)
 	result := make(map[string]string)
+	result["txHash"] = transaction.Hash.String()
 
 	//主链币检查
 	if withDrawReq.BNT.TokenType != "" {
@@ -61,9 +62,11 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 			txLogger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", subAccountBalance.Uint64(), withdrawAmount.Uint64())
 			return "BNT Not Enough", false
 		} else {
-			result["token"] = withDrawReq.BNT.TokenType
-			result["balance"] = utility.BigIntToStr(left)
-			result["lockedBalance"] = withDrawReq.BNT.Value
+			responseCoin := types.NewJSONObject()
+			responseCoin.Put("token", withDrawReq.BNT.TokenType)
+			responseCoin.Put("balance", utility.BigIntToStr(left))
+			responseCoin.Put("lockedBalance", withDrawReq.BNT.Value)
+			result["coin"] = responseCoin.TOJSONString()
 		}
 	}
 
@@ -73,6 +76,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 			return "Withdraw Data Bad Format", false
 		}
 
+		ftJSONList := make([]types.JSONObject, 0)
 		for k, v := range withDrawReq.FT {
 			subValue := accountdb.GetFT(source, k)
 			compareResult, sub := canWithDraw(v, subValue)
@@ -82,6 +86,17 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 
 			// 扣ft
 			accountdb.SetFT(source, k, sub)
+
+			ftJson := types.NewJSONObject()
+			ftJson.Put("ftId", k)
+			ftJson.Put("balance", sub)
+			ftJson.Put("lockedBalance", v)
+			ftJSONList = append(ftJSONList, ftJson)
+		}
+
+		if len(ftJSONList) != 0 {
+			json, _ := json.Marshal(ftJSONList)
+			result["ft"] = string(json)
 		}
 	}
 
@@ -92,6 +107,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 			return "Withdraw Data Bad Format", false
 		}
 
+		nftJSONList := make([]types.JSONObject, 0)
 		for _, k := range withDrawReq.NFT {
 			nft := NFTManagerInstance.DeleteNFT(source, k.SetId, k.Id, accountdb)
 			if nil == nft {
@@ -99,10 +115,16 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 			}
 
 			nftInfo = append(nftInfo, types.NFTID{SetId: k.SetId, Id: k.Id, Data: nft.ToJSONString()})
-			result["chainType"] = withDrawReq.ChainType
-			result["setId"] = k.SetId
-			result["tokenId"] = k.Id
-			result["targetAddress"] = withDrawReq.Address
+
+			nftJson := types.NewJSONObject()
+			nftJson.Put("setId", k.SetId)
+			nftJson.Put("tokenId", k.Id)
+			nftJSONList = append(nftJSONList, nftJson)
+		}
+
+		if len(nftJSONList) != 0 {
+			json, _ := json.Marshal(nftJSONList)
+			result["nft"] = string(json)
 		}
 	}
 

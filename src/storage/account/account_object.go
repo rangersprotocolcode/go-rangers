@@ -289,11 +289,13 @@ func (ao *accountObject) AddBalance(amount *big.Int) {
 }
 
 // SubBalance is used to remove funds from the origin account of a transfer.
-func (ao *accountObject) SubBalance(amount *big.Int) {
+func (ao *accountObject) SubBalance(amount *big.Int) *big.Int {
+	left := new(big.Int).Sub(ao.Balance(), amount)
 	if amount.Sign() == 0 {
-		return
+		return left
 	}
-	ao.SetBalance(new(big.Int).Sub(ao.Balance(), amount))
+	ao.SetBalance(left)
+	return left
 }
 
 func (ao *accountObject) SetBalance(amount *big.Int) {
