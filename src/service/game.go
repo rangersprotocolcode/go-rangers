@@ -239,7 +239,7 @@ func ChangeAssets(source string, targets map[string]types.TransferData, accountd
 			return "Transfer Balance Failed", false
 		} else {
 			logger.Debugf("%s to %s, target: %s", source, address, utility.BigIntToStr(accountdb.GetBalance(targetAddr)))
-			responseBalance = leftBalance.String()
+			responseBalance = utility.BigIntToStr(leftBalance)
 		}
 
 		// 转coin
@@ -275,21 +275,18 @@ func ChangeAssets(source string, targets map[string]types.TransferData, accountd
 	}
 
 	response := types.NewJSONObject()
-
 	if responseBalance != "" {
 		response.Put("balance", responseBalance)
 	}
 	if !responseCoin.IsEmpty() {
-		response.Put("coin", responseCoin.TOJSONString())
+		response.Put("coin", responseCoin.GetData())
 	}
 	if !responseFT.IsEmpty() {
-		response.Put("ft", responseFT.TOJSONString())
+		response.Put("ft", responseFT.GetData())
 	}
 	if 0 != len(responseNFT) {
-		data, _ := json.Marshal(responseNFT)
-		response.Put("nft", string(data))
+		response.Put("nft", responseNFT)
 	}
-
 	return response.TOJSONString(), true
 }
 
@@ -299,7 +296,7 @@ func transferNFT(nftIDList []types.NFTID, source common.Address, target common.A
 		return nil, true
 	}
 
-	response := make([]string, length)
+	response := make([]string, 0)
 	for _, id := range nftIDList {
 		_, flag := NFTManagerInstance.Transfer(id.SetId, id.Id, source, target, db)
 		if !flag {
