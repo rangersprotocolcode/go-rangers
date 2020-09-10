@@ -144,8 +144,7 @@ func sendWithdrawToCoiner(withDrawReq types.WithDrawReq, transaction *types.Tran
 		return false
 	}
 
-	t := types.Transaction{Source: transaction.Source, Target: transaction.Target, Data: string(b), Type: transaction.Type, Time: transaction.Time, Nonce: transaction.Nonce}
-	t.Hash = t.GenHash()
+	t := types.Transaction{Source: transaction.Source, Target: transaction.Target, Data: string(b), Type: transaction.Type, Time: transaction.Time, Nonce: transaction.Nonce, Hash: transaction.Hash}
 
 	msg, err := json.Marshal(t.ToTxJson())
 	if err != nil {
