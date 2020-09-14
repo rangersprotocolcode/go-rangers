@@ -18,6 +18,7 @@ package account
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"encoding/json"
 	"math/big"
@@ -211,7 +212,8 @@ func (self *accountObject) SetNFTValueByGameId(gameId, setId, id, value string) 
 	if nil == data || data.Empty() {
 		return false
 	}
-
+	out, _ := json.Marshal(data)
+	middleware.HeightLogger.Debugf("SetNFTValueByGameId, %s: ", string(out))
 	change := tuntunNFTChange{
 		account: &self.address,
 		gameId:  gameId,
