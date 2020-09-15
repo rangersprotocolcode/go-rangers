@@ -79,8 +79,6 @@ type TransactionPool interface {
 
 	UnMarkExecuted(txs []*types.Transaction)
 
-	AddExecuted(tx *types.Transaction) error
-
 	Clear()
 
 	IsExisted(hash common.Hash) bool

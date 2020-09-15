@@ -36,31 +36,25 @@ type operatorExecutor struct {
 func (this *operatorExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	this.logger.Debugf("txhash: %s begin transaction is not nil!", transaction.Hash.String())
 
-	// 处理转账
-	// 支持多人转账{"address1":"value1", "address2":"value2"}
-	// 理论上这里不应该失败，nonce保证了这一点
-	if 0 != len(transaction.ExtraData) {
-		mm := make(map[string]types.TransferData, 0)
-		if err := json.Unmarshal([]byte(transaction.ExtraData), &mm); nil != err {
-			return false, fmt.Sprintf("bad extraData: %s", transaction.ExtraData)
-
-		}
-		msg, ok := service.ChangeAssets(transaction.Source, mm, accountdb)
-		this.logger.Debugf("txhash: %s, finish changeAssets. msg: %s", transaction.Hash.String(), msg)
-		if !ok {
-			return false, msg
-		}
-	}
+	gameId := transaction.Target
+	isTransferOnly := 0 == len(gameId)
 
 	// 纯转账的场景，不用执行状态机
-	if 0 == len(transaction.Target) {
-		return true, ""
+	if isTransferOnly {
+		return this.transfer(transaction.Source, transaction.ExtraData, transaction.Hash.String(), accountdb)
 	}
 
 	// 在交易池里，表示game_executor已经执行过状态机了
-	// 只要处理交易里的subTransaction即可
-	if nil != service.TxManagerInstance.BeginTransaction(transaction.Target, accountdb, transaction) {
-		this.logger.Debugf("Is not game data")
+	if nil != service.TxManagerInstance.BeginTransaction(gameId, accountdb, transaction) {
+		if this.checkGameExecutor(context) {
+			return true, "Tx Is Executed"
+		}
+
+		// 只要处理交易里的subTransaction即可
+		ok, msg := this.transfer(transaction.Source, transaction.ExtraData, transaction.Hash.String(), accountdb)
+		if !ok {
+			return false, "fail to transfer"
+		}
 		if 0 != len(transaction.SubTransactions) {
 			for _, user := range transaction.SubTransactions {
 				this.logger.Debugf("Execute sub tx:%v", user)
@@ -166,18 +160,26 @@ func (this *operatorExecutor) Execute(transaction *types.Transaction, header *ty
 
 				// 用户之间转账
 				if !service.UpdateAsset(user, transaction.Target, accountdb) {
-					return false, ""
+					return false, "fail to transfer"
 				}
 			}
 		}
 
-		return true, ""
+		return true, msg
 	}
 
 	// 本地没有执行过状态机(game_executor还没有收到消息)，则需要调用状态机
 	// todo: RequestId 排序问题
+	ok, _ := this.transfer(transaction.Source, transaction.ExtraData, transaction.Hash.String(), accountdb)
+	if !ok {
+		service.GetTransactionPool().PutGameData(transaction.Hash)
+		service.TxManagerInstance.RollBack(gameId)
+		return false, "fail to transfer"
+	}
+
+	// 调用状态机
 	transaction.SubTransactions = make([]types.UserData, 0)
-	outputMessage := statemachine.STMManger.Process(transaction.Target, "operator", transaction.RequestId, transaction.Data, transaction)
+	outputMessage := statemachine.STMManger.Process(gameId, "operator", transaction.RequestId, transaction.Data, transaction)
 	service.GetTransactionPool().PutGameData(transaction.Hash)
 	result := ""
 	if outputMessage != nil {
@@ -185,10 +187,57 @@ func (this *operatorExecutor) Execute(transaction *types.Transaction, header *ty
 	}
 
 	if 0 == len(result) || result == "fail to transfer" || outputMessage == nil || outputMessage.Status == 1 {
-		service.TxManagerInstance.RollBack(transaction.Target)
+		service.TxManagerInstance.RollBack(gameId)
 		return false, "fail to transfer or stm has no response"
 	}
 
-	service.TxManagerInstance.Commit(transaction.Target)
-	return true, ""
+	service.TxManagerInstance.Commit(gameId)
+	return true, result
+}
+
+// 处理转账
+// 支持多人转账{"address1":"value1", "address2":"value2"}
+
+
+// 处理转账
+// 支持source地址给多人转账，包含余额，ft，nft
+// 数据格式{"address1":{"balance":"127","ft":{"name1":"189","name2":"1"},"nft":["id1","sword2"]}, "address2":{"balance":"1"}}
+//
+//{
+//	"address1": {
+//		"bnt": {
+//          "ETH.ETH":"0.008",
+//          "NEO.CGAS":"100"
+//      },
+//		"ft": {
+//			"name1": "189",
+//			"name2": "1"
+//		},
+//		"nft": [{"setId":"suit1","id":"xizhuang"},
+//              {"setId":"gun","id":"rifle"}
+// 				]
+//	},
+//	"address2": {
+//		"balance": "1"
+//	}
+//}
+func (this *operatorExecutor) transfer(source, data, hash string, accountdb *account.AccountDB) (bool, string) {
+	if 0 == len(data) {
+		return true, ""
+	}
+
+	mm := make(map[string]types.TransferData, 0)
+	if err := json.Unmarshal([]byte(data), &mm); nil != err {
+		return false, fmt.Sprintf("bad extraData: %s", data)
+
+	}
+
+	msg, ok := service.ChangeAssets(source, mm, accountdb)
+	this.logger.Debugf("txhash: %s, finish changeAssets. msg: %s", hash, msg)
+	return ok, msg
+}
+
+func (this *operatorExecutor) checkGameExecutor(context map[string]interface{}) bool {
+	_, ok := context["gameExecutor"]
+	return ok
 }

@@ -24,6 +24,7 @@ import (
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
+	"sort"
 	"strings"
 	"time"
 )
@@ -58,7 +59,12 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 
 	this.prepare()
 
-	for _, transaction := range this.block.Transactions {
+	txs := types.Transactions(this.block.Transactions)
+	if 0 != len(txs) && 0 != strings.Compare(this.situation, "casting") {
+		sort.Sort(txs)
+	}
+
+	for _, transaction := range txs {
 		executeTime := utility.GetTime()
 		if this.situation == "casting" && executeTime.Sub(beginTime) > MaxCastBlockTime {
 			logger.Infof("Cast block execute tx time out! Tx hash:%s ", transaction.Hash.String())

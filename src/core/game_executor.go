@@ -18,15 +18,14 @@ package core
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	executors "com.tuntun.rocket/node/src/executor"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/statemachine"
 	"com.tuntun.rocket/node/src/storage/account"
-	"com.tuntun.rocket/node/src/utility"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -326,10 +325,11 @@ func (executor *GameExecutor) cleanLoop() {
 func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) {
 	txRaw := message.Tx
 	txRaw.RequestId = message.Nonce
+	txRaw.SubTransactions = make([]types.UserData, 0)
 
 	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
+	go executor.saveTempTx(txRaw)
 
-	go executor.after(txRaw)
 	accountDB := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
 	if nil == accountDB {
 		return
@@ -363,7 +363,7 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	//go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
 }
 
-func (executor *GameExecutor) after(txRaw types.Transaction) {
+func (executor *GameExecutor) saveTempTx(txRaw types.Transaction) {
 	txBytes, _ := types.MarshalTransaction(&txRaw)
 	executor.tempTx.Put(common.Uint64ToByte(txRaw.RequestId), txBytes)
 }
@@ -373,90 +373,41 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw
 	executor.logger.Debugf("run tx. hash: %s", txhash)
 
 	if executor.isExisted(txRaw) {
-		executor.logger.Errorf("tx is existed:%v", txRaw)
+		executor.logger.Errorf("tx is existed: hash: %s", txhash)
 		return false, "Tx Is Existed"
 	}
+	defer executor.sendTransaction(&txRaw)
+
+	processor := executors.GetTxExecutor(txRaw.Type)
+	if nil == processor {
+		return false, fmt.Sprintf("finish tx. wrong tx type: %d, hash: %s", txRaw.Type, txhash)
+	}
+	context := make(map[string]interface{})
+	context["gameExecutor"] = 1
 
 	message := ""
 	result := true
 	snapshot := accountDB.Snapshot()
 
-	start := utility.GetTime()
-	if err := service.GetTransactionPool().ProcessFee(txRaw, accountDB); err != nil {
-		executor.logger.Errorf("txhash: %s, failed. not enough max", txhash)
+	start := time.Now()
+	defer executor.logger.Debugf("finish tx. result: %t, message: %s, cost time : %v, txhash: %s, requestId: %d", result, message, time.Since(start), txhash, txRaw.RequestId)
+
+	result, message = processor.BeforeExecute(&txRaw, nil, accountDB, context)
+	if !result {
+		executor.logger.Errorf("finish tx. hash: %s, failed. not enough max", txhash)
 		accountDB.RevertToSnapshot(snapshot)
-		executor.sendTransaction(&txRaw)
-		return false, err.Error()
+		return result, message
 	}
 
+	result, message = processor.Execute(&txRaw, nil, accountDB, context)
+	if !result {
+		accountDB.RevertToSnapshot(snapshot)
+	}
+
+	// 特殊处理返回
 	switch txRaw.Type {
-	// execute state machine transaction
-	case types.TransactionTypeOperatorEvent:
-		executor.logger.Debugf("begin TransactionTypeOperatorEvent. txhash: %s, appId: %s, transferInfo: %s, payload: %s", txhash, txRaw.Target, txRaw.ExtraData, txRaw.Data)
-
-		gameId := txRaw.Target
-		isTransferOnly := 0 == len(gameId)
-
-		// 只是转账
-		if isTransferOnly {
-			snapshot := accountDB.Snapshot()
-			msg, ok := executor.doTransfer(txRaw, accountDB)
-			if !ok {
-				accountDB.RevertToSnapshot(snapshot)
-			}
-
-			result = ok
-			message = msg
-			break
-		}
-
-		// 已经执行过了（入块时），则不用再执行了
-		if nil != service.TxManagerInstance.BeginTransaction(gameId, accountDB, &txRaw) {
-			// bingo
-			executor.logger.Infof("Tx is executed!")
-			return false, "Tx Is Executed"
-		}
-
-		// 调用状态机
-		// 1. 先转账
-		message, result = executor.doTransfer(txRaw, accountDB)
-
-		// 2. 转账成功，调用状态机
-		var outputMessage *types.OutputMessage
-		if result && len(txRaw.Data) != 0 {
-			txRaw.SubTransactions = make([]types.UserData, 0)
-			outputMessage = statemachine.STMManger.Process(txRaw.Target, "operator", txRaw.RequestId, txRaw.Data, &txRaw)
-			executor.logger.Debugf("txhash %s invoke state machine. result:%v", txhash, outputMessage)
-			if outputMessage != nil {
-				message = outputMessage.Payload
-			}
-
-			service.GetTransactionPool().PutGameData(txRaw.Hash)
-		}
-
-		// 没有结果返回，默认出错，回滚
-		if !result || len(txRaw.Data) != 0 && (outputMessage == nil || outputMessage.Status == 1) {
-			executor.logger.Infof("Roll back tx.")
-			service.TxManagerInstance.RollBack(gameId)
-
-			// 加入到已执行过的交易池，打包入块不会再执行这笔交易
-			executor.markExecuted(&txRaw)
-			if 0 == len(message) {
-				message = "Tx Execute Failed"
-			}
-		} else {
-			service.TxManagerInstance.Commit(gameId)
-		}
-
-		executor.logger.Debugf("end TransactionTypeOperatorEvent. txhash: %s", txhash)
-		break
-	case types.TransactionTypeWithdraw:
-		message, result = service.Withdraw(accountDB, &txRaw, false)
-		break
-
 	case types.TransactionTypePublishFT:
 		appId := txRaw.Source
-		message, result = service.PublishFT(accountDB, &txRaw)
 		if result {
 			var ftSet map[string]string
 			json.Unmarshal([]byte(txRaw.Data), &ftSet)
@@ -469,113 +420,14 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw
 		}
 
 		break
-
 	case types.TransactionTypePublishNFTSet:
-		flag, response := service.PublishNFTSet(accountDB, &txRaw)
-		if flag {
+		if result {
 			message = txRaw.Data
-			result = true
-		} else {
-			message = response
-			result = false
 		}
 		break
-
-	case types.TransactionTypeMintFT:
-		result, message = service.MintFT(accountDB, &txRaw)
-		break
-
-	case types.TransactionTypeMintNFT:
-		result, message = service.MintNFT(accountDB, &txRaw)
-		break
-
-	case types.TransactionTypeShuttleNFT:
-		result, message = service.ShuttleNFT(accountDB, &txRaw)
-		break
-
-	case types.TransactionTypeUpdateNFT:
-		result, message = service.UpdateNFT(accountDB, &txRaw)
-		break
-
-	case types.TransactionTypeApproveNFT:
-		result, message = service.ApproveNFT(accountDB, &txRaw)
-		break
-	case types.TransactionTypeRevokeNFT:
-		result, message = service.RevokeNFT(accountDB, &txRaw)
-		break
-
-	case types.TransactionTypeCoinDepositAck:
-		result, message = service.CoinDeposit(accountDB, &txRaw)
-		break
-	case types.TransactionTypeFTDepositAck:
-		result, message = service.FTDeposit(accountDB, &txRaw)
-		break
-	case types.TransactionTypeNFTDepositAck:
-		result, message = service.NFTDeposit(accountDB, &txRaw)
-		break
-
-	case types.TransactionTypeMinerApply:
-		break
-	case types.TransactionTypeMinerAdd:
-		break
-	case types.TransactionTypeMinerRefund:
-		break
-
-	case types.TransactionTypeSetExchangeRate:
-		result, message = service.SetExchangeRate(accountDB, &txRaw)
-		break
 	}
 
-	if !result {
-		accountDB.RevertToSnapshot(snapshot)
-	}
-
-	// 打包入块
-	// 入块时不再需要调用状态机，因为已经执行过了
-	executor.sendTransaction(&txRaw)
-	executor.logger.Debugf("finish tx. result: %t, message: %s, cost time : %v, txhash: %s, requestId: %d", result, message, time.Since(start), txhash, txRaw.RequestId)
 	return result, message
-}
-
-// 处理转账
-// 支持source地址给多人转账，包含余额，ft，nft
-// 数据格式{"address1":{"balance":"127","ft":{"name1":"189","name2":"1"},"nft":["id1","sword2"]}, "address2":{"balance":"1"}}
-//{
-//	"address1": {
-//		"bnt": {
-//          "ETH.ETH":"0.008",
-//          "NEO.CGAS":"100"
-//      },
-//		"ft": {
-//			"name1": "189",
-//			"name2": "1"
-//		},
-//		"nft": [{"setId":"suit1","id":"xizhuang"},
-//              {"setId":"gun","id":"rifle"}
-// 				]
-//	},
-//	"address2": {
-//		"balance": "1"
-//	}
-//}
-func (executor *GameExecutor) doTransfer(txRaw types.Transaction, accountDB *account.AccountDB) (string, bool) {
-	if 0 == len(txRaw.ExtraData) {
-		return "", true
-	}
-
-	mm := make(map[string]types.TransferData, 0)
-	if err := json.Unmarshal([]byte(txRaw.ExtraData), &mm); nil != err {
-		executor.logger.Errorf("Transfer data unmarshal error:%s", err.Error())
-		return "Transfer Bad Format", false
-	}
-
-	// todo: mm条目数校验：调用状态机的，mm条目数只能有一个；纯转账，允许多个
-	response, ok := service.ChangeAssets(txRaw.Source, mm, accountDB)
-	if !ok {
-		executor.logger.Errorf("change balances failed")
-	}
-
-	return response, ok
 }
 
 func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {
@@ -585,10 +437,6 @@ func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {
 	}
 
 	executor.logger.Debugf("Add tx success, tx: %s", tx.Hash.String())
-}
-
-func (executor *GameExecutor) markExecuted(trans *types.Transaction) {
-	service.GetTransactionPool().AddExecuted(trans)
 }
 
 func (executor *GameExecutor) isExisted(tx types.Transaction) bool {

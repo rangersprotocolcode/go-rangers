@@ -34,6 +34,10 @@ type minerRefundExecutor struct {
 }
 
 func (this *minerRefundExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	if nil == header {
+		return true, ""
+	}
+
 	value, err := strconv.ParseUint(transaction.Data, 10, 64)
 	if err != nil {
 		msg := fmt.Sprintf("fail to refund %s", transaction.Data)
@@ -80,7 +84,9 @@ func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *
 		return false, msg
 	}
 
-	miner.ApplyHeight = header.Height + common.HeightAfterStake
+	if nil != header {
+		miner.ApplyHeight = header.Height + common.HeightAfterStake
+	}
 	miner.Status = common.MinerStatusNormal
 	if utility.IsEmptyByteSlice(miner.Id) {
 		miner.Id = common.FromHex(transaction.Source)
