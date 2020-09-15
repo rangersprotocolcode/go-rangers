@@ -227,7 +227,7 @@ func ChangeAssets(source string, targets map[string]types.TransferData, accountd
 	responseBalance := ""
 	responseCoin := types.NewJSONObject()
 	responseFT := types.NewJSONObject()
-	responseNFT := make([]string, 0)
+	responseNFT := make([]types.NFTID, 0)
 
 	for address, transferData := range targets {
 		targetAddr := common.HexToAddress(address)
@@ -290,21 +290,20 @@ func ChangeAssets(source string, targets map[string]types.TransferData, accountd
 	return response.TOJSONString(), true
 }
 
-func transferNFT(nftIDList []types.NFTID, source common.Address, target common.Address, db *account.AccountDB) ([]string, bool) {
+func transferNFT(nftIDList []types.NFTID, source common.Address, target common.Address, db *account.AccountDB) ([]types.NFTID, bool) {
 	length := len(nftIDList)
 	if 0 == length {
 		return nil, true
 	}
 
-	response := make([]string, 0)
+	response := make([]types.NFTID, 0)
 	for _, id := range nftIDList {
 		_, flag := NFTManagerInstance.Transfer(id.SetId, id.Id, source, target, db)
 		if !flag {
 			return nil, false
 		}
 
-		idBytes, _ := json.Marshal(id)
-		response = append(response, string(idBytes))
+		response = append(response, id)
 	}
 
 	return response, true
