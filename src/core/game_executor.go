@@ -105,6 +105,7 @@ func initGameExecutor(blockChainImpl *blockChain) {
 }
 
 func (executor *GameExecutor) recover() {
+	executor.logger.Warnf("start recover")
 	iterator := executor.tempTx.NewIterator()
 	for iterator.Next() {
 		txBytes := iterator.Value()
@@ -119,7 +120,9 @@ func (executor *GameExecutor) recover() {
 			Nonce:  binary.BigEndian.Uint64(iterator.Key()),
 		}
 		go executor.RunWrite(msg)
+		executor.logger.Warnf("recover tx, nonce: %d, hash: %s", msg.Nonce, tx.Hash.ShortS())
 	}
+	executor.logger.Warnf("end recover")
 }
 
 func (executor *GameExecutor) read(msg notify.Message) {
