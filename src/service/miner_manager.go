@@ -20,15 +20,13 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
-	"encoding/json"
-	"errors"
-	"fmt"
-	"strconv"
-
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/trie"
 	"com.tuntun.rocket/node/src/utility"
+	"encoding/json"
+	"errors"
+	"fmt"
 )
 
 var (
@@ -42,7 +40,7 @@ type MinerManager struct {
 }
 
 func InitMinerManager() {
-	file := "pkp" + strconv.Itoa(common.InstanceIndex)
+	file := "pkp"
 	pkp, err := db.NewLDBDatabase(file, 1, 1)
 	if err != nil {
 		panic("newLDBDatabase fail, file=" + file + ", err=" + err.Error())
