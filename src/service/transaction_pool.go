@@ -128,7 +128,7 @@ func newTransactionPool() TransactionPool {
 	pool.missTxs, _ = lru.New(missTxCacheSize)
 	pool.evictedTxs, _ = lru.New(minerTxCacheSize)
 
-	executed, err := db.NewDatabase(txDataBasePrefix)
+	executed, err := db.NewLDBDatabase(txDataBasePrefix, 16, 128)
 	if err != nil {
 		txPoolLogger.Errorf("Init transaction pool error! Error:%s", err.Error())
 		return nil
