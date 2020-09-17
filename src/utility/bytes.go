@@ -16,6 +16,8 @@
 
 package utility
 
+import "unsafe"
+
 func IsEmptyByteSlice(data []byte) bool {
 	if nil == data || 0 == len(data) {
 		return true
@@ -28,4 +30,15 @@ func IsEmptyByteSlice(data []byte) bool {
 	}
 
 	return true
+}
+
+
+func Str2Bytes(s string) []byte {
+	x := (*[2]uintptr)(unsafe.Pointer(&s))
+	h := [3]uintptr{x[0], x[1], x[1]}
+	return *(*[]byte)(unsafe.Pointer(&h))
+}
+
+func Bytes2Str(b []byte) string {
+	return *(*string)(unsafe.Pointer(&b))
 }

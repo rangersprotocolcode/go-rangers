@@ -86,7 +86,7 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor.writeChan = make(chan notify.ClientTransactionMessage, maxWriteSize)
 	gameExecutor.cleaner = time.NewTicker(time.Minute * 10)
 
-	file := "tempTx" + strconv.Itoa(common.InstanceIndex)
+	file := "tempTx"
 	tempTxLDB, err := db.NewLDBDatabase(file, 10, 10)
 	if err != nil {
 		panic("newLDBDatabase fail, file=" + file + ", err=" + err.Error())

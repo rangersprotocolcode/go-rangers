@@ -44,7 +44,7 @@ func initAccountDBManager() {
 	AccountDBManagerInstance.logger = log.GetLoggerByIndex(log.AccountDBLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	AccountDBManagerInstance.debug = false
 
-	db, err := db.NewDatabase(stateDBPrefix)
+	db, err := db.NewLDBDatabase(stateDBPrefix, 128, 2048)
 	if err != nil {
 		AccountDBManagerInstance.logger.Errorf("Init accountDB error! Error:%s", err.Error())
 		panic(err)
