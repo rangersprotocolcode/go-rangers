@@ -390,7 +390,6 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw
 
 	message := ""
 	result := true
-	snapshot := accountDB.Snapshot()
 
 	start := time.Now()
 	defer executor.logger.Debugf("finish tx. result: %t, message: %s, cost time : %v, txhash: %s, requestId: %d", result, message, time.Since(start), txhash, txRaw.RequestId)
@@ -398,10 +397,10 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw
 	result, message = processor.BeforeExecute(&txRaw, nil, accountDB, context)
 	if !result {
 		executor.logger.Errorf("finish tx. hash: %s, failed. not enough max", txhash)
-		accountDB.RevertToSnapshot(snapshot)
 		return result, message
 	}
 
+	snapshot := accountDB.Snapshot()
 	result, message = processor.Execute(&txRaw, nil, accountDB, context)
 	if !result {
 		accountDB.RevertToSnapshot(snapshot)
