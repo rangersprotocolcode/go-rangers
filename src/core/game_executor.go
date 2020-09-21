@@ -349,9 +349,8 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 		return
 	}
 
-	//executor.runTransaction(accountDB, txRaw)
+	executor.runTransaction(accountDB, txRaw)
 
-	executor.sendTransaction(&txRaw)
 	//result, execMessage := executor.runTransaction(accountDB, txRaw)
 	//
 	//if 0 == len(message.UserId) {
