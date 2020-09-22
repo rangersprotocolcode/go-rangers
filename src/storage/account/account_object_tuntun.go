@@ -197,7 +197,7 @@ func (self *accountObject) RemoveNFT(db AccountDatabase, appId, setId, id string
 	}
 	self.db.transitions = append(self.db.transitions, change)
 
-	self.setNFT(nil)
+	self.removeNFT(setId, id)
 	return true
 }
 
