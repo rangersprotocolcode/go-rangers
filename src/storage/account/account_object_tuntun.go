@@ -284,13 +284,20 @@ func (self *accountObject) getNFTById(db AccountDatabase, setId, id string) *typ
 		return nil
 	}
 
+	if utility.IsEmptyByteSlice(value) {
+		return nil
+	}
+
 	nft = &types.NFT{}
 	err = rlp.DecodeBytes(value, nft)
-	if value != nil {
-		self.cachedNFT.RLock()
-		self.cachedNFTStorage[key] = nft
-		self.cachedNFT.RUnlock()
+	if nil != err {
+		common.DefaultLogger.Errorf(err.Error())
+		return nil
 	}
+
+	self.cachedNFT.RLock()
+	self.cachedNFTStorage[key] = nft
+	self.cachedNFT.RUnlock()
 	return nft
 }
 
