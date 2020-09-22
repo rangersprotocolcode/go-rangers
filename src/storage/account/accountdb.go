@@ -221,7 +221,6 @@ func (adb *AccountDB) SetNonce(addr common.Address, nonce uint64) {
 	}
 }
 
-
 func (adb *AccountDB) SetData(addr common.Address, key []byte, value []byte) {
 	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {
@@ -273,6 +272,8 @@ func (adb *AccountDB) updateAccountObject(stateObject *accountObject) {
 	if err != nil {
 		panic(fmt.Errorf("can't serialize object at %x: %v", addr[:], err))
 	}
+	common.DefaultLogger.Errorf("ao: %s, size: %d", stateObject.addrHash.String(), len(data))
+
 	adb.setError(adb.trie.TryUpdate(addr[:], data))
 }
 

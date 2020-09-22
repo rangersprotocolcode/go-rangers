@@ -18,7 +18,6 @@ package account
 
 import (
 	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/trie"
 	"fmt"
@@ -59,9 +58,6 @@ type accountObject struct {
 	addrHash common.Hash // hash of address of the account
 	data     Account
 	db       *AccountDB
-
-	// 锁
-	lock *middleware.ReentrantLock
 
 	// DB error.
 	// State objects are used by the consensus core and VM which are
@@ -120,7 +116,6 @@ func newAccountObject(db *AccountDB, address common.Address, data Account, onDir
 		dirtyStorage:  make(Storage),
 		onDirty:       onDirty,
 	}
-	ao.lock = middleware.NewReentrantLock()
 
 	return ao
 }
