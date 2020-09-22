@@ -156,31 +156,6 @@ func (adb *AccountDB) GetNonce(addr common.Address) uint64 {
 	return 0
 }
 
-// GetCode returns the contract code associated with this object, if any.
-func (adb *AccountDB) GetCode(addr common.Address) []byte {
-	stateObject := adb.getAccountObject(addr, false)
-	if stateObject != nil {
-		return stateObject.Code(adb.db)
-	}
-	return nil
-}
-
-// GetCodeSize retrieves a particular contracts code's size.
-func (adb *AccountDB) GetCodeSize(addr common.Address) int {
-	stateObject := adb.getAccountObject(addr, false)
-	if stateObject == nil {
-		return 0
-	}
-	if stateObject.code != nil {
-		return len(stateObject.code)
-	}
-	size, err := adb.db.ContractCodeSize(stateObject.addrHash, common.BytesToHash(stateObject.CodeHash()))
-	if err != nil {
-		adb.setError(err)
-	}
-	return size
-}
-
 // GetCodeHash returns code's hash
 func (adb *AccountDB) GetCodeHash(addr common.Address) common.Hash {
 	stateObject := adb.getAccountObject(addr, false)
@@ -255,12 +230,6 @@ func (adb *AccountDB) SetNonce(addr common.Address, nonce uint64) {
 	}
 }
 
-func (adb *AccountDB) SetCode(addr common.Address, code []byte) {
-	stateObject := adb.getOrNewAccountObject(addr)
-	if stateObject != nil {
-		stateObject.SetCode(sha3.Sum256(code), code)
-	}
-}
 
 func (adb *AccountDB) SetData(addr common.Address, key []byte, value []byte) {
 	stateObject := adb.getOrNewAccountObject(addr)
@@ -519,10 +488,6 @@ func (adb *AccountDB) Commit(deleteEmptyObjects bool) (root common.Hash, err err
 		case accountObject.suicided || (isDirty && deleteEmptyObjects && accountObject.empty()):
 			adb.deleteAccountObject(accountObject)
 		case isDirty:
-			if accountObject.code != nil && accountObject.dirtyCode {
-				adb.db.TrieDB().InsertBlob(common.BytesToHash(accountObject.CodeHash()), accountObject.code)
-				accountObject.dirtyCode = false
-			}
 			// Write any storage changes in the state object to its storage trie.
 			if err := accountObject.CommitTrie(adb.db); err != nil {
 				e = &err

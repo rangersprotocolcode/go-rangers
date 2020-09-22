@@ -53,10 +53,6 @@ type (
 		key      []byte
 		prevalue []byte
 	}
-	codeChange struct {
-		account            *common.Address
-		prevcode, prevhash []byte
-	}
 
 	refundChange struct {
 		prev uint64
@@ -105,10 +101,6 @@ func (ch balanceChange) undo(s *AccountDB) {
 
 func (ch nonceChange) undo(s *AccountDB) {
 	s.getAccountObject(*ch.account,false).setNonce(ch.prev)
-}
-
-func (ch codeChange) undo(s *AccountDB) {
-	s.getAccountObject(*ch.account,false).setCode(common.BytesToHash(ch.prevhash), ch.prevcode)
 }
 
 func (ch storageChange) undo(s *AccountDB) {

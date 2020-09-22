@@ -17,7 +17,6 @@
 package account
 
 import (
-	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -78,7 +77,6 @@ type accountObject struct {
 	dbErr error
 
 	trie Trie // storage trie, which becomes non-nil on first access
-	code Code // contract code, which gets set when code is loaded
 
 	cachedLock    sync.RWMutex
 	cachedStorage Storage // Storage cache of original entries to dedup rewrites
@@ -319,7 +317,7 @@ func (ao *accountObject) deepCopy(db *AccountDB, onDirty func(addr common.Addres
 	if ao.trie != nil {
 		accountObject.trie = db.db.CopyTrie(ao.trie)
 	}
-	accountObject.code = ao.code
+
 	accountObject.dirtyStorage = ao.dirtyStorage.Copy()
 	accountObject.cachedStorage = ao.dirtyStorage.Copy()
 	accountObject.suicided = ao.suicided
@@ -333,49 +331,12 @@ func (ao *accountObject) Address() common.Address {
 	return ao.address
 }
 
-// Code returns the contract code associated with this object, if any.
-func (ao *accountObject) Code(db AccountDatabase) []byte {
-	if ao.code != nil {
-		return ao.code
-	}
-	if bytes.Equal(ao.CodeHash(), emptyCodeHash[:]) {
-		return nil
-	}
-	code, err := db.ContractCode(ao.addrHash, common.BytesToHash(ao.CodeHash()))
-	if err != nil {
-		ao.setError(fmt.Errorf("can't load code hash %x: %v", ao.CodeHash(), err))
-	}
-	ao.code = code
-	return code
-}
-
 // DataIterator returns a new key-value iterator from a node iterator
 func (ao *accountObject) DataIterator(db AccountDatabase, prefix []byte) *trie.Iterator {
 	if ao.trie == nil {
 		ao.getTrie(db)
 	}
 	return trie.NewIterator(ao.trie.NodeIterator(prefix))
-}
-
-// SetCode set a value in contract storage.
-func (ao *accountObject) SetCode(codeHash common.Hash, code []byte) {
-	prevCode := ao.Code(ao.db.db)
-	ao.db.transitions = append(ao.db.transitions, codeChange{
-		account:  &ao.address,
-		prevhash: ao.CodeHash(),
-		prevcode: prevCode,
-	})
-	ao.setCode(codeHash, code)
-}
-
-func (ao *accountObject) setCode(codeHash common.Hash, code []byte) {
-	ao.code = code
-	ao.data.CodeHash = codeHash[:]
-	ao.dirtyCode = true
-	if ao.onDirty != nil {
-		ao.onDirty(ao.Address())
-		ao.onDirty = nil
-	}
 }
 
 // SetCode update nonce in account storage.
