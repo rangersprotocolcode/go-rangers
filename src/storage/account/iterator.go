@@ -18,8 +18,6 @@ package account
 
 import (
 	"bytes"
-	"fmt"
-
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/storage/rlp"
 	"com.tuntun.rocket/node/src/storage/trie"
@@ -115,14 +113,7 @@ func (it *NodeIterator) step() error {
 	if !it.dataIt.Next(true) {
 		it.dataIt = nil
 	}
-	if !bytes.Equal(account.CodeHash, emptyCodeHash[:]) {
-		it.codeHash = common.BytesToHash(account.CodeHash)
-		addrHash := common.BytesToHash(it.stateIt.LeafKey())
-		it.code, err = it.state.db.ContractCode(addrHash, common.BytesToHash(account.CodeHash))
-		if err != nil {
-			return fmt.Errorf("code %x: %v", account.CodeHash, err)
-		}
-	}
+
 	it.accountHash = it.stateIt.Parent()
 	return nil
 }

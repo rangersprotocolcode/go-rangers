@@ -156,15 +156,6 @@ func (adb *AccountDB) GetNonce(addr common.Address) uint64 {
 	return 0
 }
 
-// GetCodeHash returns code's hash
-func (adb *AccountDB) GetCodeHash(addr common.Address) common.Hash {
-	stateObject := adb.getAccountObject(addr, false)
-	if stateObject == nil {
-		return common.Hash{}
-	}
-	return common.BytesToHash(stateObject.CodeHash())
-}
-
 // GetData retrieves a value from the account storage trie.
 func (adb *AccountDB) GetData(a common.Address, key []byte) []byte {
 	stateObject := adb.getAccountObject(a, false)
@@ -510,10 +501,7 @@ func (adb *AccountDB) Commit(deleteEmptyObjects bool) (root common.Hash, err err
 		if account.Root != emptyData {
 			adb.db.TrieDB().Reference(account.Root, parent)
 		}
-		code := common.BytesToHash(account.CodeHash)
-		if code != emptyCode {
-			adb.db.TrieDB().Reference(code, parent)
-		}
+
 		return nil
 	})
 	return root, err

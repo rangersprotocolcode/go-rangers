@@ -29,12 +29,6 @@ import (
 
 var emptyCodeHash = sha3.Sum256(nil)
 
-type Code []byte
-
-func (c Code) String() string {
-	return string(c)
-}
-
 type Storage map[string][]byte
 
 func (s Storage) String() (str string) {
@@ -99,7 +93,6 @@ func (ao *accountObject) empty() bool {
 type Account struct {
 	Nonce    uint64
 	Root     common.Hash
-	CodeHash []byte
 
 	Balance  *big.Int
 	Ft       []*types.FT
@@ -116,9 +109,6 @@ func newAccountObject(db *AccountDB, address common.Address, data Account, onDir
 	}
 	if data.GameData == nil {
 		data.GameData = &types.GameData{}
-	}
-	if data.CodeHash == nil {
-		data.CodeHash = emptyCodeHash[:]
 	}
 
 	ao := &accountObject{
@@ -356,10 +346,6 @@ func (ao *accountObject) setNonce(nonce uint64) {
 	}
 }
 
-// CodeHash returns code's hash
-func (ao *accountObject) CodeHash() []byte {
-	return ao.data.CodeHash
-}
 
 func (ao *accountObject) Balance() *big.Int {
 	return ao.data.Balance

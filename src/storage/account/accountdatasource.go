@@ -23,11 +23,6 @@ import (
 	xdb "com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/storage/trie"
 	"fmt"
-	"github.com/hashicorp/golang-lru"
-)
-const (
-	// Number of codehash->size associations to keep.
-	codeSizeCacheSize = 100000
 )
 
 type AccountDatabase interface {
@@ -39,12 +34,6 @@ type AccountDatabase interface {
 
 	// CopyTrie returns an independent copy of the given trie.
 	CopyTrie(Trie) Trie
-
-	// ContractCode retrieves a particular contract's code.
-	ContractCode(addrHash, codeHash common.Hash) ([]byte, error)
-
-	// ContractCodeSize retrieves a particular contracts code's size.
-	ContractCodeSize(addrHash, codeHash common.Hash) (int, error)
 
 	// TrieDB retrieves the low level trie database used for data storage.
 	TrieDB() *trie.NodeDatabase
@@ -83,43 +72,19 @@ type Trie interface {
 // is safe for concurrent use and retains a lot of collapsed RLP trie nodes in a
 // large memory cache.
 func NewDatabase(db xdb.Database) AccountDatabase {
-	csc, _ := lru.New(codeSizeCacheSize)
 	return &storageDB{
-		db:            trie.NewDatabase(db),
-		codeSizeCache: csc,
+		db: trie.NewDatabase(db),
 	}
 }
 
 type storageDB struct {
-	db            *trie.NodeDatabase
-	mu            sync.Mutex
-	codeSizeCache *lru.Cache
+	db *trie.NodeDatabase
+	mu sync.Mutex
 }
 
 // TrieDB retrieves the low level trie database used for data storage.
 func (db *storageDB) TrieDB() *trie.NodeDatabase {
 	return db.db
-}
-
-// ContractCode retrieves a particular contract's code.
-func (db *storageDB) ContractCode(addrHash, codeHash common.Hash) ([]byte, error) {
-	code, err := db.db.Node(codeHash)
-	if err == nil {
-		db.codeSizeCache.Add(codeHash, len(code))
-	}
-	return code, err
-}
-
-// ContractCodeSize retrieves a particular contracts code's size.
-func (db *storageDB) ContractCodeSize(addrHash, codeHash common.Hash) (int, error) {
-	if cached, ok := db.codeSizeCache.Get(codeHash); ok {
-		return cached.(int), nil
-	}
-	code, err := db.ContractCode(addrHash, codeHash)
-	if err == nil {
-		db.codeSizeCache.Add(codeHash, len(code))
-	}
-	return len(code), err
 }
 
 // OpenTrie opens the main account trie.
@@ -150,5 +115,3 @@ func (db *storageDB) CopyTrie(t Trie) Trie {
 		panic(fmt.Errorf("unknown trie type %T", t))
 	}
 }
-
-
