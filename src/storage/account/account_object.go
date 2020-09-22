@@ -87,8 +87,8 @@ func (ao *accountObject) empty() bool {
 // Account is the consensus representation of accounts.
 // These objects are stored in the main account trie.
 type Account struct {
-	Nonce    uint64
-	Root     common.Hash
+	Nonce uint64
+	Root  common.Hash
 
 	Balance  *big.Int
 	Ft       []*types.FT
@@ -231,6 +231,7 @@ func (ao *accountObject) updateTrie(db AccountDatabase) Trie {
 			continue
 		}
 
+		common.DefaultLogger.Errorf("ao: %s, key: %s, size: %d", ao.address.String(), key, len(value[:]))
 		ao.setError(tr.TryUpdate([]byte(key), value[:]))
 	}
 	return tr
@@ -340,7 +341,6 @@ func (ao *accountObject) setNonce(nonce uint64) {
 		ao.onDirty = nil
 	}
 }
-
 
 func (ao *accountObject) Balance() *big.Int {
 	return ao.data.Balance

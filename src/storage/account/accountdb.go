@@ -272,7 +272,7 @@ func (adb *AccountDB) updateAccountObject(stateObject *accountObject) {
 	if err != nil {
 		panic(fmt.Errorf("can't serialize object at %x: %v", addr[:], err))
 	}
-	common.DefaultLogger.Errorf("ao: %s, size: %d", stateObject.address.String(), len(data))
+	//common.DefaultLogger.Errorf("ao: %s, size: %d", stateObject.address.String(), len(data))
 
 	adb.setError(adb.trie.TryUpdate(addr[:], data))
 }
