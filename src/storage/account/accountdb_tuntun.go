@@ -79,78 +79,73 @@ func (self *AccountDB) SubFT(addr common.Address, ftName string, balance *big.In
 // 根据setId/id 查找NFT
 func (self *AccountDB) GetNFTById(addr common.Address, setId, id string) *types.NFT {
 	accountObject := self.getOrNewAccountObject(addr)
-	data := accountObject.data.GameData
+	return accountObject.getNFTById(self.db, setId, id)
+}
 
-	for _, nftMap := range data.NFTMaps {
-		nft := nftMap.GetNFT(setId, id)
-		if nil != nft {
-			return nft
-		}
-	}
+func (self *AccountDB) GetAllNFTByGameId(addr common.Address, gameId string) []*types.NFT {
+	//accountObject := self.getOrNewAccountObject(addr)
+	//data := accountObject.data
+	//nftList := data.GameData.GetNFTMaps(gameId)
+	//if nil == nftList {
+	//	return nil
+	//}
+	//
+	//return nftList.GetAllNFT()
 
 	return nil
 }
 
-func (self *AccountDB) GetAllNFTByGameId(addr common.Address, gameId string) []*types.NFT {
-	accountObject := self.getOrNewAccountObject(addr)
-	data := accountObject.data
-	nftList := data.GameData.GetNFTMaps(gameId)
-	if nil == nftList {
-		return nil
-	}
-
-	return nftList.GetAllNFT()
-}
-
 func (self *AccountDB) GetAllNFT(addr common.Address) []*types.NFT {
-	accountObject := self.getOrNewAccountObject(addr)
-	data := accountObject.data.GameData
+	//accountObject := self.getOrNewAccountObject(addr)
+	//data := accountObject.data.GameData
+	//
+	//if nil == data {
+	//	return nil
+	//}
+	//
+	//result := make([]*types.NFT, 0)
+	//for _, nftMap := range data.NFTMaps {
+	//	nftList := nftMap.NFTList
+	//	for _, nft := range nftList {
+	//		result = append(result, nft)
+	//	}
+	//}
+	//
+	//return result
 
-	if nil == data {
-		return nil
-	}
-
-	result := make([]*types.NFT, 0)
-	for _, nftMap := range data.NFTMaps {
-		nftList := nftMap.NFTList
-		for _, nft := range nftList {
-			result = append(result, nft)
-		}
-	}
-
-	return result
+	return nil
 }
 
 func (self *AccountDB) AddNFTByGameId(addr common.Address, appId string, nft *types.NFT) bool {
 	stateObject := self.getOrNewAccountObject(addr)
-	return stateObject.AddNFTByGameId(appId, nft)
+	return stateObject.AddNFTByGameId(self.db, appId, nft)
 }
 
 func (self *AccountDB) SetNFTValueByGameId(addr common.Address, appId, setId, id, value string) bool {
 	stateObject := self.getOrNewAccountObject(addr)
-	return stateObject.SetNFTValueByGameId(appId, setId, id, value)
+	return stateObject.SetNFTValueByGameId(self.db, appId, setId, id, value)
 }
 
 func (self *AccountDB) RemoveNFTByGameId(addr common.Address, appId, setId, id string) bool {
 	stateObject := self.getOrNewAccountObject(addr)
-	return stateObject.RemoveNFT(appId, setId, id)
+	return stateObject.RemoveNFT(self.db, appId, setId, id)
 }
 
 func (self *AccountDB) RemoveNFT(addr common.Address, nft *types.NFT) bool {
 	stateObject := self.getOrNewAccountObject(addr)
-	return stateObject.RemoveNFT(nft.AppId, nft.SetID, nft.ID)
+	return stateObject.RemoveNFT(self.db, nft.AppId, nft.SetID, nft.ID)
 }
 
 func (self *AccountDB) ApproveNFT(owner common.Address, appId, setId, id, renter string) bool {
 	stateObject := self.getOrNewAccountObject(owner)
-	return stateObject.ApproveNFT(appId, setId, id, renter)
+	return stateObject.ApproveNFT(self.db, appId, setId, id, renter)
 }
 
 func (self *AccountDB) ChangeNFTStatus(owner common.Address, appId, setId, id string, status byte) bool {
 	stateObject := self.getOrNewAccountObject(owner)
 
 	if 0 == len(appId) {
-		return stateObject.ChangeNFTStatusById(setId, id, status)
+		return stateObject.ChangeNFTStatusById(self.db, setId, id, status)
 	}
-	return stateObject.ChangeNFTStatus(appId, setId, id, status)
+	return stateObject.ChangeNFTStatus(self.db, appId, setId, id, status)
 }
