@@ -278,7 +278,7 @@ func (self *accountObject) getNFTById(db AccountDatabase, setId, id string) *typ
 		return nft
 	}
 
-	value, err := self.getTrie(db).TryGet(utility.Str2Bytes(key))
+	value, err := self.getTrie(db).TryGet(utility.StrToBytes(key))
 	if err != nil {
 		self.setError(err)
 		return nil
@@ -299,6 +299,37 @@ func (self *accountObject) getNFTById(db AccountDatabase, setId, id string) *typ
 	self.cachedNFTStorage[key] = nft
 	self.cachedNFT.RUnlock()
 	return nft
+}
+
+func (self *accountObject) getAllNFT(db AccountDatabase, filter string) []*types.NFT {
+	result := make([]*types.NFT, 0)
+	filtered := 0 != len(filter)
+
+	tr := self.getTrie(db)
+	iterator := tr.NodeIterator(utility.StrToBytes("n-"))
+	for iterator.Next(true) {
+		if !iterator.Leaf() {
+			continue
+		}
+
+		bytes := iterator.LeafBlob()
+		nft := &types.NFT{}
+		err := rlp.DecodeBytes(bytes, nft)
+		if err != nil {
+			continue
+		}
+
+		if filtered {
+			if 0 == strings.Compare(nft.AppId, filter) {
+				result = append(result, nft)
+			}
+		} else {
+			result = append(result, nft)
+		}
+
+	}
+
+	return result
 }
 
 func (self *accountObject) callback() {

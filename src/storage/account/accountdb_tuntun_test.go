@@ -19,8 +19,11 @@ package account
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/db"
+	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/utility"
 	"fmt"
 	"math/big"
+	"os"
 	"testing"
 )
 
@@ -39,7 +42,7 @@ func TestAccountDB_AddFT(t *testing.T) {
 	}
 	fmt.Printf("before commit %s\n", money)
 	root, _ := state.Commit(true)
-	triedb.TrieDB().Commit(root,false)
+	triedb.TrieDB().Commit(root, false)
 
 	money = state.GetFT(address, "official-eth")
 	fmt.Printf("after commit %s\n", money)
@@ -59,8 +62,51 @@ func TestAccountDB_AddFT(t *testing.T) {
 	fmt.Printf("add again %s\n", money)
 
 	root, _ = state2.Commit(true)
-	triedb.TrieDB().Commit(root,false)
+	triedb.TrieDB().Commit(root, false)
 	money = state2.GetFT(address, "official-eth")
 	fmt.Printf("after commit %s\n", money)
+
+}
+
+func TestAccountDB_AddNFT(t *testing.T) {
+	os.RemoveAll("storage0")
+	defer os.RemoveAll("storage0")
+	db, _ := db.NewLDBDatabase("test", 0, 0)
+	defer db.Close()
+	triedb := NewDatabase(db)
+	state, _ := NewAccountDB(common.Hash{}, triedb)
+	address := common.HexToAddress("0x443")
+
+	nft := &types.NFT{}
+	nft.SetID = "1"
+	nft.ID = "a"
+	nft.SetData("sword", "test")
+	nft.AppId = "test"
+	state.AddNFTByGameId(address, "test", nft)
+
+	nft1 := &types.NFT{}
+	nft1.SetID = "11"
+	nft1.ID = "ab"
+	nft1.SetData("bow", "test")
+	nft1.AppId = "test"
+	state.AddNFTByGameId(address, "test", nft1)
+
+	nft2 := &types.NFT{}
+	nft2.SetID = "11"
+	nft2.ID = "abc"
+	nft2.SetData("bow", "test2")
+	nft2.AppId = "test2"
+	state.AddNFTByGameId(address, "test", nft2)
+
+	state.SetData(address,utility.StrToBytes("dj"),utility.StrToBytes("rp"))
+	root, _ := state.Commit(true)
+	triedb.TrieDB().Commit(root, false)
+
+	accountDB, _ := NewAccountDB(root, triedb)
+	nftList := accountDB.GetAllNFT(address)
+	fmt.Println(len(nftList))
+
+	nftList2 := accountDB.GetAllNFTByGameId(address,"test")
+	fmt.Println(len(nftList2))
 
 }

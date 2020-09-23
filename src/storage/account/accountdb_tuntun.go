@@ -82,38 +82,14 @@ func (self *AccountDB) GetNFTById(addr common.Address, setId, id string) *types.
 	return accountObject.getNFTById(self.db, setId, id)
 }
 
-func (self *AccountDB) GetAllNFTByGameId(addr common.Address, gameId string) []*types.NFT {
-	//accountObject := self.getOrNewAccountObject(addr)
-	//data := accountObject.data
-	//nftList := data.GameData.GetNFTMaps(gameId)
-	//if nil == nftList {
-	//	return nil
-	//}
-	//
-	//return nftList.GetAllNFT()
-
-	return nil
+func (self *AccountDB) GetAllNFTByGameId(addr common.Address, appId string) []*types.NFT {
+	accountObject := self.getOrNewAccountObject(addr)
+	return accountObject.getAllNFT(self.db, appId)
 }
 
 func (self *AccountDB) GetAllNFT(addr common.Address) []*types.NFT {
-	//accountObject := self.getOrNewAccountObject(addr)
-	//data := accountObject.data.GameData
-	//
-	//if nil == data {
-	//	return nil
-	//}
-	//
-	//result := make([]*types.NFT, 0)
-	//for _, nftMap := range data.NFTMaps {
-	//	nftList := nftMap.NFTList
-	//	for _, nft := range nftList {
-	//		result = append(result, nft)
-	//	}
-	//}
-	//
-	//return result
-
-	return nil
+	accountObject := self.getOrNewAccountObject(addr)
+	return accountObject.getAllNFT(self.db, "")
 }
 
 func (self *AccountDB) AddNFTByGameId(addr common.Address, appId string, nft *types.NFT) bool {

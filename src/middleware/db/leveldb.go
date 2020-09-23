@@ -3,7 +3,6 @@ package db
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/utility"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/filter"
@@ -100,8 +99,6 @@ func (db *LDBDatabase) Put(key []byte, value []byte) error {
 	if !db.inited {
 		return ErrLDBInit
 	}
-
-	db.logger.Debugf("put, key: %s, length: %d", utility.Bytes2Str(key), len(value))
 	return db.db.Put(key, value, nil)
 }
 
