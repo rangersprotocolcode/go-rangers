@@ -45,7 +45,7 @@ func TestBatchMinerApply(t *testing.T) {
 			continue
 		}
 		piece := pieceList[i]
-		if i < 10 {
+		if i < 8 {
 			piece.minerInfo.Type = common.MinerTypeProposer
 			piece.minerInfo.Stake = 5000000
 		} else {
