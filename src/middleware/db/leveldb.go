@@ -56,7 +56,7 @@ func NewLDBDatabase(file string, cache int, handles int) (*LDBDatabase, error) {
 func newLevelDBInstance(file string, cache int, handles int) (*leveldb.DB, error) {
 	db, err := leveldb.OpenFile(file, &opt.Options{
 		OpenFilesCacheCapacity: handles,
-		BlockCacheCapacity:     200 * opt.MiB,
+		BlockCacheCapacity:     20 * opt.MiB,
 		WriteBuffer:            cache * opt.MiB, // Two of these are used internally
 		Filter:                 filter.NewBloomFilter(20),
 	})
