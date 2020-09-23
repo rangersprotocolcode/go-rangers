@@ -25,11 +25,12 @@ import (
 )
 
 func TestSha256(t *testing.T) {
-	hash := sha3.Sum256([]byte{})
-	fmt.Println(Bytes2Hex(hash[:]))
+	addr := BigToAddress(big.NewInt(5))
+	fmt.Println(addr.String())
 
-	hash2 := sha3.Sum256([]byte("test"))
-	fmt.Println(Bytes2Hex(hash2[:]))
+	var h Hash
+	h = sha3.Sum256(addr[:])
+	fmt.Println(h.String())
 }
 
 func TestID(t *testing.T) {

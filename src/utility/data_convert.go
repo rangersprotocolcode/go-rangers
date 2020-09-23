@@ -26,7 +26,7 @@ import (
 
 const (
 	zeroString = "0"
-	prec       = 256
+	prec       = 1025
 	baseNumber = 1000000000
 )
 
@@ -82,12 +82,13 @@ func StrToBigInt(s string) (*big.Int, error) {
 	}
 
 	base := new(big.Float)
+	base.SetPrec(prec)
 	base.SetInt(big.NewInt(baseNumber))
 
 	target.Mul(target, base)
+
 	result := new(big.Int)
 	target.Int(result)
-
 	return result, nil
 }
 
