@@ -308,6 +308,9 @@ func (self *accountObject) getAllNFT(db AccountDatabase, filter string) []*types
 	filtered := 0 != len(filter)
 	result := make([]*types.NFT, 0)
 	for _, nft := range self.cachedNFTStorage {
+		if nil == nft {
+			continue
+		}
 		if filtered {
 			if 0 == strings.Compare(nft.AppId, filter) {
 				result = append(result, nft)
