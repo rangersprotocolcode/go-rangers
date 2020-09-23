@@ -98,15 +98,24 @@ func TestAccountDB_AddNFT(t *testing.T) {
 	nft2.AppId = "test2"
 	state.AddNFTByGameId(address, "test", nft2)
 
-	state.SetData(address,utility.StrToBytes("dj"),utility.StrToBytes("rp"))
+	state.SetData(address, utility.StrToBytes("dj"), utility.StrToBytes("rp"))
+	nftList := state.GetAllNFT(address)
+	fmt.Println(len(nftList))
+
 	root, _ := state.Commit(true)
 	triedb.TrieDB().Commit(root, false)
 
 	accountDB, _ := NewAccountDB(root, triedb)
-	nftList := accountDB.GetAllNFT(address)
-	fmt.Println(len(nftList))
 
-	nftList2 := accountDB.GetAllNFTByGameId(address,"test")
+	nftRead := accountDB.GetNFTById(address, "11", "abc")
+	if nil == nftRead {
+		t.Fatalf("no nft for 11&abd")
+	}
+
+	nftList1 := accountDB.GetAllNFT(address)
+	fmt.Println(len(nftList1))
+
+	nftList2 := accountDB.GetAllNFTByGameId(address, "test")
 	fmt.Println(len(nftList2))
 
 }
