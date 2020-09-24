@@ -98,6 +98,9 @@ func (self *NFTManager) getNFTSet(setId string, accountDB *account.AccountDB) *t
 	for iterator.Next() {
 		nftSet.OccupiedID[utility.BytesToStr(iterator.Key)] = common.BytesToAddress(iterator.Value)
 	}
+	if 0 == len(nftSet.OccupiedID) {
+		nftSet.OccupiedID = nil
+	}
 
 	return &nftSet
 }
