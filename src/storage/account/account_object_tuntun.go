@@ -379,11 +379,11 @@ func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
 		return nil
 	}
 
-	nftSet.TotalSupply = int(self.Nonce())
-
-	nftSet.OccupiedID = make(map[string]common.Address)
 	self.cachedLock.RLock()
 	defer self.cachedLock.RUnlock()
+
+	nftSet.TotalSupply = int(self.Nonce())
+	nftSet.OccupiedID = make(map[string]common.Address)
 
 	iterator := self.DataIterator(db, []byte{})
 	for iterator.Next() {
