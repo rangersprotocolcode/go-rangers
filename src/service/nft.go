@@ -77,41 +77,13 @@ func (self *NFTManager) insertNewNFTSet(nftSet *types.NFTSet, db *account.Accoun
 	db.SetBlob(nftSetAddress, nftSet.ToBlob())
 }
 
-func (self *NFTManager) getNFTSet(setId string, accountDB *account.AccountDB) *types.NFTSet {
-	nftSetAddress := self.generateNFTSetAddress(setId)
-	valueByte := accountDB.GetBlob(nftSetAddress)
-	if nil == valueByte || 0 == len(valueByte) {
-		return nil
-	}
-
-	var nftSet types.NFTSet
-	err := json.Unmarshal(valueByte, &nftSet)
-	if err != nil {
-		logger.Error("fail to get nftSet: %s, %s", setId, err.Error())
-		return nil
-	}
-
-	nftSet.TotalSupply = int(accountDB.GetNonce(nftSetAddress))
-
-	nftSet.OccupiedID = make(map[string]common.Address)
-	iterator := accountDB.DataIterator(nftSetAddress, []byte{})
-	for iterator.Next() {
-		nftSet.OccupiedID[utility.BytesToStr(iterator.Key)] = common.BytesToAddress(iterator.Value)
-	}
-	if 0 == len(nftSet.OccupiedID) {
-		nftSet.OccupiedID = nil
-	}
-
-	return &nftSet
-}
-
 // 获取NFTSet信息
 // 状态机&客户端(钱包)调用
 func (self *NFTManager) GetNFTSet(setId string, accountDB *account.AccountDB) *types.NFTSet {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
 
-	return self.getNFTSet(setId, accountDB)
+	return accountDB.GetNFTSet(setId)
 }
 
 // 从layer2 层面删除
@@ -159,8 +131,12 @@ func (self *NFTManager) PublishNFTSet(nftSet *types.NFTSet, accountDB *account.A
 	}
 
 	// 检查setId是否存在
-	if nftSet.MaxSupply < 0 || 0 == len(nftSet.SetID) || self.contains(nftSet.SetID, accountDB) {
+	if nftSet.MaxSupply < 0 || 0 == len(nftSet.SetID) {
 		return fmt.Sprintf("setId or maxSupply wrong, setId: %s, maxSupply: %d", nftSet.SetID, nftSet.MaxSupply), false
+	}
+
+	if self.contains(nftSet.SetID, accountDB) {
+		return fmt.Sprintf("setId: %s, existed", nftSet.SetID), false
 	}
 
 	self.insertNewNFTSet(nftSet, accountDB)
@@ -180,7 +156,7 @@ func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner
 	}
 
 	// 检查setId是否存在
-	nftSet := self.getNFTSet(setId, accountDB)
+	nftSet := accountDB.GetNFTSet(setId)
 	if nil == nftSet || nftSet.Owner != appId {
 		txLogger.Debugf("Mint nft! wrong setId or not setOwner! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, createTime, owner.String())
 		return "wrong setId or not setOwner", false
@@ -243,7 +219,7 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 // 状态机&客户端(钱包)调用
 func (self *NFTManager) GetNFT(setId string, id string, accountDB *account.AccountDB) *types.NFT {
 	// 检查setId是否存在
-	nftSet := self.getNFTSet(setId, accountDB)
+	nftSet := accountDB.GetNFTSet(setId)
 	if nil == nftSet {
 		return nil
 	}

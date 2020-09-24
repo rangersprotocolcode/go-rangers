@@ -145,15 +145,6 @@ func (adb *AccountDB) Empty(addr common.Address) bool {
 	return so == nil || so.empty()
 }
 
-// GetBalance Retrieve the balance from the given address or 0 if object not found
-func (adb *AccountDB) GetBlob(addr common.Address) []byte {
-	accountObject := adb.getAccountObject(addr, false)
-	if accountObject != nil {
-		return accountObject.Blob()
-	}
-	return nil
-}
-
 func (adb *AccountDB) SetBlob(addr common.Address, data []byte) {
 	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {

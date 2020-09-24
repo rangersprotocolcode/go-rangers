@@ -19,6 +19,7 @@ package account
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"fmt"
 	"math/big"
 )
 
@@ -124,4 +125,18 @@ func (self *AccountDB) ChangeNFTStatus(owner common.Address, appId, setId, id st
 		return stateObject.ChangeNFTStatusById(self.db, setId, id, status)
 	}
 	return stateObject.ChangeNFTStatus(self.db, appId, setId, id, status)
+}
+
+func (adb *AccountDB) GetNFTSet(setId string) *types.NFTSet {
+	accountObject := adb.getAccountObject(adb.generateNFTSetAddress(setId), false)
+	if nil == accountObject {
+		return nil
+	}
+
+	return accountObject.GetNFTSet(adb.db)
+}
+
+func (adb *AccountDB) generateNFTSetAddress(setId string) common.Address {
+	address := fmt.Sprintf("n-%s", setId)
+	return common.StringToAddress(address)
 }
