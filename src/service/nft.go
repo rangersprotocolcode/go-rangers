@@ -41,7 +41,7 @@ type NFTManager struct {
 
 func (self *NFTManager) generateNFTSetAddress(setId string) common.Address {
 	address := fmt.Sprintf("n-%s", setId)
-	return common.HexToAddress(address)
+	return common.StringToAddress(address)
 }
 
 // 检查setId是否存在

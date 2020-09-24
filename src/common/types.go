@@ -50,7 +50,7 @@ func BytesToAddress(b []byte) Address {
 	return a
 }
 
-func StringToAddress(s string) Address { return BytesToAddress([]byte(s)) }
+func StringToAddress(s string) Address { return BytesToAddress(utility.StrToBytes(s)) }
 func BigToAddress(b *big.Int) Address  { return BytesToAddress(b.Bytes()) }
 func HexToAddress(s string) Address    { return BytesToAddress(FromHex(s)) }
 
@@ -234,7 +234,7 @@ func (h *Hash) Set(other Hash) {
 
 // Generate implements testing/quick.Generator.
 func (h Hash) Generate(rand *rand.Rand, size int) reflect.Value {
-	m := rand.Intn(len(h)) //m为0-len(h)之间的伪随机数
+	m := rand.Intn(len(h))            //m为0-len(h)之间的伪随机数
 	for i := len(h) - 1; i > m; i-- { //从高位到m之间进行遍历
 		h[i] = byte(rand.Uint32()) //rand.Uint32为32位非负伪随机数
 	}
@@ -262,8 +262,8 @@ type Hash256 Hash
 type StorageSize float64
 
 type Hashes [2]Hash
+
 func (h Hashes) ShortS() string {
 	str := fmt.Sprintf("%s:%s", h[0].Hex(), h[1].Hex())
 	return ShortHex12(str)
 }
-
