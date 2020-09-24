@@ -48,6 +48,10 @@ type (
 		account *common.Address
 		prev    uint64
 	}
+	blobChange struct {
+		account *common.Address
+		prev    []byte
+	}
 	storageChange struct {
 		account  *common.Address
 		key      []byte
@@ -77,7 +81,7 @@ func (ch resetObjectChange) undo(s *AccountDB) {
 }
 
 func (ch suicideChange) undo(s *AccountDB) {
-	obj := s.getAccountObject(*ch.account,false)
+	obj := s.getAccountObject(*ch.account, false)
 	if obj != nil {
 		obj.suicided = ch.prev
 		obj.setBalance(ch.prevbalance)
@@ -88,7 +92,7 @@ var ripemd = common.StringToAddress("0000000000000000000000000000000000000003")
 
 func (ch touchChange) undo(s *AccountDB) {
 	if !ch.prev && *ch.account != ripemd {
-		s.getAccountObject(*ch.account,false).touched = ch.prev
+		s.getAccountObject(*ch.account, false).touched = ch.prev
 		if !ch.prevDirty {
 			delete(s.accountObjectsDirty, *ch.account)
 		}
@@ -96,15 +100,19 @@ func (ch touchChange) undo(s *AccountDB) {
 }
 
 func (ch balanceChange) undo(s *AccountDB) {
-	s.getAccountObject(*ch.account,false).setBalance(ch.prev)
+	s.getAccountObject(*ch.account, false).setBalance(ch.prev)
 }
 
 func (ch nonceChange) undo(s *AccountDB) {
-	s.getAccountObject(*ch.account,false).setNonce(ch.prev)
+	s.getAccountObject(*ch.account, false).setNonce(ch.prev)
+}
+
+func (ch blobChange) undo(s *AccountDB) {
+	s.getAccountObject(*ch.account, false).setBlob(ch.prev)
 }
 
 func (ch storageChange) undo(s *AccountDB) {
-	s.getAccountObject(*ch.account,false).setData(ch.key, ch.prevalue)
+	s.getAccountObject(*ch.account, false).setData(ch.key, ch.prevalue)
 }
 
 func (ch refundChange) undo(s *AccountDB) {

@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/storage/account"
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"fmt"
 	"strconv"
@@ -38,33 +39,47 @@ type NFTManager struct {
 	lock sync.RWMutex
 }
 
+func (self *NFTManager) generateNFTSetAddress(setId string) common.Address {
+	address := fmt.Sprintf("n-%s", setId)
+	return common.HexToAddress(address)
+}
+
 // 检查setId是否存在
 func (self *NFTManager) contains(setId string, accountDB *account.AccountDB) bool {
-	valueByte := accountDB.GetData(common.NFTSetAddress, []byte(setId))
-	if nil == valueByte || 0 == len(valueByte) {
-		return false
-	}
+	return accountDB.Exist(self.generateNFTSetAddress(setId))
+}
 
-	return true
+// 从nftSet中删除某个nft
+func (self *NFTManager) deleteNFTFromNFTSet(setId, id string, db *account.AccountDB) {
+	nftSetAddress := self.generateNFTSetAddress(setId)
+	db.RemoveData(nftSetAddress, utility.StrToBytes(id))
 }
 
 // 刷新nftset数据
-func (self *NFTManager) updateNFTSet(nftSet *types.NFTSet, accountDB *account.AccountDB) {
-	data, _ := json.Marshal(nftSet)
-	accountDB.SetData(common.NFTSetAddress, []byte(nftSet.SetID), data)
+func (self *NFTManager) updateOwnerFromNFTSet(setId, id string, owner common.Address, accountDB *account.AccountDB) {
+	nftSetAddress := self.generateNFTSetAddress(setId)
+	accountDB.SetData(nftSetAddress, utility.StrToBytes(id), owner.Bytes())
 }
 
-// 获取NFTSet信息
-// 状态机&客户端(钱包)调用
-func (self *NFTManager) GetNFTSet(setId string, accountDB *account.AccountDB) *types.NFTSet {
-	self.lock.RLock()
-	defer self.lock.RUnlock()
+// 修改nftset数据
+func (self *NFTManager) insertNewNFTFromNFTSet(setId, id string, owner common.Address, accountDB *account.AccountDB) {
+	nftSetAddress := self.generateNFTSetAddress(setId)
+	accountDB.SetData(nftSetAddress, utility.StrToBytes(id), owner.Bytes())
+	accountDB.IncreaseNonce(nftSetAddress)
+}
 
-	return self.getNFTSet(setId, accountDB)
+func (self *NFTManager) insertNewNFTSet(nftSet *types.NFTSet, db *account.AccountDB) {
+	if nil == nftSet {
+		return
+	}
+
+	nftSetAddress := self.generateNFTSetAddress(nftSet.SetID)
+	db.SetBlob(nftSetAddress, nftSet.ToBlob())
 }
 
 func (self *NFTManager) getNFTSet(setId string, accountDB *account.AccountDB) *types.NFTSet {
-	valueByte := accountDB.GetData(common.NFTSetAddress, []byte(setId))
+	nftSetAddress := self.generateNFTSetAddress(setId)
+	valueByte := accountDB.GetBlob(nftSetAddress)
 	if nil == valueByte || 0 == len(valueByte) {
 		return nil
 	}
@@ -75,7 +90,25 @@ func (self *NFTManager) getNFTSet(setId string, accountDB *account.AccountDB) *t
 		logger.Error("fail to get nftSet: %s, %s", setId, err.Error())
 		return nil
 	}
+
+	nftSet.TotalSupply = int(accountDB.GetNonce(nftSetAddress))
+
+	nftSet.OccupiedID = make(map[string]common.Address)
+	iterator := accountDB.DataIterator(nftSetAddress, []byte{})
+	for iterator.Next() {
+		nftSet.OccupiedID[utility.BytesToStr(iterator.Key)] = common.BytesToAddress(iterator.Value)
+	}
+
 	return &nftSet
+}
+
+// 获取NFTSet信息
+// 状态机&客户端(钱包)调用
+func (self *NFTManager) GetNFTSet(setId string, accountDB *account.AccountDB) *types.NFTSet {
+	self.lock.RLock()
+	defer self.lock.RUnlock()
+
+	return self.getNFTSet(setId, accountDB)
 }
 
 // 从layer2 层面删除
@@ -92,9 +125,7 @@ func (self *NFTManager) DeleteNFT(owner common.Address, setId, id string, accoun
 	accountDB.RemoveNFT(owner, nft)
 
 	// 更新nftSet
-	nftSet := self.getNFTSet(setId, accountDB)
-	nftSet.RemoveOwner(id)
-	self.updateNFTSet(nftSet, accountDB)
+	self.deleteNFTFromNFTSet(setId, id, accountDB)
 
 	return nft
 }
@@ -129,7 +160,7 @@ func (self *NFTManager) PublishNFTSet(nftSet *types.NFTSet, accountDB *account.A
 		return fmt.Sprintf("setId or maxSupply wrong, setId: %s, maxSupply: %d", nftSet.SetID, nftSet.MaxSupply), false
 	}
 
-	self.updateNFTSet(nftSet, accountDB)
+	self.insertNewNFTSet(nftSet, accountDB)
 	return fmt.Sprintf("nft publish successful, setId: %s", nftSet.SetID), true
 }
 
@@ -196,13 +227,7 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 	//分配NFT
 	if accountDB.AddNFTByGameId(owner, appId, nft) {
 		// 修改NFTSet数据
-		if nil == nftSet.OccupiedID {
-			nftSet.OccupiedID = make(map[string]common.Address, 0)
-		}
-
-		nftSet.OccupiedID[id] = owner
-		nftSet.TotalSupply++
-		self.updateNFTSet(nftSet, accountDB)
+		self.insertNewNFTFromNFTSet(setId, id, owner, accountDB)
 		return fmt.Sprintf("nft mint successful. setId: %s,id: %s", setId, id), true
 	} else {
 		msg := fmt.Sprintf("nft mint failed. appId: %s,setId: %s,id: %s,data: %s,createTime: %s,owner: %s", appId, setId, id, data, timeStamp, owner.String())
@@ -306,9 +331,7 @@ func (self *NFTManager) Transfer(setId, id string, owner, newOwner common.Addres
 	nft.Owner = newOwnerString
 	nft.Renter = newOwnerString
 	if accountDB.AddNFTByGameId(newOwner, nft.AppId, nft) && accountDB.RemoveNFTByGameId(owner, nft.AppId, nft.SetID, nft.ID) {
-		nftSet := self.GetNFTSet(setId, accountDB)
-		nftSet.ChangeOwner(id, newOwner)
-		self.updateNFTSet(nftSet, accountDB)
+		self.updateOwnerFromNFTSet(setId, id, newOwner, accountDB)
 
 		// 通知本状态机
 		return "nft transfer successful", true

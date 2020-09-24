@@ -38,6 +38,20 @@ type NFTSet struct {
 	OccupiedID map[string]common.Address `json:"occupied,omitempty"` // 当前在layer2里的nft
 }
 
+func (self *NFTSet) ToBlob() []byte {
+	nftSetMap := make(map[string]interface{}, 12)
+	nftSetMap["setId"] = self.SetID
+	nftSetMap["name"] = self.Name
+	nftSetMap["symbol"] = self.Symbol
+	nftSetMap["maxSupply"] = self.MaxSupply
+	nftSetMap["totalSupply"] = self.TotalSupply
+	nftSetMap["creator"] = self.Creator
+	nftSetMap["owner"] = self.Owner
+	nftSetMap["createTime"] = self.CreateTime
+	bytes, _ := json.Marshal(nftSetMap)
+	return bytes
+}
+
 func (self *NFTSet) ToJSONString() string {
 	nftSetMap := make(map[string]interface{}, 12)
 	nftSetMap["setId"] = self.SetID
@@ -49,16 +63,25 @@ func (self *NFTSet) ToJSONString() string {
 	nftSetMap["creator"] = self.Creator
 	nftSetMap["owner"] = self.Owner
 	nftSetMap["createTime"] = self.CreateTime
+	nftSetMap["occupied"] = self.OccupiedID
 	bytes, _ := json.Marshal(nftSetMap)
 	return string(bytes)
 }
 
-func (self *NFTSet) ChangeOwner(id string, newOwner common.Address) {
-	self.OccupiedID[id] = newOwner
-}
+func (self *NFTSet) ToJSON() map[string]interface{} {
+	nftSetMap := make(map[string]interface{}, 12)
+	nftSetMap["setId"] = self.SetID
+	nftSetMap["name"] = self.Name
+	nftSetMap["symbol"] = self.Symbol
+	nftSetMap["maxSupply"] = self.MaxSupply
+	nftSetMap["totalSupply"] = self.TotalSupply
+	nftSetMap["currentSupply"] = strconv.Itoa(len(self.OccupiedID))
+	nftSetMap["creator"] = self.Creator
+	nftSetMap["owner"] = self.Owner
+	nftSetMap["createTime"] = self.CreateTime
+	nftSetMap["occupied"] = self.OccupiedID
 
-func (self *NFTSet) RemoveOwner(id string) {
-	delete(self.OccupiedID, id)
+	return nftSetMap
 }
 
 type NFT struct {
@@ -129,6 +152,11 @@ func (self *NFT) SetData(data string, gameId string) {
 }
 
 func (self *NFT) ToJSONString() string {
+	bytes, _ := json.Marshal(self.ToMap())
+	return string(bytes)
+}
+
+func (self *NFT) ToMap() map[string]interface{} {
 	nftMap := make(map[string]interface{}, 12)
 	nftMap["setId"] = self.SetID
 	nftMap["name"] = self.Name
@@ -148,9 +176,7 @@ func (self *NFT) ToJSONString() string {
 		data[self.DataKey[i]] = self.DataValue[i]
 	}
 	nftMap["data"] = data
-
-	bytes, _ := json.Marshal(nftMap)
-	return string(bytes)
+	return nftMap
 }
 
 // FT发行配置

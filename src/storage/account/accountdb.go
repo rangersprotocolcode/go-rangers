@@ -41,6 +41,7 @@ var (
 
 	// emptyCode is the known hash of the empty TVM bytecode.
 	emptyCode = sha3.Sum256(nil)
+
 )
 
 // AccountDB are used to store anything
@@ -118,6 +119,13 @@ func (adb *AccountDB) Reset(root common.Hash) error {
 	return nil
 }
 
+func (adb *AccountDB) Clean() {
+	adb.accountObjects = new(sync.Map)
+	adb.accountObjectsLock = new(sync.Mutex)
+	adb.accountObjectsDirty = make(map[common.Address]struct{})
+	adb.clearJournalAndRefund()
+}
+
 // AddRefund adds gas to the refund counter
 func (adb *AccountDB) AddRefund(gas uint64) {
 	adb.transitions = append(adb.transitions, refundChange{prev: adb.refund})
@@ -135,6 +143,22 @@ func (adb *AccountDB) Exist(addr common.Address) bool {
 func (adb *AccountDB) Empty(addr common.Address) bool {
 	so := adb.getAccountObject(addr, false)
 	return so == nil || so.empty()
+}
+
+// GetBalance Retrieve the balance from the given address or 0 if object not found
+func (adb *AccountDB) GetBlob(addr common.Address) []byte {
+	accountObject := adb.getAccountObject(addr, false)
+	if accountObject != nil {
+		return accountObject.Blob()
+	}
+	return nil
+}
+
+func (adb *AccountDB) SetBlob(addr common.Address, data []byte) {
+	stateObject := adb.getOrNewAccountObject(addr)
+	if stateObject != nil {
+		stateObject.SetBlob(data)
+	}
 }
 
 // GetBalance Retrieve the balance from the given address or 0 if object not found
@@ -221,6 +245,13 @@ func (adb *AccountDB) SetNonce(addr common.Address, nonce uint64) {
 	}
 }
 
+func (adb *AccountDB) IncreaseNonce(addr common.Address) {
+	stateObject := adb.getOrNewAccountObject(addr)
+	if stateObject != nil {
+		stateObject.IncreaseNonce()
+	}
+}
+
 func (adb *AccountDB) SetData(addr common.Address, key []byte, value []byte) {
 	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {
@@ -272,7 +303,6 @@ func (adb *AccountDB) updateAccountObject(stateObject *accountObject) {
 	if err != nil {
 		panic(fmt.Errorf("can't serialize object at %x: %v", addr[:], err))
 	}
-
 	adb.setError(adb.trie.TryUpdate(addr[:], data))
 }
 

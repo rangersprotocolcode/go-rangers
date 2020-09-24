@@ -56,7 +56,6 @@ var (
 	RefundAddress      = BigToAddress(big.NewInt(3))
 
 	FTSetAddress  = BigToAddress(big.NewInt(4))
-	NFTSetAddress = BigToAddress(big.NewInt(5))
 
 	ExchangeRateAddress = BigToAddress(big.NewInt(6))
 )

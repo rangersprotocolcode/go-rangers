@@ -77,10 +77,10 @@ type accountObject struct {
 	cachedNFTStorage map[string]*types.NFT // Storage cache of original nft to dedup rewrites
 	dirtyNFTStorage  map[string]*types.NFT // Storage nft that need to be flushed to disk
 
-	suicided  bool
-	touched   bool
-	deleted   bool
-	onDirty   func(addr common.Address)
+	suicided bool
+	touched  bool
+	deleted  bool
+	onDirty  func(addr common.Address)
 }
 
 // empty returns whether the account is considered empty.
@@ -96,6 +96,8 @@ type Account struct {
 
 	Balance *big.Int
 	Ft      []*types.FT
+
+	Blob []byte
 }
 
 // newObject creates a account object.
@@ -342,6 +344,14 @@ func (ao *accountObject) DataIterator(db AccountDatabase, prefix []byte) *trie.I
 	return trie.NewIterator(ao.trie.NodeIterator(prefix))
 }
 
+func (ao *accountObject) IncreaseNonce() {
+	ao.db.transitions = append(ao.db.transitions, nonceChange{
+		account: &ao.address,
+		prev:    ao.data.Nonce,
+	})
+	ao.setNonce(ao.data.Nonce + 1)
+}
+
 // SetCode update nonce in account storage.
 func (ao *accountObject) SetNonce(nonce uint64) {
 	ao.db.transitions = append(ao.db.transitions, nonceChange{
@@ -357,6 +367,27 @@ func (ao *accountObject) setNonce(nonce uint64) {
 		ao.onDirty(ao.Address())
 		ao.onDirty = nil
 	}
+}
+
+// SetCode update nonce in account storage.
+func (ao *accountObject) SetBlob(blob []byte) {
+	ao.db.transitions = append(ao.db.transitions, blobChange{
+		account: &ao.address,
+		prev:    ao.data.Blob,
+	})
+	ao.setBlob(blob)
+}
+
+func (ao *accountObject) setBlob(blob []byte) {
+	ao.data.Blob = blob
+	if ao.onDirty != nil {
+		ao.onDirty(ao.Address())
+		ao.onDirty = nil
+	}
+}
+
+func (ao *accountObject) Blob() []byte {
+	return ao.data.Blob
 }
 
 func (ao *accountObject) Balance() *big.Int {
