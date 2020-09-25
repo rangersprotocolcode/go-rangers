@@ -24,22 +24,7 @@ import (
 	"strconv"
 )
 
-// NFTSet 数据结构综述
-type NFTSet struct {
-	SetID       string `json:"setId,omitempty"`
-	Name        string `json:"name,omitempty"`
-	Symbol      string `json:"symbol,omitempty"`
-	MaxSupply   uint64 `json:"maxSupply,omitempty"`   // 最大发行量，等于0则表示无限量
-	TotalSupply int    `json:"totalSupply,omitempty"` // 历史上发行量
-	Creator     string `json:"creator,omitempty"`
-	Owner       string `json:"owner,omitempty"`
-	CreateTime  string `json:"createTime,omitempty"`
-
-	// 已经发行的NFTID及其拥有者
-	OccupiedID map[string]common.Address `json:"occupied,omitempty"` // 当前在layer2里的nft
-}
-
-type nftSetDefinition struct {
+type NftSetDefinition struct {
 	SetID      string `json:"setId,omitempty"`
 	Name       string `json:"name,omitempty"`
 	Symbol     string `json:"symbol,omitempty"`
@@ -49,8 +34,36 @@ type nftSetDefinition struct {
 	CreateTime string `json:"createTime,omitempty"`
 }
 
+func (definition *NftSetDefinition) ToNFTSet() NFTSet {
+	var nftSet NFTSet
+	nftSet.SetID = definition.SetID
+	nftSet.Name = definition.Name
+	nftSet.Symbol = definition.Symbol
+	nftSet.MaxSupply = definition.MaxSupply
+	nftSet.CreateTime = definition.CreateTime
+	nftSet.Creator = definition.Creator
+	nftSet.Owner = definition.Owner
+
+	return nftSet
+}
+
+// NFTSet 数据结构综述
+type NFTSet struct {
+	SetID       string `json:"setId,omitempty"`
+	Name        string `json:"name,omitempty"`
+	Symbol      string `json:"symbol,omitempty"`
+	MaxSupply   uint64 `json:"maxSupply,omitempty"`   // 最大发行量，等于0则表示无限量
+	TotalSupply uint64 `json:"totalSupply,omitempty"` // 历史上发行量
+	Creator     string `json:"creator,omitempty"`
+	Owner       string `json:"owner,omitempty"`
+	CreateTime  string `json:"createTime,omitempty"`
+
+	// 已经发行的NFTID及其拥有者
+	OccupiedID map[string]common.Address `json:"occupied,omitempty"` // 当前在layer2里的nft
+}
+
 func (self *NFTSet) ToBlob() []byte {
-	definition := nftSetDefinition{
+	definition := NftSetDefinition{
 		SetID:      self.SetID,
 		Name:       self.Name,
 		Symbol:     self.Symbol,
@@ -59,6 +72,7 @@ func (self *NFTSet) ToBlob() []byte {
 		Owner:      self.Owner,
 		CreateTime: self.CreateTime,
 	}
+
 	data, _ := rlp.EncodeToBytes(definition)
 	return data
 }

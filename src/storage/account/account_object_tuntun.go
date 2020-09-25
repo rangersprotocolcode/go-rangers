@@ -372,8 +372,8 @@ func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
 		return nil
 	}
 
-	var nftSet types.NFTSet
-	err := rlp.DecodeBytes(valueByte, &nftSet)
+	var definition types.NftSetDefinition
+	err := rlp.DecodeBytes(valueByte, &definition)
 	if err != nil {
 		return nil
 	}
@@ -381,8 +381,9 @@ func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
 	self.cachedLock.RLock()
 	defer self.cachedLock.RUnlock()
 
+	nftSet := definition.ToNFTSet()
 	nftSet.OccupiedID = make(map[string]common.Address)
-	nftSet.TotalSupply = int(self.Nonce())
+	nftSet.TotalSupply = self.Nonce()
 
 	iterator := self.DataIterator(db, []byte{})
 	for iterator.Next() {
