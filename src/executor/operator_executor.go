@@ -135,7 +135,7 @@ func (this *operatorExecutor) Execute(transaction *types.Transaction, header *ty
 
 				if user.Address == "PublishNFTSet" {
 					maxSupplyString := user.Assets["maxSupply"]
-					maxSupply, err := strconv.Atoi(maxSupplyString)
+					maxSupply, err := strconv.ParseUint(maxSupplyString, 10, 64)
 					if err != nil {
 						msg := fmt.Sprintf("publish nft set! maxSupply bad format: %s", maxSupplyString)
 						this.logger.Errorf(msg)
@@ -197,7 +197,6 @@ func (this *operatorExecutor) Execute(transaction *types.Transaction, header *ty
 
 // 处理转账
 // 支持多人转账{"address1":"value1", "address2":"value2"}
-
 
 // 处理转账
 // 支持source地址给多人转账，包含余额，ft，nft

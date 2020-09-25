@@ -105,7 +105,7 @@ func (self *NFTManager) DeleteNFT(owner common.Address, setId, id string, accoun
 	return nft
 }
 
-func (self *NFTManager) GenerateNFTSet(setId, name, symbol, creator, owner string, maxSupply int, createTime string) *types.NFTSet {
+func (self *NFTManager) GenerateNFTSet(setId, name, symbol, creator, owner string, maxSupply uint64, createTime string) *types.NFTSet {
 	// 创建NFTSet
 	nftSet := &types.NFTSet{
 		SetID:      setId,
@@ -162,7 +162,7 @@ func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner
 		return "wrong setId or not setOwner", false
 	}
 
-	if nftSet.MaxSupply != 0 && len(nftSet.OccupiedID) == nftSet.MaxSupply {
+	if nftSet.MaxSupply != 0 && uint64(len(nftSet.OccupiedID)) == nftSet.MaxSupply {
 		return "not enough nftSet", false
 	}
 
@@ -371,7 +371,7 @@ func (self *NFTManager) SendPublishNFTSetToConnector(nftSet *types.NFTSet) {
 	data["setId"] = nftSet.SetID
 	data["name"] = nftSet.Name
 	data["symbol"] = nftSet.Symbol
-	data["maxSupply"] = strconv.Itoa(nftSet.MaxSupply)
+	data["maxSupply"] = strconv.FormatUint(nftSet.MaxSupply, 10)
 	data["creator"] = nftSet.Creator
 	data["owner"] = nftSet.Owner
 	data["createTime"] = nftSet.CreateTime

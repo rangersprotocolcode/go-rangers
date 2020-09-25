@@ -29,7 +29,7 @@ type NFTSet struct {
 	SetID       string `json:"setId,omitempty"`
 	Name        string `json:"name,omitempty"`
 	Symbol      string `json:"symbol,omitempty"`
-	MaxSupply   int    `json:"maxSupply,omitempty"`   // 最大发行量，等于0则表示无限量
+	MaxSupply   uint64 `json:"maxSupply,omitempty"`   // 最大发行量，等于0则表示无限量
 	TotalSupply int    `json:"totalSupply,omitempty"` // 历史上发行量
 	Creator     string `json:"creator,omitempty"`
 	Owner       string `json:"owner,omitempty"`
@@ -39,12 +39,11 @@ type NFTSet struct {
 	OccupiedID map[string]common.Address `json:"occupied,omitempty"` // 当前在layer2里的nft
 }
 
-
 type nftSetDefinition struct {
 	SetID      string `json:"setId,omitempty"`
 	Name       string `json:"name,omitempty"`
 	Symbol     string `json:"symbol,omitempty"`
-	MaxSupply  int    `json:"maxSupply,omitempty"` // 最大发行量，等于0则表示无限量
+	MaxSupply  uint64 `json:"maxSupply,omitempty"` // 最大发行量，等于0则表示无限量
 	Creator    string `json:"creator,omitempty"`
 	Owner      string `json:"owner,omitempty"`
 	CreateTime string `json:"createTime,omitempty"`

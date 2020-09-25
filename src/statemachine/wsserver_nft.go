@@ -291,7 +291,7 @@ func (self *wsServer) publishNFTSet(params map[string]string) (string, bool) {
 	}
 
 	accountDB := context.AccountDB
-	value, _ := strconv.Atoi(maxSupply)
+	value, _ := strconv.ParseUint(maxSupply, 10, 64)
 	nftSet := service.NFTManagerInstance.GenerateNFTSet(setId, name, symbol, appId, appId, value, createTime)
 	if reason, ok := service.NFTManagerInstance.PublishNFTSet(nftSet, accountDB); ok {
 		// 生成交易，上链 context.Tx.SubTransactions

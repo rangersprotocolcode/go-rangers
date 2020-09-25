@@ -374,7 +374,7 @@ func (chain *blockChain) publishSet(txs []*types.Transaction) {
 
 				if user.Address == "PublishNFTSet" {
 					maxSupplyString := user.Assets["maxSupply"]
-					maxSupply, err := strconv.Atoi(maxSupplyString)
+					maxSupply, err := strconv.ParseUint(maxSupplyString, 10, 64)
 					if err != nil {
 						logger.Errorf("Publish nft set! MaxSupply bad format:%s", maxSupplyString)
 						continue
