@@ -18,6 +18,7 @@ package types
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/storage/rlp"
 	"encoding/json"
 	"math/big"
 	"strconv"
@@ -38,17 +39,29 @@ type NFTSet struct {
 	OccupiedID map[string]common.Address `json:"occupied,omitempty"` // 当前在layer2里的nft
 }
 
+
+type nftSetDefinition struct {
+	SetID      string `json:"setId,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Symbol     string `json:"symbol,omitempty"`
+	MaxSupply  int    `json:"maxSupply,omitempty"` // 最大发行量，等于0则表示无限量
+	Creator    string `json:"creator,omitempty"`
+	Owner      string `json:"owner,omitempty"`
+	CreateTime string `json:"createTime,omitempty"`
+}
+
 func (self *NFTSet) ToBlob() []byte {
-	nftSetMap := make(map[string]interface{}, 12)
-	nftSetMap["setId"] = self.SetID
-	nftSetMap["name"] = self.Name
-	nftSetMap["symbol"] = self.Symbol
-	nftSetMap["maxSupply"] = self.MaxSupply
-	nftSetMap["creator"] = self.Creator
-	nftSetMap["owner"] = self.Owner
-	nftSetMap["createTime"] = self.CreateTime
-	bytes, _ := json.Marshal(nftSetMap)
-	return bytes
+	definition := nftSetDefinition{
+		SetID:      self.SetID,
+		Name:       self.Name,
+		Symbol:     self.Symbol,
+		MaxSupply:  self.MaxSupply,
+		Creator:    self.Creator,
+		Owner:      self.Owner,
+		CreateTime: self.CreateTime,
+	}
+	data, _ := rlp.EncodeToBytes(definition)
+	return data
 }
 
 func (self *NFTSet) ToJSONString() string {

@@ -21,7 +21,6 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/rlp"
 	"com.tuntun.rocket/node/src/utility"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
@@ -374,7 +373,7 @@ func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
 	}
 
 	var nftSet types.NFTSet
-	err := json.Unmarshal(valueByte, &nftSet)
+	err := rlp.DecodeBytes(valueByte, &nftSet)
 	if err != nil {
 		return nil
 	}
