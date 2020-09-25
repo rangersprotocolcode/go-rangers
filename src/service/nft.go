@@ -74,7 +74,7 @@ func (self *NFTManager) insertNewNFTSet(nftSet *types.NFTSet, db *account.Accoun
 	}
 
 	nftSetAddress := self.generateNFTSetAddress(nftSet.SetID)
-	db.SetBlob(nftSetAddress, nftSet.ToBlob())
+	db.SetNFTSetDefinition(nftSetAddress, nftSet.ToBlob())
 }
 
 // 获取NFTSet信息

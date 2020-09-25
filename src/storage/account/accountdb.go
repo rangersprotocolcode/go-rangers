@@ -41,7 +41,6 @@ var (
 
 	// emptyCode is the known hash of the empty TVM bytecode.
 	emptyCode = sha3.Sum256(nil)
-
 )
 
 // AccountDB are used to store anything
@@ -145,13 +144,6 @@ func (adb *AccountDB) Empty(addr common.Address) bool {
 	return so == nil || so.empty()
 }
 
-func (adb *AccountDB) SetBlob(addr common.Address, data []byte) {
-	stateObject := adb.getOrNewAccountObject(addr)
-	if stateObject != nil {
-		stateObject.SetBlob(data)
-	}
-}
-
 // GetBalance Retrieve the balance from the given address or 0 if object not found
 func (adb *AccountDB) GetBalance(addr common.Address) *big.Int {
 	accountObject := adb.getAccountObject(addr, false)
@@ -248,6 +240,22 @@ func (adb *AccountDB) SetData(addr common.Address, key []byte, value []byte) {
 	if stateObject != nil {
 		stateObject.SetData(adb.db, key, value)
 	}
+}
+
+func (adb *AccountDB) SetNFTSetDefinition(addr common.Address, code []byte) {
+	stateObject := adb.getOrNewAccountObject(addr)
+	if stateObject != nil {
+		stateObject.SetNFTSetDefinition(sha3.Sum256(code), code)
+	}
+}
+
+// GetCode returns the contract code associated with this object, if any.
+func (adb *AccountDB) getNFTSetDefinition(addr common.Address) []byte {
+	stateObject := adb.getAccountObject(addr, false)
+	if stateObject != nil {
+		return stateObject.nftSetDefinition(adb.db)
+	}
+	return nil
 }
 
 func (adb *AccountDB) Transfer(sender, recipient common.Address, amount *big.Int) {
@@ -500,6 +508,11 @@ func (adb *AccountDB) Commit(deleteEmptyObjects bool) (root common.Hash, err err
 		case accountObject.suicided || (isDirty && deleteEmptyObjects && accountObject.empty()):
 			adb.deleteAccountObject(accountObject)
 		case isDirty:
+			if accountObject.nftSet != nil && accountObject.dirtyNFTSet {
+				adb.db.TrieDB().InsertBlob(common.BytesToHash(accountObject.NFTSetDefinitionHash()), accountObject.nftSet)
+				accountObject.dirtyNFTSet = false
+			}
+
 			// Write any storage changes in the state object to its storage trie.
 			if err := accountObject.CommitTrie(adb.db); err != nil {
 				e = &err
@@ -522,7 +535,10 @@ func (adb *AccountDB) Commit(deleteEmptyObjects bool) (root common.Hash, err err
 		if account.Root != emptyData {
 			adb.db.TrieDB().Reference(account.Root, parent)
 		}
-
+		code := common.BytesToHash(account.NFTSetDefinitionHash)
+		if code != emptyCode {
+			adb.db.TrieDB().Reference(code, parent)
+		}
 		return nil
 	})
 	return root, err

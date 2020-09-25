@@ -48,14 +48,15 @@ type (
 		account *common.Address
 		prev    uint64
 	}
-	blobChange struct {
-		account *common.Address
-		prev    []byte
-	}
 	storageChange struct {
 		account  *common.Address
 		key      []byte
 		prevalue []byte
+	}
+
+	nftSetDefinitionChange struct {
+		account        *common.Address
+		prev, prevhash []byte
 	}
 
 	refundChange struct {
@@ -107,10 +108,6 @@ func (ch nonceChange) undo(s *AccountDB) {
 	s.getAccountObject(*ch.account, false).setNonce(ch.prev)
 }
 
-func (ch blobChange) undo(s *AccountDB) {
-	s.getAccountObject(*ch.account, false).setBlob(ch.prev)
-}
-
 func (ch storageChange) undo(s *AccountDB) {
 	s.getAccountObject(*ch.account, false).setData(ch.key, ch.prevalue)
 }
@@ -118,3 +115,8 @@ func (ch storageChange) undo(s *AccountDB) {
 func (ch refundChange) undo(s *AccountDB) {
 	s.refund = ch.prev
 }
+
+func (ch nftSetDefinitionChange) undo(s *AccountDB) {
+	s.getAccountObject(*ch.account, false).setNFTSetDefinition(common.BytesToHash(ch.prevhash), ch.prev)
+}
+

@@ -17,6 +17,7 @@
 package account
 
 import (
+	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/rlp"
@@ -69,6 +70,9 @@ type accountObject struct {
 
 	trie Trie // storage trie, which becomes non-nil on first access
 
+	nftSet      []byte
+	dirtyNFTSet bool // true if the code was updated
+
 	cachedLock    sync.RWMutex
 	cachedStorage Storage // Storage cache of original entries to dedup rewrites
 	dirtyStorage  Storage // Storage entries that need to be flushed to disk
@@ -94,10 +98,9 @@ type Account struct {
 	Nonce uint64
 	Root  common.Hash
 
-	Balance *big.Int
-	Ft      []*types.FT
-
-	Blob []byte
+	NFTSetDefinitionHash []byte
+	Balance              *big.Int
+	Ft                   []*types.FT
 }
 
 // newObject creates a account object.
@@ -107,6 +110,9 @@ func newAccountObject(db *AccountDB, address common.Address, data Account, onDir
 	}
 	if data.Ft == nil {
 		data.Ft = make([]*types.FT, 0)
+	}
+	if data.NFTSetDefinitionHash == nil {
+		data.NFTSetDefinitionHash = emptyCodeHash[:]
 	}
 
 	ao := &accountObject{
@@ -324,6 +330,7 @@ func (ao *accountObject) deepCopy(db *AccountDB, onDirty func(addr common.Addres
 		accountObject.trie = db.db.CopyTrie(ao.trie)
 	}
 
+	accountObject.nftSet = ao.nftSet
 	accountObject.dirtyStorage = ao.dirtyStorage.Copy()
 	accountObject.cachedStorage = ao.dirtyStorage.Copy()
 	accountObject.suicided = ao.suicided
@@ -334,6 +341,41 @@ func (ao *accountObject) deepCopy(db *AccountDB, onDirty func(addr common.Addres
 // Returns the address of the contract/account
 func (ao *accountObject) Address() common.Address {
 	return ao.address
+}
+
+func (ao *accountObject) nftSetDefinition(db AccountDatabase) []byte {
+	if ao.nftSet != nil {
+		return ao.nftSet
+	}
+	if bytes.Equal(ao.NFTSetDefinitionHash(), emptyCodeHash[:]) {
+		return nil
+	}
+	code, err := db.ContractCode(ao.addrHash, common.BytesToHash(ao.NFTSetDefinitionHash()))
+	if err != nil {
+		ao.setError(fmt.Errorf("can't load code hash %x: %v", ao.NFTSetDefinitionHash(), err))
+	}
+	ao.nftSet = code
+	return code
+}
+
+func (ao *accountObject) SetNFTSetDefinition(hash common.Hash, code []byte) {
+	prevCode := ao.nftSetDefinition(ao.db.db)
+	ao.db.transitions = append(ao.db.transitions, nftSetDefinitionChange{
+		account:  &ao.address,
+		prevhash: ao.NFTSetDefinitionHash(),
+		prev:     prevCode,
+	})
+	ao.setNFTSetDefinition(hash, code)
+}
+
+func (ao *accountObject) setNFTSetDefinition(hash common.Hash, code []byte) {
+	ao.nftSet = code
+	ao.data.NFTSetDefinitionHash = hash[:]
+	ao.dirtyNFTSet = true
+	if ao.onDirty != nil {
+		ao.onDirty(ao.Address())
+		ao.onDirty = nil
+	}
 }
 
 // DataIterator returns a new key-value iterator from a node iterator
@@ -352,7 +394,7 @@ func (ao *accountObject) IncreaseNonce() {
 	ao.setNonce(ao.data.Nonce + 1)
 }
 
-// SetCode update nonce in account storage.
+// setNFTSetDefinition update nonce in account storage.
 func (ao *accountObject) SetNonce(nonce uint64) {
 	ao.db.transitions = append(ao.db.transitions, nonceChange{
 		account: &ao.address,
@@ -369,25 +411,9 @@ func (ao *accountObject) setNonce(nonce uint64) {
 	}
 }
 
-// SetCode update nonce in account storage.
-func (ao *accountObject) SetBlob(blob []byte) {
-	ao.db.transitions = append(ao.db.transitions, blobChange{
-		account: &ao.address,
-		prev:    ao.data.Blob,
-	})
-	ao.setBlob(blob)
-}
-
-func (ao *accountObject) setBlob(blob []byte) {
-	ao.data.Blob = blob
-	if ao.onDirty != nil {
-		ao.onDirty(ao.Address())
-		ao.onDirty = nil
-	}
-}
-
-func (ao *accountObject) Blob() []byte {
-	return ao.data.Blob
+// CodeHash returns code's hash
+func (ao *accountObject) NFTSetDefinitionHash() []byte {
+	return ao.data.NFTSetDefinitionHash
 }
 
 func (ao *accountObject) Balance() *big.Int {
@@ -396,8 +422,4 @@ func (ao *accountObject) Balance() *big.Int {
 
 func (ao *accountObject) Nonce() uint64 {
 	return ao.data.Nonce
-}
-
-func (ao *accountObject) Value() *big.Int {
-	panic("Value on accountObject should never be called")
 }

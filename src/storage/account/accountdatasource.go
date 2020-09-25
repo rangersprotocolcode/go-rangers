@@ -37,6 +37,9 @@ type AccountDatabase interface {
 
 	// TrieDB retrieves the low level trie database used for data storage.
 	TrieDB() *trie.NodeDatabase
+
+	// ContractCode retrieves a particular contract's code.
+	ContractCode(addrHash, codeHash common.Hash) ([]byte, error)
 }
 
 type Trie interface {
@@ -73,13 +76,13 @@ type Trie interface {
 // large memory cache.
 func NewDatabase(db xdb.Database) AccountDatabase {
 	return &storageDB{
-		db: trie.NewDatabase(db),
+		db:        trie.NewDatabase(db),
 	}
 }
 
 type storageDB struct {
-	db *trie.NodeDatabase
-	mu sync.Mutex
+	db        *trie.NodeDatabase
+	mu        sync.Mutex
 }
 
 // TrieDB retrieves the low level trie database used for data storage.
@@ -114,4 +117,10 @@ func (db *storageDB) CopyTrie(t Trie) Trie {
 		// this must not happen
 		panic(fmt.Errorf("unknown trie type %T", t))
 	}
+}
+
+// ContractCode retrieves a particular contract's code.
+func (db *storageDB) ContractCode(addrHash, codeHash common.Hash) ([]byte, error) {
+	code, err := db.db.Node(codeHash)
+	return code, err
 }

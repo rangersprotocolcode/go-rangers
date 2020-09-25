@@ -44,7 +44,6 @@ func (self *NFTSet) ToBlob() []byte {
 	nftSetMap["name"] = self.Name
 	nftSetMap["symbol"] = self.Symbol
 	nftSetMap["maxSupply"] = self.MaxSupply
-	nftSetMap["totalSupply"] = self.TotalSupply
 	nftSetMap["creator"] = self.Creator
 	nftSetMap["owner"] = self.Owner
 	nftSetMap["createTime"] = self.CreateTime

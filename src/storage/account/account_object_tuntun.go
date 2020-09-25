@@ -368,7 +368,7 @@ func (self *accountObject) generateNFTKey(setId, id string) string {
 }
 
 func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
-	valueByte := self.Blob()
+	valueByte := self.nftSetDefinition(db)
 	if nil == valueByte || 0 == len(valueByte) {
 		return nil
 	}
@@ -382,8 +382,8 @@ func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
 	self.cachedLock.RLock()
 	defer self.cachedLock.RUnlock()
 
-	nftSet.TotalSupply = int(self.Nonce())
 	nftSet.OccupiedID = make(map[string]common.Address)
+	nftSet.TotalSupply = int(self.Nonce())
 
 	iterator := self.DataIterator(db, []byte{})
 	for iterator.Next() {
