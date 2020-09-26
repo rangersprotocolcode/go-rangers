@@ -86,25 +86,6 @@ func (self *NFTManager) GetNFTSet(setId string, accountDB *account.AccountDB) *t
 	return accountDB.GetNFTSet(setId)
 }
 
-// 从layer2 层面删除
-func (self *NFTManager) DeleteNFT(owner common.Address, setId, id string, accountDB *account.AccountDB) *types.NFT {
-	self.lock.RLock()
-	defer self.lock.RUnlock()
-
-	nft := accountDB.GetNFTById(owner, setId, id)
-	if nil == nft {
-		return nil
-	}
-
-	//删除要提现的NFT
-	accountDB.RemoveNFT(owner, nft)
-
-	// 更新nftSet
-	self.deleteNFTFromNFTSet(setId, id, accountDB)
-
-	return nft
-}
-
 func (self *NFTManager) GenerateNFTSet(setId, name, symbol, creator, owner string, maxSupply uint64, createTime string) *types.NFTSet {
 	// 创建NFTSet
 	nftSet := &types.NFTSet{
@@ -213,6 +194,57 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 		txLogger.Debugf(msg)
 		return msg, false
 	}
+}
+
+//mark nft been withdrawn
+func (self *NFTManager) MarkNFTWithdrawn(owner common.Address, setId, id string, accountDB *account.AccountDB) *types.NFT {
+	self.lock.RLock()
+	defer self.lock.RUnlock()
+
+	nft := accountDB.GetNFTById(owner, setId, id)
+	if nil == nft || nft.Status != 0 {
+		return nil
+	}
+
+	//change nft status to be withdrawn
+	accountDB.ChangeNFTStatus(owner, "", setId, id, 2)
+	return nft
+}
+
+//deposit local withdrawn nft
+//only owner renter appId data will be updated,other fields will not be updated
+func (self *NFTManager) DepositWithdrawnNFT(owner, renter, appId string, fullData map[string]string, accountDB *account.AccountDB, originalNFT *types.NFT) (string, bool) {
+	self.lock.RLock()
+	defer self.lock.RUnlock()
+
+	if nil == originalNFT {
+		return fmt.Sprintf("nft is not existed. setId: %s, id: %s", originalNFT.SetID, originalNFT.ID), false
+	}
+
+	nft := &types.NFT{SetID: originalNFT.SetID, ID: originalNFT.ID,
+		Name: originalNFT.Name, Symbol: originalNFT.Symbol,
+		Creator: originalNFT.Creator, CreateTime: originalNFT.CreateTime,
+		Condition: originalNFT.Condition, Imported: originalNFT.Imported}
+	nft.Status = 0
+	nft.Owner = owner
+	nft.Renter = renter
+	nft.AppId = appId
+
+	nft.DataKey = make([]string, 0)
+	nft.DataValue = make([]string, 0)
+	if nil != fullData && 0 != len(fullData) {
+		for key, value := range fullData {
+			nft.DataKey = append(nft.DataKey, key)
+			nft.DataValue = append(nft.DataValue, value)
+		}
+	}
+	if accountDB.RemoveNFTByGameId(common.HexStringToAddress(originalNFT.Owner), originalNFT.AppId, originalNFT.SetID, originalNFT.ID) && accountDB.AddNFTByGameId(common.HexStringToAddress(nft.Owner), nft.AppId, nft) {
+		if nft.Owner != originalNFT.Owner {
+			self.updateOwnerFromNFTSet(originalNFT.SetID, originalNFT.SetID, common.HexStringToAddress(nft.Owner), accountDB)
+		}
+		return "Deposit withdrawn nft successful", true
+	}
+	return "Deposit withdrawn nft false", true
 }
 
 // 获取NFT信息
@@ -366,6 +398,7 @@ func (self *NFTManager) shuttle(owner, setId, id, newAppId string, accountDB *ac
 	return "nft shuttle successful", true
 }
 
+//todo:delete after test
 func (self *NFTManager) SendPublishNFTSetToConnector(nftSet *types.NFTSet) {
 	data := make(map[string]string, 8)
 	data["setId"] = nftSet.SetID
@@ -380,6 +413,7 @@ func (self *NFTManager) SendPublishNFTSetToConnector(nftSet *types.NFTSet) {
 	self.publishNFTSetToConnector(data, nftSet.Creator, nftSet.CreateTime)
 }
 
+//todo:delete after test
 func (self *NFTManager) ImportNFTSet(setId, contract, chainType string) {
 	data := make(map[string]string)
 	data["setId"] = setId
@@ -390,6 +424,7 @@ func (self *NFTManager) ImportNFTSet(setId, contract, chainType string) {
 	self.publishNFTSetToConnector(data, "", "")
 }
 
+//todo:delete after test
 func (self *NFTManager) publishNFTSetToConnector(data map[string]string, source, time string) {
 	b, err := json.Marshal(data)
 	if err != nil {
@@ -409,3 +444,22 @@ func (self *NFTManager) publishNFTSetToConnector(data map[string]string, source,
 	txLogger.Tracef("After publish nft.Send msg to coiner:%s", t.ToTxJson().ToString())
 	go network.GetNetInstance().SendToCoinConnector(msg)
 }
+
+//// 从layer2 层面删除
+//func (self *NFTManager) DeleteNFT(owner common.Address, setId, id string, accountDB *account.AccountDB) *types.NFT {
+//	self.lock.RLock()
+//	defer self.lock.RUnlock()
+//
+//	nft := accountDB.GetNFTById(owner, setId, id)
+//	if nil == nft {
+//		return nil
+//	}
+//
+//	//删除要提现的NFT
+//	accountDB.RemoveNFT(owner, nft)
+//
+//	// 更新nftSet
+//	self.deleteNFTFromNFTSet(setId, id, accountDB)
+//
+//	return nft
+//}

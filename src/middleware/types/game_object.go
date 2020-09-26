@@ -59,7 +59,7 @@ type NFTSet struct {
 	CreateTime  string `json:"createTime,omitempty"`
 
 	// 已经发行的NFTID及其拥有者
-	OccupiedID map[string]common.Address `json:"occupied,omitempty"` // 当前在layer2里的nft
+	OccupiedID map[string]common.Address `json:"occupied,omitempty"` // 当前在layer2里的nft(包含已经被提现走的NFT)
 }
 
 func (self *NFTSet) ToBlob() []byte {
@@ -125,7 +125,7 @@ type NFT struct {
 	Owner  string `json:"owner,omitempty"`  // 当前所有权拥有者。如果为空，则表示由创建者所有。只有owner有权transfer。一个NFT只有一个owner
 	Renter string `json:"renter,omitempty"` // 当前使用权拥有者。由owner指定。owner默认有使用权。同一时间内，一个NFT只有一个renter
 	// 2.2 锁定状态
-	Status    byte `json:"status,omitempty"`    // 状态位（默认0） 0：正常，1：锁定（数据与状态不可变更，例如：提现待确认）
+	Status    byte `json:"status,omitempty"`    // 状态位（默认0） 0：正常，1：锁定（数据与状态不可变更），2:已经被从L2中提走
 	Condition byte `json:"condition,omitempty"` // 解锁条件 1：锁定直到状态机解锁 2：锁定直到用户解锁
 	// 2.3 使用权回收条件（待定）
 	//ReturnCondition byte // 使用权结束条件 0：到期自动结束 1：所有者触发结束 2：使用者触发结束

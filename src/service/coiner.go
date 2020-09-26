@@ -124,8 +124,16 @@ func NFTDeposit(accountdb *account.AccountDB, transaction *types.Transaction) (b
 		NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
 	}
 
-	appId := transaction.Target
-	str, ok := NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, "", depositNFTData.Creator, depositNFTData.CreateTime, "official", common.HexToAddress(transaction.Source), depositNFTData.Data, accountdb)
+	var str string
+	var ok bool
+	nft := NFTManagerInstance.GetNFT(nftSet.SetID, depositNFTData.ID, accountdb)
+	if nft != nil {
+		//仅更新 owner renter data appId,data 其他字段不更新
+		str, ok = NFTManagerInstance.DepositWithdrawnNFT(depositNFTData.Owner, depositNFTData.Renter, depositNFTData.AppId, depositNFTData.Data, accountdb, nft)
+	} else {
+		appId := transaction.Target
+		str, ok = NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, "", depositNFTData.Creator, depositNFTData.CreateTime, "official", common.HexToAddress(transaction.Source), depositNFTData.Data, accountdb)
+	}
 	msg := fmt.Sprintf("depositNFT result: %s, %t", str, ok)
 	txLogger.Debugf(msg)
 	return ok, msg

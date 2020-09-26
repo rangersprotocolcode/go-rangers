@@ -108,10 +108,10 @@ func (self *AccountDB) RemoveNFTByGameId(addr common.Address, appId, setId, id s
 	return stateObject.RemoveNFT(self.db, appId, setId, id)
 }
 
-func (self *AccountDB) RemoveNFT(addr common.Address, nft *types.NFT) bool {
-	stateObject := self.getOrNewAccountObject(addr)
-	return stateObject.RemoveNFT(self.db, nft.AppId, nft.SetID, nft.ID)
-}
+//func (self *AccountDB) RemoveNFT(addr common.Address, nft *types.NFT) bool {
+//	stateObject := self.getOrNewAccountObject(addr)
+//	return stateObject.RemoveNFT(self.db, nft.AppId, nft.SetID, nft.ID)
+//}
 
 func (self *AccountDB) ApproveNFT(owner common.Address, appId, setId, id, renter string) bool {
 	stateObject := self.getOrNewAccountObject(owner)

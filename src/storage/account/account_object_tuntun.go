@@ -204,7 +204,7 @@ func (self *accountObject) RemoveNFT(db AccountDatabase, appId, setId, id string
 // 更新nft属性值
 func (self *accountObject) SetNFTValueByGameId(db AccountDatabase, appId, setId, id, value string) bool {
 	nft := self.getNFT(db, appId, setId, id)
-	if nil == nft {
+	if nil == nft || nft.Status != 0 {
 		common.DefaultLogger.Debugf("Remove nft. get nil nft")
 		return false
 	}

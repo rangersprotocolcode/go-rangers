@@ -108,7 +108,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 
 		nftList := make([]map[string]string, 0)
 		for _, k := range withDrawReq.NFT {
-			nft := NFTManagerInstance.DeleteNFT(source, k.SetId, k.Id, accountdb)
+			nft := NFTManagerInstance.MarkNFTWithdrawn(source, k.SetId, k.Id, accountdb)
 			if nil == nft {
 				return "NFT Not Exist In This Game", false
 			}
@@ -133,6 +133,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 	return result.TOJSONString(), true
 }
 
+//todo:delete after test
 func sendWithdrawToCoiner(withDrawReq types.WithDrawReq, transaction *types.Transaction, nftInfo []types.NFTID) bool {
 	withdrawData := types.WithDrawData{ChainType: withDrawReq.ChainType, Address: withDrawReq.Address}
 	withdrawData.BNT = withDrawReq.BNT
