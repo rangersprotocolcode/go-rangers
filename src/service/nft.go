@@ -238,9 +238,10 @@ func (self *NFTManager) DepositWithdrawnNFT(owner, renter, appId string, fullDat
 			nft.DataValue = append(nft.DataValue, value)
 		}
 	}
+
 	if accountDB.RemoveNFTByGameId(common.HexStringToAddress(originalNFT.Owner), originalNFT.AppId, originalNFT.SetID, originalNFT.ID) && accountDB.AddNFTByGameId(common.HexStringToAddress(nft.Owner), nft.AppId, nft) {
 		if nft.Owner != originalNFT.Owner {
-			self.updateOwnerFromNFTSet(originalNFT.SetID, originalNFT.SetID, common.HexStringToAddress(nft.Owner), accountDB)
+			self.updateOwnerFromNFTSet(originalNFT.SetID, originalNFT.ID, common.HexStringToAddress(nft.Owner), accountDB)
 		}
 		return "Deposit withdrawn nft successful", true
 	}
