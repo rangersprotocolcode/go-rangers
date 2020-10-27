@@ -54,9 +54,6 @@ var (
 	ValidatorDBAddress = BigToAddress(big.NewInt(1))
 	ProposerDBAddress  = BigToAddress(big.NewInt(2))
 	RefundAddress      = BigToAddress(big.NewInt(3))
-
-	FTSetAddress  = BigToAddress(big.NewInt(4))
-
 	ExchangeRateAddress = BigToAddress(big.NewInt(6))
 )
 
