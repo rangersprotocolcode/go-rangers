@@ -113,7 +113,7 @@ func (self *accountObject) SetFT(db AccountDatabase, amount *big.Int, name strin
 		return false
 	}
 
-	self.SetData(db, utility.StrToBytes(name), amount.Bytes())
+	self.SetData(db, utility.StrToBytes(self.generateFTKey(name)), amount.Bytes())
 	return true
 }
 
