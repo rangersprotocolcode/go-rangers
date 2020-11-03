@@ -19,15 +19,9 @@ package account
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"math/big"
 )
 
 type (
-	tuntunFTChange struct {
-		account *common.Address
-		prev    *big.Int
-		name    string
-	}
 	tuntunNFTChange struct {
 		account *common.Address
 		prev    string
@@ -55,9 +49,6 @@ type (
 	}
 )
 
-func (ch tuntunFTChange) undo(s *AccountDB) {
-	s.getAccountObject(*ch.account, false).setFT(ch.prev, ch.name)
-}
 func (ch tuntunNFTChange) undo(s *AccountDB) {
 	ch.nft.SetData(ch.prev, ch.appId)
 	s.getAccountObject(*ch.account, false).setNFT(ch.nft)

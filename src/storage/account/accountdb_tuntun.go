@@ -19,35 +19,30 @@ package account
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/utility"
 	"fmt"
 	"math/big"
 )
 
 func (self *AccountDB) GetFT(addr common.Address, ftName string) *big.Int {
 	accountObject := self.getOrNewAccountObject(addr)
-	data := accountObject.data
-	if 0 == len(data.Ft) {
-		return big.NewInt(0)
-	}
-
-	raw := accountObject.getFT(accountObject.data.Ft, ftName)
+	raw := accountObject.getFT(self.db, ftName)
 	if raw == nil {
 		return big.NewInt(0)
 	}
-	return raw.Balance
+	return raw
 }
 
 func (self *AccountDB) GetAllFT(addr common.Address) map[string]*big.Int {
 	accountObject := self.getOrNewAccountObject(addr)
-	data := accountObject.data
-	if 0 == len(data.Ft) {
-		return nil
+	result := make(map[string]*big.Int)
+	iterator := accountObject.DataIterator(self.db, utility.StrToBytes("f-"))
+
+	for iterator.Next() {
+		ftName := utility.BytesToStr(iterator.Key)
+		result[ftName[2:]] = new(big.Int).SetBytes(iterator.Value)
 	}
 
-	result := make(map[string]*big.Int, len(data.Ft))
-	for _, value := range data.Ft {
-		result[value.ID] = value.Balance
-	}
 	return result
 }
 
@@ -56,7 +51,7 @@ func (self *AccountDB) SetFT(addr common.Address, ftName string, balance *big.In
 		return
 	}
 	account := self.getOrNewAccountObject(addr)
-	account.SetFT(balance, ftName)
+	account.SetFT(self.db, balance, ftName)
 }
 
 func (self *AccountDB) AddFT(addr common.Address, ftName string, balance *big.Int) bool {
@@ -65,7 +60,7 @@ func (self *AccountDB) AddFT(addr common.Address, ftName string, balance *big.In
 	}
 	account := self.getOrNewAccountObject(addr)
 
-	return account.AddFT(balance, ftName)
+	return account.AddFT(self.db, balance, ftName)
 }
 
 func (self *AccountDB) SubFT(addr common.Address, ftName string, balance *big.Int) (*big.Int, bool) {
@@ -73,7 +68,7 @@ func (self *AccountDB) SubFT(addr common.Address, ftName string, balance *big.In
 		return nil, false
 	}
 	account := self.getOrNewAccountObject(addr)
-	return account.SubFT(balance, ftName)
+	return account.SubFT(self.db, balance, ftName)
 
 }
 

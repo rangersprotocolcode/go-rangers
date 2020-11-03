@@ -32,17 +32,19 @@ func (self *accountObject) checkAndCreate() {
 	}
 }
 
-func (self *accountObject) getFT(ftList []*types.FT, name string) *types.FT {
-	for _, ft := range ftList {
-		if ft.ID == name {
-			return ft
-		}
-	}
-
-	return nil
+func (c *accountObject) generateFTKey(name string) string {
+	return fmt.Sprintf("f-%s", name)
 }
 
-func (c *accountObject) AddFT(amount *big.Int, name string) bool {
+func (c *accountObject) getFT(db AccountDatabase, name string) *big.Int {
+	value := c.GetData(db, utility.StrToBytes(name))
+	if nil == value || 0 == len(value) {
+		return nil
+	}
+	return new(big.Int).SetBytes(value)
+}
+
+func (c *accountObject) AddFT(db AccountDatabase, amount *big.Int, name string) bool {
 	if amount.Sign() == 0 {
 		if c.empty() {
 			c.touch()
@@ -50,81 +52,43 @@ func (c *accountObject) AddFT(amount *big.Int, name string) bool {
 
 		return true
 	}
-	raw := c.getFT(c.data.Ft, name)
+	raw := c.getFT(db, name)
 	if nil == raw {
-		return c.SetFT(new(big.Int).Set(amount), name)
+		return c.SetFT(db, new(big.Int).Set(amount), name)
 	} else {
-		return c.SetFT(new(big.Int).Add(raw.Balance, amount), name)
+		return c.SetFT(db, new(big.Int).Add(raw, amount), name)
 	}
 
 }
 
-func (c *accountObject) SubFT(amount *big.Int, name string) (*big.Int, bool) {
+func (c *accountObject) SubFT(db AccountDatabase, amount *big.Int, name string) (*big.Int, bool) {
 	if amount.Sign() == 0 {
-		raw := c.getFT(c.data.Ft, name)
+		raw := c.getFT(db, name)
 		if nil == raw {
 			return big.NewInt(0), true
 		}
-		return raw.Balance, true
+		return raw, true
 	}
 
-	raw := c.getFT(c.data.Ft, name)
+	raw := c.getFT(db, name)
+
 	// 余额不足就滚粗
-	if nil == raw || raw.Balance.Cmp(amount) == -1 {
+	if nil == raw || raw.Cmp(amount) == -1 {
 		return nil, false
 	}
 
-	left := new(big.Int).Sub(raw.Balance, amount)
-	c.SetFT(left, name)
+	left := new(big.Int).Sub(raw, amount)
+	c.SetFT(db, left, name)
 
 	return left, true
 }
 
-func (self *accountObject) SetFT(amount *big.Int, name string) bool {
-	raw := self.getFT(self.data.Ft, name)
-	change := tuntunFTChange{
-		account: &self.address,
-		name:    name,
-	}
-	if raw != nil {
-		change.prev = new(big.Int).Set(raw.Balance)
-	} else {
-		change.prev = nil
+func (self *accountObject) SetFT(db AccountDatabase, amount *big.Int, name string) bool {
+	if nil == amount {
+		return false
 	}
 
-	self.db.transitions = append(self.db.transitions, change)
-	return self.setFT(amount, name)
-}
-
-func (self *accountObject) setFT(amount *big.Int, name string) bool {
-	if nil == amount || amount.Sign() == 0 {
-		index := -1
-		for i, ft := range self.data.Ft {
-			if ft.ID == name {
-				index = i
-				break
-			}
-		}
-		if -1 != index {
-			self.data.Ft = append(self.data.Ft[:index], self.data.Ft[index+1:]...)
-		}
-	} else {
-		ftObject := self.getFT(self.data.Ft, name)
-		if ftObject == nil {
-			ftObject = &types.FT{}
-			ftObject.ID = name
-
-			self.data.Ft = append(self.data.Ft, ftObject)
-		}
-		ftObject.Balance = new(big.Int).Set(amount)
-
-		// 溢出判断
-		if ftObject.Balance.Sign() == -1 {
-			return false
-		}
-	}
-
-	self.callback()
+	self.SetData(db, utility.StrToBytes(name), amount.Bytes())
 	return true
 }
 

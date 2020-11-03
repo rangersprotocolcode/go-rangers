@@ -73,6 +73,7 @@ type accountObject struct {
 	nftSet      []byte
 	dirtyNFTSet bool // true if the code was updated
 
+	// SetData用
 	cachedLock    sync.RWMutex
 	cachedStorage Storage // Storage cache of original entries to dedup rewrites
 	dirtyStorage  Storage // Storage entries that need to be flushed to disk
@@ -89,7 +90,7 @@ type accountObject struct {
 
 // empty returns whether the account is considered empty.
 func (ao *accountObject) empty() bool {
-	return ao.data.Ft == nil && ao.data.Nonce == 0 && ao.data.Balance.Sign() == 0 && len(ao.cachedStorage) == 0 && len(ao.dirtyStorage) == 0 && len(ao.cachedNFTStorage) == 0 && len(ao.dirtyNFTStorage) == 0
+	return ao.data.Nonce == 0 && ao.data.Balance.Sign() == 0 && len(ao.cachedStorage) == 0 && len(ao.dirtyStorage) == 0 && len(ao.cachedNFTStorage) == 0 && len(ao.dirtyNFTStorage) == 0
 }
 
 // Account is the consensus representation of accounts.
@@ -100,16 +101,12 @@ type Account struct {
 
 	NFTSetDefinitionHash []byte
 	Balance              *big.Int
-	Ft                   []*types.FT
 }
 
 // newObject creates a account object.
 func newAccountObject(db *AccountDB, address common.Address, data Account, onDirty func(addr common.Address)) *accountObject {
 	if data.Balance == nil {
 		data.Balance = new(big.Int)
-	}
-	if data.Ft == nil {
-		data.Ft = make([]*types.FT, 0)
 	}
 	if data.NFTSetDefinitionHash == nil {
 		data.NFTSetDefinitionHash = emptyCodeHash[:]
