@@ -36,6 +36,31 @@ func (c *accountObject) generateFTKey(name string) string {
 	return fmt.Sprintf("f-%s", name)
 }
 
+func (c *accountObject) getAllFT(db AccountDatabase) map[string]*big.Int {
+	c.cachedLock.Lock()
+	defer c.cachedLock.Unlock()
+
+	result := make(map[string]*big.Int)
+	for key, value := range c.cachedStorage {
+		if strings.HasPrefix(key, "f-") {
+			result[key[2:]] = new(big.Int).SetBytes(value)
+		}
+	}
+
+	iterator := c.DataIterator(db, utility.StrToBytes("f-"))
+	for iterator.Next() {
+		ftName := utility.BytesToStr(iterator.Key)
+		_, contains := c.cachedStorage[ftName]
+		if !contains {
+			result[ftName[2:]] = new(big.Int).SetBytes(iterator.Value)
+			c.cachedStorage[ftName] = iterator.Value
+		}
+
+	}
+
+	return result
+}
+
 func (c *accountObject) getFT(db AccountDatabase, name string) *big.Int {
 	value := c.GetData(db, utility.StrToBytes(name))
 	if nil == value || 0 == len(value) {

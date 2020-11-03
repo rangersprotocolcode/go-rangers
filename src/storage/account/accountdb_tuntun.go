@@ -19,7 +19,6 @@ package account
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/utility"
 	"fmt"
 	"math/big"
 )
@@ -35,15 +34,7 @@ func (self *AccountDB) GetFT(addr common.Address, ftName string) *big.Int {
 
 func (self *AccountDB) GetAllFT(addr common.Address) map[string]*big.Int {
 	accountObject := self.getOrNewAccountObject(addr)
-	result := make(map[string]*big.Int)
-	iterator := accountObject.DataIterator(self.db, utility.StrToBytes("f-"))
-
-	for iterator.Next() {
-		ftName := utility.BytesToStr(iterator.Key)
-		result[ftName[2:]] = new(big.Int).SetBytes(iterator.Value)
-	}
-
-	return result
+	return accountObject.getAllFT(self.db)
 }
 
 func (self *AccountDB) SetFT(addr common.Address, ftName string, balance *big.Int) {
