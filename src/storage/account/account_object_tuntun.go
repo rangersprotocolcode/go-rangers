@@ -22,7 +22,6 @@ import (
 	"com.tuntun.rocket/node/src/storage/rlp"
 	"com.tuntun.rocket/node/src/utility"
 	"fmt"
-	"math/big"
 	"strings"
 )
 
@@ -30,91 +29,6 @@ func (self *accountObject) checkAndCreate() {
 	if self.empty() {
 		self.touch()
 	}
-}
-
-func (c *accountObject) generateFTKey(name string) string {
-	return fmt.Sprintf("f-%s", name)
-}
-
-func (c *accountObject) getAllFT(db AccountDatabase) map[string]*big.Int {
-	c.cachedLock.Lock()
-	defer c.cachedLock.Unlock()
-
-	result := make(map[string]*big.Int)
-	for key, value := range c.cachedStorage {
-		if strings.HasPrefix(key, "f-") {
-			result[key[2:]] = new(big.Int).SetBytes(value)
-		}
-	}
-
-	iterator := c.DataIterator(db, utility.StrToBytes("f-"))
-	for iterator.Next() {
-		ftName := utility.BytesToStr(iterator.Key)
-		_, contains := c.cachedStorage[ftName]
-		if !contains {
-			result[ftName[2:]] = new(big.Int).SetBytes(iterator.Value)
-			c.cachedStorage[ftName] = iterator.Value
-		}
-
-	}
-
-	return result
-}
-
-func (c *accountObject) getFT(db AccountDatabase, name string) *big.Int {
-	value := c.GetData(db, utility.StrToBytes(c.generateFTKey(name)))
-	if nil == value || 0 == len(value) {
-		return nil
-	}
-	return new(big.Int).SetBytes(value)
-}
-
-func (c *accountObject) AddFT(db AccountDatabase, amount *big.Int, name string) bool {
-	if amount.Sign() == 0 {
-		if c.empty() {
-			c.touch()
-		}
-
-		return true
-	}
-	raw := c.getFT(db, name)
-	if nil == raw {
-		return c.SetFT(db, new(big.Int).Set(amount), name)
-	} else {
-		return c.SetFT(db, new(big.Int).Add(raw, amount), name)
-	}
-
-}
-
-func (c *accountObject) SubFT(db AccountDatabase, amount *big.Int, name string) (*big.Int, bool) {
-	if amount.Sign() == 0 {
-		raw := c.getFT(db, name)
-		if nil == raw {
-			return big.NewInt(0), true
-		}
-		return raw, true
-	}
-
-	raw := c.getFT(db, name)
-
-	// 余额不足就滚粗
-	if nil == raw || raw.Cmp(amount) == -1 {
-		return nil, false
-	}
-
-	left := new(big.Int).Sub(raw, amount)
-	c.SetFT(db, left, name)
-
-	return left, true
-}
-
-func (self *accountObject) SetFT(db AccountDatabase, amount *big.Int, name string) bool {
-	if nil == amount {
-		return false
-	}
-
-	self.SetData(db, utility.StrToBytes(self.generateFTKey(name)), amount.Bytes())
-	return true
 }
 
 func (self *accountObject) setNFT(nft *types.NFT) {
