@@ -62,7 +62,7 @@ func (c *accountObject) getAllFT(db AccountDatabase) map[string]*big.Int {
 }
 
 func (c *accountObject) getFT(db AccountDatabase, name string) *big.Int {
-	value := c.GetData(db, utility.StrToBytes(name))
+	value := c.GetData(db, utility.StrToBytes(c.generateFTKey(name)))
 	if nil == value || 0 == len(value) {
 		return nil
 	}
