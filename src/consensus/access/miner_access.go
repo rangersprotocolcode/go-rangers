@@ -21,7 +21,6 @@ import (
 	"com.tuntun.rocket/node/src/consensus/groupsig"
 	"com.tuntun.rocket/node/src/consensus/model"
 	"com.tuntun.rocket/node/src/consensus/vrf"
-	"com.tuntun.rocket/node/src/core"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
@@ -30,10 +29,10 @@ import (
 var minerPoolReaderInstance *MinerPoolReader
 
 type MinerPoolReader struct {
-	minerManager *core.MinerManager
+	minerManager *service.MinerManager
 }
 
-func NewMinerPoolReader(mp *core.MinerManager) *MinerPoolReader {
+func NewMinerPoolReader(mp *service.MinerManager) *MinerPoolReader {
 	if logger == nil {
 		logger = log.GetLoggerByIndex(log.AccessLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	}
@@ -65,8 +64,8 @@ func (reader *MinerPoolReader) GetProposeMiner(id groupsig.ID, hash common.Hash)
 	return reader.convert2MinerDO(miner)
 }
 
-func (reader *MinerPoolReader) GetCandidateMiners(h uint64) []model.MinerInfo {
-	miners := reader.getAllMiner(common.MinerTypeValidator, h)
+func (reader *MinerPoolReader) GetCandidateMiners(h uint64, hash common.Hash) []model.MinerInfo {
+	miners := reader.getAllMiner(common.MinerTypeValidator, hash)
 	rets := make([]model.MinerInfo, 0)
 	logger.Debugf("all light nodes size %v", len(miners))
 	for _, md := range miners {
@@ -78,12 +77,12 @@ func (reader *MinerPoolReader) GetCandidateMiners(h uint64) []model.MinerInfo {
 	return rets
 }
 
-func (reader *MinerPoolReader) GetTotalStake(h uint64) uint64 {
-	return reader.minerManager.GetProposerTotalStake(h)
+func (reader *MinerPoolReader) GetTotalStake(h uint64, hash common.Hash) uint64 {
+	return reader.minerManager.GetProposerTotalStake(h, hash)
 }
 
-func (reader *MinerPoolReader) getAllMiner(minerType byte, height uint64) []*model.MinerInfo {
-	iter := reader.minerManager.MinerIterator(minerType, height)
+func (reader *MinerPoolReader) getAllMiner(minerType byte, hash common.Hash) []*model.MinerInfo {
+	iter := reader.minerManager.MinerIterator(minerType, hash)
 	mds := make([]*model.MinerInfo, 0)
 	for iter.Next() {
 		if curr, err := iter.Current(); err != nil {

@@ -17,15 +17,34 @@
 package common
 
 import (
+	"encoding/hex"
 	"fmt"
 	"golang.org/x/crypto/sha3"
+	"math/big"
 	"testing"
 )
 
 func TestSha256(t *testing.T) {
-	hash := sha3.Sum256([]byte{})
-	fmt.Println(Bytes2Hex(hash[:]))
+	addr := BigToAddress(big.NewInt(5))
+	fmt.Println(addr.String())
 
-	hash2 := sha3.Sum256([]byte("test"))
-	fmt.Println(Bytes2Hex(hash2[:]))
+	var h Hash
+	h = sha3.Sum256(addr[:])
+	fmt.Println(h.String())
+}
+
+func TestID(t *testing.T) {
+	privateKeyStr := "0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea  "
+	privateKeyBuf, _ := hex.DecodeString(privateKeyStr[len(PREFIX):])
+	fmt.Printf("privateKeyBuf len:%d\n", len(privateKeyBuf))
+	var privateKey PrivateKey
+	privateKey.PrivKey.PublicKey.Curve = getDefaultCurve()
+	privateKey.PrivKey.D = new(big.Int).SetBytes(privateKeyBuf)
+	privateKey.PrivKey.PublicKey.X, privateKey.PrivKey.PublicKey.Y = getDefaultCurve().ScalarBaseMult(privateKey.PrivKey.D.Bytes())
+
+	pubkey := privateKey.GetPubKey()
+	address := pubkey.GetAddress()
+	fmt.Printf("SK:%v\n", privateKey.GetHexString())
+	fmt.Printf("pubkey:%v\n", pubkey.GetHexString())
+	fmt.Printf("address:%v\n", address.GetHexString())
 }

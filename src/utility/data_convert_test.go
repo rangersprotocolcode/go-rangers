@@ -19,6 +19,7 @@ package utility
 import (
 	"encoding/hex"
 	"fmt"
+	"math/big"
 	"strconv"
 	"testing"
 )
@@ -49,7 +50,7 @@ func TestStrconv(t *testing.T) {
 }
 
 func TestStrToBigInt(t *testing.T) {
-	str := "1.23000"
+	str := "4.281755743"
 	fmt.Println(str)
 	bigInt, _ := StrToBigInt(str)
 	fmt.Println(bigInt.String())
@@ -129,6 +130,45 @@ func TestStrToBigInt7(t *testing.T) {
 	fmt.Println(bigIntToStr(value, 9))
 }
 
+func TestStrToBigInt8(t *testing.T) {
+	str := "2.0E-8"
+	value, err := StrToBigInt(str)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(str)
+	fmt.Println(value.String())
+
+	fmt.Println(bigIntToStr(value, 9))
+}
+
+func TestStrToBigInt9(t *testing.T) {
+	str := "1000000000000000000000000001000000000.281755743"
+	value, err := StrToBigInt(str)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(str)
+	fmt.Println(value.String())
+
+	fmt.Println(BigIntToStr(value))
+}
+
+func TestStrToBigInt10(t *testing.T) {
+	str := "0.1234567899"
+	value, err := StrToBigInt(str)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(str)
+	fmt.Println(value.String())
+
+	fmt.Println(BigIntToStr(value))
+}
+
 func TestFloat64ToBigInt(t *testing.T) {
 	number := float64(11.2222222222222222)
 	result := Float64ToBigInt(number)
@@ -141,4 +181,11 @@ func TestFloat64ToBigInt(t *testing.T) {
 func TestUint64ToBigInt(t *testing.T) {
 	number := uint64(1000009)
 	fmt.Println(Uint64ToBigInt(number))
+}
+
+func TestBigFloatToInt(t *testing.T) {
+	f, _ := new(big.Float).SetPrec(256).SetString("4281755743")
+	i := new(big.Int)
+	f.Int(i)
+	fmt.Printf("%v\n", i.String())
 }

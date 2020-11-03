@@ -38,7 +38,7 @@ const (
 	minerTxCacheSize = 1000
 	missTxCacheSize  = 60000
 
-	txCountPerBlock = 5000
+	txCountPerBlock = 3000
 )
 
 var (
@@ -78,8 +78,6 @@ type TransactionPool interface {
 	MarkExecuted(receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash)
 
 	UnMarkExecuted(txs []*types.Transaction)
-
-	AddExecuted(tx *types.Transaction) error
 
 	Clear()
 
@@ -130,7 +128,7 @@ func newTransactionPool() TransactionPool {
 	pool.missTxs, _ = lru.New(missTxCacheSize)
 	pool.evictedTxs, _ = lru.New(minerTxCacheSize)
 
-	executed, err := db.NewDatabase(txDataBasePrefix)
+	executed, err := db.NewLDBDatabase(txDataBasePrefix, 16, 128)
 	if err != nil {
 		txPoolLogger.Errorf("Init transaction pool error! Error:%s", err.Error())
 		return nil

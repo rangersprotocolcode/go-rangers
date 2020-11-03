@@ -18,64 +18,16 @@ package core
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/executor"
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
+	"sort"
 	"strings"
 	"time"
 )
-
-var executors map[int32]executor
-
-type executor interface {
-	BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string)
-	Execute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string)
-}
-
-type baseFeeExecutor struct {
-}
-
-func (this *baseFeeExecutor) BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
-	err := service.GetTransactionPool().ProcessFee(*tx, accountdb)
-	if err == nil {
-		return true, ""
-	}
-	return false, err.Error()
-}
-
-func initExecutors() {
-	executors = make(map[int32]executor, 21)
-
-	executors[types.TransactionTypeOperatorEvent] = &operatorExecutor{}
-	executors[types.TransactionTypeWithdraw] = &withdrawExecutor{}
-	executors[types.TransactionTypeCoinDepositAck] = &coinDepositExecutor{}
-	executors[types.TransactionTypeFTDepositAck] = &ftDepositExecutor{}
-	executors[types.TransactionTypeNFTDepositAck] = &nftDepositExecutor{}
-	executors[types.TransactionTypeMinerApply] = &minerApplyExecutor{}
-	executors[types.TransactionTypeMinerAdd] = &minerAddExecutor{}
-	executors[types.TransactionTypeMinerRefund] = &minerRefundExecutor{}
-
-	executors[types.TransactionTypePublishFT] = &ftExecutor{}
-	executors[types.TransactionTypePublishNFTSet] = &ftExecutor{}
-	executors[types.TransactionTypeMintFT] = &ftExecutor{}
-	executors[types.TransactionTypeMintNFT] = &ftExecutor{}
-	executors[types.TransactionTypeShuttleNFT] = &ftExecutor{}
-	executors[types.TransactionTypeUpdateNFT] = &ftExecutor{}
-	executors[types.TransactionTypeApproveNFT] = &ftExecutor{}
-	executors[types.TransactionTypeRevokeNFT] = &ftExecutor{}
-
-	executors[types.TransactionTypeAddStateMachine] = &stmExecutor{}
-	executors[types.TransactionTypeUpdateStorage] = &stmExecutor{}
-	executors[types.TransactionTypeStartSTM] = &stmExecutor{}
-	executors[types.TransactionTypeStopSTM] = &stmExecutor{}
-	executors[types.TransactionTypeUpgradeSTM] = &stmExecutor{}
-	executors[types.TransactionTypeQuitSTM] = &stmExecutor{}
-	executors[types.TransactionTypeImportNFT] = &stmExecutor{}
-
-	executors[types.TransactionTypeSetExchangeRate] = &exchangeRateExecutor{}
-}
 
 const MaxCastBlockTime = time.Second * 3
 
@@ -107,7 +59,12 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 
 	this.prepare()
 
-	for _, transaction := range this.block.Transactions {
+	txs := types.Transactions(this.block.Transactions)
+	if 0 != len(txs) && 0 != strings.Compare(this.situation, "casting") {
+		sort.Sort(txs)
+	}
+
+	for _, transaction := range txs {
 		executeTime := utility.GetTime()
 		if this.situation == "casting" && executeTime.Sub(beginTime) > MaxCastBlockTime {
 			logger.Infof("Cast block execute tx time out! Tx hash:%s ", transaction.Hash.String())
@@ -115,15 +72,15 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		}
 		logger.Debugf("Execute %s, type:%d", transaction.Hash.String(), transaction.Type)
 
-		executor := executors[transaction.Type]
+		txExecutor := executor.GetTxExecutor(transaction.Type)
 		success := false
 		msg := ""
 
-		if executor != nil {
-			success, msg = executor.BeforeExecute(transaction, this.block.Header, this.accountdb, this.context)
+		if txExecutor != nil {
+			success, msg = txExecutor.BeforeExecute(transaction, this.block.Header, this.accountdb, this.context)
 			if success {
 				snapshot := this.accountdb.Snapshot()
-				success, msg = executor.Execute(transaction, this.block.Header, this.accountdb, this.context)
+				success, msg = txExecutor.Execute(transaction, this.block.Header, this.accountdb, this.context)
 
 				if !success {
 					logger.Debugf("Execute failed tx: %s, type: %d, msg: %s", transaction.Hash.String(), transaction.Type, msg)
@@ -158,7 +115,7 @@ func (executor *VMExecutor) validateNonce(accountdb *account.AccountDB, transact
 }
 
 func (executor *VMExecutor) prepare() {
-	executor.context["refund"] = make(map[uint64]RefundInfoList)
+	executor.context["refund"] = make(map[uint64]types.RefundInfoList)
 }
 
 func (executor *VMExecutor) after() {
@@ -169,13 +126,9 @@ func (executor *VMExecutor) after() {
 	height := executor.block.Header.Height
 
 	// 计算定时任务（冻结、退款等等）
-	RefundManagerImpl.Add(getRefundInfo(executor.context), executor.accountdb)
-	RefundManagerImpl.CheckAndMove(height, executor.accountdb)
+	service.RefundManagerImpl.Add(types.GetRefundInfo(executor.context), executor.accountdb)
+	service.RefundManagerImpl.CheckAndMove(height, executor.accountdb)
 
 	// 计算出块奖励
-	RewardCalculatorImpl.CalculateReward(height, executor.accountdb)
-}
-func getRefundInfo(context map[string]interface{}) map[uint64]RefundInfoList {
-	raw := context["refund"]
-	return raw.(map[uint64]RefundInfoList)
+	service.RewardCalculatorImpl.CalculateReward(height, executor.accountdb)
 }

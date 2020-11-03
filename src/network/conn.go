@@ -26,6 +26,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"fmt"
 	"github.com/gorilla/websocket"
 	"net/url"
 	"strconv"
@@ -210,7 +211,12 @@ func (base *baseConn) getConn() *websocket.Conn {
 }
 
 func (base *baseConn) closeConn() {
-	base.conn.Close()
+	base.connLock.Lock()
+	defer base.connLock.Unlock()
+
+	if base.conn != nil {
+		base.conn.Close()
+	}
 	base.conn = nil
 }
 
@@ -223,7 +229,7 @@ func (base *baseConn) send(method []byte, target uint64, msg []byte, nonce uint6
 	}
 
 	base.sendChan <- base.loadMsg(header, msg)
-	base.logger.Debugf("send message. wsHeader: %v, length: %d,body:%s", header, len(msg), string(msg))
+	base.logger.Debugf("send message. wsHeader: %v, body length: %d", header, len(msg))
 }
 
 //新的单播接口使用
@@ -288,6 +294,14 @@ func (base *baseConn) generateTarget(targetId string) (uint64, error) {
 	return target, nil
 }
 
+func (base *baseConn) sendWrongNonce(nonce uint64, msg string) {
+	if 0 == nonce {
+		return
+	}
+
+	go notify.BUS.Publish(notify.WrongTxNonce, &notify.NonceNotifyMessage{Nonce: nonce, Msg: msg})
+}
+
 // 处理客户端的read/write请求
 var (
 	methodCodeClientReader, _ = hex.DecodeString("60000000")
@@ -329,12 +343,15 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 		}
 
 		if !bytes.Equal(wsHeader.method, clientConn.method) {
-			clientConn.logger.Error("%s received wrong method. wsHeader: %v", clientConn.path, wsHeader)
+			msg := fmt.Sprintf("%s received wrong method. wsHeader: %v", clientConn.path, wsHeader)
+			clientConn.logger.Error(msg)
+			clientConn.sendWrongNonce(wsHeader.nonce, msg)
 			return
 		}
 
 		clientConn.handleClientMessage(body, strconv.FormatUint(wsHeader.sourceId, 10), wsHeader.nonce, event)
 	}
+
 	//流控方法
 	clientConn.rcv = func(msg []byte) {
 		if len(clientConn.rcvChan) == clientConn.rcvSize {
@@ -344,6 +361,7 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 
 		clientConn.rcvChan <- msg
 	}
+
 	// 流控方法
 	clientConn.isSend = func(method []byte, target uint64, msg []byte, nonce uint64) bool {
 		return len(clientConn.sendChan) < clientConn.sendSize
@@ -365,7 +383,9 @@ func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, no
 	var txJson types.TxJson
 	err := json.Unmarshal(body, &txJson)
 	if nil != err {
-		clientConn.logger.Errorf("Json unmarshal client message error:%s", err.Error())
+		msg := fmt.Sprintf("handleClientMessage json unmarshal client message error:%s", err.Error())
+		clientConn.logger.Errorf(msg)
+		clientConn.sendWrongNonce(nonce, msg)
 		return
 	}
 
@@ -408,7 +428,7 @@ func (clientConn *ClientConn) generateNotifyId(gameId string, userId string) uin
 
 	md5Result := md5.Sum(data)
 	idBytes := md5Result[4:12]
-	return uint64(binary.BigEndian.Uint64(idBytes))
+	return binary.BigEndian.Uint64(idBytes)
 }
 
 // 处理coiner的请求
@@ -441,21 +461,29 @@ func (connectorConn *ConnectorConn) handleConnectorMessage(data []byte, nonce ui
 	var txJson types.TxJson
 	err := json.Unmarshal(data, &txJson)
 	if err != nil {
-		Logger.Errorf("Json unmarshal coiner msg err:", err.Error())
+		msg := fmt.Sprintf("handleConnectorMessage json unmarshal coiner msg err: %s", err.Error())
+		connectorConn.logger.Errorf(msg)
+		connectorConn.sendWrongNonce(nonce, msg)
 		return
 	}
+
 	tx := txJson.ToTransaction()
 	tx.RequestId = nonce
-	Logger.Debugf("Rcv message from coiner.Tx info:%s", tx.ToTxJson().ToString())
+	connectorConn.logger.Debugf("Rcv message from coiner.Tx info:%s", tx.ToTxJson().ToString())
 	if !types.CoinerSignVerifier.VerifyDeposit(txJson) {
-		Logger.Infof("Tx from coiner verify sign error!Tx Info:%s", txJson.ToString())
+		msg := fmt.Sprintf("tx from coiner verify sign error! Tx Info: %s", txJson.ToString())
+		connectorConn.logger.Infof(msg)
+		connectorConn.sendWrongNonce(nonce, msg)
 		return
 	}
 
 	if tx.Type == types.TransactionTypeCoinDepositAck || tx.Type == types.TransactionTypeFTDepositAck || tx.Type == types.TransactionTypeNFTDepositAck {
 		msg := notify.CoinProxyNotifyMessage{Tx: tx}
 		notify.BUS.Publish(notify.CoinProxyNotify, &msg)
-		return
+	} else {
+		msg := fmt.Sprintf("unknown type from coiner:%d", txJson.Type)
+		connectorConn.sendWrongNonce(nonce, msg)
+		connectorConn.logger.Infof(msg)
 	}
-	Logger.Infof("Unknown type from coiner:%d", txJson.Type)
+
 }

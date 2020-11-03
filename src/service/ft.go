@@ -35,6 +35,19 @@ type FTManager struct {
 
 var FTManagerInstance *FTManager
 
+
+// 地址相关常量
+var (
+	name        = utility.StrToBytes("n")
+	symbol      = utility.StrToBytes("s")
+	appId       = utility.StrToBytes("a")
+	owner       = utility.StrToBytes("o")
+	createTime  = utility.StrToBytes("c")
+	maxSupply   = utility.StrToBytes("m")
+	totalSupply = utility.StrToBytes("t")
+	kind        = utility.StrToBytes("k")
+)
+
 func initFTManager() {
 	FTManagerInstance = &FTManager{}
 	FTManagerInstance.lock = sync.RWMutex{}
@@ -45,16 +58,24 @@ func (self *FTManager) GetFTSet(id string, accountDB *account.AccountDB) *types.
 	self.lock.RLock()
 	defer self.lock.RUnlock()
 
-	valueByte := accountDB.GetData(common.FTSetAddress, []byte(id))
-	if nil == valueByte || 0 == len(valueByte) {
+	if !self.contains(id, accountDB) {
 		return nil
 	}
 
-	var ftSet types.FTSet
-	err := json.Unmarshal(valueByte, &ftSet)
-	if err != nil {
-		logger.Error("fail to get ftSet: %s, %s", id, err.Error())
-		return nil
+	ftAddress := common.BytesToAddress(utility.StrToBytes(id))
+	ftSet := types.FTSet{ID: id,
+		Name:        utility.BytesToStr(accountDB.GetData(ftAddress, name)),
+		Symbol:      utility.BytesToStr(accountDB.GetData(ftAddress, symbol)),
+		AppId:       utility.BytesToStr(accountDB.GetData(ftAddress, appId)),
+		Owner:       utility.BytesToStr(accountDB.GetData(ftAddress, owner)),
+		CreateTime:  utility.BytesToStr(accountDB.GetData(ftAddress, createTime)),
+		MaxSupply:   new(big.Int).SetBytes(accountDB.GetData(ftAddress, maxSupply)),
+		TotalSupply: new(big.Int).SetBytes(accountDB.GetData(ftAddress, totalSupply)),
+	}
+
+	k := accountDB.GetData(ftAddress, kind)
+	if nil != k && 1 == len(k) {
+		ftSet.Type = k[0]
 	}
 
 	return &ftSet
@@ -96,59 +117,67 @@ func (self *FTManager) PublishFTSet(ftSet *types.FTSet, accountDB *account.Accou
 		return "", false
 	}
 
-	appId := ftSet.AppId
-	id := ftSet.ID
-	symbol := ftSet.Symbol
-
 	// checkId
-	if 0 == len(appId) || 0 == len(symbol) || strings.Contains(appId, "-") || strings.Contains(symbol, "-") || appId == "official" {
+	if 0 == len(ftSet.AppId) || 0 == len(symbol) || strings.Contains(ftSet.AppId, "-") || strings.Contains(ftSet.Symbol, "-") || ftSet.AppId == "official" {
 		return "appId or symbol wrong", false
 	}
 
 	// 检查id是否已存在
-	if self.contains(id, accountDB) {
-		return id, false
+	if self.contains(ftSet.ID, accountDB) {
+		return ftSet.ID, false
 	}
 
-	self.updateFTSet(id, ftSet, accountDB)
+	ftAddress := common.BytesToAddress(utility.StrToBytes(ftSet.ID))
+	accountDB.SetData(ftAddress, name, utility.StrToBytes(ftSet.Name))
+	accountDB.SetData(ftAddress, symbol, utility.StrToBytes(ftSet.Symbol))
+	accountDB.SetData(ftAddress, appId, utility.StrToBytes(ftSet.AppId))
+	accountDB.SetData(ftAddress, owner, utility.StrToBytes(ftSet.Owner))
+	accountDB.SetData(ftAddress, createTime, utility.StrToBytes(ftSet.CreateTime))
+	accountDB.SetData(ftAddress, kind, []byte{ftSet.Type})
+	if nil == ftSet.MaxSupply {
+		accountDB.SetData(ftAddress, maxSupply, []byte{})
+	} else {
+		accountDB.SetData(ftAddress, maxSupply, ftSet.MaxSupply.Bytes())
+	}
+	if nil == ftSet.TotalSupply {
+		accountDB.SetData(ftAddress, totalSupply, []byte{})
+	} else {
+		accountDB.SetData(ftAddress, totalSupply, ftSet.TotalSupply.Bytes())
+	}
 
-	return id, true
+	return ftSet.ID, true
 }
 
 // 扣
-func (self *FTManager) SubFTSet(owner, ftId string, amount *big.Int, accountDB *account.AccountDB) bool {
+func (self *FTManager) SubFTSet(triedOwner, ftId string, amount *big.Int, accountDB *account.AccountDB) bool {
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	var ftSet *types.FTSet
-	valueByte := accountDB.GetData(common.FTSetAddress, []byte(ftId))
-	if nil == valueByte || 0 == len(valueByte) {
+	// check ftId
+	if !self.contains(ftId, accountDB) {
 		return false
 	}
 
-	var ftSetData types.FTSet
-	err := json.Unmarshal(valueByte, &ftSetData)
-	if err != nil {
-		logger.Error("fail to get ftSet: %s, %s", ftId, err.Error())
+	ftAddress := common.BytesToAddress(utility.StrToBytes(ftId))
+
+	// check owner
+	ftSetOwner := utility.BytesToStr(accountDB.GetData(ftAddress, owner))
+	if 0 != strings.Compare(ftSetOwner, triedOwner) {
 		return false
 	}
 
-	ftSet = &ftSetData
-	if ftSet.Owner != owner {
+	// change total
+	existedTotalSupply := new(big.Int).SetBytes(accountDB.GetData(ftAddress, totalSupply))
+	total := new(big.Int).Add(existedTotalSupply, amount)
+
+	// check maxSupply
+	existedMaxSupply := new(big.Int).SetBytes(accountDB.GetData(ftAddress, maxSupply))
+	if existedMaxSupply.Sign() != 0 && total.Cmp(existedMaxSupply) > 0 {
 		return false
 	}
 
-	total := amount
-	if ftSet.TotalSupply != nil {
-		total = new(big.Int).Add(ftSet.TotalSupply, amount)
-	}
-
-	if ftSet.MaxSupply.Sign() != 0 && total.Cmp(ftSet.MaxSupply) > 0 {
-		return false
-	}
-
-	ftSet.TotalSupply = total
-	self.updateFTSet(ftId, ftSet, accountDB)
+	//update maxSupply
+	accountDB.SetData(ftAddress, totalSupply, total.Bytes())
 	return true
 }
 
@@ -203,19 +232,8 @@ func (self *FTManager) genID(appId, symbol string) string {
 	return fmt.Sprintf("%s-%s", appId, symbol)
 }
 
-func (self *FTManager) updateFTSet(id string, ftSet *types.FTSet, accountDB *account.AccountDB) {
-	data, _ := json.Marshal(ftSet)
-	accountDB.SetData(common.FTSetAddress, []byte(id), data)
-}
-
 func (self *FTManager) contains(id string, accountDB *account.AccountDB) bool {
-
-	valueByte := accountDB.GetData(common.FTSetAddress, []byte(id))
-	if nil == valueByte || 0 == len(valueByte) {
-		return false
-	}
-
-	return true
+	return accountDB.Exist(common.BytesToAddress(utility.StrToBytes(id)))
 }
 
 func (self *FTManager) convert(value string) *big.Int {

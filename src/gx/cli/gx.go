@@ -37,7 +37,6 @@ import (
 	_ "net/http/pprof"
 	"os"
 	"runtime"
-	"strconv"
 	"time"
 )
 
@@ -144,9 +143,9 @@ func (gx *GX) Run() {
 func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
-	databaseValue := "d" + strconv.Itoa(instanceIndex)
+	databaseValue := "chain"
 	common.GlobalConf.SetString(db.ConfigSec, db.DefaultDatabase, databaseValue)
-	joinedGroupDatabaseValue := "jgs" + strconv.Itoa(instanceIndex)
+	joinedGroupDatabaseValue := "jgs"
 	common.GlobalConf.SetString(db.ConfigSec, db.DefaultJoinedGroupDatabaseKey, joinedGroupDatabaseValue)
 
 	middleware.InitMiddleware()

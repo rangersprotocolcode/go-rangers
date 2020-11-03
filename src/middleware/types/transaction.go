@@ -84,6 +84,8 @@ const (
 
 	// 系统管理
 	TransactionTypeSetExchangeRate = 801 // 新增汇率表
+
+	TransactionTypeWrongTxNonce = 404
 )
 
 type Transaction struct {

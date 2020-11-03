@@ -23,6 +23,7 @@ import (
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"fmt"
+	"math/big"
 	"strings"
 )
 
@@ -178,7 +179,8 @@ func UpdateAsset(user types.UserData, appId string, accountDB *account.AccountDB
 	appAddr := common.HexToAddress(appId)
 
 	// 转balance
-	if !transferBalance(user.Balance, appAddr, userAddr, accountDB) {
+	transferBalanceOk, _ := transferBalance(user.Balance, appAddr, userAddr, accountDB)
+	if !transferBalanceOk {
 		logger.Debugf("Change balance failed!")
 		return false
 	}
@@ -222,19 +224,22 @@ func UpdateAsset(user types.UserData, appId string, accountDB *account.AccountDB
 func ChangeAssets(source string, targets map[string]types.TransferData, accountdb *account.AccountDB) (string, bool) {
 	sourceAddr := common.HexToAddress(source)
 
+	responseBalance := ""
 	responseCoin := types.NewJSONObject()
 	responseFT := types.NewJSONObject()
-	responseNFT := make([]string, 0)
+	responseNFT := make([]types.NFTID, 0)
 
 	for address, transferData := range targets {
 		targetAddr := common.HexToAddress(address)
 
 		// 转钱
-		if !transferBalance(transferData.Balance, sourceAddr, targetAddr, accountdb) {
+		ok, leftBalance := transferBalance(transferData.Balance, sourceAddr, targetAddr, accountdb)
+		if !ok {
 			logger.Debugf("Transfer balance failed!")
 			return "Transfer Balance Failed", false
 		} else {
 			logger.Debugf("%s to %s, target: %s", source, address, utility.BigIntToStr(accountdb.GetBalance(targetAddr)))
+			responseBalance = utility.BigIntToStr(leftBalance)
 		}
 
 		// 转coin
@@ -270,48 +275,48 @@ func ChangeAssets(source string, targets map[string]types.TransferData, accountd
 	}
 
 	response := types.NewJSONObject()
+	if responseBalance != "" {
+		response.Put("balance", responseBalance)
+	}
 	if !responseCoin.IsEmpty() {
-		response.Put("coin", responseCoin.TOJSONString())
+		response.Put("coin", responseCoin.GetData())
 	}
 	if !responseFT.IsEmpty() {
-		response.Put("ft", responseFT.TOJSONString())
+		response.Put("ft", responseFT.GetData())
 	}
 	if 0 != len(responseNFT) {
-		data, _ := json.Marshal(responseNFT)
-		response.Put("nft", string(data))
+		response.Put("nft", responseNFT)
 	}
-
 	return response.TOJSONString(), true
 }
 
-func transferNFT(nftIDList []types.NFTID, source common.Address, target common.Address, db *account.AccountDB) ([]string, bool) {
+func transferNFT(nftIDList []types.NFTID, source common.Address, target common.Address, db *account.AccountDB) ([]types.NFTID, bool) {
 	length := len(nftIDList)
 	if 0 == length {
 		return nil, true
 	}
 
-	response := make([]string, length)
+	response := make([]types.NFTID, 0)
 	for _, id := range nftIDList {
 		_, flag := NFTManagerInstance.Transfer(id.SetId, id.Id, source, target, db)
 		if !flag {
 			return nil, false
 		}
 
-		idBytes, _ := json.Marshal(id)
-		response = append(response, string(idBytes))
+		response = append(response, id)
 	}
 
 	return response, true
 }
 
-func transferBalance(value string, source common.Address, target common.Address, accountDB *account.AccountDB) bool {
+func transferBalance(value string, source common.Address, target common.Address, accountDB *account.AccountDB) (bool, *big.Int) {
 	balance, err := utility.StrToBigInt(value)
 	if err != nil {
-		return false
+		return false, nil
 	}
 	// 不能扣钱
 	if balance.Sign() == -1 {
-		return false
+		return false, nil
 	}
 
 	sourceBalance := accountDB.GetBalance(source)
@@ -319,16 +324,16 @@ func transferBalance(value string, source common.Address, target common.Address,
 	// 钱不够转账，再见
 	if sourceBalance.Cmp(balance) == -1 {
 		logger.Debugf("transfer bnt:bnt not enough!")
-		return false
+		return false, nil
 	}
 
 	// 目标加钱
 	accountDB.AddBalance(target, balance)
 
 	// 自己减钱
-	accountDB.SubBalance(source, balance)
+	left := accountDB.SubBalance(source, balance)
 
-	return true
+	return true, left
 }
 
 func transferFT(ft map[string]string, source string, target string, accountDB *account.AccountDB) (*types.JSONObject, bool) {

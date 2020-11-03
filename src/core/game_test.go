@@ -17,7 +17,11 @@
 package core
 
 import (
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/db"
 	"fmt"
+	"os"
+	"strconv"
 	"testing"
 )
 
@@ -25,7 +29,7 @@ func TestSwtich(t *testing.T) {
 	echo(1)
 }
 
-func echo(a int ){
+func echo(a int) {
 	switch a {
 	case 1:
 		fmt.Println("1")
@@ -36,4 +40,30 @@ func echo(a int ){
 		fmt.Println("3")
 	}
 	fmt.Println("After case")
+}
+
+func TestGameExecutor_RunWrite(t *testing.T) {
+	file := "tempTx" + strconv.Itoa(common.InstanceIndex)
+	tempTxLDB, err := db.NewLDBDatabase(file, 10, 10)
+	if err != nil {
+		panic("newLDBDatabase fail, file=" + file + ", err=" + err.Error())
+	}
+	defer func() {
+		fmt.Println("finished")
+	}()
+	tempTxLDB.Put([]byte("1234"), []byte("abcd"))
+	tempTxLDB.Put([]byte("5678"), []byte("qwer"))
+	tempTxLDB.Put([]byte("9012"), []byte("zxcv"))
+
+	iter := tempTxLDB.NewIterator()
+	for iter.Next() {
+		fmt.Printf("%s, %s\n", iter.Key(), iter.Value())
+		tempTxLDB.Delete([]byte("5678"))
+	}
+
+	value, _ := tempTxLDB.Get([]byte("5678"))
+	fmt.Printf("%s", string(value))
+	tempTxLDB.Close()
+
+	os.RemoveAll("tempTx0")
 }

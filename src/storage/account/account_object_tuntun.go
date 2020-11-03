@@ -19,21 +19,16 @@ package account
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"encoding/json"
+	"com.tuntun.rocket/node/src/storage/rlp"
+	"com.tuntun.rocket/node/src/utility"
+	"fmt"
 	"math/big"
+	"strings"
 )
 
-func (self *accountObject) checkAndCreate(gameId string) {
+func (self *accountObject) checkAndCreate() {
 	if self.empty() {
 		self.touch()
-	}
-
-	if self.data.GameData.GetNFTMaps(gameId) == nil {
-		self.data.GameData.SetNFTMaps(gameId, &types.NFTMap{})
-		self.db.transitions = append(self.db.transitions, createGameDataChange{
-			account: &self.address,
-			gameId:  gameId,
-		})
 	}
 }
 
@@ -133,177 +128,231 @@ func (self *accountObject) setFT(amount *big.Int, name string) bool {
 	return true
 }
 
-// 新增一个nft实例
-func (self *accountObject) AddNFTByGameId(gameId string, nft *types.NFT) bool {
-	if nil == nft {
-		return false
-	}
+func (self *accountObject) setNFT(nft *types.NFT) {
+	key := self.generateNFTKey(nft.SetID, nft.ID)
+	self.cachedNFT.Lock()
+	self.cachedNFTStorage[key] = nft
+	self.cachedNFT.Unlock()
+	self.dirtyNFTStorage[key] = nft
 
-	self.checkAndCreate(gameId)
-	nftMaps := self.data.GameData.GetNFTMaps(gameId)
-	if nftMaps.GetNFT(nft.SetID, nft.ID) != nil {
+	self.callback()
+}
+
+func (self *accountObject) removeNFT(setId, id string) {
+	key := self.generateNFTKey(setId, id)
+	self.cachedNFT.Lock()
+	self.cachedNFTStorage[key] = nil
+	self.cachedNFT.Unlock()
+	self.dirtyNFTStorage[key] = nil
+
+	self.callback()
+}
+
+// 新增一个nft实例
+func (self *accountObject) AddNFTByGameId(db AccountDatabase, appId string, nft *types.NFT) bool {
+	if nil == nft || nil != self.getNFTById(db, nft.SetID, nft.ID) {
 		return false
 	}
 
 	change := tuntunAddNFTChange{
 		account: &self.address,
-		gameId:  gameId,
 		id:      nft.ID,
 		setId:   nft.SetID,
 	}
 	self.db.transitions = append(self.db.transitions, change)
-	ok := nftMaps.SetNFT(nft)
-	if ok {
-		self.callback()
-	}
 
-	return ok
+	self.setNFT(nft)
+	return true
 }
 
-func (self *accountObject) ApproveNFT(gameId, setId, id, renter string) bool {
-	nft := self.getNFT(gameId, setId, id)
+func (self *accountObject) ApproveNFT(db AccountDatabase, gameId, setId, id, renter string) bool {
+	nft := self.getNFT(db, gameId, setId, id)
 	if nft == nil || nft.Status != 0 {
 		return false
 	}
 
 	change := tuntunNFTApproveChange{
 		account: &self.address,
-		appId:   gameId,
-		id:      nft.ID,
-		setId:   nft.SetID,
+		nft:     nft,
 		prev:    nft.Renter,
 	}
 	self.db.transitions = append(self.db.transitions, change)
-	nft.Renter = renter
 
-	self.callback()
+	nft.Renter = renter
+	self.setNFT(nft)
 	return true
 }
 
-func (self *accountObject) RemoveNFT(gameId, setId, id string) bool {
-	common.DefaultLogger.Debugf("Remove nft.gameId:%s,setId:%s,id:%s", gameId, setId, id)
-	data := self.data.GameData.GetNFTMaps(gameId)
-	if nil == data {
-		common.DefaultLogger.Debugf("Remove nft.get nil data")
+func (self *accountObject) RemoveNFT(db AccountDatabase, appId, setId, id string) bool {
+	common.DefaultLogger.Debugf("Remove nft.gameId:%s,setId:%s,id:%s", appId, setId, id)
+	nft := self.getNFT(db, appId, setId, id)
+	if nil == nft {
+		common.DefaultLogger.Debugf("Remove nft. get nil nft")
 		return false
 	}
-	jsonBefore, _ := json.Marshal(data)
-	common.DefaultLogger.Debugf("before delete.data:%s", jsonBefore)
-
-	nft := data.Delete(setId, id)
-	jsonAfter, _ := json.Marshal(data)
-	common.DefaultLogger.Debugf("after delete.data:%s", jsonAfter)
-	common.DefaultLogger.Debugf("after delete.deleted nft:%v", nft)
 
 	change := tuntunRemoveNFTChange{
 		nft:     nft,
 		account: &self.address,
-		gameId:  gameId,
 	}
 	self.db.transitions = append(self.db.transitions, change)
-	self.callback()
+
+	self.removeNFT(setId, id)
 	return true
 }
 
 // 更新nft属性值
-func (self *accountObject) SetNFTValueByGameId(gameId, setId, id, value string) bool {
-	data := self.data.GameData.GetNFTMaps(gameId)
-	if nil == data || data.Empty() {
+func (self *accountObject) SetNFTValueByGameId(db AccountDatabase, appId, setId, id, value string) bool {
+	nft := self.getNFT(db, appId, setId, id)
+	if nil == nft || nft.Status != 0 {
+		common.DefaultLogger.Debugf("Remove nft. get nil nft")
 		return false
 	}
 
 	change := tuntunNFTChange{
 		account: &self.address,
-		gameId:  gameId,
-		setId:   setId,
-		id:      id,
+		appId:   appId,
+		nft:     nft,
 	}
-	nft := data.GetNFT(setId, id)
-	if nil != nft {
-		nftValue := nft.GetData(gameId)
-		if 0 != len(nftValue) {
-			change.prev = nftValue
-		}
+
+	nftValue := nft.GetData(appId)
+	if 0 != len(nftValue) {
+		change.prev = nftValue
 	}
+
 	self.db.transitions = append(self.db.transitions, change)
-
-	return self.setNFTByGameId(gameId, setId, id, value)
-}
-
-func (self *accountObject) setNFTByGameId(gameId, setId, id, value string) bool {
-	data := self.data.GameData.GetNFTMaps(gameId)
-	if nil == data {
-		return false
-	}
-
-	nftData := data.GetNFT(setId, id)
-	if nil != nftData {
-		nftData.SetData(value, gameId)
-		self.callback()
-	}
-
+	nft.SetData(value, appId)
+	self.setNFT(nft)
 	return true
 }
 
-func (self *accountObject) ChangeNFTStatus(gameId, setId, id string, status byte) bool {
-	nft := self.getNFT(gameId, setId, id)
+func (self *accountObject) ChangeNFTStatus(db AccountDatabase, appId, setId, id string, status byte) bool {
+	nft := self.getNFT(db, appId, setId, id)
 	if nft == nil {
 		return false
 	}
 
 	change := tuntunNFTStatusChange{
 		account: &self.address,
-		appId:   gameId,
-		id:      nft.ID,
-		setId:   nft.SetID,
+		nft:     nft,
 		prev:    nft.Status,
 	}
 	self.db.transitions = append(self.db.transitions, change)
 	nft.Status = status
+	self.setNFT(nft)
 	return true
 }
 
-func (self *accountObject) ChangeNFTStatusById(setId, id string, status byte) bool {
-	nft := self.getNFTById(setId, id)
+func (self *accountObject) ChangeNFTStatusById(db AccountDatabase, setId, id string, status byte) bool {
+	nft := self.getNFTById(db, setId, id)
 	if nft == nil {
 		return false
 	}
 
 	change := tuntunNFTStatusChange{
 		account: &self.address,
-		appId:   "",
-		id:      nft.ID,
-		setId:   nft.SetID,
+		nft:     nft,
 		prev:    nft.Status,
 	}
 	self.db.transitions = append(self.db.transitions, change)
 	nft.Status = status
+	self.setNFT(nft)
 	return true
 }
 
-func (self *accountObject) getNFT(appId, setId, id string) *types.NFT {
-	data := self.data.GameData.GetNFTMaps(appId)
-	if nil == data {
+func (self *accountObject) getNFT(db AccountDatabase, appId, setId, id string) *types.NFT {
+	nft := self.getNFTById(db, setId, id)
+	if nil == nft || 0 != strings.Compare(appId, nft.AppId) {
 		return nil
 	}
 
-	return data.GetNFT(setId, id)
+	return nft
 }
 
-func (self *accountObject) getNFTById(setId, id string) *types.NFT {
-	data := self.data.GameData.NFTMaps
-	if nil == data || 0 == len(data) {
+func (self *accountObject) getNFTById(db AccountDatabase, setId, id string) *types.NFT {
+	key := self.generateNFTKey(setId, id)
+	self.cachedNFT.RLock()
+	nft, exists := self.cachedNFTStorage[key]
+	self.cachedNFT.RUnlock()
+	if exists {
+		return nft
+	}
+
+	value, err := self.getTrie(db).TryGet(utility.StrToBytes(key))
+	if err != nil {
+		self.setError(err)
 		return nil
 	}
 
-	for _, nftMap := range data {
-		nft := nftMap.GetNFT(setId, id)
-		if nil != nft {
-			return nft
+	if utility.IsEmptyByteSlice(value) {
+		return nil
+	}
+
+	nft = &types.NFT{}
+	err = rlp.DecodeBytes(value, nft)
+	if nil != err {
+		common.DefaultLogger.Errorf(err.Error())
+		return nil
+	}
+
+	self.cachedNFT.RLock()
+	self.cachedNFTStorage[key] = nft
+	self.cachedNFT.RUnlock()
+	return nft
+}
+
+func (self *accountObject) getAllNFT(db AccountDatabase, filter string) []*types.NFT {
+	self.cachedNFT.Lock()
+	defer self.cachedNFT.Unlock()
+
+	filtered := 0 != len(filter)
+	result := make([]*types.NFT, 0)
+	for _, nft := range self.cachedNFTStorage {
+		if nil == nft {
+			continue
+		}
+		if filtered {
+			if 0 == strings.Compare(nft.AppId, filter) {
+				result = append(result, nft)
+			}
+		} else {
+			result = append(result, nft)
 		}
 	}
 
-	return nil
+	tr := self.getTrie(db)
+	iterator := tr.NodeIterator(utility.StrToBytes("n-"))
+	for iterator.Next(true) {
+		if !iterator.Leaf() {
+			continue
+		}
+
+		bytes := iterator.LeafBlob()
+		nft := &types.NFT{}
+		err := rlp.DecodeBytes(bytes, nft)
+		if err != nil {
+			continue
+		}
+
+		key := self.generateNFTKey(nft.SetID, nft.ID)
+		_, contains := self.cachedNFTStorage[key]
+		if contains {
+			continue
+		} else {
+			self.cachedNFTStorage[key] = nft
+		}
+
+		if filtered {
+			if 0 == strings.Compare(nft.AppId, filter) {
+				result = append(result, nft)
+			}
+		} else {
+			result = append(result, nft)
+		}
+
+	}
+
+	return result
 }
 
 func (self *accountObject) callback() {
@@ -311,4 +360,47 @@ func (self *accountObject) callback() {
 		self.onDirty(self.Address())
 		self.onDirty = nil
 	}
+}
+
+func (self *accountObject) generateNFTKey(setId, id string) string {
+	return fmt.Sprintf("n-%s-%s", setId, id)
+}
+
+func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
+	valueByte := self.nftSetDefinition(db)
+	if nil == valueByte || 0 == len(valueByte) {
+		return nil
+	}
+
+	var definition types.NftSetDefinition
+	err := rlp.DecodeBytes(valueByte, &definition)
+	if err != nil {
+		return nil
+	}
+
+	self.cachedLock.RLock()
+	defer self.cachedLock.RUnlock()
+
+	nftSet := definition.ToNFTSet()
+	nftSet.OccupiedID = make(map[string]common.Address)
+	nftSet.TotalSupply = self.Nonce()
+
+	iterator := self.DataIterator(db, []byte{})
+	for iterator.Next() {
+		nftSet.OccupiedID[utility.BytesToStr(iterator.Key)] = common.BytesToAddress(iterator.Value)
+	}
+
+	for id, addr := range self.cachedStorage {
+		if addr == nil {
+			delete(nftSet.OccupiedID, id)
+			continue
+		}
+		nftSet.OccupiedID[id] = common.BytesToAddress(addr)
+	}
+
+	if 0 == len(nftSet.OccupiedID) {
+		nftSet.OccupiedID = nil
+	}
+
+	return &nftSet
 }

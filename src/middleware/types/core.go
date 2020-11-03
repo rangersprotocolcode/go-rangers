@@ -234,7 +234,7 @@ type Group struct {
 type UserData struct {
 	Address string `json:"address"`
 	TransferData
-	Assets  map[string]string
+	Assets map[string]string
 }
 
 func (sub *UserData) Hash() []byte {
@@ -391,6 +391,10 @@ func (object *JSONObject) TOJSONString() string {
 	dataBytes, _ := json.Marshal(object.data)
 
 	return string(dataBytes)
+}
+
+func (object *JSONObject) GetData() map[string]interface{} {
+	return object.data
 }
 
 //func (object *JSONObject) MarshalJSON() ([]byte, error) {

@@ -24,6 +24,7 @@ import (
 	"com.tuntun.rocket/node/src/consensus/net"
 	"com.tuntun.rocket/node/src/core"
 	"com.tuntun.rocket/node/src/middleware/log"
+	"com.tuntun.rocket/node/src/service"
 	"github.com/hashicorp/golang-lru"
 	"sync"
 	"time"
@@ -70,7 +71,7 @@ func (p *groupCreateProcessor) Init(minerInfo model.SelfMinerInfo, joinedGroupSt
 	p.groupSignCollectorMap = sync.Map{}
 	p.groupInitContextCache = newGroupInitContextCache()
 
-	p.minerReader = access.NewMinerPoolReader(core.MinerManagerImpl)
+	p.minerReader = access.NewMinerPoolReader(service.MinerManagerImpl)
 	access.InitPubkeyPool(p.minerReader)
 	p.groupAccessor = access.NewGroupAccessor(core.GetGroupChain())
 

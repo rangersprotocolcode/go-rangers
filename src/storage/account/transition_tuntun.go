@@ -31,38 +31,27 @@ type (
 	tuntunNFTChange struct {
 		account *common.Address
 		prev    string
-		gameId  string
-		setId   string
-		id      string
+		nft     *types.NFT
+		appId   string
 	}
 	tuntunNFTApproveChange struct {
 		account *common.Address
-		appId   string
-		setId   string
-		id      string
 		prev    string
+		nft     *types.NFT
 	}
 	tuntunNFTStatusChange struct {
 		account *common.Address
 		prev    byte
-		appId   string
-		setId   string
-		id      string
+		nft     *types.NFT
 	}
 	tuntunAddNFTChange struct {
 		account *common.Address
-		gameId  string
 		id      string
 		setId   string
 	}
 	tuntunRemoveNFTChange struct {
 		account *common.Address
-		gameId  string
 		nft     *types.NFT
-	}
-	createGameDataChange struct {
-		account *common.Address
-		gameId  string
 	}
 )
 
@@ -70,34 +59,27 @@ func (ch tuntunFTChange) undo(s *AccountDB) {
 	s.getAccountObject(*ch.account, false).setFT(ch.prev, ch.name)
 }
 func (ch tuntunNFTChange) undo(s *AccountDB) {
-	s.getAccountObject(*ch.account, false).setNFTByGameId(ch.gameId, ch.setId, ch.id, ch.prev)
-}
-func (ch createGameDataChange) undo(s *AccountDB) {
-	s.getAccountObject(*ch.account, false).data.GameData.Delete(ch.gameId)
+	ch.nft.SetData(ch.prev, ch.appId)
+	s.getAccountObject(*ch.account, false).setNFT(ch.nft)
 }
 
 func (ch tuntunAddNFTChange) undo(s *AccountDB) {
-	s.getAccountObject(*ch.account, false).data.GameData.GetNFTMaps(ch.gameId).Delete(ch.setId, ch.id)
+	s.getAccountObject(*ch.account, false).removeNFT(ch.setId, ch.id)
 }
 
 func (ch tuntunRemoveNFTChange) undo(s *AccountDB) {
-	s.getAccountObject(*ch.account, false).data.GameData.GetNFTMaps(ch.gameId).SetNFT(ch.nft)
+	s.getAccountObject(*ch.account, false).setNFT(ch.nft)
 }
 
 func (ch tuntunNFTApproveChange) undo(s *AccountDB) {
 	object := s.getAccountObject(*ch.account, false)
-	if 0 == len(ch.appId) {
-		nft := object.getNFTById(ch.setId, ch.id)
-		nft.Renter = ch.prev
-	} else {
-		nft := object.getNFT(ch.appId, ch.setId, ch.id)
-		nft.Renter = ch.prev
-	}
+	ch.nft.Renter = ch.prev
+	object.setNFT(ch.nft)
 
 }
 
 func (ch tuntunNFTStatusChange) undo(s *AccountDB) {
 	object := s.getAccountObject(*ch.account, false)
-	nft := object.getNFT(ch.appId, ch.setId, ch.id)
-	nft.Status = ch.prev
+	ch.nft.Status = ch.prev
+	object.setNFT(ch.nft)
 }

@@ -38,7 +38,7 @@ func (chain *blockChain) getChainPieceInfo(reqHeight uint64) []*types.BlockHeade
 
 	var lastChainPieceBlock *types.BlockHeader
 	for i := height; i <= chain.Height(); i++ {
-		bh := chain.queryBlockHeaderByHeight(i, true)
+		bh := chain.QueryBlockHeaderByHeight(i, true)
 		if nil == bh {
 			continue
 		}
@@ -80,7 +80,7 @@ func (chain *blockChain) getChainPieceBlocks(reqHeight uint64) []*types.Block {
 
 	var firstChainPieceBlock *types.BlockHeader
 	for i := height; i <= chain.Height(); i++ {
-		bh := chain.queryBlockHeaderByHeight(i, true)
+		bh := chain.QueryBlockHeaderByHeight(i, true)
 		if nil == bh {
 			continue
 		}
@@ -93,7 +93,7 @@ func (chain *blockChain) getChainPieceBlocks(reqHeight uint64) []*types.Block {
 
 	chainPieceBlocks := make([]*types.Block, 0)
 	for i := firstChainPieceBlock.Height; i <= chain.Height(); i++ {
-		bh := chain.queryBlockHeaderByHeight(i, true)
+		bh := chain.QueryBlockHeaderByHeight(i, true)
 		if nil == bh {
 			continue
 		}
@@ -192,7 +192,7 @@ func (chain *blockChain) mergeFork(blockChainPiece []*types.Block, topHeader *ty
 		return
 	}
 
-	if (blockChainPiece[len(blockChainPiece)-1].Header.TotalQN == localTopHeader.TotalQN) {
+	if blockChainPiece[len(blockChainPiece)-1].Header.TotalQN == localTopHeader.TotalQN {
 		if !chain.compareNextBlockPv(blockChainPiece[0].Header) {
 			return
 		}
@@ -251,7 +251,7 @@ func (chain *blockChain) compareNextBlockPv(remoteNextHeader *types.BlockHeader)
 
 	var localNextBlock *types.BlockHeader
 	for i := commonAncestor.Header.Height + 1; i <= chain.Height(); i++ {
-		bh := chain.queryBlockHeaderByHeight(i, true)
+		bh := chain.QueryBlockHeaderByHeight(i, true)
 		if nil == bh {
 			continue
 		}
@@ -304,7 +304,7 @@ func (chain *blockChain) isCommonAncestor(chainPiece []*types.BlockHeader, index
 	}
 	he := chainPiece[index]
 
-	bh := chain.queryBlockHeaderByHeight(he.Height, true)
+	bh := chain.QueryBlockHeaderByHeight(he.Height, true)
 	if bh == nil {
 		logger.Debugf("isCommonAncestor:Height:%d,local hash:%x,coming hash:%x\n", he.Height, nil, he.Hash)
 		return -1
@@ -318,7 +318,7 @@ func (chain *blockChain) isCommonAncestor(chainPiece []*types.BlockHeader, index
 	}
 	//判断链更后面的一块
 	afterHe := chainPiece[index-1]
-	afterBh := chain.queryBlockHeaderByHeight(afterHe.Height, true)
+	afterBh := chain.QueryBlockHeaderByHeight(afterHe.Height, true)
 	if afterBh == nil {
 		logger.Debugf("isCommonAncestor:after block height:%d,local hash:%s,coming hash:%x\n", afterHe.Height, "null", afterHe.Hash)
 		if afterHe != nil && bh.Hash == he.Hash {

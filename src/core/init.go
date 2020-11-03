@@ -18,8 +18,10 @@ package core
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/executor"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/service"
 )
 
 var (
@@ -30,9 +32,10 @@ var (
 )
 
 func InitCore(helper types.ConsensusHelper) error {
-	logger = log.GetLoggerByIndex(log.CoreLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	txLogger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	consensusLogger = log.GetLoggerByIndex(log.ConsensusLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	index := common.GlobalConf.GetString("instance", "index", "")
+	logger = log.GetLoggerByIndex(log.CoreLogConfig, index)
+	txLogger = log.GetLoggerByIndex(log.TxLogConfig, index)
+	consensusLogger = log.GetLoggerByIndex(log.ConsensusLogConfig, index)
 	consensusHelper = helper
 
 	initPeerManager()
@@ -47,9 +50,9 @@ func InitCore(helper types.ConsensusHelper) error {
 		initGroupChain()
 	}
 
-	initExecutors()
-	initRewardCalculator(MinerManagerImpl, blockChainImpl, groupChainImpl)
-	initRefundManager()
+	executor.InitExecutors()
+	service.InitRewardCalculator(blockChainImpl, groupChainImpl)
+	service.InitRefundManager(groupChainImpl)
 
 	initChainHandler()
 

@@ -48,17 +48,17 @@ func TestStartStateMachineTx(t *testing.T) {
 
 func TestProposerApplyTx(t *testing.T) {
 	source := "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"
-	target := "0x9a5adc4b83ed4272f8af0c46686a938701391ae3576b77891e2ab4e7438f442e"
+	target := "0xe059d17139e2915d270ef8f3eee2f3e1438546ba2f06eb674dda0967846b6951"
 	tx := types.Transaction{Type: 2, Source: source, Target: target, Time: utility.GetTime().String()}
 
-	data := `{"id":"mlrcS4PtQnL4rwxGaGqThwE5GuNXa3eJHiq050OPRC4=","publicKey":"BOu0RbvBDBlVUySzb+ojoE7BTO67yhYQWdOvqClYG+Qu11SFY79i1lDou9VkPfnpX0KPhlvtpTIIK3IIR2K1meM=","vrfPublicKey":"Dw7zNJeE4wj+diK2c/P+9raL6R72SY1ySbleYVihJtU="}`
+	data := `{"id":"4FnRcTnikV0nDvjz7uLz4UOFRrovButnTdoJZ4RraVE=","publicKey":"VUD8/iw8JOtgJvyeBR/WlusU/L7+9jsae4z1s4QYZHN6fGVaqfZOI4LlUhaY5+15M0JwhZL+dCjMx8zJa0q/6IriorePaeCsjGt1lTRXYmhSzCZvebL4NP/oR09zDOTSP384WcyZHsV2MMRI7M+K2L3FO6JLI+u9jIAa3pgHQ5E=","vrfPublicKey":"og9c2j7LEkkQwQpSpjVAQ9jkZa/eriBlNrORJdhMe/8="}`
 	var obj = types.Miner{}
 	err := json.Unmarshal([]byte(data), &obj)
 	if err != nil {
 		fmt.Printf("ummarshal error:%v", err)
 	}
 
-	obj.Stake = 2000000
+	obj.Stake = 60000000
 	obj.Type = common.MinerTypeProposer
 
 	applyData, _ := json.Marshal(obj)
@@ -94,6 +94,26 @@ func TestVerifierApplyTx(t *testing.T) {
 	//fmt.Printf("data:%v\n",string(applyData))
 
 	tx.Data = string(applyData)
+	tx.Hash = tx.GenHash()
+
+	privateKeyStr := "0x040a0c4baa2e0b927a2b1f6f93b317c320d4aa3a5b54c0a83f5872c23155dcf1455fb015a7699d4ef8491cc4c7a770e580ab1362a0e3af9f784dd2485cfc9ba7c1e7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"
+	privateKey := common.HexStringToSecKey(privateKeyStr)
+	sign := privateKey.Sign(tx.Hash.Bytes())
+	tx.Sign = &sign
+
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestAddMinerStakeTx(t *testing.T) {
+	source := "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"
+	target := "0xe059d17139e2915d270ef8f3eee2f3e1438546ba2f06eb674dda0967846b6951"
+	tx := types.Transaction{Type: 5, Source: source, Target: target, Time: utility.GetTime().String()}
+
+	data := `{"id":"4FnRcTnikV0nDvjz7uLz4UOFRrovButnTdoJZ4RraVE=","stake":60000000}`
+	//applyData, _ := json.Marshal(data)
+	//fmt.Printf("data:%v\n",string(applyData))
+
+	tx.Data = data
 	tx.Hash = tx.GenHash()
 
 	privateKeyStr := "0x040a0c4baa2e0b927a2b1f6f93b317c320d4aa3a5b54c0a83f5872c23155dcf1455fb015a7699d4ef8491cc4c7a770e580ab1362a0e3af9f784dd2485cfc9ba7c1e7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"

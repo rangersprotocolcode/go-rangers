@@ -62,33 +62,6 @@ func TestNFT_EncodeRLP(t *testing.T) {
 	fmt.Println(nft.CreateTime)
 }
 
-func TestGameData_SetNFT(t *testing.T) {
-	gameData := &GameData{}
-	nftMap := &NFTMap{}
-	nft := &NFT{SetID: "g1", ID: "sword1", Name: "yitai", Symbol: "yt"}
-	nftMap.SetNFT(nft)
-	gameData.SetNFTMaps("test1", nftMap)
-
-	fmt.Println(gameData.GetNFTMaps("test1").GetNFT("g1", "sword1").Name)
-
-	data, err := rlp.EncodeToBytes(gameData)
-	if err != nil {
-		t.Fatalf("%s", err.Error())
-	}
-	fmt.Println(data)
-
-	g := &GameData{}
-	err = rlp.DecodeBytes(data, g)
-	if err != nil {
-		t.Fatalf("%s", err.Error())
-	}
-	nftMap = g.GetNFTMaps("test1")
-	fmt.Println(nftMap)
-	fmt.Println(nftMap.GetAllNFT())
-	nft = nftMap.GetNFT("g1", "sword1")
-	fmt.Println(nft.Name)
-}
-
 func Test_RLP(t *testing.T) {
 	s := Student{Name: "icattlecoder", Sex: "male"}
 

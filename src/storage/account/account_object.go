@@ -19,8 +19,8 @@ package account
 import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/storage/rlp"
 	"com.tuntun.rocket/node/src/storage/trie"
 	"fmt"
 	"golang.org/x/crypto/sha3"
@@ -29,12 +29,6 @@ import (
 )
 
 var emptyCodeHash = sha3.Sum256(nil)
-
-type Code []byte
-
-func (c Code) String() string {
-	return string(c)
-}
 
 type Storage map[string][]byte
 
@@ -67,9 +61,6 @@ type accountObject struct {
 	data     Account
 	db       *AccountDB
 
-	// 锁
-	lock *middleware.ReentrantLock
-
 	// DB error.
 	// State objects are used by the consensus core and VM which are
 	// unable to deal with database-level errors. Any error that occurs
@@ -78,34 +69,38 @@ type accountObject struct {
 	dbErr error
 
 	trie Trie // storage trie, which becomes non-nil on first access
-	code Code // contract code, which gets set when code is loaded
+
+	nftSet      []byte
+	dirtyNFTSet bool // true if the code was updated
 
 	cachedLock    sync.RWMutex
 	cachedStorage Storage // Storage cache of original entries to dedup rewrites
 	dirtyStorage  Storage // Storage entries that need to be flushed to disk
 
-	dirtyCode bool // true if the code was updated
-	suicided  bool
-	touched   bool
-	deleted   bool
-	onDirty   func(addr common.Address)
+	cachedNFT        sync.RWMutex
+	cachedNFTStorage map[string]*types.NFT // Storage cache of original nft to dedup rewrites
+	dirtyNFTStorage  map[string]*types.NFT // Storage nft that need to be flushed to disk
+
+	suicided bool
+	touched  bool
+	deleted  bool
+	onDirty  func(addr common.Address)
 }
 
 // empty returns whether the account is considered empty.
 func (ao *accountObject) empty() bool {
-	return ao.data.Ft == nil && ao.data.GameData == nil && ao.data.Nonce == 0 && ao.data.Balance.Sign() == 0 && len(ao.cachedStorage) == 0
+	return ao.data.Ft == nil && ao.data.Nonce == 0 && ao.data.Balance.Sign() == 0 && len(ao.cachedStorage) == 0 && len(ao.dirtyStorage) == 0 && len(ao.cachedNFTStorage) == 0 && len(ao.dirtyNFTStorage) == 0
 }
 
 // Account is the consensus representation of accounts.
 // These objects are stored in the main account trie.
 type Account struct {
-	Nonce    uint64
-	Root     common.Hash
-	CodeHash []byte
+	Nonce uint64
+	Root  common.Hash
 
-	Balance  *big.Int
-	Ft       []*types.FT
-	GameData *types.GameData
+	NFTSetDefinitionHash []byte
+	Balance              *big.Int
+	Ft                   []*types.FT
 }
 
 // newObject creates a account object.
@@ -116,23 +111,21 @@ func newAccountObject(db *AccountDB, address common.Address, data Account, onDir
 	if data.Ft == nil {
 		data.Ft = make([]*types.FT, 0)
 	}
-	if data.GameData == nil {
-		data.GameData = &types.GameData{}
-	}
-	if data.CodeHash == nil {
-		data.CodeHash = emptyCodeHash[:]
+	if data.NFTSetDefinitionHash == nil {
+		data.NFTSetDefinitionHash = emptyCodeHash[:]
 	}
 
 	ao := &accountObject{
-		db:            db,
-		address:       address,
-		addrHash:      sha3.Sum256(address[:]),
-		data:          data,
-		cachedStorage: make(Storage),
-		dirtyStorage:  make(Storage),
-		onDirty:       onDirty,
+		db:               db,
+		address:          address,
+		addrHash:         sha3.Sum256(address[:]),
+		data:             data,
+		cachedStorage:    make(Storage),
+		dirtyStorage:     make(Storage),
+		cachedNFTStorage: make(map[string]*types.NFT),
+		dirtyNFTStorage:  make(map[string]*types.NFT),
+		onDirty:          onDirty,
 	}
-	ao.lock = middleware.NewReentrantLock()
 
 	return ao
 }
@@ -240,6 +233,7 @@ func (ao *accountObject) setData(key []byte, value []byte) {
 // updateTrie writes cached storage modifications into the object's storage trie.
 func (ao *accountObject) updateTrie(db AccountDatabase) Trie {
 	tr := ao.getTrie(db)
+
 	// Update all the dirty slots in the trie
 	for key, value := range ao.dirtyStorage {
 		delete(ao.dirtyStorage, key)
@@ -249,6 +243,22 @@ func (ao *accountObject) updateTrie(db AccountDatabase) Trie {
 		}
 
 		ao.setError(tr.TryUpdate([]byte(key), value[:]))
+	}
+
+	// Update all the dirty slots in the trie
+	for key, value := range ao.dirtyNFTStorage {
+		delete(ao.dirtyNFTStorage, key)
+		if value == nil {
+			ao.setError(tr.TryDelete([]byte(key)))
+			continue
+		}
+
+		bytes, err := rlp.EncodeToBytes(value)
+		if nil != err {
+			common.DefaultLogger.Errorf(err.Error())
+			continue
+		}
+		ao.setError(tr.TryUpdate([]byte(key), bytes))
 	}
 	return tr
 }
@@ -289,11 +299,13 @@ func (ao *accountObject) AddBalance(amount *big.Int) {
 }
 
 // SubBalance is used to remove funds from the origin account of a transfer.
-func (ao *accountObject) SubBalance(amount *big.Int) {
+func (ao *accountObject) SubBalance(amount *big.Int) *big.Int {
+	left := new(big.Int).Sub(ao.Balance(), amount)
 	if amount.Sign() == 0 {
-		return
+		return left
 	}
-	ao.SetBalance(new(big.Int).Sub(ao.Balance(), amount))
+	ao.SetBalance(left)
+	return left
 }
 
 func (ao *accountObject) SetBalance(amount *big.Int) {
@@ -317,11 +329,11 @@ func (ao *accountObject) deepCopy(db *AccountDB, onDirty func(addr common.Addres
 	if ao.trie != nil {
 		accountObject.trie = db.db.CopyTrie(ao.trie)
 	}
-	accountObject.code = ao.code
+
+	accountObject.nftSet = ao.nftSet
 	accountObject.dirtyStorage = ao.dirtyStorage.Copy()
 	accountObject.cachedStorage = ao.dirtyStorage.Copy()
 	accountObject.suicided = ao.suicided
-	accountObject.dirtyCode = ao.dirtyCode
 	accountObject.deleted = ao.deleted
 	return accountObject
 }
@@ -331,20 +343,39 @@ func (ao *accountObject) Address() common.Address {
 	return ao.address
 }
 
-// Code returns the contract code associated with this object, if any.
-func (ao *accountObject) Code(db AccountDatabase) []byte {
-	if ao.code != nil {
-		return ao.code
+func (ao *accountObject) nftSetDefinition(db AccountDatabase) []byte {
+	if ao.nftSet != nil {
+		return ao.nftSet
 	}
-	if bytes.Equal(ao.CodeHash(), emptyCodeHash[:]) {
+	if bytes.Equal(ao.NFTSetDefinitionHash(), emptyCodeHash[:]) {
 		return nil
 	}
-	code, err := db.ContractCode(ao.addrHash, common.BytesToHash(ao.CodeHash()))
+	code, err := db.ContractCode(ao.addrHash, common.BytesToHash(ao.NFTSetDefinitionHash()))
 	if err != nil {
-		ao.setError(fmt.Errorf("can't load code hash %x: %v", ao.CodeHash(), err))
+		ao.setError(fmt.Errorf("can't load code hash %x: %v", ao.NFTSetDefinitionHash(), err))
 	}
-	ao.code = code
+	ao.nftSet = code
 	return code
+}
+
+func (ao *accountObject) SetNFTSetDefinition(hash common.Hash, code []byte) {
+	prevCode := ao.nftSetDefinition(ao.db.db)
+	ao.db.transitions = append(ao.db.transitions, nftSetDefinitionChange{
+		account:  &ao.address,
+		prevhash: ao.NFTSetDefinitionHash(),
+		prev:     prevCode,
+	})
+	ao.setNFTSetDefinition(hash, code)
+}
+
+func (ao *accountObject) setNFTSetDefinition(hash common.Hash, code []byte) {
+	ao.nftSet = code
+	ao.data.NFTSetDefinitionHash = hash[:]
+	ao.dirtyNFTSet = true
+	if ao.onDirty != nil {
+		ao.onDirty(ao.Address())
+		ao.onDirty = nil
+	}
 }
 
 // DataIterator returns a new key-value iterator from a node iterator
@@ -355,28 +386,15 @@ func (ao *accountObject) DataIterator(db AccountDatabase, prefix []byte) *trie.I
 	return trie.NewIterator(ao.trie.NodeIterator(prefix))
 }
 
-// SetCode set a value in contract storage.
-func (ao *accountObject) SetCode(codeHash common.Hash, code []byte) {
-	prevCode := ao.Code(ao.db.db)
-	ao.db.transitions = append(ao.db.transitions, codeChange{
-		account:  &ao.address,
-		prevhash: ao.CodeHash(),
-		prevcode: prevCode,
+func (ao *accountObject) IncreaseNonce() {
+	ao.db.transitions = append(ao.db.transitions, nonceChange{
+		account: &ao.address,
+		prev:    ao.data.Nonce,
 	})
-	ao.setCode(codeHash, code)
+	ao.setNonce(ao.data.Nonce + 1)
 }
 
-func (ao *accountObject) setCode(codeHash common.Hash, code []byte) {
-	ao.code = code
-	ao.data.CodeHash = codeHash[:]
-	ao.dirtyCode = true
-	if ao.onDirty != nil {
-		ao.onDirty(ao.Address())
-		ao.onDirty = nil
-	}
-}
-
-// SetCode update nonce in account storage.
+// setNFTSetDefinition update nonce in account storage.
 func (ao *accountObject) SetNonce(nonce uint64) {
 	ao.db.transitions = append(ao.db.transitions, nonceChange{
 		account: &ao.address,
@@ -394,8 +412,8 @@ func (ao *accountObject) setNonce(nonce uint64) {
 }
 
 // CodeHash returns code's hash
-func (ao *accountObject) CodeHash() []byte {
-	return ao.data.CodeHash
+func (ao *accountObject) NFTSetDefinitionHash() []byte {
+	return ao.data.NFTSetDefinitionHash
 }
 
 func (ao *accountObject) Balance() *big.Int {
@@ -404,8 +422,4 @@ func (ao *accountObject) Balance() *big.Int {
 
 func (ao *accountObject) Nonce() uint64 {
 	return ao.data.Nonce
-}
-
-func (ao *accountObject) Value() *big.Int {
-	panic("Value on accountObject should never be called")
 }

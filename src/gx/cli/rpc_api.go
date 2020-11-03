@@ -325,11 +325,11 @@ func (api *GtasAPI) CastStat(begin uint64, end uint64) (*Result, error) {
 func (api *GtasAPI) MinerInfo(addr string) (*Result, error) {
 	morts := make([]MortGage, 0)
 	id := common.HexToAddress(addr).Bytes()
-	heavyInfo := core.MinerManagerImpl.GetMinerById(id, common.MinerTypeProposer, nil)
+	heavyInfo := service.MinerManagerImpl.GetMinerById(id, common.MinerTypeProposer, nil)
 	if heavyInfo != nil {
 		morts = append(morts, *NewMortGageFromMiner(heavyInfo))
 	}
-	lightInfo := core.MinerManagerImpl.GetMinerById(id, common.MinerTypeValidator, nil)
+	lightInfo := service.MinerManagerImpl.GetMinerById(id, common.MinerTypeValidator, nil)
 	if lightInfo != nil {
 		morts = append(morts, *NewMortGageFromMiner(lightInfo))
 	}
@@ -351,14 +351,14 @@ func (api *GtasAPI) NodeInfo() (*Result, error) {
 		ni.Status = "运行中"
 		morts := make([]MortGage, 0)
 		t := ""
-		heavyInfo := core.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeProposer, service.AccountDBManagerInstance.GetLatestStateDB())
+		heavyInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeProposer, service.AccountDBManagerInstance.GetLatestStateDB())
 		if heavyInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(heavyInfo))
 			if heavyInfo.AbortHeight == 0 {
 				t = "提案节点"
 			}
 		}
-		lightInfo := core.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeValidator, service.AccountDBManagerInstance.GetLatestStateDB())
+		lightInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeValidator, service.AccountDBManagerInstance.GetLatestStateDB())
 		if lightInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(lightInfo))
 			if lightInfo.AbortHeight == 0 {

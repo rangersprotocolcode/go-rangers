@@ -24,10 +24,12 @@ import (
 var logger, txLogger, txPoolLogger log.Logger
 
 func InitService() {
-	logger = log.GetLoggerByIndex(log.CoreLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	txLogger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	txPoolLogger = log.GetLoggerByIndex(log.TxPoolLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	index := common.GlobalConf.GetString("instance", "index", "")
+	logger = log.GetLoggerByIndex(log.CoreLogConfig, index)
+	txLogger = log.GetLoggerByIndex(log.TxLogConfig, index)
+	txPoolLogger = log.GetLoggerByIndex(log.TxPoolLogConfig, index)
 
+	InitMinerManager()
 	initTransactionPool()
 	initTxManager()
 	initFTManager()

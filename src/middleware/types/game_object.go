@@ -18,28 +18,63 @@ package types
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/storage/rlp"
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"strconv"
 )
 
-// NFT 数据结构综述
-// GameData 的结构可以用map来简单描述
-// GameData = map[string]*NFTMap key为gameId
-// NFTMap = map[string]*NFT key为nftId
+type NftSetDefinition struct {
+	SetID      string `json:"setId,omitempty"`
+	Name       string `json:"name,omitempty"`
+	Symbol     string `json:"symbol,omitempty"`
+	MaxSupply  uint64 `json:"maxSupply,omitempty"` // 最大发行量，等于0则表示无限量
+	Creator    string `json:"creator,omitempty"`
+	Owner      string `json:"owner,omitempty"`
+	CreateTime string `json:"createTime,omitempty"`
+}
+
+func (definition *NftSetDefinition) ToNFTSet() NFTSet {
+	var nftSet NFTSet
+	nftSet.SetID = definition.SetID
+	nftSet.Name = definition.Name
+	nftSet.Symbol = definition.Symbol
+	nftSet.MaxSupply = definition.MaxSupply
+	nftSet.CreateTime = definition.CreateTime
+	nftSet.Creator = definition.Creator
+	nftSet.Owner = definition.Owner
+
+	return nftSet
+}
+
+// NFTSet 数据结构综述
 type NFTSet struct {
 	SetID       string `json:"setId,omitempty"`
 	Name        string `json:"name,omitempty"`
 	Symbol      string `json:"symbol,omitempty"`
-	MaxSupply   int    `json:"maxSupply,omitempty"`   // 最大发行量，等于0则表示无限量
-	TotalSupply int    `json:"totalSupply,omitempty"` // 历史上发行量
+	MaxSupply   uint64 `json:"maxSupply,omitempty"`   // 最大发行量，等于0则表示无限量
+	TotalSupply uint64 `json:"totalSupply,omitempty"` // 历史上发行量
 	Creator     string `json:"creator,omitempty"`
 	Owner       string `json:"owner,omitempty"`
 	CreateTime  string `json:"createTime,omitempty"`
 
 	// 已经发行的NFTID及其拥有者
-	OccupiedID map[string]common.Address `json:"occupied,omitempty"` // 当前在layer2里的nft
+	OccupiedID map[string]common.Address `json:"occupied,omitempty"` // 当前在layer2里的nft(包含已经被提现走的NFT)
+}
+
+func (self *NFTSet) ToBlob() []byte {
+	definition := NftSetDefinition{
+		SetID:      self.SetID,
+		Name:       self.Name,
+		Symbol:     self.Symbol,
+		MaxSupply:  self.MaxSupply,
+		Creator:    self.Creator,
+		Owner:      self.Owner,
+		CreateTime: self.CreateTime,
+	}
+
+	data, _ := rlp.EncodeToBytes(definition)
+	return data
 }
 
 func (self *NFTSet) ToJSONString() string {
@@ -53,16 +88,25 @@ func (self *NFTSet) ToJSONString() string {
 	nftSetMap["creator"] = self.Creator
 	nftSetMap["owner"] = self.Owner
 	nftSetMap["createTime"] = self.CreateTime
+	nftSetMap["occupied"] = self.OccupiedID
 	bytes, _ := json.Marshal(nftSetMap)
 	return string(bytes)
 }
 
-func (self *NFTSet) ChangeOwner(id string, newOwner common.Address) {
-	self.OccupiedID[id] = newOwner
-}
+func (self *NFTSet) ToJSON() map[string]interface{} {
+	nftSetMap := make(map[string]interface{}, 12)
+	nftSetMap["setId"] = self.SetID
+	nftSetMap["name"] = self.Name
+	nftSetMap["symbol"] = self.Symbol
+	nftSetMap["maxSupply"] = self.MaxSupply
+	nftSetMap["totalSupply"] = self.TotalSupply
+	nftSetMap["currentSupply"] = strconv.Itoa(len(self.OccupiedID))
+	nftSetMap["creator"] = self.Creator
+	nftSetMap["owner"] = self.Owner
+	nftSetMap["createTime"] = self.CreateTime
+	nftSetMap["occupied"] = self.OccupiedID
 
-func (self *NFTSet) RemoveOwner(id string) {
-	delete(self.OccupiedID, id)
+	return nftSetMap
 }
 
 type NFT struct {
@@ -81,7 +125,7 @@ type NFT struct {
 	Owner  string `json:"owner,omitempty"`  // 当前所有权拥有者。如果为空，则表示由创建者所有。只有owner有权transfer。一个NFT只有一个owner
 	Renter string `json:"renter,omitempty"` // 当前使用权拥有者。由owner指定。owner默认有使用权。同一时间内，一个NFT只有一个renter
 	// 2.2 锁定状态
-	Status    byte `json:"status,omitempty"`    // 状态位（默认0） 0：正常，1：锁定（数据与状态不可变更，例如：提现待确认）
+	Status    byte `json:"status,omitempty"`    // 状态位（默认0） 0：正常，1：锁定（数据与状态不可变更），2:已经被从L2中提走
 	Condition byte `json:"condition,omitempty"` // 解锁条件 1：锁定直到状态机解锁 2：锁定直到用户解锁
 	// 2.3 使用权回收条件（待定）
 	//ReturnCondition byte // 使用权结束条件 0：到期自动结束 1：所有者触发结束 2：使用者触发结束
@@ -133,6 +177,11 @@ func (self *NFT) SetData(data string, gameId string) {
 }
 
 func (self *NFT) ToJSONString() string {
+	bytes, _ := json.Marshal(self.ToMap())
+	return string(bytes)
+}
+
+func (self *NFT) ToMap() map[string]interface{} {
 	nftMap := make(map[string]interface{}, 12)
 	nftMap["setId"] = self.SetID
 	nftMap["name"] = self.Name
@@ -152,145 +201,7 @@ func (self *NFT) ToJSONString() string {
 		data[self.DataKey[i]] = self.DataValue[i]
 	}
 	nftMap["data"] = data
-
-	bytes, _ := json.Marshal(nftMap)
-	return string(bytes)
-}
-
-type NFTMap struct {
-	NFTList   []*NFT
-	NFTIDList []string
-}
-
-func (self *NFTMap) genID(setId, id string) string {
-	return fmt.Sprintf("%s-%s", setId, id)
-}
-
-func (self *NFTMap) Delete(setId, id string) *NFT {
-	name := self.genID(setId, id)
-	index := -1
-	for i, key := range self.NFTIDList {
-		if key == name {
-			index = i
-			break
-		}
-	}
-
-	if -1 == index {
-		return nil
-	}
-	nft := self.NFTList[index]
-
-	self.NFTList = append(self.NFTList[:index], self.NFTList[index+1:]...)
-	self.NFTIDList = append(self.NFTIDList[:index], self.NFTIDList[index+1:]...)
-
-	return nft
-}
-
-func (self *NFTMap) GetNFT(setId, id string) *NFT {
-	name := self.genID(setId, id)
-	index := -1
-	for i, key := range self.NFTIDList {
-		if key == name {
-			index = i
-			break
-		}
-	}
-
-	if -1 == index {
-		return nil
-	}
-	return self.NFTList[index]
-}
-
-func (self *NFTMap) SetNFT(nft *NFT) bool {
-	if nil == nft {
-		return false
-	}
-
-	id := self.genID(nft.SetID, nft.ID)
-	index := -1
-	for i, key := range self.NFTIDList {
-		if key == id {
-			index = i
-			break
-		}
-	}
-
-	if -1 == index {
-		self.NFTIDList = append(self.NFTIDList, id)
-		self.NFTList = append(self.NFTList, nft)
-		return true
-	}
-
-	self.NFTList[index] = nft
-	return true
-}
-
-func (self *NFTMap) GetAllNFT() []*NFT {
-	return self.NFTList
-}
-
-func (self *NFTMap) Empty() bool {
-	return 0 == len(self.NFTIDList)
-}
-
-type GameData struct {
-	GameIDList []string
-	NFTMaps    []*NFTMap
-}
-
-func (self *GameData) GetNFTMaps(appId string) *NFTMap {
-	index := -1
-	for i, key := range self.GameIDList {
-		if key == appId {
-			index = i
-			break
-		}
-	}
-
-	if -1 == index {
-		return nil
-	}
-	return self.NFTMaps[index]
-}
-
-func (self *GameData) SetNFTMaps(id string, nft *NFTMap) bool {
-	index := -1
-	for i, key := range self.GameIDList {
-		if key == id {
-			index = i
-			break
-		}
-	}
-
-	if -1 == index {
-		self.GameIDList = append(self.GameIDList, id)
-		self.NFTMaps = append(self.NFTMaps, nft)
-		return true
-	}
-
-	self.NFTMaps[index] = nft
-	return false
-}
-
-func (self *GameData) Delete(gameId string) bool {
-	index := -1
-	for i, key := range self.GameIDList {
-		if key == gameId {
-			index = i
-			break
-		}
-	}
-
-	if -1 == index {
-		return false
-	}
-
-	self.GameIDList = append(self.GameIDList[:index], self.GameIDList[index+1:]...)
-	self.NFTMaps = append(self.NFTMaps[:index], self.NFTMaps[index+1:]...)
-
-	return true
+	return nftMap
 }
 
 // FT发行配置

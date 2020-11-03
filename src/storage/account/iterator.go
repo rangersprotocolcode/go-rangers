@@ -18,12 +18,13 @@ package account
 
 import (
 	"bytes"
-	"fmt"
-
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/storage/rlp"
 	"com.tuntun.rocket/node/src/storage/trie"
+	"fmt"
 )
+
+
 // NodeIterator is an iterator to traverse the entire state trie post-order,
 // including all of the contract code and contract state tries.
 type NodeIterator struct {
@@ -115,12 +116,12 @@ func (it *NodeIterator) step() error {
 	if !it.dataIt.Next(true) {
 		it.dataIt = nil
 	}
-	if !bytes.Equal(account.CodeHash, emptyCodeHash[:]) {
-		it.codeHash = common.BytesToHash(account.CodeHash)
+	if !bytes.Equal(account.NFTSetDefinitionHash, emptyCodeHash[:]) {
+		it.codeHash = common.BytesToHash(account.NFTSetDefinitionHash)
 		addrHash := common.BytesToHash(it.stateIt.LeafKey())
-		it.code, err = it.state.db.ContractCode(addrHash, common.BytesToHash(account.CodeHash))
+		it.code, err = it.state.db.ContractCode(addrHash, common.BytesToHash(account.NFTSetDefinitionHash))
 		if err != nil {
-			return fmt.Errorf("code %x: %v", account.CodeHash, err)
+			return fmt.Errorf("code %x: %v", account.NFTSetDefinitionHash, err)
 		}
 	}
 	it.accountHash = it.stateIt.Parent()

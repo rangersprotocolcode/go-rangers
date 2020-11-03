@@ -56,7 +56,7 @@ func (p *groupCreateProcessor) StartCreateGroupPolling() {
 	groupHashList := p.createGroupCache.Keys()
 	for _, hash := range groupHashList {
 		createHeight, _ := p.createGroupCache.Get(hash)
-		if topHeight > createHeight.(uint64)+model.Param.GroupReadyGap {
+		if createHeight != nil && topHeight > createHeight.(uint64)+model.Param.GroupReadyGap {
 			groupCreateDebugLogger.Infof("Group create time out. Hash:%s\n", hash.(common.Hash).String())
 			p.createGroupCache.Remove(hash)
 		}
@@ -174,7 +174,7 @@ func (p *groupCreateProcessor) genCreateGroupBaseInfo(baseHeight uint64) (*creat
 func (p *groupCreateProcessor) selectCandidates(theBH *types.BlockHeader) (enough bool, cands []groupsig.ID) {
 	min := model.Param.CreateGroupMinCandidates()
 	height := theBH.Height
-	allCandidates := p.minerReader.GetCandidateMiners(height)
+	allCandidates := p.minerReader.GetCandidateMiners(height, theBH.StateTree)
 
 	ids := make([]string, len(allCandidates))
 	for idx, can := range allCandidates {

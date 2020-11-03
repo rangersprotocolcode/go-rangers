@@ -96,27 +96,3 @@ func TestAccountDB_GetData(t *testing.T) {
 	hash := state.IntermediateRoot(true)
 	fmt.Println(hash.Hex())
 }
-
-func TestAccountDB_SetCode(t *testing.T) {
-	db, _ := db.NewLDBDatabase("/Users/Kaede/TasProject/work/test", 0, 0)
-	defer db.Close()
-	triedb := NewDatabase(db)
-	state, _ := NewAccountDB(common.HexToHash("0xbd51564993c69858d5d2e181fc8d5e5dfdb4e1800f0ead7a1ebdd4a488f5e55f"), triedb)
-	//fmt.Println(string(state.Dump()))
-	state.SetCode(common.BytesToAddress([]byte("2")), []byte{1,2})
-	root, _ := state.Commit(false)
-	fmt.Println(root.Hex())
-	triedb.TrieDB().Commit(root, false)
-}
-
-func TestAccountDB_GetCode(t *testing.T) {
-	db, _ := db.NewLDBDatabase("/Users/Kaede/TasProject/work/test", 0, 0)
-	defer db.Close()
-	triedb := NewDatabase(db)
-	state, _ := NewAccountDB(common.HexToHash("0x43b1c4652bd927fce344607f46d61955100dc5b4f358baf2df4f4bfdf2016683"), triedb)
-	//fmt.Println(string(state.Dump()))
-	hash := state.GetCodeHash(common.BytesToAddress([]byte("2")))
-	fmt.Println(hash)
-	sta := state.GetCode(common.BytesToAddress([]byte("2")))
-	fmt.Println(sta)
-}

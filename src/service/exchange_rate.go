@@ -47,10 +47,14 @@ func checkAuth(source string) bool {
 }
 
 func IsRateExisted(id string, accountdb *account.AccountDB) bool {
-	if 0 == len(id) || nil == accountdb {
-		return false
+	//if 0 == len(id) || nil == accountdb {
+	//	return false
+	//}
+	//
+	//rate := accountdb.GetData(common.ExchangeRateAddress, []byte(id))
+	//return nil != rate && 0 != len(rate)
+	if 0 == strings.Compare(strings.ToLower(id), "max") {
+		return true
 	}
-
-	rate := accountdb.GetData(common.ExchangeRateAddress, []byte(id))
-	return nil != rate && 0 != len(rate)
+	return true
 }

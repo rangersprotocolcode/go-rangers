@@ -339,3 +339,16 @@ func (s *STMStorageReadyMessage) GetRaw() []byte {
 func (s *STMStorageReadyMessage) GetData() interface{} {
 	return s.FileName
 }
+
+type NonceNotifyMessage struct {
+	Nonce uint64
+	Msg   string
+}
+
+func (m *NonceNotifyMessage) GetRaw() []byte {
+	// never use it
+	return nil
+}
+func (m *NonceNotifyMessage) GetData() interface{} {
+	return m
+}

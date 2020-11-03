@@ -44,7 +44,8 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 	}
 
 	source := common.HexToAddress(transaction.Source)
-	result := make(map[string]string)
+	result := types.NewJSONObject()
+	result.Put("txHash", transaction.Hash.String())
 
 	//主链币检查
 	if withDrawReq.BNT.TokenType != "" {
@@ -61,9 +62,11 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 			txLogger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", subAccountBalance.Uint64(), withdrawAmount.Uint64())
 			return "BNT Not Enough", false
 		} else {
-			result["token"] = withDrawReq.BNT.TokenType
-			result["balance"] = utility.BigIntToStr(left)
-			result["lockedBalance"] = withDrawReq.BNT.Value
+			responseCoin := make(map[string]string)
+			responseCoin["token"] = withDrawReq.BNT.TokenType
+			responseCoin["balance"] = utility.BigIntToStr(left)
+			responseCoin["lockedBalance"] = withDrawReq.BNT.Value
+			result.Put("coin", responseCoin)
 		}
 	}
 
@@ -73,6 +76,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 			return "Withdraw Data Bad Format", false
 		}
 
+		ftList := make([]map[string]string, 0)
 		for k, v := range withDrawReq.FT {
 			subValue := accountdb.GetFT(source, k)
 			compareResult, sub := canWithDraw(v, subValue)
@@ -82,6 +86,16 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 
 			// 扣ft
 			accountdb.SetFT(source, k, sub)
+
+			ftMap := make(map[string]string)
+			ftMap["ftId"] = k
+			ftMap["balance"] = utility.BigIntToStr(sub)
+			ftMap["lockedBalance"] = v
+			ftList = append(ftList, ftMap)
+		}
+
+		if len(ftList) != 0 {
+			result.Put("ft", ftList)
 		}
 	}
 
@@ -92,17 +106,23 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 			return "Withdraw Data Bad Format", false
 		}
 
+		nftList := make([]map[string]string, 0)
 		for _, k := range withDrawReq.NFT {
-			nft := NFTManagerInstance.DeleteNFT(source, k.SetId, k.Id, accountdb)
+			nft := NFTManagerInstance.MarkNFTWithdrawn(source, k.SetId, k.Id, accountdb)
 			if nil == nft {
 				return "NFT Not Exist In This Game", false
 			}
 
 			nftInfo = append(nftInfo, types.NFTID{SetId: k.SetId, Id: k.Id, Data: nft.ToJSONString()})
-			result["chainType"] = withDrawReq.ChainType
-			result["setId"] = k.SetId
-			result["tokenId"] = k.Id
-			result["targetAddress"] = withDrawReq.Address
+
+			nftMap := make(map[string]string)
+			nftMap["setId"] = k.SetId
+			nftMap["tokenId"] = k.Id
+			nftList = append(nftList, nftMap)
+		}
+
+		if len(nftList) != 0 {
+			result.Put("nft", nftList)
 		}
 	}
 
@@ -110,10 +130,10 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 		return "Send To Connector Error", false
 	}
 
-	resultString, _ := json.Marshal(result)
-	return string(resultString), true
+	return result.TOJSONString(), true
 }
 
+//todo:delete after test
 func sendWithdrawToCoiner(withDrawReq types.WithDrawReq, transaction *types.Transaction, nftInfo []types.NFTID) bool {
 	withdrawData := types.WithDrawData{ChainType: withDrawReq.ChainType, Address: withDrawReq.Address}
 	withdrawData.BNT = withDrawReq.BNT
@@ -125,8 +145,7 @@ func sendWithdrawToCoiner(withDrawReq types.WithDrawReq, transaction *types.Tran
 		return false
 	}
 
-	t := types.Transaction{Source: transaction.Source, Target: transaction.Target, Data: string(b), Type: transaction.Type, Time: transaction.Time, Nonce: transaction.Nonce}
-	t.Hash = t.GenHash()
+	t := types.Transaction{Source: transaction.Source, Target: transaction.Target, Data: string(b), Type: transaction.Type, Time: transaction.Time, Nonce: transaction.Nonce, Hash: transaction.Hash}
 
 	msg, err := json.Marshal(t.ToTxJson())
 	if err != nil {

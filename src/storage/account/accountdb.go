@@ -118,6 +118,13 @@ func (adb *AccountDB) Reset(root common.Hash) error {
 	return nil
 }
 
+func (adb *AccountDB) Clean() {
+	adb.accountObjects = new(sync.Map)
+	adb.accountObjectsLock = new(sync.Mutex)
+	adb.accountObjectsDirty = make(map[common.Address]struct{})
+	adb.clearJournalAndRefund()
+}
+
 // AddRefund adds gas to the refund counter
 func (adb *AccountDB) AddRefund(gas uint64) {
 	adb.transitions = append(adb.transitions, refundChange{prev: adb.refund})
@@ -154,40 +161,6 @@ func (adb *AccountDB) GetNonce(addr common.Address) uint64 {
 	}
 
 	return 0
-}
-
-// GetCode returns the contract code associated with this object, if any.
-func (adb *AccountDB) GetCode(addr common.Address) []byte {
-	stateObject := adb.getAccountObject(addr, false)
-	if stateObject != nil {
-		return stateObject.Code(adb.db)
-	}
-	return nil
-}
-
-// GetCodeSize retrieves a particular contracts code's size.
-func (adb *AccountDB) GetCodeSize(addr common.Address) int {
-	stateObject := adb.getAccountObject(addr, false)
-	if stateObject == nil {
-		return 0
-	}
-	if stateObject.code != nil {
-		return len(stateObject.code)
-	}
-	size, err := adb.db.ContractCodeSize(stateObject.addrHash, common.BytesToHash(stateObject.CodeHash()))
-	if err != nil {
-		adb.setError(err)
-	}
-	return size
-}
-
-// GetCodeHash returns code's hash
-func (adb *AccountDB) GetCodeHash(addr common.Address) common.Hash {
-	stateObject := adb.getAccountObject(addr, false)
-	if stateObject == nil {
-		return common.Hash{}
-	}
-	return common.BytesToHash(stateObject.CodeHash())
 }
 
 // GetData retrieves a value from the account storage trie.
@@ -233,11 +206,12 @@ func (adb *AccountDB) AddBalance(addr common.Address, amount *big.Int) {
 }
 
 // SubBalance subtracts amount from the account associated with addr.
-func (adb *AccountDB) SubBalance(addr common.Address, amount *big.Int) {
+func (adb *AccountDB) SubBalance(addr common.Address, amount *big.Int) (left *big.Int) {
 	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {
-		stateObject.SubBalance(amount)
+		left = stateObject.SubBalance(amount)
 	}
+	return
 }
 
 func (adb *AccountDB) SetBalance(addr common.Address, amount *big.Int) {
@@ -254,10 +228,10 @@ func (adb *AccountDB) SetNonce(addr common.Address, nonce uint64) {
 	}
 }
 
-func (adb *AccountDB) SetCode(addr common.Address, code []byte) {
+func (adb *AccountDB) IncreaseNonce(addr common.Address) {
 	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {
-		stateObject.SetCode(sha3.Sum256(code), code)
+		stateObject.IncreaseNonce()
 	}
 }
 
@@ -266,6 +240,22 @@ func (adb *AccountDB) SetData(addr common.Address, key []byte, value []byte) {
 	if stateObject != nil {
 		stateObject.SetData(adb.db, key, value)
 	}
+}
+
+func (adb *AccountDB) SetNFTSetDefinition(addr common.Address, code []byte) {
+	stateObject := adb.getOrNewAccountObject(addr)
+	if stateObject != nil {
+		stateObject.SetNFTSetDefinition(sha3.Sum256(code), code)
+	}
+}
+
+// GetCode returns the contract code associated with this object, if any.
+func (adb *AccountDB) getNFTSetDefinition(addr common.Address) []byte {
+	stateObject := adb.getAccountObject(addr, false)
+	if stateObject != nil {
+		return stateObject.nftSetDefinition(adb.db)
+	}
+	return nil
 }
 
 func (adb *AccountDB) Transfer(sender, recipient common.Address, amount *big.Int) {
@@ -518,10 +508,11 @@ func (adb *AccountDB) Commit(deleteEmptyObjects bool) (root common.Hash, err err
 		case accountObject.suicided || (isDirty && deleteEmptyObjects && accountObject.empty()):
 			adb.deleteAccountObject(accountObject)
 		case isDirty:
-			if accountObject.code != nil && accountObject.dirtyCode {
-				adb.db.TrieDB().InsertBlob(common.BytesToHash(accountObject.CodeHash()), accountObject.code)
-				accountObject.dirtyCode = false
+			if accountObject.nftSet != nil && accountObject.dirtyNFTSet {
+				adb.db.TrieDB().InsertBlob(common.BytesToHash(accountObject.NFTSetDefinitionHash()), accountObject.nftSet)
+				accountObject.dirtyNFTSet = false
 			}
+
 			// Write any storage changes in the state object to its storage trie.
 			if err := accountObject.CommitTrie(adb.db); err != nil {
 				e = &err
@@ -544,7 +535,7 @@ func (adb *AccountDB) Commit(deleteEmptyObjects bool) (root common.Hash, err err
 		if account.Root != emptyData {
 			adb.db.TrieDB().Reference(account.Root, parent)
 		}
-		code := common.BytesToHash(account.CodeHash)
+		code := common.BytesToHash(account.NFTSetDefinitionHash)
 		if code != emptyCode {
 			adb.db.TrieDB().Reference(code, parent)
 		}

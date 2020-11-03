@@ -150,7 +150,7 @@ func convertGroup(g *types.Group) map[string]interface{} {
 
 func (api *GtasAPI) GetMiner(minerId string) (*Result, error) {
 	accountDB := service.AccountDBManagerInstance.GetLatestStateDB()
-	miner := core.MinerManagerImpl.GetMiner(common.FromHex(minerId), accountDB)
+	miner := service.MinerManagerImpl.GetMiner(common.FromHex(minerId), accountDB)
 
 	if nil == miner {
 		return failResult(fmt.Sprintf("miner: %s does not exist", minerId))

@@ -53,9 +53,10 @@ type (
 		key      []byte
 		prevalue []byte
 	}
-	codeChange struct {
-		account            *common.Address
-		prevcode, prevhash []byte
+
+	nftSetDefinitionChange struct {
+		account        *common.Address
+		prev, prevhash []byte
 	}
 
 	refundChange struct {
@@ -81,7 +82,7 @@ func (ch resetObjectChange) undo(s *AccountDB) {
 }
 
 func (ch suicideChange) undo(s *AccountDB) {
-	obj := s.getAccountObject(*ch.account,false)
+	obj := s.getAccountObject(*ch.account, false)
 	if obj != nil {
 		obj.suicided = ch.prev
 		obj.setBalance(ch.prevbalance)
@@ -92,7 +93,7 @@ var ripemd = common.StringToAddress("0000000000000000000000000000000000000003")
 
 func (ch touchChange) undo(s *AccountDB) {
 	if !ch.prev && *ch.account != ripemd {
-		s.getAccountObject(*ch.account,false).touched = ch.prev
+		s.getAccountObject(*ch.account, false).touched = ch.prev
 		if !ch.prevDirty {
 			delete(s.accountObjectsDirty, *ch.account)
 		}
@@ -100,21 +101,22 @@ func (ch touchChange) undo(s *AccountDB) {
 }
 
 func (ch balanceChange) undo(s *AccountDB) {
-	s.getAccountObject(*ch.account,false).setBalance(ch.prev)
+	s.getAccountObject(*ch.account, false).setBalance(ch.prev)
 }
 
 func (ch nonceChange) undo(s *AccountDB) {
-	s.getAccountObject(*ch.account,false).setNonce(ch.prev)
-}
-
-func (ch codeChange) undo(s *AccountDB) {
-	s.getAccountObject(*ch.account,false).setCode(common.BytesToHash(ch.prevhash), ch.prevcode)
+	s.getAccountObject(*ch.account, false).setNonce(ch.prev)
 }
 
 func (ch storageChange) undo(s *AccountDB) {
-	s.getAccountObject(*ch.account,false).setData(ch.key, ch.prevalue)
+	s.getAccountObject(*ch.account, false).setData(ch.key, ch.prevalue)
 }
 
 func (ch refundChange) undo(s *AccountDB) {
 	s.refund = ch.prev
 }
+
+func (ch nftSetDefinitionChange) undo(s *AccountDB) {
+	s.getAccountObject(*ch.account, false).setNFTSetDefinition(common.BytesToHash(ch.prevhash), ch.prev)
+}
+
