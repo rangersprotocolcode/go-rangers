@@ -42,7 +42,7 @@ func testVMExecutorPublishNFTSet(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("ea5f03b21b10a1298e255fac4b6adf7367d67c075ffecdc872c843bb34b28831", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("adfd07d9d9ba8651f36a15f6a600535a944167afdfb5950519a39f20b93a7741", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 0 != len(evictedTxs) {
@@ -67,7 +67,7 @@ func testVMExecutorPublishNFTSet(t *testing.T) {
 	accountDB, _ = account.NewAccountDB(root, accountDB.Database())
 	nftSet := service.NFTManagerInstance.GetNFTSet("1c9b03bf-5975-417f-a6fa-dc098ba8ff2e", accountDB)
 	if nil == nftSet || 0 != strings.Compare(nftSet.Owner, tx1.Source) || 100 != nftSet.MaxSupply {
-		t.Fatalf("fail to get ftSet")
+		t.Fatalf("fail to get nftSet")
 	}
 
 	balance := accountDB.GetBalance(common.HexToAddress(tx1.Source))
@@ -92,7 +92,7 @@ func testVMExecutorPublishNFTSetError(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("e93ae5047d6c1a47fad6619d3f3c0ac44184ceb9141f0094a9ef229e1ed98b9b", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("ae0e307c7e33b2f79522a061c4e392976fce33df40f62e4e658231282943a3b7", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 1 != len(evictedTxs) {
@@ -101,7 +101,7 @@ func testVMExecutorPublishNFTSetError(t *testing.T) {
 	if 1 != len(transactions) {
 		t.Fatalf("fail to get transactions")
 	}
-	if 1 != len(receipts) || 0 != strings.Compare(receipts[0].Msg, "setId or maxSupply wrong, setId: 1c9b03bf-5975-417f-a6fa-dc098ba8ff2e, maxSupply: -100") {
+	if 1 != len(receipts) || 0 != strings.Compare(receipts[0].Msg, "Publish NFT Set Bad Format") {
 		t.Fatalf("fail to get receipts, %s", receipts[0].Msg)
 	}
 
@@ -147,7 +147,7 @@ func testVMExecutorMintNFT(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("0e2948fe9faf293df1ca17163d99aa1af1354de69c5620969c61d49e601c44db", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("e072e0366a12a2cf2e8c6381c30fd30995d5028518dde0051381d1ef4ea74533", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 0 != len(evictedTxs) {
@@ -179,7 +179,7 @@ func testVMExecutorMintNFT(t *testing.T) {
 		t.Fatalf("fail to get nftSet, %s, %s", nftSet.OccupiedID["123450"].GetHexString(), tx2.Target)
 	}
 
-	nft := accountDB.GetNFTById(common.HexToAddress("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"), "1c9b03bf-5975-417f-a6fa-dc098ba8ff2e", "123450")
+	nft := accountDB.GetNFTById("1c9b03bf-5975-417f-a6fa-dc098ba8ff2e", "123450")
 	if nil == nft || 0 != strings.Compare("5.99", nft.GetData("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443")) {
 		t.Fatalf("fail to get nft")
 	}
@@ -215,7 +215,7 @@ func testVMExecutorMintNFTWithoutLimit(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("89f96f400c8e228da1528ebc4302b8d58b99193ef464052dbb7292602957426f", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("6630b458271cf2624d695a8aa5033b8dd9c79881af2c7f1d175b11bccddd68ee", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 0 != len(evictedTxs) {
@@ -249,12 +249,12 @@ func testVMExecutorMintNFTWithoutLimit(t *testing.T) {
 		t.Fatalf("fail to get nftSet, %s, %s", nftSet.OccupiedID["123450"].GetHexString(), tx2.Target)
 	}
 
-	nft := accountDB.GetNFTById(common.HexToAddress("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"), "1c9b03bf-5975-417f-a6fa-dc098ba8ff2e", "123450")
+	nft := accountDB.GetNFTById("1c9b03bf-5975-417f-a6fa-dc098ba8ff2e", "123450")
 	if nil == nft || 0 != strings.Compare("5.99", nft.GetData("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443")) {
 		t.Fatalf("fail to get nft")
 	}
 
-	nft2 := accountDB.GetNFTById(common.HexToAddress("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"), "1c9b03bf-5975-417f-a6fa-dc098ba8ff2e", "123451")
+	nft2 := accountDB.GetNFTById("1c9b03bf-5975-417f-a6fa-dc098ba8ff2e", "123451")
 	if nil == nft2 || 0 != strings.Compare("6.99", nft2.GetData("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443")) {
 		t.Fatalf("fail to get nft2")
 	}
@@ -319,7 +319,7 @@ func testVMExecutorMintNFTWithoutLimitGoodAndEvil(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("07658b59eac68eefb103b1e90e86357e50541749cfa23ea9f368297c059082ea", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("e499efd919480021a1793931946e799cda835cc05fcd478711f5a6997df5ca78", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 2 != len(evictedTxs) {
@@ -332,7 +332,7 @@ func testVMExecutorMintNFTWithoutLimitGoodAndEvil(t *testing.T) {
 		0 != strings.Compare(receipts[0].Msg, "nft publish successful, setId: 1c9b03bf-5975-417f-a6fa-dc098ba8ff2e") ||
 		0 != strings.Compare(receipts[1].Msg, "nft mint successful. setId: 1c9b03bf-5975-417f-a6fa-dc098ba8ff2e,id: 123450") ||
 		0 != strings.Compare(receipts[2].Msg, "nft mint successful. setId: 1c9b03bf-5975-417f-a6fa-dc098ba8ff2e,id: 123451") ||
-		0 != strings.Compare(receipts[4].Msg, "nft publish successful, setId: onlyOne"){
+		0 != strings.Compare(receipts[4].Msg, "nft publish successful, setId: onlyOne") {
 		t.Fatalf("fail to get receipts. %s", receipts[0].Msg)
 	}
 
@@ -358,21 +358,21 @@ func testVMExecutorMintNFTWithoutLimitGoodAndEvil(t *testing.T) {
 	nftSet2 := service.NFTManagerInstance.GetNFTSet("onlyOne", accountDB)
 	if nil == nftSet2 || 0 != strings.Compare(nftSet2.Owner, tx1.Source) || 1 != nftSet2.MaxSupply ||
 		1 != nftSet2.TotalSupply || 1 != len(nftSet2.OccupiedID) ||
-		0 != strings.Compare(nftSet2.OccupiedID["a00"].GetHexString(), "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf444"){
+		0 != strings.Compare(nftSet2.OccupiedID["a00"].GetHexString(), "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf444") {
 		t.Fatalf("fail to get nftSet2, %s", nftSet2.OccupiedID["a00"].GetHexString())
 	}
 
-	nft := accountDB.GetNFTById(common.HexToAddress("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"), "1c9b03bf-5975-417f-a6fa-dc098ba8ff2e", "123450")
+	nft := accountDB.GetNFTById("1c9b03bf-5975-417f-a6fa-dc098ba8ff2e", "123450")
 	if nil == nft || 0 != strings.Compare("5.99", nft.GetData("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443")) {
 		t.Fatalf("fail to get nft")
 	}
 
-	nft2 := accountDB.GetNFTById(common.HexToAddress("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"), "1c9b03bf-5975-417f-a6fa-dc098ba8ff2e", "123451")
+	nft2 := accountDB.GetNFTById("1c9b03bf-5975-417f-a6fa-dc098ba8ff2e", "123451")
 	if nil == nft2 || 0 != strings.Compare("6.99", nft2.GetData("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443")) {
 		t.Fatalf("fail to get nft2")
 	}
 
-	nft3 := accountDB.GetNFTById(common.HexToAddress("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf444"), "onlyOne", "a00")
+	nft3 := accountDB.GetNFTById("onlyOne", "a00")
 	if nil == nft3 || 0 != strings.Compare("a.99", nft3.GetData("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443")) {
 		t.Fatalf("fail to get nft3")
 	}

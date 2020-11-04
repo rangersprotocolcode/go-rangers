@@ -17,15 +17,11 @@
 package account
 
 import (
+	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/utility"
-	"fmt"
 	"math/big"
 	"strings"
 )
-
-func (c *accountObject) generateFTKey(name string) string {
-	return fmt.Sprintf("f-%s", name)
-}
 
 func (c *accountObject) getAllFT(db AccountDatabase) map[string]*big.Int {
 	c.cachedLock.Lock()
@@ -33,12 +29,12 @@ func (c *accountObject) getAllFT(db AccountDatabase) map[string]*big.Int {
 
 	result := make(map[string]*big.Int)
 	for key, value := range c.cachedStorage {
-		if strings.HasPrefix(key, "f-") {
+		if strings.HasPrefix(key, common.FTPrefix) {
 			result[key[2:]] = new(big.Int).SetBytes(value)
 		}
 	}
 
-	iterator := c.DataIterator(db, utility.StrToBytes("f-"))
+	iterator := c.DataIterator(db, utility.StrToBytes(common.FTPrefix))
 	for iterator.Next() {
 		ftName := utility.BytesToStr(iterator.Key)
 		_, contains := c.cachedStorage[ftName]
@@ -53,7 +49,7 @@ func (c *accountObject) getAllFT(db AccountDatabase) map[string]*big.Int {
 }
 
 func (c *accountObject) getFT(db AccountDatabase, name string) *big.Int {
-	value := c.GetData(db, utility.StrToBytes(c.generateFTKey(name)))
+	value := c.GetData(db, utility.StrToBytes(common.GenerateFTKey(name)))
 	if nil == value || 0 == len(value) {
 		return nil
 	}
@@ -68,6 +64,7 @@ func (c *accountObject) AddFT(db AccountDatabase, amount *big.Int, name string) 
 
 		return true
 	}
+
 	raw := c.getFT(db, name)
 	if nil == raw {
 		return c.SetFT(db, new(big.Int).Set(amount), name)
@@ -104,6 +101,6 @@ func (self *accountObject) SetFT(db AccountDatabase, amount *big.Int, name strin
 		return false
 	}
 
-	self.SetData(db, utility.StrToBytes(self.generateFTKey(name)), amount.Bytes())
+	self.SetData(db, utility.StrToBytes(common.GenerateFTKey(name)), amount.Bytes())
 	return true
 }

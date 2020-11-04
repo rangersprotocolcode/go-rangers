@@ -19,7 +19,6 @@ package account
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"fmt"
 	"math/big"
 )
 
@@ -64,9 +63,15 @@ func (self *AccountDB) SubFT(addr common.Address, ftName string, balance *big.In
 }
 
 // 根据setId/id 查找NFT
-func (self *AccountDB) GetNFTById(addr common.Address, setId, id string) *types.NFT {
-	accountObject := self.getOrNewAccountObject(addr)
-	return accountObject.getNFTById(self.db, setId, id)
+func (self *AccountDB) GetNFTById(setId, id string) *types.NFT {
+	addr := common.GenerateNFTAddress(setId, id)
+	accountObject := self.getAccountObject(addr, false)
+
+	if nil == accountObject {
+		return nil
+	}
+
+	return accountObject.GetNFT(self.db)
 }
 
 func (self *AccountDB) GetAllNFTByGameId(addr common.Address, appId string) []*types.NFT {
@@ -80,18 +85,43 @@ func (self *AccountDB) GetAllNFT(addr common.Address) []*types.NFT {
 }
 
 func (self *AccountDB) AddNFTByGameId(addr common.Address, appId string, nft *types.NFT) bool {
+	if nil == nft {
+		return false
+	}
+
+	// save nft
+	nftObject := self.getOrNewAccountObject(common.GenerateNFTAddress(nft.SetID, nft.ID))
+	nftObject.AddNFT(self.db, nft)
+
+	// link to user
 	stateObject := self.getOrNewAccountObject(addr)
-	return stateObject.AddNFTByGameId(self.db, appId, nft)
+	return stateObject.AddNFTLink(self.db, appId, nft.SetID, nft.ID)
 }
 
 func (self *AccountDB) SetNFTValueByGameId(addr common.Address, appId, setId, id, value string) bool {
-	stateObject := self.getOrNewAccountObject(addr)
-	return stateObject.SetNFTValueByGameId(self.db, appId, setId, id, value)
+	nftAddress := common.GenerateNFTAddress(setId, id)
+	if !self.Exist(nftAddress) {
+		return false
+	}
+
+	stateObject := self.getOrNewAccountObject(nftAddress)
+	return stateObject.SetNFTValueByGameId(self.db, addr, appId, value)
 }
 
 func (self *AccountDB) RemoveNFTByGameId(addr common.Address, appId, setId, id string) bool {
+	nftAddress := common.GenerateNFTAddress(setId, id)
+	if !self.Exist(nftAddress) {
+		return false
+	}
+
 	stateObject := self.getOrNewAccountObject(addr)
-	return stateObject.RemoveNFT(self.db, appId, setId, id)
+	if !stateObject.RemoveNFTLink(self.db, setId, id) {
+		return false
+	}
+
+	nftObject := self.getOrNewAccountObject(nftAddress)
+	nftObject.markSuicided()
+	return true
 }
 
 //func (self *AccountDB) RemoveNFT(addr common.Address, nft *types.NFT) bool {
@@ -100,29 +130,30 @@ func (self *AccountDB) RemoveNFTByGameId(addr common.Address, appId, setId, id s
 //}
 
 func (self *AccountDB) ApproveNFT(owner common.Address, appId, setId, id, renter string) bool {
-	stateObject := self.getOrNewAccountObject(owner)
-	return stateObject.ApproveNFT(self.db, appId, setId, id, renter)
+	nftAddress := common.GenerateNFTAddress(setId, id)
+	if !self.Exist(nftAddress) {
+		return false
+	}
+
+	stateObject := self.getOrNewAccountObject(nftAddress)
+	return stateObject.ApproveNFT(self.db, owner, renter)
 }
 
 func (self *AccountDB) ChangeNFTStatus(owner common.Address, appId, setId, id string, status byte) bool {
-	stateObject := self.getOrNewAccountObject(owner)
-
-	if 0 == len(appId) {
-		return stateObject.ChangeNFTStatusById(self.db, setId, id, status)
+	nftAddress := common.GenerateNFTAddress(setId, id)
+	if !self.Exist(nftAddress) {
+		return false
 	}
-	return stateObject.ChangeNFTStatus(self.db, appId, setId, id, status)
+
+	stateObject := self.getOrNewAccountObject(nftAddress)
+	return stateObject.ChangeNFTStatus(self.db, owner, status)
 }
 
 func (adb *AccountDB) GetNFTSet(setId string) *types.NFTSet {
-	accountObject := adb.getAccountObject(adb.generateNFTSetAddress(setId), false)
+	accountObject := adb.getAccountObject(common.GenerateNFTSetAddress(setId), false)
 	if nil == accountObject {
 		return nil
 	}
 
 	return accountObject.GetNFTSet(adb.db)
-}
-
-func (adb *AccountDB) generateNFTSetAddress(setId string) common.Address {
-	address := fmt.Sprintf("n-%s", setId)
-	return common.StringToAddress(address)
 }

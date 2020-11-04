@@ -36,7 +36,7 @@ func testVMExecutorCoinDeposit(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("66845646df71bfc03d43f69253ac393927c935bf42d662bd54c97f4dfb30b4ec", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 0 != len(evictedTxs) {
@@ -81,7 +81,7 @@ func testVMExecutorFtDepositExecutor(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("2aa51016b4b5fa786ae5f2e69c9a6b59c5ad22df44bd00445d2ed334aa01be84", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 0 != len(evictedTxs) {
@@ -127,7 +127,7 @@ func testVMExecutorNFTDepositExecutor(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("6cf5f1c81b60620708c01020c9a716bcbbc33512fd10c83dd13427fbd992bd36", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("8e6410af861bf0a6bed9df03002c8423a54d421cac6ded82bc2bb738821457f7", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 0 != len(evictedTxs) {
@@ -150,7 +150,7 @@ func testVMExecutorNFTDepositExecutor(t *testing.T) {
 	}
 
 	accountDB, _ = account.NewAccountDB(root, accountDB.Database())
-	nft := accountDB.GetNFTById(common.HexToAddress(tx1.Source), "dfaefeafe", "dafrefae")
+	nft := accountDB.GetNFTById("dfaefeafe", "dafrefae")
 	if nil == nft {
 		t.Fatalf("fail to get nft")
 	}
@@ -185,7 +185,7 @@ func testVMExecutorNFTDepositExecutorWithAppId(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("fcec4c096c0825e4f3b9e8f43ebeafc52d29237ce02ecdc8fbff2e1c28759e0d", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("0210181b7f86ef8a468b51d177fe7057ecedf5f6b823b9ae5f4b889a9d87cb17", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 0 != len(evictedTxs) {
@@ -208,7 +208,7 @@ func testVMExecutorNFTDepositExecutorWithAppId(t *testing.T) {
 	}
 
 	accountDB, _ = account.NewAccountDB(root, accountDB.Database())
-	nft := accountDB.GetNFTById(common.HexToAddress(tx1.Source), "dfaefeafe", "dafrefae")
+	nft := accountDB.GetNFTById("dfaefeafe", "dafrefae")
 	if nil == nft {
 		t.Fatalf("fail to get nft")
 	}
