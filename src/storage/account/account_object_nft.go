@@ -47,8 +47,9 @@ func (self *accountObject) generateNFTDataKey(key string) string {
 }
 
 func (self *accountObject) checkOwner(db AccountDatabase, addr common.Address) bool {
-	ownerAddress := self.GetData(db, ownerKey)
-	return 0 == bytes.Compare(common.BytesToAddress(ownerAddress).Bytes(), addr.Bytes())
+	ownerAddressBytes := self.GetData(db, ownerKey)
+	ownerAddress := common.HexStringToAddress(utility.BytesToStr(ownerAddressBytes))
+	return 0 == bytes.Compare(ownerAddress.Bytes(), addr.Bytes())
 }
 
 // 新增一个nft实例

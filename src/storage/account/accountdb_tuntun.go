@@ -131,11 +131,10 @@ func (self *AccountDB) RemoveNFTByGameId(addr common.Address, appId, setId, id s
 
 func (self *AccountDB) ApproveNFT(owner common.Address, appId, setId, id, renter string) bool {
 	nftAddress := common.GenerateNFTAddress(setId, id)
-	if !self.Exist(nftAddress) {
+	stateObject := self.getAccountObject(nftAddress, false)
+	if nil == stateObject {
 		return false
 	}
-
-	stateObject := self.getOrNewAccountObject(nftAddress)
 	return stateObject.ApproveNFT(self.db, owner, renter)
 }
 

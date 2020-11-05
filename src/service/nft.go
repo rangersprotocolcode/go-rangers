@@ -315,7 +315,7 @@ func (self *NFTManager) Transfer(setId, id string, owner, newOwner common.Addres
 	if nil == nft {
 		return fmt.Sprintf("nft is not existed. setId: %s, id: %s, owner: %s", setId, id, owner.String()), false
 	}
-	if 0 != bytes.Compare(owner.Bytes(), common.StringToAddress(nft.Owner).Bytes()) {
+	if 0 != bytes.Compare(owner.Bytes(), common.HexStringToAddress(nft.Owner).Bytes()) {
 		return fmt.Sprintf("nft is not authed. setId: %s, id: %s, owner: %s", setId, id, owner.String()), false
 	}
 	txLogger.Tracef("Transfer nft.Got nft:%v", nft)
