@@ -139,16 +139,17 @@ func (self *accountObject) ApproveNFT(db AccountDatabase, owner common.Address, 
 
 // 更新nft属性值
 func (self *accountObject) SetNFTValue(db AccountDatabase, addr common.Address, appId, propertyName, value string) bool {
-	if !self.checkOwner(db, addr) {
+	if 0 != strings.Compare(appId, utility.BytesToStr(self.GetData(db, appIdKey))) {
 		return false
 	}
+
 	self.SetData(db, utility.StrToBytes(self.generateNFTDataKey(common.GenerateAppIdProperty(appId, propertyName))), utility.StrToBytes(value))
 	return true
 }
 
 // 更新nft属性值
 func (self *accountObject) SetNFTValueByGameId(db AccountDatabase, addr common.Address, appId, value string) bool {
-	if !self.checkOwner(db, addr) {
+	if 0 != strings.Compare(appId, utility.BytesToStr(self.GetData(db, appIdKey))) {
 		return false
 	}
 

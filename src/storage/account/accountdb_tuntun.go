@@ -100,17 +100,18 @@ func (self *AccountDB) AddNFTByGameId(addr common.Address, appId string, nft *ty
 
 func (self *AccountDB) SetNFTValueByGameId(addr common.Address, appId, setId, id, value string) bool {
 	nftAddress := common.GenerateNFTAddress(setId, id)
-	if !self.Exist(nftAddress) {
+	stateObject := self.getAccountObject(nftAddress, false)
+	if nil == stateObject {
 		return false
 	}
 
-	stateObject := self.getOrNewAccountObject(nftAddress)
 	return stateObject.SetNFTValueByGameId(self.db, addr, appId, value)
 }
 
 func (self *AccountDB) RemoveNFTByGameId(addr common.Address, appId, setId, id string) bool {
 	nftAddress := common.GenerateNFTAddress(setId, id)
-	if !self.Exist(nftAddress) {
+	nftObject := self.getAccountObject(nftAddress, false)
+	if nil == nftObject {
 		return false
 	}
 
@@ -119,7 +120,6 @@ func (self *AccountDB) RemoveNFTByGameId(addr common.Address, appId, setId, id s
 		return false
 	}
 
-	nftObject := self.getOrNewAccountObject(nftAddress)
 	nftObject.markSuicided()
 	return true
 }
