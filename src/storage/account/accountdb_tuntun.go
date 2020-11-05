@@ -78,7 +78,7 @@ func (self *AccountDB) GetAllNFTByGameId(addr common.Address, appId string) []*t
 	accountObject := self.getOrNewAccountObject(addr)
 	idList := accountObject.getAllNFT(self.db, appId)
 	if nil == idList || 0 == len(idList) {
-		return nil
+		return make([]*types.NFT, len(idList))
 	}
 
 	result := make([]*types.NFT, len(idList))
