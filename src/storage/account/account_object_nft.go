@@ -52,6 +52,14 @@ func (self *accountObject) checkOwner(db AccountDatabase, addr common.Address) b
 	return 0 == bytes.Compare(ownerAddress.Bytes(), addr.Bytes())
 }
 
+func (self *accountObject) SetOwner(db AccountDatabase, owner string) {
+	self.SetData(db, ownerKey, utility.StrToBytes(owner))
+}
+
+func (self *accountObject) SetAppId(db AccountDatabase, appId string) {
+	self.SetData(db, appIdKey, utility.StrToBytes(appId))
+}
+
 // 新增一个nft实例
 func (self *accountObject) AddNFT(db AccountDatabase, nft *types.NFT) bool {
 	if nil == nft {

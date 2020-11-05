@@ -92,6 +92,26 @@ func (self *AccountDB) GetAllNFT(addr common.Address) []*types.NFT {
 	return self.GetAllNFTByGameId(addr, "")
 }
 
+func (self *AccountDB) ChangeNFTOwner(owner, newOwner common.Address, setId, id string) bool {
+	ownerObject := self.getOrNewAccountObject(owner)
+	appId := ownerObject.GetNFTAppId(self.db, setId, id)
+	if !ownerObject.RemoveNFTLink(self.db, setId, id) {
+		return false
+	}
+
+	newOwnerObject := self.getOrNewAccountObject(newOwner)
+	if !newOwnerObject.AddNFTLink(self.db, appId, setId, id) {
+		return false
+	}
+
+	nft := self.getAccountObject(common.GenerateNFTAddress(setId, id), false)
+	if nil == nft {
+		return false
+	}
+	nft.SetOwner(self.db, newOwner.GetHexString())
+	return true
+}
+
 func (self *AccountDB) AddNFTByGameId(addr common.Address, appId string, nft *types.NFT) bool {
 	if nil == nft {
 		return false
@@ -146,13 +166,30 @@ func (self *AccountDB) ApproveNFT(owner common.Address, appId, setId, id, renter
 	return stateObject.ApproveNFT(self.db, owner, renter)
 }
 
-func (self *AccountDB) ChangeNFTStatus(owner common.Address, appId, setId, id string, status byte) bool {
+func (self *AccountDB) SetNFTAppId(owner common.Address, setId, id, appId string) bool {
+	// change nft
 	nftAddress := common.GenerateNFTAddress(setId, id)
-	if !self.Exist(nftAddress) {
+	nftObject := self.getAccountObject(nftAddress, false)
+	if nil == nftObject {
 		return false
 	}
+	nftObject.SetAppId(self.db, appId)
 
-	stateObject := self.getOrNewAccountObject(nftAddress)
+	// change link
+	stateObject := self.getAccountObject(owner, false)
+	if nil == stateObject {
+		return false
+	}
+	stateObject.UpdateNFTLink(self.db, setId, id, appId)
+	return true
+}
+
+func (self *AccountDB) ChangeNFTStatus(owner common.Address, appId, setId, id string, status byte) bool {
+	nftAddress := common.GenerateNFTAddress(setId, id)
+	stateObject := self.getAccountObject(nftAddress, false)
+	if nil == stateObject {
+		return false
+	}
 	return stateObject.ChangeNFTStatus(self.db, owner, status)
 }
 

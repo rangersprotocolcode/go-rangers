@@ -326,10 +326,7 @@ func (self *NFTManager) Transfer(setId, id string, owner, newOwner common.Addres
 	}
 
 	// 修改数据
-	newOwnerString := newOwner.GetHexString()
-	nft.Owner = newOwnerString
-	nft.Renter = newOwnerString
-	if accountDB.AddNFTByGameId(newOwner, nft.AppId, nft) && accountDB.RemoveNFTByGameId(owner, nft.AppId, nft.SetID, nft.ID) {
+	if accountDB.ChangeNFTOwner(owner, newOwner, setId, id) {
 		self.updateOwnerFromNFTSet(setId, id, newOwner, accountDB)
 
 		// 通知本状态机
@@ -375,11 +372,7 @@ func (self *NFTManager) shuttle(owner, setId, id, newAppId string, accountDB *ac
 	}
 
 	// 修改数据
-	addr := common.HexToAddress(nft.Owner)
-	oldAppId := nft.AppId
-	accountDB.RemoveNFTByGameId(addr, oldAppId, setId, id)
-	nft.AppId = newAppId
-	accountDB.AddNFTByGameId(addr, newAppId, nft)
+	accountDB.SetNFTAppId(common.HexStringToAddress(owner),setId,id,newAppId)
 
 	// 通知当前状态机
 	// 通知接收状态机

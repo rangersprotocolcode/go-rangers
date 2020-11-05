@@ -34,6 +34,11 @@ func (self *accountObject) checkAndCreate() {
 	}
 }
 
+func (self *accountObject) GetNFTAppId(db AccountDatabase, setId, id string) string {
+	nftKey := utility.StrToBytes(common.GenerateNFTKey(setId, id))
+	return utility.BytesToStr(self.GetData(db, nftKey))
+}
+
 func (self *accountObject) RemoveNFTLink(db AccountDatabase, setId, id string) bool {
 	nftKey := utility.StrToBytes(common.GenerateNFTKey(setId, id))
 	if utility.IsEmptyByteSlice(self.GetData(db, nftKey)) {
@@ -57,6 +62,15 @@ func (self *accountObject) AddNFTLink(db AccountDatabase, appId, setId, id strin
 	}
 
 	return true
+}
+
+func (self *accountObject) UpdateNFTLink(db AccountDatabase, appId, setId, id string) {
+	nftKey := utility.StrToBytes(common.GenerateNFTKey(setId, id))
+	if 0 == len(appId) {
+		self.SetData(db, nftKey, dummyAppId)
+	} else {
+		self.SetData(db, nftKey, utility.StrToBytes(appId))
+	}
 }
 
 func (self *accountObject) getAllNFT(db AccountDatabase, filter string) []*types.NFT {
