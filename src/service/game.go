@@ -209,7 +209,7 @@ func UpdateAsset(user types.UserData, appId string, accountDB *account.AccountDB
 	nftList := user.NFT
 	if 0 != len(nftList) {
 		for _, nft := range nftList {
-			if !NFTManagerInstance.UpdateNFT(userAddr, appId, nft.SetId, nft.Id, nft.Data, accountDB) {
+			if !NFTManagerInstance.UpdateNFT(appId, nft.SetId, nft.Id, nft.Data, accountDB) {
 				return false
 			}
 		}
@@ -440,14 +440,7 @@ func UpdateNFT(accountDB *account.AccountDB, tx *types.Transaction) (bool, strin
 		return false, "param error"
 	}
 
-	addr := NFTManagerInstance.GetNFTOwner(setId, id, accountDB)
-	if nil == addr {
-		msg := fmt.Sprintf("wrong setId %s or id %s", setId, id)
-		txLogger.Debugf(msg)
-		return false, msg
-	}
-
-	if NFTManagerInstance.UpdateNFT(*addr, appId, setId, id, data, accountDB) {
+	if NFTManagerInstance.UpdateNFT(appId, setId, id, data, accountDB) {
 		return true, "success update nft"
 	} else {
 		msg := fmt.Sprintf("fail to update setId %s or id %s", setId, id)

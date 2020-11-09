@@ -126,14 +126,24 @@ func (self *AccountDB) AddNFTByGameId(addr common.Address, appId string, nft *ty
 	return stateObject.AddNFTLink(self.db, appId, nft.SetID, nft.ID)
 }
 
-func (self *AccountDB) SetNFTValueByGameId(addr common.Address, appId, setId, id, value string) bool {
+func (self *AccountDB) SetNFTValueByGameId(appId, setId, id, value string) bool {
 	nftAddress := common.GenerateNFTAddress(setId, id)
 	stateObject := self.getAccountObject(nftAddress, false)
 	if nil == stateObject {
 		return false
 	}
 
-	return stateObject.SetNFTValueByGameId(self.db, addr, appId, value)
+	return stateObject.SetNFTValueByGameId(self.db, appId, value)
+}
+
+func (self *AccountDB) SetNFTValueByProperty(addr common.Address, appId, property, setId, id, value string) bool {
+	nftAddress := common.GenerateNFTAddress(setId, id)
+	stateObject := self.getAccountObject(nftAddress, false)
+	if nil == stateObject {
+		return false
+	}
+
+	return stateObject.SetNFTProperty(self.db, appId, property, value)
 }
 
 func (self *AccountDB) RemoveNFTByGameId(addr common.Address, appId, setId, id string) bool {

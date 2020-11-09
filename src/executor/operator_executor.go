@@ -95,8 +95,7 @@ func (this *operatorExecutor) Execute(transaction *types.Transaction, header *ty
 
 				// 修改NFT属性
 				if user.Address == "UpdateNFT" {
-					addr := common.HexToAddress(user.Assets["addr"])
-					flag := service.NFTManagerInstance.UpdateNFT(addr, user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], accountdb)
+					flag := service.NFTManagerInstance.UpdateNFT(user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], accountdb)
 					if !flag {
 						return false, fmt.Sprintf("nft not existed, setId: %s, id: %s", user.Assets["setId"], user.Assets["id"])
 					}

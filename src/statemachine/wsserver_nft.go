@@ -54,7 +54,7 @@ func (self *wsServer) updateNFT(params map[string]string) (string, bool) {
 		return msg, false
 	}
 
-	if service.NFTManagerInstance.UpdateNFT(*addr, appId, setId, id, data, accountDB) {
+	if service.NFTManagerInstance.UpdateNFT(appId, setId, id, data, accountDB) {
 		// 生成交易，上链 context.Tx.SubTransactions
 		userData := types.UserData{}
 		userData.Address = "UpdateNFT"

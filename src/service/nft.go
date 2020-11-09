@@ -290,18 +290,22 @@ func (self *NFTManager) GetNFTOwner(setId, id string, accountDB *account.Account
 
 // 更新用户当前游戏的NFT数据属性
 // 状态机调用
-func (self *NFTManager) UpdateNFT(addr common.Address, appId, setId, id, data string, accountDB *account.AccountDB) bool {
-	return accountDB.SetNFTValueByGameId(addr, appId, setId, id, data)
+func (self *NFTManager) UpdateNFT(appId, setId, id, data string, accountDB *account.AccountDB) bool {
+	return accountDB.SetNFTValueByGameId(appId, setId, id, data)
+}
+
+func (self *NFTManager) UpdateNFTProperty(addr common.Address, appId, property, setId, id, data string, accountDB *account.AccountDB) bool {
+	return accountDB.SetNFTValueByProperty(addr, appId, property, setId, id, data)
 }
 
 // 批量更新用户当前游戏的NFT数据属性
 // 状态机调用
-func (self *NFTManager) BatchUpdateNFT(addr common.Address, appId, setId string, idList, data []string, accountDB *account.AccountDB) (string, bool) {
+func (self *NFTManager) BatchUpdateNFT(appId, setId string, idList, data []string, accountDB *account.AccountDB) (string, bool) {
 	if 0 == len(idList) || 0 == len(data) || len(idList) != len(data) {
 		return "wrong idList/data", false
 	}
 	for i := range idList {
-		self.UpdateNFT(addr, appId, setId, idList[i], data[i], accountDB)
+		self.UpdateNFT(appId, setId, idList[i], data[i], accountDB)
 	}
 	return "batchUpdate successful", true
 }
@@ -372,7 +376,7 @@ func (self *NFTManager) shuttle(owner, setId, id, newAppId string, accountDB *ac
 	}
 
 	// 修改数据
-	accountDB.SetNFTAppId(common.HexStringToAddress(owner),setId,id,newAppId)
+	accountDB.SetNFTAppId(common.HexStringToAddress(owner), setId, id, newAppId)
 
 	// 通知当前状态机
 	// 通知接收状态机
