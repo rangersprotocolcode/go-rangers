@@ -294,8 +294,8 @@ func (self *NFTManager) UpdateNFT(appId, setId, id, data string, accountDB *acco
 	return accountDB.SetNFTValueByGameId(appId, setId, id, data)
 }
 
-func (self *NFTManager) UpdateNFTProperty(addr common.Address, appId, property, setId, id, data string, accountDB *account.AccountDB) bool {
-	return accountDB.SetNFTValueByProperty(addr, appId, property, setId, id, data)
+func (self *NFTManager) UpdateNFTProperty(appId, property, setId, id, data string, accountDB *account.AccountDB) bool {
+	return accountDB.SetNFTValueByProperty(appId, property, setId, id, data)
 }
 
 // 批量更新用户当前游戏的NFT数据属性

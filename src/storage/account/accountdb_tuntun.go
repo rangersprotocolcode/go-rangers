@@ -136,7 +136,7 @@ func (self *AccountDB) SetNFTValueByGameId(appId, setId, id, value string) bool 
 	return stateObject.SetNFTValueByGameId(self.db, appId, value)
 }
 
-func (self *AccountDB) SetNFTValueByProperty(addr common.Address, appId, property, setId, id, value string) bool {
+func (self *AccountDB) SetNFTValueByProperty(appId, property, setId, id, value string) bool {
 	nftAddress := common.GenerateNFTAddress(setId, id)
 	stateObject := self.getAccountObject(nftAddress, false)
 	if nil == stateObject {
