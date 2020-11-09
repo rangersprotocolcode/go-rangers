@@ -18,7 +18,6 @@ package account
 
 import (
 	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/rlp"
 	"fmt"
 	"math/big"
@@ -29,9 +28,6 @@ func Test_RLP_account(t *testing.T) {
 	account := Account{}
 	if account.Balance == nil {
 		account.Balance = new(big.Int)
-	}
-	if account.Ft == nil {
-		account.Ft = make([]*types.FT, 0)
 	}
 
 

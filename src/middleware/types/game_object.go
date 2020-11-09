@@ -135,45 +135,22 @@ type NFT struct {
 	AppId string `json:"appId,omitempty"` // 当前游戏id
 
 	// 4. NFT在游戏中的数据
-	DataValue []string `json:"dataValue,omitempty"` //key为appId，
-	DataKey   []string `json:"dataKey,omitempty"`
+	Data map[string]string
 
 	// 5. 从外部导入的相关信息
 	Imported string `json:"imported,omitempty"`
 }
 
 func (self *NFT) GetData(gameId string) string {
-	index := -1
-	for i, key := range self.DataKey {
-		if key == gameId {
-			index = i
-			break
-		}
-	}
-
-	if -1 == index {
-		return ""
-	}
-
-	return self.DataValue[index]
+	return self.Data[gameId]
 }
 
-func (self *NFT) SetData(data string, gameId string) {
-	index := -1
-	for i, key := range self.DataKey {
-		if key == gameId {
-			index = i
-			break
-		}
-	}
+func (self *NFT) GetProperty(appId, propertyName string) string {
+	return self.Data[common.GenerateAppIdProperty(appId, propertyName)]
+}
 
-	if -1 == index {
-		self.DataKey = append(self.DataKey, gameId)
-		self.DataValue = append(self.DataValue, data)
-	} else {
-		self.DataValue[index] = data
-	}
-
+func (self *NFT) SetData(gameId, data string) {
+	self.Data[gameId] = data
 }
 
 func (self *NFT) ToJSONString() string {
@@ -195,12 +172,7 @@ func (self *NFT) ToMap() map[string]interface{} {
 	nftMap["condition"] = self.Condition
 	nftMap["appId"] = self.AppId
 	nftMap["imported"] = self.Imported
-
-	data := make(map[string]string, 0)
-	for i := range self.DataKey {
-		data[self.DataKey[i]] = self.DataValue[i]
-	}
-	nftMap["data"] = data
+	nftMap["data"] = self.Data
 	return nftMap
 }
 
@@ -216,10 +188,4 @@ type FTSet struct {
 	MaxSupply   *big.Int // 发行总数， 0表示无限量（对于公链币，也是如此）
 	TotalSupply *big.Int // 已经发行了多少
 	Type        byte     // 类型，0代表公链币，1代表游戏发行的FT
-}
-
-// 用户ft数据结构
-type FT struct {
-	Balance *big.Int // 余额，注意这里会存储实际余额乘以10的9次方，用于表达浮点数。例如，用户拥有12.45币，这里的数值就是12450000000
-	ID      string   // 代币ID，在发行时由layer2生成。生成规则时appId-symbol。例如0x12ef3-NOX
 }

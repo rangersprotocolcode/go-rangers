@@ -19,8 +19,6 @@ package account
 import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/storage/rlp"
 	"com.tuntun.rocket/node/src/storage/trie"
 	"fmt"
 	"golang.org/x/crypto/sha3"
@@ -73,13 +71,10 @@ type accountObject struct {
 	nftSet      []byte
 	dirtyNFTSet bool // true if the code was updated
 
+	// SetData用
 	cachedLock    sync.RWMutex
 	cachedStorage Storage // Storage cache of original entries to dedup rewrites
 	dirtyStorage  Storage // Storage entries that need to be flushed to disk
-
-	cachedNFT        sync.RWMutex
-	cachedNFTStorage map[string]*types.NFT // Storage cache of original nft to dedup rewrites
-	dirtyNFTStorage  map[string]*types.NFT // Storage nft that need to be flushed to disk
 
 	suicided bool
 	touched  bool
@@ -89,7 +84,7 @@ type accountObject struct {
 
 // empty returns whether the account is considered empty.
 func (ao *accountObject) empty() bool {
-	return ao.data.Ft == nil && ao.data.Nonce == 0 && ao.data.Balance.Sign() == 0 && len(ao.cachedStorage) == 0 && len(ao.dirtyStorage) == 0 && len(ao.cachedNFTStorage) == 0 && len(ao.dirtyNFTStorage) == 0
+	return (ao.data.NFTSetDefinitionHash == nil || 0 == bytes.Compare(ao.data.NFTSetDefinitionHash, emptyCodeHash[:])) && ao.data.Nonce == 0 && ao.data.Balance.Sign() == 0 && len(ao.cachedStorage) == 0 && len(ao.dirtyStorage) == 0
 }
 
 // Account is the consensus representation of accounts.
@@ -100,7 +95,6 @@ type Account struct {
 
 	NFTSetDefinitionHash []byte
 	Balance              *big.Int
-	Ft                   []*types.FT
 }
 
 // newObject creates a account object.
@@ -108,23 +102,18 @@ func newAccountObject(db *AccountDB, address common.Address, data Account, onDir
 	if data.Balance == nil {
 		data.Balance = new(big.Int)
 	}
-	if data.Ft == nil {
-		data.Ft = make([]*types.FT, 0)
-	}
 	if data.NFTSetDefinitionHash == nil {
 		data.NFTSetDefinitionHash = emptyCodeHash[:]
 	}
 
 	ao := &accountObject{
-		db:               db,
-		address:          address,
-		addrHash:         sha3.Sum256(address[:]),
-		data:             data,
-		cachedStorage:    make(Storage),
-		dirtyStorage:     make(Storage),
-		cachedNFTStorage: make(map[string]*types.NFT),
-		dirtyNFTStorage:  make(map[string]*types.NFT),
-		onDirty:          onDirty,
+		db:            db,
+		address:       address,
+		addrHash:      sha3.Sum256(address[:]),
+		data:          data,
+		cachedStorage: make(Storage),
+		dirtyStorage:  make(Storage),
+		onDirty:       onDirty,
 	}
 
 	return ao
@@ -245,21 +234,6 @@ func (ao *accountObject) updateTrie(db AccountDatabase) Trie {
 		ao.setError(tr.TryUpdate([]byte(key), value[:]))
 	}
 
-	// Update all the dirty slots in the trie
-	for key, value := range ao.dirtyNFTStorage {
-		delete(ao.dirtyNFTStorage, key)
-		if value == nil {
-			ao.setError(tr.TryDelete([]byte(key)))
-			continue
-		}
-
-		bytes, err := rlp.EncodeToBytes(value)
-		if nil != err {
-			common.DefaultLogger.Errorf(err.Error())
-			continue
-		}
-		ao.setError(tr.TryUpdate([]byte(key), bytes))
-	}
 	return tr
 }
 

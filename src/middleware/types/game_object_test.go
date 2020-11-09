@@ -20,32 +20,9 @@ import (
 	"com.tuntun.rocket/node/src/storage/rlp"
 	"encoding/json"
 	"fmt"
-	"math/big"
 	"strings"
 	"testing"
 )
-
-func TestFT_EncodeRLP(t *testing.T) {
-	ft := FT{
-		ID:      "test1",
-		Balance: big.NewInt(100),
-	}
-
-	data, err := rlp.EncodeToBytes(ft)
-	if err != nil {
-		t.Fatalf("%s", err.Error())
-	}
-	fmt.Println(data)
-
-	ftMap := []FT{}
-	ftMap = append(ftMap, ft)
-	data, err = rlp.EncodeToBytes(ftMap)
-	if err != nil {
-		t.Fatalf("%s", err.Error())
-	}
-	fmt.Println(data)
-
-}
 
 func TestNFT_EncodeRLP(t *testing.T) {
 	ft := &NFT{ID: "sword1", Name: "yitai", Symbol: "yt", CreateTime: "1571134085856098"}

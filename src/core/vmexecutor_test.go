@@ -185,10 +185,7 @@ func getTestAccountDB() *account.AccountDB {
 
 
 func clean() {
-	os.RemoveAll("pkp0")
-	os.RemoveAll("logs")
-	os.RemoveAll("test")
-	os.RemoveAll("database")
+	os.RemoveAll("storage0")
 	os.RemoveAll("1.ini")
 	leveldb = nil
 }

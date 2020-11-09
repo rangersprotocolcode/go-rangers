@@ -107,7 +107,7 @@ func TestAccountDB_AddNFT(t *testing.T) {
 
 	accountDB, _ := NewAccountDB(root, triedb)
 
-	nftRead := accountDB.GetNFTById(address, "11", "abc")
+	nftRead := accountDB.GetNFTById("11", "abc")
 	if nil == nftRead {
 		t.Fatalf("no nft for 11&abd")
 	}

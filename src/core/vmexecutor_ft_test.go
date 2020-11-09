@@ -42,7 +42,7 @@ func testVMExecutorPublishFTSet(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("7f6187c5b79e8b3dcc9722b005bb93ece090d440d00fa20a0569d8ffbd63e7dd", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("88cafca4783d08dfed9832cea2dd1a1e6594c46feaf2232d66485db44aaf4be9", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 0 != len(evictedTxs) {
@@ -92,7 +92,7 @@ func testVMExecutorPublishFTSetError(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("e93ae5047d6c1a47fad6619d3f3c0ac44184ceb9141f0094a9ef229e1ed98b9b", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("ae0e307c7e33b2f79522a061c4e392976fce33df40f62e4e658231282943a3b7", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 1 != len(evictedTxs) {
@@ -146,7 +146,7 @@ func testVMExecutorMintFT(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("c5abe5b5b8205197ad7d660d649e190efef82dda63f6a43c084b357a9151ff9a", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("bfd578ae48366bc3d53fca175edb32f0031c6eb4837db9608f29ac4621af5aed", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 0 != len(evictedTxs) {
@@ -217,7 +217,7 @@ func testVMExecutorMintFTError(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("36ac7f86e700c2747f4d954869bae610793af2874d82185ed623163c6ddffce1", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("b06ac0f75d4482c293f9b08cde11ad1bbd33fa502e838ec44983cb5850a4cf64", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 2 != len(evictedTxs) {
@@ -292,7 +292,7 @@ func testVMExecutorMintFTGoodAndEvil(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("4d52d3c7efa09a0b37f827e5de1ef6b000d6df4b7a71416d797d4ea923c6292f", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("a07d18066ca8703ee51860124a9284041cd6d4a2e8b439470499820328b0ff3c", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 2 != len(evictedTxs) {

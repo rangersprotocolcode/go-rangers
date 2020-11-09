@@ -35,7 +35,6 @@ type FTManager struct {
 
 var FTManagerInstance *FTManager
 
-
 // 地址相关常量
 var (
 	name        = utility.StrToBytes("n")
@@ -134,15 +133,13 @@ func (self *FTManager) PublishFTSet(ftSet *types.FTSet, accountDB *account.Accou
 	accountDB.SetData(ftAddress, owner, utility.StrToBytes(ftSet.Owner))
 	accountDB.SetData(ftAddress, createTime, utility.StrToBytes(ftSet.CreateTime))
 	accountDB.SetData(ftAddress, kind, []byte{ftSet.Type})
+	accountDB.SetData(ftAddress, totalSupply, []byte{})
+	accountDB.SetNonce(ftAddress, 1)
+
 	if nil == ftSet.MaxSupply {
 		accountDB.SetData(ftAddress, maxSupply, []byte{})
 	} else {
 		accountDB.SetData(ftAddress, maxSupply, ftSet.MaxSupply.Bytes())
-	}
-	if nil == ftSet.TotalSupply {
-		accountDB.SetData(ftAddress, totalSupply, []byte{})
-	} else {
-		accountDB.SetData(ftAddress, totalSupply, ftSet.TotalSupply.Bytes())
 	}
 
 	return ftSet.ID, true
@@ -176,7 +173,7 @@ func (self *FTManager) SubFTSet(triedOwner, ftId string, amount *big.Int, accoun
 		return false
 	}
 
-	//update maxSupply
+	//update totalSupply
 	accountDB.SetData(ftAddress, totalSupply, total.Bytes())
 	return true
 }
