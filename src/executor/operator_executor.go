@@ -150,7 +150,7 @@ func (this *operatorExecutor) Execute(transaction *types.Transaction, header *ty
 				}
 
 				if user.Address == "MintNFT" {
-					msg, ok := service.NFTManagerInstance.MintNFT(user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], user.Assets["createTime"], common.HexToAddress(user.Assets["target"]), accountdb)
+					msg, ok := service.NFTManagerInstance.MintNFT(user.Assets["source"], user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], user.Assets["createTime"], common.HexToAddress(user.Assets["target"]), accountdb)
 					if !ok {
 						return false, msg
 					}

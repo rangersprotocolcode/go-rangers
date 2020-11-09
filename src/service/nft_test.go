@@ -79,7 +79,7 @@ func TestNFTManager_MintNFT(t *testing.T) {
 		t.Fatalf("fail to get nft after mint")
 	}
 
-	fmt.Println(accountdb.RemoveNFTByGameId(owner, appId, setId, id))
+	fmt.Println(accountdb.RemoveNFTByGameId(owner, setId, id))
 
 	root, err = accountdb.Commit(true)
 	if nil != err {

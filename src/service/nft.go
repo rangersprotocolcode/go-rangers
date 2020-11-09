@@ -123,7 +123,7 @@ func (self *NFTManager) PublishNFTSet(nftSet *types.NFTSet, accountDB *account.A
 
 // L2创建NFT
 // 状态机调用
-func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner common.Address, accountDB *account.AccountDB) (string, bool) {
+func (self *NFTManager) MintNFT(nftSetOwner, appId, setId, id, data, createTime string, owner common.Address, accountDB *account.AccountDB) (string, bool) {
 	txLogger.Debugf("Mint NFT! appId: %s, setId: %s, id: %s, data: %s, createTime: %s, owner: %s", appId, setId, id, data, createTime, owner.String())
 	self.lock.Lock()
 	defer self.lock.Unlock()
@@ -135,7 +135,7 @@ func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner
 
 	// 检查setId是否存在
 	nftSet := accountDB.GetNFTSet(setId)
-	if nil == nftSet || nftSet.Owner != appId {
+	if nil == nftSet || 0 != strings.Compare(common.FormatHexString(nftSet.Owner), common.FormatHexString(nftSetOwner)) {
 		txLogger.Debugf("Mint nft! wrong setId or not setOwner! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, createTime, owner.String())
 		return "wrong setId or not setOwner", false
 	}
@@ -144,7 +144,11 @@ func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner
 		return "not enough nftSet", false
 	}
 
-	return self.GenerateNFT(nftSet, appId, setId, id, data, appId, createTime, "", owner, nil, accountDB)
+	if 0 == len(appId) {
+		appId = nftSetOwner
+	}
+
+	return self.GenerateNFT(nftSet, appId, setId, id, data, nftSetOwner, createTime, "", owner, nil, accountDB)
 }
 
 func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data, creator, timeStamp, imported string, owner common.Address, fullData map[string]string, accountDB *account.AccountDB) (string, bool) {
@@ -234,7 +238,7 @@ func (self *NFTManager) DepositWithdrawnNFT(owner, renter, appId string, fullDat
 		}
 	}
 
-	if accountDB.RemoveNFTByGameId(common.HexStringToAddress(originalNFT.Owner), originalNFT.AppId, originalNFT.SetID, originalNFT.ID) && accountDB.AddNFTByGameId(common.HexStringToAddress(nft.Owner), nft.AppId, nft) {
+	if accountDB.RemoveNFTByGameId(common.HexStringToAddress(originalNFT.Owner), originalNFT.SetID, originalNFT.ID) && accountDB.AddNFTByGameId(common.HexStringToAddress(nft.Owner), nft.AppId, nft) {
 		if nft.Owner != originalNFT.Owner {
 			self.updateOwnerFromNFTSet(originalNFT.SetID, originalNFT.ID, common.HexStringToAddress(nft.Owner), accountDB)
 		}

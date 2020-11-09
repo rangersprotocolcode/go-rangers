@@ -57,3 +57,17 @@ func GenerateFTKey(name string) string {
 func GenerateAppIdProperty(appId, property string) string {
 	return fmt.Sprintf("%s:%s", appId, property)
 }
+
+func FormatHexString(s string) string {
+	s = strings.ToLower(s)
+	if len(s) > 1 {
+		if s[0:2] == "0x" || s[0:2] == "0X" {
+			return s[2:]
+		}
+		if len(s)%2 == 1 {
+			return "0" + s
+		}
+	}
+
+	return ""
+}

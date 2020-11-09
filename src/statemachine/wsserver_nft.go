@@ -318,6 +318,7 @@ func (self *wsServer) publishNFTSet(params map[string]string) (string, bool) {
 // NFT铸币
 func (self *wsServer) mintNFT(params map[string]string) (string, bool) {
 	authCode := params["authCode"]
+	source := params["source"]
 	appId := params["appId"]
 	setId := params["setId"]
 	target := params["target"]
@@ -338,7 +339,7 @@ func (self *wsServer) mintNFT(params map[string]string) (string, bool) {
 	}
 
 	accountDB := context.AccountDB
-	if reason, ok := service.NFTManagerInstance.MintNFT(appId, setId, id, data, createTime, common.HexToAddress(target), accountDB); ok {
+	if reason, ok := service.NFTManagerInstance.MintNFT(source, appId, setId, id, data, createTime, common.HexToAddress(target), accountDB); ok {
 		// 生成交易，上链 context.Tx.SubTransactions
 		userData := types.UserData{}
 		userData.Address = "MintNFT"
