@@ -64,6 +64,11 @@ const (
 	TransactionTypeBatchUpdateNFT = 126 // 批量更新NFT数据
 	TransactionTypeImportNFT      = 128 // 从外部导入NFT/NFTSet
 
+	TransactionTypeLockCombo         = 129 // 锁定 nft/ft/bnt
+	TransactionTypeUnLockCombo       = 130 // 解锁 nft/ft/bnt
+	TransactionTypeUpdatePropertyNFT = 131 // 修改nft的属性
+	TransactionTypeComboNFT          = 132 // 组合nft
+
 	// 状态机通知客户端
 	TransactionTypeNotify          = 301 // 通知某个用户
 	TransactionTypeNotifyGroup     = 302 // 通知某个组

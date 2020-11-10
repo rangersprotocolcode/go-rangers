@@ -26,6 +26,11 @@ import (
 	"sync"
 )
 
+const (
+	NFTSET_TYPE = 1
+	NFT_TYPE    = 2
+)
+
 var emptyCodeHash = sha3.Sum256(nil)
 
 type Storage map[string][]byte
@@ -90,9 +95,9 @@ func (ao *accountObject) empty() bool {
 // Account is the consensus representation of accounts.
 // These objects are stored in the main account trie.
 type Account struct {
-	Nonce uint64
-	Root  common.Hash
-
+	Nonce                uint64
+	Root                 common.Hash
+	kind                 byte
 	NFTSetDefinitionHash []byte
 	Balance              *big.Int
 }
@@ -343,6 +348,7 @@ func (ao *accountObject) SetNFTSetDefinition(hash common.Hash, code []byte) {
 }
 
 func (ao *accountObject) setNFTSetDefinition(hash common.Hash, code []byte) {
+	ao.data.kind = NFTSET_TYPE
 	ao.nftSet = code
 	ao.data.NFTSetDefinitionHash = hash[:]
 	ao.dirtyNFTSet = true
@@ -396,4 +402,8 @@ func (ao *accountObject) Balance() *big.Int {
 
 func (ao *accountObject) Nonce() uint64 {
 	return ao.data.Nonce
+}
+
+func (ao *accountObject) IsNFT() bool {
+	return ao.data.kind == NFT_TYPE
 }

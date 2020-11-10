@@ -82,6 +82,8 @@ func (self *accountObject) AddNFT(db AccountDatabase, nft *types.NFT) bool {
 	for key, value := range nft.Data {
 		self.SetData(db, utility.StrToBytes(self.generateNFTDataKey(key)), utility.StrToBytes(value))
 	}
+
+	self.data.kind = NFT_TYPE
 	return true
 }
 
