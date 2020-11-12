@@ -45,7 +45,7 @@ func testVMExecutorCoinDeposit(t *testing.T) {
 	if 1 != len(transactions) {
 		t.Fatalf("fail to get transactions")
 	}
-	if 1 != len(receipts) || 0 != strings.Compare(receipts[0].Msg, "coin: official-ETH.ETH, deposit 12560000000") {
+	if 1 != len(receipts) || 0 != strings.Compare(receipts[0].Msg, "coin: ETH.ETH, deposit 12560000000") {
 		t.Fatalf("fail to get receipts")
 	}
 
@@ -59,13 +59,13 @@ func testVMExecutorCoinDeposit(t *testing.T) {
 	}
 
 	accountDB, _ = account.NewAccountDB(root, accountDB.Database())
-	ft := accountDB.GetFT(common.HexToAddress(tx1.Source), "official-ETH.ETH")
+	ft := accountDB.GetBNT(common.HexToAddress(tx1.Source), "ETH.ETH")
 	if nil == ft || 0 != strings.Compare(ft.String(), "12560000000") {
 		t.Fatalf("fail to get ft")
 	}
 
-	ftMap := accountDB.GetAllFT(common.HexToAddress(tx1.Source))
-	if nil == ftMap || 1 != len(ftMap) || 0 != strings.Compare(ftMap["official-ETH.ETH"].String(), "12560000000") {
+	ftMap := accountDB.GetAllBNT(common.HexToAddress(tx1.Source))
+	if nil == ftMap || 1 != len(ftMap) || 0 != strings.Compare(ftMap["ETH.ETH"].String(), "12560000000") {
 		t.Fatalf("fail to get all ft")
 	}
 }

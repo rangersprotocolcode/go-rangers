@@ -53,7 +53,7 @@ func (self *wsServer) transferBNT(data map[string]string) (string, bool) {
 	chainType := data["chainType"]
 	balance := data["balance"]
 
-	return self.transferFTOrCoin(authCode, appId, target, fmt.Sprintf("official-%s", chainType), balance)
+	return self.transferFTOrCoin(authCode, appId, target, chainType, balance, true)
 }
 
 // todo: 经济模型，转币的费用问题
@@ -66,10 +66,10 @@ func (self *wsServer) transferFT(data map[string]string) (string, bool) {
 	supply := data["supply"]
 
 	self.logger.Debugf("Transfer FT appId:%s,target:%s,ftId:%s,supply:%s", appId, target, ftId, supply)
-	return self.transferFTOrCoin(authCode, appId, target, ftId, supply)
+	return self.transferFTOrCoin(authCode, appId, target, ftId, supply, false)
 }
 
-func (self *wsServer) transferFTOrCoin(authCode, appId, target, ftId, supply string) (string, bool) {
+func (self *wsServer) transferFTOrCoin(authCode, appId, target, ftId, supply string, isBNT bool) (string, bool) {
 	if 0 == len(appId) || 0 == len(authCode) || !STMManger.ValidateAppId(appId, authCode) {
 		return "wrong params", false
 	}
@@ -81,7 +81,16 @@ func (self *wsServer) transferFTOrCoin(authCode, appId, target, ftId, supply str
 		return msg, false
 	}
 
-	result, _, flag := service.FTManagerInstance.TransferFT(appId, ftId, target, supply, context.AccountDB)
+	var (
+		result string
+		flag   bool
+	)
+	if isBNT {
+		result, _, flag = service.FTManagerInstance.TransferBNT(appId, ftId, target, supply, context.AccountDB)
+	} else {
+		result, _, flag = service.FTManagerInstance.TransferFT(appId, ftId, target, supply, context.AccountDB)
+	}
+
 	self.logger.Debugf("Transfer FTOrCoin result:%t,message:%s", flag, result)
 	if flag {
 		// 生成交易，上链 context.Tx.SubTransactions

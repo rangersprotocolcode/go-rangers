@@ -117,7 +117,7 @@ func (self *FTManager) PublishFTSet(ftSet *types.FTSet, accountDB *account.Accou
 	}
 
 	// checkId
-	if 0 == len(ftSet.AppId) || 0 == len(symbol) || strings.Contains(ftSet.AppId, "-") || strings.Contains(ftSet.Symbol, "-") || ftSet.AppId == "official" {
+	if 0 == len(ftSet.AppId) || 0 == len(symbol) || strings.Contains(ftSet.AppId, "-") || strings.Contains(ftSet.Symbol, "-") || ftSet.AppId == common.Official {
 		return "appId or symbol wrong", false
 	}
 
@@ -178,10 +178,29 @@ func (self *FTManager) SubFTSet(triedOwner, ftId string, amount *big.Int, accoun
 	return true
 }
 
-func (self *FTManager) TransferFT(source string, ftId string, target string, supply string, accountDB *account.AccountDB) (string, *big.Int, bool) {
+func (self *FTManager) TransferBNT(source, bntId, target, supply string, accountDB *account.AccountDB) (string, *big.Int, bool) {
+	if 0 == len(bntId) || 0 == len(supply) {
+		return "", nil, true
+	}
+
+	balance := self.convert(supply)
+	left, ok := accountDB.SubBNT(common.HexToAddress(source), bntId, balance)
+	if !ok {
+		return fmt.Sprintf("not enough bnt. ftId: %s, supply: %s", bntId, supply), nil, false
+	}
+
+	if accountDB.AddBNT(common.HexToAddress(target), bntId, balance) {
+		return "success", left, true
+	} else {
+		return "overflow", nil, false
+	}
+}
+
+func (self *FTManager) TransferFT(source, ftId, target, supply string, accountDB *account.AccountDB) (string, *big.Int, bool) {
 	if 0 == len(ftId) || 0 == len(supply) {
 		return "", nil, true
 	}
+	// 检查ftId的格式 xxx-xxxx
 	ftInfo := strings.Split(ftId, "-")
 	if 2 != len(ftInfo) {
 		return fmt.Sprintf("invalid ftId: %s", ftId), nil, false

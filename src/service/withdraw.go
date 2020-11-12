@@ -23,7 +23,6 @@ import (
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
-	"fmt"
 	"math/big"
 )
 
@@ -55,10 +54,9 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 			return "Withdraw Data BNT Bad Format", false
 		}
 
-		coinId := fmt.Sprintf("official-%s", withDrawReq.BNT.TokenType)
-		left, ok := accountdb.SubFT(source, coinId, withdrawAmount)
+		left, ok := accountdb.SubBNT(source, withDrawReq.BNT.TokenType, withdrawAmount)
 		if !ok {
-			subAccountBalance := accountdb.GetFT(source, coinId)
+			subAccountBalance := accountdb.GetBNT(source, withDrawReq.BNT.TokenType)
 			txLogger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", subAccountBalance.Uint64(), withdrawAmount.Uint64())
 			return "BNT Not Enough", false
 		} else {

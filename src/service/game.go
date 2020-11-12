@@ -24,7 +24,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"strings"
 )
 
 func GetBalance(source common.Address) string {
@@ -36,25 +35,19 @@ func GetBalance(source common.Address) string {
 	return utility.BigIntToStr(balance)
 }
 
-func GetCoinBalance(source common.Address, ft string) string {
-	ftName := fmt.Sprintf("official-%s", ft)
-	logger.Debugf("Get coin balance before get balance.source:%s,ft:%s", source, ft)
+func GetCoinBalance(source common.Address, bnt string) string {
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	logger.Debugf("Get coin balance after get balance.")
-	balance := accountDB.GetFT(source, ftName)
+	balance := accountDB.GetBNT(source, bnt)
 
 	return utility.BigIntToStr(balance)
 }
 
 func GetAllCoinInfo(source common.Address) string {
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	ftMap := accountDB.GetAllFT(source)
+	ftMap := accountDB.GetAllBNT(source)
 	data := make(map[string]string, 0)
 	for key, value := range ftMap {
-		keyItems := strings.Split(key, "-")
-		if "official" == keyItems[0] {
-			data[keyItems[1]] = utility.BigIntToStr(value)
-		}
+		data[key] = utility.BigIntToStr(value)
 	}
 	bytes, _ := json.Marshal(data)
 	return string(bytes)
@@ -72,10 +65,7 @@ func GetAllFT(source common.Address) string {
 	ftMap := accountDB.GetAllFT(source)
 	data := make(map[string]string, 0)
 	for key, value := range ftMap {
-		keyItems := strings.Split(key, "-")
-		if "official" != keyItems[0] {
-			data[key] = utility.BigIntToStr(value)
-		}
+		data[key] = utility.BigIntToStr(value)
 	}
 	bytes, _ := json.Marshal(data)
 	return string(bytes)
@@ -349,7 +339,7 @@ func transferFT(ft map[string]string, source string, target string, accountDB *a
 			return nil, false
 		}
 
-		response.Put(strings.TrimPrefix(ftName, "official-"), left)
+		response.Put(ftName, left)
 	}
 
 	return &response, true
@@ -359,13 +349,19 @@ func transferCoin(coin map[string]string, source string, target string, accountD
 	if 0 == len(coin) {
 		return nil, true
 	}
+	response := types.NewJSONObject()
 
-	ft := make(map[string]string, len(coin))
-	for key, value := range coin {
-		ft[fmt.Sprintf("official-%s", key)] = value
+	for ftName, valueString := range coin {
+		message, left, ok := FTManagerInstance.TransferBNT(source, ftName, target, valueString, accountDB)
+		if !ok {
+			logger.Debugf("Transfer FT Failed:%s", message)
+			return nil, false
+		}
+
+		response.Put(ftName, left)
 	}
 
-	return transferFT(ft, source, target, accountDB)
+	return &response, true
 }
 
 // tx.source : 发币方

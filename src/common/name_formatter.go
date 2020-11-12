@@ -28,6 +28,19 @@ const (
 	NFTSetPrefix = "ns:"
 )
 
+const (
+	Official  = "official"
+	BNTPrefix = Official + "-"
+)
+
+func GenerateBNTName(bntName string) string {
+	return fmt.Sprintf("%s%s", BNTPrefix, bntName)
+}
+
+func FormatBNTName(bntName string) string {
+	return bntName[len(BNTPrefix):]
+}
+
 func GenerateNFTAddress(setId, id string) Address {
 	return BytesToAddress(Sha256(utility.StrToBytes(GenerateNFTKey(setId, id))))
 }

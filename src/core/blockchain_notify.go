@@ -17,6 +17,7 @@
 package core
 
 import (
+	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
 	"encoding/json"
@@ -150,7 +151,7 @@ func (chain *blockChain) notifyWallet(remoteBlock *types.Block) {
 						data["from"] = sub.Assets["gameId"]
 						data["to"] = sub.Assets["target"]
 						data["value"], _ = strconv.ParseFloat(sub.Assets["supply"], 64)
-						if strings.HasPrefix(sub.Assets["symbol"], "official-") {
+						if strings.HasPrefix(sub.Assets["symbol"], common.BNTPrefix) {
 							data["token"] = strings.Split(sub.Assets["symbol"], "-")[1]
 							events = append(events, chain.generateWalletNotify("transfer_bnt", data))
 						} else {

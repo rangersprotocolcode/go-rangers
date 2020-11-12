@@ -50,9 +50,9 @@ func CoinDeposit(accountdb *account.AccountDB, transaction *types.Transaction) (
 	}
 
 	value, _ := utility.StrToBigInt(depositCoinData.Amount)
-	result := accountdb.AddFT(common.HexToAddress(transaction.Source), fmt.Sprintf("official-%s", depositCoinData.ChainType), value)
+	result := accountdb.AddBNT(common.HexToAddress(transaction.Source), depositCoinData.ChainType, value)
 	if result {
-		return result, fmt.Sprintf("coin: %s, deposit %s", fmt.Sprintf("official-%s", depositCoinData.ChainType), value)
+		return result, fmt.Sprintf("coin: %s, deposit %s", depositCoinData.ChainType, value)
 	}
 	return result, fmt.Sprintf("too much value %s", value)
 

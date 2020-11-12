@@ -22,6 +22,15 @@ import (
 	"math/big"
 )
 
+func (self *AccountDB) GetBNT(addr common.Address, bntName string) *big.Int {
+	accountObject := self.getOrNewAccountObject(addr)
+	raw := accountObject.getFT(self.db, common.GenerateBNTName(bntName))
+	if raw == nil {
+		return big.NewInt(0)
+	}
+	return raw
+}
+
 func (self *AccountDB) GetFT(addr common.Address, ftName string) *big.Int {
 	accountObject := self.getOrNewAccountObject(addr)
 	raw := accountObject.getFT(self.db, ftName)
@@ -31,9 +40,22 @@ func (self *AccountDB) GetFT(addr common.Address, ftName string) *big.Int {
 	return raw
 }
 
+func (self *AccountDB) GetAllBNT(addr common.Address) map[string]*big.Int {
+	accountObject := self.getOrNewAccountObject(addr)
+	return accountObject.getAllFT(self.db, true)
+}
+
 func (self *AccountDB) GetAllFT(addr common.Address) map[string]*big.Int {
 	accountObject := self.getOrNewAccountObject(addr)
-	return accountObject.getAllFT(self.db)
+	return accountObject.getAllFT(self.db, false)
+}
+
+func (self *AccountDB) SetBNT(addr common.Address, bntName string, balance *big.Int) {
+	if nil == balance {
+		return
+	}
+	account := self.getOrNewAccountObject(addr)
+	account.SetFT(self.db, balance, common.GenerateBNTName(bntName))
 }
 
 func (self *AccountDB) SetFT(addr common.Address, ftName string, balance *big.Int) {
@@ -44,6 +66,15 @@ func (self *AccountDB) SetFT(addr common.Address, ftName string, balance *big.In
 	account.SetFT(self.db, balance, ftName)
 }
 
+func (self *AccountDB) AddBNT(addr common.Address, bntName string, balance *big.Int) bool {
+	if nil == balance {
+		return true
+	}
+	account := self.getOrNewAccountObject(addr)
+
+	return account.AddFT(self.db, balance, common.GenerateBNTName(bntName))
+}
+
 func (self *AccountDB) AddFT(addr common.Address, ftName string, balance *big.Int) bool {
 	if nil == balance {
 		return true
@@ -51,6 +82,14 @@ func (self *AccountDB) AddFT(addr common.Address, ftName string, balance *big.In
 	account := self.getOrNewAccountObject(addr)
 
 	return account.AddFT(self.db, balance, ftName)
+}
+
+func (self *AccountDB) SubBNT(addr common.Address, bntName string, balance *big.Int) (*big.Int, bool) {
+	if nil == balance {
+		return nil, false
+	}
+	account := self.getOrNewAccountObject(addr)
+	return account.SubFT(self.db, balance, common.GenerateBNTName(bntName))
 }
 
 func (self *AccountDB) SubFT(addr common.Address, ftName string, balance *big.Int) (*big.Int, bool) {
