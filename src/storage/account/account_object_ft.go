@@ -71,6 +71,10 @@ func (c *accountObject) getFT(db AccountDatabase, name string) *big.Int {
 	return new(big.Int).SetBytes(value)
 }
 
+func (c *accountObject) AddBNT(db AccountDatabase, amount *big.Int, name string) bool {
+	return c.AddFT(db, amount, common.GenerateBNTName(name))
+}
+
 func (c *accountObject) AddFT(db AccountDatabase, amount *big.Int, name string) bool {
 	if amount.Sign() == 0 {
 		if c.empty() {
@@ -87,6 +91,10 @@ func (c *accountObject) AddFT(db AccountDatabase, amount *big.Int, name string) 
 		return c.SetFT(db, new(big.Int).Add(raw, amount), name)
 	}
 
+}
+
+func (c *accountObject) SubBNT(db AccountDatabase, amount *big.Int, name string) (*big.Int, bool) {
+	return c.SubFT(db, amount, common.GenerateBNTName(name))
 }
 
 func (c *accountObject) SubFT(db AccountDatabase, amount *big.Int, name string) (*big.Int, bool) {

@@ -92,6 +92,13 @@ func StrToBigInt(s string) (*big.Int, error) {
 	return result, nil
 }
 
+func BigIntBytesToStr(value []byte) string {
+	amount := new(big.Int)
+	amount.SetBytes(value)
+
+	return BigIntToStr(amount)
+}
+
 // 11220000000->"11.220000000"
 func BigIntToStr(number *big.Int) string {
 	if nil == number || 0 == number.Sign() {

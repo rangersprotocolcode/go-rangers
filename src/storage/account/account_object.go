@@ -19,6 +19,7 @@ package account
 import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/trie"
 	"fmt"
 	"golang.org/x/crypto/sha3"
@@ -406,4 +407,18 @@ func (ao *accountObject) Nonce() uint64 {
 
 func (ao *accountObject) IsNFT() bool {
 	return ao.data.kind == NFT_TYPE
+}
+
+func (ao *accountObject) getOrCreateLockResource(result map[string]*types.LockResource, key string) *types.LockResource {
+	lockResource := result[key]
+	if nil == lockResource {
+		lockResource = &types.LockResource{
+			Coin: make(map[string]string),
+			FT:   make(map[string]string),
+			NFT:  make([]types.NFTID, 0),
+		}
+		result[key] = lockResource
+	}
+
+	return lockResource
 }

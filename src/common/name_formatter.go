@@ -22,10 +22,16 @@ import (
 	"strings"
 )
 
+//AccountObject data 用到的key
 const (
-	FTPrefix     = "f:"
-	NFTPrefix    = "n:"
-	NFTSetPrefix = "ns:"
+	FTPrefix       = "f:"
+	NFTPrefix      = "n:"
+	NFTSetPrefix   = "ns:"
+	LockPrefix     = "l:"
+	LockBalanceKey = LockPrefix + "b"
+	LockBNTKey     = LockPrefix + "bn"
+	LockFTKey      = LockPrefix + "f"
+	LockNFTKey     = LockPrefix + "n"
 )
 
 const (
@@ -50,6 +56,10 @@ func GenerateNFTKey(setId, id string) string {
 }
 
 func SplitNFTKey(key string) (string, string) {
+	if !strings.HasPrefix(key, NFTPrefix) {
+		return "", ""
+	}
+
 	idList := strings.Split(key, ":")
 	if 3 != len(idList) {
 		return "", ""
@@ -83,4 +93,20 @@ func FormatHexString(s string) string {
 	}
 
 	return ""
+}
+
+func GenerateLockBalanceKey(source string) string {
+	return fmt.Sprintf("%s:%s", LockBalanceKey, source)
+}
+
+func GenerateLockBNTKey(source, name string) string {
+	return fmt.Sprintf("%s:%s:%s", LockBNTKey, source, name)
+}
+
+func GenerateLockFTKey(source, name string) string {
+	return fmt.Sprintf("%s:%s:%s", LockFTKey, source, name)
+}
+
+func GenerateLockNFTKey(source, setId, id string) string {
+	return fmt.Sprintf("%s:%s:%s:%s", LockNFTKey, source, setId, id)
 }

@@ -24,15 +24,20 @@ import (
 	"strconv"
 )
 
-type NftSetDefinition struct {
-	SetID      string `json:"setId,omitempty"`
-	Name       string `json:"name,omitempty"`
-	Symbol     string `json:"symbol,omitempty"`
-	MaxSupply  uint64 `json:"maxSupply,omitempty"` // 最大发行量，等于0则表示无限量
-	Creator    string `json:"creator,omitempty"`
-	Owner      string `json:"owner,omitempty"`
-	CreateTime string `json:"createTime,omitempty"`
-}
+type (
+	ComboResource    TransferData
+	LockResource     TransferData
+
+	NftSetDefinition struct {
+		SetID      string `json:"setId,omitempty"`
+		Name       string `json:"name,omitempty"`
+		Symbol     string `json:"symbol,omitempty"`
+		MaxSupply  uint64 `json:"maxSupply,omitempty"` // 最大发行量，等于0则表示无限量
+		Creator    string `json:"creator,omitempty"`
+		Owner      string `json:"owner,omitempty"`
+		CreateTime string `json:"createTime,omitempty"`
+	}
+)
 
 func (definition *NftSetDefinition) ToNFTSet() NFTSet {
 	var nftSet NFTSet
@@ -139,6 +144,12 @@ type NFT struct {
 
 	// 5. 从外部导入的相关信息
 	Imported string `json:"imported,omitempty"`
+
+	// 6. 组合信息
+	ComboResource ComboResource
+
+	// 7. 被锁定
+	Lock string // 锁定账号
 }
 
 func (self *NFT) GetData(gameId string) string {

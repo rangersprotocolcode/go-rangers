@@ -23,6 +23,7 @@ import (
 	"com.tuntun.rocket/node/src/storage/rlp"
 	"com.tuntun.rocket/node/src/utility"
 	"fmt"
+	"math/big"
 	"strings"
 )
 
@@ -39,7 +40,13 @@ var (
 	conditionKey  = utility.StrToBytes("co")
 	appIdKey      = utility.StrToBytes("a")
 	importedKey   = utility.StrToBytes("im")
-	dataPrefix    = "d:"
+	lockKey       = utility.StrToBytes("l")
+
+	dataPrefix  = "d:"
+	comboPrefix = "cm:"
+	bntPrefix   = fmt.Sprintf("%s%s", comboPrefix, "bn:")
+	ftPrefix    = fmt.Sprintf("%s%s", comboPrefix, "f:")
+	nftPrefix   = fmt.Sprintf("%s%s", comboPrefix, "n:")
 )
 
 func (self *accountObject) generateNFTDataKey(key string) string {
@@ -60,6 +67,10 @@ func (self *accountObject) SetAppId(db AccountDatabase, appId string) {
 	self.SetData(db, appIdKey, utility.StrToBytes(appId))
 }
 
+func (self *accountObject) SetLock(db AccountDatabase, lock []byte) {
+	self.SetData(db, lockKey, lock)
+}
+
 // 新增一个nft实例
 func (self *accountObject) AddNFT(db AccountDatabase, nft *types.NFT) bool {
 	if nil == nft {
@@ -78,6 +89,7 @@ func (self *accountObject) AddNFT(db AccountDatabase, nft *types.NFT) bool {
 	self.SetData(db, conditionKey, []byte{nft.Condition})
 	self.SetData(db, appIdKey, utility.StrToBytes(nft.AppId))
 	self.SetData(db, importedKey, utility.StrToBytes(nft.Imported))
+	self.SetData(db, lockKey, utility.StrToBytes(nft.Lock))
 
 	for key, value := range nft.Data {
 		self.SetData(db, utility.StrToBytes(self.generateNFTDataKey(key)), utility.StrToBytes(value))
@@ -99,6 +111,7 @@ func (self *accountObject) GetNFT(db AccountDatabase) *types.NFT {
 		Renter:     utility.BytesToStr(self.GetData(db, renterKey)),
 		AppId:      utility.BytesToStr(self.GetData(db, appIdKey)),
 		Imported:   utility.BytesToStr(self.GetData(db, importedKey)),
+		Lock:       utility.BytesToStr(self.GetData(db, lockKey)),
 		Data:       make(map[string]string),
 	}
 
@@ -111,6 +124,10 @@ func (self *accountObject) GetNFT(db AccountDatabase) *types.NFT {
 	if nil != contidion && 1 == len(contidion) {
 		nft.Condition = contidion[0]
 	}
+
+	// getBalance
+	key := utility.StrToBytes(fmt.Sprintf("%s%s", comboPrefix, "b"))
+	value := self.GetData(db, key)
 
 	self.cachedLock.RLock()
 	defer self.cachedLock.RUnlock()
@@ -131,6 +148,13 @@ func (self *accountObject) GetNFT(db AccountDatabase) *types.NFT {
 		nft.Data[key[2:]] = utility.BytesToStr(iterator.Value)
 	}
 
+	nft.ComboResource = self.getCombo(db)
+	if nil == value || utility.IsEmptyByteSlice(value) {
+		nft.ComboResource.Balance = "0"
+	} else {
+		now := new(big.Int).SetBytes(value)
+		nft.ComboResource.Balance = utility.BigIntToStr(now)
+	}
 	return nft
 }
 func (self *accountObject) ApproveNFT(db AccountDatabase, owner common.Address, renter string) bool {
@@ -176,6 +200,14 @@ func (self *accountObject) ChangeNFTStatus(db AccountDatabase, addr common.Addre
 	return true
 }
 
+func (self *accountObject) getNFTStatus(db AccountDatabase) byte {
+	status := self.GetData(db, statusKey)
+	if nil == status {
+		return 0
+	}
+	return status[0]
+}
+
 func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
 	valueByte := self.nftSetDefinition(db)
 	if nil == valueByte || 0 == len(valueByte) {
@@ -213,4 +245,116 @@ func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
 	}
 
 	return &nftSet
+}
+
+// nft记录锁定的target
+func (ao *accountObject) lockNFTSelf(db AccountDatabase, owner, target common.Address) bool {
+	if !ao.checkOwner(db, owner) {
+		return false
+	}
+
+	if 0 != ao.getNFTStatus(db) {
+		return false
+	}
+
+	ao.SetLock(db, utility.StrToBytes(target.String()))
+	ao.SetData(db, statusKey, []byte{3})
+	return true
+}
+
+func (ao *accountObject) unlockNFTSelf(db AccountDatabase) {
+	ao.SetLock(db, nil)
+	ao.SetData(db, statusKey, []byte{0})
+}
+
+func (ao *accountObject) setComboCoin(db AccountDatabase, key []byte, amount *big.Int) {
+	if nil == amount || 0 == amount.Sign() {
+		return
+	}
+
+	value := ao.GetData(db, key)
+	if nil == value || utility.IsEmptyByteSlice(value) {
+		ao.SetData(db, key, amount.Bytes())
+	} else {
+		now := new(big.Int).SetBytes(value)
+		now = now.Add(now, amount)
+		ao.SetData(db, key, now.Bytes())
+	}
+}
+
+func (ao *accountObject) setComboBalance(db AccountDatabase, amount *big.Int) {
+	ao.setComboCoin(db, utility.StrToBytes(fmt.Sprintf("%s%s", comboPrefix, "b")), amount)
+}
+
+func (ao *accountObject) setComboBNT(db AccountDatabase, amount *big.Int, bnt string) {
+	ao.setComboCoin(db, utility.StrToBytes(fmt.Sprintf("%s%s", bntPrefix, bnt)), amount)
+}
+
+func (ao *accountObject) setComboFT(db AccountDatabase, amount *big.Int, ft string) {
+	ao.setComboCoin(db, utility.StrToBytes(fmt.Sprintf("%s%s", ftPrefix, ft)), amount)
+}
+
+func (ao *accountObject) setComboNFT(db AccountDatabase, setId, id string) {
+	key := utility.StrToBytes(fmt.Sprintf("%s%s:%s", nftPrefix, setId, id))
+	ao.SetData(db, key, []byte{0})
+}
+
+// 调用的地方已经加锁了，这里不用加锁了
+func (ao *accountObject) getCombo(db AccountDatabase) types.ComboResource {
+	result := types.ComboResource{
+		Coin: make(map[string]string),
+		FT:   make(map[string]string),
+		NFT:  make([]types.NFTID, 0),
+	}
+
+	//	bnt/ft/nft
+	for key, value := range ao.cachedStorage {
+		if strings.HasPrefix(key, bntPrefix) {
+			result.Coin[key[len(bntPrefix):]] = utility.BigIntBytesToStr(value)
+		}
+		if strings.HasPrefix(key, ftPrefix) {
+			result.FT[key[len(ftPrefix):]] = utility.BigIntBytesToStr(value)
+		}
+		if strings.HasPrefix(key, nftPrefix) {
+			ids := strings.Split(key[len(nftPrefix):], ":")
+			if 2 == len(ids) {
+				nft := types.NFTID{
+					SetId: ids[0],
+					Id:    ids[1],
+				}
+				result.NFT = append(result.NFT, nft)
+			}
+		}
+	}
+
+	iterator := ao.DataIterator(db, utility.StrToBytes(comboPrefix))
+	for iterator.Next() {
+		key := utility.BytesToStr(iterator.Key)
+
+		_, contains := ao.cachedStorage[key]
+		if contains {
+			continue
+		}
+
+		ao.cachedStorage[key] = iterator.Value
+
+		if strings.HasPrefix(key, bntPrefix) {
+			result.Coin[key[len(bntPrefix):]] = utility.BigIntBytesToStr(iterator.Value)
+		}
+		if strings.HasPrefix(key, ftPrefix) {
+			result.FT[key[len(ftPrefix):]] = utility.BigIntBytesToStr(iterator.Value)
+		}
+		if strings.HasPrefix(key, nftPrefix) {
+			ids := strings.Split(key[len(nftPrefix):], ":")
+			if 2 == len(ids) {
+				nft := types.NFTID{
+					SetId: ids[0],
+					Id:    ids[1],
+				}
+				result.NFT = append(result.NFT, nft)
+			}
+		}
+	}
+
+	return result
 }
