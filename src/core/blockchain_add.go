@@ -300,8 +300,6 @@ func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block) {
 		topBlockInfo := TopBlockInfo{Hash: chain.latestBlock.Hash, TotalQn: chain.latestBlock.TotalQN, Height: chain.latestBlock.Height, PreHash: chain.latestBlock.PreHash}
 		go BlockSyncer.sendTopBlockInfoToNeighbor(topBlockInfo)
 	}
-
-	go chain.notifyWallet(remoteBlock)
 }
 
 func (chain *blockChain) validateGroupSig(bh *types.BlockHeader) (bool, error) {
