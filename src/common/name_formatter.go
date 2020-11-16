@@ -28,7 +28,7 @@ const (
 	NFTPrefix      = "n:"
 	NFTSetPrefix   = "ns:"
 	LockPrefix     = "l:"
-	LockBalanceKey = LockPrefix + "b"
+	LockBalanceKey = LockPrefix + "ba"
 	LockBNTKey     = LockPrefix + "bn"
 	LockFTKey      = LockPrefix + "f"
 	LockNFTKey     = LockPrefix + "n"

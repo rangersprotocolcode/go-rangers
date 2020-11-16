@@ -84,33 +84,26 @@ func (ao *accountObject) unlockNFT(db AccountDatabase, source common.Address, se
 }
 
 func (ao *accountObject) getLockedResource(db AccountDatabase, source common.Address) *types.LockResource {
-	result := &types.LockResource{}
-
-	// balance
-	balance := ao.GetData(db, utility.StrToBytes(common.GenerateLockBalanceKey(source.String())))
-	if nil != balance {
-		result.Balance = utility.BigIntBytesToStr(balance)
-	}
-
-	all := ao.getLockedBNTFTNFT(db)
-	if nil != all {
-		filtered, ok := all[source.String()]
-		if ok {
-			result.FT = filtered.FT
-			result.NFT = filtered.NFT
-			result.Coin = filtered.Coin
-		}
-	}
-	return result
+	all := ao.getAllLockedResource(db)
+	return all[source.String()]
 }
 
-func (ao *accountObject) getLockedBNTFTNFT(db AccountDatabase) map[string]*types.LockResource {
+func (ao *accountObject) getAllLockedResource(db AccountDatabase) map[string]*types.LockResource {
 	result := make(map[string]*types.LockResource)
 	ao.cachedLock.Lock()
 	defer ao.cachedLock.Unlock()
 
-	// bnt/ft/nft
+	// balance/bnt/ft/nft
 	for key, value := range ao.cachedStorage {
+		if strings.HasPrefix(key, common.LockBalanceKey) {
+			source := key[len(common.LockBalanceKey)+1:]
+			if 0 == len(source) {
+				continue
+			}
+			target := ao.getOrCreateLockResource(result, source)
+			target.Balance = utility.BigIntBytesToStr(value)
+			continue
+		}
 		if strings.HasPrefix(key, common.LockBNTKey) {
 			source, name := ao.getSourceAndName(key[len(common.LockBNTKey)+1:])
 			if 0 == len(source) {
@@ -118,6 +111,7 @@ func (ao *accountObject) getLockedBNTFTNFT(db AccountDatabase) map[string]*types
 			}
 			target := ao.getOrCreateLockResource(result, source)
 			target.Coin[name] = utility.BigIntBytesToStr(value)
+			continue
 		}
 		if strings.HasPrefix(key, common.LockFTKey) {
 			source, name := ao.getSourceAndName(key[len(common.LockFTKey)+1:])
@@ -126,6 +120,7 @@ func (ao *accountObject) getLockedBNTFTNFT(db AccountDatabase) map[string]*types
 			}
 			target := ao.getOrCreateLockResource(result, source)
 			target.FT[name] = utility.BigIntBytesToStr(value)
+			continue
 		}
 		if strings.HasPrefix(key, common.LockNFTKey) {
 			source, setId, id := ao.getSourceAndSetIdAndId(key[len(common.LockNFTKey)+1:])
@@ -138,6 +133,7 @@ func (ao *accountObject) getLockedBNTFTNFT(db AccountDatabase) map[string]*types
 				Id:    id,
 			}
 			target.NFT = append(target.NFT, nft)
+			continue
 		}
 	}
 
@@ -152,6 +148,15 @@ func (ao *accountObject) getLockedBNTFTNFT(db AccountDatabase) map[string]*types
 
 		ao.cachedStorage[key] = iterator.Value
 
+		if strings.HasPrefix(key, common.LockBalanceKey) {
+			source := key[len(common.LockBalanceKey)+1:]
+			if 0 == len(source) {
+				continue
+			}
+			target := ao.getOrCreateLockResource(result, source)
+			target.Balance = utility.BigIntBytesToStr(iterator.Value)
+			continue
+		}
 		if strings.HasPrefix(key, common.LockBNTKey) {
 			source, name := ao.getSourceAndName(key[len(common.LockBNTKey)+1:])
 			if 0 == len(source) {
@@ -159,6 +164,7 @@ func (ao *accountObject) getLockedBNTFTNFT(db AccountDatabase) map[string]*types
 			}
 			target := ao.getOrCreateLockResource(result, source)
 			target.Coin[name] = utility.BigIntBytesToStr(iterator.Value)
+			continue
 		}
 		if strings.HasPrefix(key, common.LockFTKey) {
 			source, name := ao.getSourceAndName(key[len(common.LockFTKey)+1:])
@@ -167,6 +173,7 @@ func (ao *accountObject) getLockedBNTFTNFT(db AccountDatabase) map[string]*types
 			}
 			target := ao.getOrCreateLockResource(result, source)
 			target.FT[name] = utility.BigIntBytesToStr(iterator.Value)
+			continue
 		}
 		if strings.HasPrefix(key, common.LockNFTKey) {
 			source, setId, id := ao.getSourceAndSetIdAndId(key[len(common.LockNFTKey)+1:])
@@ -179,6 +186,7 @@ func (ao *accountObject) getLockedBNTFTNFT(db AccountDatabase) map[string]*types
 				Id:    id,
 			}
 			target.NFT = append(target.NFT, nft)
+			continue
 		}
 	}
 

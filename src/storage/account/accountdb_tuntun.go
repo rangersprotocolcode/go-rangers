@@ -455,15 +455,13 @@ func (adb *AccountDB) processResource(sourceAddr, targetAddr common.Address, set
 }
 
 // 查询target中所有的锁定的资源情况
-func (adb *AccountDB) GetLockedResource(targetAddr common.Address) map[string]types.LockResource {
+func (adb *AccountDB) GetLockedResource(targetAddr common.Address) map[string]*types.LockResource {
 	target := adb.getAccountObject(targetAddr, false)
 	if nil == target {
 		return nil
 	}
 
-	result := make(map[string]types.LockResource, 0)
-
-	return result
+	return target.getAllLockedResource(adb.db)
 }
 
 // 查询target中 filter 地址 锁定的资源情况
