@@ -21,12 +21,9 @@ import (
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/statemachine"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
-	"encoding/json"
 	"errors"
-	"strconv"
 	"time"
 )
 
@@ -305,87 +302,6 @@ func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block) {
 	}
 
 	go chain.notifyWallet(remoteBlock)
-	//check txs
-	go chain.publishSet(remoteBlock.Transactions)
-}
-
-// 块上链成功之后，调用Connector
-func (chain *blockChain) publishSet(txs []*types.Transaction) {
-	if 0 == len(txs) {
-		return
-	}
-
-	for _, tx := range txs {
-		appId := tx.Source
-
-		// 直接发交易的nftSet publish
-		if tx.Type == types.TransactionTypePublishNFTSet {
-			var nftSet types.NFTSet
-			if err := json.Unmarshal([]byte(tx.Data), &nftSet); nil != err {
-				logger.Errorf("Unmarshal data error:%s", err.Error())
-				continue
-			}
-
-			set := service.NFTManagerInstance.GenerateNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime)
-			service.NFTManagerInstance.SendPublishNFTSetToConnector(set)
-			continue
-		}
-
-		// 直接发交易的ftSet publish
-		if tx.Type == types.TransactionTypePublishFT {
-			var ftSetMap map[string]string
-			if err := json.Unmarshal([]byte(tx.Data), &ftSetMap); nil != err {
-				logger.Errorf("Unmarshal data error:%s", err.Error())
-				continue
-			}
-
-			appId := tx.Source
-			createTime := ftSetMap["createTime"]
-			ftSet := service.FTManagerInstance.GenerateFTSet(ftSetMap["name"], ftSetMap["symbol"], appId, ftSetMap["maxSupply"], appId, createTime, 1)
-			service.FTManagerInstance.SendPublishFTSetToConnector(ftSet)
-			continue
-		}
-
-		if tx.Type == types.TransactionTypeImportNFT {
-			appId := tx.Source
-			if !statemachine.STMManger.IsAppId(appId) {
-				txLogger.Errorf("fail to import NFTSetAndNFT, appId: %s", appId)
-				continue
-			}
-
-			var data map[string]string
-			err := json.Unmarshal([]byte(tx.Data), &data)
-			if err != nil {
-				txLogger.Errorf("fail to import NFTSetAndNFT, error: %s", err)
-				continue
-			}
-
-			service.NFTManagerInstance.ImportNFTSet(data["setId"], data["contract"], data["chainType"])
-		}
-
-		// 状态机内调用
-		if 0 != len(tx.SubTransactions) {
-			for _, user := range tx.SubTransactions {
-				if user.Address == "StartFT" {
-					ftSet := service.FTManagerInstance.GenerateFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], user.Assets["createTime"], 1)
-					service.FTManagerInstance.SendPublishFTSetToConnector(ftSet)
-					continue
-				}
-
-				if user.Address == "PublishNFTSet" {
-					maxSupplyString := user.Assets["maxSupply"]
-					maxSupply, err := strconv.ParseUint(maxSupplyString, 10, 64)
-					if err != nil {
-						logger.Errorf("Publish nft set! MaxSupply bad format:%s", maxSupplyString)
-						continue
-					}
-					appId := user.Assets["appId"]
-					nftSet := service.NFTManagerInstance.GenerateNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"])
-					service.NFTManagerInstance.SendPublishNFTSetToConnector(nftSet)
-				}
-			}
-		}
-	}
 }
 
 func (chain *blockChain) validateGroupSig(bh *types.BlockHeader) (bool, error) {

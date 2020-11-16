@@ -35,7 +35,7 @@ func GetTxExecutor(txType int32) executor {
 func InitExecutors() {
 	logger := log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
-	executors := make(map[int32]executor, 21)
+	executors := make(map[int32]executor)
 
 	executors[types.TransactionTypeOperatorEvent] = &operatorExecutor{logger: logger}
 	executors[types.TransactionTypeWithdraw] = &withdrawExecutor{}
@@ -64,6 +64,10 @@ func InitExecutors() {
 	executors[types.TransactionTypeImportNFT] = &stmExecutor{}
 
 	executors[types.TransactionTypeSetExchangeRate] = &exchangeRateExecutor{}
+
+	executors[types.TransactionTypeLockResource] = &resourceLockUnLockExecutor{logger: logger}
+	executors[types.TransactionTypeUnLockResource] = &resourceLockUnLockExecutor{logger: logger}
+	executors[types.TransactionTypeComboNFT] = &resourceLockUnLockExecutor{logger: logger}
 
 	txExecutorsImpl = &txExecutors{executors: executors}
 }

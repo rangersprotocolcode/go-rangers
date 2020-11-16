@@ -242,10 +242,11 @@ func (adb *AccountDB) SetData(addr common.Address, key []byte, value []byte) {
 	}
 }
 
-func (adb *AccountDB) SetNFTSetDefinition(addr common.Address, code []byte) {
+func (adb *AccountDB) SetNFTSetDefinition(addr common.Address, code []byte, owner string) {
 	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {
 		stateObject.SetNFTSetDefinition(sha3.Sum256(code), code)
+		stateObject.SetNFTSetOwner(adb.db, owner)
 	}
 }
 

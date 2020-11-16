@@ -25,8 +25,8 @@ import (
 )
 
 type (
-	ComboResource    TransferData
-	LockResource     TransferData
+	ComboResource TransferData
+	LockResource  TransferData
 
 	NftSetDefinition struct {
 		SetID      string `json:"setId,omitempty"`
@@ -34,8 +34,8 @@ type (
 		Symbol     string `json:"symbol,omitempty"`
 		MaxSupply  uint64 `json:"maxSupply,omitempty"` // 最大发行量，等于0则表示无限量
 		Creator    string `json:"creator,omitempty"`
-		Owner      string `json:"owner,omitempty"`
 		CreateTime string `json:"createTime,omitempty"`
+		Conditions string `json:"condition,omitempty"`
 	}
 )
 
@@ -47,8 +47,7 @@ func (definition *NftSetDefinition) ToNFTSet() NFTSet {
 	nftSet.MaxSupply = definition.MaxSupply
 	nftSet.CreateTime = definition.CreateTime
 	nftSet.Creator = definition.Creator
-	nftSet.Owner = definition.Owner
-
+	nftSet.Conditions = definition.Conditions
 	return nftSet
 }
 
@@ -62,6 +61,7 @@ type NFTSet struct {
 	Creator     string `json:"creator,omitempty"`
 	Owner       string `json:"owner,omitempty"`
 	CreateTime  string `json:"createTime,omitempty"`
+	Conditions  string `json:"condition,omitempty"`
 
 	// 已经发行的NFTID及其拥有者
 	OccupiedID map[string]common.Address `json:"occupied,omitempty"` // 当前在layer2里的nft(包含已经被提现走的NFT)
@@ -74,8 +74,8 @@ func (self *NFTSet) ToBlob() []byte {
 		Symbol:     self.Symbol,
 		MaxSupply:  self.MaxSupply,
 		Creator:    self.Creator,
-		Owner:      self.Owner,
 		CreateTime: self.CreateTime,
+		Conditions: self.Conditions,
 	}
 
 	data, _ := rlp.EncodeToBytes(definition)
@@ -94,6 +94,8 @@ func (self *NFTSet) ToJSONString() string {
 	nftSetMap["owner"] = self.Owner
 	nftSetMap["createTime"] = self.CreateTime
 	nftSetMap["occupied"] = self.OccupiedID
+	nftSetMap["conditions"] = self.Conditions
+
 	bytes, _ := json.Marshal(nftSetMap)
 	return string(bytes)
 }
@@ -110,6 +112,7 @@ func (self *NFTSet) ToJSON() map[string]interface{} {
 	nftSetMap["owner"] = self.Owner
 	nftSetMap["createTime"] = self.CreateTime
 	nftSetMap["occupied"] = self.OccupiedID
+	nftSetMap["conditions"] = self.Conditions
 
 	return nftSetMap
 }

@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"strings"
 )
 
 func GetBalance(source common.Address) string {
@@ -199,7 +200,7 @@ func UpdateAsset(user types.UserData, appId string, accountDB *account.AccountDB
 	nftList := user.NFT
 	if 0 != len(nftList) {
 		for _, nft := range nftList {
-			if !NFTManagerInstance.UpdateNFT(appId, nft.SetId, nft.Id, nft.Data, accountDB) {
+			if !NFTManagerInstance.UpdateNFT(appId, nft.SetId, nft.Id, nft.Data, nft.Property, accountDB) {
 				return false
 			}
 		}
@@ -394,7 +395,7 @@ func PublishNFTSet(accountdb *account.AccountDB, tx *types.Transaction) (bool, s
 	}
 
 	appId := tx.Source
-	message, flag := NFTManagerInstance.PublishNFTSet(NFTManagerInstance.GenerateNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime), accountdb)
+	message, flag := NFTManagerInstance.PublishNFTSet(NFTManagerInstance.GenerateNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.Conditions, nftSet.MaxSupply, nftSet.CreateTime), accountdb)
 	return flag, message
 }
 
@@ -431,12 +432,13 @@ func UpdateNFT(accountDB *account.AccountDB, tx *types.Transaction) (bool, strin
 	setId := params["setId"]
 	id := params["id"]
 	data := params["data"]
+	propertyString := params["property"]
 
 	if 0 == len(appId) || 0 == len(setId) || 0 == len(id) {
 		return false, "param error"
 	}
 
-	if NFTManagerInstance.UpdateNFT(appId, setId, id, data, accountDB) {
+	if NFTManagerInstance.UpdateNFT(appId, setId, id, data, propertyString, accountDB) {
 		return true, "success update nft"
 	} else {
 		msg := fmt.Sprintf("fail to update setId %s or id %s", setId, id)
@@ -476,4 +478,45 @@ func RevokeNFT(accountDB *account.AccountDB, tx *types.Transaction) (bool, strin
 
 	params["target"] = tx.Source
 	return approveNFT(accountDB, params, tx.Source)
+}
+
+func ComboNFT(accountDB *account.AccountDB, transaction *types.Transaction) (bool, string) {
+	nftId := strings.Split(transaction.Target, ":")
+	if 2 != len(nftId) {
+		return false, "nftId error: " + transaction.Target
+	}
+
+	// nftSet owner check
+	setId := nftId[0]
+	if !accountDB.CheckNFTSetOwner(setId, transaction.Source) {
+		return false, "nftSetOwner error: " + transaction.Source
+	}
+
+	// nft check
+	id := nftId[1]
+	nft := accountDB.GetNFTById(setId, id)
+	if nil == nft {
+		return false, fmt.Sprintf("no such nft: %s %s", setId, id)
+	}
+
+	// 资源提供方
+	var sourceAddr common.Address
+	if 0 == len(transaction.ExtraData) {
+		sourceAddr = common.HexToAddress(nft.Owner)
+	} else {
+		sourceAddr = common.HexToAddress(transaction.ExtraData)
+	}
+
+	// 所需的资源
+	var resource types.LockResource
+	if err := json.Unmarshal(utility.StrToBytes(transaction.Data), resource); nil != err {
+		return false, "resource data error: " + transaction.Data
+	}
+
+	success := accountDB.ComboResource(sourceAddr, common.GenerateNFTSetAddress(setId), setId, id, resource)
+	if success {
+		return success, "nft combo successful"
+	} else {
+		return success, "nft combo failed"
+	}
 }

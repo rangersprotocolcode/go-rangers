@@ -61,13 +61,12 @@ const (
 	TransactionTypeRevokeNFT      = 123 // 回收NFT
 	TransactionTypeTransferNFT    = 124 // 状态机给用户转NFT
 	TransactionTypeUpdateNFT      = 125 // 更新NFT数据
-	TransactionTypeBatchUpdateNFT = 126 // 批量更新NFT数据
+	TransactionTypeBatchUpdateNFT = 126 // 批量更新NFT数据 deprecated
 	TransactionTypeImportNFT      = 128 // 从外部导入NFT/NFTSet
 
-	TransactionTypeLockCombo         = 129 // 锁定 nft/ft/bnt
-	TransactionTypeUnLockCombo       = 130 // 解锁 nft/ft/bnt
-	TransactionTypeUpdatePropertyNFT = 131 // 修改nft的属性
-	TransactionTypeComboNFT          = 132 // 组合nft
+	TransactionTypeLockResource   = 129 // 锁定 nft/ft/bnt
+	TransactionTypeUnLockResource = 130 // 解锁 nft/ft/bnt
+	TransactionTypeComboNFT       = 131 // 组合nft
 
 	// 状态机通知客户端
 	TransactionTypeNotify          = 301 // 通知某个用户

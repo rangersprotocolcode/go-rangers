@@ -178,7 +178,7 @@ func (self *AccountDB) SetNFTValueByGameId(appId, setId, id, value string) bool 
 	return stateObject.SetNFTValueByGameId(self.db, appId, value)
 }
 
-func (self *AccountDB) SetNFTValueByProperty(appId, property, setId, id, value string) bool {
+func (self *AccountDB) SetNFTValueByProperty(appId, setId, id, property, value string) bool {
 	nftAddress := common.GenerateNFTAddress(setId, id)
 	stateObject := self.getAccountObject(nftAddress, false)
 	if nil == stateObject {
@@ -240,6 +240,15 @@ func (self *AccountDB) ChangeNFTStatus(owner common.Address, appId, setId, id st
 	return stateObject.ChangeNFTStatus(self.db, owner, status)
 }
 
+func (adb *AccountDB) CheckNFTSetOwner(setId string, owner string) bool {
+	accountObject := adb.getAccountObject(common.GenerateNFTSetAddress(setId), false)
+	if nil == accountObject {
+		return false
+	}
+
+	return accountObject.CheckNFTSetOwner(adb.db, owner)
+}
+
 func (adb *AccountDB) GetNFTSet(setId string) *types.NFTSet {
 	accountObject := adb.getAccountObject(common.GenerateNFTSetAddress(setId), false)
 	if nil == accountObject {
@@ -251,9 +260,12 @@ func (adb *AccountDB) GetNFTSet(setId string) *types.NFTSet {
 
 // source 用户 锁定 resource 到target
 func (adb *AccountDB) LockResource(sourceAddr, targetAddr common.Address, resource types.LockResource) bool {
+	db := adb.db
 	source := adb.getOrNewAccountObject(sourceAddr)
 	target := adb.getOrNewAccountObject(targetAddr)
-	db := adb.db
+	if target.IsNFT() {
+		return false
+	}
 
 	// balance
 	balanceString := resource.Balance
@@ -330,17 +342,17 @@ func (adb *AccountDB) DestroyResource(sourceAddr, targetAddr common.Address, dem
 	return adb.processResource(sourceAddr, targetAddr, "", "", demand, 2)
 }
 
-// target(nftSet) comboNFT时，转移
-// source 用户 锁定在target中的 resource到ComboResource
+// target(nftSet账户) comboNFT时，转移
+// source(资源提供方) 用户 锁定在target中的 resource到ComboResource
 func (adb *AccountDB) ComboResource(sourceAddr, targetAddr common.Address, setId, id string, demand types.LockResource) bool {
 	return adb.processResource(sourceAddr, targetAddr, setId, id, demand, 3)
 }
 
 // 处理target中锁定的资源
 // 处理类型有：
-// 1 解锁
+// 1 解锁（返回给sourceAddr）
 // 2 mintNFT时，销毁对应的资源
-// 3 组合NFT时转移至source的ComboResource
+// 3 组合NFT时转移至nft的ComboResource中
 func (adb *AccountDB) processResource(sourceAddr, targetAddr common.Address, setId, id string, demand types.LockResource, kind byte) bool {
 	source := adb.getOrNewAccountObject(sourceAddr)
 	target := adb.getOrNewAccountObject(targetAddr)

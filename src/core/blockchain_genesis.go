@@ -96,7 +96,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 
 	// 测试用
 	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("tuntun", "pig", "hz", "0", "hz", "10086", 0), stateDB)
-	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("tuntunhz", "tuntun", "t", "hz", "hz", 0, "10000"), stateDB)
+	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("tuntunhz", "tuntun", "t", "hz", "hz", "", 0, "10000"), stateDB)
 	stateDB.SetBNT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"), "ETH.ETH", big.NewInt(10000000000))
 	/**
 		测试账户

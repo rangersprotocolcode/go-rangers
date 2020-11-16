@@ -32,6 +32,7 @@ func (self *wsServer) updateNFT(params map[string]string) (string, bool) {
 	setId := params["setId"]
 	id := params["id"]
 	data := params["data"]
+	property := params["property"]
 
 	self.logger.Debugf("Update NFT! appId:%s,setId:%s,id:%s,data:%s", appId, setId, id, data)
 
@@ -54,7 +55,7 @@ func (self *wsServer) updateNFT(params map[string]string) (string, bool) {
 		return msg, false
 	}
 
-	if service.NFTManagerInstance.UpdateNFT(appId, setId, id, data, accountDB) {
+	if service.NFTManagerInstance.UpdateNFT(appId, setId, id, data, property, accountDB) {
 		// 生成交易，上链 context.Tx.SubTransactions
 		userData := types.UserData{}
 		userData.Address = "UpdateNFT"
@@ -278,6 +279,7 @@ func (self *wsServer) publishNFTSet(params map[string]string) (string, bool) {
 	symbol := params["symbol"]
 	maxSupply := params["maxSupply"]
 	createTime := params["createTime"]
+	conditions := params["conditions"]
 
 	if 0 == len(appId) || 0 == len(authCode) || !STMManger.ValidateAppId(appId, authCode) {
 		return "param error", false
@@ -292,7 +294,7 @@ func (self *wsServer) publishNFTSet(params map[string]string) (string, bool) {
 
 	accountDB := context.AccountDB
 	value, _ := strconv.ParseUint(maxSupply, 10, 64)
-	nftSet := service.NFTManagerInstance.GenerateNFTSet(setId, name, symbol, appId, appId, value, createTime)
+	nftSet := service.NFTManagerInstance.GenerateNFTSet(setId, name, symbol, appId, appId, conditions, value, createTime)
 	if reason, ok := service.NFTManagerInstance.PublishNFTSet(nftSet, accountDB); ok {
 		// 生成交易，上链 context.Tx.SubTransactions
 		userData := types.UserData{}

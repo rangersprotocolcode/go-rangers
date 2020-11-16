@@ -95,7 +95,7 @@ func (this *operatorExecutor) Execute(transaction *types.Transaction, header *ty
 
 				// 修改NFT属性
 				if user.Address == "UpdateNFT" {
-					flag := service.NFTManagerInstance.UpdateNFT(user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], accountdb)
+					flag := service.NFTManagerInstance.UpdateNFT(user.Assets["appId"], user.Assets["setId"], user.Assets["id"], user.Assets["data"], user.Assets["property"], accountdb)
 					if !flag {
 						return false, fmt.Sprintf("nft not existed, setId: %s, id: %s", user.Assets["setId"], user.Assets["id"])
 					}
@@ -141,7 +141,7 @@ func (this *operatorExecutor) Execute(transaction *types.Transaction, header *ty
 						return false, msg
 					}
 					appId := user.Assets["appId"]
-					nftSet := service.NFTManagerInstance.GenerateNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"])
+					nftSet := service.NFTManagerInstance.GenerateNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, user.Assets["conditions"], maxSupply, user.Assets["createTime"])
 					msg, ok := service.NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
 					if !ok {
 						return false, msg

@@ -254,9 +254,10 @@ type TransferData struct {
 }
 
 type NFTID struct {
-	SetId string `json:"setId,omitempty"`
-	Id    string `json:"id,omitempty"`
-	Data  string `json:"data,omitempty"`
+	SetId    string `json:"setId,omitempty"`
+	Id       string `json:"id,omitempty"`
+	Data     string `json:"data,omitempty"`
+	Property string `json:"property,omitempty"`
 }
 
 //提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链

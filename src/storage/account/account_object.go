@@ -338,27 +338,6 @@ func (ao *accountObject) nftSetDefinition(db AccountDatabase) []byte {
 	return code
 }
 
-func (ao *accountObject) SetNFTSetDefinition(hash common.Hash, code []byte) {
-	prevCode := ao.nftSetDefinition(ao.db.db)
-	ao.db.transitions = append(ao.db.transitions, nftSetDefinitionChange{
-		account:  &ao.address,
-		prevhash: ao.NFTSetDefinitionHash(),
-		prev:     prevCode,
-	})
-	ao.setNFTSetDefinition(hash, code)
-}
-
-func (ao *accountObject) setNFTSetDefinition(hash common.Hash, code []byte) {
-	ao.data.kind = NFTSET_TYPE
-	ao.nftSet = code
-	ao.data.NFTSetDefinitionHash = hash[:]
-	ao.dirtyNFTSet = true
-	if ao.onDirty != nil {
-		ao.onDirty(ao.Address())
-		ao.onDirty = nil
-	}
-}
-
 // DataIterator returns a new key-value iterator from a node iterator
 func (ao *accountObject) DataIterator(db AccountDatabase, prefix []byte) *trie.Iterator {
 	if ao.trie == nil {

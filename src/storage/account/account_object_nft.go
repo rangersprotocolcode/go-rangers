@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/storage/rlp"
 	"com.tuntun.rocket/node/src/utility"
 	"fmt"
 	"math/big"
@@ -206,45 +205,6 @@ func (self *accountObject) getNFTStatus(db AccountDatabase) byte {
 		return 0
 	}
 	return status[0]
-}
-
-func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
-	valueByte := self.nftSetDefinition(db)
-	if nil == valueByte || 0 == len(valueByte) {
-		return nil
-	}
-
-	var definition types.NftSetDefinition
-	err := rlp.DecodeBytes(valueByte, &definition)
-	if err != nil {
-		return nil
-	}
-
-	self.cachedLock.RLock()
-	defer self.cachedLock.RUnlock()
-
-	nftSet := definition.ToNFTSet()
-	nftSet.OccupiedID = make(map[string]common.Address)
-	nftSet.TotalSupply = self.Nonce()
-
-	iterator := self.DataIterator(db, []byte{})
-	for iterator.Next() {
-		nftSet.OccupiedID[utility.BytesToStr(iterator.Key)] = common.BytesToAddress(iterator.Value)
-	}
-
-	for id, addr := range self.cachedStorage {
-		if addr == nil {
-			delete(nftSet.OccupiedID, id)
-			continue
-		}
-		nftSet.OccupiedID[id] = common.BytesToAddress(addr)
-	}
-
-	if 0 == len(nftSet.OccupiedID) {
-		nftSet.OccupiedID = nil
-	}
-
-	return &nftSet
 }
 
 // nft记录锁定的target
