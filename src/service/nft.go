@@ -25,7 +25,6 @@ import (
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"strings"
 	"sync"
 )
@@ -129,7 +128,7 @@ func (self *NFTManager) MintNFT(nftSetOwner, appId, setId, id, data, createTime 
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	if 0 == len(setId) || 0 == len(id) || strings.Contains(id, ":") {
+	if 0 == len(setId) || 0 == len(id) || strings.Contains(id, ":") || 0 == strings.Compare(id, account.NFTSetOwnerString) {
 		txLogger.Tracef("Mint nft! setId and id cannot be null")
 		return "setId and id cannot be null", false
 	}
@@ -396,21 +395,6 @@ func (self *NFTManager) shuttle(owner, setId, id, newAppId string, accountDB *ac
 }
 
 //todo:delete after test
-func (self *NFTManager) SendPublishNFTSetToConnector(nftSet *types.NFTSet) {
-	data := make(map[string]string, 8)
-	data["setId"] = nftSet.SetID
-	data["name"] = nftSet.Name
-	data["symbol"] = nftSet.Symbol
-	data["maxSupply"] = strconv.FormatUint(nftSet.MaxSupply, 10)
-	data["creator"] = nftSet.Creator
-	data["owner"] = nftSet.Owner
-	data["createTime"] = nftSet.CreateTime
-	data["contract"] = "" // 标记为源生layer2的数据
-
-	self.publishNFTSetToConnector(data, nftSet.Creator, nftSet.CreateTime)
-}
-
-//todo:delete after test
 func (self *NFTManager) ImportNFTSet(setId, contract, chainType string) {
 	data := make(map[string]string)
 	data["setId"] = setId
@@ -441,22 +425,3 @@ func (self *NFTManager) publishNFTSetToConnector(data map[string]string, source,
 	txLogger.Tracef("After publish nft.Send msg to coiner:%s", t.ToTxJson().ToString())
 	go network.GetNetInstance().SendToCoinConnector(msg)
 }
-
-//// 从layer2 层面删除
-//func (self *NFTManager) DeleteNFT(owner common.Address, setId, id string, accountDB *account.AccountDB) *types.NFT {
-//	self.lock.RLock()
-//	defer self.lock.RUnlock()
-//
-//	nft := accountDB.GetNFTById(owner, setId, id)
-//	if nil == nft {
-//		return nil
-//	}
-//
-//	//删除要提现的NFT
-//	accountDB.RemoveNFT(owner, nft)
-//
-//	// 更新nftSet
-//	self.deleteNFTFromNFTSet(setId, id, accountDB)
-//
-//	return nft
-//}

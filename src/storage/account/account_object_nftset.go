@@ -24,7 +24,10 @@ import (
 	"strings"
 )
 
-var nftSetOwnerKey = utility.StrToBytes("nso")
+var (
+	NFTSetOwnerString = "nso"
+	nftSetOwnerKey    = utility.StrToBytes(NFTSetOwnerString)
+)
 
 func (self *accountObject) CheckNFTSetOwner(db AccountDatabase, owner string) bool {
 	return 0 == strings.Compare(strings.ToLower(self.GetNFTSetOwner(db)), strings.ToLower(owner))
@@ -53,10 +56,18 @@ func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
 
 	iterator := self.DataIterator(db, []byte{})
 	for iterator.Next() {
-		nftSet.OccupiedID[utility.BytesToStr(iterator.Key)] = common.BytesToAddress(iterator.Value)
+		key := utility.BytesToStr(iterator.Key)
+		if 0 == strings.Compare(key, NFTSetOwnerString) {
+			continue
+		}
+		nftSet.OccupiedID[key] = common.BytesToAddress(iterator.Value)
 	}
 
 	for id, addr := range self.cachedStorage {
+		if 0 == strings.Compare(id, NFTSetOwnerString) {
+			continue
+		}
+
 		if addr == nil {
 			delete(nftSet.OccupiedID, id)
 			continue
