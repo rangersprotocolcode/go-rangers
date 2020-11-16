@@ -19,10 +19,8 @@ package service
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
@@ -259,33 +257,4 @@ func (self *FTManager) convert(value string) *big.Int {
 	}
 
 	return supply
-}
-
-func (self *FTManager) SendPublishFTSetToConnector(ftSet *types.FTSet) {
-	data := make(map[string]string, 7)
-	data["setId"] = ftSet.ID
-	data["name"] = ftSet.Name
-	data["symbol"] = ftSet.Symbol
-	data["maxSupply"] = utility.BigIntToStr(ftSet.MaxSupply)
-	data["creator"] = ftSet.AppId
-	data["owner"] = ftSet.Owner
-	data["createTime"] = ftSet.CreateTime
-
-	b, err := json.Marshal(data)
-	if err != nil {
-		txLogger.Error("json marshal err, err:%s", err.Error())
-		return
-	}
-
-	t := types.Transaction{Source: ftSet.AppId, Target: "", Data: string(b), Type: types.TransactionTypePublishFT, Time: ftSet.CreateTime}
-	t.Hash = t.GenHash()
-
-	msg, err := json.Marshal(t.ToTxJson())
-	if err != nil {
-		txLogger.Debugf("Json marshal tx json error:%s", err.Error())
-		return
-	}
-
-	txLogger.Tracef("After publish ft.Send msg to coiner:%s", t.ToTxJson().ToString())
-	go network.GetNetInstance().SendToCoinConnector(msg)
 }

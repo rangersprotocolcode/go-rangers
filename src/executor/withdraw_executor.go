@@ -27,6 +27,6 @@ type withdrawExecutor struct {
 }
 
 func (this *withdrawExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
-	msg, success := service.Withdraw(accountdb, transaction, true)
+	msg, success := service.Withdraw(accountdb, transaction)
 	return success, msg
 }
