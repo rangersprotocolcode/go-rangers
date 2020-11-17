@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
@@ -128,7 +127,7 @@ func (self *NFTManager) MintNFT(nftSetOwner, appId, setId, id, data, createTime 
 	self.lock.Lock()
 	defer self.lock.Unlock()
 
-	if 0 == len(setId) || 0 == len(id) || strings.Contains(id, ":") || 0 == strings.Compare(id, account.NFTSetOwnerString) {
+	if 0 == len(setId) || 0 == len(id) || strings.Contains(id, ":") {
 		txLogger.Tracef("Mint nft! setId and id cannot be null")
 		return "setId and id cannot be null", false
 	}
@@ -392,36 +391,4 @@ func (self *NFTManager) shuttle(owner, setId, id, newAppId string, accountDB *ac
 	// 通知当前状态机
 	// 通知接收状态机
 	return "nft shuttle successful", true
-}
-
-//todo:delete after test
-func (self *NFTManager) ImportNFTSet(setId, contract, chainType string) {
-	data := make(map[string]string)
-	data["setId"] = setId
-	data["maxSupply"] = "0"
-	data["contract"] = contract // 标记为外部导入的数据
-	data["chainType"] = chainType
-
-	self.publishNFTSetToConnector(data, "", "")
-}
-
-//todo:delete after test
-func (self *NFTManager) publishNFTSetToConnector(data map[string]string, source, time string) {
-	b, err := json.Marshal(data)
-	if err != nil {
-		txLogger.Error("json marshal err, err:%s", err.Error())
-		return
-	}
-
-	t := types.Transaction{Source: source, Target: "", Data: string(b), Type: types.TransactionTypePublishNFTSet, Time: time}
-	t.Hash = t.GenHash()
-
-	msg, err := json.Marshal(t.ToTxJson())
-	if err != nil {
-		txLogger.Debugf("Json marshal tx json error:%s", err.Error())
-		return
-	}
-
-	txLogger.Tracef("After publish nft.Send msg to coiner:%s", t.ToTxJson().ToString())
-	go network.GetNetInstance().SendToCoinConnector(msg)
 }

@@ -19,7 +19,6 @@ package service
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
@@ -27,7 +26,7 @@ import (
 )
 
 // 提现
-func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSendToConnector bool) (string, bool) {
+func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction) (string, bool) {
 	txLogger.Tracef("Execute withdraw tx:%s", transaction.ToTxJson().ToString())
 	if transaction.Data == "" {
 		return "Withdraw Data Bad Format", false
@@ -123,37 +122,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction, isSe
 			result.Put("nft", nftList)
 		}
 	}
-
-	if isSendToConnector && !sendWithdrawToCoiner(withDrawReq, transaction, nftInfo) {
-		return "Send To Connector Error", false
-	}
-
 	return result.TOJSONString(), true
-}
-
-//todo:delete after test
-func sendWithdrawToCoiner(withDrawReq types.WithDrawReq, transaction *types.Transaction, nftInfo []types.NFTID) bool {
-	withdrawData := types.WithDrawData{ChainType: withDrawReq.ChainType, Address: withDrawReq.Address}
-	withdrawData.BNT = withDrawReq.BNT
-	withdrawData.FT = withDrawReq.FT
-	withdrawData.NFT = nftInfo
-	b, err := json.Marshal(withdrawData)
-	if err != nil {
-		txLogger.Error("Execute withdraw tx:%s json marshal err, err:%s", transaction.Hash.String(), err.Error())
-		return false
-	}
-
-	t := types.Transaction{Source: transaction.Source, Target: transaction.Target, Data: string(b), Type: transaction.Type, Time: transaction.Time, Nonce: transaction.Nonce, Hash: transaction.Hash}
-
-	msg, err := json.Marshal(t.ToTxJson())
-	if err != nil {
-		txLogger.Debugf("Json marshal tx json error:%s", err.Error())
-		return false
-	}
-
-	txLogger.Tracef("After execute withdraw.Send msg to coin proxy:%s", t.ToTxJson().ToString())
-	go network.GetNetInstance().SendToCoinConnector(msg)
-	return true
 }
 
 /**
