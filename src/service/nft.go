@@ -20,10 +20,12 @@ import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 )
@@ -392,22 +394,3 @@ func (self *NFTManager) shuttle(owner, setId, id, newAppId string, accountDB *ac
 	// 通知接收状态机
 	return "nft shuttle successful", true
 }
-
-//// 从layer2 层面删除
-//func (self *NFTManager) DeleteNFT(owner common.Address, setId, id string, accountDB *account.AccountDB) *types.NFT {
-//	self.lock.RLock()
-//	defer self.lock.RUnlock()
-//
-//	nft := accountDB.GetNFTById(owner, setId, id)
-//	if nil == nft {
-//		return nil
-//	}
-//
-//	//删除要提现的NFT
-//	accountDB.RemoveNFT(owner, nft)
-//
-//	// 更新nftSet
-//	self.deleteNFTFromNFTSet(setId, id, accountDB)
-//
-//	return nft
-//}
