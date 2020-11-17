@@ -354,13 +354,16 @@ func (adb *AccountDB) ComboResource(sourceAddr, targetAddr common.Address, setId
 // 2 mintNFT时，销毁对应的资源
 // 3 组合NFT时转移至nft的ComboResource中
 func (adb *AccountDB) processResource(sourceAddr, targetAddr common.Address, setId, id string, demand types.LockResource, kind byte) bool {
-	source := adb.getOrNewAccountObject(sourceAddr)
-	target := adb.getOrNewAccountObject(targetAddr)
-	targetNFT := adb.getAccountObject(common.GenerateNFTAddress(setId, id), false)
-	if 3 == kind && nil == targetNFT {
-		return false
+	var targetNFT *accountObject
+	if 3 == kind {
+		targetNFT = adb.getAccountObject(common.GenerateNFTAddress(setId, id), false)
+		if nil == targetNFT || !targetNFT.checkOwner(adb.db, sourceAddr) || 0 != targetNFT.getNFTStatus(adb.db) {
+			return false
+		}
 	}
 
+	source := adb.getOrNewAccountObject(sourceAddr)
+	target := adb.getOrNewAccountObject(targetAddr)
 	db := adb.db
 
 	// balance
