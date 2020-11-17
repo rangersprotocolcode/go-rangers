@@ -111,6 +111,10 @@ func (ao *accountObject) getAllLockedResource(db AccountDatabase) map[string]*ty
 
 	// balance/bnt/ft/nft
 	for key, value := range ao.cachedStorage {
+		if nil == value || 0 == len(value) {
+			continue
+		}
+
 		if strings.HasPrefix(key, common.LockBalanceKey) {
 			source := key[len(common.LockBalanceKey)+1:]
 			if 0 == len(source) {
@@ -156,6 +160,9 @@ func (ao *accountObject) getAllLockedResource(db AccountDatabase) map[string]*ty
 	iterator := ao.DataIterator(db, utility.StrToBytes(comboPrefix))
 	for iterator.Next() {
 		key := utility.BytesToStr(iterator.Key)
+		if nil == iterator.Value || 0 == len(iterator.Value) {
+			continue
+		}
 
 		_, contains := ao.cachedStorage[key]
 		if contains {
