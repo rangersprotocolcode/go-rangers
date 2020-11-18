@@ -64,7 +64,7 @@ func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
 	}
 
 	for id, addr := range self.cachedStorage {
-		if 0 == strings.Compare(id, NFTSetOwnerString) {
+		if 0 == strings.Compare(id, NFTSetOwnerString) || strings.HasPrefix(id, common.LockPrefix)  {
 			continue
 		}
 
