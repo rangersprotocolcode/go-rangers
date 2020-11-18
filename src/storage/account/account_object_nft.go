@@ -172,7 +172,7 @@ func (self *accountObject) ApproveNFT(db AccountDatabase, owner common.Address, 
 		return false
 	}
 
-	self.SetData(db, renterKey, utility.StrToBytes(renter))
+	self.SetData(db, renterKey, common.FromHex(renter))
 	return true
 }
 
