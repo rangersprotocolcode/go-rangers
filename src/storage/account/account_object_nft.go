@@ -120,10 +120,7 @@ func (self *accountObject) GetNFT(db AccountDatabase) *types.NFT {
 		Data:       make(map[string]string),
 	}
 
-	status := self.GetData(db, statusKey)
-	if nil != status && 1 == len(status) {
-		nft.Status = status[0]
-	}
+	nft.Status = self.getNFTStatus(db)
 
 	contidion := self.GetData(db, conditionKey)
 	if nil != contidion && 1 == len(contidion) {
@@ -164,11 +161,13 @@ func (self *accountObject) GetNFT(db AccountDatabase) *types.NFT {
 }
 func (self *accountObject) ApproveNFT(db AccountDatabase, owner common.Address, renter string) bool {
 	if !self.checkOwner(db, owner) {
+		self.log.Errorf("check owner error: %s, approve failed", owner.String())
 		return false
 	}
 
-	status := self.GetData(db, statusKey)
-	if nil == status || 1 != len(status) || status[0] != 0 {
+	status := self.getNFTStatus(db)
+	if status != 0 {
+		self.log.Errorf("check status error. status: %d, owner: %s, approve failed", status, owner.String())
 		return false
 	}
 
@@ -207,9 +206,10 @@ func (self *accountObject) ChangeNFTStatus(db AccountDatabase, addr common.Addre
 
 func (self *accountObject) getNFTStatus(db AccountDatabase) byte {
 	status := self.GetData(db, statusKey)
-	if nil == status {
+	if nil == status || 1 != len(status) {
 		return 0
 	}
+
 	return status[0]
 }
 
