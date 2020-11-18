@@ -163,6 +163,10 @@ func (self *NFT) GetProperty(appId, propertyName string) string {
 	return self.Data[common.GenerateAppIdProperty(appId, propertyName)]
 }
 
+func (self *NFT) SetProperty(appId, propertyName, data string) {
+	self.Data[common.GenerateAppIdProperty(appId, propertyName)] = data
+}
+
 func (self *NFT) SetData(gameId, data string) {
 	self.Data[gameId] = data
 }

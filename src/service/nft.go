@@ -24,9 +24,22 @@ import (
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"strings"
 	"sync"
 )
+
+type NFTConditions struct {
+	Balance string            `json:"balance,omitempty"`
+	Coin    map[string]string `json:"coin,omitempty"`
+	FT      map[string]string `json:"ft,omitempty"`
+	NFT     []NFTCondition    `json:"nft,omitempty"`
+}
+
+type NFTCondition struct {
+	SetId     string                       `json:"setId,omitempty"`
+	Attribute map[string]map[string]string `json:"attribute,omitempty"`
+}
 
 var NFTManagerInstance *NFTManager
 
@@ -147,7 +160,150 @@ func (self *NFTManager) MintNFT(nftSetOwner, appId, setId, id, data, createTime 
 		appId = nftSetOwner
 	}
 
+	// 定义了组合规则的
+	if 0 != len(nftSet.Conditions) {
+		demand := self.checkNFTConditions(nftSet.Conditions, accountDB, setId, owner)
+		if nil == demand {
+			return "nft check failed", false
+		}
+
+		if !accountDB.DestroyResource(owner, common.GenerateNFTSetAddress(setId), *demand) {
+			return "no such resources", false
+		}
+	}
 	return self.GenerateNFT(nftSet, appId, setId, id, data, nftSetOwner, createTime, "", owner, nil, accountDB)
+}
+func (self *NFTManager) checkNFTConditions(conditions string, accountDB *account.AccountDB, nftSetId string, owner common.Address) *types.LockResource {
+	var nftConditions NFTConditions
+	if err := json.Unmarshal(utility.StrToBytes(conditions), &nftConditions); nil != err {
+		return nil
+	}
+
+	demand := types.LockResource{}
+	if 0 != len(nftConditions.Balance) {
+		demand.Balance = nftConditions.Balance
+	}
+	if 0 != len(nftConditions.FT) {
+		demand.FT = nftConditions.FT
+	}
+	if 0 != len(nftConditions.Coin) {
+		demand.Coin = nftConditions.Coin
+	}
+	if 0 != len(nftConditions.NFT) {
+		demand.NFT = make([]types.NFTID, 0)
+		lockedResource := accountDB.GetLockedResourceByAddress(common.GenerateNFTSetAddress(nftSetId), owner)
+		if nil == lockedResource || 0 == len(lockedResource.NFT) {
+			return nil
+		}
+
+		for _, nftCondition := range nftConditions.NFT {
+			found := false
+			for _, lockedNFT := range lockedResource.NFT {
+				if lockedNFT.SetId != nftCondition.SetId {
+					continue
+				}
+				nft := accountDB.GetNFTById(nftCondition.SetId, lockedNFT.Id)
+				if nil == nft {
+					continue
+				}
+
+				match := true
+				if 0 != len(nftCondition.Attribute) {
+					for property, conditionMap := range nftCondition.Attribute {
+						var valueString string
+						if strings.Contains(property, ":") {
+							list := strings.Split(property, ":")
+							if 2 != len(list) {
+								return nil
+							}
+							valueString = nft.GetProperty(list[0], list[1])
+						} else {
+							valueString = nft.GetProperty(nft.AppId, property)
+						}
+
+						value, err := strconv.Atoi(valueString)
+						if err != nil {
+							continue
+						}
+
+						targetValue := strings.TrimSpace(conditionMap["value"])
+						switch strings.ToLower(conditionMap["operate"]) {
+						case "eq":
+							target, err := strconv.Atoi(targetValue)
+							if err != nil || value != target {
+								match = false
+							}
+							break
+						case "ne":
+							target, err := strconv.Atoi(targetValue)
+							if err != nil || value == target {
+								match = false
+							}
+						case "gt":
+							target, err := strconv.Atoi(targetValue)
+							if err != nil || value <= target {
+								match = false
+							}
+							break
+						case "lt":
+							target, err := strconv.Atoi(targetValue)
+							if err != nil || value >= target {
+								match = false
+							}
+							break
+						case "ge":
+							target, err := strconv.Atoi(targetValue)
+							if err != nil || value < target {
+								match = false
+							}
+							break
+						case "le":
+							target, err := strconv.Atoi(targetValue)
+							if err != nil || value > target {
+								match = false
+							}
+							break
+						case "between":
+							borders := targetValue[1 : len(targetValue)-1]
+							borderList := strings.Split(borders, ",")
+							if 2 != len(borderList) {
+								return nil
+							}
+							border, err := strconv.Atoi(strings.TrimSpace(borderList[0]))
+							if err != nil || value < border {
+								match = false
+							}
+							border, err = strconv.Atoi(strings.TrimSpace(borderList[1]))
+							if err != nil || value > border {
+								match = false
+							}
+							break
+						default:
+							match = false
+						}
+						if !match {
+							break
+						}
+					}
+				}
+				if match {
+					demand.NFT = append(demand.NFT, types.NFTID{SetId: nftCondition.SetId, Id: lockedNFT.Id})
+					found = true
+					break
+				}
+			}
+
+			if !found {
+				return nil
+			}
+		}
+
+	}
+
+	if 0 == len(demand.Balance) && 0 == len(demand.FT) && 0 == len(demand.Coin) && 0 == len(demand.NFT) {
+		return nil
+	}
+	return &demand
 }
 
 func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data, creator, timeStamp, imported string, owner common.Address, fullData map[string]string, accountDB *account.AccountDB) (string, bool) {

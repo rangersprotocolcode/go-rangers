@@ -57,7 +57,7 @@ func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
 	iterator := self.DataIterator(db, []byte{})
 	for iterator.Next() {
 		key := utility.BytesToStr(iterator.Key)
-		if 0 == strings.Compare(key, NFTSetOwnerString) {
+		if 0 == strings.Compare(key, NFTSetOwnerString) || strings.HasPrefix(key, common.LockPrefix) {
 			continue
 		}
 		nftSet.OccupiedID[key] = common.BytesToAddress(iterator.Value)
