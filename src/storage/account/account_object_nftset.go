@@ -83,11 +83,11 @@ func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
 }
 
 func (ao *accountObject) SetNFTSetOwner(db AccountDatabase, owner string) {
-	ao.SetData(db, nftSetOwnerKey, utility.StrToBytes(owner))
+	ao.SetData(db, nftSetOwnerKey, common.FromHex(owner))
 }
 
 func (ao *accountObject) GetNFTSetOwner(db AccountDatabase) string {
-	return utility.BytesToStr(ao.GetData(db, nftSetOwnerKey))
+	return common.ToHex(ao.GetData(db, nftSetOwnerKey))
 }
 
 func (ao *accountObject) SetNFTSetDefinition(hash common.Hash, code []byte) {
