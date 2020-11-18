@@ -54,12 +54,11 @@ func (self *accountObject) generateNFTDataKey(key string) string {
 
 func (self *accountObject) checkOwner(db AccountDatabase, addr common.Address) bool {
 	ownerAddressBytes := self.GetData(db, ownerKey)
-	ownerAddress := common.HexStringToAddress(utility.BytesToStr(ownerAddressBytes))
-	return 0 == bytes.Compare(ownerAddress.Bytes(), addr.Bytes())
+	return 0 == bytes.Compare(ownerAddressBytes, addr.Bytes())
 }
 
 func (self *accountObject) SetOwner(db AccountDatabase, owner string) {
-	self.SetData(db, ownerKey, utility.StrToBytes(owner))
+	self.SetData(db, ownerKey, common.FromHex(owner))
 }
 
 func (self *accountObject) SetAppId(db AccountDatabase, appId string) {
@@ -80,15 +79,22 @@ func (self *accountObject) AddNFT(db AccountDatabase, nft *types.NFT) bool {
 	self.SetData(db, nameKey, utility.StrToBytes(nft.Name))
 	self.SetData(db, symbolKey, utility.StrToBytes(nft.Symbol))
 	self.SetData(db, idKey, utility.StrToBytes(nft.ID))
-	self.SetData(db, creatorKey, utility.StrToBytes(nft.Creator))
+	self.SetData(db, creatorKey, common.FromHex(nft.Creator))
 	self.SetData(db, createTimeKey, utility.StrToBytes(nft.CreateTime))
-	self.SetData(db, ownerKey, utility.StrToBytes(nft.Owner))
-	self.SetData(db, renterKey, utility.StrToBytes(nft.Renter))
-	self.SetData(db, statusKey, []byte{nft.Status})
-	self.SetData(db, conditionKey, []byte{nft.Condition})
+	self.SetData(db, ownerKey, common.FromHex(nft.Owner))
+	if 0 != len(nft.Renter) {
+		self.SetData(db, renterKey, common.FromHex(nft.Renter))
+	}
+	if 0 != nft.Status {
+		self.SetData(db, statusKey, []byte{nft.Status})
+	}
+	if 0 != nft.Condition {
+		self.SetData(db, conditionKey, []byte{nft.Condition})
+	}
 	self.SetData(db, appIdKey, utility.StrToBytes(nft.AppId))
-	self.SetData(db, importedKey, utility.StrToBytes(nft.Imported))
-	self.SetData(db, lockKey, utility.StrToBytes(nft.Lock))
+	if 0 != len(nft.Imported) {
+		self.SetData(db, importedKey, utility.StrToBytes(nft.Imported))
+	}
 
 	for key, value := range nft.Data {
 		self.SetData(db, utility.StrToBytes(self.generateNFTDataKey(key)), utility.StrToBytes(value))
@@ -104,13 +110,13 @@ func (self *accountObject) GetNFT(db AccountDatabase) *types.NFT {
 		Name:       utility.BytesToStr(self.GetData(db, nameKey)),
 		Symbol:     utility.BytesToStr(self.GetData(db, symbolKey)),
 		ID:         utility.BytesToStr(self.GetData(db, idKey)),
-		Creator:    utility.BytesToStr(self.GetData(db, creatorKey)),
+		Creator:    common.ToHex(self.GetData(db, creatorKey)),
 		CreateTime: utility.BytesToStr(self.GetData(db, createTimeKey)),
-		Owner:      utility.BytesToStr(self.GetData(db, ownerKey)),
-		Renter:     utility.BytesToStr(self.GetData(db, renterKey)),
+		Owner:      common.ToHex(self.GetData(db, ownerKey)),
+		Renter:     common.ToHex(self.GetData(db, renterKey)),
 		AppId:      utility.BytesToStr(self.GetData(db, appIdKey)),
 		Imported:   utility.BytesToStr(self.GetData(db, importedKey)),
-		Lock:       utility.BytesToStr(self.GetData(db, lockKey)),
+		Lock:       common.Bytes2Hex(self.GetData(db, lockKey)),
 		Data:       make(map[string]string),
 	}
 
@@ -124,7 +130,7 @@ func (self *accountObject) GetNFT(db AccountDatabase) *types.NFT {
 		nft.Condition = contidion[0]
 	}
 
-	// getBalance
+	// getLockedBalance
 	key := utility.StrToBytes(fmt.Sprintf("%s%s", comboPrefix, "b"))
 	value := self.GetData(db, key)
 
@@ -217,7 +223,7 @@ func (ao *accountObject) lockNFTSelf(db AccountDatabase, owner, target common.Ad
 		return false
 	}
 
-	ao.SetLock(db, utility.StrToBytes(target.String()))
+	ao.SetLock(db, target.Bytes())
 	ao.SetData(db, statusKey, []byte{3})
 	return true
 }
