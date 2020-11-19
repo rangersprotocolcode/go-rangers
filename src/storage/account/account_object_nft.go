@@ -56,10 +56,6 @@ func (self *accountObject) checkOwner(db AccountDatabase, addr common.Address) b
 	ownerAddressBytes := self.GetData(db, ownerKey)
 
 	result := 0 == bytes.Compare(ownerAddressBytes, addr.Bytes())
-	if !result {
-		self.log.Errorf("check owner error: %s,expect: %s, approve failed", addr.String(), common.ToHex(ownerAddressBytes))
-	}
-
 	return result
 }
 
@@ -167,13 +163,11 @@ func (self *accountObject) GetNFT(db AccountDatabase) *types.NFT {
 }
 func (self *accountObject) ApproveNFT(db AccountDatabase, owner common.Address, renter string) bool {
 	if !self.checkOwner(db, owner) {
-		self.log.Errorf("check owner error, approve failed")
 		return false
 	}
 
 	status := self.getNFTStatus(db)
 	if status != 0 {
-		self.log.Errorf("check status error. status: %d, owner: %s, approve failed", status, owner.String())
 		return false
 	}
 

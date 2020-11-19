@@ -208,7 +208,6 @@ func (self *AccountDB) ApproveNFT(owner common.Address, appId, setId, id, renter
 	nftAddress := common.GenerateNFTAddress(setId, id)
 	stateObject := self.getAccountObject(nftAddress, false)
 	if nil == stateObject {
-		self.log.Errorf("fail to find nft: %s %s, approve failed", setId, id)
 		return false
 	}
 	return stateObject.ApproveNFT(self.db, owner, renter)
