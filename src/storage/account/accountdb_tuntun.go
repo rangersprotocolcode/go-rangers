@@ -288,6 +288,9 @@ func (adb *AccountDB) LockResource(sourceAddr, targetAddr common.Address, resour
 			if err != nil {
 				return false
 			}
+			if 0 == amount.Sign() {
+				continue
+			}
 
 			_, ok := source.SubBNT(db, amount, bnt)
 			if !ok {
@@ -305,7 +308,9 @@ func (adb *AccountDB) LockResource(sourceAddr, targetAddr common.Address, resour
 			if err != nil {
 				return false
 			}
-
+			if 0 == amount.Sign() {
+				continue
+			}
 			_, ok := source.SubFT(db, amount, ft)
 			if !ok {
 				return false
