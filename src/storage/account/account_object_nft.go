@@ -186,7 +186,12 @@ func (self *accountObject) SetNFTProperty(db AccountDatabase, appId, propertyNam
 		return false
 	}
 
-	self.SetData(db, utility.StrToBytes(self.generateNFTDataKey(common.GenerateAppIdProperty(appId, propertyName))), utility.StrToBytes(value))
+	key := utility.StrToBytes(self.generateNFTDataKey(common.GenerateAppIdProperty(appId, propertyName)))
+	if 0 == len(value) {
+		self.RemoveData(db, key)
+	} else {
+		self.SetData(db, key, utility.StrToBytes(value))
+	}
 	return true
 }
 
@@ -196,7 +201,12 @@ func (self *accountObject) SetNFTValueByGameId(db AccountDatabase, appId, value 
 		return false
 	}
 
-	self.SetData(db, utility.StrToBytes(self.generateNFTDataKey(appId)), utility.StrToBytes(value))
+	key := utility.StrToBytes(self.generateNFTDataKey(appId))
+	if 0 == len(value) {
+		self.RemoveData(db, key)
+	} else {
+		self.SetData(db, key, utility.StrToBytes(value))
+	}
 	return true
 }
 
@@ -206,11 +216,10 @@ func (self *accountObject) ChangeNFTStatus(db AccountDatabase, addr common.Addre
 	}
 
 	if 0 == status {
-		self.SetData(db, statusKey, nil)
+		self.RemoveData(db, statusKey)
 	} else {
 		self.SetData(db, statusKey, []byte{status})
 	}
-
 	return true
 }
 
@@ -240,7 +249,7 @@ func (ao *accountObject) lockNFTSelf(db AccountDatabase, owner, target common.Ad
 
 func (ao *accountObject) unlockNFTSelf(db AccountDatabase) {
 	ao.SetLock(db, nil)
-	ao.SetData(db, statusKey, nil)
+	ao.RemoveData(db, statusKey)
 }
 
 func (ao *accountObject) setComboCoin(db AccountDatabase, key []byte, amount *big.Int) {
