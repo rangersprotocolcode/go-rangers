@@ -17,9 +17,11 @@
 package account
 
 import (
+	"com.tuntun.rocket/node/src/middleware/log"
 	"fmt"
 	"math/big"
 	"sort"
+	"strconv"
 	"sync"
 
 	"com.tuntun.rocket/node/src/storage/trie"
@@ -41,6 +43,9 @@ var (
 
 	// emptyCode is the known hash of the empty TVM bytecode.
 	emptyCode = sha3.Sum256(nil)
+
+	// log
+	accountLog = log.GetLoggerByIndex(log.AccountLogConfig, strconv.Itoa(common.InstanceIndex))
 )
 
 // AccountDB are used to store anything

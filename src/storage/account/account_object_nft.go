@@ -56,6 +56,9 @@ func (self *accountObject) checkOwner(db AccountDatabase, addr common.Address) b
 	ownerAddressBytes := self.GetData(db, ownerKey)
 
 	result := 0 == bytes.Compare(ownerAddressBytes, addr.Bytes())
+	if !result {
+		accountLog.Errorf("check owner error: %s,expect: %s, approve failed", addr.String(), common.ToHex(ownerAddressBytes))
+	}
 	return result
 }
 
@@ -163,11 +166,13 @@ func (self *accountObject) GetNFT(db AccountDatabase) *types.NFT {
 }
 func (self *accountObject) ApproveNFT(db AccountDatabase, owner common.Address, renter string) bool {
 	if !self.checkOwner(db, owner) {
+		accountLog.Errorf("check owner error, approve failed")
 		return false
 	}
 
 	status := self.getNFTStatus(db)
 	if status != 0 {
+		accountLog.Errorf("check status error. status: %d, owner: %s, approve failed", status, owner.String())
 		return false
 	}
 
@@ -200,7 +205,12 @@ func (self *accountObject) ChangeNFTStatus(db AccountDatabase, addr common.Addre
 		return false
 	}
 
-	self.SetData(db, statusKey, []byte{status})
+	if 0 == status {
+		self.SetData(db, statusKey, nil)
+	} else {
+		self.SetData(db, statusKey, []byte{status})
+	}
+
 	return true
 }
 
@@ -230,7 +240,7 @@ func (ao *accountObject) lockNFTSelf(db AccountDatabase, owner, target common.Ad
 
 func (ao *accountObject) unlockNFTSelf(db AccountDatabase) {
 	ao.SetLock(db, nil)
-	ao.SetData(db, statusKey, []byte{0})
+	ao.SetData(db, statusKey, nil)
 }
 
 func (ao *accountObject) setComboCoin(db AccountDatabase, key []byte, amount *big.Int) {
