@@ -24,6 +24,26 @@ import (
 	"strconv"
 )
 
+type NFTConditions struct {
+	Balance string            `json:"balance,omitempty"`
+	Coin    map[string]string `json:"coin,omitempty"`
+	FT      map[string]string `json:"ft,omitempty"`
+	NFT     []NFTCondition    `json:"nft,omitempty"`
+}
+
+func (self *NFTConditions) IsEmpty() bool {
+	if 0 != len(self.Balance) || 0 != len(self.Coin) || 0 != len(self.FT) || 0 != len(self.NFT) {
+		return false
+	}
+
+	return true
+}
+
+type NFTCondition struct {
+	SetId     string                       `json:"setId,omitempty"`
+	Attribute map[string]map[string]string `json:"attribute,omitempty"`
+}
+
 type (
 	ComboResource TransferData
 	LockResource  TransferData
@@ -35,7 +55,7 @@ type (
 		MaxSupply  uint64 `json:"maxSupply,omitempty"` // 最大发行量，等于0则表示无限量
 		Creator    string `json:"creator,omitempty"`
 		CreateTime string `json:"createTime,omitempty"`
-		Conditions string `json:"condition,omitempty"`
+		Conditions []byte `json:"condition,omitempty"`
 	}
 )
 
@@ -47,21 +67,21 @@ func (definition *NftSetDefinition) ToNFTSet() NFTSet {
 	nftSet.MaxSupply = definition.MaxSupply
 	nftSet.CreateTime = definition.CreateTime
 	nftSet.Creator = definition.Creator
-	nftSet.Conditions = definition.Conditions
+	json.Unmarshal(definition.Conditions,&nftSet.Conditions)
 	return nftSet
 }
 
 // NFTSet 数据结构综述
 type NFTSet struct {
-	SetID       string `json:"setId,omitempty"`
-	Name        string `json:"name,omitempty"`
-	Symbol      string `json:"symbol,omitempty"`
-	MaxSupply   uint64 `json:"maxSupply,omitempty"`   // 最大发行量，等于0则表示无限量
-	TotalSupply uint64 `json:"totalSupply,omitempty"` // 历史上发行量
-	Creator     string `json:"creator,omitempty"`
-	Owner       string `json:"owner,omitempty"`
-	CreateTime  string `json:"createTime,omitempty"`
-	Conditions  string `json:"conditions,omitempty"`
+	SetID       string        `json:"setId,omitempty"`
+	Name        string        `json:"name,omitempty"`
+	Symbol      string        `json:"symbol,omitempty"`
+	MaxSupply   uint64        `json:"maxSupply,omitempty"`   // 最大发行量，等于0则表示无限量
+	TotalSupply uint64        `json:"totalSupply,omitempty"` // 历史上发行量
+	Creator     string        `json:"creator,omitempty"`
+	Owner       string        `json:"owner,omitempty"`
+	CreateTime  string        `json:"createTime,omitempty"`
+	Conditions  NFTConditions `json:"conditions,omitempty"`
 
 	// 已经发行的NFTID及其拥有者
 	OccupiedID map[string]common.Address `json:"occupied,omitempty"` // 当前在layer2里的nft(包含已经被提现走的NFT)
@@ -75,9 +95,8 @@ func (self *NFTSet) ToBlob() []byte {
 		MaxSupply:  self.MaxSupply,
 		Creator:    self.Creator,
 		CreateTime: self.CreateTime,
-		Conditions: self.Conditions,
 	}
-
+	definition.Conditions,_ = json.Marshal(self.Conditions)
 	data, _ := rlp.EncodeToBytes(definition)
 	return data
 }

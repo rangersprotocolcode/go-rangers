@@ -29,18 +29,6 @@ import (
 	"sync"
 )
 
-type NFTConditions struct {
-	Balance string            `json:"balance,omitempty"`
-	Coin    map[string]string `json:"coin,omitempty"`
-	FT      map[string]string `json:"ft,omitempty"`
-	NFT     []NFTCondition    `json:"nft,omitempty"`
-}
-
-type NFTCondition struct {
-	SetId     string                       `json:"setId,omitempty"`
-	Attribute map[string]map[string]string `json:"attribute,omitempty"`
-}
-
 var NFTManagerInstance *NFTManager
 
 func initNFTManager() {
@@ -94,7 +82,7 @@ func (self *NFTManager) GetNFTSet(setId string, accountDB *account.AccountDB) *t
 	return accountDB.GetNFTSet(setId)
 }
 
-func (self *NFTManager) GenerateNFTSet(setId, name, symbol, creator, owner, conditions string, maxSupply uint64, createTime string) *types.NFTSet {
+func (self *NFTManager) GenerateNFTSet(setId, name, symbol, creator, owner string, conditions types.NFTConditions, maxSupply uint64, createTime string) *types.NFTSet {
 	// 创建NFTSet
 	nftSet := &types.NFTSet{
 		SetID:      setId,
@@ -161,7 +149,7 @@ func (self *NFTManager) MintNFT(nftSetOwner, appId, setId, id, data, createTime 
 	}
 
 	// 定义了组合规则的
-	if 0 != len(nftSet.Conditions) {
+	if !nftSet.Conditions.IsEmpty() {
 		demand := self.checkNFTConditions(nftSet.Conditions, accountDB, setId, owner)
 		if nil == demand {
 			return "nft check failed", false
@@ -173,12 +161,7 @@ func (self *NFTManager) MintNFT(nftSetOwner, appId, setId, id, data, createTime 
 	}
 	return self.GenerateNFT(nftSet, appId, setId, id, data, nftSetOwner, createTime, "", owner, nil, accountDB)
 }
-func (self *NFTManager) checkNFTConditions(conditions string, accountDB *account.AccountDB, nftSetId string, owner common.Address) *types.LockResource {
-	var nftConditions NFTConditions
-	if err := json.Unmarshal(utility.StrToBytes(conditions), &nftConditions); nil != err {
-		return nil
-	}
-
+func (self *NFTManager) checkNFTConditions(nftConditions types.NFTConditions, accountDB *account.AccountDB, nftSetId string, owner common.Address) *types.LockResource {
 	demand := types.LockResource{}
 	if 0 != len(nftConditions.Balance) {
 		demand.Balance = nftConditions.Balance

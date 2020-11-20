@@ -21,6 +21,8 @@ import (
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
+	"com.tuntun.rocket/node/src/utility"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"os"
@@ -94,7 +96,7 @@ func TestNFTManager_MintNFT(t *testing.T) {
 	// 检查setId
 	nftSet := NFTManagerInstance.GetNFTSet(setId, accountdb)
 	if nil == nftSet {
-		nftSet = NFTManagerInstance.GenerateNFTSet(setId, name, symbol, creator, creator, "", 0, "0")
+		nftSet = NFTManagerInstance.GenerateNFTSet(setId, name, symbol, creator, creator, types.NFTConditions{}, 0, "0")
 		NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
 	}
 
@@ -180,12 +182,21 @@ func TestNFTManager_MintNFTWithCondition(t *testing.T) {
 	creator := "0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"
 
 	// 检查setId
+	var conditions types.NFTConditions
+	err := json.Unmarshal(utility.StrToBytes(`{"nft":[{"setId":"nftSetId1","attribute":{"a":{"operate":"eq","value":"1"},"b":{"operate":"between","value":"[1, 20]"}}},{"setId":"nftSetId2","attribute":{"a":{"operate":"ne","value":"1"},"b":{"operate":"ge","value":"3"}}}],"ft":{"0x10086-abc":"0.1","0x10086-123":"0.4"},"coin":{"ETH.ETH":"1","ONT":"0.5"},"balance":"1"}`), &conditions)
+	if nil != err {
+		t.Fatalf(err.Error())
+	}
 	nftSet := NFTManagerInstance.GetNFTSet(setId, accountdb)
 	if nil == nftSet {
-		nftSet = NFTManagerInstance.GenerateNFTSet(setId, name, symbol, creator, creator, `{"nft":[{"setId":"nftSetId1","attribute":{"a":{"operate":"eq","value":"1"},"b":{"operate":"between","value":"[1, 20]"}}},{"setId":"nftSetId2","attribute":{"a":{"operate":"ne","value":"1"},"b":{"operate":"ge","value":"3"}}}],"ft":{"0x10086-abc":"0.1","0x10086-123":"0.4"},"coin":{"ETH.ETH":"1","ONT":"0.5"},"balance":"1"}`, 0, "0")
-		NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
+		nftSet = NFTManagerInstance.GenerateNFTSet(setId, name, symbol, creator, creator, conditions, 0, "0")
+		msg, flag := NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
+		if !flag {
+			t.Fatalf(msg)
+		}
 	}
 
+	nftSet = NFTManagerInstance.GetNFTSet(setId, accountdb)
 	// lock resource
 	lockedRoot := lockResource(accountdb, triedb, t)
 	accountdb, _ = account.NewAccountDB(lockedRoot, triedb)

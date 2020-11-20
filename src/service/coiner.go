@@ -120,7 +120,7 @@ func NFTDeposit(accountdb *account.AccountDB, transaction *types.Transaction) (b
 	// 检查setId
 	nftSet := NFTManagerInstance.GetNFTSet(depositNFTData.SetId, accountdb)
 	if nil == nftSet {
-		nftSet = NFTManagerInstance.GenerateNFTSet(depositNFTData.SetId, depositNFTData.Name, depositNFTData.Symbol, depositNFTData.Creator, depositNFTData.Owner, "", 0, depositNFTData.CreateTime)
+		nftSet = NFTManagerInstance.GenerateNFTSet(depositNFTData.SetId, depositNFTData.Name, depositNFTData.Symbol, depositNFTData.Creator, depositNFTData.Owner, types.NFTConditions{}, 0, depositNFTData.CreateTime)
 		NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
 	}
 
