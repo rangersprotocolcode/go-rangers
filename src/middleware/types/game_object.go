@@ -61,7 +61,7 @@ type NFTSet struct {
 	Creator     string `json:"creator,omitempty"`
 	Owner       string `json:"owner,omitempty"`
 	CreateTime  string `json:"createTime,omitempty"`
-	Conditions  string `json:"condition,omitempty"`
+	Conditions  string `json:"conditions,omitempty"`
 
 	// 已经发行的NFTID及其拥有者
 	OccupiedID map[string]common.Address `json:"occupied,omitempty"` // 当前在layer2里的nft(包含已经被提现走的NFT)
