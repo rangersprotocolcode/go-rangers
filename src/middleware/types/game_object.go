@@ -25,10 +25,10 @@ import (
 )
 
 type NFTConditions struct {
-	Balance string            `json:"balance,omitempty"`
-	Coin    map[string]string `json:"coin,omitempty"`
-	FT      map[string]string `json:"ft,omitempty"`
-	NFT     []NFTCondition    `json:"nft,omitempty"`
+	Balance string                  `json:"balance,omitempty"`
+	Coin    map[string]string       `json:"coin,omitempty"`
+	FT      map[string]string       `json:"ft,omitempty"`
+	NFT     map[string]NFTCondition `json:"nft,omitempty"`
 }
 
 func (self *NFTConditions) IsEmpty() bool {
@@ -40,7 +40,7 @@ func (self *NFTConditions) IsEmpty() bool {
 }
 
 type NFTCondition struct {
-	SetId     string                       `json:"setId,omitempty"`
+	Num       int                          `json:"num,omitempty"`
 	Attribute map[string]map[string]string `json:"attribute,omitempty"`
 }
 
@@ -67,7 +67,7 @@ func (definition *NftSetDefinition) ToNFTSet() NFTSet {
 	nftSet.MaxSupply = definition.MaxSupply
 	nftSet.CreateTime = definition.CreateTime
 	nftSet.Creator = definition.Creator
-	json.Unmarshal(definition.Conditions,&nftSet.Conditions)
+	json.Unmarshal(definition.Conditions, &nftSet.Conditions)
 	return nftSet
 }
 
@@ -96,7 +96,7 @@ func (self *NFTSet) ToBlob() []byte {
 		Creator:    self.Creator,
 		CreateTime: self.CreateTime,
 	}
-	definition.Conditions,_ = json.Marshal(self.Conditions)
+	definition.Conditions, _ = json.Marshal(self.Conditions)
 	data, _ := rlp.EncodeToBytes(definition)
 	return data
 }

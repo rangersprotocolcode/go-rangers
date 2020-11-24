@@ -183,7 +183,127 @@ func TestNFTManager_MintNFTWithCondition(t *testing.T) {
 
 	// 检查setId
 	var conditions types.NFTConditions
-	err := json.Unmarshal(utility.StrToBytes(`{"nft":[{"setId":"nftSetId1","attribute":{"a":{"operate":"eq","value":"1"},"b":{"operate":"between","value":"[1, 20]"}}},{"setId":"nftSetId2","attribute":{"a":{"operate":"ne","value":"1"},"b":{"operate":"ge","value":"3"}}}],"ft":{"0x10086-abc":"0.1","0x10086-123":"0.4"},"coin":{"ETH.ETH":"1","ONT":"0.5"},"balance":"1"}`), &conditions)
+	err := json.Unmarshal(utility.StrToBytes(`{"nft":{"nftSetId1":{"num":2},"nftSetId2":{"attribute":{"a":{"operate":"ne","value":"1"},"b":{"operate":"ge","value":"3"}}}},"ft":{"0x10086-abc":"0.1","0x10086-123":"0.4"},"coin":{"ETH.ETH":"1","ONT":"0.5"},"balance":"1"}`), &conditions)
+	if nil != err {
+		t.Fatalf(err.Error())
+	}
+	nftSet := NFTManagerInstance.GetNFTSet(setId, accountdb)
+	if nil == nftSet {
+		nftSet = NFTManagerInstance.GenerateNFTSet(setId, name, symbol, creator, creator, conditions, 0, "0")
+		msg, flag := NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
+		if !flag {
+			t.Fatalf(msg)
+		}
+	}
+
+	nftSet = NFTManagerInstance.GetNFTSet(setId, accountdb)
+	// lock resource
+	lockedRoot := lockResource(accountdb, triedb, t)
+	accountdb, _ = account.NewAccountDB(lockedRoot, triedb)
+
+	appId := "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"
+
+	// 发行
+	msg, ok := NFTManagerInstance.MintNFT(creator, appId, setId, id, "pppp", creator, sourceAddr, accountdb)
+	if !ok {
+		t.Fatalf(msg)
+	}
+
+	root, err := accountdb.Commit(true)
+	if nil != err {
+		t.Fatalf("fail to commit accountdb after mint")
+	}
+	err = triedb.TrieDB().Commit(root, true)
+	if nil != err {
+		t.Fatalf("fail to commit TrieDB after mint")
+	}
+
+	accountdb, err = account.NewAccountDB(root, triedb)
+	if nil != err {
+		t.Fatalf("fail to find accountdb after mint")
+	}
+
+	nftSet = NFTManagerInstance.GetNFTSet(setId, accountdb)
+	if nil == nftSet || nftSet.SetID != setId {
+		t.Fatalf("fail to get nftSet after mint")
+	}
+
+	nft := NFTManagerInstance.GetNFT(setId, id, accountdb)
+	if nil == nft || nft.SetID != setId {
+		t.Fatalf("fail to get nft after mint")
+	}
+
+	if !accountdb.RemoveNFTByGameId(sourceAddr, setId, id) {
+		t.Fatalf("remove failed")
+	}
+
+	root, err = accountdb.Commit(true)
+	if nil != err {
+		t.Fatalf("fail to commit accountdb after mint")
+	}
+	err = triedb.TrieDB().Commit(root, true)
+	if nil != err {
+		t.Fatalf("fail to commit TrieDB after mint")
+	}
+
+	nft = NFTManagerInstance.GetNFT(setId, id, accountdb)
+	if nil != nft {
+		t.Fatalf("fail to RemoveNFTByGameId commit")
+	}
+
+	accountdb, err = account.NewAccountDB(root, triedb)
+	if nil != err {
+		t.Fatalf("fail to find accountdb after RemoveNFTByGameId")
+	}
+
+	nft = NFTManagerInstance.GetNFT(setId, id, accountdb)
+	if nil != nft {
+		t.Fatalf("fail to RemoveNFTByGameId")
+	}
+
+	resource := accountdb.GetLockedResourceByAddress(targetAddr, sourceAddr)
+	if nil == resource {
+		t.Fatalf("fail to get LockResource")
+	}
+
+	if "9.000000000" != resource.Balance {
+		t.Fatalf("fail to remain balance")
+	}
+	if "1.500000000" != resource.Coin[bntName2] || 1 != len(resource.Coin) {
+		t.Fatalf("fail to remain Coin")
+	}
+	if "1.600000000" != resource.FT[ftName2] || 2 != len(resource.FT) || "0.900000000" != resource.FT[ftName1] {
+		t.Fatalf("fail to remain FT")
+	}
+	if 0 != len(resource.NFT) {
+		t.Fatalf("fail to remain FT")
+	}
+}
+
+func TestNFTManager_MintNFTWithConditionByAttributes(t *testing.T) {
+	os.RemoveAll("storage0")
+	os.RemoveAll("logs")
+	os.Remove("1.ini")
+	defer os.RemoveAll("logs")
+	defer os.RemoveAll("storage0")
+	defer os.Remove("1.ini")
+
+	common.InitConf("1.ini")
+	InitService()
+	db, _ := db.NewLDBDatabase("test", 0, 0)
+	defer db.Close()
+	triedb := account.NewDatabase(db)
+	accountdb, _ := account.NewAccountDB(common.Hash{}, triedb)
+
+	setId := "test1"
+	name := "aaaaahh"
+	symbol := "eth"
+	id := "007"
+	creator := "0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"
+
+	// 检查setId
+	var conditions types.NFTConditions
+	err := json.Unmarshal(utility.StrToBytes(`{"nft":{"nftSetId1":{"attribute":{"a":{"operate":"eq","value":"1"},"b":{"operate":"between","value":"[1, 20]"}}},"nftSetId2":{"attribute":{"a":{"operate":"ne","value":"1"},"b":{"operate":"ge","value":"3"}}}},"ft":{"0x10086-abc":"0.1","0x10086-123":"0.4"},"coin":{"ETH.ETH":"1","ONT":"0.5"},"balance":"1"}`), &conditions)
 	if nil != err {
 		t.Fatalf(err.Error())
 	}
@@ -276,7 +396,7 @@ func TestNFTManager_MintNFTWithCondition(t *testing.T) {
 		t.Fatalf("fail to remain FT")
 	}
 	if 1 != len(resource.NFT) || resource.NFT[0].SetId != NFTSETID1 || resource.NFT[0].Id != NFTID1 {
-		t.Fatalf("fail to remain FT")
+		t.Fatalf("fail to remain NFT")
 	}
 }
 
@@ -331,7 +451,7 @@ func lockResource(state *account.AccountDB, triedb account.AccountDatabase, t *t
 		Owner: sourceAddr.GetHexString(),
 		Data:  make(map[string]string),
 	}
-	nft2.SetData(APPID3, "real3")
+	nft3.SetData(APPID3, "real3")
 	state.AddNFTByGameId(sourceAddr, APPID2, nft3)
 
 	root, err := state.Commit(true)

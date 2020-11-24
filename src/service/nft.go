@@ -161,6 +161,7 @@ func (self *NFTManager) MintNFT(nftSetOwner, appId, setId, id, data, createTime 
 	}
 	return self.GenerateNFT(nftSet, appId, setId, id, data, nftSetOwner, createTime, "", owner, nil, accountDB)
 }
+
 func (self *NFTManager) checkNFTConditions(nftConditions types.NFTConditions, accountDB *account.AccountDB, nftSetId string, owner common.Address) *types.LockResource {
 	demand := types.LockResource{}
 	if 0 != len(nftConditions.Balance) {
@@ -179,13 +180,20 @@ func (self *NFTManager) checkNFTConditions(nftConditions types.NFTConditions, ac
 			return nil
 		}
 
-		for _, nftCondition := range nftConditions.NFT {
-			found := false
-			for _, lockedNFT := range lockedResource.NFT {
-				if lockedNFT.SetId != nftCondition.SetId {
+		for setId, nftCondition := range nftConditions.NFT {
+			num := nftCondition.Num
+			if 0 >= num {
+				num = 1
+			}
+
+			found := 0
+			for i := 0; i < len(lockedResource.NFT); i++ {
+				lockedNFT := lockedResource.NFT[i]
+				if lockedNFT.SetId != setId {
 					continue
 				}
-				nft := accountDB.GetNFTById(nftCondition.SetId, lockedNFT.Id)
+
+				nft := accountDB.GetNFTById(setId, lockedNFT.Id)
 				if nil == nft {
 					continue
 				}
@@ -270,13 +278,14 @@ func (self *NFTManager) checkNFTConditions(nftConditions types.NFTConditions, ac
 					}
 				}
 				if match {
-					demand.NFT = append(demand.NFT, types.NFTID{SetId: nftCondition.SetId, Id: lockedNFT.Id})
-					found = true
-					break
+					demand.NFT = append(demand.NFT, types.NFTID{SetId: setId, Id: lockedNFT.Id})
+					found++
+					lockedResource.NFT = append(lockedResource.NFT[:i], lockedResource.NFT[i+1:]...)
+					i--
 				}
 			}
 
-			if !found {
+			if num != found {
 				return nil
 			}
 		}
