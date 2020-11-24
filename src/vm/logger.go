@@ -106,13 +106,12 @@ type StructLog struct {
 
 // overrides for gencodec
 type structLogMarshaling struct {
-	Stack       []*HexOrDecimal256
-	ReturnStack []HexOrDecimal64
-	Gas         HexOrDecimal64
-	GasCost     HexOrDecimal64
-	//todo
-	//Memory      hexutil.Bytes
-	//ReturnData  hexutil.Bytes
+	Stack       []*utility.HexOrDecimal256
+	ReturnStack []utility.HexOrDecimal64
+	Gas         utility.HexOrDecimal64
+	GasCost     utility.HexOrDecimal64
+	Memory      utility.Bytes
+	ReturnData  utility.Bytes
 	OpName      string `json:"opName"` // adds call to OpName() in MarshalJSON
 	ErrorString string `json:"error"`  // adds call to ErrorString() in MarshalJSON
 }
@@ -276,7 +275,7 @@ func WriteTrace(writer io.Writer, logs []StructLog) {
 		if len(log.Stack) > 0 {
 			fmt.Fprintln(writer, "Stack:")
 			for i := len(log.Stack) - 1; i >= 0; i-- {
-				fmt.Fprintf(writer, "%08d  %x\n", len(log.Stack)-i-1, PaddedBigBytes(log.Stack[i], 32))
+				fmt.Fprintf(writer, "%08d  %x\n", len(log.Stack)-i-1, utility.PaddedBigBytes(log.Stack[i], 32))
 			}
 		}
 		if len(log.ReturnStack) > 0 {
@@ -398,12 +397,12 @@ func (s StructLog) MarshalJSON() ([]byte, error) {
 	type StructLog struct {
 		Pc            uint64                      `json:"pc"`
 		Op            OpCode                      `json:"op"`
-		Gas           HexOrDecimal64              `json:"gas"`
-		GasCost       HexOrDecimal64              `json:"gasCost"`
+		Gas           utility.HexOrDecimal64      `json:"gas"`
+		GasCost       utility.HexOrDecimal64      `json:"gasCost"`
 		Memory        utility.Bytes               `json:"memory"`
 		MemorySize    int                         `json:"memSize"`
-		Stack         []*HexOrDecimal256          `json:"stack"`
-		ReturnStack   []HexOrDecimal64            `json:"returnStack"`
+		Stack         []*utility.HexOrDecimal256  `json:"stack"`
+		ReturnStack   []utility.HexOrDecimal64    `json:"returnStack"`
 		ReturnData    utility.Bytes               `json:"returnData"`
 		Storage       map[common.Hash]common.Hash `json:"-"`
 		Depth         int                         `json:"depth"`
@@ -415,20 +414,20 @@ func (s StructLog) MarshalJSON() ([]byte, error) {
 	var enc StructLog
 	enc.Pc = s.Pc
 	enc.Op = s.Op
-	enc.Gas = HexOrDecimal64(s.Gas)
-	enc.GasCost = HexOrDecimal64(s.GasCost)
+	enc.Gas = utility.HexOrDecimal64(s.Gas)
+	enc.GasCost = utility.HexOrDecimal64(s.GasCost)
 	enc.Memory = s.Memory
 	enc.MemorySize = s.MemorySize
 	if s.Stack != nil {
-		enc.Stack = make([]*HexOrDecimal256, len(s.Stack))
+		enc.Stack = make([]*utility.HexOrDecimal256, len(s.Stack))
 		for k, v := range s.Stack {
-			enc.Stack[k] = (*HexOrDecimal256)(v)
+			enc.Stack[k] = (*utility.HexOrDecimal256)(v)
 		}
 	}
 	if s.ReturnStack != nil {
-		enc.ReturnStack = make([]HexOrDecimal64, len(s.ReturnStack))
+		enc.ReturnStack = make([]utility.HexOrDecimal64, len(s.ReturnStack))
 		for k, v := range s.ReturnStack {
-			enc.ReturnStack[k] = HexOrDecimal64(v)
+			enc.ReturnStack[k] = utility.HexOrDecimal64(v)
 		}
 	}
 	enc.ReturnData = s.ReturnData
@@ -446,12 +445,12 @@ func (s *StructLog) UnmarshalJSON(input []byte) error {
 	type StructLog struct {
 		Pc            *uint64                     `json:"pc"`
 		Op            *OpCode                     `json:"op"`
-		Gas           *HexOrDecimal64             `json:"gas"`
-		GasCost       *HexOrDecimal64             `json:"gasCost"`
+		Gas           *utility.HexOrDecimal64     `json:"gas"`
+		GasCost       *utility.HexOrDecimal64     `json:"gasCost"`
 		Memory        *utility.Bytes              `json:"memory"`
 		MemorySize    *int                        `json:"memSize"`
-		Stack         []*HexOrDecimal256          `json:"stack"`
-		ReturnStack   []HexOrDecimal64            `json:"returnStack"`
+		Stack         []*utility.HexOrDecimal256  `json:"stack"`
+		ReturnStack   []utility.HexOrDecimal64    `json:"returnStack"`
 		ReturnData    *utility.Bytes              `json:"returnData"`
 		Storage       map[common.Hash]common.Hash `json:"-"`
 		Depth         *int                        `json:"depth"`

@@ -18,6 +18,7 @@ package vm
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/utility"
 	"errors"
 )
 
@@ -147,7 +148,7 @@ func gasExtCodeCopyEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memo
 		evm.StateDB.AddAddressToAccessList(addr)
 		var overflow bool
 		// We charge (cold-warm), since 'warm' is already charged as constantGas
-		if gas, overflow = SafeAdd(gas, ColdAccountAccessCostEIP2929-WarmStorageReadCostEIP2929); overflow {
+		if gas, overflow = utility.SafeAdd(gas, ColdAccountAccessCostEIP2929-WarmStorageReadCostEIP2929); overflow {
 			return 0, ErrGasUintOverflow
 		}
 		return gas, nil

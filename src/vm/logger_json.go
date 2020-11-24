@@ -18,6 +18,7 @@ package vm
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"io"
 	"math/big"
@@ -82,13 +83,13 @@ func (l *JSONLogger) CaptureFault(env *EVM, pc uint64, op OpCode, gas, cost uint
 // CaptureEnd is triggered at end of execution.
 func (l *JSONLogger) CaptureEnd(output []byte, gasUsed uint64, t time.Duration, err error) error {
 	type endLog struct {
-		Output  string         `json:"output"`
-		GasUsed HexOrDecimal64 `json:"gasUsed"`
-		Time    time.Duration  `json:"time"`
-		Err     string         `json:"error,omitempty"`
+		Output  string                 `json:"output"`
+		GasUsed utility.HexOrDecimal64 `json:"gasUsed"`
+		Time    time.Duration          `json:"time"`
+		Err     string                 `json:"error,omitempty"`
 	}
 	if err != nil {
-		return l.encoder.Encode(endLog{common.Bytes2Hex(output), HexOrDecimal64(gasUsed), t, err.Error()})
+		return l.encoder.Encode(endLog{common.Bytes2Hex(output), utility.HexOrDecimal64(gasUsed), t, err.Error()})
 	}
-	return l.encoder.Encode(endLog{common.Bytes2Hex(output), HexOrDecimal64(gasUsed), t, ""})
+	return l.encoder.Encode(endLog{common.Bytes2Hex(output), utility.HexOrDecimal64(gasUsed), t, ""})
 }

@@ -51,14 +51,20 @@ var (
 
 // 地址相关常量
 var (
-	ValidatorDBAddress = BigToAddress(big.NewInt(1))
-	ProposerDBAddress  = BigToAddress(big.NewInt(2))
-	RefundAddress      = BigToAddress(big.NewInt(3))
+	ValidatorDBAddress  = BigToAddress(big.NewInt(1))
+	ProposerDBAddress   = BigToAddress(big.NewInt(2))
+	RefundAddress       = BigToAddress(big.NewInt(3))
 	ExchangeRateAddress = BigToAddress(big.NewInt(6))
 )
 
 var (
 	Big0   = big.NewInt(0)
+	Big1   = big.NewInt(1)
+	Big2   = big.NewInt(2)
+	Big3   = big.NewInt(3)
+	Big32  = big.NewInt(32)
+	Big256 = big.NewInt(256)
+	Big257 = big.NewInt(257)
 
 	ErrSelectGroupNil     = errors.New("selectGroupId is nil")
 	ErrSelectGroupInequal = errors.New("selectGroupId not equal")

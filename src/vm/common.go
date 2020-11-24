@@ -17,6 +17,7 @@
 package vm
 
 import (
+	"com.tuntun.rocket/node/src/utility"
 	"github.com/holiman/uint256"
 )
 
@@ -58,13 +59,13 @@ func getData(data []byte, start uint64, size uint64) []byte {
 	if end > length {
 		end = length
 	}
-	return RightPadBytes(data[start:end], int(size))
+	return utility.RightPadBytes(data[start:end], int(size))
 }
 
 // toWordSize returns the ceiled word size required for memory expansion.
 func toWordSize(size uint64) uint64 {
-	if size > MaxUint64-31 {
-		return MaxUint64/32 + 1
+	if size > utility.MaxUint64-31 {
+		return utility.MaxUint64/32 + 1
 	}
 
 	return (size + 31) / 32

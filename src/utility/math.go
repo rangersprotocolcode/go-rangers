@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package vm
+package utility
 
 import (
 	"fmt"
@@ -179,4 +179,13 @@ func ParseBig256(s string) (*big.Int, bool) {
 		bigint, ok = nil, false
 	}
 	return bigint, ok
+}
+
+// MustParseBig256 parses s as a 256 bit big integer and panics if the string is invalid.
+func MustParseBig256(s string) *big.Int {
+	v, ok := ParseBig256(s)
+	if !ok {
+		panic("invalid 256 bit integer: " + s)
+	}
+	return v
 }

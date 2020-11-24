@@ -18,6 +18,7 @@ package vm
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/utility"
 	"fmt"
 	"hash"
 	"sync/atomic"
@@ -259,7 +260,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 			}
 			// memory is expanded in words of 32 bytes. Gas
 			// is also calculated in words.
-			if memorySize, overflow = SafeMul(toWordSize(memSize), 32); overflow {
+			if memorySize, overflow = utility.SafeMul(toWordSize(memSize), 32); overflow {
 				return nil, ErrGasUintOverflow
 			}
 		}
