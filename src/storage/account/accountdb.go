@@ -18,6 +18,7 @@ package account
 
 import (
 	"com.tuntun.rocket/node/src/middleware/log"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"fmt"
 	"math/big"
 	"sort"
@@ -548,4 +549,196 @@ func (adb *AccountDB) Commit(deleteEmptyObjects bool) (root common.Hash, err err
 		return nil
 	})
 	return root, err
+}
+
+//----------------------------------------------------add interface method to implement-------------------------------
+// CreateAccount explicitly creates a state object. If a state object with the address
+// already exists the balance is carried over to the new account.
+//
+// CreateAccount is called during the EVM CREATE operation. The situation might arise that
+// a contract does the following:
+//
+//   1. sends funds to sha(account ++ (nonce + 1))
+//   2. tx_create(sha(account ++ nonce)) (note that this gets the address of 1)
+//
+// Carrying over the balance ensures that Ether doesn't disappear.
+func (adb *AccountDB) CreateAccount(addr common.Address) {
+	//newObj, prev := s.createObject(addr)
+	//if prev != nil {
+	//	newObj.setBalance(prev.data.Balance)
+	//}
+	//todo
+}
+
+func (adb *AccountDB) GetCode(addr common.Address) []byte {
+	//stateObject := s.getStateObject(addr)
+	//if stateObject != nil {
+	//	return stateObject.Code(s.db)
+	//}
+	//todo
+	return nil
+}
+
+func (adb *AccountDB) GetCodeSize(addr common.Address) int {
+	//stateObject := s.getStateObject(addr)
+	//if stateObject != nil {
+	//	return stateObject.CodeSize(s.db)
+	//}
+	//todo
+	return 0
+}
+
+func (adb *AccountDB) GetCodeHash(addr common.Address) common.Hash {
+	//stateObject := s.getStateObject(addr)
+	//if stateObject == nil {
+	//	return common.Hash{}
+	//}
+	//return common.BytesToHash(stateObject.CodeHash())
+	//todo
+	return common.Hash{}
+}
+
+func (adb *AccountDB) SetCode(addr common.Address, code []byte) {
+	//stateObject := s.GetOrNewStateObject(addr)
+	//if stateObject != nil {
+	//	stateObject.SetCode(crypto.Keccak256Hash(code), code)
+	//}
+	//todo
+}
+
+// SubRefund removes gas from the refund counter.
+// This method will panic if the refund counter goes below zero
+func (adb *AccountDB) SubRefund(gas uint64) {
+	//s.journal.append(refundChange{prev: s.refund})
+	//if gas > s.refund {
+	//	panic(fmt.Sprintf("Refund counter below zero (gas: %d > refund: %d)", gas, s.refund))
+	//}
+	//s.refund -= gas
+	//todo
+}
+
+// GetCommittedState retrieves a value from the given account's committed storage trie.
+func (adb *AccountDB) GetCommittedState(addr common.Address, hash common.Hash) common.Hash {
+	//stateObject := s.getStateObject(addr)
+	//if stateObject != nil {
+	//	return stateObject.GetCommittedState(s.db, hash)
+	//}
+	//todo
+	return common.Hash{}
+}
+
+// GetState retrieves a value from the given account's storage trie.
+func (adb *AccountDB) GetState(addr common.Address, hash common.Hash) common.Hash {
+	//stateObject := s.getStateObject(addr)
+	//if stateObject != nil {
+	//	return stateObject.GetState(s.db, hash)
+	//}
+	//todo
+	return common.Hash{}
+}
+
+func (adb *AccountDB) SetState(addr common.Address, key, value common.Hash) {
+	//stateObject := s.GetOrNewStateObject(addr)
+	//if stateObject != nil {
+	//	stateObject.SetState(s.db, key, value)
+	//}
+	//todo
+}
+
+// AddressInAccessList returns true if the given address is in the access list.
+func (adb *AccountDB) AddressInAccessList(addr common.Address) bool {
+	//return s.accessList.ContainsAddress(addr)
+	//todo
+	return false
+}
+
+// SlotInAccessList returns true if the given (address, slot)-tuple is in the access list.
+func (adb *AccountDB) SlotInAccessList(addr common.Address, slot common.Hash) (addressPresent bool, slotPresent bool) {
+	//return s.accessList.Contains(addr, slot)
+	//todo
+	return false, false
+}
+
+// AddAddressToAccessList adds the given address to the access list
+func (adb *AccountDB) AddAddressToAccessList(addr common.Address) {
+	//if s.accessList.AddAddress(addr) {
+	//	s.journal.append(accessListAddAccountChange{&addr})
+	//}
+	//todo
+}
+
+// AddSlotToAccessList adds the given (address, slot)-tuple to the access list
+func (adb *AccountDB) AddSlotToAccessList(addr common.Address, slot common.Hash) {
+	//addrMod, slotMod := s.accessList.AddSlot(addr, slot)
+	//if addrMod {
+	//	// In practice, this should not happen, since there is no way to enter the
+	//	// scope of 'address' without having the 'address' become already added
+	//	// to the access list (via call-variant, create, etc).
+	//	// Better safe than sorry, though
+	//	s.journal.append(accessListAddAccountChange{&addr})
+	//}
+	//if slotMod {
+	//	s.journal.append(accessListAddSlotChange{
+	//		address: &addr,
+	//		slot:    &slot,
+	//	})
+	//}
+	//todo
+}
+
+func (adb *AccountDB) AddLog(log *types.Log) {
+	//s.journal.append(addLogChange{txhash: s.thash})
+	//
+	//log.TxHash = s.thash
+	//log.BlockHash = s.bhash
+	//log.TxIndex = uint(s.txIndex)
+	//log.Index = s.logSize
+	//s.logs[s.thash] = append(s.logs[s.thash], log)
+	//s.logSize++
+}
+
+// AddPreimage records a SHA3 preimage seen by the VM.
+func (adb *AccountDB) AddPreimage(hash common.Hash, preimage []byte) {
+	//if _, ok := s.preimages[hash]; !ok {
+	//	s.journal.append(addPreimageChange{hash: hash})
+	//	pi := make([]byte, len(preimage))
+	//	copy(pi, preimage)
+	//	s.preimages[hash] = pi
+	//}
+	//todo
+}
+
+func (adb *AccountDB) ForEachStorage(addr common.Address, cb func(key, value common.Hash) bool) error {
+	//so := db.getStateObject(addr)
+	//if so == nil {
+	//	return nil
+	//}
+	//it := trie.NewIterator(so.getTrie(db.db).NodeIterator(nil))
+	//
+	//for it.Next() {
+	//	key := common.BytesToHash(db.trie.GetKey(it.Key))
+	//	if value, dirty := so.dirtyStorage[key]; dirty {
+	//		if !cb(key, value) {
+	//			return nil
+	//		}
+	//		continue
+	//	}
+	//
+	//	if len(it.Value) > 0 {
+	//		_, content, _, err := rlp.Split(it.Value)
+	//		if err != nil {
+	//			return err
+	//		}
+	//		if !cb(key, common.BytesToHash(content)) {
+	//			return nil
+	//		}
+	//	}
+	//}
+	//todo
+	return nil
+}
+
+//有小写开头的同名方法
+func (adb *AccountDB) GetOrNewAccountObject(addr common.Address) *accountObject {
+	return adb.getAccountObject(addr, true)
 }

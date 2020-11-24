@@ -18,6 +18,7 @@ package vm
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"math/big"
 )
 
@@ -25,7 +26,7 @@ import (
 type StateDB interface {
 	CreateAccount(common.Address)
 
-	SubBalance(common.Address, *big.Int)
+	SubBalance(common.Address, *big.Int) *big.Int
 	AddBalance(common.Address, *big.Int)
 	GetBalance(common.Address) *big.Int
 
@@ -36,7 +37,7 @@ type StateDB interface {
 	GetCode(common.Address) []byte
 	SetCode(common.Address, []byte)
 	GetCodeSize(common.Address) int
-
+	//
 	AddRefund(uint64)
 	SubRefund(uint64)
 	GetRefund() uint64
@@ -44,7 +45,7 @@ type StateDB interface {
 	GetCommittedState(common.Address, common.Hash) common.Hash
 	GetState(common.Address, common.Hash) common.Hash
 	SetState(common.Address, common.Hash, common.Hash)
-
+	//
 	Suicide(common.Address) bool
 	HasSuicided(common.Address) bool
 
@@ -67,7 +68,7 @@ type StateDB interface {
 	RevertToSnapshot(int)
 	Snapshot() int
 
-	AddLog(*Log)
+	AddLog(*types.Log)
 	AddPreimage(common.Hash, []byte)
 
 	ForEachStorage(common.Address, func(common.Hash, common.Hash) bool) error

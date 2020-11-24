@@ -8,6 +8,7 @@ require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751 // indirect
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/astaxie/beego v1.12.1
+	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/docker/distribution v2.7.1+incompatible // indirect
 	github.com/docker/docker v1.4.2-0.20190316220345-38005cfc12fb

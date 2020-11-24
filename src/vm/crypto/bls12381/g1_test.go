@@ -2,11 +2,10 @@ package bls12381
 
 import (
 	"bytes"
+	"com.tuntun.rocket/node/src/common"
 	"crypto/rand"
 	"math/big"
 	"testing"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 func (g *G1) one() *PointG1 {

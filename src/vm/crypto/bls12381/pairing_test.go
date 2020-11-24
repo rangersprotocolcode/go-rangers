@@ -1,10 +1,9 @@
 package bls12381
 
 import (
+	"com.tuntun.rocket/node/src/common"
 	"math/big"
 	"testing"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 func TestPairingExpected(t *testing.T) {

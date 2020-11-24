@@ -31,6 +31,7 @@ package ecies
 
 import (
 	"bytes"
+	"com.tuntun.rocket/node/src/vm/crypto"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"
@@ -38,8 +39,6 @@ import (
 	"fmt"
 	"math/big"
 	"testing"
-
-	"github.com/ethereum/go-ethereum/crypto"
 )
 
 func TestKDF(t *testing.T) {

@@ -17,10 +17,9 @@
 package bls12381
 
 import (
+	"com.tuntun.rocket/node/src/common"
 	"errors"
 	"math/big"
-
-	"github.com/ethereum/go-ethereum/common"
 )
 
 func bigFromHex(hex string) *big.Int {
