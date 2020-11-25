@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"math/big"
 	"testing"
 
 	"github.com/holiman/uint256"
@@ -88,10 +89,12 @@ func init() {
 	}
 }
 
+var testChainID = big.NewInt(0)
+
 func testTwoOperandOp(t *testing.T, tests []TwoOperandTestcase, opFn executionFunc, name string) {
 
 	var (
-		env            = NewEVM(Context{}, nil, TestChainConfig, Config{})
+		env            = NewEVM(Context{}, nil, testChainID, Config{})
 		stack          = newstack()
 		rstack         = newReturnStack()
 		pc             = uint64(0)
@@ -191,7 +194,7 @@ func TestSAR(t *testing.T) {
 
 func TestAddMod(t *testing.T) {
 	var (
-		env            = NewEVM(Context{}, nil, TestChainConfig, Config{})
+		env            = NewEVM(Context{}, nil, testChainID, Config{})
 		stack          = newstack()
 		evmInterpreter = NewEVMInterpreter(env, env.vmConfig)
 		pc             = uint64(0)
@@ -230,7 +233,7 @@ func TestAddMod(t *testing.T) {
 // getResult is a convenience function to generate the expected values
 func getResult(args []*twoOperandParams, opFn executionFunc) []TwoOperandTestcase {
 	var (
-		env           = NewEVM(Context{}, nil, TestChainConfig, Config{})
+		env           = NewEVM(Context{}, nil, testChainID, Config{})
 		stack, rstack = newstack(), newReturnStack()
 		pc            = uint64(0)
 		interpreter   = env.interpreter.(*EVMInterpreter)
@@ -280,7 +283,7 @@ func TestJsonTestcases(t *testing.T) {
 
 func opBenchmark(bench *testing.B, op executionFunc, args ...string) {
 	var (
-		env            = NewEVM(Context{}, nil, TestChainConfig, Config{})
+		env            = NewEVM(Context{}, nil, testChainID, Config{})
 		stack, rstack  = newstack(), newReturnStack()
 		evmInterpreter = NewEVMInterpreter(env, env.vmConfig)
 	)
@@ -514,7 +517,7 @@ func BenchmarkOpIsZero(b *testing.B) {
 
 func TestOpMstore(t *testing.T) {
 	var (
-		env            = NewEVM(Context{}, nil, TestChainConfig, Config{})
+		env            = NewEVM(Context{}, nil, testChainID, Config{})
 		stack, rstack  = newstack(), newReturnStack()
 		mem            = NewMemory()
 		evmInterpreter = NewEVMInterpreter(env, env.vmConfig)
@@ -538,7 +541,7 @@ func TestOpMstore(t *testing.T) {
 
 func BenchmarkOpMstore(bench *testing.B) {
 	var (
-		env            = NewEVM(Context{}, nil, TestChainConfig, Config{})
+		env            = NewEVM(Context{}, nil, testChainID, Config{})
 		stack, rstack  = newstack(), newReturnStack()
 		mem            = NewMemory()
 		evmInterpreter = NewEVMInterpreter(env, env.vmConfig)
@@ -559,7 +562,7 @@ func BenchmarkOpMstore(bench *testing.B) {
 
 func BenchmarkOpSHA3(bench *testing.B) {
 	var (
-		env            = NewEVM(Context{}, nil, TestChainConfig, Config{})
+		env            = NewEVM(Context{}, nil, testChainID, Config{})
 		stack, rstack  = newstack(), newReturnStack()
 		mem            = NewMemory()
 		evmInterpreter = NewEVMInterpreter(env, env.vmConfig)

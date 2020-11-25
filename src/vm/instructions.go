@@ -616,9 +616,14 @@ func opCreate(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]
 		input        = callContext.memory.GetCopy(int64(offset.Uint64()), int64(size.Uint64()))
 		gas          = callContext.contract.Gas
 	)
+	/**todo
+	origin:
 	if interpreter.evm.chainRules.IsEIP150 {
 		gas -= gas / 64
 	}
+	*/
+	gas -= gas / 64
+
 	// reuse size int for stackvalue
 	stackvalue := size
 
@@ -634,7 +639,10 @@ func opCreate(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]
 	// homestead we must check for CodeStoreOutOfGasError (homestead only
 	// rule) and treat as an error, if the ruleset is frontier we must
 	// ignore this error and pretend the operation was successful.
-	if interpreter.evm.chainRules.IsHomestead && suberr == ErrCodeStoreOutOfGas {
+	/*todo
+	origin: interpreter.evm.chainRules.IsHomestead && suberr == ErrCodeStoreOutOfGas
+	*/
+	if suberr == ErrCodeStoreOutOfGas {
 		stackvalue.Clear()
 	} else if suberr != nil && suberr != ErrCodeStoreOutOfGas {
 		stackvalue.Clear()
@@ -902,7 +910,7 @@ func opPush1(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]b
 
 // opChainID implements CHAINID opcode
 func opChainID(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	chainId, _ := uint256.FromBig(interpreter.evm.chainConfig.ChainID)
+	chainId, _ := uint256.FromBig(interpreter.evm.chainID)
 	callContext.stack.push(chainId)
 	return nil, nil
 }

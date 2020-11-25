@@ -53,7 +53,7 @@ type LogConfig struct {
 	Debug             bool // print output during capture end
 	Limit             int  // maximum length of output, but zero means unlimited
 	// Chain overrides, can be used to execute a trace using future fork rules
-	Overrides *ChainConfig `json:"overrides,omitempty"`
+	//Overrides *ChainConfig `json:"overrides,omitempty"`
 }
 
 //go:generate gencodec -type StructLog -field-override structLogMarshaling -out gen_structlog.go

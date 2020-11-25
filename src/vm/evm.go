@@ -44,31 +44,11 @@ type (
 // ActivePrecompiles returns the addresses of the precompiles enabled with the current
 // configuration
 func (evm *EVM) ActivePrecompiles() []common.Address {
-	switch {
-	case evm.chainRules.IsYoloV2:
-		return PrecompiledAddressesYoloV2
-	case evm.chainRules.IsIstanbul:
-		return PrecompiledAddressesIstanbul
-	case evm.chainRules.IsByzantium:
-		return PrecompiledAddressesByzantium
-	default:
-		return PrecompiledAddressesHomestead
-	}
+	return PrecompiledAddresses
 }
 
 func (evm *EVM) precompile(addr common.Address) (PrecompiledContract, bool) {
-	var precompiles map[common.Address]PrecompiledContract
-	switch {
-	case evm.chainRules.IsYoloV2:
-		precompiles = PrecompiledContractsYoloV2
-	case evm.chainRules.IsIstanbul:
-		precompiles = PrecompiledContractsIstanbul
-	case evm.chainRules.IsByzantium:
-		precompiles = PrecompiledContractsByzantium
-	default:
-		precompiles = PrecompiledContractsHomestead
-	}
-	p, ok := precompiles[addr]
+	p, ok := PrecompiledContracts[addr]
 	return p, ok
 }
 
@@ -130,10 +110,8 @@ type EVM struct {
 	// Depth is the current call stack
 	depth int
 
-	// chainConfig contains information about the current chain
-	chainConfig *ChainConfig
-	// chain rules contains the chain rules for the current epoch
-	chainRules Rules
+	chainID *big.Int
+
 	// virtual machine configuration options used to initialise the
 	// evm.
 	vmConfig Config
@@ -152,30 +130,13 @@ type EVM struct {
 
 // NewEVM returns a new EVM. The returned EVM is not thread safe and should
 // only ever be used *once*.
-func NewEVM(ctx Context, statedb StateDB, chainConfig *ChainConfig, vmConfig Config) *EVM {
+func NewEVM(ctx Context, statedb StateDB, chainID *big.Int, vmConfig Config) *EVM {
 	evm := &EVM{
 		Context:      ctx,
 		StateDB:      statedb,
 		vmConfig:     vmConfig,
-		chainConfig:  chainConfig,
-		chainRules:   chainConfig.Rules(ctx.BlockNumber),
+		chainID:      chainID,
 		interpreters: make([]Interpreter, 0, 1),
-	}
-
-	if chainConfig.IsEWASM(ctx.BlockNumber) {
-		// to be implemented by EVM-C and Wagon PRs.
-		// if vmConfig.EWASMInterpreter != "" {
-		//  extIntOpts := strings.Split(vmConfig.EWASMInterpreter, ":")
-		//  path := extIntOpts[0]
-		//  options := []string{}
-		//  if len(extIntOpts) > 1 {
-		//    options = extIntOpts[1..]
-		//  }
-		//  evm.interpreters = append(evm.interpreters, NewEVMVCInterpreter(evm, vmConfig, options))
-		// } else {
-		// 	evm.interpreters = append(evm.interpreters, NewEWASMInterpreter(evm, vmConfig))
-		// }
-		panic("No supported ewasm interpreter yet.")
 	}
 
 	// vmConfig.EVMInterpreter will be used by EVM-C, it won't be checked here
@@ -222,7 +183,10 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 	p, isPrecompile := evm.precompile(addr)
 
 	if !evm.StateDB.Exist(addr) {
-		if !isPrecompile && evm.chainRules.IsEIP158 && value.Sign() == 0 {
+		/**todo
+		origin:if !isPrecompile && evm.chainRules.IsEIP158 && value.Sign() == 0
+		*/
+		if !isPrecompile && value.Sign() == 0 {
 			// Calling a non existing account, don't do anything, but ping the tracer
 			if evm.vmConfig.Debug && evm.depth == 0 {
 				evm.vmConfig.Tracer.CaptureStart(caller.Address(), addr, false, input, gas, value)
@@ -432,9 +396,14 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	evm.StateDB.SetNonce(caller.Address(), nonce+1)
 	// We add this to the access list _before_ taking a snapshot. Even if the creation fails,
 	// the access-list change should not be rolled back
+	/*todo
+	origin:
 	if evm.chainRules.IsYoloV2 {
 		evm.StateDB.AddAddressToAccessList(address)
 	}
+	*/
+	evm.StateDB.AddAddressToAccessList(address)
+
 	// Ensure there's no existing contract already at the designated address
 	contractHash := evm.StateDB.GetCodeHash(address)
 	if evm.StateDB.GetNonce(address) != 0 || (contractHash != (common.Hash{}) && contractHash != emptyCodeHash) {
@@ -443,9 +412,14 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	// Create a new account on the state
 	snapshot := evm.StateDB.Snapshot()
 	evm.StateDB.CreateAccount(address)
+	/*todo
+	origin:
 	if evm.chainRules.IsEIP158 {
 		evm.StateDB.SetNonce(address, 1)
 	}
+	*/
+	evm.StateDB.SetNonce(address, 1)
+
 	evm.Transfer(evm.StateDB, caller.Address(), address, value)
 
 	// Initialise a new contract and set the code that is to be used by the EVM.
@@ -465,7 +439,11 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	ret, err := run(evm, contract, nil, false)
 
 	// check whether the max code size has been exceeded
+	/**todo
+	origin:
 	maxCodeSizeExceeded := evm.chainRules.IsEIP158 && len(ret) > MaxCodeSize
+	*/
+	maxCodeSizeExceeded := len(ret) > MaxCodeSize
 	// if the contract creation ran successfully and no errors were returned
 	// calculate the gas required to store the code. If the code could not
 	// be stored due to not enough gas set an error and let it be handled
@@ -482,7 +460,11 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	// When an error was returned by the EVM or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
 	// when we're in homestead this also counts for code storage gas errors.
-	if maxCodeSizeExceeded || (err != nil && (evm.chainRules.IsHomestead || err != ErrCodeStoreOutOfGas)) {
+	/*todo
+	origin:
+		if maxCodeSizeExceeded || (err != nil && (evm.chainRules.IsHomestead || err != ErrCodeStoreOutOfGas))
+	*/
+	if maxCodeSizeExceeded || (err != nil && err != ErrCodeStoreOutOfGas) {
 		evm.StateDB.RevertToSnapshot(snapshot)
 		if err != ErrExecutionReverted {
 			contract.UseGas(contract.Gas)
@@ -514,6 +496,3 @@ func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *
 	contractAddr = crypto.CreateAddress2(caller.Address(), common.Hash(salt.Bytes32()), codeAndHash.Hash().Bytes())
 	return evm.create(caller, codeAndHash, gas, endowment, contractAddr)
 }
-
-// ChainConfig returns the environment's chain configuration
-func (evm *EVM) ChainConfig() *ChainConfig { return evm.chainConfig }
