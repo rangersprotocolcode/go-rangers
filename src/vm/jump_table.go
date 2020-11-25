@@ -44,163 +44,51 @@ type operation struct {
 	returns bool // determines whether the operations sets the return data content
 }
 
-var (
-	frontierInstructionSet         = newFrontierInstructionSet()
-	homesteadInstructionSet        = newHomesteadInstructionSet()
-	tangerineWhistleInstructionSet = newTangerineWhistleInstructionSet()
-	spuriousDragonInstructionSet   = newSpuriousDragonInstructionSet()
-	byzantiumInstructionSet        = newByzantiumInstructionSet()
-	constantinopleInstructionSet   = newConstantinopleInstructionSet()
-	istanbulInstructionSet         = newIstanbulInstructionSet()
-	yoloV2InstructionSet           = newYoloV2InstructionSet()
-)
-
 // JumpTable contains the EVM opcodes supported at a given fork.
 type JumpTable [256]*operation
 
-// newYoloV2InstructionSet creates an instructionset containing
-// - "EIP-2315: Simple Subroutines"
-// - "EIP-2929: Gas cost increases for state access opcodes"
-func newYoloV2InstructionSet() JumpTable {
-	instructionSet := newIstanbulInstructionSet()
-	enable2315(&instructionSet) // Subroutines - https://eips.ethereum.org/EIPS/eip-2315
-	enable2929(&instructionSet) // Access lists for trie accesses https://eips.ethereum.org/EIPS/eip-2929
-	return instructionSet
-}
+/**
+EVM instruction set evolution：
+HomesteadInstructionSet = FrontierInstructionSet + [DELEGATECALL]
 
-// newIstanbulInstructionSet returns the frontier, homestead
-// byzantium, contantinople and petersburg instructions.
-func newIstanbulInstructionSet() JumpTable {
-	instructionSet := newConstantinopleInstructionSet()
+EIP 150:
+TangerineWhistleInstructionSet = HomesteadInstructionSet +[BALANCE,EXTCODESIZE,SLOAD,EXTCODECOPY,CALL,CALLCODE,DELEGATECALL]
 
-	enable1344(&instructionSet) // ChainID opcode - https://eips.ethereum.org/EIPS/eip-1344
-	enable1884(&instructionSet) // Reprice reader opcodes - https://eips.ethereum.org/EIPS/eip-1884
-	enable2200(&instructionSet) // Net metered SSTORE - https://eips.ethereum.org/EIPS/eip-2200
+EIP 158:
+SpuriousDragonInstructionSet = TangerineWhistleInstructionSet + EXP
 
-	return instructionSet
-}
+ByzantiumInstructionSet = SpuriousDragonInstructionSet +[STATICCALL,RETURNDATASIZE,RETURNDATACOPY,REVERT]
 
-// newConstantinopleInstructionSet returns the frontier, homestead
-// byzantium and contantinople instructions.
-func newConstantinopleInstructionSet() JumpTable {
-	instructionSet := newByzantiumInstructionSet()
-	instructionSet[SHL] = &operation{
-		execute:     opSHL,
-		constantGas: GasFastestStep,
-		minStack:    minStack(2, 1),
-		maxStack:    maxStack(2, 1),
-	}
-	instructionSet[SHR] = &operation{
-		execute:     opSHR,
-		constantGas: GasFastestStep,
-		minStack:    minStack(2, 1),
-		maxStack:    maxStack(2, 1),
-	}
-	instructionSet[SAR] = &operation{
-		execute:     opSAR,
-		constantGas: GasFastestStep,
-		minStack:    minStack(2, 1),
-		maxStack:    maxStack(2, 1),
-	}
-	instructionSet[EXTCODEHASH] = &operation{
-		execute:     opExtCodeHash,
-		constantGas: ExtcodeHashGasConstantinople,
-		minStack:    minStack(1, 1),
-		maxStack:    maxStack(1, 1),
-	}
-	instructionSet[CREATE2] = &operation{
-		execute:     opCreate2,
-		constantGas: Create2Gas,
-		dynamicGas:  gasCreate2,
-		minStack:    minStack(4, 1),
-		maxStack:    maxStack(4, 1),
-		memorySize:  memoryCreate2,
-		writes:      true,
-		returns:     true,
-	}
-	return instructionSet
-}
+ConstantinopleInstructionSet = ByzantiumInstructionSet + [SHL,SHR,SAR,EXTCODEHASH,CREATE2]
 
-// newByzantiumInstructionSet returns the frontier, homestead and
-// byzantium instructions.
-func newByzantiumInstructionSet() JumpTable {
-	instructionSet := newSpuriousDragonInstructionSet()
-	instructionSet[STATICCALL] = &operation{
-		execute:     opStaticCall,
-		constantGas: CallGasEIP150,
-		dynamicGas:  gasStaticCall,
-		minStack:    minStack(6, 1),
-		maxStack:    maxStack(6, 1),
-		memorySize:  memoryStaticCall,
-		returns:     true,
-	}
-	instructionSet[RETURNDATASIZE] = &operation{
-		execute:     opReturnDataSize,
-		constantGas: GasQuickStep,
-		minStack:    minStack(0, 1),
-		maxStack:    maxStack(0, 1),
-	}
-	instructionSet[RETURNDATACOPY] = &operation{
-		execute:     opReturnDataCopy,
-		constantGas: GasFastestStep,
-		dynamicGas:  gasReturnDataCopy,
-		minStack:    minStack(3, 0),
-		maxStack:    maxStack(3, 0),
-		memorySize:  memoryReturnDataCopy,
-	}
-	instructionSet[REVERT] = &operation{
-		execute:    opRevert,
-		dynamicGas: gasRevert,
-		minStack:   minStack(2, 0),
-		maxStack:   maxStack(2, 0),
-		memorySize: memoryRevert,
-		reverts:    true,
-		returns:    true,
-	}
-	return instructionSet
-}
+IstanbulInstructionSet = ConstantinopleInstructionSet + EIP-1344 + EIP-1884 +EIP-2200
 
-// EIP 158 a.k.a Spurious Dragon
-func newSpuriousDragonInstructionSet() JumpTable {
-	instructionSet := newTangerineWhistleInstructionSet()
-	instructionSet[EXP].dynamicGas = gasExpEIP158
-	return instructionSet
+EIP 1344:
+CHAINID
 
-}
+EIP 1884:
+SELFBALANCE
+gas cost changed: SLOAD BALANCE EXTCODEHASH
 
-// EIP 150 a.k.a Tangerine Whistle
-func newTangerineWhistleInstructionSet() JumpTable {
-	instructionSet := newHomesteadInstructionSet()
-	instructionSet[BALANCE].constantGas = BalanceGasEIP150
-	instructionSet[EXTCODESIZE].constantGas = ExtcodeSizeGasEIP150
-	instructionSet[SLOAD].constantGas = SloadGasEIP150
-	instructionSet[EXTCODECOPY].constantGas = ExtcodeCopyBaseEIP150
-	instructionSet[CALL].constantGas = CallGasEIP150
-	instructionSet[CALLCODE].constantGas = CallGasEIP150
-	instructionSet[DELEGATECALL].constantGas = CallGasEIP150
-	return instructionSet
-}
+EIP 2200:
+SLOAD constantGas
+SSTORE dynamicGas
 
-// newHomesteadInstructionSet returns the frontier and homestead
-// instructions that can be executed during the homestead phase.
-func newHomesteadInstructionSet() JumpTable {
-	instructionSet := newFrontierInstructionSet()
-	instructionSet[DELEGATECALL] = &operation{
-		execute:     opDelegateCall,
-		dynamicGas:  gasDelegateCall,
-		constantGas: CallGasFrontier,
-		minStack:    minStack(6, 1),
-		maxStack:    maxStack(6, 1),
-		memorySize:  memoryDelegateCall,
-		returns:     true,
-	}
-	return instructionSet
-}
+YoloV2InstructionSet = IstanbulInstructionSet + EIP-2315 + EIP-2929
 
-// newFrontierInstructionSet returns the frontier instructions
-// that can be executed during the frontier phase.
-func newFrontierInstructionSet() JumpTable {
-	return JumpTable{
+EIP 2315:
+BEGINSUB JUMPSUB RETURNSUB
+
+EIP 2929:
+dynamicGas:SSTORE,SLOAD,EXTCODECOPY,EXTCODESIZE,EXTCODEHASH,BALANCE,CALL,CALLCODE,STATICCALL,DELEGATECALL,SELFDESTRUCT
+constantGas:SLOAD,EXTCODECOPY,EXTCODESIZE,EXTCODEHASH,BALANCE,CALL,CALLCODE,STATICCALL,DELEGATECALL,SELFDESTRUCT
+
+Roctet Protocol VM is compatible all evm instruction set util eth-release 1.9.24
+*/
+
+func newInstructionSet() JumpTable {
+	//FrontierInstructionSet
+	instructionSet := JumpTable{
 		STOP: {
 			execute:     opStop,
 			constantGas: 0,
@@ -1018,4 +906,182 @@ func newFrontierInstructionSet() JumpTable {
 			writes:     true,
 		},
 	}
+	//HomesteadInstructionSet-------------------------------------------------------------------------------------------
+	instructionSet[DELEGATECALL] = &operation{
+		execute:     opDelegateCall,
+		dynamicGas:  gasDelegateCall,
+		constantGas: CallGasFrontier,
+		minStack:    minStack(6, 1),
+		maxStack:    maxStack(6, 1),
+		memorySize:  memoryDelegateCall,
+		returns:     true,
+	}
+
+	//TangerineWhistleInstructionSet------------------------------------------------------------------------------------
+	instructionSet[BALANCE].constantGas = BalanceGasEIP150
+	instructionSet[EXTCODESIZE].constantGas = ExtcodeSizeGasEIP150
+	instructionSet[SLOAD].constantGas = SloadGasEIP150
+	instructionSet[EXTCODECOPY].constantGas = ExtcodeCopyBaseEIP150
+	instructionSet[CALL].constantGas = CallGasEIP150
+	instructionSet[CALLCODE].constantGas = CallGasEIP150
+	instructionSet[DELEGATECALL].constantGas = CallGasEIP150
+
+	//SpuriousDragonInstructionSet--------------------------------------------------------------------------------------
+	instructionSet[EXP].dynamicGas = gasExpEIP158
+
+	//ByzantiumInstructionSet-------------------------------------------------------------------------------------------
+	instructionSet[STATICCALL] = &operation{
+		execute:     opStaticCall,
+		constantGas: CallGasEIP150,
+		dynamicGas:  gasStaticCall,
+		minStack:    minStack(6, 1),
+		maxStack:    maxStack(6, 1),
+		memorySize:  memoryStaticCall,
+		returns:     true,
+	}
+	instructionSet[RETURNDATASIZE] = &operation{
+		execute:     opReturnDataSize,
+		constantGas: GasQuickStep,
+		minStack:    minStack(0, 1),
+		maxStack:    maxStack(0, 1),
+	}
+	instructionSet[RETURNDATACOPY] = &operation{
+		execute:     opReturnDataCopy,
+		constantGas: GasFastestStep,
+		dynamicGas:  gasReturnDataCopy,
+		minStack:    minStack(3, 0),
+		maxStack:    maxStack(3, 0),
+		memorySize:  memoryReturnDataCopy,
+	}
+	instructionSet[REVERT] = &operation{
+		execute:    opRevert,
+		dynamicGas: gasRevert,
+		minStack:   minStack(2, 0),
+		maxStack:   maxStack(2, 0),
+		memorySize: memoryRevert,
+		reverts:    true,
+		returns:    true,
+	}
+
+	//ConstantinopleInstructionSet--------------------------------------------------------------------------------------
+	instructionSet[SHL] = &operation{
+		execute:     opSHL,
+		constantGas: GasFastestStep,
+		minStack:    minStack(2, 1),
+		maxStack:    maxStack(2, 1),
+	}
+	instructionSet[SHR] = &operation{
+		execute:     opSHR,
+		constantGas: GasFastestStep,
+		minStack:    minStack(2, 1),
+		maxStack:    maxStack(2, 1),
+	}
+	instructionSet[SAR] = &operation{
+		execute:     opSAR,
+		constantGas: GasFastestStep,
+		minStack:    minStack(2, 1),
+		maxStack:    maxStack(2, 1),
+	}
+	instructionSet[EXTCODEHASH] = &operation{
+		execute:     opExtCodeHash,
+		constantGas: ExtcodeHashGasConstantinople,
+		minStack:    minStack(1, 1),
+		maxStack:    maxStack(1, 1),
+	}
+	instructionSet[CREATE2] = &operation{
+		execute:     opCreate2,
+		constantGas: Create2Gas,
+		dynamicGas:  gasCreate2,
+		minStack:    minStack(4, 1),
+		maxStack:    maxStack(4, 1),
+		memorySize:  memoryCreate2,
+		writes:      true,
+		returns:     true,
+	}
+
+	//IstanbulInstructionSet--------------------------------------------------------------------------------------------
+	//EIP 1344
+	instructionSet[CHAINID] = &operation{
+		execute:     opChainID,
+		constantGas: GasQuickStep,
+		minStack:    minStack(0, 1),
+		maxStack:    maxStack(0, 1),
+	}
+
+	//EIP1884
+	instructionSet[SLOAD].constantGas = SloadGasEIP1884
+	instructionSet[BALANCE].constantGas = BalanceGasEIP1884
+	instructionSet[EXTCODEHASH].constantGas = ExtcodeHashGasEIP1884
+
+	instructionSet[SELFBALANCE] = &operation{
+		execute:     opSelfBalance,
+		constantGas: GasFastStep,
+		minStack:    minStack(0, 1),
+		maxStack:    maxStack(0, 1),
+	}
+
+	//EIP 2200
+	instructionSet[SLOAD].constantGas = SloadGasEIP2200
+	instructionSet[SSTORE].dynamicGas = gasSStoreEIP2200
+
+	//YoloV2InstructionSet----------------------------------------------------------------------------------------------
+
+	//EIP 2315
+	instructionSet[BEGINSUB] = &operation{
+		execute:     opBeginSub,
+		constantGas: GasQuickStep,
+		minStack:    minStack(0, 0),
+		maxStack:    maxStack(0, 0),
+	}
+	instructionSet[JUMPSUB] = &operation{
+		execute:     opJumpSub,
+		constantGas: GasSlowStep,
+		minStack:    minStack(1, 0),
+		maxStack:    maxStack(1, 0),
+		jumps:       true,
+	}
+	instructionSet[RETURNSUB] = &operation{
+		execute:     opReturnSub,
+		constantGas: GasFastStep,
+		minStack:    minStack(0, 0),
+		maxStack:    maxStack(0, 0),
+		jumps:       true,
+	}
+
+	//EIP 2929
+	instructionSet[SSTORE].dynamicGas = gasSStoreEIP2929
+
+	instructionSet[SLOAD].constantGas = 0
+	instructionSet[SLOAD].dynamicGas = gasSLoadEIP2929
+
+	instructionSet[EXTCODECOPY].constantGas = WarmStorageReadCostEIP2929
+	instructionSet[EXTCODECOPY].dynamicGas = gasExtCodeCopyEIP2929
+
+	instructionSet[EXTCODESIZE].constantGas = WarmStorageReadCostEIP2929
+	instructionSet[EXTCODESIZE].dynamicGas = gasEip2929AccountCheck
+
+	instructionSet[EXTCODEHASH].constantGas = WarmStorageReadCostEIP2929
+	instructionSet[EXTCODEHASH].dynamicGas = gasEip2929AccountCheck
+
+	instructionSet[BALANCE].constantGas = WarmStorageReadCostEIP2929
+	instructionSet[BALANCE].dynamicGas = gasEip2929AccountCheck
+
+	instructionSet[CALL].constantGas = WarmStorageReadCostEIP2929
+	instructionSet[CALL].dynamicGas = gasCallEIP2929
+
+	instructionSet[CALLCODE].constantGas = WarmStorageReadCostEIP2929
+	instructionSet[CALLCODE].dynamicGas = gasCallCodeEIP2929
+
+	instructionSet[STATICCALL].constantGas = WarmStorageReadCostEIP2929
+	instructionSet[STATICCALL].dynamicGas = gasStaticCallEIP2929
+
+	instructionSet[DELEGATECALL].constantGas = WarmStorageReadCostEIP2929
+	instructionSet[DELEGATECALL].dynamicGas = gasDelegateCallEIP2929
+
+	// This was previously part of the dynamic cost, but we're using it as a constantGas
+	// factor here
+	instructionSet[SELFDESTRUCT].constantGas = SelfdestructGasEIP150
+	instructionSet[SELFDESTRUCT].dynamicGas = gasSelfdestructEIP2929
+
+	return instructionSet
 }

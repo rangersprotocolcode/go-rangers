@@ -19,7 +19,6 @@ package vm
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/utility"
-	"fmt"
 	"hash"
 	"sync/atomic"
 )
@@ -96,34 +95,7 @@ func NewEVMInterpreter(evm *EVM, cfg Config) *EVMInterpreter {
 	// the jump table was initialised. If it was not
 	// we'll set the default jump table.
 	if cfg.JumpTable[STOP] == nil {
-		var jt JumpTable
-		switch {
-		case evm.chainRules.IsYoloV2:
-			jt = yoloV2InstructionSet
-		case evm.chainRules.IsIstanbul:
-			jt = istanbulInstructionSet
-		case evm.chainRules.IsConstantinople:
-			jt = constantinopleInstructionSet
-		case evm.chainRules.IsByzantium:
-			jt = byzantiumInstructionSet
-		case evm.chainRules.IsEIP158:
-			jt = spuriousDragonInstructionSet
-		case evm.chainRules.IsEIP150:
-			jt = tangerineWhistleInstructionSet
-		case evm.chainRules.IsHomestead:
-			jt = homesteadInstructionSet
-		default:
-			jt = frontierInstructionSet
-		}
-		for i, eip := range cfg.ExtraEips {
-			if err := EnableEIP(eip, &jt); err != nil {
-				// Disable it, so caller can check if it's activated or not
-				cfg.ExtraEips = append(cfg.ExtraEips[:i], cfg.ExtraEips[i+1:]...)
-				//todo 这里原来是log.Error
-				//log.Error("EIP activation failed", "eip", eip, "error", err)
-				fmt.Sprintf("EIP activation failed", "eip", eip, "error", err)
-			}
-		}
+		var jt = newInstructionSet()
 		cfg.JumpTable = jt
 	}
 

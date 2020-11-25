@@ -900,6 +900,19 @@ func opPush1(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]b
 	return nil, nil
 }
 
+// opChainID implements CHAINID opcode
+func opChainID(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	chainId, _ := uint256.FromBig(interpreter.evm.chainConfig.ChainID)
+	callContext.stack.push(chainId)
+	return nil, nil
+}
+
+func opSelfBalance(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	balance, _ := uint256.FromBig(interpreter.evm.StateDB.GetBalance(callContext.contract.Address()))
+	callContext.stack.push(balance)
+	return nil, nil
+}
+
 // make push instruction function
 func makePush(size uint64, pushByteSize int) executionFunc {
 	return func(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
