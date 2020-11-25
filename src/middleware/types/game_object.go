@@ -168,10 +168,10 @@ type NFT struct {
 	Imported string `json:"imported,omitempty"`
 
 	// 6. 组合信息
-	ComboResource ComboResource
+	ComboResource ComboResource `json:"combo,omitempty"`
 
 	// 7. 被锁定
-	Lock string // 锁定账号
+	Lock string `json:"lockedTo,omitempty"` // 锁定账号
 }
 
 func (self *NFT) GetData(gameId string) string {
