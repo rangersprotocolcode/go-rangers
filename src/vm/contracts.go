@@ -18,6 +18,7 @@ package vm
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/utility"
 	"com.tuntun.rocket/node/src/vm/crypto"
 	"com.tuntun.rocket/node/src/vm/crypto/blake2b"
 	"com.tuntun.rocket/node/src/vm/crypto/bls12381"
@@ -272,7 +273,7 @@ func (c *bigModExp) RequiredGas(input []byte) uint64 {
 	adjExpLen.Add(adjExpLen, big.NewInt(int64(msb)))
 
 	// Calculate the gas cost of the operation
-	gas := new(big.Int).Set(BigMax(modLen, baseLen))
+	gas := new(big.Int).Set(utility.BigMax(modLen, baseLen))
 	switch {
 	case gas.Cmp(big64) <= 0:
 		gas.Mul(gas, gas)
@@ -287,11 +288,11 @@ func (c *bigModExp) RequiredGas(input []byte) uint64 {
 			new(big.Int).Sub(new(big.Int).Mul(big480, gas), big199680),
 		)
 	}
-	gas.Mul(gas, BigMax(adjExpLen, big1))
+	gas.Mul(gas, utility.BigMax(adjExpLen, big1))
 	gas.Div(gas, new(big.Int).SetUint64(ModExpQuadCoeffDiv))
 
 	if gas.BitLen() > 64 {
-		return MaxUint64
+		return utility.MaxUint64
 	}
 	return gas.Uint64()
 }
