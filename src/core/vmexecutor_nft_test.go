@@ -21,7 +21,9 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"strings"
 	"testing"
@@ -38,6 +40,9 @@ func testVMExecutorPublishNFTSet(t *testing.T) {
 		t.Fatalf(err.Error())
 	}
 	tx1 := txJson.ToTransaction()
+
+	tx1bytes,_:=json.Marshal(tx1)
+	fmt.Println(utility.BytesToStr(tx1bytes))
 
 	block.Transactions = append(block.Transactions, &tx1)
 	accountDB := getTestAccountDB()
