@@ -21,7 +21,9 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"strings"
 	"testing"
@@ -31,9 +33,16 @@ import (
 func testVMExecutorPublishNFTSet(t *testing.T) {
 	block := generateBlock()
 
-	txString := `{"data":"{\"symbol\":\"testNFTSetSymbol\",\"createTime\":\"1585791972730\",\"name\":\"testNFTSetName\",\"setId\":\"1c9b03bf-5975-417f-a6fa-dc098ba8ff2e\",\"maxSupply\":100}","extraData":"","hash":"0xdf3d6b5ade4bd0de884bbf85000d9fa6f7ea91eeb99592f9cf9e825f428c2305","nonce":0,"sign":"0x275eb9cfdc5a850625cad2710fe16cb9d2383c2b9494069721db5660bae033a61ecbde189f03605ebc03916937a54e9942a01c0953cb3a833df86b2e8bdbeb8100","socketRequestId":"6044708977077341138-111","source":"0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443","target":"","time":"1585791972709","type":111}`
-	var tx1 types.Transaction
-	json.Unmarshal([]byte(txString), &tx1)
+	txString := `{"data":"{\"conditions\":{\"ft\":{\"0x10086-abc\":\"0.1\",\"0x10086-123\":\"0.4\"},\"coin\":{\"ETH.ETH \":\"1 \",\"ONT \":\"0.5 \"}},\"symbol\":\"testNFTSetSymbol\",\"createTime\":\"1585791972730\",\"name\":\"testNFTSetName\",\"setId\":\"1c9b03bf-5975-417f-a6fa-dc098ba8ff2e\",\"maxSupply\":100}","extraData":"","hash":"0xdf3d6b5ade4bd0de884bbf85000d9fa6f7ea91eeb99592f9cf9e825f428c2305","nonce":0,"sign":"0x275eb9cfdc5a850625cad2710fe16cb9d2383c2b9494069721db5660bae033a61ecbde189f03605ebc03916937a54e9942a01c0953cb3a833df86b2e8bdbeb8100","socketRequestId":"6044708977077341138-111","source":"0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443","target":"","time":"1585791972709","type":111}`
+	var txJson types.TxJson
+	err := json.Unmarshal([]byte(txString), &txJson)
+	if nil != err {
+		t.Fatalf(err.Error())
+	}
+	tx1 := txJson.ToTransaction()
+
+	tx1bytes,_:=json.Marshal(tx1)
+	fmt.Println(utility.BytesToStr(tx1bytes))
 
 	block.Transactions = append(block.Transactions, &tx1)
 	accountDB := getTestAccountDB()
@@ -42,7 +51,7 @@ func testVMExecutorPublishNFTSet(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("adfd07d9d9ba8651f36a15f6a600535a944167afdfb5950519a39f20b93a7741", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("98cc35916b602e5685fa405a9581d1b8940a6fd1713255743e4600c3b45546c1", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 0 != len(evictedTxs) {
@@ -147,7 +156,7 @@ func testVMExecutorMintNFT(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("e072e0366a12a2cf2e8c6381c30fd30995d5028518dde0051381d1ef4ea74533", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("12834f4392a98fceeab8036655794099a7528d9c8f65802416bb8584b335eb16", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 0 != len(evictedTxs) {
@@ -215,7 +224,7 @@ func testVMExecutorMintNFTWithoutLimit(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("6630b458271cf2624d695a8aa5033b8dd9c79881af2c7f1d175b11bccddd68ee", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("6b21a37dbd2d885bd0fb255c01343e74d384d2b1a4c2a365fa3c974395af958b", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 0 != len(evictedTxs) {
@@ -319,7 +328,7 @@ func testVMExecutorMintNFTWithoutLimitGoodAndEvil(t *testing.T) {
 	executor := newVMExecutor(accountDB, block, "testing")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 
-	if 0 != strings.Compare("e499efd919480021a1793931946e799cda835cc05fcd478711f5a6997df5ca78", common.Bytes2Hex(stateRoot[:])) {
+	if 0 != strings.Compare("a2f4a59767b5fefca5715a4b12437243d4c354cd6beca90ceb33c1ad2f1231cd", common.Bytes2Hex(stateRoot[:])) {
 		t.Fatalf("fail to get stateRoot. %s", common.Bytes2Hex(stateRoot[:]))
 	}
 	if 2 != len(evictedTxs) {

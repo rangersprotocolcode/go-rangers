@@ -19,13 +19,11 @@ package account
 import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/trie"
 	"fmt"
 	"golang.org/x/crypto/sha3"
 	"math/big"
-	"strconv"
 	"sync"
 )
 
@@ -88,8 +86,6 @@ type accountObject struct {
 	touched  bool
 	deleted  bool
 	onDirty  func(addr common.Address)
-
-	log log.Logger
 }
 
 // empty returns whether the account is considered empty.
@@ -124,7 +120,6 @@ func newAccountObject(db *AccountDB, address common.Address, data Account, onDir
 		cachedStorage: make(Storage),
 		dirtyStorage:  make(Storage),
 		onDirty:       onDirty,
-		log:           log.GetLoggerByIndex(log.AccountLogConfig, strconv.Itoa(common.InstanceIndex)),
 	}
 
 	return ao

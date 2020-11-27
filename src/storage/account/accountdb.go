@@ -44,6 +44,9 @@ var (
 
 	// emptyCode is the known hash of the empty TVM bytecode.
 	emptyCode = sha3.Sum256(nil)
+
+	// log
+	accountLog = log.GetLoggerByIndex(log.AccountLogConfig, strconv.Itoa(common.InstanceIndex))
 )
 
 // AccountDB are used to store anything
@@ -71,8 +74,6 @@ type AccountDB struct {
 	transitions    transition
 	validRevisions []revision
 	nextRevisionID int
-
-	log log.Logger
 }
 
 // Create a new account from a given trie.
@@ -87,7 +88,6 @@ func NewAccountDB(root common.Hash, db AccountDatabase) (*AccountDB, error) {
 		accountObjects:      new(sync.Map),
 		accountObjectsDirty: make(map[common.Address]struct{}),
 		accountObjectsLock:  new(sync.Mutex),
-		log:                 log.GetLoggerByIndex(log.AccountLogConfig, strconv.Itoa(common.InstanceIndex)),
 	}
 	return accountDb, nil
 }

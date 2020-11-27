@@ -141,7 +141,7 @@ func (this *operatorExecutor) Execute(transaction *types.Transaction, header *ty
 						return false, msg
 					}
 					appId := user.Assets["appId"]
-					nftSet := service.NFTManagerInstance.GenerateNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, user.Assets["conditions"], maxSupply, user.Assets["createTime"])
+					nftSet := service.NFTManagerInstance.GenerateNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, types.NFTConditions{}, maxSupply, user.Assets["createTime"])
 					msg, ok := service.NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
 					if !ok {
 						return false, msg

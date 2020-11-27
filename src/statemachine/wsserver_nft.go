@@ -279,7 +279,6 @@ func (self *wsServer) publishNFTSet(params map[string]string) (string, bool) {
 	symbol := params["symbol"]
 	maxSupply := params["maxSupply"]
 	createTime := params["createTime"]
-	conditions := params["conditions"]
 
 	if 0 == len(appId) || 0 == len(authCode) || !STMManger.ValidateAppId(appId, authCode) {
 		return "param error", false
@@ -294,7 +293,7 @@ func (self *wsServer) publishNFTSet(params map[string]string) (string, bool) {
 
 	accountDB := context.AccountDB
 	value, _ := strconv.ParseUint(maxSupply, 10, 64)
-	nftSet := service.NFTManagerInstance.GenerateNFTSet(setId, name, symbol, appId, appId, conditions, value, createTime)
+	nftSet := service.NFTManagerInstance.GenerateNFTSet(setId, name, symbol, appId, appId, types.NFTConditions{}, value, createTime)
 	if reason, ok := service.NFTManagerInstance.PublishNFTSet(nftSet, accountDB); ok {
 		// 生成交易，上链 context.Tx.SubTransactions
 		userData := types.UserData{}

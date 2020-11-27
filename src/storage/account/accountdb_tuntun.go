@@ -208,7 +208,7 @@ func (self *AccountDB) ApproveNFT(owner common.Address, appId, setId, id, renter
 	nftAddress := common.GenerateNFTAddress(setId, id)
 	stateObject := self.getAccountObject(nftAddress, false)
 	if nil == stateObject {
-		self.log.Errorf("fail to find nft: %s %s, approve failed", setId, id)
+		accountLog.Errorf("fail to find nft: %s %s, approve failed", setId, id)
 		return false
 	}
 	return stateObject.ApproveNFT(self.db, owner, renter)
@@ -288,6 +288,9 @@ func (adb *AccountDB) LockResource(sourceAddr, targetAddr common.Address, resour
 			if err != nil {
 				return false
 			}
+			if 0 == amount.Sign() {
+				continue
+			}
 
 			_, ok := source.SubBNT(db, amount, bnt)
 			if !ok {
@@ -305,7 +308,9 @@ func (adb *AccountDB) LockResource(sourceAddr, targetAddr common.Address, resour
 			if err != nil {
 				return false
 			}
-
+			if 0 == amount.Sign() {
+				continue
+			}
 			_, ok := source.SubFT(db, amount, ft)
 			if !ok {
 				return false
