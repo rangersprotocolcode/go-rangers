@@ -324,12 +324,6 @@ func (l *StructLogger) CaptureEnd(output []byte, gasUsed uint64, t time.Duration
 	l.err = err
 	l.logger.Debugf("\nOutput: `0x%x`\nConsumed gas: `%d`\nError: `%v`\n",
 		output, gasUsed, err)
-	if l.cfg.Debug {
-		l.logger.Debugf("0x%x\n", output)
-		if err != nil {
-			l.logger.Debugf(" error: %v\n", err)
-		}
-	}
 	return nil
 }
 

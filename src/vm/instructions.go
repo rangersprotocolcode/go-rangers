@@ -242,10 +242,10 @@ func opSha3(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	interpreter.hasher.Write(data)
 	interpreter.hasher.Read(interpreter.hasherBuf[:])
 
-	evm := interpreter.evm
-	if evm.vmConfig.EnablePreimageRecording {
-		evm.StateDB.AddPreimage(interpreter.hasherBuf, data)
-	}
+	//evm := interpreter.evm
+	//if evm.vmConfig.EnablePreimageRecording {
+	//	evm.StateDB.AddPreimage(interpreter.hasherBuf, data)
+	//}
 
 	size.SetBytes(interpreter.hasherBuf[:])
 	return nil, nil
