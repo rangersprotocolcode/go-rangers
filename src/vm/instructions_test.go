@@ -194,9 +194,9 @@ func TestSAR(t *testing.T) {
 
 func TestAddMod(t *testing.T) {
 	var (
-		env            = NewEVM(Context{}, nil, testChainID, Config{})
+		env            = NewEVM(Context{}, nil)
 		stack          = newstack()
-		evmInterpreter = NewEVMInterpreter(env, env.vmConfig)
+		evmInterpreter = NewEVMInterpreter(env)
 		pc             = uint64(0)
 	)
 	tests := []struct {
@@ -233,7 +233,7 @@ func TestAddMod(t *testing.T) {
 // getResult is a convenience function to generate the expected values
 func getResult(args []*twoOperandParams, opFn executionFunc) []TwoOperandTestcase {
 	var (
-		env           = NewEVM(Context{}, nil, testChainID, Config{})
+		env           = NewEVM(Context{}, nil)
 		stack, rstack = newstack(), newReturnStack()
 		pc            = uint64(0)
 		interpreter   = env.interpreter.(*EVMInterpreter)
@@ -283,9 +283,9 @@ func TestJsonTestcases(t *testing.T) {
 
 func opBenchmark(bench *testing.B, op executionFunc, args ...string) {
 	var (
-		env            = NewEVM(Context{}, nil, testChainID, Config{})
+		env            = NewEVM(Context{}, nil)
 		stack, rstack  = newstack(), newReturnStack()
-		evmInterpreter = NewEVMInterpreter(env, env.vmConfig)
+		evmInterpreter = NewEVMInterpreter(env)
 	)
 
 	env.interpreter = evmInterpreter
@@ -517,10 +517,10 @@ func BenchmarkOpIsZero(b *testing.B) {
 
 func TestOpMstore(t *testing.T) {
 	var (
-		env            = NewEVM(Context{}, nil, testChainID, Config{})
+		env            = NewEVM(Context{}, nil)
 		stack, rstack  = newstack(), newReturnStack()
 		mem            = NewMemory()
-		evmInterpreter = NewEVMInterpreter(env, env.vmConfig)
+		evmInterpreter = NewEVMInterpreter(env)
 	)
 
 	env.interpreter = evmInterpreter
@@ -541,10 +541,10 @@ func TestOpMstore(t *testing.T) {
 
 func BenchmarkOpMstore(bench *testing.B) {
 	var (
-		env            = NewEVM(Context{}, nil, testChainID, Config{})
+		env            = NewEVM(Context{}, nil)
 		stack, rstack  = newstack(), newReturnStack()
 		mem            = NewMemory()
-		evmInterpreter = NewEVMInterpreter(env, env.vmConfig)
+		evmInterpreter = NewEVMInterpreter(env)
 	)
 
 	env.interpreter = evmInterpreter
@@ -562,10 +562,10 @@ func BenchmarkOpMstore(bench *testing.B) {
 
 func BenchmarkOpSHA3(bench *testing.B) {
 	var (
-		env            = NewEVM(Context{}, nil, testChainID, Config{})
+		env            = NewEVM(Context{}, nil)
 		stack, rstack  = newstack(), newReturnStack()
 		mem            = NewMemory()
-		evmInterpreter = NewEVMInterpreter(env, env.vmConfig)
+		evmInterpreter = NewEVMInterpreter(env)
 	)
 	env.interpreter = evmInterpreter
 	mem.Resize(32)

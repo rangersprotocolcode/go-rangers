@@ -23,21 +23,6 @@ import (
 	"sync/atomic"
 )
 
-// Config are the configuration options for the Interpreter
-type Config struct {
-	Debug                   bool   // Enables debugging
-	Tracer                  Tracer // Opcode logger
-	NoRecursion             bool   // Disables call, callcode, delegate call and create
-	EnablePreimageRecording bool   // Enables recording of SHA3/keccak preimages
-
-	JumpTable [256]*operation // EVM instruction table, automatically populated if unset
-
-	EWASMInterpreter string // External EWASM interpreter options
-	EVMInterpreter   string // External EVM interpreter options
-
-	ExtraEips []int // Additional EIPS that are to be enabled
-}
-
 // Interpreter is used to run Ethereum based contracts and will utilise the
 // passed environment to query external sources for state information.
 // The Interpreter will run the byte code VM based on the passed
@@ -79,8 +64,9 @@ type keccakState interface {
 
 // EVMInterpreter represents an EVM interpreter
 type EVMInterpreter struct {
-	evm *EVM
-	cfg Config
+	evm       *EVM
+	tracer    Tracer
+	jumpTable [256]*operation
 
 	hasher    keccakState // Keccak256 hasher instance shared across opcodes
 	hasherBuf common.Hash // Keccak256 hasher result array shared aross opcodes
@@ -90,18 +76,12 @@ type EVMInterpreter struct {
 }
 
 // NewEVMInterpreter returns a new instance of the Interpreter.
-func NewEVMInterpreter(evm *EVM, cfg Config) *EVMInterpreter {
-	// We use the STOP instruction whether to see
-	// the jump table was initialised. If it was not
-	// we'll set the default jump table.
-	if cfg.JumpTable[STOP] == nil {
-		var jt = newInstructionSet()
-		cfg.JumpTable = jt
-	}
+func NewEVMInterpreter(evm *EVM) *EVMInterpreter {
 
 	return &EVMInterpreter{
-		evm: evm,
-		cfg: cfg,
+		evm:       evm,
+		jumpTable: newInstructionSet(),
+		tracer:    vmTracer,
 	}
 }
 
@@ -164,17 +144,16 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 	}()
 	contract.Input = input
 
-	if in.cfg.Debug {
-		defer func() {
-			if err != nil {
-				if !logged {
-					in.cfg.Tracer.CaptureState(in.evm, pcCopy, op, gasCopy, cost, mem, stack, returns, in.returnData, contract, in.evm.depth, err)
-				} else {
-					in.cfg.Tracer.CaptureFault(in.evm, pcCopy, op, gasCopy, cost, mem, stack, returns, contract, in.evm.depth, err)
-				}
+	defer func() {
+		if err != nil {
+			if !logged {
+				in.tracer.CaptureState(in.evm, pcCopy, op, gasCopy, cost, mem, stack, returns, in.returnData, contract, in.evm.depth, err)
+			} else {
+				in.tracer.CaptureFault(in.evm, pcCopy, op, gasCopy, cost, mem, stack, returns, contract, in.evm.depth, err)
 			}
-		}()
-	}
+		}
+	}()
+
 	// The Interpreter main run loop (contextual). This loop runs until either an
 	// explicit STOP, RETURN or SELFDESTRUCT is executed, an error occurred during
 	// the execution of one of the operations or until the done flag is set by the
@@ -185,15 +164,13 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		if steps%1000 == 0 && atomic.LoadInt32(&in.evm.abort) != 0 {
 			break
 		}
-		if in.cfg.Debug {
-			// Capture pre-execution values for tracing.
-			logged, pcCopy, gasCopy = false, pc, contract.Gas
-		}
+		// Capture pre-execution values for tracing.
+		logged, pcCopy, gasCopy = false, pc, contract.Gas
 
 		// Get the operation from the jump table and validate the stack to ensure there are
 		// enough stack items available to perform the operation.
 		op = contract.GetOp(pc)
-		operation := in.cfg.JumpTable[op]
+		operation := in.jumpTable[op]
 		if operation == nil {
 			return nil, &ErrInvalidOpCode{opcode: op}
 		}
@@ -254,10 +231,8 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 			mem.Resize(memorySize)
 		}
 
-		if in.cfg.Debug {
-			in.cfg.Tracer.CaptureState(in.evm, pc, op, gasCopy, cost, mem, stack, returns, in.returnData, contract, in.evm.depth, err)
-			logged = true
-		}
+		in.tracer.CaptureState(in.evm, pc, op, gasCopy, cost, mem, stack, returns, in.returnData, contract, in.evm.depth, err)
+		logged = true
 
 		// execute the operation
 		res, err = operation.execute(&pc, in, callContext)
