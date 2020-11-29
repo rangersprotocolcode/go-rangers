@@ -19,6 +19,7 @@ package types
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/storage/rlp"
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"math/big"
 	"strconv"
@@ -37,6 +38,11 @@ func (self *NFTConditions) IsEmpty() bool {
 	}
 
 	return true
+}
+
+func (self *NFTConditions) String() string {
+	data, _ := json.Marshal(self)
+	return utility.BytesToStr(data)
 }
 
 type NFTCondition struct {

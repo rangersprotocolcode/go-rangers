@@ -513,10 +513,10 @@ func ComboNFT(accountDB *account.AccountDB, transaction *types.Transaction) (boo
 		return false, "resource data error: " + transaction.Data
 	}
 
-	success := accountDB.ComboResource(sourceAddr, common.GenerateNFTSetAddress(setId), setId, id, resource)
+	success, msg := accountDB.ComboResource(sourceAddr, common.GenerateNFTSetAddress(setId), setId, id, resource)
 	if success {
 		return success, "nft combo successful"
 	} else {
-		return success, "nft combo failed"
+		return success, msg
 	}
 }

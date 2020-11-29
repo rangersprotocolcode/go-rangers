@@ -136,12 +136,13 @@ func (self *NFTManager) MintNFT(nftSetOwner, appId, setId, id, data, createTime 
 	// 检查setId是否存在
 	nftSet := accountDB.GetNFTSet(setId)
 	if nil == nftSet || 0 != strings.Compare(common.FormatHexString(nftSet.Owner), common.FormatHexString(nftSetOwner)) {
-		txLogger.Debugf("Mint nft! wrong setId or not setOwner! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, createTime, owner.String())
+		txLogger.Errorf("Mint nft! wrong setId or not setOwner! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, createTime, owner.String())
 		return "wrong setId or not setOwner", false
 	}
 
 	if nftSet.MaxSupply != 0 && uint64(len(nftSet.OccupiedID)) == nftSet.MaxSupply {
-		return "not enough nftSet", false
+		txLogger.Errorf("not enough nftSet: " + setId)
+		return fmt.Sprintf("not enough nftSet %s, MaxSupply: %d, Occupied: %d", setId, nftSet.MaxSupply, len(nftSet.OccupiedID)), false
 	}
 
 	if 0 == len(appId) {
@@ -150,19 +151,22 @@ func (self *NFTManager) MintNFT(nftSetOwner, appId, setId, id, data, createTime 
 
 	// 定义了组合规则的
 	if !nftSet.Conditions.IsEmpty() {
-		demand := self.checkNFTConditions(nftSet.Conditions, accountDB, setId, owner)
+		msg, demand := self.checkNFTConditions(nftSet.Conditions, accountDB, setId, owner)
 		if nil == demand {
-			return "nft check failed", false
+			txLogger.Errorf(msg)
+			return msg, false
 		}
 
-		if !accountDB.DestroyResource(owner, common.GenerateNFTSetAddress(setId), *demand) {
-			return "no such resources", false
+		flag, message := accountDB.DestroyResource(owner, common.GenerateNFTSetAddress(setId), *demand)
+		if !flag {
+			txLogger.Errorf(message)
+			return message, false
 		}
 	}
 	return self.GenerateNFT(nftSet, appId, setId, id, data, nftSetOwner, createTime, "", owner, nil, accountDB)
 }
 
-func (self *NFTManager) checkNFTConditions(nftConditions types.NFTConditions, accountDB *account.AccountDB, nftSetId string, owner common.Address) *types.LockResource {
+func (self *NFTManager) checkNFTConditions(nftConditions types.NFTConditions, accountDB *account.AccountDB, nftSetId string, owner common.Address) (string, *types.LockResource) {
 	demand := types.LockResource{}
 	if 0 != len(nftConditions.Balance) {
 		demand.Balance = nftConditions.Balance
@@ -177,7 +181,7 @@ func (self *NFTManager) checkNFTConditions(nftConditions types.NFTConditions, ac
 		demand.NFT = make([]types.NFTID, 0)
 		lockedResource := accountDB.GetLockedResourceByAddress(common.GenerateNFTSetAddress(nftSetId), owner)
 		if nil == lockedResource || 0 == len(lockedResource.NFT) {
-			return nil
+			return fmt.Sprintf("owner: %s has no lockedResource in NFTSet %s for conditions: %s", owner.GetHexString(), nftSetId, nftConditions.String()), nil
 		}
 
 		for setId, nftCondition := range nftConditions.NFT {
@@ -205,7 +209,7 @@ func (self *NFTManager) checkNFTConditions(nftConditions types.NFTConditions, ac
 						if strings.Contains(property, ":") {
 							list := strings.Split(property, ":")
 							if 2 != len(list) {
-								return nil
+								return fmt.Sprintf("bad conditions: %s for property: %s in NFTSet %s", nftConditions.String(), property, nftSetId), nil
 							}
 							valueString = nft.GetProperty(list[0], list[1])
 						} else {
@@ -258,7 +262,7 @@ func (self *NFTManager) checkNFTConditions(nftConditions types.NFTConditions, ac
 							borders := targetValue[1 : len(targetValue)-1]
 							borderList := strings.Split(borders, ",")
 							if 2 != len(borderList) {
-								return nil
+								return fmt.Sprintf("bad conditions: %s for borders: %s in NFTSet %s", nftConditions.String(), borders, nftSetId), nil
 							}
 							border, err := strconv.Atoi(strings.TrimSpace(borderList[0]))
 							if err != nil || value < border {
@@ -286,16 +290,16 @@ func (self *NFTManager) checkNFTConditions(nftConditions types.NFTConditions, ac
 			}
 
 			if num != found {
-				return nil
+				return fmt.Sprintf("owner: %s bad num: %d Vs found: %d for nftSet: %s in conditons: %s", owner.GetHexString(), num, found, nftSetId, nftConditions.String()), nil
 			}
 		}
 
 	}
 
 	if 0 == len(demand.Balance) && 0 == len(demand.FT) && 0 == len(demand.Coin) && 0 == len(demand.NFT) {
-		return nil
+		return fmt.Sprintf("owner: %s has no lockedResource in NFTSet %s for conditions: %s", owner.GetHexString(), nftSetId, nftConditions.String()), nil
 	}
-	return &demand
+	return "", &demand
 }
 
 func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data, creator, timeStamp, imported string, owner common.Address, fullData map[string]string, accountDB *account.AccountDB) (string, bool) {
