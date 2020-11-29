@@ -323,21 +323,6 @@ func (ao *accountObject) Address() common.Address {
 	return ao.address
 }
 
-func (ao *accountObject) nftSetDefinition(db AccountDatabase) []byte {
-	if ao.nftSet != nil {
-		return ao.nftSet
-	}
-	if bytes.Equal(ao.NFTSetDefinitionHash(), emptyCodeHash[:]) {
-		return nil
-	}
-	code, err := db.ContractCode(ao.addrHash, common.BytesToHash(ao.NFTSetDefinitionHash()))
-	if err != nil {
-		ao.setError(fmt.Errorf("can't load code hash %x: %v", ao.NFTSetDefinitionHash(), err))
-	}
-	ao.nftSet = code
-	return code
-}
-
 // DataIterator returns a new key-value iterator from a node iterator
 func (ao *accountObject) DataIterator(db AccountDatabase, prefix []byte) *trie.Iterator {
 	if ao.trie == nil {
@@ -400,4 +385,30 @@ func (ao *accountObject) getOrCreateLockResource(result map[string]*types.LockRe
 	}
 
 	return lockResource
+}
+
+func (ao *accountObject) SetCode(codeHash common.Hash, code []byte) {
+	ao.SetNFTSetDefinition(codeHash, code)
+}
+
+func (ao *accountObject) CodeHash() []byte {
+	return ao.data.NFTSetDefinitionHash
+}
+
+func (ao *accountObject) Code(db AccountDatabase) []byte {
+	return ao.nftSetDefinition(db)
+}
+
+func (ao *accountObject) CodeSize(db AccountDatabase) int {
+	if ao.nftSet != nil {
+		return len(ao.nftSet)
+	}
+	if bytes.Equal(ao.CodeHash(), emptyCodeHash[:]) {
+		return 0
+	}
+	size, err := db.ContractCodeSize(ao.addrHash, common.BytesToHash(ao.CodeHash()))
+	if err != nil {
+		ao.setError(fmt.Errorf("can't load code size %x: %v", ao.CodeHash(), err))
+	}
+	return size
 }

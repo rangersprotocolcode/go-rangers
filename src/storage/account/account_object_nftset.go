@@ -17,10 +17,12 @@
 package account
 
 import (
+	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/rlp"
 	"com.tuntun.rocket/node/src/utility"
+	"fmt"
 	"strings"
 )
 
@@ -64,7 +66,7 @@ func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
 	}
 
 	for id, addr := range self.cachedStorage {
-		if 0 == strings.Compare(id, NFTSetOwnerString) || strings.HasPrefix(id, common.LockPrefix)  {
+		if 0 == strings.Compare(id, NFTSetOwnerString) || strings.HasPrefix(id, common.LockPrefix) {
 			continue
 		}
 
@@ -109,4 +111,19 @@ func (ao *accountObject) setNFTSetDefinition(hash common.Hash, code []byte) {
 		ao.onDirty(ao.Address())
 		ao.onDirty = nil
 	}
+}
+
+func (ao *accountObject) nftSetDefinition(db AccountDatabase) []byte {
+	if ao.nftSet != nil {
+		return ao.nftSet
+	}
+	if bytes.Equal(ao.NFTSetDefinitionHash(), emptyCodeHash[:]) {
+		return nil
+	}
+	code, err := db.ContractCode(ao.addrHash, common.BytesToHash(ao.NFTSetDefinitionHash()))
+	if err != nil {
+		ao.setError(fmt.Errorf("can't load code hash %x: %v", ao.NFTSetDefinitionHash(), err))
+	}
+	ao.nftSet = code
+	return code
 }

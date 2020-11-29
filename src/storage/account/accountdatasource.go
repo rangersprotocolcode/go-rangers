@@ -17,12 +17,14 @@
 package account
 
 import (
-	"sync"
-
 	"com.tuntun.rocket/node/src/common"
 	xdb "com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/storage/trie"
+	"errors"
 	"fmt"
+	"github.com/VictoriaMetrics/fastcache"
+	lru "github.com/hashicorp/golang-lru"
+	"sync"
 )
 
 type AccountDatabase interface {
@@ -40,6 +42,9 @@ type AccountDatabase interface {
 
 	// ContractCode retrieves a particular contract's code.
 	ContractCode(addrHash, codeHash common.Hash) ([]byte, error)
+
+	// ContractCodeSize retrieves a particular contracts code's size.
+	ContractCodeSize(addrHash, codeHash common.Hash) (int, error)
 }
 
 type Trie interface {
@@ -75,14 +80,28 @@ type Trie interface {
 // is safe for concurrent use and retains a lot of collapsed RLP trie nodes in a
 // large memory cache.
 func NewDatabase(db xdb.Database) AccountDatabase {
+	csc, _ := lru.New(codeSizeCacheSize)
 	return &storageDB{
-		db:        trie.NewDatabase(db),
+		db:            trie.NewDatabase(db),
+		codeSizeCache: csc,
+		codeCache:     fastcache.New(codeCacheSize),
 	}
 }
 
+const (
+	// Number of codehash->size associations to keep.
+	codeSizeCacheSize = 100000
+
+	// Cache size granted for caching clean code.
+	codeCacheSize = 64 * 1024 * 1024
+)
+
 type storageDB struct {
-	db        *trie.NodeDatabase
-	mu        sync.Mutex
+	db *trie.NodeDatabase
+	mu sync.Mutex
+
+	codeSizeCache *lru.Cache
+	codeCache     *fastcache.Cache
 }
 
 // TrieDB retrieves the low level trie database used for data storage.
@@ -121,6 +140,23 @@ func (db *storageDB) CopyTrie(t Trie) Trie {
 
 // ContractCode retrieves a particular contract's code.
 func (db *storageDB) ContractCode(addrHash, codeHash common.Hash) ([]byte, error) {
-	code, err := db.db.Node(codeHash)
-	return code, err
+	if code := db.codeCache.Get(nil, codeHash.Bytes()); len(code) > 0 {
+		return code, nil
+	}
+	code, _ := db.db.Node(codeHash)
+	if len(code) > 0 {
+		db.codeCache.Set(codeHash.Bytes(), code)
+		db.codeSizeCache.Add(codeHash, len(code))
+		return code, nil
+	}
+	return nil, errors.New("not found")
+}
+
+// ContractCodeSize retrieves a particular contracts code's size.
+func (db *storageDB) ContractCodeSize(addrHash, codeHash common.Hash) (int, error) {
+	if cached, ok := db.codeSizeCache.Get(codeHash); ok {
+		return cached.(int), nil
+	}
+	code, err := db.ContractCode(addrHash, codeHash)
+	return len(code), err
 }
