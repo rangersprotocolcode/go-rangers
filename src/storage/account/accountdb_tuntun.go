@@ -20,6 +20,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/utility"
+	"fmt"
 	"math/big"
 )
 
@@ -338,20 +339,38 @@ func (adb *AccountDB) LockResource(sourceAddr, targetAddr common.Address, resour
 }
 
 // source 用户 解锁 存放在target(通常是nftSet)中 resource
-func (adb *AccountDB) UnLockResource(sourceAddr, targetAddr common.Address, demand types.LockResource) bool {
-	return adb.processResource(sourceAddr, targetAddr, "", "", demand, 1)
+func (adb *AccountDB) UnLockResource(sourceAddr, targetAddr common.Address, demand types.LockResource) (bool, string) {
+	flag, msg := adb.processResource(sourceAddr, targetAddr, "", "", demand, 1)
+	if !flag {
+		accountLog.Errorf(msg)
+	} else {
+		accountLog.Debugf(msg)
+	}
+	return flag, msg
 }
 
 // target(nftSet) mintNFT时，销毁
 // source 用户 锁定在target中 resource
-func (adb *AccountDB) DestroyResource(sourceAddr, targetAddr common.Address, demand types.LockResource) bool {
-	return adb.processResource(sourceAddr, targetAddr, "", "", demand, 2)
+func (adb *AccountDB) DestroyResource(sourceAddr, targetAddr common.Address, demand types.LockResource) (bool, string) {
+	flag, msg := adb.processResource(sourceAddr, targetAddr, "", "", demand, 2)
+	if !flag {
+		accountLog.Errorf(msg)
+	} else {
+		accountLog.Debugf(msg)
+	}
+	return flag, msg
 }
 
 // target(nftSet账户) comboNFT时，转移
 // source(资源提供方) 用户 锁定在target中的 resource到ComboResource
-func (adb *AccountDB) ComboResource(sourceAddr, targetAddr common.Address, setId, id string, demand types.LockResource) bool {
-	return adb.processResource(sourceAddr, targetAddr, setId, id, demand, 3)
+func (adb *AccountDB) ComboResource(sourceAddr, targetAddr common.Address, setId, id string, demand types.LockResource) (bool, string) {
+	flag, msg := adb.processResource(sourceAddr, targetAddr, setId, id, demand, 3)
+	if !flag {
+		accountLog.Errorf(msg)
+	} else {
+		accountLog.Debugf(msg)
+	}
+	return flag, msg
 }
 
 // 处理target中锁定的资源
@@ -359,12 +378,19 @@ func (adb *AccountDB) ComboResource(sourceAddr, targetAddr common.Address, setId
 // 1 解锁（返回给sourceAddr）
 // 2 mintNFT时，销毁对应的资源
 // 3 组合NFT时转移至nft的ComboResource中
-func (adb *AccountDB) processResource(sourceAddr, targetAddr common.Address, setId, id string, demand types.LockResource, kind byte) bool {
+func (adb *AccountDB) processResource(sourceAddr, targetAddr common.Address, setId, id string, demand types.LockResource, kind byte) (bool, string) {
 	var targetNFT *accountObject
 	if 3 == kind {
 		targetNFT = adb.getAccountObject(common.GenerateNFTAddress(setId, id), false)
-		if nil == targetNFT || !targetNFT.checkOwner(adb.db, sourceAddr) || 0 != targetNFT.getNFTStatus(adb.db) {
-			return false
+		if nil == targetNFT {
+			return false, fmt.Sprintf("setId: %s id: %s not existed", setId, id)
+		}
+		if !targetNFT.checkOwner(adb.db, sourceAddr) {
+			return false, fmt.Sprintf("setId: %s id: %s owner wrong: %s", setId, id, sourceAddr.GetHexString())
+		}
+		status := targetNFT.getNFTStatus(adb.db)
+		if 0 != status {
+			return false, fmt.Sprintf("setId: %s id: %s status error: %d", setId, id, status)
 		}
 	}
 
@@ -377,7 +403,7 @@ func (adb *AccountDB) processResource(sourceAddr, targetAddr common.Address, set
 	if 0 != len(balanceString) {
 		balance, err := utility.StrToBigInt(balanceString)
 		if nil != err || !target.unlockBalance(db, sourceAddr, balance) {
-			return false
+			return false, fmt.Sprintf("setId: %s id: %s balance error: %s", setId, id, balanceString)
 		}
 
 		switch kind {
@@ -400,7 +426,7 @@ func (adb *AccountDB) processResource(sourceAddr, targetAddr common.Address, set
 		for bnt, value := range bntMap {
 			amount, err := utility.StrToBigInt(value)
 			if err != nil || !target.unlockBNT(db, sourceAddr, bnt, amount) {
-				return false
+				return false, fmt.Sprintf("setId: %s id: %s bnt error: %s, %s", setId, id, bnt, value)
 			}
 
 			switch kind {
@@ -424,7 +450,7 @@ func (adb *AccountDB) processResource(sourceAddr, targetAddr common.Address, set
 		for ft, value := range ftMap {
 			amount, err := utility.StrToBigInt(value)
 			if err != nil || !target.unlockFT(db, sourceAddr, ft, amount) {
-				return false
+				return false, fmt.Sprintf("setId: %s id: %s ft error: %s, %s", setId, id, ft, value)
 			}
 
 			switch kind {
@@ -451,7 +477,7 @@ func (adb *AccountDB) processResource(sourceAddr, targetAddr common.Address, set
 
 			nft := adb.getAccountObject(common.GenerateNFTAddress(setId, id), false)
 			if nil == nft {
-				return false
+				return false, fmt.Sprintf("setId: %s id: %s not existed", setId, id)
 			}
 
 			nft.unlockNFTSelf(db)
@@ -472,7 +498,7 @@ func (adb *AccountDB) processResource(sourceAddr, targetAddr common.Address, set
 		}
 	}
 
-	return true
+	return true, ""
 }
 
 // 查询target中所有的锁定的资源情况

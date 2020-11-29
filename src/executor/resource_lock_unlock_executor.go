@@ -54,12 +54,7 @@ func (this *resourceLockUnLockExecutor) Execute(transaction *types.Transaction, 
 		}
 		break
 	case types.TransactionTypeUnLockResource:
-		success = accountdb.UnLockResource(common.HexToAddress(transaction.Source), common.GenerateNFTSetAddress(transaction.Target), resource)
-		if success {
-			msg = "resource unlocked successful"
-		} else {
-			msg = "resource unlocked failed"
-		}
+		success, msg = accountdb.UnLockResource(common.HexToAddress(transaction.Source), common.GenerateNFTSetAddress(transaction.Target), resource)
 		break
 	case types.TransactionTypeComboNFT:
 		success, msg = service.ComboNFT(accountdb, transaction)
