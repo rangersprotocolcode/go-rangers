@@ -18,6 +18,7 @@ package vm
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/storage/account"
 	"github.com/holiman/uint256"
 	"math/big"
@@ -49,8 +50,8 @@ func (*dummyStatedb) GetRefund() uint64 { return 1337 }
 
 func TestStoreCapture(t *testing.T) {
 	var (
-		env      = NewEVM(Context{}, &dummyStatedb{}, testChainID, Config{})
-		logger   = NewStructLogger(nil)
+		env      = NewEVM(Context{}, &dummyStatedb{})
+		logger   = NewStructLogger(nil, log.GetLoggerByIndex(log.VMLogConfig, ""))
 		mem      = NewMemory()
 		stack    = newstack()
 		rstack   = newReturnStack()
