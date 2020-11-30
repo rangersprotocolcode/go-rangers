@@ -19,8 +19,8 @@
 package crypto
 
 import (
+	"com.tuntun.rocket/node/src/common/secp256k1"
 	"com.tuntun.rocket/node/src/utility"
-	"com.tuntun.rocket/node/src/vm/crypto/secp256k1"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"fmt"
