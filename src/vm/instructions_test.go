@@ -94,7 +94,7 @@ var testChainID = big.NewInt(0)
 func testTwoOperandOp(t *testing.T, tests []TwoOperandTestcase, opFn executionFunc, name string) {
 
 	var (
-		env            = NewEVM(Context{}, nil, testChainID, Config{})
+		env            = NewEVM(Context{}, nil)
 		stack          = newstack()
 		rstack         = newReturnStack()
 		pc             = uint64(0)
