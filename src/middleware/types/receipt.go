@@ -45,6 +45,7 @@ type Receipt struct {
 	TxHash            common.Hash `json:"transactionHash" gencodec:"required"`
 	Msg               string      `json:"-"`
 	Source            string      `json:"-"`
+	Logs              []*Log      `json:"logs" gencodec:"required"`
 }
 
 func NewReceipt(root []byte, failed bool, cumulativeGasUsed uint64, height uint64, msg, source string) *Receipt {

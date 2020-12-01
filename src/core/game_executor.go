@@ -400,7 +400,7 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw
 		executor.logger.Errorf("finish tx. hash: %s, failed. not enough max", txhash)
 		return result, message
 	}
-
+	accountDB.Prepare(txRaw.Hash, common.Hash{}, 0)
 	snapshot := accountDB.Snapshot()
 	result, message = processor.Execute(&txRaw, nil, accountDB, context)
 	if !result {

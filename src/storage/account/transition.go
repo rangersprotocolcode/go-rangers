@@ -80,6 +80,17 @@ type (
 	}
 )
 
+func (ch addLogChange) undo(s *AccountDB) {
+	logs := s.logs[ch.txhash]
+	if len(logs) == 1 {
+		delete(s.logs, ch.txhash)
+	} else {
+		s.logs[ch.txhash] = logs[:len(logs)-1]
+	}
+	s.logSize--
+
+}
+
 func (ch createObjectChange) undo(s *AccountDB) {
 	s.accountObjects.Delete(*ch.account)
 	delete(s.accountObjectsDirty, *ch.account)

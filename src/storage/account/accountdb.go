@@ -78,6 +78,11 @@ type AccountDB struct {
 	transitions    transition
 	validRevisions []revision
 	nextRevisionID int
+
+	thash, bhash common.Hash
+	txIndex      int
+	logs         map[common.Hash][]*types.Log
+	logSize      uint
 }
 
 // Create a new account from a given trie.
@@ -93,6 +98,7 @@ func NewAccountDB(root common.Hash, db AccountDatabase) (*AccountDB, error) {
 		accountObjectsDirty: make(map[common.Address]struct{}),
 		accountObjectsLock:  new(sync.Mutex),
 		accessList:          newAccessList(),
+		logs:                make(map[common.Hash][]*types.Log),
 	}
 	return accountDb, nil
 }
@@ -127,6 +133,11 @@ func (adb *AccountDB) Reset(root common.Hash) error {
 	adb.accountObjectsDirty = make(map[common.Address]struct{})
 	adb.clearJournalAndRefund()
 	adb.accessList = newAccessList()
+	adb.thash = common.Hash{}
+	adb.bhash = common.Hash{}
+	adb.txIndex = 0
+	adb.logs = make(map[common.Hash][]*types.Log)
+	adb.logSize = 0
 	return nil
 }
 
@@ -135,6 +146,15 @@ func (adb *AccountDB) Clean() {
 	adb.accountObjectsLock = new(sync.Mutex)
 	adb.accountObjectsDirty = make(map[common.Address]struct{})
 	adb.clearJournalAndRefund()
+}
+
+// Prepare sets the current transaction hash and index and block hash which is
+// used when the EVM emits new state logs.
+func (s *AccountDB) Prepare(thash, bhash common.Hash, ti int) {
+	s.thash = thash
+	s.bhash = bhash
+	s.txIndex = ti
+	s.accessList = newAccessList()
 }
 
 // AddRefund adds gas to the refund counter
@@ -686,12 +706,16 @@ func (adb *AccountDB) AddSlotToAccessList(addr common.Address, slot common.Hash)
 }
 
 func (adb *AccountDB) AddLog(log *types.Log) {
-	//s.journal.append(addLogChange{txhash: s.thash})
-	//
-	//log.TxHash = s.thash
-	//log.BlockHash = s.bhash
-	//log.TxIndex = uint(s.txIndex)
-	//log.Index = s.logSize
-	//s.logs[s.thash] = append(s.logs[s.thash], log)
-	//s.logSize++
+	adb.transitions = append(adb.transitions, addLogChange{txhash: adb.thash})
+
+	log.TxHash = adb.thash
+	log.BlockHash = adb.bhash
+	log.TxIndex = uint(adb.txIndex)
+	log.Index = adb.logSize
+	adb.logs[adb.thash] = append(adb.logs[adb.thash], log)
+	adb.logSize++
+}
+
+func (s *AccountDB) GetLogs(hash common.Hash) []*types.Log {
+	return s.logs[hash]
 }
