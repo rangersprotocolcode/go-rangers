@@ -19,6 +19,7 @@ package account
 import (
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/vm/crypto"
 	"fmt"
 	"math/big"
 	"sort"
@@ -571,39 +572,37 @@ func (adb *AccountDB) CreateAccount(addr common.Address) {
 }
 
 func (adb *AccountDB) GetCode(addr common.Address) []byte {
-	//stateObject := s.getStateObject(addr)
-	//if stateObject != nil {
-	//	return stateObject.Code(s.db)
-	//}
-	//todo
+	stateObject := adb.getAccountObject(addr, false)
+	if stateObject != nil {
+		return stateObject.Code(adb.db)
+	}
 	return nil
 }
 
 func (adb *AccountDB) GetCodeSize(addr common.Address) int {
-	//stateObject := s.getStateObject(addr)
-	//if stateObject != nil {
-	//	return stateObject.CodeSize(s.db)
-	//}
-	//todo
+	stateObject := adb.getAccountObject(addr, false)
+	if stateObject != nil {
+		return stateObject.CodeSize(adb.db)
+	}
 	return 0
 }
 
 func (adb *AccountDB) GetCodeHash(addr common.Address) common.Hash {
-	//stateObject := s.getStateObject(addr)
-	//if stateObject == nil {
-	//	return common.Hash{}
-	//}
-	//return common.BytesToHash(stateObject.CodeHash())
-	//todo
+	stateObject := adb.getAccountObject(addr, false)
+	if stateObject == nil {
+		return common.Hash{}
+	}
+	return common.BytesToHash(stateObject.CodeHash())
+
 	return common.Hash{}
 }
 
 func (adb *AccountDB) SetCode(addr common.Address, code []byte) {
-	//stateObject := s.GetOrNewStateObject(addr)
-	//if stateObject != nil {
-	//	stateObject.SetCode(crypto.Keccak256Hash(code), code)
-	//}
-	//todo
+	stateObject := adb.GetOrNewAccountObject(addr)
+	if stateObject != nil {
+		stateObject.SetCode(crypto.Keccak256Hash(code), code)
+	}
+
 }
 
 // SubRefund removes gas from the refund counter.
