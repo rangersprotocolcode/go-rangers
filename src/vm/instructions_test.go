@@ -23,7 +23,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"math/big"
 	"testing"
 
 	"github.com/holiman/uint256"
@@ -88,8 +87,6 @@ func init() {
 		"sar":     opSAR,
 	}
 }
-
-var testChainID = big.NewInt(0)
 
 func testTwoOperandOp(t *testing.T, tests []TwoOperandTestcase, opFn executionFunc, name string) {
 
@@ -278,6 +275,30 @@ func TestJsonTestcases(t *testing.T) {
 		var testcases []TwoOperandTestcase
 		json.Unmarshal(data, &testcases)
 		testTwoOperandOp(t, testcases, twoOpMethods[name], name)
+	}
+}
+
+func TestOpMstore(t *testing.T) {
+	var (
+		env            = NewEVM(Context{}, nil)
+		stack, rstack  = newstack(), newReturnStack()
+		mem            = NewMemory()
+		evmInterpreter = NewEVMInterpreter(env)
+	)
+
+	env.interpreter = evmInterpreter
+	mem.Resize(64)
+	pc := uint64(0)
+	v := "abcdef00000000000000abba000000000deaf000000c0de00100000000133700"
+	stack.pushN(*new(uint256.Int).SetBytes(common.Hex2Bytes(v)), *new(uint256.Int))
+	opMstore(&pc, evmInterpreter, &callCtx{mem, stack, rstack, nil})
+	if got := common.Bytes2Hex(mem.GetCopy(0, 32)); got != v {
+		t.Fatalf("Mstore fail, got %v, expected %v", got, v)
+	}
+	stack.pushN(*new(uint256.Int).SetUint64(0x1), *new(uint256.Int))
+	opMstore(&pc, evmInterpreter, &callCtx{mem, stack, rstack, nil})
+	if common.Bytes2Hex(mem.GetCopy(0, 32)) != "0000000000000000000000000000000000000000000000000000000000000001" {
+		t.Fatalf("Mstore failed to overwrite previous value")
 	}
 }
 
@@ -513,30 +534,6 @@ func BenchmarkOpSAR(b *testing.B) {
 func BenchmarkOpIsZero(b *testing.B) {
 	x := "FBCDEF090807060504030201ffffffffFBCDEF090807060504030201ffffffff"
 	opBenchmark(b, opIszero, x)
-}
-
-func TestOpMstore(t *testing.T) {
-	var (
-		env            = NewEVM(Context{}, nil)
-		stack, rstack  = newstack(), newReturnStack()
-		mem            = NewMemory()
-		evmInterpreter = NewEVMInterpreter(env)
-	)
-
-	env.interpreter = evmInterpreter
-	mem.Resize(64)
-	pc := uint64(0)
-	v := "abcdef00000000000000abba000000000deaf000000c0de00100000000133700"
-	stack.pushN(*new(uint256.Int).SetBytes(common.Hex2Bytes(v)), *new(uint256.Int))
-	opMstore(&pc, evmInterpreter, &callCtx{mem, stack, rstack, nil})
-	if got := common.Bytes2Hex(mem.GetCopy(0, 32)); got != v {
-		t.Fatalf("Mstore fail, got %v, expected %v", got, v)
-	}
-	stack.pushN(*new(uint256.Int).SetUint64(0x1), *new(uint256.Int))
-	opMstore(&pc, evmInterpreter, &callCtx{mem, stack, rstack, nil})
-	if common.Bytes2Hex(mem.GetCopy(0, 32)) != "0000000000000000000000000000000000000000000000000000000000000001" {
-		t.Fatalf("Mstore failed to overwrite previous value")
-	}
 }
 
 func BenchmarkOpMstore(bench *testing.B) {

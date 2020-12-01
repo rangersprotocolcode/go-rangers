@@ -57,6 +57,7 @@ func TestStoreCapture(t *testing.T) {
 		rstack   = newReturnStack()
 		contract = NewContract(&dummyContractRef{}, &dummyContractRef{}, new(big.Int), 0)
 	)
+	defer log.Close()
 	stack.push(uint256.NewInt().SetUint64(1))
 	stack.push(uint256.NewInt())
 	var index common.Hash
