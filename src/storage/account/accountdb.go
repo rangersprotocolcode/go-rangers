@@ -589,11 +589,7 @@ func (adb *AccountDB) Commit(deleteEmptyObjects bool) (root common.Hash, err err
 //
 // Carrying over the balance ensures that Ether doesn't disappear.
 func (adb *AccountDB) CreateAccount(addr common.Address) {
-	//newObj, prev := s.createObject(addr)
-	//if prev != nil {
-	//	newObj.setBalance(prev.data.Balance)
-	//}
-	//todo
+	adb.getOrNewAccountObject(addr)
 }
 
 func (adb *AccountDB) GetCode(addr common.Address) []byte {
