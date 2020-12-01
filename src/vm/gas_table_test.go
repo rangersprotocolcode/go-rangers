@@ -17,7 +17,11 @@
 package vm
 
 import (
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/db"
+	"com.tuntun.rocket/node/src/storage/account"
 	"math"
+	"math/big"
 	"testing"
 )
 
@@ -70,33 +74,40 @@ var eip2200Tests = []struct {
 	{1, 2307, "0x6001600055", 806, 0, nil},                                     // 1 -> 1 (2301 sentry + 2xPUSH)
 }
 
-//
-//func TestEIP2200(t *testing.T) {
-//	for i, tt := range eip2200Tests {
-//		address := common.BytesToAddress([]byte("contract"))
-//
-//		//todo
-//		statedb, _ := account.NewAccountDB(common.Hash{}, account.NewDatabase(b.NewLDBDatabase("test", 0, 0))
-//		statedb.CreateAccount(address)
-//		statedb.SetCode(address, common.MustDecode(tt.input))
-//		statedb.SetState(address, common.Hash{}, common.BytesToHash([]byte{tt.original}))
-//		statedb.Finalise(true) // Push the state into the "original" slot
-//
-//		vmctx := Context{
-//			CanTransfer: func(StateDB, common.Address, *big.Int) bool { return true },
-//			Transfer:    func(StateDB, common.Address, common.Address, *big.Int) {},
-//		}
-//		vmenv := NewEVM(vmctx, statedb, AllEthashProtocolChanges, Config{ExtraEips: []int{2200}})
-//
-//		_, gas, err := vmenv.Call(AccountRef(common.Address{}), address, nil, tt.gaspool, new(big.Int))
-//		if err != tt.failure {
-//			t.Errorf("test %d: failure mismatch: have %v, want %v", i, err, tt.failure)
-//		}
-//		if used := tt.gaspool - gas; used != tt.used {
-//			t.Errorf("test %d: gas used mismatch: have %v, want %v", i, used, tt.used)
-//		}
-//		if refund := vmenv.StateDB.GetRefund(); refund != tt.refund {
-//			t.Errorf("test %d: gas refund mismatch: have %v, want %v", i, refund, tt.refund)
-//		}
-//	}
-//}
+func TestEIP2200(t *testing.T) {
+	common.InitConf("1.ini")
+	InitVM()
+
+	for i, tt := range eip2200Tests {
+		address := common.BytesToAddress([]byte("contract"))
+
+		database, _ := db.NewLDBDatabase("test", 0, 0)
+		statedb, _ := account.NewAccountDB(common.Hash{}, account.NewDatabase(database))
+		statedb.CreateAccount(address)
+		statedb.SetCode(address, common.MustDecode(tt.input))
+		statedb.SetState(address, common.Hash{}, common.BytesToHash([]byte{tt.original}))
+		statedb.Finalise(true) // Push the state into the "original" slot
+
+		vmctx := Context{
+			CanTransfer: func(StateDB, common.Address, *big.Int) bool { return true },
+			Transfer:    func(StateDB, common.Address, common.Address, *big.Int) {},
+		}
+		vmenv := NewEVM(vmctx, statedb)
+
+		//our vm default use the last instruction,here set jump table use EIP2200 force for test
+		interpreter := vmenv.interpreter.(*EVMInterpreter)
+		interpreter.jumpTable[SLOAD].constantGas = SloadGasEIP2200
+		interpreter.jumpTable[SSTORE].dynamicGas = gasSStoreEIP2200
+
+		_, gas, err := vmenv.Call(AccountRef(common.Address{}), address, nil, tt.gaspool, new(big.Int))
+		if err != tt.failure {
+			t.Errorf("test %d: failure mismatch: have %v, want %v", i, err, tt.failure)
+		}
+		if used := tt.gaspool - gas; used != tt.used {
+			t.Errorf("test %d: gas used mismatch: have %v, want %v", i, used, tt.used)
+		}
+		if refund := vmenv.StateDB.GetRefund(); refund != tt.refund {
+			t.Errorf("test %d: gas refund mismatch: have %v, want %v", i, refund, tt.refund)
+		}
+	}
+}

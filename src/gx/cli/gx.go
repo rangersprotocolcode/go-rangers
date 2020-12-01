@@ -30,6 +30,7 @@ import (
 	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/statemachine"
+	"com.tuntun.rocket/node/src/vm"
 	"encoding/json"
 	"fmt"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -160,6 +161,7 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 
 	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr)
 	service.InitService()
+	vm.InitVM()
 
 	err := core.InitCore(consensus.NewConsensusHelper(minerInfo.ID))
 	if err != nil {

@@ -14,21 +14,18 @@ type LogConfig struct {
 	DisableReturnData bool // disable return data capture
 }
 
-var chainID *big.Int
-var vmTracer Tracer
-
 /**
 chainID:
 0  main net
 1  dev net
 2  test net
 */
-func InitVM(chainID *big.Int) {
-	if chainID == nil {
-		chainID = big.NewInt(0)
-	} else {
-		chainID = chainID
-	}
+var chainID *big.Int
+var vmTracer Tracer
+
+func InitVM() {
+	//todo configurable?
+	chainID = big.NewInt(0)
 
 	index := common.GlobalConf.GetString("instance", "index", "")
 	logger := log.GetLoggerByIndex(log.VMLogConfig, index)
@@ -38,4 +35,16 @@ func InitVM(chainID *big.Int) {
 		cfg:    &config,
 		logger: logger,
 	}
+}
+
+// CanTransfer checks whether there are enough funds in the address' account to make a transfer.
+// This does not take the necessary gas in to account to make the transfer valid.
+func CanTransfer(db StateDB, addr common.Address, amount *big.Int) bool {
+	return db.GetBalance(addr).Cmp(amount) >= 0
+}
+
+// Transfer subtracts amount from sender and adds amount to recipient using the given Db
+func Transfer(db StateDB, sender, recipient common.Address, amount *big.Int) {
+	db.SubBalance(sender, amount)
+	db.AddBalance(recipient, amount)
 }

@@ -353,10 +353,8 @@ func (t *mdLogger) CaptureStart(from common.Address, to common.Address, create b
 			input, gas, value)
 	}
 
-	t.logger.Debugf(`
-|  Pc   |      Op     | Cost |   Stack   |   RStack  |  Refund |
-|-------|-------------|------|-----------|-----------|---------|
-`)
+	t.logger.Debugf(`|  Pc   |      Op     | Cost |   Stack   |   RStack  |  Refund |`)
+	t.logger.Debugf(`|-------|-------------|------|-----------|-----------|---------|`)
 	return nil
 }
 
