@@ -629,12 +629,12 @@ func (adb *AccountDB) SetCode(addr common.Address, code []byte) {
 // SubRefund removes gas from the refund counter.
 // This method will panic if the refund counter goes below zero
 func (adb *AccountDB) SubRefund(gas uint64) {
-	//s.journal.append(refundChange{prev: s.refund})
-	//if gas > s.refund {
-	//	panic(fmt.Sprintf("Refund counter below zero (gas: %d > refund: %d)", gas, s.refund))
-	//}
-	//s.refund -= gas
-	//todo
+	adb.transitions = append(adb.transitions, refundChange{prev: adb.refund})
+	if gas > adb.refund {
+		panic(fmt.Sprintf("Refund counter below zero (gas: %d > refund: %d)", gas, adb.refund))
+	}
+	adb.refund -= gas
+
 }
 
 // GetCommittedState retrieves a value from the given account's committed storage trie.
