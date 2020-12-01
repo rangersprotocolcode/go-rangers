@@ -70,6 +70,14 @@ type (
 		prev      bool
 		prevDirty bool
 	}
+	// Changes to the access list
+	accessListAddAccountChange struct {
+		address *common.Address
+	}
+	accessListAddSlotChange struct {
+		address *common.Address
+		slot    *common.Hash
+	}
 )
 
 func (ch createObjectChange) undo(s *AccountDB) {
@@ -120,3 +128,10 @@ func (ch nftSetDefinitionChange) undo(s *AccountDB) {
 	s.getAccountObject(*ch.account, false).setNFTSetDefinition(common.BytesToHash(ch.prevhash), ch.prev)
 }
 
+func (ch accessListAddAccountChange) undo(s *AccountDB) {
+	s.accessList.DeleteAddress(*ch.address)
+}
+
+func (ch accessListAddSlotChange) undo(s *AccountDB) {
+	s.accessList.DeleteSlot(*ch.address, *ch.slot)
+}

@@ -59,6 +59,9 @@ type AccountDB struct {
 	db   AccountDatabase
 	trie Trie
 
+	// Per-transaction access list
+	accessList *accessList
+
 	accountObjectsLock  *sync.Mutex
 	accountObjects      *sync.Map
 	accountObjectsDirty map[common.Address]struct{}
@@ -89,6 +92,7 @@ func NewAccountDB(root common.Hash, db AccountDatabase) (*AccountDB, error) {
 		accountObjects:      new(sync.Map),
 		accountObjectsDirty: make(map[common.Address]struct{}),
 		accountObjectsLock:  new(sync.Mutex),
+		accessList:          newAccessList(),
 	}
 	return accountDb, nil
 }
@@ -122,6 +126,7 @@ func (adb *AccountDB) Reset(root common.Hash) error {
 	adb.accountObjectsLock = new(sync.Mutex)
 	adb.accountObjectsDirty = make(map[common.Address]struct{})
 	adb.clearJournalAndRefund()
+	adb.accessList = newAccessList()
 	return nil
 }
 
@@ -646,43 +651,38 @@ func (adb *AccountDB) SetState(addr common.Address, key, value common.Hash) {
 
 // AddressInAccessList returns true if the given address is in the access list.
 func (adb *AccountDB) AddressInAccessList(addr common.Address) bool {
-	//return s.accessList.ContainsAddress(addr)
-	//todo
-	return false
+	return adb.accessList.ContainsAddress(addr)
 }
 
 // SlotInAccessList returns true if the given (address, slot)-tuple is in the access list.
 func (adb *AccountDB) SlotInAccessList(addr common.Address, slot common.Hash) (addressPresent bool, slotPresent bool) {
-	//return s.accessList.Contains(addr, slot)
-	//todo
-	return false, false
+	return adb.accessList.Contains(addr, slot)
 }
 
 // AddAddressToAccessList adds the given address to the access list
 func (adb *AccountDB) AddAddressToAccessList(addr common.Address) {
-	//if s.accessList.AddAddress(addr) {
-	//	s.journal.append(accessListAddAccountChange{&addr})
-	//}
-	//todo
+	if adb.accessList.AddAddress(addr) {
+		adb.transitions = append(adb.transitions, accessListAddAccountChange{&addr})
+	}
 }
 
 // AddSlotToAccessList adds the given (address, slot)-tuple to the access list
 func (adb *AccountDB) AddSlotToAccessList(addr common.Address, slot common.Hash) {
-	//addrMod, slotMod := s.accessList.AddSlot(addr, slot)
-	//if addrMod {
-	//	// In practice, this should not happen, since there is no way to enter the
-	//	// scope of 'address' without having the 'address' become already added
-	//	// to the access list (via call-variant, create, etc).
-	//	// Better safe than sorry, though
-	//	s.journal.append(accessListAddAccountChange{&addr})
-	//}
-	//if slotMod {
-	//	s.journal.append(accessListAddSlotChange{
-	//		address: &addr,
-	//		slot:    &slot,
-	//	})
-	//}
-	//todo
+	addrMod, slotMod := adb.accessList.AddSlot(addr, slot)
+	if addrMod {
+		// In practice, this should not happen, since there is no way to enter the
+		// scope of 'address' without having the 'address' become already added
+		// to the access list (via call-variant, create, etc).
+		// Better safe than sorry, though
+		adb.transitions = append(adb.transitions, accessListAddAccountChange{&addr})
+	}
+	if slotMod {
+		adb.transitions = append(adb.transitions, accessListAddSlotChange{
+			address: &addr,
+			slot:    &slot,
+		})
+	}
+
 }
 
 func (adb *AccountDB) AddLog(log *types.Log) {
@@ -694,17 +694,6 @@ func (adb *AccountDB) AddLog(log *types.Log) {
 	//log.Index = s.logSize
 	//s.logs[s.thash] = append(s.logs[s.thash], log)
 	//s.logSize++
-}
-
-// AddPreimage records a SHA3 preimage seen by the VM.
-func (adb *AccountDB) AddPreimage(hash common.Hash, preimage []byte) {
-	//if _, ok := s.preimages[hash]; !ok {
-	//	s.journal.append(addPreimageChange{hash: hash})
-	//	pi := make([]byte, len(preimage))
-	//	copy(pi, preimage)
-	//	s.preimages[hash] = pi
-	//}
-	//todo
 }
 
 func (adb *AccountDB) ForEachStorage(addr common.Address, cb func(key, value common.Hash) bool) error {
