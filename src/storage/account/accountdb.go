@@ -695,33 +695,3 @@ func (adb *AccountDB) AddLog(log *types.Log) {
 	//s.logs[s.thash] = append(s.logs[s.thash], log)
 	//s.logSize++
 }
-
-func (adb *AccountDB) ForEachStorage(addr common.Address, cb func(key, value common.Hash) bool) error {
-	//so := db.getStateObject(addr)
-	//if so == nil {
-	//	return nil
-	//}
-	//it := trie.NewIterator(so.getTrie(db.db).NodeIterator(nil))
-	//
-	//for it.Next() {
-	//	key := common.BytesToHash(db.trie.GetKey(it.Key))
-	//	if value, dirty := so.dirtyStorage[key]; dirty {
-	//		if !cb(key, value) {
-	//			return nil
-	//		}
-	//		continue
-	//	}
-	//
-	//	if len(it.Value) > 0 {
-	//		_, content, _, err := rlp.Split(it.Value)
-	//		if err != nil {
-	//			return err
-	//		}
-	//		if !cb(key, common.BytesToHash(content)) {
-	//			return nil
-	//		}
-	//	}
-	//}
-	//todo
-	return nil
-}
