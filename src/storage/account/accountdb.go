@@ -598,7 +598,7 @@ func (adb *AccountDB) GetCodeHash(addr common.Address) common.Hash {
 }
 
 func (adb *AccountDB) SetCode(addr common.Address, code []byte) {
-	stateObject := adb.GetOrNewAccountObject(addr)
+	stateObject := adb.getAccountObject(addr, true)
 	if stateObject != nil {
 		stateObject.SetCode(crypto.Keccak256Hash(code), code)
 	}
@@ -618,30 +618,30 @@ func (adb *AccountDB) SubRefund(gas uint64) {
 
 // GetCommittedState retrieves a value from the given account's committed storage trie.
 func (adb *AccountDB) GetCommittedState(addr common.Address, hash common.Hash) common.Hash {
-	//stateObject := s.getStateObject(addr)
-	//if stateObject != nil {
-	//	return stateObject.GetCommittedState(s.db, hash)
-	//}
-	//todo
+	stateObject := adb.getAccountObject(addr, false)
+	if stateObject != nil {
+		return common.BytesToHash(stateObject.GetCommittedData(adb.db, hash.Bytes()))
+	}
+
 	return common.Hash{}
 }
 
 // GetState retrieves a value from the given account's storage trie.
 func (adb *AccountDB) GetState(addr common.Address, hash common.Hash) common.Hash {
-	//stateObject := s.getStateObject(addr)
-	//if stateObject != nil {
-	//	return stateObject.GetState(s.db, hash)
-	//}
-	//todo
+	stateObject := adb.getAccountObject(addr, false)
+	if stateObject != nil {
+		data := stateObject.GetData(adb.db, hash.Bytes())
+		return common.BytesToHash(data)
+	}
+
 	return common.Hash{}
 }
 
 func (adb *AccountDB) SetState(addr common.Address, key, value common.Hash) {
-	//stateObject := s.GetOrNewStateObject(addr)
-	//if stateObject != nil {
-	//	stateObject.SetState(s.db, key, value)
-	//}
-	//todo
+	stateObject := adb.getAccountObject(addr, true)
+	if stateObject != nil {
+		stateObject.SetData(adb.db, key.Bytes(), value.Bytes())
+	}
 }
 
 // AddressInAccessList returns true if the given address is in the access list.
@@ -735,9 +735,4 @@ func (adb *AccountDB) ForEachStorage(addr common.Address, cb func(key, value com
 	//}
 	//todo
 	return nil
-}
-
-//有小写开头的同名方法
-func (adb *AccountDB) GetOrNewAccountObject(addr common.Address) *accountObject {
-	return adb.getAccountObject(addr, true)
 }

@@ -179,10 +179,15 @@ func (ao *accountObject) GetData(db AccountDatabase, key []byte) []byte {
 	if exists {
 		return value
 	}
+
 	// Otherwise load the value from the database
+	return ao.GetCommittedData(db, key)
+}
+
+func (ao *accountObject) GetCommittedData(db AccountDatabase, key []byte) []byte {
 	trie := ao.getTrie(db)
 	if nil == trie {
-		common.DefaultLogger.Errorf("Account Obj get date nil! address:%s,key:%s", ao.address.GetHexString(), common.ToHex(key))
+		accountLog.Errorf("Account Obj get date nil! address:%s,key:%s", ao.address.GetHexString(), common.ToHex(key))
 		return nil
 	}
 	value, err := trie.TryGet(key)
@@ -201,10 +206,15 @@ func (ao *accountObject) GetData(db AccountDatabase, key []byte) []byte {
 
 // SetData updates a value in account storage.
 func (ao *accountObject) SetData(db AccountDatabase, key []byte, value []byte) {
+	preValue := ao.GetData(db, key)
+	if 0 == bytes.Compare(value, preValue) {
+		return
+	}
+
 	ao.db.transitions = append(ao.db.transitions, storageChange{
 		account:  &ao.address,
 		key:      key,
-		prevalue: ao.GetData(db, key),
+		prevalue: preValue,
 	})
 	ao.setData(key, value)
 }
