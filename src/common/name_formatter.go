@@ -27,6 +27,7 @@ const (
 	FTPrefix       = "f:"
 	NFTPrefix      = "n:"
 	NFTSetPrefix   = "ns:"
+	LotteryPrefix  = "lp:"
 	LockPrefix     = "l:"
 	LockBalanceKey = LockPrefix + "ba"
 	LockBNTKey     = LockPrefix + "bn"
@@ -66,6 +67,11 @@ func SplitNFTKey(key string) (string, string) {
 	}
 
 	return idList[1], idList[2]
+}
+
+func GenerateLotteryAddress(owner string, nonce uint64) Address {
+	addr := fmt.Sprintf("%s%s%d", LotteryPrefix, owner, nonce)
+	return BytesToAddress(Sha256(utility.StrToBytes(addr)))
 }
 
 func GenerateNFTSetAddress(setId string) Address {

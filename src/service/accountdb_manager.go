@@ -32,6 +32,7 @@ type AccountDBManager struct {
 	stateDB       account.AccountDatabase
 	latestStateDB *account.AccountDB
 	requestId     uint64
+	height        uint64
 	debug         bool // debug 为true，则不开启requestId校验
 	logger        log.Logger
 }
@@ -74,7 +75,7 @@ func (manager *AccountDBManager) GetTrieDB() *trie.NodeDatabase {
 	return manager.stateDB.TrieDB()
 }
 
-func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *account.AccountDB {
+func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) (*account.AccountDB, uint64) {
 	waited := false
 	req := manager.requestId
 
@@ -86,7 +87,7 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *accou
 			// 已经执行过的消息，忽略
 			manager.logger.Errorf("%s requestId :%d skipped, current requestId: %d", "", nonce, manager.requestId)
 			manager.getCond().L.Unlock()
-			return nil
+			return nil, 0
 		}
 
 		for nonce != (manager.requestId + 1) {
@@ -103,11 +104,11 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) *accou
 	if waited {
 		manager.logger.Infof("requestId: %d waited, since: %d", nonce, req)
 	}
-	return manager.latestStateDB
+	return manager.latestStateDB, manager.height
 }
 
 //
-func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *account.AccountDB, nonce uint64, msg string) {
+func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *account.AccountDB, nonce uint64, msg string, height uint64) {
 	defer manager.getCond().L.Unlock()
 	if !manager.debug && msg != "gameExecutor" {
 		//manager.getCond().L.Unlock()
@@ -119,6 +120,7 @@ func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *accoun
 			manager.latestStateDB = latestStateDB
 		}
 
+		manager.height = height
 		manager.requestId = nonce
 		manager.logger.Warnf("accountDB set success. requestId: %d, current: %d, msg: %s", nonce, manager.requestId, msg)
 
@@ -132,10 +134,10 @@ func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *accoun
 	manager.logger.Warnf("accountDB not set. requestId: %d, current: %d, msg: %s", nonce, manager.requestId, msg)
 }
 
-func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.AccountDB, requestIds map[string]uint64) {
+func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.AccountDB, requestIds map[string]uint64, height uint64) {
 	key := "fixed"
 	value := requestIds[key]
-	manager.SetLatestStateDBWithNonce(latestStateDB, value, "add block")
+	manager.SetLatestStateDBWithNonce(latestStateDB, value, "add block", height)
 }
 
 func (manager *AccountDBManager) getCond() *sync.Cond {

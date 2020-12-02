@@ -233,11 +233,12 @@ func (adb *AccountDB) SetNonce(addr common.Address, nonce uint64) {
 	}
 }
 
-func (adb *AccountDB) IncreaseNonce(addr common.Address) {
+func (adb *AccountDB) IncreaseNonce(addr common.Address) uint64 {
 	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {
-		stateObject.IncreaseNonce()
+		return stateObject.IncreaseNonce()
 	}
+	return 0
 }
 
 func (adb *AccountDB) SetData(addr common.Address, key []byte, value []byte) {
@@ -253,6 +254,32 @@ func (adb *AccountDB) SetNFTSetDefinition(addr common.Address, code []byte, owne
 		stateObject.SetNFTSetDefinition(sha3.Sum256(code), code)
 		stateObject.SetNFTSetOwner(adb.db, owner)
 	}
+}
+
+func (adb *AccountDB) SetLotteryDefinition(addr common.Address, code []byte, owner string) {
+	stateObject := adb.getOrNewAccountObject(addr)
+	if stateObject != nil {
+		stateObject.SetLotteryDefinition(sha3.Sum256(code), code)
+		stateObject.SetLotteryOwner(adb.db, owner)
+	}
+}
+
+func (adb *AccountDB) GetLotteryDefinition(addr common.Address) []byte {
+	accountObject := adb.getAccountObject(addr, false)
+	if nil == accountObject {
+		return nil
+	}
+
+	return accountObject.GetLotteryDefinition(adb.db)
+}
+
+func (adb *AccountDB) GetLotteryOwner(addr common.Address) string {
+	accountObject := adb.getAccountObject(addr, false)
+	if nil == accountObject {
+		return ""
+	}
+
+	return accountObject.GetLotteryOwner(adb.db)
 }
 
 // GetCode returns the contract code associated with this object, if any.

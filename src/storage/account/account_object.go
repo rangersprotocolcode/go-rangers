@@ -346,12 +346,13 @@ func (ao *accountObject) DataIterator(db AccountDatabase, prefix []byte) *trie.I
 	return trie.NewIterator(ao.trie.NodeIterator(prefix))
 }
 
-func (ao *accountObject) IncreaseNonce() {
+func (ao *accountObject) IncreaseNonce() uint64 {
 	ao.db.transitions = append(ao.db.transitions, nonceChange{
 		account: &ao.address,
 		prev:    ao.data.Nonce,
 	})
 	ao.setNonce(ao.data.Nonce + 1)
+	return ao.data.Nonce
 }
 
 // setNFTSetDefinition update nonce in account storage.

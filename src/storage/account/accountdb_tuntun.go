@@ -260,6 +260,15 @@ func (adb *AccountDB) GetNFTSet(setId string) *types.NFTSet {
 	return accountObject.GetNFTSet(adb.db)
 }
 
+func (adb *AccountDB) GetNFTSetDefinition(setId string) *types.NFTSet {
+	accountObject := adb.getAccountObject(common.GenerateNFTSetAddress(setId), false)
+	if nil == accountObject {
+		return nil
+	}
+
+	return accountObject.GetNFTSetDefinition(adb.db)
+}
+
 // source 用户 锁定 resource 到target
 func (adb *AccountDB) LockResource(sourceAddr, targetAddr common.Address, resource types.LockResource) bool {
 	db := adb.db

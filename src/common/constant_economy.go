@@ -37,10 +37,15 @@ const (
 
 	// 一年，单位ms
 	//OneYear = 365 * 24 * 3600 * 1000
-	OneYear = 7 * 24 * 3600 * 1000
+	oneYear = 7 * oneDay
+
+	oneDay = 24 * 3600 * 1000
 
 	// 一年出得块数量
-	BlocksPerYear = uint64(OneYear / CastingInterval)
+	BlocksPerYear = uint64(oneYear / CastingInterval)
+
+	// 一天出得块数量
+	BlocksPerDay = uint64(oneDay / CastingInterval)
 )
 
 // 奖励

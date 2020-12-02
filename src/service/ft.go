@@ -115,7 +115,7 @@ func (self *FTManager) PublishFTSet(ftSet *types.FTSet, accountDB *account.Accou
 	}
 
 	// checkId
-	if 0 == len(ftSet.AppId) || 0 == len(symbol) || strings.Contains(ftSet.AppId, "-") || strings.Contains(ftSet.Symbol, "-") || ftSet.AppId == common.Official {
+	if 0 == len(ftSet.AppId) || 0 == len(ftSet.Symbol) || strings.Contains(ftSet.AppId, "-") || strings.Contains(ftSet.Symbol, "-") || ftSet.AppId == common.Official {
 		return "appId or symbol wrong", false
 	}
 

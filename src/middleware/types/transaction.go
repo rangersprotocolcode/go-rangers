@@ -90,6 +90,10 @@ const (
 	TransactionTypeSetExchangeRate = 801 // 新增汇率表
 
 	TransactionTypeWrongTxNonce = 404
+
+	// 奖池
+	TransactionTypeLotteryCreate = 501 // 创建奖池
+	TransactionTypeJackpot       = 502 // 抽奖
 )
 
 type Transaction struct {

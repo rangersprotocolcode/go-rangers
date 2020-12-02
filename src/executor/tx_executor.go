@@ -68,6 +68,8 @@ func InitExecutors() {
 	executors[types.TransactionTypeLockResource] = &resourceLockUnLockExecutor{logger: logger}
 	executors[types.TransactionTypeUnLockResource] = &resourceLockUnLockExecutor{logger: logger}
 	executors[types.TransactionTypeComboNFT] = &resourceLockUnLockExecutor{logger: logger}
+	executors[types.TransactionTypeLotteryCreate] = &lotteryExecutor{}
+	executors[types.TransactionTypeJackpot] = &lotteryExecutor{}
 
 	txExecutorsImpl = &txExecutors{executors: executors}
 }

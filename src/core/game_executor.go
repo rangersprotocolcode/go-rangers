@@ -333,11 +333,11 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
 	go executor.saveTempTx(txRaw)
 
-	accountDB := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
+	accountDB, height := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
 	if nil == accountDB {
 		return
 	}
-	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor")
+	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
 
 	if types.TransactionTypeWrongTxNonce == txRaw.Type {
 		return
@@ -349,7 +349,7 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 		return
 	}
 
-	executor.runTransaction(accountDB, txRaw)
+	executor.runTransaction(accountDB, height, txRaw)
 
 	//result, execMessage := executor.runTransaction(accountDB, txRaw)
 	//
@@ -372,7 +372,7 @@ func (executor *GameExecutor) saveTempTx(txRaw types.Transaction) {
 	executor.tempTx.Put(common.Uint64ToByte(txRaw.RequestId), txBytes)
 }
 
-func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw types.Transaction) (bool, string) {
+func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, height uint64, txRaw types.Transaction) (bool, string) {
 	txhash := txRaw.Hash.String()
 	executor.logger.Debugf("run tx. hash: %s", txhash)
 
@@ -402,7 +402,7 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw
 	}
 
 	snapshot := accountDB.Snapshot()
-	result, message = processor.Execute(&txRaw, nil, accountDB, context)
+	result, message = processor.Execute(&txRaw, &types.BlockHeader{Height: height}, accountDB, context)
 	if !result {
 		accountDB.RevertToSnapshot(snapshot)
 	}
