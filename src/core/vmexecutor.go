@@ -88,7 +88,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 					this.accountdb.RevertToSnapshot(snapshot)
 				} else {
 					if transaction.Source != "" {
-						this.accountdb.SetNonce(common.HexToAddress(transaction.Source), transaction.Nonce)
+						this.accountdb.IncreaseNonce(common.HexToAddress(transaction.Source))
 					}
 
 					logger.Debugf("Execute success, txhash: %s, type: %d", transaction.Hash.String(), transaction.Type)

@@ -236,7 +236,9 @@ func (adb *AccountDB) SetNonce(addr common.Address, nonce uint64) {
 func (adb *AccountDB) IncreaseNonce(addr common.Address) uint64 {
 	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {
-		return stateObject.IncreaseNonce()
+		result := stateObject.IncreaseNonce()
+		accountLog.Debugf("addr: %s, nonce: %d", addr.GetHexString(), result)
+		return result
 	}
 	return 0
 }
