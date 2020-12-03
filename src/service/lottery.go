@@ -119,6 +119,10 @@ func CreateLottery(addr, condition string, accountDB *account.AccountDB) (string
 		}
 	}
 	for ftId := range ft.Content {
+		if 0 == strings.Compare(strings.ToLower(ftId), "max") || strings.HasPrefix(strings.ToLower(ftId), "system-") {
+			continue
+		}
+
 		ftSet := FTManagerInstance.GetFTSet(ftId, accountDB)
 		if nil == ftSet {
 			txLogger.Errorf("ftSet: %s not existed", ftId)
@@ -227,7 +231,29 @@ func Jackpot(lotteryAddress, target, time string, seed, height uint64, accountDB
 				continue
 			}
 
-			FTManagerInstance.MintFT(owner, ftSetId, target, value, accountDB)
+			if 0 == strings.Compare(strings.ToLower(ftSetId), "max") {
+				valueBig, _ := utility.StrToBigInt(value)
+				ownerAddress := common.HexToAddress(owner)
+				balance := accountDB.GetBalance(ownerAddress)
+				if balance.Cmp(valueBig) < 0 {
+					continue
+				}
+
+				accountDB.SubBalance(ownerAddress, valueBig)
+				accountDB.AddBalance(targetAddress, valueBig)
+			} else if strings.HasPrefix(strings.ToLower(ftSetId), "system-") {
+				valueBig, _ := utility.StrToBigInt(value)
+				ownerAddress := common.HexToAddress(owner)
+				balance := accountDB.GetFT(ownerAddress, ftSetId)
+				if balance.Cmp(valueBig) < 0 {
+					continue
+				}
+				accountDB.SubFT(ownerAddress, ftSetId, valueBig)
+				accountDB.AddFT(targetAddress, ftSetId, valueBig)
+			} else {
+				FTManagerInstance.MintFT(owner, ftSetId, target, value, accountDB)
+			}
+
 			award.Ft = append(award.Ft, types.FTID{Id: ftSetId, Value: value})
 		}
 	}
