@@ -134,7 +134,7 @@ func CreateLottery(addr, condition string, accountDB *account.AccountDB) (string
 		}
 	}
 
-	nonce := accountDB.IncreaseNonce(common.HexToAddress(addr))
+	nonce := accountDB.GetNonce(common.HexToAddress(addr))
 	lotteryAddress := common.GenerateLotteryAddress(addr, nonce)
 	accountDB.SetLotteryDefinition(lotteryAddress, utility.StrToBytes(condition), addr)
 
