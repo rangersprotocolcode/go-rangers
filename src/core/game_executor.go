@@ -344,27 +344,10 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	}
 
 	if err := service.GetTransactionPool().VerifyTransaction(&txRaw); err != nil {
-		response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
-		go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
 		return
 	}
 
 	executor.runTransaction(accountDB, height, txRaw)
-
-	//result, execMessage := executor.runTransaction(accountDB, txRaw)
-	//
-	//if 0 == len(message.UserId) {
-	//	return
-	//}
-	//
-	//// reply to the client
-	//var response []byte
-	//if result {
-	//	response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
-	//} else {
-	//	response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
-	//}
-	//go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
 }
 
 func (executor *GameExecutor) saveTempTx(txRaw types.Transaction) {

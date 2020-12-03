@@ -102,11 +102,13 @@ func getTestBlockHeader() *types.BlockHeader {
 }
 
 func TestVMExecutorAll(t *testing.T) {
-	fs := []func(*testing.T){testVMExecutorFeeFail, testVMExecutorCoinDeposit, testVMExecutorFtDepositExecutor,
+	fs := []func(*testing.T){
+		testVMExecutorFeeFail, testVMExecutorCoinDeposit, testVMExecutorFtDepositExecutor,
 		testVMExecutorNFTDepositExecutor, testVMExecutorNFTDepositExecutorWithAppId, testVMExecutorPublishFTSet,
 		testVMExecutorPublishFTSetError, testVMExecutorPublishNFTSet, testVMExecutorPublishNFTSetError,
 		testVMExecutorMintFT, testVMExecutorMintFTError, testVMExecutorMintFTGoodAndEvil, testVMExecutorMintNFT,
 		testVMExecutorMintNFTWithoutLimit,testVMExecutorMintNFTWithoutLimitGoodAndEvil,
+		testVMExecutorJackPot,
 	}
 
 	for i, f := range fs {
@@ -168,9 +170,10 @@ func testVMExecutorFeeFail(t *testing.T) {
 	}
 
 }
+
 var (
-	leveldb             *db.LDBDatabase
-	triedb              account.AccountDatabase
+	leveldb *db.LDBDatabase
+	triedb  account.AccountDatabase
 )
 
 func getTestAccountDB() *account.AccountDB {
@@ -182,7 +185,6 @@ func getTestAccountDB() *account.AccountDB {
 	accountdb, _ := account.NewAccountDB(common.Hash{}, triedb)
 	return accountdb
 }
-
 
 func clean() {
 	os.RemoveAll("storage0")

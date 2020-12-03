@@ -33,7 +33,7 @@ func (this *lotteryExecutor) Execute(tx *types.Transaction, header *types.BlockH
 		msg, _ = service.CreateLottery(tx.Source, tx.Data, accountdb)
 		break
 	case types.TransactionTypeJackpot:
-		msg, _ = service.Jackpot(tx.Target, tx.Source, tx.RequestId, header.Height, accountdb)
+		msg, _ = service.Jackpot(tx.Target, tx.Source, tx.Time, tx.RequestId, header.Height, accountdb)
 		break
 	}
 

@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -137,10 +138,11 @@ func CreateLottery(addr, condition string, accountDB *account.AccountDB) (string
 	lotteryAddress := common.GenerateLotteryAddress(addr, nonce)
 	accountDB.SetLotteryDefinition(lotteryAddress, utility.StrToBytes(condition), addr)
 
+	txLogger.Debugf("addr: %s createLottery: %s with condition: %s", addr, lotteryAddress.GetHexString(), condition)
 	return lotteryAddress.GetHexString(), ""
 }
 
-func Jackpot(lotteryAddress, target string, seed, height uint64, accountDB *account.AccountDB) (string, string) {
+func Jackpot(lotteryAddress, target, time string, seed, height uint64, accountDB *account.AccountDB) (string, string) {
 	address := common.HexToAddress(lotteryAddress)
 	targetAddress := common.HexToAddress(target)
 
@@ -188,7 +190,6 @@ func Jackpot(lotteryAddress, target string, seed, height uint64, accountDB *acco
 			}
 		}
 	}
-
 	award := items{Nft: make([]types.NFTID, 0), Ft: make([]types.FTID, 0)}
 
 	// 开始抽奖
@@ -216,7 +217,7 @@ func Jackpot(lotteryAddress, target string, seed, height uint64, accountDB *acco
 
 			nonce := accountDB.GetNonce(common.GenerateNFTSetAddress(nftSetId))
 			id := strconv.FormatUint(nonce, 10)
-			NFTManagerInstance.MintNFT(owner, owner, nftSetId, id, "", "", targetAddress, accountDB)
+			NFTManagerInstance.MintNFT(owner, owner, nftSetId, id, "", time, targetAddress, accountDB)
 			award.Nft = append(award.Nft, types.NFTID{SetId: nftSetId, Id: id})
 		} else if p < (nftProbability + ftProbability) {
 			// 抽中ft
@@ -233,12 +234,21 @@ func Jackpot(lotteryAddress, target string, seed, height uint64, accountDB *acco
 
 	accountDB.SetData(address, utility.StrToBytes(target), utility.UInt64ToByte(height))
 	data, _ := json.Marshal(award)
-	return utility.BytesToStr(data), ""
+	awardString := utility.BytesToStr(data)
+	txLogger.Debugf("addr: %s get award: %s from lottery: %s", target, awardString, lotteryAddress)
+	return awardString, ""
 }
 
 func getJackPotFt(p float64, prizes map[string]ftContent, random *rand.Rand) (string, string) {
+	sortedKeys := make([]string, 0)
+	for k, _ := range prizes {
+		sortedKeys = append(sortedKeys, k)
+	}
+	sort.Strings(sortedKeys)
+
 	sum := float64(0)
-	for key, ftContent := range prizes {
+	for _, key := range sortedKeys {
+		ftContent := prizes[key]
 		probability, err := strconv.ParseFloat(ftContent.Probability, 64)
 		if nil != err {
 			return "", ""
@@ -268,8 +278,15 @@ func getJackPotFt(p float64, prizes map[string]ftContent, random *rand.Rand) (st
 }
 
 func getJackPotItem(p float64, prizes map[string]string) string {
+	sortedKeys := make([]string, 0)
+	for k, _ := range prizes {
+		sortedKeys = append(sortedKeys, k)
+	}
+	sort.Strings(sortedKeys)
+
 	sum := float64(0)
-	for key, value := range prizes {
+	for _, key := range sortedKeys {
+		value := prizes[key]
 		probability, err := strconv.ParseFloat(value, 64)
 		if nil != err {
 			return ""

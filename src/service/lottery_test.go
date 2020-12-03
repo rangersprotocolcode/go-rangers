@@ -143,8 +143,9 @@ func TestJackpot(t *testing.T) {
 	accountdb, _ = account.NewAccountDB(root, triedb)
 	m := make(map[int]int, 0)
 	for i := uint64(0); i < 100; i++ {
-		answer, _ := Jackpot(id, sourceAddr2.GetHexString(), uint64(time.Now().UnixNano()), 1024+i*common.BlocksPerDay, accountdb)
+		answer, _ := Jackpot(id, sourceAddr2.GetHexString(), "123", uint64(time.Now().UnixNano()), 1024+i*common.BlocksPerDay, accountdb)
 		var it items
+		fmt.Println(answer)
 		json.Unmarshal(utility.StrToBytes(answer), &it)
 		length := len(it.Nft) + len(it.Ft)
 		m[length] = m[length] + 1
