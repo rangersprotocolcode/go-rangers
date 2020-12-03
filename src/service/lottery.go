@@ -152,11 +152,11 @@ func Jackpot(lotteryAddress, target, time string, seed, height uint64, accountDB
 		return "", fmt.Sprintf("no such lotteryAddress: %s", lotteryAddress)
 	}
 
-	pre := utility.ByteToUInt64(accountDB.GetData(address, utility.StrToBytes(target)))
-	if 0 != pre && height-pre < common.BlocksPerDay {
-		txLogger.Errorf("not the time. height: %d, pre: %d, lottery: %s, user: %s", height, pre, lotteryAddress, target)
-		return "", fmt.Sprintf("not the time. height: %d, pre: %d, lottery: %s, user: %s", height, pre, lotteryAddress, target)
-	}
+	//pre := utility.ByteToUInt64(accountDB.GetData(address, utility.StrToBytes(target)))
+	//if 0 != pre && height-pre < common.BlocksPerDay {
+	//	txLogger.Errorf("not the time. height: %d, pre: %d, lottery: %s, user: %s", height, pre, lotteryAddress, target)
+	//	return "", fmt.Sprintf("not the time. height: %d, pre: %d, lottery: %s, user: %s", height, pre, lotteryAddress, target)
+	//}
 
 	var lottery lotteryCondition
 	err := json.Unmarshal(condition, &lottery)
