@@ -179,17 +179,17 @@ func Jackpot(lotteryAddress, target, time string, seed, height uint64, accountDB
 		if comboP == 1 || p > comboP {
 			q := random.Float64()
 			item := getJackPotItem(q, lottery.Combo.Content)
-			if 0 == len(item) {
-				txLogger.Error("fail to calculate num")
-				return "", "fail to calculate num"
+			if 0 != len(item) {
+				num, err = strconv.Atoi(item)
+				if nil != err {
+					txLogger.Error(err.Error())
+					return "", err.Error()
+				}
 			}
-			num, err = strconv.Atoi(item)
-			if nil != err {
-				txLogger.Error(err.Error())
-				return "", err.Error()
-			}
+
 		}
 	}
+
 	award := items{Nft: make([]types.NFTID, 0), Ft: make([]types.FTID, 0)}
 
 	// 开始抽奖
