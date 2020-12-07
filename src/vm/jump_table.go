@@ -1026,62 +1026,62 @@ func newInstructionSet() JumpTable {
 
 	//YoloV2InstructionSet----------------------------------------------------------------------------------------------
 
-	//EIP 2315
-	instructionSet[BEGINSUB] = &operation{
-		execute:     opBeginSub,
-		constantGas: GasQuickStep,
-		minStack:    minStack(0, 0),
-		maxStack:    maxStack(0, 0),
-	}
-	instructionSet[JUMPSUB] = &operation{
-		execute:     opJumpSub,
-		constantGas: GasSlowStep,
-		minStack:    minStack(1, 0),
-		maxStack:    maxStack(1, 0),
-		jumps:       true,
-	}
-	instructionSet[RETURNSUB] = &operation{
-		execute:     opReturnSub,
-		constantGas: GasFastStep,
-		minStack:    minStack(0, 0),
-		maxStack:    maxStack(0, 0),
-		jumps:       true,
-	}
-
-	//EIP 2929
-	instructionSet[SSTORE].dynamicGas = gasSStoreEIP2929
-
-	instructionSet[SLOAD].constantGas = 0
-	instructionSet[SLOAD].dynamicGas = gasSLoadEIP2929
-
-	instructionSet[EXTCODECOPY].constantGas = WarmStorageReadCostEIP2929
-	instructionSet[EXTCODECOPY].dynamicGas = gasExtCodeCopyEIP2929
-
-	instructionSet[EXTCODESIZE].constantGas = WarmStorageReadCostEIP2929
-	instructionSet[EXTCODESIZE].dynamicGas = gasEip2929AccountCheck
-
-	instructionSet[EXTCODEHASH].constantGas = WarmStorageReadCostEIP2929
-	instructionSet[EXTCODEHASH].dynamicGas = gasEip2929AccountCheck
-
-	instructionSet[BALANCE].constantGas = WarmStorageReadCostEIP2929
-	instructionSet[BALANCE].dynamicGas = gasEip2929AccountCheck
-
-	instructionSet[CALL].constantGas = WarmStorageReadCostEIP2929
-	instructionSet[CALL].dynamicGas = gasCallEIP2929
-
-	instructionSet[CALLCODE].constantGas = WarmStorageReadCostEIP2929
-	instructionSet[CALLCODE].dynamicGas = gasCallCodeEIP2929
-
-	instructionSet[STATICCALL].constantGas = WarmStorageReadCostEIP2929
-	instructionSet[STATICCALL].dynamicGas = gasStaticCallEIP2929
-
-	instructionSet[DELEGATECALL].constantGas = WarmStorageReadCostEIP2929
-	instructionSet[DELEGATECALL].dynamicGas = gasDelegateCallEIP2929
-
-	// This was previously part of the dynamic cost, but we're using it as a constantGas
-	// factor here
-	instructionSet[SELFDESTRUCT].constantGas = SelfdestructGasEIP150
-	instructionSet[SELFDESTRUCT].dynamicGas = gasSelfdestructEIP2929
+	////EIP 2315
+	//instructionSet[BEGINSUB] = &operation{
+	//	execute:     opBeginSub,
+	//	constantGas: GasQuickStep,
+	//	minStack:    minStack(0, 0),
+	//	maxStack:    maxStack(0, 0),
+	//}
+	//instructionSet[JUMPSUB] = &operation{
+	//	execute:     opJumpSub,
+	//	constantGas: GasSlowStep,
+	//	minStack:    minStack(1, 0),
+	//	maxStack:    maxStack(1, 0),
+	//	jumps:       true,
+	//}
+	//instructionSet[RETURNSUB] = &operation{
+	//	execute:     opReturnSub,
+	//	constantGas: GasFastStep,
+	//	minStack:    minStack(0, 0),
+	//	maxStack:    maxStack(0, 0),
+	//	jumps:       true,
+	//}
+	//
+	////EIP 2929
+	//instructionSet[SSTORE].dynamicGas = gasSStoreEIP2929
+	//
+	//instructionSet[SLOAD].constantGas = 0
+	//instructionSet[SLOAD].dynamicGas = gasSLoadEIP2929
+	//
+	//instructionSet[EXTCODECOPY].constantGas = WarmStorageReadCostEIP2929
+	//instructionSet[EXTCODECOPY].dynamicGas = gasExtCodeCopyEIP2929
+	//
+	//instructionSet[EXTCODESIZE].constantGas = WarmStorageReadCostEIP2929
+	//instructionSet[EXTCODESIZE].dynamicGas = gasEip2929AccountCheck
+	//
+	//instructionSet[EXTCODEHASH].constantGas = WarmStorageReadCostEIP2929
+	//instructionSet[EXTCODEHASH].dynamicGas = gasEip2929AccountCheck
+	//
+	//instructionSet[BALANCE].constantGas = WarmStorageReadCostEIP2929
+	//instructionSet[BALANCE].dynamicGas = gasEip2929AccountCheck
+	//
+	//instructionSet[CALL].constantGas = WarmStorageReadCostEIP2929
+	//instructionSet[CALL].dynamicGas = gasCallEIP2929
+	//
+	//instructionSet[CALLCODE].constantGas = WarmStorageReadCostEIP2929
+	//instructionSet[CALLCODE].dynamicGas = gasCallCodeEIP2929
+	//
+	//instructionSet[STATICCALL].constantGas = WarmStorageReadCostEIP2929
+	//instructionSet[STATICCALL].dynamicGas = gasStaticCallEIP2929
+	//
+	//instructionSet[DELEGATECALL].constantGas = WarmStorageReadCostEIP2929
+	//instructionSet[DELEGATECALL].dynamicGas = gasDelegateCallEIP2929
+	//
+	//// This was previously part of the dynamic cost, but we're using it as a constantGas
+	//// factor here
+	//instructionSet[SELFDESTRUCT].constantGas = SelfdestructGasEIP150
+	//instructionSet[SELFDESTRUCT].dynamicGas = gasSelfdestructEIP2929
 
 	return instructionSet
 }

@@ -22,19 +22,17 @@ chainID:
 */
 var chainID *big.Int
 var vmTracer Tracer
+var logger log.Logger
 
 func InitVM() {
 	//todo configurable?
 	chainID = big.NewInt(0)
 
 	index := common.GlobalConf.GetString("instance", "index", "")
-	logger := log.GetLoggerByIndex(log.VMLogConfig, index)
+	logger = log.GetLoggerByIndex(log.VMLogConfig, index)
 
 	config := LogConfig{false, false, false, false}
-	vmTracer = &mdLogger{
-		cfg:    &config,
-		logger: logger,
-	}
+	vmTracer = NewStructLogger(&config, logger)
 }
 
 // CanTransfer checks whether there are enough funds in the address' account to make a transfer.

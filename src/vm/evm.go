@@ -457,6 +457,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 		createDataGas := uint64(len(ret)) * CreateDataGas
 		if contract.UseGas(createDataGas) {
 			evm.StateDB.SetCode(address, ret)
+			logger.Debugf("Create data gas:%d", createDataGas)
 		} else {
 			err = ErrCodeStoreOutOfGas
 		}
