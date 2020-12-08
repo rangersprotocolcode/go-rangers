@@ -52,13 +52,7 @@ func newVRFWorker(miner *model.SelfMinerInfo, bh *types.BlockHeader, castHeight 
 }
 
 func (vrfWorker *vrfWorker) genProve(castTime time.Time, totalStake uint64) (vrf.VRFProve, uint64, error) {
-	delta := 1
-	// 创世块可能年代久远，导致第一块需要多次计算Hash引发出块超时
-	// 这里特殊处理
-	if 0 != vrfWorker.baseBH.Height {
-		delta = CalDeltaByTime(castTime, vrfWorker.baseBH.CurTime)
-	}
-
+	delta := CalDeltaByTime(castTime, vrfWorker.baseBH.CurTime, 0 == vrfWorker.baseBH.Height)
 	vrfMsg := genVrfMsg(vrfWorker.baseBH.Random, delta)
 	prove, err := vrf.VRFGenProve(vrfWorker.miner.VrfPK, vrfWorker.miner.VrfSK, vrfMsg)
 	if err != nil {
