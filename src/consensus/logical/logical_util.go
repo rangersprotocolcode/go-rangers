@@ -55,7 +55,7 @@ func CalcRandomHash(preBH *types.BlockHeader, castTime time.Time) common.Hash {
 	data := preBH.Random
 	var hash common.Hash
 
-	deltaHeight := CalDeltaByTime(castTime, preBH.CurTime, 0 == preBH.Height)
+	deltaHeight := CalDeltaByTime(castTime, preBH.CurTime)
 	for ; deltaHeight > 0; deltaHeight-- {
 		hash = base.Data2CommonHash(data)
 		data = hash.Bytes()
@@ -70,11 +70,13 @@ func IsGroupWorkQualifiedAt(gh *types.GroupHeader, h uint64) bool {
 	return !IsGroupDissmisedAt(gh, h) && gh.WorkHeight <= h
 }
 
-func CalDeltaByTime(after time.Time, before time.Time, isFirst bool) int {
+func CalDeltaByTime(after time.Time, before time.Time) int {
 	// 创世块可能年代久远，导致第一块需要多次计算Hash引发出块超时
 	// 这里特殊处理
-	if isFirst {
-		return 1
+	result := int(after.Sub(before).Seconds())/model.MAX_GROUP_BLOCK_TIME + 1
+	if result > 8 {
+		result = 8
 	}
-	return int(after.Sub(before).Seconds())/model.MAX_GROUP_BLOCK_TIME + 1
+
+	return result
 }

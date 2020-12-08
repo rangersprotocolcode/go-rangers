@@ -52,7 +52,7 @@ func newVRFWorker(miner *model.SelfMinerInfo, bh *types.BlockHeader, castHeight 
 }
 
 func (vrfWorker *vrfWorker) genProve(castTime time.Time, totalStake uint64) (vrf.VRFProve, uint64, error) {
-	delta := CalDeltaByTime(castTime, vrfWorker.baseBH.CurTime, 0 == vrfWorker.baseBH.Height)
+	delta := CalDeltaByTime(castTime, vrfWorker.baseBH.CurTime)
 	vrfMsg := genVrfMsg(vrfWorker.baseBH.Random, delta)
 	prove, err := vrf.VRFGenProve(vrfWorker.miner.VrfPK, vrfWorker.miner.VrfSK, vrfMsg)
 	if err != nil {
