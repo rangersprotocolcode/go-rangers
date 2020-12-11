@@ -220,9 +220,17 @@ func Jackpot(lotteryAddress, target, time string, seed, height uint64, accountDB
 			}
 
 			nonce := accountDB.GetNonce(common.GenerateNFTSetAddress(nftSetId))
-			id := strconv.FormatUint(nonce, 10)
-			NFTManagerInstance.MintNFT(owner, owner, nftSetId, id, "", time, targetAddress, accountDB)
-			award.Nft = append(award.Nft, types.NFTID{SetId: nftSetId, Id: id})
+			for i := uint64(0); i < 100; i++ {
+				id := fmt.Sprintf("l%d", nonce+i)
+				msg, succ := NFTManagerInstance.MintNFT(owner, owner, nftSetId, id, "", time, targetAddress, accountDB)
+				if succ {
+					award.Nft = append(award.Nft, types.NFTID{SetId: nftSetId, Id: id})
+					break
+				}
+				if !strings.Contains(msg, "Generate NFT wrong id!") {
+					break
+				}
+			}
 		} else if p < (nftProbability + ftProbability) {
 			// 抽中ft
 			p = random.Float64()
