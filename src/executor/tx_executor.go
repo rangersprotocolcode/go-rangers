@@ -37,7 +37,6 @@ func InitExecutors() {
 
 	executors := make(map[int32]executor)
 
-	executors[types.TransactionTypeOperatorEvent] = &operatorExecutor{logger: logger}
 	executors[types.TransactionTypeWithdraw] = &withdrawExecutor{}
 	executors[types.TransactionTypeCoinDepositAck] = &coinDepositExecutor{}
 	executors[types.TransactionTypeFTDepositAck] = &ftDepositExecutor{}
@@ -68,6 +67,8 @@ func InitExecutors() {
 	executors[types.TransactionTypeLockResource] = &resourceLockUnLockExecutor{logger: logger}
 	executors[types.TransactionTypeUnLockResource] = &resourceLockUnLockExecutor{logger: logger}
 	executors[types.TransactionTypeComboNFT] = &resourceLockUnLockExecutor{logger: logger}
+
+	executors[types.TransactionTypeOperatorEvent] = &contractExecutor{}
 
 	txExecutorsImpl = &txExecutors{executors: executors}
 }
