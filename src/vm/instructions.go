@@ -17,8 +17,10 @@
 package vm
 
 import (
+	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"fmt"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 )
@@ -880,15 +882,16 @@ func makeLog(size int) executionFunc {
 		}
 
 		d := callContext.memory.GetCopy(int64(mStart.Uint64()), int64(mSize.Uint64()))
-		interpreter.evm.StateDB.AddLog(&types.Log{
+		log := &types.Log{
 			Address: callContext.contract.Address(),
 			Topics:  topics,
 			Data:    d,
 			// This is a non-consensus field, but assigned here because
 			// core/state doesn't know the current block number.
 			BlockNumber: interpreter.evm.BlockNumber.Uint64(),
-		})
-
+		}
+		interpreter.evm.StateDB.AddLog(log)
+		printLog(*log)
 		return nil, nil
 	}
 }
@@ -961,4 +964,20 @@ func makeSwap(size int64) executionFunc {
 		callContext.stack.swap(int(size))
 		return nil, nil
 	}
+}
+
+func printLog(log types.Log) {
+	var buffer bytes.Buffer
+	buffer.WriteString("Log:\n address:")
+	buffer.WriteString(log.Address.String())
+
+	buffer.WriteString("\n topics:")
+	for _, topic := range log.Topics {
+		buffer.WriteString(topic.String())
+		buffer.WriteString("\n")
+	}
+	buffer.WriteString("\n data:")
+	buffer.WriteString(fmt.Sprintf("%v", log.Data))
+	buffer.WriteString(common.ToHex(log.Data[:32]))
+	fmt.Println(buffer.String())
 }

@@ -1,0 +1,228 @@
+1.初始信息
+合约原文:
+pragma solidity ^0.5.17;
+
+contract Helloworld {
+    event event_dbg(bool msg);
+    event event_dbg(string msg);
+   // event event_dbg(bytes msg);
+    event event_dbg(uint256 msg);
+    event event_dbg(address msg);
+    
+    function test() public returns(bool)
+    {
+        uint256 a;
+        assembly{
+            a := mod(5,3)
+        }
+        emit event_dbg(a);
+        
+        
+        uint256 b;
+        assembly{
+            b := smod(5,4)
+        }
+        emit event_dbg(b);
+
+
+        uint256 c;
+        assembly{
+            c := sgt(a,b)
+        }
+        emit event_dbg(c);
+        
+        
+        uint256 d;
+        assembly{
+            d := xor(1,0)
+        }
+        emit event_dbg(d);
+
+        address e;
+        assembly{
+           e := address
+        }
+        emit event_dbg(e);
+        
+        uint256 f;
+        assembly{
+            f := origin
+        }
+        emit event_dbg(f);
+        
+        uint256 g;
+        assembly{
+            g := gasprice
+        }
+        emit event_dbg(g);
+        
+        bytes32 h;
+        assembly{
+            h := blockhash(1)
+        }
+        //emit event_dbg(h);
+        
+        uint256 i;
+        assembly{
+            i := coinbase
+        }
+        emit event_dbg(i);
+        
+        
+        uint256 j;
+        assembly{
+            j := number
+        }
+        emit event_dbg(j);
+        
+        uint256 k;
+        assembly{
+            k := timestamp
+        }
+        emit event_dbg(k);
+        
+        uint256 l;
+        assembly{
+            l := difficulty
+        }
+        emit event_dbg(l);
+        
+        uint256 m;
+        assembly{
+            m := gaslimit
+        }
+        emit event_dbg(m);
+        
+        return true;
+    }
+    
+    
+}
+
+GasLimit:3000000
+GasPrice:1
+
+2.合约编译后的字节码：
+"6080604052348015600f57600080fd5b506103ac8061001f6000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c8063f8a8fd6d14610030575b600080fd5b610038610052565b604051808215151515815260200191505060405180910390f35b600080600360050690507f3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18816040518082815260200191505060405180910390a16000600460050790507f3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18816040518082815260200191505060405180910390a1600081831390507f3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18816040518082815260200191505060405180910390a160008060011890507f3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18816040518082815260200191505060405180910390a160003090507fe821288434e942492293d0b381bb8e705c32fa88ff6a7978ea1a399fde4a7e6d81604051808273ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390a160003290507f3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18816040518082815260200191505060405180910390a160003a90507f3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18816040518082815260200191505060405180910390a16000600140905060004190507f3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18816040518082815260200191505060405180910390a160004390507f3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18816040518082815260200191505060405180910390a160004290507f3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18816040518082815260200191505060405180910390a160004490507f3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18816040518082815260200191505060405180910390a160004590507f3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18816040518082815260200191505060405180910390a160019d50505050505050505050505050509056fea265627a7a723158208f072ad16ca9bcf60e7483559e58f66b1dd625c0eb10201e3846e1c9dbdd62e064736f6c63430005110032"
+
+3.创建合约
+hash: 0x873b4f7dd5ce41752a9f0c6df37eb7e41b890a5a2e6b4db9f6d901cb4fec5d2e
+
+
+4.调用合约的输入
+调用方法：test
+hash: 0xeb10abbb67f7e7aafb4f7f5eccad4e5af0d597b05ff3c2f7cd939cdf73157d50
+参数：无
+abi编码：0xf8a8fd6d
+返回：无
+log：
+[
+	{
+		"from": "0x8eD39Cb054BE4E7F39b8D03Fb4353Bb07A849aAf",
+		"topic": "0x3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18",
+		"event": "event_dbg",
+		"args": {
+			"0": "2",
+			"msg": "2"
+		}
+	},
+	{
+		"from": "0x8eD39Cb054BE4E7F39b8D03Fb4353Bb07A849aAf",
+		"topic": "0x3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18",
+		"event": "event_dbg",
+		"args": {
+			"0": "1",
+			"msg": "1"
+		}
+	},
+	{
+		"from": "0x8eD39Cb054BE4E7F39b8D03Fb4353Bb07A849aAf",
+		"topic": "0x3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18",
+		"event": "event_dbg",
+		"args": {
+			"0": "1",
+			"msg": "1"
+		}
+	},
+	{
+		"from": "0x8eD39Cb054BE4E7F39b8D03Fb4353Bb07A849aAf",
+		"topic": "0x3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18",
+		"event": "event_dbg",
+		"args": {
+			"0": "1",
+			"msg": "1"
+		}
+	},
+	{
+		"from": "0x8eD39Cb054BE4E7F39b8D03Fb4353Bb07A849aAf",
+		"topic": "0xe821288434e942492293d0b381bb8e705c32fa88ff6a7978ea1a399fde4a7e6d",
+		"event": "event_dbg",
+		"args": {
+			"0": "0x8eD39Cb054BE4E7F39b8D03Fb4353Bb07A849aAf",
+			"msg": "0x8eD39Cb054BE4E7F39b8D03Fb4353Bb07A849aAf"
+		}
+	},
+	{
+		"from": "0x8eD39Cb054BE4E7F39b8D03Fb4353Bb07A849aAf",
+		"topic": "0x3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18",
+		"event": "event_dbg",
+		"args": {
+			"0": "1040694834294712318949765077569989443689579724197",
+			"msg": "1040694834294712318949765077569989443689579724197"
+		}
+	},
+	{
+		"from": "0x8eD39Cb054BE4E7F39b8D03Fb4353Bb07A849aAf",
+		"topic": "0x3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18",
+		"event": "event_dbg",
+		"args": {
+			"0": "1",
+			"msg": "1"
+		}
+	},
+	{
+		"from": "0x8eD39Cb054BE4E7F39b8D03Fb4353Bb07A849aAf",
+		"topic": "0x3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18",
+		"event": "event_dbg",
+		"args": {
+			"0": "1040694834294712318949765077569989443689579724197",
+			"msg": "1040694834294712318949765077569989443689579724197"
+		}
+	},
+	{
+		"from": "0x8eD39Cb054BE4E7F39b8D03Fb4353Bb07A849aAf",
+		"topic": "0x3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18",
+		"event": "event_dbg",
+		"args": {
+			"0": "11312",
+			"msg": "11312"
+		}
+	},
+	{
+		"from": "0x8eD39Cb054BE4E7F39b8D03Fb4353Bb07A849aAf",
+		"topic": "0x3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18",
+		"event": "event_dbg",
+		"args": {
+			"0": "1607512520",
+			"msg": "1607512520"
+		}
+	},
+	{
+		"from": "0x8eD39Cb054BE4E7F39b8D03Fb4353Bb07A849aAf",
+		"topic": "0x3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18",
+		"event": "event_dbg",
+		"args": {
+			"0": "2041302",
+			"msg": "2041302"
+		}
+	},
+	{
+		"from": "0x8eD39Cb054BE4E7F39b8D03Fb4353Bb07A849aAf",
+		"topic": "0x3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18",
+		"event": "event_dbg",
+		"args": {
+			"0": "8000000",
+			"msg": "8000000"
+		}
+	}
+]
