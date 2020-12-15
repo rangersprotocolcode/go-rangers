@@ -46,6 +46,7 @@ func newVMExecutor(accountdb *account.AccountDB, block *types.Block, situation s
 		situation: situation,
 		context:   make(map[string]interface{}),
 	}
+	vm.context["chain"] = blockChainImpl
 
 	return vm
 }

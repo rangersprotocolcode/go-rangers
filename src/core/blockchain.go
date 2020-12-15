@@ -438,6 +438,14 @@ func (chain *blockChain) HasBlockByHash(hash common.Hash) bool {
 	return result
 }
 
+func (chain *blockChain) GetBlockHash(height uint64) common.Hash {
+	block := chain.QueryBlock(height)
+	if block != nil {
+		return block.Header.Hash
+	}
+	return common.Hash{}
+}
+
 func (chain *blockChain) queryBlockByHash(hash common.Hash) *types.Block {
 	result, err := chain.hashDB.Get(hash.Bytes())
 
