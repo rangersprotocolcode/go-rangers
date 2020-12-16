@@ -27,6 +27,7 @@ type contractExecuteData struct {
 }
 
 func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transaction, header *types.BlockHeader, context map[string]interface{}) (bool, string) {
+	txLogger.Debugf("Execute contract data:%s", transaction.ToTxJson().ToString())
 	vmCtx := vm.Context{}
 	vmCtx.CanTransfer = vm.CanTransfer
 	vmCtx.Transfer = vm.Transfer
@@ -41,7 +42,6 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 	vmCtx.Difficulty = new(big.Int).SetUint64(123)
 
 	var data contractData
-	txLogger.Debugf("Execute contract data:%s", transaction.Data)
 	err := json.Unmarshal([]byte(transaction.Data), &data)
 	if err != nil {
 		txLogger.Errorf("Contract data unmarshal error:%s", err.Error())
