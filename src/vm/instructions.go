@@ -891,7 +891,7 @@ func makeLog(size int) executionFunc {
 			BlockNumber: interpreter.evm.BlockNumber.Uint64(),
 		}
 		interpreter.evm.StateDB.AddLog(log)
-		printLog(*log)
+		//printLog(*log)
 		return nil, nil
 	}
 }
@@ -978,6 +978,5 @@ func printLog(log types.Log) {
 	}
 	buffer.WriteString("\n data:")
 	buffer.WriteString(fmt.Sprintf("%v", log.Data))
-	buffer.WriteString(common.ToHex(log.Data[:32]))
 	fmt.Println(buffer.String())
 }
