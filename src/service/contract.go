@@ -27,7 +27,6 @@ type contractExecuteData struct {
 }
 
 func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transaction, header *types.BlockHeader, context map[string]interface{}) (bool, string) {
-	txLogger.Debugf("Execute contract data:%s", transaction.ToTxJson().ToString())
 	vmCtx := vm.Context{}
 	vmCtx.CanTransfer = vm.CanTransfer
 	vmCtx.Transfer = vm.Transfer
@@ -79,7 +78,7 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 		txLogger.Tracef("After execute contract create!Contract address:%s, leftOverGas: %d,error:%v", contractAddress.GetHexString(), leftOverGas, err)
 	} else {
 		result, leftOverGas, err = vmInstance.Call(caller, contractAddress, common.Hex2Bytes(data.AbiData), vmCtx.GasLimit, transferValue)
-		txLogger.Tracef("After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err.Error())
+		txLogger.Tracef("After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
 	}
 	if err != nil {
 		return false, err.Error()
