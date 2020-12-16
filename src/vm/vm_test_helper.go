@@ -147,10 +147,10 @@ func mockCreate(input []byte, cfg *testConfig) ([]byte, common.Address, uint64, 
 		vmenv  = mockEVM(cfg)
 		sender = AccountRef(cfg.Origin)
 	)
-	cfg.State.AddAddressToAccessList(cfg.Origin)
-	for _, addr := range vmenv.ActivePrecompiles() {
-		cfg.State.AddAddressToAccessList(addr)
-	}
+	//cfg.State.AddAddressToAccessList(cfg.Origin)
+	//for _, addr := range vmenv.ActivePrecompiles() {
+	//	cfg.State.AddAddressToAccessList(addr)
+	//}
 
 	// Call the code with the given configuration.
 	code, address, leftOverGas, err := vmenv.Create(
