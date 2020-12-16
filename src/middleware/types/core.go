@@ -260,6 +260,11 @@ type NFTID struct {
 	Property string `json:"property,omitempty"`
 }
 
+type FTID struct {
+	Id    string `json:"id,omitempty"`
+	Value string `json:"value,omitempty"`
+}
+
 //提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链
 type WithDrawReq struct {
 	Address string          `json:"address,omitempty"`

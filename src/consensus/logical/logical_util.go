@@ -71,5 +71,12 @@ func IsGroupWorkQualifiedAt(gh *types.GroupHeader, h uint64) bool {
 }
 
 func CalDeltaByTime(after time.Time, before time.Time) int {
-	return int(after.Sub(before).Seconds())/model.MAX_GROUP_BLOCK_TIME + 1
+	// 创世块可能年代久远，导致第一块需要多次计算Hash引发出块超时
+	// 这里特殊处理
+	result := int(after.Sub(before).Seconds())/model.MAX_GROUP_BLOCK_TIME + 1
+	//if result > 8 {
+	//	result = 8
+	//}
+
+	return result
 }

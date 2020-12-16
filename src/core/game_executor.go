@@ -333,38 +333,21 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
 	go executor.saveTempTx(txRaw)
 
-	accountDB := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
+	accountDB, height := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
 	if nil == accountDB {
 		return
 	}
-	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor")
+	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
 
 	if types.TransactionTypeWrongTxNonce == txRaw.Type {
 		return
 	}
 
 	if err := service.GetTransactionPool().VerifyTransaction(&txRaw); err != nil {
-		response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
-		go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
 		return
 	}
 
-	executor.runTransaction(accountDB, txRaw)
-
-	//result, execMessage := executor.runTransaction(accountDB, txRaw)
-	//
-	//if 0 == len(message.UserId) {
-	//	return
-	//}
-	//
-	//// reply to the client
-	//var response []byte
-	//if result {
-	//	response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
-	//} else {
-	//	response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
-	//}
-	//go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+	executor.runTransaction(accountDB, height, txRaw)
 }
 
 func (executor *GameExecutor) saveTempTx(txRaw types.Transaction) {
@@ -372,7 +355,7 @@ func (executor *GameExecutor) saveTempTx(txRaw types.Transaction) {
 	executor.tempTx.Put(common.Uint64ToByte(txRaw.RequestId), txBytes)
 }
 
-func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw types.Transaction) (bool, string) {
+func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, height uint64, txRaw types.Transaction) (bool, string) {
 	txhash := txRaw.Hash.String()
 	executor.logger.Debugf("run tx. hash: %s", txhash)
 
@@ -403,9 +386,11 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw
 	}
 	accountDB.Prepare(txRaw.Hash, common.Hash{}, 0)
 	snapshot := accountDB.Snapshot()
-	result, message = processor.Execute(&txRaw, nil, accountDB, context)
+	result, message = processor.Execute(&txRaw, &types.BlockHeader{Height: height}, accountDB, context)
 	if !result {
 		accountDB.RevertToSnapshot(snapshot)
+	} else if txRaw.Source != "" {
+		accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
 	}
 
 	// 特殊处理返回

@@ -65,7 +65,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		sort.Sort(txs)
 	}
 
-	for txIndex, transaction := range txs {
+	for _, transaction := range txs {
 		executeTime := utility.GetTime()
 		if this.situation == "casting" && executeTime.Sub(beginTime) > MaxCastBlockTime {
 			logger.Infof("Cast block execute tx time out! Tx hash:%s ", transaction.Hash.String())
@@ -80,7 +80,6 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		if txExecutor != nil {
 			success, msg = txExecutor.BeforeExecute(transaction, this.block.Header, this.accountdb, this.context)
 			if success {
-				this.accountdb.Prepare(transaction.Hash, this.block.Header.Hash, txIndex)
 				snapshot := this.accountdb.Snapshot()
 				success, msg = txExecutor.Execute(transaction, this.block.Header, this.accountdb, this.context)
 
@@ -90,7 +89,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 					this.accountdb.RevertToSnapshot(snapshot)
 				} else {
 					if transaction.Source != "" {
-						this.accountdb.SetNonce(common.HexToAddress(transaction.Source), transaction.Nonce)
+						this.accountdb.IncreaseNonce(common.HexToAddress(transaction.Source))
 					}
 
 					logger.Debugf("Execute success, txhash: %s, type: %d", transaction.Hash.String(), transaction.Type)
@@ -99,10 +98,16 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		}
 
 		transactions = append(transactions, transaction)
-		receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height, msg, transaction.Source)
-		receipt.TxHash = transaction.Hash
-		receipt.Logs = this.accountdb.GetLogs(transaction.Hash)
-		receipts = append(receipts, receipt)
+		if types.TransactionTypeJackpot == transaction.Type {
+			receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height, msg, transaction.Source, msg)
+			receipt.TxHash = transaction.Hash
+			receipts = append(receipts, receipt)
+		} else {
+			receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height, msg, transaction.Source, "")
+			receipt.TxHash = transaction.Hash
+			receipts = append(receipts, receipt)
+		}
+
 	}
 
 	this.after()

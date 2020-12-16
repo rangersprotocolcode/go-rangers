@@ -35,6 +35,23 @@ func (self *accountObject) CheckNFTSetOwner(db AccountDatabase, owner string) bo
 	return 0 == strings.Compare(strings.ToLower(self.GetNFTSetOwner(db)), strings.ToLower(owner))
 }
 
+func (self *accountObject) GetNFTSetDefinition(db AccountDatabase) *types.NFTSet {
+	valueByte := self.nftSetDefinition(db)
+	if nil == valueByte || 0 == len(valueByte) {
+		return nil
+	}
+
+	var definition types.NftSetDefinition
+	err := rlp.DecodeBytes(valueByte, &definition)
+	if err != nil {
+		return nil
+	}
+
+	nftSet := definition.ToNFTSet()
+	nftSet.Owner = self.GetNFTSetOwner(db)
+	return &nftSet
+}
+
 func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
 	valueByte := self.nftSetDefinition(db)
 	if nil == valueByte || 0 == len(valueByte) {

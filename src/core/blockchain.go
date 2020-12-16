@@ -135,7 +135,7 @@ func initBlockChain() error {
 		if nil != err {
 			panic(err)
 		}
-		service.AccountDBManagerInstance.SetLatestStateDB(state, chain.latestBlock.RequestIds)
+		service.AccountDBManagerInstance.SetLatestStateDB(state, chain.latestBlock.RequestIds, chain.latestBlock.Height)
 		logger.Debugf("refreshed latestStateDB, state: %v, height: %d", chain.latestBlock.StateTree, chain.latestBlock.Height)
 
 		if !chain.versionValidate() {
