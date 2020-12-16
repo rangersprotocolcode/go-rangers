@@ -50,7 +50,7 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 	vmCtx.GasPrice, err = utility.StrToBigInt(data.GasPrice)
 	if err != nil {
 		txLogger.Errorf("Contract GasPrice convert error:%s", err.Error())
-		return false, fmt.Sprintf("Contract data GasPriceerror, data: %s", data.GasPrice)
+		return false, fmt.Sprintf("Contract data GasPrice error, data: %s", data.GasPrice)
 	}
 	gasLimit, err := strconv.Atoi(data.GasLimit)
 	if err != nil {
@@ -59,6 +59,11 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 	}
 	vmCtx.GasLimit = uint64(gasLimit)
 
+	transferValue, err := utility.StrToBigInt(data.TransferValue)
+	if err != nil {
+		txLogger.Errorf("Contract TransferValue convert error:%s", err.Error())
+		return false, fmt.Sprintf("Contract data TransferValue eror, data: %s", data.TransferValue)
+	}
 	txLogger.Tracef("Execute contract! data: %v,target address:%s", data, transaction.Target)
 
 	vmInstance := vm.NewEVM(vmCtx, accountdb)
@@ -69,10 +74,10 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 		contractAddress common.Address = common.HexToAddress(transaction.Target)
 	)
 	if transaction.Target == "" {
-		result, contractAddress, leftOverGas, err = vmInstance.Create(caller, []byte(data.AbiData), data.GasLimit, data.TransferValue)
+		result, contractAddress, leftOverGas, err = vmInstance.Create(caller, []byte(data.AbiData), vmCtx.GasLimit, transferValue)
 		txLogger.Tracef("After execute contract create!Contract address:%s, leftOverGas: %d,error:%v", contractAddress.GetHexString(), leftOverGas, err.Error())
 	} else {
-		result, leftOverGas, err = vmInstance.Call(caller, contractAddress, []byte(data.AbiData), data.GasLimit, data.TransferValue)
+		result, leftOverGas, err = vmInstance.Call(caller, contractAddress, []byte(data.AbiData), vmCtx.GasLimit, transferValue)
 		txLogger.Tracef("After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err.Error())
 	}
 	if err != nil {
