@@ -4,18 +4,20 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
+	"com.tuntun.rocket/node/src/utility"
 	"com.tuntun.rocket/node/src/vm"
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"strconv"
 )
 
 type contractData struct {
-	GasPrice *big.Int `json:"gasPrice,omitempty"`
-	GasLimit uint64   `json:"gasLimit,omitempty"`
+	GasPrice string `json:"gasPrice,omitempty"`
+	GasLimit string `json:"gasLimit,omitempty"`
 
-	TransferValue *big.Int `json:"transferValue,omitempty"`
-	AbiData       string   `json:"abiData,omitempty"`
+	TransferValue string `json:"transferValue,omitempty"`
+	AbiData       string `json:"abiData,omitempty"`
 }
 
 type contractExecuteData struct {
@@ -45,9 +47,19 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 		return false, fmt.Sprintf("Contract data error, data: %s", transaction.Data)
 	}
 
+	vmCtx.GasPrice, err = utility.StrToBigInt(data.GasPrice)
+	if err != nil {
+		txLogger.Errorf("Contract GasPrice convert error:%s", err.Error())
+		return false, fmt.Sprintf("Contract data GasPriceerror, data: %s", data.GasPrice)
+	}
+	gasLimit, err := strconv.Atoi(data.GasLimit)
+	if err != nil {
+		txLogger.Errorf("Contract gasLimit convert error:%s", err.Error())
+		return false, fmt.Sprintf("Contract data gasLimit error, data: %s", data.GasLimit)
+	}
+	vmCtx.GasLimit = uint64(gasLimit)
+
 	txLogger.Tracef("Execute contract! data: %v,target address:%s", data, transaction.Target)
-	vmCtx.GasPrice = data.GasPrice
-	vmCtx.GasLimit = data.GasLimit
 
 	vmInstance := vm.NewEVM(vmCtx, accountdb)
 	caller := vm.AccountRef(vmCtx.Origin)
