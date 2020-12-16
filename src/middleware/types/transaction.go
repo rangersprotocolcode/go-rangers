@@ -94,6 +94,9 @@ const (
 	// 奖池
 	TransactionTypeLotteryCreate = 501 // 创建奖池
 	TransactionTypeJackpot       = 502 // 抽奖
+
+	//合约交易
+	TransactionTypeContract = 200
 )
 
 type Transaction struct {

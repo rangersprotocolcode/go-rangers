@@ -37,6 +37,7 @@ func InitExecutors() {
 
 	executors := make(map[int32]executor)
 
+	executors[types.TransactionTypeOperatorEvent] = &operatorExecutor{logger: logger}
 	executors[types.TransactionTypeWithdraw] = &withdrawExecutor{}
 	executors[types.TransactionTypeCoinDepositAck] = &coinDepositExecutor{}
 	executors[types.TransactionTypeFTDepositAck] = &ftDepositExecutor{}
@@ -70,7 +71,7 @@ func InitExecutors() {
 	executors[types.TransactionTypeLotteryCreate] = &lotteryExecutor{}
 	executors[types.TransactionTypeJackpot] = &lotteryExecutor{}
 
-	executors[types.TransactionTypeOperatorEvent] = &contractExecutor{}
+	executors[types.TransactionTypeContract] = &contractExecutor{}
 
 	txExecutorsImpl = &txExecutors{executors: executors}
 }
