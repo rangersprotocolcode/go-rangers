@@ -14,9 +14,8 @@ type contractData struct {
 	GasPrice *big.Int `json:"gasPrice,omitempty"`
 	GasLimit uint64   `json:"gasLimit,omitempty"`
 
-	TransferValue   *big.Int `json:"transferValue,omitempty"`
-	AbiData         string   `json:"abiData,omitempty"`
-	ContractAddress string   `json:"contractAddress,omitempty"`
+	TransferValue *big.Int `json:"transferValue,omitempty"`
+	AbiData       string   `json:"abiData,omitempty"`
 }
 
 type contractExecuteData struct {
@@ -55,7 +54,7 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 	var (
 		result          []byte
 		leftOverGas     uint64
-		contractAddress common.Address = common.HexToAddress(data.ContractAddress)
+		contractAddress common.Address = common.HexToAddress(transaction.Target)
 	)
 	if transaction.Target == "" {
 		result, contractAddress, leftOverGas, err = vmInstance.Create(caller, []byte(data.AbiData), data.GasLimit, data.TransferValue)
