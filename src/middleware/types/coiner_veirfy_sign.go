@@ -19,7 +19,7 @@ package types
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/common/secp256k1"
-	"com.tuntun.rocket/node/src/storage/sha3"
+	"com.tuntun.rocket/node/src/common/sha3"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"encoding/json"

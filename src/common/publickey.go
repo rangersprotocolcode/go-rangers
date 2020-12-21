@@ -19,10 +19,10 @@ package common
 import (
 	"com.tuntun.rocket/node/src/common/ecies"
 	"com.tuntun.rocket/node/src/common/secp256k1"
+	"com.tuntun.rocket/node/src/common/sha3"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"encoding/hex"
-	"golang.org/x/crypto/sha3"
 	"io"
 )
 
@@ -39,20 +39,12 @@ func (pk PublicKey) Verify(hash []byte, s *Sign) bool {
 
 //由公钥萃取地址函数
 func (pk PublicKey) GetAddress() Address {
-	x := pk.PubKey.X.Bytes()
-	y := pk.PubKey.Y.Bytes()
-
-	digest := make([]byte, 64)
-	copy(digest[32-len(x):], x)
-	copy(digest[64-len(y):], y)
-
-	addr_buf := sha3.Sum256(digest)
-	Addr := BytesToAddress(addr_buf[:])
-	return Addr
+	addrBuf := pk.GetID()
+	return BytesToAddress(addrBuf[:])
 }
 
 //由公钥萃取矿工ID
-func (pk PublicKey) GetID() [32]byte {
+func (pk PublicKey) GetID() []byte {
 	x := pk.PubKey.X.Bytes()
 	y := pk.PubKey.Y.Bytes()
 
@@ -60,9 +52,10 @@ func (pk PublicKey) GetID() [32]byte {
 	copy(digest[32-len(x):], x)
 	copy(digest[64-len(y):], y)
 
-	addr_buf := sha3.Sum256(digest)
-
-	return addr_buf
+	d := sha3.NewKeccak256()
+	d.Write(digest)
+	hash := d.Sum(nil)
+	return hash
 }
 
 //把公钥转换成字节切片
