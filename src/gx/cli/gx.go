@@ -158,7 +158,6 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 	sk := common.HexStringToSecKey(gx.account.Sk)
 	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
-	common.GlobalConf.SetString(Section, "signSecKey", minerInfo.SecKey.GetHexString())
 
 	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr)
 	service.InitService()
