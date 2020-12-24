@@ -34,7 +34,7 @@ func TestSha256(t *testing.T) {
 }
 
 func TestID(t *testing.T) {
-	privateKeyStr := "0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea  "
+	privateKeyStr := "0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"
 	privateKeyBuf, _ := hex.DecodeString(privateKeyStr[len(PREFIX):])
 	fmt.Printf("privateKeyBuf len:%d\n", len(privateKeyBuf))
 	var privateKey PrivateKey

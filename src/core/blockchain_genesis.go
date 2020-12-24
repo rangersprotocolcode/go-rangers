@@ -101,11 +101,12 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	/**
 		测试账户
 		id:0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443
+	    adderss:0x38780174572fb5b4735df1b7c69aee77ff6e9f49
 	    sk:0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea
 	*/
-	stateDB.SetBNT(common.HexToAddress("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"), "ETH.ETH", big.NewInt(10000000000))
-	stateDB.SetFT(common.HexToAddress("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"), "SYSTEM-ETH.USDT", big.NewInt(10000000000))
-	stateDB.SetBalance(common.HexToAddress("0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"), big.NewInt(1000000000000000000))
+	stateDB.SetBNT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "ETH.ETH", big.NewInt(10000000000))
+	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-ETH.USDT", big.NewInt(10000000000))
+	stateDB.SetBalance(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), big.NewInt(1000000000000000000))
 
 	//客户端测试使用账号
 	stateDB.SetBNT(common.HexToAddress("0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"), "ETH.ETH", big.NewInt(10000000000))
@@ -116,11 +117,12 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	/**
 	自动化测试框架专用账户
 	id:0x7dba6865f337148e5887d6bea97e6a98701a2fa774bd00474ea68bcc645142f2
+	address:0x2c616a97d3d10e008f901b392986b1a65e0abbb7
 	sk:0x083f3fb13ffa99a18283a7fd5e2f831a52f39afdd90f5310a3d8fd4ffbd00d49
 	*/
-	stateDB.SetBNT(common.HexToAddress("0x7dba6865f337148e5887d6bea97e6a98701a2fa774bd00474ea68bcc645142f2"), "ETH.ETH", big.NewInt(10000000000))
-	stateDB.SetFT(common.HexToAddress("0x7dba6865f337148e5887d6bea97e6a98701a2fa774bd00474ea68bcc645142f2"), "SYSTEM-ETH.USDT", big.NewInt(10000000000))
-	stateDB.SetBalance(common.HexToAddress("0x7dba6865f337148e5887d6bea97e6a98701a2fa774bd00474ea68bcc645142f2"), big.NewInt(1000000000000000000))
+	stateDB.SetBNT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "ETH.ETH", big.NewInt(10000000000))
+	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-ETH.USDT", big.NewInt(10000000000))
+	stateDB.SetBalance(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), big.NewInt(1000000000000000000))
 
 	root, _ := stateDB.Commit(true)
 	triedb.Commit(root, false)
