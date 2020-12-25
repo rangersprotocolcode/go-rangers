@@ -78,11 +78,14 @@ type EVMInterpreter struct {
 // NewEVMInterpreter returns a new instance of the Interpreter.
 func NewEVMInterpreter(evm *EVM) *EVMInterpreter {
 
-	return &EVMInterpreter{
+	interpreter := &EVMInterpreter{
 		evm:       evm,
 		jumpTable: newInstructionSet(),
-		tracer:    vmTracer,
 	}
+
+	config := LogConfig{false, false, false, false}
+	interpreter.tracer = NewStructLogger(&config, logger)
+	return interpreter
 }
 
 // Run loops and evaluates the contract's code with the given input data and returns

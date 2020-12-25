@@ -32,9 +32,6 @@ func InitVM() {
 
 	index := common.GlobalConf.GetString("instance", "index", "")
 	logger = log.GetLoggerByIndex(log.VMLogConfig, index)
-
-	config := LogConfig{false, false, false, false}
-	vmTracer = NewStructLogger(&config, logger)
 }
 
 // CanTransfer checks whether there are enough funds in the address' account to make a transfer.

@@ -133,9 +133,11 @@ func NewEVM(ctx Context, statedb StateDB) *EVM {
 		Context:      ctx,
 		StateDB:      statedb,
 		chainID:      chainID,
-		tracer:       vmTracer,
 		interpreters: make([]Interpreter, 0, 1),
 	}
+
+	config := LogConfig{false, false, false, false}
+	evm.tracer = NewStructLogger(&config, logger)
 
 	// vmConfig.EVMInterpreter will be used by EVM-C, it won't be checked here
 	// as we always want to have the built-in EVM as the failover option.
