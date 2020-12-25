@@ -106,7 +106,7 @@ func BigIntToStr(number *big.Int) string {
 	}
 
 	// 默认保留小数点9位
-	return bigIntToStr(number, 9)
+	return bigIntToStr(number, 18)
 }
 
 func bigIntToStr(n *big.Int, precision int) string {
