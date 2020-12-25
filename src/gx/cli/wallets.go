@@ -24,6 +24,7 @@ import (
 	"com.tuntun.rocket/node/src/consensus/vrf"
 	"com.tuntun.rocket/node/src/core"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"log"
 	"sync"
@@ -93,13 +94,13 @@ func (ws *wallets) newWalletByPrivateKey(privateKey string) (privKeyStr, walletA
 	return
 }
 
-func (ws *wallets) getBalance(account string) (uint64, error) {
+func (ws *wallets) getBalance(account string) string {
 	if account == "" && len(walletManager) > 0 {
 		account = walletManager[0].Address
 	}
 	balance := core.GetBlockChain().GetBalance(common.HexToAddress(account))
 
-	return balance.Uint64(), nil
+	return utility.BigIntToStr(balance)
 }
 
 func newWallets() wallets {

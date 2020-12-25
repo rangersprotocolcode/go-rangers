@@ -340,11 +340,8 @@ func (api *GtasAPI) NodeInfo() (*Result, error) {
 	ni := &NodeInfo{}
 	p := consensus.Proc
 	ni.ID = p.GetMinerID().GetHexString()
-	balance, err := walletManager.getBalance(p.GetMinerID().GetHexString())
-	if err != nil {
-		return failResult(err.Error())
-	}
-	ni.Balance = float64(balance) / float64(1000000000)
+	balance := walletManager.getBalance(p.GetMinerID().GetHexString())
+	ni.Balance = balance
 	if !p.Ready() {
 		ni.Status = "节点未准备就绪"
 	} else {

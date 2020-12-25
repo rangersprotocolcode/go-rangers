@@ -27,7 +27,7 @@ import (
 const (
 	zeroString = "0"
 	prec       = 1025
-	baseNumber = 1000000000
+	baseNumber = 1000000000000000000
 )
 
 func UInt32ToByte(i uint32) []byte {
