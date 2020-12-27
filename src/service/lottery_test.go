@@ -162,3 +162,109 @@ func TestJackpot(t *testing.T) {
 	}
 	fmt.Println(m)
 }
+
+// 必中
+func TestJackpot2(t *testing.T) {
+	os.RemoveAll("storage0")
+	os.RemoveAll("logs")
+	os.Remove("1.ini")
+	defer os.RemoveAll("logs")
+	defer os.RemoveAll("storage0")
+	defer os.Remove("1.ini")
+
+	common.InitConf("1.ini")
+	InitService()
+	db, _ := db.NewLDBDatabase("test", 0, 0)
+	defer db.Close()
+	triedb := account.NewDatabase(db)
+
+	accountdb, _ := account.NewAccountDB(common.Hash{}, triedb)
+	NFTManagerInstance.PublishNFTSet(&types.NFTSet{
+		SetID:     NFTSETID1,
+		MaxSupply: 0,
+		Owner:     sourceAddr.GetHexString(),
+	}, accountdb)
+	accountdb.SetBalance(sourceAddr, big.NewInt(100*1000000000))
+
+	conditions := `{"combo":{"p":"1"},"prizes":{"nft":{"p":"0.5","content":{"nftSetId1":"1"}},"ft":{"p":"0.5","content":{"max":{"p":"1","range":"0-0.001"}}}}}`
+	id, reason := CreateLottery(sourceAddr.GetHexString(), conditions, accountdb)
+	if 0 != len(reason) {
+		t.Fatalf(reason)
+	}
+
+	root, err := accountdb.Commit(true)
+	if nil != err {
+		t.Fatalf("fail to commit accountdb after mint")
+	}
+	err = triedb.TrieDB().Commit(root, true)
+	if nil != err {
+		t.Fatalf("fail to commit TrieDB after mint")
+	}
+
+	accountdb, _ = account.NewAccountDB(root, triedb)
+	for i := uint64(0); i < 10000; i++ {
+		answer, _ := Jackpot(id, sourceAddr2.GetHexString(), "123", uint64(time.Now().UnixNano()), 1024+i*common.BlocksPerDay, accountdb)
+		var it items
+		fmt.Println(answer)
+		json.Unmarshal(utility.StrToBytes(answer), &it)
+		length := len(it.Nft) + len(it.Ft)
+		if 1 != length {
+			t.Fatalf("wrong: %s", answer)
+		}
+
+	}
+}
+
+
+
+// 必中
+func TestJackpot3(t *testing.T) {
+	os.RemoveAll("storage0")
+	os.RemoveAll("logs")
+	os.Remove("1.ini")
+	defer os.RemoveAll("logs")
+	defer os.RemoveAll("storage0")
+	defer os.Remove("1.ini")
+
+	common.InitConf("1.ini")
+	InitService()
+	db, _ := db.NewLDBDatabase("test", 0, 0)
+	defer db.Close()
+	triedb := account.NewDatabase(db)
+
+	accountdb, _ := account.NewAccountDB(common.Hash{}, triedb)
+	NFTManagerInstance.PublishNFTSet(&types.NFTSet{
+		SetID:     "46108ebd-d3e7-4fd5-b07e-8518e9d75e10",
+		MaxSupply: 0,
+		Owner:     sourceAddr.GetHexString(),
+	}, accountdb)
+	accountdb.SetBalance(sourceAddr, big.NewInt(100*1000000000))
+
+	conditions := `{"combo":{"p":"1"},"prizes":{"nft":{"p":"1","content":{"46108ebd-d3e7-4fd5-b07e-8518e9d75e10":"1"}}}}`
+	id, reason := CreateLottery(sourceAddr.GetHexString(), conditions, accountdb)
+	if 0 != len(reason) {
+		t.Fatalf(reason)
+	}
+
+	root, err := accountdb.Commit(true)
+	if nil != err {
+		t.Fatalf("fail to commit accountdb after mint")
+	}
+	err = triedb.TrieDB().Commit(root, true)
+	if nil != err {
+		t.Fatalf("fail to commit TrieDB after mint")
+	}
+
+	accountdb, _ = account.NewAccountDB(root, triedb)
+	for i := uint64(0); i < 10; i++ {
+		answer, _ := Jackpot(id, sourceAddr2.GetHexString(), "123", uint64(time.Now().UnixNano()), 1024+i*common.BlocksPerDay, accountdb)
+		var it items
+		fmt.Println(answer)
+		json.Unmarshal(utility.StrToBytes(answer), &it)
+		length := len(it.Nft) + len(it.Ft)
+		if 1 != length {
+			t.Fatalf("wrong: %s", answer)
+		}
+
+	}
+}

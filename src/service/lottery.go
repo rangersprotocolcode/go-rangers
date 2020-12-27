@@ -169,7 +169,7 @@ func Jackpot(lotteryAddress, target, time string, seed, height uint64, accountDB
 		return "", err.Error()
 	}
 
-	comboP, err := strconv.ParseFloat(lottery.Combo.Probability, 64)
+	comboP, err := parseFloatString(lottery.Combo.Probability)
 	if nil != err {
 		txLogger.Error(err.Error())
 		return "", err.Error()
@@ -198,12 +198,12 @@ func Jackpot(lotteryAddress, target, time string, seed, height uint64, accountDB
 
 	// 开始抽奖
 	owner := accountDB.GetLotteryOwner(address)
-	nftProbability, err := strconv.ParseFloat(lottery.Prizes.Nft.Probability, 64)
+	nftProbability, err := parseFloatString(lottery.Prizes.Nft.Probability)
 	if nil != err {
 		txLogger.Error(err.Error())
 		return "", err.Error()
 	}
-	ftProbability, err := strconv.ParseFloat(lottery.Prizes.Ft.Probability, 64)
+	ftProbability, err := parseFloatString(lottery.Prizes.Ft.Probability)
 	if nil != err {
 		txLogger.Error(err.Error())
 		return "", err.Error()
@@ -333,4 +333,12 @@ func getJackPotItem(p float64, prizes map[string]string) string {
 	}
 
 	return ""
+}
+
+func parseFloatString(floatString string) (float64, error) {
+	if 0 == len(floatString) {
+		return 0, nil
+	}
+
+	return strconv.ParseFloat(floatString, 64)
 }
