@@ -3,8 +3,6 @@ package vm
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/utility"
-	"fmt"
 	"math/big"
 )
 
@@ -37,7 +35,6 @@ func InitVM() {
 // CanTransfer checks whether there are enough funds in the address' account to make a transfer.
 // This does not take the necessary gas in to account to make the transfer valid.
 func CanTransfer(db StateDB, addr common.Address, amount *big.Int) bool {
-	fmt.Printf("CanTransfer: amount:%s,balance:%s\n", utility.BigIntToStr(amount), utility.BigIntToStr(db.GetBalance(addr)))
 	return db.GetBalance(addr).Cmp(amount) >= 0
 }
 
