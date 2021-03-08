@@ -238,6 +238,27 @@ func TestVM7(t *testing.T) {
 
 }
 
+func TestVM8(t *testing.T) {
+	mockInit()
+	config := new(testConfig)
+	setDefaults(config)
+	defer log.Close()
+
+	config.GasLimit = 3000000
+	config.GasPrice = big.NewInt(1)
+
+	//contractCodeBytes := common.Hex2Bytes("6080604052348015600f57600080fd5b5060606040518060400160405280600781526020017f6e66744e616d6500000000000000000000000000000000000000000000000000815250905060606040518060400160405280600981526020017f6e667453796d626f6c0000000000000000000000000000000000000000000000815250905060006103e790506000838383e090505050505060518060a46000396000f3fe6080604052600080fdfea264697066735822122062d45ee11410a296edf3c7ca4865bf7a3617239b50bf8aa4a0e080acc5e3234b64736f6c6375302e372e352b636f6d6d69742e65623737656430380045")
+	contractCodeBytes := common.Hex2Bytes("6080604052348015600f57600080fd5b5060606040518060400160405280600a81526020017f6e667453796d626f6c5f0000000000000000000000000000000000000000000081525090506000607b90506040518060400160405280600781526020017f6e66744e616d65000000000000000000000000000000000000000000000000008152508282e050505060518060996000396000f3fe6080604052600080fdfea2646970667358221220d50dbd6ce40d1dd9385660c286447c63eb4a1e8bf7a16317196a285c4ef43f9464736f6c6375302e372e352b636f6d6d69742e65623737656430380045")
+	createResult, contractAddress, createLeftGas, createErr := mockCreate(contractCodeBytes, config)
+	fmt.Printf("New create contract address:%s\n", contractAddress.GetHexString())
+	fmt.Printf("New create contract createResult:%v,%d\n", createResult, len(createResult))
+	fmt.Printf("New create contract costGas:%v,createErr:%v\n", config.GasLimit-createLeftGas, createErr)
+
+	//input := common.Hex2Bytes("f8a8fd6d")
+	//callResult, callLeftGas, callErr := mockCall(contractAddress, input, config)
+	//fmt.Printf("callResult:%v,costGas:%d,callErr:%v\n", callResult, config.GasLimit-callLeftGas, callErr)
+}
+
 func TestAddress(t *testing.T) {
 	addr := common.HexToAddress("0xbfaf6e5211f2c4aff8eeccf0bdf6965cb7d37e88bb6244ab08c77bf055497302")
 	fmt.Printf("addr:%v\n", addr.Bytes()[:20])

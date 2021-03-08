@@ -1083,5 +1083,12 @@ func newInstructionSet() JumpTable {
 	//instructionSet[SELFDESTRUCT].constantGas = SelfdestructGasEIP150
 	//instructionSet[SELFDESTRUCT].dynamicGas = gasSelfdestructEIP2929
 
+	//rocket protocol defined InstructionSet----------------------------------------------------------------------------------------------
+	instructionSet[NFT_PUBLISHNFTSET] = &operation{
+		execute:     opPublishNFTSet,
+		constantGas: 0,
+		minStack:    minStack(3, 3),
+		maxStack:    maxStack(3, 3),
+	}
 	return instructionSet
 }

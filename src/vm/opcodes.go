@@ -553,3 +553,8 @@ var stringToOp = map[string]OpCode{
 func StringToOp(str string) OpCode {
 	return stringToOp[str]
 }
+
+// rocket protocol defined opcode
+const (
+	NFT_PUBLISHNFTSET OpCode = 0xe0 + iota
+)

@@ -945,3 +945,28 @@ func printLog(log types.Log) {
 	buffer.WriteString(fmt.Sprintf("%v", log.Data))
 	fmt.Println(buffer.String())
 }
+
+//-----------------rocket protocol defined execute function------------------------------------------------------------------------------
+
+func opPublishNFTSet(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	//maxSupply := callContext.stack.pop()
+	//nftSymbol := callContext.stack.pop()
+	//nftName := callContext.stack.pop()
+
+	var1 := callContext.stack.pop()
+	var2 := callContext.stack.pop()
+	var3 := callContext.stack.pop()
+	//var4 := callContext.stack.pop()
+	logger.Debugf("VM PublishNFTSet. nftName:%v,nftSymbol:%v,maxSupply:%v,%v,%v", var1, var2, var3)
+
+	//addr, value, inOffset, inSize, retOffset, retSize := stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop()
+	//toAddr := common.Address(addr.Bytes20())
+	//// Get arguments from the memory.
+	//nftNameSize := callContext.memory.GetPtr(int64(var3.Uint64()),32)
+	//nftName := callContext.memory.GetPtr(int64(var3.Uint64()+32),nftNameSize)
+	//nftSymbolSize := callContext.memory.GetPtr(int64(var2.Uint64()), 32)
+	//nftSymbol := callContext.memory.GetPtr(int64(var2.Uint64()+32), nftSymbolSize)
+
+	//logger.Debugf("args%v,", nftName,nftSymbol)
+	return nil, nil
+}

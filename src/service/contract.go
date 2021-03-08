@@ -20,7 +20,7 @@ type contractData struct {
 	AbiData       string `json:"abiData,omitempty"`
 }
 
-type contractExecuteData struct {
+type executeResultData struct {
 	ContractAddress string `json:"contractAddress,omitempty"`
 
 	ExecuteResult []byte `json:"result,omitempty"`
@@ -84,7 +84,7 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 		return false, err.Error()
 	}
 
-	returnData := contractExecuteData{contractAddress.GetHexString(), result}
+	returnData := executeResultData{contractAddress.GetHexString(), result}
 	json, _ := json.Marshal(returnData)
 	return true, string(json)
 }
