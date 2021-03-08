@@ -148,8 +148,10 @@ func (executor *GameExecutor) read(msg notify.Message) {
 
 	// 查询账户余额
 	case types.TransactionTypeOperatorBalance:
-		result = service.GetBalance(source)
-		executor.logger.Debugf("balance,addr: %s, result: %s", sourceString, result)
+		param := make(map[string]string, 0)
+		json.Unmarshal([]byte(txRaw.Data), &param)
+		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
+		result = service.GetBalance(source, accountDB)
 		break
 
 		// 查询主链币
@@ -224,6 +226,67 @@ func (executor *GameExecutor) read(msg notify.Message) {
 
 		bytes, _ := json.Marshal(resultMap)
 		result = string(bytes)
+		break
+		//查询CHAIN ID
+	case types.TransactionTypeGetChainId:
+		result = service.GetChainId()
+		break
+		//查询最新块
+	case types.TransactionTypeGetTopBlock:
+		block := GetBlockChain().CurrentBlock()
+		blockBytes, _ := json.Marshal(block)
+		result = string(blockBytes)
+		break
+		//根据高度或者HASH查询block
+	case types.TransactionTypeGetBlock:
+		param := make(map[string]string, 0)
+		json.Unmarshal([]byte(txRaw.Data), &param)
+		result = getBlock(param["height"], param["hash"])
+		break
+		//查询NONCE
+	case types.TransactionTypeGetNonce:
+		param := make(map[string]string, 0)
+		json.Unmarshal([]byte(txRaw.Data), &param)
+		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
+		result = service.GetNonce(source, accountDB)
+		break
+		//查询交易
+	case types.TransactionTypeGetTx:
+		param := make(map[string]string, 0)
+		json.Unmarshal([]byte(txRaw.Data), &param)
+		result = getTransaction(common.StringToHash(param["txHash"]))
+		break
+		//查询收据
+	case types.TransactionTypeGetReceipt:
+		param := make(map[string]string, 0)
+		json.Unmarshal([]byte(txRaw.Data), &param)
+		result = service.GetReceipt(common.StringToHash(param["txHash"]))
+		break
+		//查询交易数量
+	case types.TransactionTypeGetTxCount:
+		param := make(map[string]string, 0)
+		json.Unmarshal([]byte(txRaw.Data), &param)
+		result = getTransactionCount(param["height"], param["hash"])
+		break
+		//根据索引查询块中交易
+	case types.TransactionTypeGetTxFromBlock:
+		param := make(map[string]string, 0)
+		json.Unmarshal([]byte(txRaw.Data), &param)
+		result = getTransactionFromBlock(param["height"], param["hash"], param["index"])
+		break
+		//查询存储信息
+	case types.TransactionTypeGetStorage:
+		param := make(map[string]string, 0)
+		json.Unmarshal([]byte(txRaw.Data), &param)
+		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
+		result = service.GetStorageAt(param["address"], param["key"], accountDB)
+		break
+		//查询CODE
+	case types.TransactionTypeGetCode:
+		param := make(map[string]string, 0)
+		json.Unmarshal([]byte(txRaw.Data), &param)
+		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
+		result = service.GetCode(param["address"], accountDB)
 		break
 	}
 

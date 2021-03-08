@@ -19,3 +19,5 @@ package common
 const Version = "0.9"
 
 const ConsensusVersion = 1
+
+const ChainId = "1"

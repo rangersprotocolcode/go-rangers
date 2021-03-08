@@ -24,13 +24,14 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 )
 
-func GetBalance(source common.Address) string {
-	logger.Debugf("Get balance before get balance.source:%s", source)
-	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	logger.Debugf("Get balance after get balance.")
+func GetBalance(source common.Address, accountDB *account.AccountDB) string {
+	if accountDB == nil {
+		return ""
+	}
 	balance := accountDB.GetBalance(source)
 
 	return utility.BigIntToStr(balance)
@@ -161,6 +162,43 @@ func GetFTSet(id string) string {
 	}
 
 	return ""
+}
+
+func GetChainId() string {
+	return common.ChainId
+}
+
+func GetNonce(address common.Address, accountDB *account.AccountDB) string {
+	if accountDB == nil {
+		return ""
+	}
+	nonce := accountDB.GetNonce(address)
+	return strconv.FormatUint(nonce, 10)
+}
+
+func GetReceipt(txHash common.Hash) string {
+	transaction := GetTransactionPool().GetExecuted(txHash)
+	if transaction == nil {
+		return ""
+	}
+	result, _ := json.Marshal(transaction.Receipt)
+	return string(result)
+}
+
+func GetStorageAt(address string, key string, accountDB *account.AccountDB) string {
+	if accountDB == nil {
+		return ""
+	}
+	value := accountDB.GetData(common.StringToAddress(address), []byte(key))
+	return string(value)
+}
+
+func GetCode(address string, accountDB *account.AccountDB) string {
+	if accountDB == nil {
+		return ""
+	}
+	value := accountDB.GetCode(common.StringToAddress(address))
+	return string(value)
 }
 
 // 状态机更新资产
