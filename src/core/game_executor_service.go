@@ -128,7 +128,7 @@ func getAccountDBByHashOrHeight(height string, hash string) *account.AccountDB {
 	if height == "" && hash == "" {
 		accountDB = service.AccountDBManagerInstance.GetAccountDB("", true)
 	} else if hash != "" {
-		accountDB = getAccountDBByHash(common.StringToHash(hash))
+		accountDB = getAccountDBByHash(common.HexToHash(hash))
 	} else {
 		heightInt, err := strconv.Atoi(height)
 		if err == nil {
@@ -164,7 +164,7 @@ func getBlockByHashOrHeight(height string, hash string) *types.Block {
 	if height == "" && hash == "" {
 		block = GetBlockChain().CurrentBlock()
 	} else if hash != "" {
-		block = GetBlockChain().QueryBlockByHash(common.StringToHash(hash))
+		block = GetBlockChain().QueryBlockByHash(common.HexToHash(hash))
 	} else {
 		heightInt, err := strconv.Atoi(height)
 		if err == nil {
