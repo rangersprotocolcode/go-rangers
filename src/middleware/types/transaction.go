@@ -100,7 +100,7 @@ const (
 
 	//查询接口
 	TransactionTypeGetChainId     = 601 //查询CHAIN ID
-	TransactionTypeGetTopBlock    = 602 //查询最新块
+	TransactionTypeGetBlockNumber = 602 //查询块高
 	TransactionTypeGetBlock       = 603 //根据高度或者hash查询块
 	TransactionTypeGetNonce       = 604 //查询NONCE
 	TransactionTypeGetTx          = 605 //查询交易
@@ -112,8 +112,7 @@ const (
 
 	TransactionTypeGetPastEvents = 611
 	TransactionTypeGetPastLogs   = 612
-	TransactionTypeEncodeABI     = 613
-	TransactionTypeCallVM        = 614
+	TransactionTypeCallVM        = 613
 )
 
 type Transaction struct {

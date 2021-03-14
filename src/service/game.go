@@ -189,7 +189,7 @@ func GetStorageAt(address string, key string, accountDB *account.AccountDB) stri
 	if accountDB == nil {
 		return ""
 	}
-	value := accountDB.GetData(common.StringToAddress(address), []byte(key))
+	value := accountDB.GetData(common.HexToAddress(address), []byte(key))
 	return string(value)
 }
 
@@ -197,7 +197,7 @@ func GetCode(address string, accountDB *account.AccountDB) string {
 	if accountDB == nil {
 		return ""
 	}
-	value := accountDB.GetCode(common.StringToAddress(address))
+	value := accountDB.GetCode(common.HexToAddress(address))
 	return string(value)
 }
 

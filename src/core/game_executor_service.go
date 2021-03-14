@@ -18,6 +18,14 @@ func getBlock(height string, hash string) string {
 	return string(result)
 }
 
+func getBlockNumber(height string, hash string) string {
+	block := getBlockByHashOrHeight(height, hash)
+	if block == nil {
+		return ""
+	}
+	return strconv.FormatUint(block.Header.Height, 10)
+}
+
 func getTransactionCount(height string, hash string) string {
 	block := getBlockByHashOrHeight(height, hash)
 	if block == nil {
@@ -46,6 +54,72 @@ func getTransaction(hash common.Hash) string {
 	tx, _ := GetBlockChain().GetTransaction(hash)
 	result, _ := json.Marshal(tx)
 	return string(result)
+}
+
+func getPastLogs(from uint64, to uint64, addresses []common.Address, topics [][]string) string {
+	var logs []*types.Log
+	if to == 0 {
+		to = GetBlockChain().Height()
+	}
+	for i := from; i <= to; i++ {
+		block := GetBlockChain().QueryBlock(i)
+		if block == nil {
+			continue
+		}
+		txHashList := block.Header.Transactions[0]
+		for _, txHash := range txHashList {
+			tx := service.GetTransactionPool().GetExecuted(txHash)
+			if tx == nil {
+				continue
+			}
+			for _, log := range tx.Receipt.Logs {
+				logs = append(logs, log)
+			}
+		}
+	}
+	logs = filterLogs(logs, addresses, topics)
+	result, _ := json.Marshal(logs)
+	return string(result)
+}
+
+// filterLogs creates a slice of logs matching the given criteria.
+func filterLogs(logs []*types.Log, addresses []common.Address, topics [][]string) []*types.Log {
+	var ret []*types.Log
+Logs:
+	for _, log := range logs {
+
+		if len(addresses) > 0 && !includes(addresses, log.Address) {
+			continue
+		}
+		// If the to filtered topics is greater than the amount of topics in logs, skip.
+		if len(topics) > len(log.Topics) {
+			continue Logs
+		}
+		for i, sub := range topics {
+			match := len(sub) == 0 // empty rule set == wildcard
+			for _, topic := range sub {
+				if log.Topics[i].String() == topic {
+					match = true
+					break
+				}
+			}
+			if !match {
+				continue Logs
+			}
+		}
+		ret = append(ret, log)
+	}
+	return ret
+}
+
+func includes(addresses []common.Address, a common.Address) bool {
+	for _, addr := range addresses {
+		if addr == a {
+			return true
+		}
+	}
+
+	return false
 }
 
 //-----------------------------------------------------------------------------
@@ -87,7 +161,9 @@ func getAccountDBByHash(hash common.Hash) (accountDB *account.AccountDB) {
 
 func getBlockByHashOrHeight(height string, hash string) *types.Block {
 	var block *types.Block
-	if hash != "" {
+	if height == "" && hash == "" {
+		block = GetBlockChain().CurrentBlock()
+	} else if hash != "" {
 		block = GetBlockChain().QueryBlockByHash(common.StringToHash(hash))
 	} else {
 		heightInt, err := strconv.Atoi(height)

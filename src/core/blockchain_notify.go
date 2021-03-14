@@ -41,3 +41,21 @@ func (chain *blockChain) notifyReceipts(receipts types.Receipts) {
 		network.GetNetInstance().Notify(true, "rocketprotocol", receipt.Source, string(msgBytes))
 	}
 }
+
+func (chain *blockChain) notifyVMEvents(receipts types.Receipts) {
+	if nil == receipts || 0 == len(receipts) {
+		return
+	}
+
+	for _, receipt := range receipts {
+		for _, log := range receipt.Logs {
+			logBytes, err := json.Marshal(log)
+			if err != nil {
+				continue
+			}
+			for _, topic := range log.Topics {
+				network.GetNetInstance().Notify(false, "vm_event_"+topic.String(), "", string(logBytes))
+			}
+		}
+	}
+}

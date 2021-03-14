@@ -123,3 +123,74 @@ func TestAddMinerStakeTx(t *testing.T) {
 
 	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
 }
+
+//------------------------------------------------------------------------------------------------
+func TestGetBlockNumberTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 602, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"height":"11","hash":""}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetBalanceTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 99, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"height":"11","hash":""}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetStorageTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 609, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"height":"11","hash":"",address:"",key:""}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetCodeTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 610, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"height":"","hash":"",address:"0x9ddeb4a196da90824feceeac57e6d5f1d82b2ad7"}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetBlockTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 603, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"height":"","hash":"",address:"0x9ddeb4a196da90824feceeac57e6d5f1d82b2ad7"}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetBlockTransactionCountTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 607, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"height":"","hash":""}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetTransactionTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 605, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"txHash":"0xf58b553d58d2ff88a01bcf936681984802d2006b6512b5eb4e47573c81400926"}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}

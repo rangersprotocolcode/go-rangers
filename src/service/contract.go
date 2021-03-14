@@ -85,7 +85,6 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 	}
 	returnData := executeResultData{contractAddress.GetHexString(), result}
 	json, _ := json.Marshal(returnData)
-	txLogger.Debugf("contract address:%s,result:%v,json:%s", contractAddress.GetHexString(), result, string(json))
 	return true, string(json)
 }
 

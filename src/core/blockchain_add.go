@@ -283,6 +283,7 @@ func (chain *blockChain) updateVerifyHash(block *types.Block) {
 
 func (chain *blockChain) updateTxPool(block *types.Block, receipts types.Receipts) {
 	go chain.notifyReceipts(receipts)
+	go chain.notifyVMEvents(receipts)
 	chain.transactionPool.MarkExecuted(receipts, block.Transactions, block.Header.EvictedTxs)
 }
 

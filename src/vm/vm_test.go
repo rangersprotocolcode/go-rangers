@@ -196,11 +196,12 @@ func TestVM6(t *testing.T) {
 	createResult, contractAddress, createLeftGas, createErr := mockCreate(contractCodeBytes, config)
 	fmt.Printf("New create contract address:%s\n", contractAddress.GetHexString())
 	fmt.Printf("New create contract createResult:%v,%d\n", createResult, len(createResult))
+	fmt.Printf("New create contract createResult:%s,%d\n", string(createResult), len(createResult))
 	fmt.Printf("New create contract costGas:%v,createErr:%v\n", config.GasLimit-createLeftGas, createErr)
 
-	input := common.Hex2Bytes("f8a8fd6d")
-	callResult, callLeftGas, callErr := mockCall(contractAddress, input, config)
-	fmt.Printf("callResult:%v,costGas:%d,callErr:%v\n", callResult, config.GasLimit-callLeftGas, callErr)
+	//input := common.Hex2Bytes("f8a8fd6d")
+	//callResult, callLeftGas, callErr := mockCall(contractAddress, input, config)
+	//fmt.Printf("callResult:%v,costGas:%d,callErr:%v\n", callResult, config.GasLimit-callLeftGas, callErr)
 }
 
 func TestVM7(t *testing.T) {

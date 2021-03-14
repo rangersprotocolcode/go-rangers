@@ -232,10 +232,10 @@ func (executor *GameExecutor) read(msg notify.Message) {
 		result = service.GetChainId()
 		break
 		//查询最新块
-	case types.TransactionTypeGetTopBlock:
-		block := GetBlockChain().CurrentBlock()
-		blockBytes, _ := json.Marshal(block)
-		result = string(blockBytes)
+	case types.TransactionTypeGetBlockNumber:
+		param := make(map[string]string, 0)
+		json.Unmarshal([]byte(txRaw.Data), &param)
+		result = getBlockNumber(param["height"], param["hash"])
 		break
 		//根据高度或者HASH查询block
 	case types.TransactionTypeGetBlock:
@@ -254,13 +254,13 @@ func (executor *GameExecutor) read(msg notify.Message) {
 	case types.TransactionTypeGetTx:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
-		result = getTransaction(common.StringToHash(param["txHash"]))
+		result = getTransaction(common.HexToHash(param["txHash"]))
 		break
 		//查询收据
 	case types.TransactionTypeGetReceipt:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
-		result = service.GetReceipt(common.StringToHash(param["txHash"]))
+		result = service.GetReceipt(common.HexToHash(param["txHash"]))
 		break
 		//查询交易数量
 	case types.TransactionTypeGetTxCount:
@@ -287,6 +287,19 @@ func (executor *GameExecutor) read(msg notify.Message) {
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
 		result = service.GetCode(param["address"], accountDB)
+		break
+
+	case types.TransactionTypeGetPastLogs:
+		param := make(map[string]interface{}, 0)
+		json.Unmarshal([]byte(txRaw.Data), &param)
+		from := param["fromBlock"].(uint64)
+		to := param["toBlock"].(uint64)
+		var addressList []common.Address
+		for _, address := range param["address"].([]string) {
+			addressList = append(addressList, common.HexToAddress(address))
+		}
+		topics := param["topics"].([][]string)
+		result = getPastLogs(from, to, addressList, topics)
 		break
 	}
 
