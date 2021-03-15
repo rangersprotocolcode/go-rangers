@@ -46,7 +46,8 @@ func getTransactionFromBlock(height string, hash string, index string) string {
 	if indexInt >= len(block.Transactions) {
 		return ""
 	}
-	result, _ := json.Marshal(block.Transactions[indexInt])
+	tx := block.Transactions[indexInt]
+	result, _ := json.Marshal(tx)
 	return string(result)
 }
 

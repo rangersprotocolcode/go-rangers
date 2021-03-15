@@ -194,3 +194,60 @@ func TestGetTransactionTx(t *testing.T) {
 	tx.Data = string(data)
 	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
 }
+
+func TestGetTransactionFromBlockTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 608, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"height":"","hash":"",index:"0"}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetReceiptTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 606, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"txHash":"0xf58b553d58d2ff88a01bcf936681984802d2006b6512b5eb4e47573c81400926"}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetNonceTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 604, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"height":"","hash":""}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestTransferTx(t *testing.T) {
+	source := "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
+	target := "0x51ba50a9b4730aea7ecee86df6536297900f5b78"
+	tx := types.Transaction{Type: 200, Source: source, Target: target, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := contractData{GasPrice: "1", GasLimit: "100000", TransferValue: "3", AbiData: "11"}
+	dataBytes, _ := json.Marshal(data)
+	tx.Data = string(dataBytes)
+
+	tx.Hash = tx.GenHash()
+
+	privateKeyStr := "0x040a0c4baa2e0b927a2b1f6f93b317c320d4aa3a5b54c0a83f5872c23155dcf1455fb015a7699d4ef8491cc4c7a770e580ab1362a0e3af9f784dd2485cfc9ba7c1e7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"
+	privateKey := common.HexStringToSecKey(privateKeyStr)
+	sign := privateKey.Sign(tx.Hash.Bytes())
+	tx.Sign = &sign
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+type contractData struct {
+	GasPrice string `json:"gasPrice,omitempty"`
+	GasLimit string `json:"gasLimit,omitempty"`
+
+	TransferValue string `json:"transferValue,omitempty"`
+	AbiData       string `json:"abiData,omitempty"`
+}
