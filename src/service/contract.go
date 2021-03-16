@@ -24,6 +24,8 @@ type executeResultData struct {
 	ContractAddress string `json:"contractAddress,omitempty"`
 
 	ExecuteResult []byte `json:"result,omitempty"`
+
+	Logs []*types.Log `json:"logs,omitempty"`
 }
 
 func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transaction, header *types.BlockHeader, context map[string]interface{}) (bool, string) {
@@ -71,19 +73,20 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 	var (
 		result          []byte
 		leftOverGas     uint64
+		logs            []*types.Log
 		contractAddress common.Address = common.HexToAddress(transaction.Target)
 	)
 	if transaction.Target == "" {
-		result, contractAddress, leftOverGas, err = vmInstance.Create(caller, common.Hex2Bytes(data.AbiData), vmCtx.GasLimit, transferValue)
+		result, contractAddress, leftOverGas, logs, err = vmInstance.Create(caller, common.Hex2Bytes(data.AbiData), vmCtx.GasLimit, transferValue)
 		txLogger.Tracef("After execute contract create!Contract address:%s, leftOverGas: %d,error:%v", contractAddress.GetHexString(), leftOverGas, err)
 	} else {
-		result, leftOverGas, err = vmInstance.Call(caller, contractAddress, common.Hex2Bytes(data.AbiData), vmCtx.GasLimit, transferValue)
+		result, leftOverGas, logs, err = vmInstance.Call(caller, contractAddress, common.Hex2Bytes(data.AbiData), vmCtx.GasLimit, transferValue)
 		txLogger.Tracef("After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
 	}
 	if err != nil {
 		return false, err.Error()
 	}
-	returnData := executeResultData{contractAddress.GetHexString(), result}
+	returnData := executeResultData{contractAddress.GetHexString(), result, logs}
 	json, _ := json.Marshal(returnData)
 	return true, string(json)
 }

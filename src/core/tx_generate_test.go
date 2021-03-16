@@ -150,7 +150,7 @@ func TestGetStorageTx(t *testing.T) {
 	tx := types.Transaction{Type: 609, Source: source, Time: utility.GetTime().String()}
 	tx.SocketRequestId = "111"
 
-	data := `{"height":"11","hash":"",address:"",key:""}`
+	data := `{"height":"11","hash":"","address":"0x0200000000000000000000000000000000000000","key":"0x51ba50a9b4730aea7ecee86df6536297900f5b77"}`
 	tx.Data = string(data)
 	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
 }
@@ -160,7 +160,7 @@ func TestGetCodeTx(t *testing.T) {
 	tx := types.Transaction{Type: 610, Source: source, Time: utility.GetTime().String()}
 	tx.SocketRequestId = "111"
 
-	data := `{"height":"","hash":"",address:"0x9ddeb4a196da90824feceeac57e6d5f1d82b2ad7"}`
+	data := `{"height":"","hash":"","address":"0x9ddeb4a196da90824feceeac57e6d5f1d82b2ad7"}`
 	tx.Data = string(data)
 	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
 }
@@ -200,7 +200,7 @@ func TestGetTransactionFromBlockTx(t *testing.T) {
 	tx := types.Transaction{Type: 608, Source: source, Time: utility.GetTime().String()}
 	tx.SocketRequestId = "111"
 
-	data := `{"height":"","hash":"",index:"0"}`
+	data := `{"height":"","hash":"","index":"0"}`
 	tx.Data = string(data)
 	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
 }

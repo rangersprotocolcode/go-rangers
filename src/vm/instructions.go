@@ -621,7 +621,10 @@ func opCreate(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]
 		bigVal = value.ToBig()
 	}
 
-	res, addr, returnGas, suberr := interpreter.evm.Create(callContext.contract, input, gas, bigVal)
+	res, addr, returnGas, logs, suberr := interpreter.evm.Create(callContext.contract, input, gas, bigVal)
+	for _, log := range logs {
+		callContext.logs = append(callContext.logs, log)
+	}
 	// Push item on the stack based on the returned error. If the ruleset is
 	// homestead we must check for CodeStoreOutOfGasError (homestead only
 	// rule) and treat as an error, if the ruleset is frontier we must
@@ -664,8 +667,11 @@ func opCreate2(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 	if !endowment.IsZero() {
 		bigEndowment = endowment.ToBig()
 	}
-	res, addr, returnGas, suberr := interpreter.evm.Create2(callContext.contract, input, gas,
+	res, addr, returnGas, logs, suberr := interpreter.evm.Create2(callContext.contract, input, gas,
 		bigEndowment, &salt)
+	for _, log := range logs {
+		callContext.logs = append(callContext.logs, log)
+	}
 	// Push item on the stack based on the returned error.
 	if suberr != nil {
 		stackvalue.Clear()
@@ -703,8 +709,10 @@ func opCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 		bigVal = value.ToBig()
 	}
 
-	ret, returnGas, err := interpreter.evm.Call(callContext.contract, toAddr, args, gas, bigVal)
-
+	ret, returnGas, logs, err := interpreter.evm.Call(callContext.contract, toAddr, args, gas, bigVal)
+	for _, log := range logs {
+		callContext.logs = append(callContext.logs, log)
+	}
 	if err != nil {
 		temp.Clear()
 	} else {
@@ -738,7 +746,10 @@ func opCallCode(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 		bigVal = value.ToBig()
 	}
 
-	ret, returnGas, err := interpreter.evm.CallCode(callContext.contract, toAddr, args, gas, bigVal)
+	ret, returnGas, logs, err := interpreter.evm.CallCode(callContext.contract, toAddr, args, gas, bigVal)
+	for _, log := range logs {
+		callContext.logs = append(callContext.logs, log)
+	}
 	if err != nil {
 		temp.Clear()
 	} else {
@@ -765,7 +776,10 @@ func opDelegateCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCt
 	// Get arguments from the memory.
 	args := callContext.memory.GetPtr(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
-	ret, returnGas, err := interpreter.evm.DelegateCall(callContext.contract, toAddr, args, gas)
+	ret, returnGas, logs, err := interpreter.evm.DelegateCall(callContext.contract, toAddr, args, gas)
+	for _, log := range logs {
+		callContext.logs = append(callContext.logs, log)
+	}
 	if err != nil {
 		temp.Clear()
 	} else {
@@ -792,7 +806,10 @@ func opStaticCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx)
 	// Get arguments from the memory.
 	args := callContext.memory.GetPtr(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
-	ret, returnGas, err := interpreter.evm.StaticCall(callContext.contract, toAddr, args, gas)
+	ret, returnGas, logs, err := interpreter.evm.StaticCall(callContext.contract, toAddr, args, gas)
+	for _, log := range logs {
+		callContext.logs = append(callContext.logs, log)
+	}
 	if err != nil {
 		temp.Clear()
 	} else {
@@ -856,6 +873,7 @@ func makeLog(size int) executionFunc {
 			BlockNumber: interpreter.evm.BlockNumber.Uint64(),
 		}
 		interpreter.evm.StateDB.AddLog(log)
+		callContext.logs = append(callContext.logs, log)
 		//printLog(*log)
 		return nil, nil
 	}

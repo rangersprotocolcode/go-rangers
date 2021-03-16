@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -190,7 +191,7 @@ func GetStorageAt(address string, key string, accountDB *account.AccountDB) stri
 		return ""
 	}
 	value := accountDB.GetData(common.HexToAddress(address), []byte(key))
-	return string(value)
+	return base64.StdEncoding.EncodeToString(value)
 }
 
 func GetCode(address string, accountDB *account.AccountDB) string {
@@ -198,7 +199,7 @@ func GetCode(address string, accountDB *account.AccountDB) string {
 		return ""
 	}
 	value := accountDB.GetCode(common.HexToAddress(address))
-	return string(value)
+	return base64.StdEncoding.EncodeToString(value)
 }
 
 // 状态机更新资产

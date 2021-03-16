@@ -18,6 +18,7 @@ package vm
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/utility"
 	"hash"
 	"sync/atomic"
@@ -30,7 +31,7 @@ import (
 type Interpreter interface {
 	// Run loops and evaluates the contract's code with the given input data and returns
 	// the return byte-slice and an error if one occurred.
-	Run(contract *Contract, input []byte, static bool) ([]byte, error)
+	Run(contract *Contract, input []byte, static bool) ([]byte, []*types.Log, error)
 	// CanRun tells if the contract, passed as an argument, can be
 	// run by the current interpreter. This is meant so that the
 	// caller can do something like:
@@ -52,6 +53,8 @@ type callCtx struct {
 	stack    *Stack
 	rstack   *ReturnStack
 	contract *Contract
+
+	logs []*types.Log
 }
 
 // keccakState wraps sha3.state. In addition to the usual hash methods, it also supports
@@ -94,7 +97,7 @@ func NewEVMInterpreter(evm *EVM) *EVMInterpreter {
 // It's important to note that any errors returned by the interpreter should be
 // considered a revert-and-consume-all-gas operation except for
 // ErrExecutionReverted which means revert-and-keep-gas-left.
-func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (ret []byte, err error) {
+func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (ret []byte, logs []*types.Log, err error) {
 
 	// Increment the call depth which is restricted to 1024
 	in.evm.depth++
@@ -113,7 +116,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 
 	// Don't bother with the execution if there's no code.
 	if len(contract.Code) == 0 {
-		return nil, nil
+		return nil, nil, nil
 	}
 
 	var (
@@ -126,6 +129,8 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 			stack:    stack,
 			rstack:   returns,
 			contract: contract,
+
+			logs: make([]*types.Log, 0),
 		}
 		// For optimisation reason we're using uint64 as the program counter.
 		// It's theoretically possible to go above 2^64. The YP defines the PC
@@ -175,13 +180,13 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		op = contract.GetOp(pc)
 		operation := in.jumpTable[op]
 		if operation == nil {
-			return nil, &ErrInvalidOpCode{opcode: op}
+			return nil, nil, &ErrInvalidOpCode{opcode: op}
 		}
 		// Validate stack
 		if sLen := stack.len(); sLen < operation.minStack {
-			return nil, &ErrStackUnderflow{stackLen: sLen, required: operation.minStack}
+			return nil, nil, &ErrStackUnderflow{stackLen: sLen, required: operation.minStack}
 		} else if sLen > operation.maxStack {
-			return nil, &ErrStackOverflow{stackLen: sLen, limit: operation.maxStack}
+			return nil, nil, &ErrStackOverflow{stackLen: sLen, limit: operation.maxStack}
 		}
 		// If the operation is valid, enforce and write restrictions
 		/*todo
@@ -194,13 +199,13 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 			// account to the others means the state is modified and should also
 			// return with an error.
 			if operation.writes || (op == CALL && stack.Back(2).Sign() != 0) {
-				return nil, ErrWriteProtection
+				return nil, nil, ErrWriteProtection
 			}
 		}
 		// Static portion of gas
 		cost = operation.constantGas // For tracing
 		if !contract.UseGas(operation.constantGas) {
-			return nil, ErrOutOfGas
+			return nil, nil, ErrOutOfGas
 		}
 
 		var memorySize uint64
@@ -211,12 +216,12 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		if operation.memorySize != nil {
 			memSize, overflow := operation.memorySize(stack)
 			if overflow {
-				return nil, ErrGasUintOverflow
+				return nil, nil, ErrGasUintOverflow
 			}
 			// memory is expanded in words of 32 bytes. Gas
 			// is also calculated in words.
 			if memorySize, overflow = utility.SafeMul(toWordSize(memSize), 32); overflow {
-				return nil, ErrGasUintOverflow
+				return nil, nil, ErrGasUintOverflow
 			}
 		}
 		// Dynamic portion of gas
@@ -227,7 +232,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 			dynamicCost, err = operation.dynamicGas(in.evm, contract, stack, mem, memorySize)
 			cost += dynamicCost // total cost, for debug tracing
 			if err != nil || !contract.UseGas(dynamicCost) {
-				return nil, ErrOutOfGas
+				return nil, nil, ErrOutOfGas
 			}
 		}
 		if memorySize > 0 {
@@ -247,16 +252,16 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 
 		switch {
 		case err != nil:
-			return nil, err
+			return nil, nil, err
 		case operation.reverts:
-			return res, ErrExecutionReverted
+			return res, callContext.logs, ErrExecutionReverted
 		case operation.halts:
-			return res, nil
+			return res, callContext.logs, nil
 		case !operation.jumps:
 			pc++
 		}
 	}
-	return nil, nil
+	return nil, nil, nil
 }
 
 // CanRun tells if the contract, passed as an argument, can be

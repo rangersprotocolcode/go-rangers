@@ -121,7 +121,7 @@ func mockExecute(code, input []byte, cfg *testConfig) ([]byte, *account.AccountD
 	// set the receiver's (the executing contract) code for execution.
 	cfg.State.SetCode(address, code)
 	// Call the code with the given configuration.
-	ret, _, err := vmenv.Call(
+	ret, _, _, err := vmenv.Call(
 		sender,
 		common.BytesToAddress([]byte("contract")),
 		input,
@@ -153,7 +153,7 @@ func mockCreate(input []byte, cfg *testConfig) ([]byte, common.Address, uint64, 
 	//}
 
 	// Call the code with the given configuration.
-	code, address, leftOverGas, err := vmenv.Create(
+	code, address, leftOverGas, _, err := vmenv.Create(
 		sender,
 		input,
 		cfg.GasLimit,
@@ -179,7 +179,7 @@ func mockCall(address common.Address, input []byte, cfg *testConfig) ([]byte, ui
 	}
 
 	// Call the code with the given configuration.
-	ret, leftOverGas, err := vmenv.Call(
+	ret, leftOverGas, _, err := vmenv.Call(
 		sender,
 		address,
 		input,
