@@ -77,10 +77,10 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 		contractAddress common.Address = common.HexToAddress(transaction.Target)
 	)
 	if transaction.Target == "" {
-		result, contractAddress, leftOverGas, logs, err = vmInstance.Create(caller, common.Hex2Bytes(data.AbiData), vmCtx.GasLimit, transferValue)
+		result, contractAddress, leftOverGas, logs, err = vmInstance.Create(caller, common.FromHex(data.AbiData), vmCtx.GasLimit, transferValue)
 		txLogger.Tracef("After execute contract create!Contract address:%s, leftOverGas: %d,error:%v", contractAddress.GetHexString(), leftOverGas, err)
 	} else {
-		result, leftOverGas, logs, err = vmInstance.Call(caller, contractAddress, common.Hex2Bytes(data.AbiData), vmCtx.GasLimit, transferValue)
+		result, leftOverGas, logs, err = vmInstance.Call(caller, contractAddress, common.FromHex(data.AbiData), vmCtx.GasLimit, transferValue)
 		txLogger.Tracef("After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
 	}
 	context["logs"] = logs
