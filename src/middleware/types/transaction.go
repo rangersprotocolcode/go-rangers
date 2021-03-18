@@ -110,9 +110,8 @@ const (
 	TransactionTypeGetStorage     = 609 //查询存储信息
 	TransactionTypeGetCode        = 610 //查询CODE
 
-	TransactionTypeGetPastEvents = 611
-	TransactionTypeGetPastLogs   = 612
-	TransactionTypeCallVM        = 613
+	TransactionTypeGetPastLogs = 611
+	TransactionTypeCallVM      = 612
 )
 
 type Transaction struct {

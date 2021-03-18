@@ -104,6 +104,10 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 			receipts = append(receipts, receipt)
 		} else {
 			receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height, msg, transaction.Source, "")
+			logs := this.context["logs"]
+			if logs != nil {
+				receipt.Logs = logs.([]*types.Log)
+			}
 			receipt.TxHash = transaction.Hash
 			receipts = append(receipts, receipt)
 		}

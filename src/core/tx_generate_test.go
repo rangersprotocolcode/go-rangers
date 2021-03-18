@@ -244,10 +244,32 @@ func TestTransferTx(t *testing.T) {
 	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
 }
 
+func TestGetPastLogsTx(t *testing.T) {
+	source := "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
+	tx := types.Transaction{Type: 611, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := QueryLogData{FromBlock: 596173, ToBlock: 596173}
+	dataBytes, err := json.Marshal(&data)
+	if err != nil {
+		panic(err)
+	}
+	tx.Data = string(dataBytes)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
 type contractData struct {
 	GasPrice string `json:"gasPrice,omitempty"`
 	GasLimit string `json:"gasLimit,omitempty"`
 
 	TransferValue string `json:"transferValue,omitempty"`
 	AbiData       string `json:"abiData,omitempty"`
+}
+
+type QueryLogData struct {
+	FromBlock uint64 `json:"fromBlock,omitempty"`
+	ToBlock   uint64 `json:"toBlock,omitempty"`
+
+	Address []string   `json:"address,omitempty"`
+	Topics  [][]string `json:"topics,omitempty"`
 }

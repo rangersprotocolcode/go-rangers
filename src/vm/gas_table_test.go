@@ -99,7 +99,7 @@ func TestEIP2200(t *testing.T) {
 		interpreter.jumpTable[SLOAD].constantGas = SloadGasEIP2200
 		interpreter.jumpTable[SSTORE].dynamicGas = gasSStoreEIP2200
 
-		_, gas, err := vmenv.Call(AccountRef(common.Address{}), address, nil, tt.gaspool, new(big.Int))
+		_, gas, _, err := vmenv.Call(AccountRef(common.Address{}), address, nil, tt.gaspool, new(big.Int))
 		if err != tt.failure {
 			t.Errorf("test %d: failure mismatch: have %v, want %v", i, err, tt.failure)
 		}

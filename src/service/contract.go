@@ -83,6 +83,7 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 		result, leftOverGas, logs, err = vmInstance.Call(caller, contractAddress, common.Hex2Bytes(data.AbiData), vmCtx.GasLimit, transferValue)
 		txLogger.Tracef("After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
 	}
+	context["logs"] = logs
 	if err != nil {
 		return false, err.Error()
 	}
