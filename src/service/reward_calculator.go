@@ -186,12 +186,12 @@ func (reward *RewardCalculator) NextRewardHeight(height uint64) uint64 {
 	return uint64(next) * common.RewardBlocks
 }
 
-func getYear(height uint64) uint64 {
-	return uint64(height / common.BlocksPerYear)
+func getEpoch(height uint64) uint64 {
+	return height / common.BlocksPerEpoch
 }
 
 func getTotalReward(height uint64) float64 {
-	return common.FirstYearRewardPerBlock * math.Pow(common.Inflation, float64(getYear(height)))
+	return common.TotalRPGSupply * math.Pow(1-common.ReleaseRate, float64(getEpoch(height))) * common.ReleaseRate / common.BlocksPerEpoch
 }
 
 func addReward(all map[common.Address]*big.Int, addr common.Address, delta *big.Int) {

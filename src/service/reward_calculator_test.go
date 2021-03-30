@@ -25,23 +25,23 @@ import (
 	"testing"
 )
 
-func TestGetYear(t *testing.T) {
-	year := getYear(1)
+func TestGetEpoch(t *testing.T) {
+	year := getEpoch(1)
 	if 0 != year {
 		t.Fatalf("year error for 1")
 	}
 
-	year = getYear(100000)
+	year = getEpoch(100000)
 	if 0 != year {
 		t.Fatalf("year error for 100000")
 	}
 
-	year = getYear(common.BlocksPerYear)
+	year = getEpoch(common.BlocksPerEpoch)
 	if 1 != year {
 		t.Fatalf("year error for BlocksPerYear")
 	}
 
-	year = getYear(common.BlocksPerYear + 1)
+	year = getEpoch(common.BlocksPerEpoch + 1)
 	if 1 != year {
 		t.Fatalf("year error for BlocksPerYear+1")
 	}
@@ -49,23 +49,23 @@ func TestGetYear(t *testing.T) {
 
 func TestGetTotalReward(t *testing.T) {
 	reward := getTotalReward(1)
-	if 15.9 != reward {
+	if 0.052932098765432097 != reward {
 		t.Fatalf("reward error for 1")
 	}
 	reward = getTotalReward(1000000)
-	if 15.9 != reward {
+	if 0.052932098765432097 != reward {
 		t.Fatalf("reward error for 1000000")
 	}
-	reward = getTotalReward(common.BlocksPerYear)
-	if 16.695 != reward {
+	reward = getTotalReward(common.BlocksPerEpoch)
+	if 0.04869753086419753 != reward {
 		t.Fatalf("reward error for BlocksPerYear, %v", reward)
 	}
-	reward = getTotalReward(common.BlocksPerYear + 1)
-	if 16.695 != reward {
+	reward = getTotalReward(common.BlocksPerEpoch + 1)
+	if 0.04869753086419753 != reward {
 		t.Fatalf("reward error for BlocksPerYear+1")
 	}
-	reward = getTotalReward(common.BlocksPerYear * 2)
-	if 17.52975 != reward {
+	reward = getTotalReward(common.BlocksPerEpoch * 2)
+	if 0.044801728395061725 != reward {
 		t.Fatalf("reward error for BlocksPerYear*2, %v", reward)
 	}
 

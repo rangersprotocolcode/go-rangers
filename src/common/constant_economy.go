@@ -37,12 +37,13 @@ const (
 
 	// 一年，单位ms
 	//OneYear = 365 * 24 * 3600 * 1000
-	oneYear = 7 * oneDay
+	//oneYear = 7 * oneDay
 
 	oneDay = 24 * 3600 * 1000
+	epoch  = 180 * oneDay
 
-	// 一年出得块数量
-	BlocksPerYear = uint64(oneYear / CastingInterval)
+	// 一个epoch出得块数量
+	BlocksPerEpoch = epoch / CastingInterval
 
 	// 一天出得块数量
 	BlocksPerDay = uint64(oneDay / CastingInterval)
@@ -50,17 +51,16 @@ const (
 
 // 奖励
 const (
-	// 第一年的奖励
-	FirstYearRewardPerBlock = float64(15.85)
+	// 矿工总奖励
+	TotalRPGSupply = 2100 * 10000 * 0.49
 
-	// 通胀率
-	Inflation = float64(1.05)
+	ReleaseRate = 0.08
 
 	// 社区比例
-	CommunityReward = 0.2
+	CommunityReward = 0.3
 
 	// 验证组比例
-	ValidatorsReward = 0.3
+	ValidatorsReward = 0.2
 
 	// 所有提案者比例
 	AllProposerReward = 0.5
@@ -71,8 +71,8 @@ const (
 
 // 最小质押量
 const (
-	ValidatorStake = uint64(100000)
-	ProposerStake  = uint64(5000000)
+	ValidatorStake = uint64(200)
+	ProposerStake  = uint64(10000)
 
 	HeightAfterStake = RewardBlocks
 )
