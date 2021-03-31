@@ -35,18 +35,14 @@ const (
 
 	RefundBlocks = uint64(RefundTime / CastingInterval)
 
-	// 一年，单位ms
-	//OneYear = 365 * 24 * 3600 * 1000
-	//oneYear = 7 * oneDay
-
+	// 一天，单位ms
 	oneDay = 24 * 3600 * 1000
+
+	// 释放周期
 	epoch  = 180 * oneDay
 
-	// 一个epoch出得块数量
+	// 一个epoch内，出块总量
 	BlocksPerEpoch = epoch / CastingInterval
-
-	// 一天出得块数量
-	BlocksPerDay = uint64(oneDay / CastingInterval)
 )
 
 // 奖励
@@ -79,4 +75,6 @@ const (
 
 var (
 	CommunityAddress = HexToAddress("0xffffff")
+
+	//todo 核心开发团队 孵化团队地址
 )

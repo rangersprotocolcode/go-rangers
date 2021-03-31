@@ -142,8 +142,12 @@ func TestJackpot(t *testing.T) {
 
 	accountdb, _ = account.NewAccountDB(root, triedb)
 	m := make(map[int]int, 0)
+
+	// 一天出得块数量
+	blocksPerDay := uint64(24 * 3600 * 1000 / common.CastingInterval)
+
 	for i := uint64(0); i < 100; i++ {
-		answer, _ := Jackpot(id, sourceAddr2.GetHexString(), "123", uint64(time.Now().UnixNano()), 1024+i*common.BlocksPerDay, accountdb)
+		answer, _ := Jackpot(id, sourceAddr2.GetHexString(), "123", uint64(time.Now().UnixNano()), 1024+i*blocksPerDay, accountdb)
 		var it items
 		fmt.Println(answer)
 		json.Unmarshal(utility.StrToBytes(answer), &it)
