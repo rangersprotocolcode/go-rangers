@@ -20,4 +20,8 @@ const Version = "0.9"
 
 const ConsensusVersion = 1
 
+//用于区分不同的网络环境
+const NetworkId = "1"
+
+//用于区分不同的分叉
 const ChainId = "1"

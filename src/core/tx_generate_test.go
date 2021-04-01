@@ -249,7 +249,8 @@ func TestGetPastLogsTx(t *testing.T) {
 	tx := types.Transaction{Type: 611, Source: source, Time: utility.GetTime().String()}
 	tx.SocketRequestId = "111"
 
-	data := QueryLogData{FromBlock: 596173, ToBlock: 596173}
+	topics := [][]string{{"0x3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18"}}
+	data := QueryLogData{FromBlock: 596173, ToBlock: 596173, Topics: topics}
 	dataBytes, err := json.Marshal(&data)
 	if err != nil {
 		panic(err)
