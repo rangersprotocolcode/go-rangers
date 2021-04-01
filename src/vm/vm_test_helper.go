@@ -51,7 +51,7 @@ func setDefaults(cfg *testConfig) {
 		cfg.Difficulty = new(big.Int)
 	}
 	if cfg.Time == nil {
-		cfg.Time = big.NewInt(time.Now().Unix())
+		cfg.Time = new(big.Int).SetUint64(uint64(time.Now().Unix()))
 	}
 	if cfg.GasLimit == 0 {
 		cfg.GasLimit = math.MaxUint64
@@ -172,11 +172,11 @@ func mockCall(address common.Address, input []byte, cfg *testConfig) ([]byte, ui
 	vmenv := mockEVM(cfg)
 
 	sender := mockContractRef{cfg.Origin}
-	cfg.State.AddAddressToAccessList(cfg.Origin)
-	cfg.State.AddAddressToAccessList(address)
-	for _, addr := range vmenv.ActivePrecompiles() {
-		cfg.State.AddAddressToAccessList(addr)
-	}
+	//cfg.State.AddAddressToAccessList(cfg.Origin)
+	//cfg.State.AddAddressToAccessList(address)
+	//for _, addr := range vmenv.ActivePrecompiles() {
+	//	cfg.State.AddAddressToAccessList(addr)
+	//}
 
 	// Call the code with the given configuration.
 	ret, leftOverGas, _, err := vmenv.Call(
