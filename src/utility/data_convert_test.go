@@ -169,6 +169,19 @@ func TestStrToBigInt10(t *testing.T) {
 	fmt.Println(BigIntToStr(value))
 }
 
+func TestStrToBigInt11(t *testing.T) {
+	str := "1000000000000000000000"
+	value, err := StrToBigInt(str)
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println(str)
+	fmt.Println(value.String())
+
+	fmt.Println(BigIntToStr(value))
+}
+
 func TestFloat64ToBigInt(t *testing.T) {
 	number := float64(11.2222222222222222)
 	result := Float64ToBigInt(number)

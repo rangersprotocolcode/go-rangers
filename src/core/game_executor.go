@@ -25,6 +25,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
@@ -274,7 +275,7 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 	}
 	accountDB.Prepare(txRaw.Hash, common.Hash{}, 0)
 	snapshot := accountDB.Snapshot()
-	result, message = processor.Execute(&txRaw, &types.BlockHeader{Height: height}, accountDB, context)
+	result, message = processor.Execute(&txRaw, &types.BlockHeader{Height: height, CurTime: utility.GetTime()}, accountDB, context)
 	if !result {
 		accountDB.RevertToSnapshot(snapshot)
 	} else if txRaw.Source != "" {

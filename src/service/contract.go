@@ -54,12 +54,15 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 		txLogger.Errorf("Contract GasPrice convert error:%s", err.Error())
 		return false, fmt.Sprintf("Contract data GasPrice error, data: %s", data.GasPrice)
 	}
-	gasLimit, err := strconv.Atoi(data.GasLimit)
-	if err != nil {
-		txLogger.Errorf("Contract gasLimit convert error:%s", err.Error())
-		return false, fmt.Sprintf("Contract data gasLimit error, data: %s", data.GasLimit)
+
+	if data.GasLimit != "" {
+		gasLimit, err := strconv.Atoi(data.GasLimit)
+		if err != nil {
+			txLogger.Errorf("Contract gasLimit convert error:%s", err.Error())
+			return false, fmt.Sprintf("Contract data gasLimit error, data: %s", data.GasLimit)
+		}
+		vmCtx.GasLimit = uint64(gasLimit)
 	}
-	vmCtx.GasLimit = uint64(gasLimit)
 
 	transferValue, err := transferValueToBigInt(data.TransferValue)
 	if err != nil {
