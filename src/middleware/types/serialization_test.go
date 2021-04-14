@@ -17,10 +17,11 @@
 package types
 
 import (
-	"com.tuntun.rocket/node/src/middleware/pb"
 	"encoding/json"
 	"fmt"
 	"testing"
+
+	middleware_pb "com.tuntun.rocket/node/src/middleware/pb"
 )
 
 func TestPbToBlockHeader(t *testing.T) {
@@ -44,10 +45,8 @@ func TestNFT(t *testing.T) {
 	nft := NFT{SetID: "111", ID: "fdd", Name: "nftName", Symbol: "nftSymbol", Creator: "testman", CreateTime: "4644646546464", Owner: "abc",
 		Renter: "dbd", Status: 0, Condition: 0, AppId: "0xdafawe"}
 
-	dataValue := []string{"data1", "data2"}
-	dataKey := []string{"key1", "key2"}
-	nft.DataKey = dataKey
-	nft.DataValue = dataValue
+	nft.SetData("key1", "data1")
+	nft.SetData("key2", "data2")
 
 	fmt.Printf("%s\n", nft.ToJSONString())
 

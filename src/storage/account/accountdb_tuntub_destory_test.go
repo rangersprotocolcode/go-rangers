@@ -17,12 +17,13 @@
 package account
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/db"
-	"com.tuntun.rocket/node/src/middleware/types"
 	"math/big"
 	"os"
 	"testing"
+
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/db"
+	"com.tuntun.rocket/node/src/middleware/types"
 )
 
 // source1 -> target1
@@ -282,7 +283,8 @@ func TestAccountDB_DestroyResource(t *testing.T) {
 	// destroy start
 	// destroy sourceAddr2 all
 	state, err = NewAccountDB(root, triedb)
-	if !state.DestroyResource(sourceAddr2, targetAddr, *allLocked[sourceAddr2.String()]) {
+	flag1, _ := state.DestroyResource(sourceAddr2, targetAddr, *allLocked[sourceAddr2.String()])
+	if !flag1 {
 		t.Fatalf("DestroyResource sourceAddr2 failed")
 	}
 	// destroy sourceAddr something
@@ -300,7 +302,8 @@ func TestAccountDB_DestroyResource(t *testing.T) {
 		SetId: NFTSETID1,
 		Id:    NFTID1,
 	})
-	if !state.DestroyResource(sourceAddr, targetAddr, resource) {
+	flag2, _ := state.DestroyResource(sourceAddr, targetAddr, resource)
+	if !flag2 {
 		t.Fatalf("DestroyResource sourceAddr failed")
 	}
 	root, err = state.Commit(true)

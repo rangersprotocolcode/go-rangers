@@ -17,13 +17,14 @@
 package account
 
 import (
+	"math/big"
+	"os"
+	"testing"
+
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/utility"
-	"math/big"
-	"os"
-	"testing"
 )
 
 // source1 -> target1
@@ -284,7 +285,8 @@ func TestAccountDB_ComboResource(t *testing.T) {
 	// combo start
 	state, err = NewAccountDB(root, triedb)
 	lockedResource1 := allLocked[sourceAddr.String()] // combo all for sourceAddr
-	if !state.ComboResource(sourceAddr, targetAddr, NFTSETID2, NFTID2, *lockedResource1) {
+	flag1, _ := state.ComboResource(sourceAddr, targetAddr, NFTSETID2, NFTID2, *lockedResource1)
+	if !flag1 {
 		t.Fatalf("error to ComboResource")
 	}
 	resource2 = types.LockResource{
@@ -297,7 +299,8 @@ func TestAccountDB_ComboResource(t *testing.T) {
 	resource2.Coin[bntName2] = "0.1"
 	resource2.FT[ftName1] = "1"
 	resource2.FT[ftName2] = "1.1"
-	if !state.ComboResource(sourceAddr2, targetAddr, NFTSETID4, NFTID4, resource2) {
+	flag2, _ := state.ComboResource(sourceAddr2, targetAddr, NFTSETID4, NFTID4, resource2)
+	if !flag2 {
 		t.Fatalf("error to ComboResource")
 	}
 	root, err = state.Commit(true)
