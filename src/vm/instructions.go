@@ -18,9 +18,10 @@ package vm
 
 import (
 	"bytes"
+	"fmt"
+
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"fmt"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 )
@@ -966,25 +967,217 @@ func printLog(log types.Log) {
 
 //-----------------rocket protocol defined execute function------------------------------------------------------------------------------
 
+func popUint256(callContext *callCtx) uint256.Int {
+	return callContext.stack.pop()
+}
+
+func popAddress(callContext *callCtx) common.Address {
+	u256 := callContext.stack.pop()
+	return common.BytesToAddress(u256.Bytes())
+}
+
+func popString(callContext *callCtx) string {
+	offset := callContext.stack.pop()
+	size := int64(uint256.NewInt().SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()), 32)).Uint64())
+	str := string(callContext.memory.GetPtr(int64(offset.Uint64()+32), size))
+	return str
+}
+
+func pushBool(callContext *callCtx, value bool) {
+	if value {
+		callContext.stack.push(&uint256.Int{1})
+	} else {
+		callContext.stack.push(&uint256.Int{0})
+	}
+}
+
+func pushString(callContext *callCtx, value string) {
+	size := uint64(len(value))
+	offset := uint64(callContext.memory.Len()) - size - 32
+	callContext.memory.Set32(offset, uint256.NewInt().SetUint64(size))
+	callContext.memory.Set(offset+32, size, []byte(value))
+	callContext.stack.push(uint256.NewInt().SetUint64(offset))
+}
+
+func pushStringArray(callContext *callCtx, value []string) {
+	bytes := uint64(32)
+	for _, s := range value {
+		str_size := uint64(len(s))
+		bytes += 32 + str_size
+	}
+	offset := uint64(callContext.memory.Len()) - bytes
+	count := uint64(len(value))
+	callContext.memory.Set32(offset, uint256.NewInt().SetUint64(count))
+	for _, s := range value {
+		str_size := uint64(len(s))
+		callContext.memory.Set32(offset, uint256.NewInt().SetUint64(str_size))
+		callContext.memory.Set(offset+32, str_size, []byte(s))
+	}
+	callContext.stack.push(uint256.NewInt().SetUint64(offset))
+}
+
+// bool nft.publishNFTSet(string nftName, string nftSymbol, uint256 maxSupply);
 func opPublishNFTSet(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	//maxSupply := callContext.stack.pop()
-	//nftSymbol := callContext.stack.pop()
-	//nftName := callContext.stack.pop()
+	ret_bool := true
+	arg_maxSupply := popUint256(callContext)
+	arg_nftSymbol := popString(callContext)
+	arg_nftName := popString(callContext)
 
-	var1 := callContext.stack.pop()
-	var2 := callContext.stack.pop()
-	var3 := callContext.stack.pop()
-	//var4 := callContext.stack.pop()
-	logger.Debugf("VM PublishNFTSet. nftName:%v,nftSymbol:%v,maxSupply:%v,%v,%v", var1, var2, var3)
+	// TODO
 
-	//addr, value, inOffset, inSize, retOffset, retSize := stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop(), stack.pop()
-	//toAddr := common.Address(addr.Bytes20())
-	//// Get arguments from the memory.
-	//nftNameSize := callContext.memory.GetPtr(int64(var3.Uint64()),32)
-	//nftName := callContext.memory.GetPtr(int64(var3.Uint64()+32),nftNameSize)
-	//nftSymbolSize := callContext.memory.GetPtr(int64(var2.Uint64()), 32)
-	//nftSymbol := callContext.memory.GetPtr(int64(var2.Uint64()+32), nftSymbolSize)
+	pushBool(callContext, ret_bool)
+	fmt.Printf("nft.publishNFTSet(%v, %v, %v) return %v\n", arg_nftName, arg_nftSymbol, arg_maxSupply.String(), ret_bool)
+	return nil, nil
+}
 
-	//logger.Debugf("args%v,", nftName,nftSymbol)
+// bool nft.mintNFT(string setId, string nftId, address targetAddress, string data);
+func opMintNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_bool := true
+	arg_data := popString(callContext)
+	arg_targetAddress := popAddress(callContext)
+	arg_nftId := popString(callContext)
+	arg_setId := popString(callContext)
+
+	// TODO
+
+	pushBool(callContext, ret_bool)
+	fmt.Printf("nft.mintNFT(%v, %v, %v, %v) return %v\n", arg_setId, arg_nftId, arg_targetAddress, arg_data, ret_bool)
+	return nil, nil
+}
+
+// bool nft.transferNFT(string setId, string nftId, address targetAddress);
+func opTransferNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_bool := true
+	arg_targetAddress := popAddress(callContext)
+	arg_nftId := popString(callContext)
+	arg_setId := popString(callContext)
+
+	// TODO
+
+	pushBool(callContext, ret_bool)
+	fmt.Printf("nft.transferNFT(%v, %v, %v) return %v\n", arg_setId, arg_nftId, arg_targetAddress, ret_bool)
+	return nil, nil
+}
+
+// bool nft.shuttleNFT(string setId, string nftId, string appId, string targetAppId);
+func opShuttleNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_bool := true
+	arg_targetAppId := popString(callContext)
+	arg_appid := popString(callContext)
+	arg_nftId := popString(callContext)
+	arg_setId := popString(callContext)
+
+	// TODO
+
+	pushBool(callContext, ret_bool)
+	fmt.Printf("nft.opShuttleNFT(%v, %v, %v, %v) return %v\n", arg_setId, arg_nftId, arg_appid, arg_targetAppId, ret_bool)
+	return nil, nil
+}
+
+// bool nft.approveNFT(string setId, string nftId, address targetAddress);
+func opApproveNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_bool := true
+	arg_targetAddress := popAddress(callContext)
+	arg_nftId := popString(callContext)
+	arg_setId := popString(callContext)
+
+	// TODO
+
+	pushBool(callContext, ret_bool)
+	fmt.Printf("nft.approveNFT(%v, %v, %v) return %v\n", arg_setId, arg_nftId, arg_targetAddress, ret_bool)
+	return nil, nil
+}
+
+// bool nft.revokeNFT(string setId, string nftId);
+func opRevokeNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_bool := true
+	arg_nftId := popString(callContext)
+	arg_setId := popString(callContext)
+
+	// TODO
+
+	pushBool(callContext, ret_bool)
+	fmt.Printf("nft.revokeNFT(%v, %v) return %v\n", arg_setId, arg_nftId, ret_bool)
+	return nil, nil
+}
+
+// bool nft.removeNFT(string setId, string nftId);
+func opRemoveNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_bool := true
+	arg_nftId := popString(callContext)
+	arg_setId := popString(callContext)
+
+	// TODO
+
+	pushBool(callContext, ret_bool)
+	fmt.Printf("nft.removeNFT(%v, %v) return %v\n", arg_setId, arg_nftId, ret_bool)
+	return nil, nil
+}
+
+// bool nft.updateData(string appId, string setId, string nftId, string key, string value);
+func opUpdateData(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_bool := true
+	arg_value := popString(callContext)
+	arg_key := popString(callContext)
+	arg_nftId := popString(callContext)
+	arg_setId := popString(callContext)
+	arg_appId := popString(callContext)
+
+	// TODO
+
+	pushBool(callContext, ret_bool)
+	fmt.Printf("nft.updateData(%v, %v, %v, %v, %v) return %v\n", arg_appId, arg_setId, arg_nftId, arg_key, arg_value, ret_bool)
+	return nil, nil
+}
+
+// string nft.getData(string appId, string setId, string id, string key);
+func opGetData(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_string := "data_325412312345647645"
+	arg_key := popString(callContext)
+	arg_id := popString(callContext)
+	arg_setId := popString(callContext)
+	arg_appId := popString(callContext)
+
+	// TODO
+
+	pushString(callContext, ret_string)
+	fmt.Printf("nft.getData(%v, %v, %v, %v) return %v\n", arg_appId, arg_setId, arg_id, arg_key, ret_string)
+	return nil, nil
+}
+
+// bool nft.isExistedNFTSet(string setId);
+func opIsExistedNFTSet(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_bool := true
+	arg_setId := popString(callContext)
+
+	// TODO
+
+	pushBool(callContext, ret_bool)
+	fmt.Printf("nft.isExistedNFTSet(%v) return %v\n", arg_setId, ret_bool)
+	return nil, nil
+}
+
+// bool nft.isExistedNFT(string setId, string nftId);
+func opIsExistedNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_bool := true
+	arg_nftId := popString(callContext)
+	arg_setId := popString(callContext)
+
+	// TODO
+
+	pushBool(callContext, ret_bool)
+	fmt.Printf("nft.isExistedNFT(%v, %v) return %v\n", arg_setId, arg_nftId, ret_bool)
+	return nil, nil
+}
+
+// []string nft.getNFTList(address ownerAddress);
+func opGetNFTList(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_stringarray := []string{"key1", "key2", "key3"}
+	arg_ownerAddress := popAddress(callContext)
+
+	// TODO
+
+	pushStringArray(callContext, ret_stringarray)
+	fmt.Printf("nft.getNFTList(%v) return %v\n", arg_ownerAddress, ret_stringarray)
 	return nil, nil
 }
