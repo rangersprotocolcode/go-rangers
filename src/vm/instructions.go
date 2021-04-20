@@ -19,6 +19,7 @@ package vm
 import (
 	"bytes"
 	"fmt"
+	"math"
 
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -991,27 +992,35 @@ func pushBool(callContext *callCtx, value bool) {
 	}
 }
 
+func appendUint256(callContext *callCtx, value int) {
+	offset := uint64(callContext.memory.Len())
+	callContext.memory.Resize(uint64(callContext.memory.Len()) + 32)
+	callContext.memory.Set32(offset, uint256.NewInt().SetUint64(uint64(value)))
+}
+
+func appendBytes(callContext *callCtx, bytes []byte) {
+	offset := uint64(callContext.memory.Len())
+	size := uint64(math.Ceil(float64(len(bytes))/32)) * 32
+	callContext.memory.Resize(uint64(callContext.memory.Len()) + size)
+	callContext.memory.Set(offset, uint64(len(bytes)), bytes)
+}
+
 func pushString(callContext *callCtx, value string) {
-	size := uint64(len(value))
-	offset := uint64(callContext.memory.Len()) - size - 32
-	callContext.memory.Set32(offset, uint256.NewInt().SetUint64(size))
-	callContext.memory.Set(offset+32, size, []byte(value))
+	offset := uint64(callContext.memory.Len())
+	appendUint256(callContext, len(value))
+	appendBytes(callContext, []byte(value))
 	callContext.stack.push(uint256.NewInt().SetUint64(offset))
+	//return callContext.memory.GetPtr(int64(offset), int64(uint64(callContext.memory.Len())-offset))
 }
 
 func pushStringArray(callContext *callCtx, value []string) {
-	bytes := uint64(32)
-	for _, s := range value {
-		str_size := uint64(len(s))
-		bytes += 32 + str_size
-	}
-	offset := uint64(callContext.memory.Len()) - bytes
-	count := uint64(len(value))
-	callContext.memory.Set32(offset, uint256.NewInt().SetUint64(count))
-	for _, s := range value {
-		str_size := uint64(len(s))
-		callContext.memory.Set32(offset, uint256.NewInt().SetUint64(str_size))
-		callContext.memory.Set(offset+32, str_size, []byte(s))
+	offset := uint64(callContext.memory.Len())
+	appendUint256(callContext, len(value))
+	appendBytes(callContext, make([]byte, len(value)*32))
+	for i, s := range value {
+		callContext.memory.Set32(offset+32+32*uint64(i), uint256.NewInt().SetUint64(uint64(callContext.memory.Len())))
+		appendUint256(callContext, len(s))
+		appendBytes(callContext, []byte(s))
 	}
 	callContext.stack.push(uint256.NewInt().SetUint64(offset))
 }
