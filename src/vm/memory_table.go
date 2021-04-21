@@ -113,9 +113,9 @@ func memoryLog(stack *Stack) (uint64, bool) {
 }
 
 func memoryNFT_GetData(stack *Stack) (uint64, bool) {
-	return calcMemSize64WithUint(stack.Back(0), 4096)
+	return calcMemSize64WithUint(stack.Back(0), 1024*64)
 }
 
 func memoryNFT_GetNFTList(stack *Stack) (uint64, bool) {
-	return calcMemSize64WithUint(stack.Back(1), 4096)
+	return calcMemSize64WithUint(stack.Back(1), 1024*64)
 }
