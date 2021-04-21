@@ -1146,6 +1146,7 @@ func newInstructionSet() JumpTable {
 		constantGas: 0,
 		minStack:    minStack(4, 4),
 		maxStack:    maxStack(4, 4),
+		memorySize:  memoryNFT_GetData,
 	}
 
 	instructionSet[NFT_ISEXISTEDNFTSET] = &operation{
@@ -1167,6 +1168,7 @@ func newInstructionSet() JumpTable {
 		constantGas: 0,
 		minStack:    minStack(1, 1),
 		maxStack:    maxStack(1, 1),
+		memorySize:  memoryNFT_GetNFTList,
 	}
 
 	return instructionSet
