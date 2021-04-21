@@ -25,10 +25,13 @@ import (
 )
 
 const (
-	zeroString = "0"
-	prec       = 1025
-	baseNumber = 1000000000000000000
+	zeroString     = "0"
+	prec           = 1025
+	baseNumber     = 1000000000000000000
+	defaultDecimal = 18
 )
+
+var ten = big.NewInt(10)
 
 func UInt32ToByte(i uint32) []byte {
 	buf := bytes.NewBuffer([]byte{})
@@ -69,8 +72,20 @@ func ByteToUInt64(b []byte) uint64 {
 	return x
 }
 
+func BigIntBytesToStr(value []byte) string {
+	amount := new(big.Int)
+	amount.SetBytes(value)
+
+	return BigIntToStr(amount)
+}
+
 //"11.22"->11220000000
 func StrToBigInt(s string) (*big.Int, error) {
+	return strToBigInt(s, defaultDecimal)
+}
+
+//"11.22"->11220000000
+func strToBigInt(s string, decimal int64) (*big.Int, error) {
 	// 空字符串，默认返回0
 	if 0 == len(s) {
 		return big.NewInt(0), nil
@@ -81,32 +96,26 @@ func StrToBigInt(s string) (*big.Int, error) {
 		return nil, err
 	}
 
+	exp := new(big.Int)
+	exp.Exp(ten, big.NewInt(decimal), nil)
 	base := new(big.Float)
-	base.SetPrec(prec)
-	base.SetInt(big.NewInt(baseNumber))
+	base.SetInt(exp)
 
 	target.Mul(target, base)
-
 	result := new(big.Int)
 	target.Int(result)
+
 	return result, nil
 }
 
-func BigIntBytesToStr(value []byte) string {
-	amount := new(big.Int)
-	amount.SetBytes(value)
-
-	return BigIntToStr(amount)
-}
-
-// 11220000000->"11.220000000"
+// 11220000000000000000->"11.220000000"
 func BigIntToStr(number *big.Int) string {
 	if nil == number || 0 == number.Sign() {
 		return zeroString
 	}
 
 	// 默认保留小数点9位
-	return bigIntToStr(number, 18)
+	return bigIntToStr(number, defaultDecimal)
 }
 
 func bigIntToStr(n *big.Int, precision int) string {
@@ -115,16 +124,16 @@ func bigIntToStr(n *big.Int, precision int) string {
 	}
 
 	// 绝对值字符串
-	number := n.Abs(n).String()
-
 	var starter, first, last string
-
 	// 负数
 	if n.Sign() < 0 {
 		starter = "-"
 	}
 
+	numCopied := new(big.Int).Set(n)
+	number := numCopied.Abs(numCopied).String()
 	length := len(number)
+
 	// 小于1的数
 	if length <= precision {
 		first = zeroString
@@ -162,5 +171,17 @@ func Uint64ToBigInt(number uint64) *big.Int {
 	result.SetUint64(number)
 	result.Mul(result, base)
 
+	return result
+}
+
+// FormatDecimalForERC20 火箭协议默认18位decimal，
+// 而ERC20通常会自己定义decimal，需要转换
+func FormatDecimalForERC20(number *big.Int, decimal int64) *big.Int {
+	if nil == number || 0 == number.Sign() {
+		return big.NewInt(0)
+	}
+
+	numberString := BigIntToStr(number)
+	result, _ := strToBigInt(numberString, decimal)
 	return result
 }

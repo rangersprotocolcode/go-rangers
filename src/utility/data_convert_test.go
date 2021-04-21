@@ -50,7 +50,7 @@ func TestStrconv(t *testing.T) {
 }
 
 func TestStrToBigInt(t *testing.T) {
-	str := "4.281755743"
+	str := "1.23000"
 	fmt.Println(str)
 	bigInt, _ := StrToBigInt(str)
 	fmt.Println(bigInt.String())
@@ -130,45 +130,6 @@ func TestStrToBigInt7(t *testing.T) {
 	fmt.Println(bigIntToStr(value, 9))
 }
 
-func TestStrToBigInt8(t *testing.T) {
-	str := "2.0E-8"
-	value, err := StrToBigInt(str)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(str)
-	fmt.Println(value.String())
-
-	fmt.Println(bigIntToStr(value, 9))
-}
-
-func TestStrToBigInt9(t *testing.T) {
-	str := "1000000000000000000000000001000000000.281755743"
-	value, err := StrToBigInt(str)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(str)
-	fmt.Println(value.String())
-
-	fmt.Println(BigIntToStr(value))
-}
-
-func TestStrToBigInt10(t *testing.T) {
-	str := "0.1234567899"
-	value, err := StrToBigInt(str)
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println(str)
-	fmt.Println(value.String())
-
-	fmt.Println(BigIntToStr(value))
-}
-
 func TestStrToBigInt11(t *testing.T) {
 	str := "1000000000000000000000"
 	value, err := StrToBigInt(str)
@@ -196,9 +157,44 @@ func TestUint64ToBigInt(t *testing.T) {
 	fmt.Println(Uint64ToBigInt(number))
 }
 
-func TestBigFloatToInt(t *testing.T) {
-	f, _ := new(big.Float).SetPrec(256).SetString("4281755743")
-	i := new(big.Int)
-	f.Int(i)
-	fmt.Printf("%v\n", i.String())
+func TestBigInttoStr1(t *testing.T) {
+	num := &big.Int{}
+	num.SetUint64(17311813916080901740)
+	fmt.Println(num.String())
+	fmt.Println(BigIntToStr(num))
+
+	num1 := &big.Int{}
+	num1.SetString("2408246081606430596384225821300900488360223075370881439480057452", 10)
+	fmt.Println(num1.String())
+	fmt.Println(num1.IsUint64())
+
+	fmt.Println(num.Cmp(num1))
+
+}
+
+func TestExp(t *testing.T) {
+	test := new(big.Int)
+	test.Exp(big.NewInt(10), big.NewInt(18), nil)
+	fmt.Println(test)
+
+	base := new(big.Float)
+	base.SetInt(test)
+	fmt.Println(base)
+}
+
+func TestFormatDecimalForERC20(t *testing.T) {
+	number := Uint64ToBigInt(100)
+	fmt.Println(number)
+
+	fmt.Println(FormatDecimalForERC20(number, 18))
+	fmt.Println(FormatDecimalForERC20(number, 0))
+	fmt.Println(FormatDecimalForERC20(number, 10))
+}
+
+func TestFormat(t *testing.T) {
+	numberBytes := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 69, 149, 22, 20, 1, 72, 74, 0, 0, 0}
+	fmt.Println(len(numberBytes))
+
+	number := new(big.Int).SetBytes(numberBytes)
+	fmt.Println(number)
 }
