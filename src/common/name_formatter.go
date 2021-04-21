@@ -40,6 +40,10 @@ const (
 	BNTPrefix = Official + "-"
 )
 
+const (
+	ERC20BindingPrefix = "erc20-"
+)
+
 func GenerateBNTName(bntName string) string {
 	return fmt.Sprintf("%s%s", BNTPrefix, bntName)
 }
@@ -115,4 +119,9 @@ func GenerateLockFTKey(source, name string) string {
 
 func GenerateLockNFTKey(source, setId, id string) string {
 	return fmt.Sprintf("%s:%s:%s:%s", LockNFTKey, source, setId, id)
+}
+
+func GenerateERC20Binding(name string) Address {
+	addr := fmt.Sprintf("%s%s", ERC20BindingPrefix, name)
+	return BytesToAddress(Sha256(utility.StrToBytes(addr)))
 }
