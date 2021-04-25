@@ -81,6 +81,7 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 	)
 	if transaction.Target == "" {
 		result, contractAddress, leftOverGas, logs, err = vmInstance.Create(caller, common.FromHex(data.AbiData), vmCtx.GasLimit, transferValue)
+		context["contractAddress"] = contractAddress
 		txLogger.Tracef("After execute contract create!Contract address:%s, leftOverGas: %d,error:%v", contractAddress.GetHexString(), leftOverGas, err)
 	} else {
 		result, leftOverGas, logs, err = vmInstance.Call(caller, contractAddress, common.FromHex(data.AbiData), vmCtx.GasLimit, transferValue)
