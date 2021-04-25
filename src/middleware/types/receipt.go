@@ -38,15 +38,16 @@ const (
 )
 
 type Receipt struct {
-	PostState         []byte      `json:"-"`
-	Status            uint        `json:"status"`
-	CumulativeGasUsed uint64      `json:"cumulativeGasUsed"`
-	Height            uint64      `json:"height"`
-	TxHash            common.Hash `json:"transactionHash" gencodec:"required"`
-	Msg               string      `json:"-"`
-	Source            string      `json:"-"`
-	Logs              []*Log      `json:"logs" gencodec:"required"`
-	Result            string      `json:"result,omitempty"`
+	PostState         []byte         `json:"-"`
+	Status            uint           `json:"status"`
+	CumulativeGasUsed uint64         `json:"cumulativeGasUsed"`
+	Height            uint64         `json:"height"`
+	TxHash            common.Hash    `json:"transactionHash" gencodec:"required"`
+	Msg               string         `json:"-"`
+	Source            string         `json:"-"`
+	ContractAddress   common.Address `json:"contractAddress"`
+	Logs              []*Log         `json:"logs" gencodec:"required"`
+	Result            string         `json:"result,omitempty"`
 }
 
 func NewReceipt(root []byte, failed bool, cumulativeGasUsed uint64, height uint64, msg, source, result string) *Receipt {

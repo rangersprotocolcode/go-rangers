@@ -869,7 +869,7 @@ func makeLog(size int) executionFunc {
 		log := &types.Log{
 			Address: callContext.contract.Address(),
 			Topics:  topics,
-			Data:    d,
+			Data:    common.ToHex(d),
 			// This is a non-consensus field, but assigned here because
 			// core/state doesn't know the current block number.
 			BlockNumber: interpreter.evm.BlockNumber.Uint64(),
