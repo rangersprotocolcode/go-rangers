@@ -42,6 +42,8 @@ func InitExecutors() {
 	executors[types.TransactionTypeCoinDepositAck] = &coinDepositExecutor{}
 	executors[types.TransactionTypeFTDepositAck] = &ftDepositExecutor{}
 	executors[types.TransactionTypeNFTDepositAck] = &nftDepositExecutor{}
+	executors[types.TransactionTypeERC20Binding] = &erc20BindingExecutor{}
+
 	executors[types.TransactionTypeMinerApply] = &minerApplyExecutor{logger: logger}
 	executors[types.TransactionTypeMinerAdd] = &minerAddExecutor{logger: logger}
 	executors[types.TransactionTypeMinerRefund] = &minerRefundExecutor{logger: logger}

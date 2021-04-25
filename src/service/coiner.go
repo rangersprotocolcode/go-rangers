@@ -144,3 +144,32 @@ func NFTDeposit(accountdb *account.AccountDB, transaction *types.Transaction) (b
 	txLogger.Debugf(msg)
 	return ok, msg
 }
+
+// ERC20Binding 确认
+func ERC20Binding(accountdb *account.AccountDB, transaction *types.Transaction) (bool, string) {
+	txLogger.Tracef("Execute ERC20Binding ack tx:%s", transaction.ToTxJson().ToString())
+	if transaction.Data == "" {
+		return false, fmt.Sprintf("data error, data: %s", transaction.Data)
+	}
+	var erc20BindingData types.ERC20BindingData
+	err := json.Unmarshal([]byte(transaction.Data), &erc20BindingData)
+	if err != nil {
+		txLogger.Errorf("Deposit ERC20Binding data unmarshal error:%s", err.Error())
+		return false, fmt.Sprintf("ERC20Binding data error, data: %s", transaction.Data)
+	}
+
+	if 0 == len(erc20BindingData.Name) || 0 == len(erc20BindingData.ContractAddress) {
+		txLogger.Errorf("ERC20Binding data error, data: %s", transaction.Data)
+		return false, fmt.Sprintf("ERC20Binding data error, data: %s", transaction.Data)
+	}
+	if 0 == erc20BindingData.Decimal {
+		erc20BindingData.Decimal = 18
+	}
+
+	txLogger.Tracef("ERC20Binding nft data:%v,target address:%s", erc20BindingData, transaction.Source)
+	if !accountdb.AddERC20Binding(erc20BindingData.Name, common.HexToAddress(erc20BindingData.ContractAddress), uint64(erc20BindingData.Position), uint64(erc20BindingData.Decimal)) {
+		txLogger.Errorf("ERC20Binding name error, name: %s", erc20BindingData.Name)
+		return false, fmt.Sprintf("ERC20Binding name error, name: %s", erc20BindingData.Name)
+	}
+	return true, ""
+}
