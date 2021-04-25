@@ -278,7 +278,10 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 		if iCount >= self.SignLimit {
 			return true
 		}
+	} else if msg.Type == 204 {
+		// todo
 	}
+
 	return false
 }
 
