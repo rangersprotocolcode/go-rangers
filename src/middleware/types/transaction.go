@@ -77,6 +77,7 @@ const (
 	TransactionTypeCoinDepositAck = 201 // 充值
 	TransactionTypeFTDepositAck   = 202 // 充值
 	TransactionTypeNFTDepositAck  = 203 // 充值
+	TransactionTypeERC20Binding   = 204 // 绑定ERC-20
 
 	// 状态机管理
 	TransactionTypeAddStateMachine = 901 // 新增状态机

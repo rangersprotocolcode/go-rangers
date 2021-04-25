@@ -258,3 +258,4 @@ func (self *FTManager) convert(value string) *big.Int {
 
 	return supply
 }
+

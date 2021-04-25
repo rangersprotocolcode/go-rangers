@@ -53,6 +53,13 @@ type DepositNFTData struct {
 	TxId             string `json:"txId,omitempty"`
 }
 
+type ERC20BindingData struct {
+	Name            string `json:"name,omitempty"`
+	Decimal         int64  `json:"decimal,omitempty"`
+	Position        int64  `json:"position,omitempty"`
+	ContractAddress string `json:"contract,omitempty"`
+}
+
 type DepositNotify struct {
 	Method string                 `json:"type"`
 	Data   map[string]interface{} `json:"data"`
