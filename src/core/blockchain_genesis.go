@@ -195,7 +195,7 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 	vmInstance := vm.NewEVM(vmCtx, statedb)
 	caller := vm.AccountRef(vmCtx.Origin)
 
-	_, usdtContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(usdtContractData), vmCtx.GasLimit, nil)
+	_, usdtContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(usdtContractData), vmCtx.GasLimit, big.NewInt(0))
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
 	}
