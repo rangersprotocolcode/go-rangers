@@ -108,6 +108,10 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 			if logs != nil {
 				receipt.Logs = logs.([]*types.Log)
 			}
+			contractAddress := this.context["contractAddress"]
+			if contractAddress != nil {
+				receipt.ContractAddress = contractAddress.(common.Address)
+			}
 			receipt.TxHash = transaction.Hash
 			receipts = append(receipts, receipt)
 		}
