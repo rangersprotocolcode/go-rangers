@@ -185,3 +185,15 @@ func FormatDecimalForERC20(number *big.Int, decimal int64) *big.Int {
 	result, _ := strToBigInt(numberString, decimal)
 	return result
 }
+
+// FormatDecimalForRocket 火箭协议默认18位decimal，
+// 而ERC20通常会自己定义decimal，需要转换
+func FormatDecimalForRocket(number *big.Int, decimal int64) *big.Int {
+	if nil == number || 0 == number.Sign() {
+		return big.NewInt(0)
+	}
+
+	numberString := bigIntToStr(number, int(decimal))
+	result, _ := StrToBigInt(numberString)
+	return result
+}
