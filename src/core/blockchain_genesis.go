@@ -100,6 +100,11 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 
 	valueTen, _ := utility.StrToBigInt("10")
 	valueBillion, _ := utility.StrToBigInt("1000000000")
+
+	//创建创始合约
+	usdtContractAddress := createGenesisContract(block.Header, stateDB)
+	stateDB.AddERC20Binding("SYSTEM-ETH.USDT", usdtContractAddress, 0, 6)
+
 	// 测试用
 	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("tuntun", "pig", "hz", "0", "hz", "10086", 0), stateDB)
 	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("tuntunhz", "tuntun", "t", "hz", "hz", types.NFTConditions{}, 0, "10000"), stateDB)
@@ -129,9 +134,6 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	stateDB.SetBNT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "ETH.ETH", valueTen)
 	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-ETH.USDT", valueTen)
 	stateDB.SetBalance(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), valueBillion)
-
-	//创建创始合约
-	createGenesisContract(block.Header, stateDB)
 
 	root, _ := stateDB.Commit(true)
 	triedb.Commit(root, false)
