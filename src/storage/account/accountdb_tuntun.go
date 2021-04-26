@@ -34,6 +34,15 @@ func (self *AccountDB) GetBNT(addr common.Address, bntName string) *big.Int {
 }
 
 func (self *AccountDB) GetFT(addr common.Address, ftName string) *big.Int {
+	// check if erc-20
+	found, contract, position, decimal := self.GetERC20Binding(ftName)
+	if found {
+		account := self.getOrNewAccountObject(contract)
+		data := account.GetData(self.db, self.GetERC20Key(addr, position))
+		result := new(big.Int).SetBytes(data)
+		return utility.FormatDecimalForRocket(result, int64(decimal))
+	}
+
 	accountObject := self.getOrNewAccountObject(addr)
 	raw := accountObject.getFT(self.db, ftName)
 	if raw == nil {
@@ -64,6 +73,14 @@ func (self *AccountDB) SetFT(addr common.Address, ftName string, balance *big.In
 	if nil == balance {
 		return
 	}
+	// check if erc-20
+	found, contract, position, decimal := self.GetERC20Binding(ftName)
+	if found {
+		account := self.getOrNewAccountObject(contract)
+		account.SetData(self.db, self.GetERC20Key(addr, position), utility.FormatDecimalForERC20(balance, int64(decimal)).Bytes())
+		return
+	}
+
 	account := self.getOrNewAccountObject(addr)
 	account.SetFT(self.db, balance, ftName)
 }
@@ -81,8 +98,19 @@ func (self *AccountDB) AddFT(addr common.Address, ftName string, balance *big.In
 	if nil == balance {
 		return true
 	}
-	account := self.getOrNewAccountObject(addr)
 
+	// check if erc-20
+	found, contract, position, decimal := self.GetERC20Binding(ftName)
+	if found {
+		account := self.getOrNewAccountObject(contract)
+		key := self.GetERC20Key(addr, position)
+		remain := new(big.Int).SetBytes(account.GetData(self.db, key))
+		remain.Add(remain, utility.FormatDecimalForERC20(balance, int64(decimal)))
+		account.setData(key, remain.Bytes())
+		return true
+	}
+
+	account := self.getOrNewAccountObject(addr)
 	return account.AddFT(self.db, balance, ftName)
 }
 
@@ -98,6 +126,18 @@ func (self *AccountDB) SubFT(addr common.Address, ftName string, balance *big.In
 	if nil == balance {
 		return nil, false
 	}
+
+	// check if erc-20
+	found, contract, position, decimal := self.GetERC20Binding(ftName)
+	if found {
+		account := self.getOrNewAccountObject(contract)
+		key := self.GetERC20Key(addr, position)
+		remain := new(big.Int).SetBytes(account.GetData(self.db, key))
+		remain.Sub(remain, utility.FormatDecimalForERC20(balance, int64(decimal)))
+		account.setData(key, remain.Bytes())
+		return remain, true
+	}
+
 	account := self.getOrNewAccountObject(addr)
 	return account.SubFT(self.db, balance, ftName)
 
