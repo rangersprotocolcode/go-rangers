@@ -280,6 +280,7 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 		}
 	} else if msg.Type == 204 {
 		// todo
+		return true
 	}
 
 	return false

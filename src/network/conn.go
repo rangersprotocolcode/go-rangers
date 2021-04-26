@@ -477,7 +477,7 @@ func (connectorConn *ConnectorConn) handleConnectorMessage(data []byte, nonce ui
 		return
 	}
 
-	if tx.Type == types.TransactionTypeCoinDepositAck || tx.Type == types.TransactionTypeFTDepositAck || tx.Type == types.TransactionTypeNFTDepositAck {
+	if tx.Type == types.TransactionTypeCoinDepositAck || tx.Type == types.TransactionTypeFTDepositAck || tx.Type == types.TransactionTypeNFTDepositAck || tx.Type == types.TransactionTypeERC20Binding {
 		msg := notify.CoinProxyNotifyMessage{Tx: tx}
 		notify.BUS.Publish(notify.CoinProxyNotify, &msg)
 	} else {
