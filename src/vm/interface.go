@@ -19,6 +19,7 @@ package vm
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/storage/account"
 	"math/big"
 )
 
@@ -82,4 +83,15 @@ type CallContext interface {
 	DelegateCall(env *EVM, me ContractRef, addr common.Address, data []byte, gas *big.Int) ([]byte, error)
 	// Create a new contract
 	Create(env *EVM, me ContractRef, data []byte, gas, value *big.Int) ([]byte, common.Address, error)
+}
+
+type NFTImpelement interface {
+	PublishNFTSet(nftSet *types.NFTSet, accountDB *account.AccountDB) (string, bool)
+	MintNFT(nftSetOwner, appId, setId, id, data, createTime string, owner common.Address, accountDB *account.AccountDB) (string, bool)
+	Transfer(setId, id string, owner, newOwner common.Address, accountDB *account.AccountDB) (string, bool)
+	Shuttle(owner, setId, id, newAppId string, accountDB *account.AccountDB) (string, bool)
+	UpdateNFT(appId, setId, id, data, propertyString string, accountDB *account.AccountDB) bool
+	GetNFT(setId string, id string, accountDB *account.AccountDB) *types.NFT
+	Contains(setId string, accountDB *account.AccountDB) bool
+	GetNFTListByAddress(address common.Address, appId string, accountDB *account.AccountDB) []*types.NFT
 }

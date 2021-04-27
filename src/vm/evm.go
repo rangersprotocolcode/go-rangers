@@ -19,6 +19,7 @@ package vm
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/vm/crypto"
 	"errors"
 	"math/big"
@@ -125,6 +126,10 @@ type EVM struct {
 	// available gas is calculated in gasCall* according to the 63/64 rule and later
 	// applied in opCall*.
 	callGasTemp uint64
+
+	nftManagerInstance NFTImpelement
+
+	accountDB *account.AccountDB
 }
 
 // NewEVM returns a new EVM. The returned EVM is not thread safe and should
@@ -144,6 +149,16 @@ func NewEVM(ctx Context, statedb StateDB) *EVM {
 	// as we always want to have the built-in EVM as the failover option.
 	evm.interpreters = append(evm.interpreters, NewEVMInterpreter(evm))
 	evm.interpreter = evm.interpreters[0]
+
+	return evm
+}
+
+// NewEVM returns a new EVM. The returned EVM is not thread safe and should
+// only ever be used *once*.
+func NewEVMWithNFT(ctx Context, statedb StateDB, nftManagerInstance NFTImpelement, accountDB *account.AccountDB) *EVM {
+	evm := NewEVM(ctx, statedb)
+	evm.nftManagerInstance = nftManagerInstance
+	evm.accountDB = accountDB
 
 	return evm
 }

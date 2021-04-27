@@ -71,7 +71,7 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 	}
 	txLogger.Tracef("Execute contract! data: %v,target address:%s", data, transaction.Target)
 
-	vmInstance := vm.NewEVM(vmCtx, accountdb)
+	vmInstance := vm.NewEVMWithNFT(vmCtx, accountdb, NFTManagerInstance, accountdb)
 	caller := vm.AccountRef(vmCtx.Origin)
 	var (
 		result          []byte
