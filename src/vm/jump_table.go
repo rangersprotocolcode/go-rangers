@@ -1088,8 +1088,8 @@ func newInstructionSet() JumpTable {
 	instructionSet[NFT_PUBLISHNFTSET] = &operation{
 		execute:     opPublishNFTSet,
 		constantGas: 0,
-		minStack:    minStack(3, 3),
-		maxStack:    maxStack(3, 3),
+		minStack:    minStack(5, 5),
+		maxStack:    maxStack(5, 5),
 	}
 
 	instructionSet[NFT_MINTNFT] = &operation{

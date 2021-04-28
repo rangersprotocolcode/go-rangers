@@ -1025,17 +1025,22 @@ func pushStringArray(callContext *callCtx, value []string) {
 	callContext.stack.push(uint256.NewInt().SetUint64(offset))
 }
 
-// bool nft.publishNFTSet(string nftName, string nftSymbol, uint256 maxSupply);
+// bool nft.publishNFTSet(string setId, string owner, string nftName, string nftSymbol, uint256 maxSupply);
 func opPublishNFTSet(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
 	arg_maxSupply := popUint256(callContext)
 	arg_nftSymbol := popString(callContext)
 	arg_nftName := popString(callContext)
+	arg_owner := popString(callContext)
+	arg_setId := popString(callContext)
 
 	// 业务实现
 	nftSet := &types.NFTSet{}
+	nftSet.SetID = arg_setId
 	nftSet.Name = arg_nftName
 	nftSet.MaxSupply = arg_maxSupply.Uint64()
 	nftSet.Symbol = arg_nftSymbol
+	nftSet.Owner = arg_owner
+
 	evm := interpreter.evm
 	answer, ret_bool := evm.nftManagerInstance.PublishNFTSet(nftSet, evm.accountDB)
 
@@ -1052,9 +1057,11 @@ func opMintNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 	arg_setId := popString(callContext)
 	arg_appId := popString(callContext)
 	arg_owner := popString(callContext)
+
 	// TODO
 	evm := interpreter.evm
-	answer, ret_bool := evm.nftManagerInstance.MintNFT(arg_owner, arg_appId, arg_setId, arg_nftId, arg_data, "", arg_targetAddress, evm.accountDB)
+	nftSetOwner := common.ToHex(common.FromHex(arg_owner))
+	answer, ret_bool := evm.nftManagerInstance.MintNFT(nftSetOwner, arg_appId, arg_setId, arg_nftId, arg_data, evm.Time.String(), arg_targetAddress, evm.accountDB)
 
 	pushBool(callContext, ret_bool)
 	fmt.Printf("nft.mintNFT(%v, %v, %v, %v) return %v, %s\n", arg_setId, arg_nftId, arg_targetAddress, arg_data, ret_bool, answer)
@@ -1163,8 +1170,13 @@ func opGetData(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 	// TODO
 	evm := interpreter.evm
 	nft := evm.nftManagerInstance.GetNFT(arg_setId, arg_id, evm.accountDB)
-	ret_string := nft.GetProperty(arg_appId, arg_key)
+	if nil == nft {
+		fmt.Printf("nft.getData(%v, %v, %v, %v) return %v\n", arg_appId, arg_setId, arg_id, arg_key, "")
+		pushString(callContext, "")
+		return nil, nil
+	}
 
+	ret_string := nft.GetProperty(arg_appId, arg_key)
 	pushString(callContext, ret_string)
 	fmt.Printf("nft.getData(%v, %v, %v, %v) return %v\n", arg_appId, arg_setId, arg_id, arg_key, ret_string)
 	return nil, nil
