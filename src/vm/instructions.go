@@ -1042,10 +1042,9 @@ func opPublishNFTSet(pc *uint64, interpreter *EVMInterpreter, callContext *callC
 	nftSet.Owner = arg_owner
 
 	evm := interpreter.evm
-	answer, ret_bool := evm.nftManagerInstance.PublishNFTSet(nftSet, evm.accountDB)
+	_, ret_bool := evm.nftManagerInstance.PublishNFTSet(nftSet, evm.accountDB)
 
 	pushBool(callContext, ret_bool)
-	fmt.Printf("nft.publishNFTSet(%v, %v, %v) return %v, answer: %s\n", arg_nftName, arg_nftSymbol, arg_maxSupply.String(), ret_bool, answer)
 	return nil, nil
 }
 
@@ -1061,10 +1060,9 @@ func opMintNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 	// TODO
 	evm := interpreter.evm
 	nftSetOwner := common.ToHex(common.FromHex(arg_owner))
-	answer, ret_bool := evm.nftManagerInstance.MintNFT(nftSetOwner, arg_appId, arg_setId, arg_nftId, arg_data, evm.Time.String(), arg_targetAddress, evm.accountDB)
+	_, ret_bool := evm.nftManagerInstance.MintNFT(nftSetOwner, arg_appId, arg_setId, arg_nftId, arg_data, evm.Time.String(), arg_targetAddress, evm.accountDB)
 
 	pushBool(callContext, ret_bool)
-	fmt.Printf("nft.mintNFT(%v, %v, %v, %v) return %v, %s\n", arg_setId, arg_nftId, arg_targetAddress, arg_data, ret_bool, answer)
 	return nil, nil
 }
 
@@ -1076,26 +1074,24 @@ func opTransferNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx
 
 	// TODO
 	evm := interpreter.evm
-	answer, ret_bool := evm.nftManagerInstance.Transfer(arg_setId, arg_nftId, callContext.contract.CallerAddress, arg_targetAddress, evm.accountDB)
+	_, ret_bool := evm.nftManagerInstance.Transfer(arg_setId, arg_nftId, callContext.contract.CallerAddress, arg_targetAddress, evm.accountDB)
 
 	pushBool(callContext, ret_bool)
-	fmt.Printf("nft.transferNFT(%v, %v, %v) return %v, %s\n", arg_setId, arg_nftId, arg_targetAddress, ret_bool, answer)
 	return nil, nil
 }
 
 // bool nft.shuttleNFT(string setId, string nftId, string appId, string targetAppId);
 func opShuttleNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
 	arg_targetAppId := popString(callContext)
-	arg_appid := popString(callContext)
+	popString(callContext)
 	arg_nftId := popString(callContext)
 	arg_setId := popString(callContext)
 
 	// TODO
 	evm := interpreter.evm
-	answer, ret_bool := evm.nftManagerInstance.Shuttle(callContext.contract.CallerAddress.GetHexString(), arg_setId, arg_nftId, arg_targetAppId, evm.accountDB)
+	_, ret_bool := evm.nftManagerInstance.Shuttle(callContext.contract.CallerAddress.GetHexString(), arg_setId, arg_nftId, arg_targetAppId, evm.accountDB)
 
 	pushBool(callContext, ret_bool)
-	fmt.Printf("nft.opShuttleNFT(%v, %v, %v, %v) return %v, %s\n", arg_setId, arg_nftId, arg_appid, arg_targetAppId, ret_bool, answer)
 	return nil, nil
 }
 
@@ -1110,7 +1106,6 @@ func opApproveNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx)
 	ret_bool := accountDB.ApproveNFT(callContext.contract.CallerAddress, "", arg_setId, arg_nftId, arg_targetAddress.GetHexString())
 
 	pushBool(callContext, ret_bool)
-	fmt.Printf("nft.approveNFT(%v, %v, %v) return %v\n", arg_setId, arg_nftId, arg_targetAddress, ret_bool)
 	return nil, nil
 }
 
@@ -1124,7 +1119,6 @@ func opRevokeNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) 
 	ret_bool := accountDB.ApproveNFT(callContext.contract.CallerAddress, "", arg_setId, arg_nftId, callContext.contract.CallerAddress.GetHexString())
 
 	pushBool(callContext, ret_bool)
-	fmt.Printf("nft.revokeNFT(%v, %v) return %v\n", arg_setId, arg_nftId, ret_bool)
 	return nil, nil
 }
 
@@ -1138,7 +1132,6 @@ func opRemoveNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) 
 	ret_bool := accountDB.RemoveNFTByGameId(callContext.contract.CallerAddress, arg_setId, arg_nftId)
 
 	pushBool(callContext, ret_bool)
-	fmt.Printf("nft.removeNFT(%v, %v) return %v\n", arg_setId, arg_nftId, ret_bool)
 	return nil, nil
 }
 
@@ -1155,7 +1148,6 @@ func opUpdateData(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx)
 	ret_bool := evm.nftManagerInstance.UpdateNFT(arg_appId, arg_setId, arg_nftId, arg_value, arg_key, evm.accountDB)
 
 	pushBool(callContext, ret_bool)
-	fmt.Printf("nft.updateData(%v, %v, %v, %v, %v) return %v\n", arg_appId, arg_setId, arg_nftId, arg_key, arg_value, ret_bool)
 	return nil, nil
 }
 
@@ -1178,7 +1170,6 @@ func opGetData(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 
 	ret_string := nft.GetProperty(arg_appId, arg_key)
 	pushString(callContext, ret_string)
-	fmt.Printf("nft.getData(%v, %v, %v, %v) return %v\n", arg_appId, arg_setId, arg_id, arg_key, ret_string)
 	return nil, nil
 }
 
@@ -1191,7 +1182,6 @@ func opIsExistedNFTSet(pc *uint64, interpreter *EVMInterpreter, callContext *cal
 	ret_bool := evm.nftManagerInstance.Contains(arg_setId, evm.accountDB)
 
 	pushBool(callContext, ret_bool)
-	fmt.Printf("nft.isExistedNFTSet(%v) return %v\n", arg_setId, ret_bool)
 	return nil, nil
 }
 
@@ -1206,7 +1196,6 @@ func opIsExistedNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCt
 	ret_bool := nft != nil
 
 	pushBool(callContext, ret_bool)
-	fmt.Printf("nft.isExistedNFT(%v, %v) return %v\n", arg_setId, arg_nftId, ret_bool)
 	return nil, nil
 }
 
@@ -1224,6 +1213,5 @@ func opGetNFTList(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx)
 	}
 
 	pushStringArray(callContext, ret_stringarray)
-	fmt.Printf("nft.getNFTList(%v) return %v\n", arg_ownerAddress, ret_stringarray)
 	return nil, nil
 }
