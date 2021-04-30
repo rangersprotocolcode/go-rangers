@@ -41,7 +41,7 @@ type NFTManager struct {
 }
 
 // 检查setId是否存在
-func (self *NFTManager) contains(setId string, accountDB *account.AccountDB) bool {
+func (self *NFTManager) Contains(setId string, accountDB *account.AccountDB) bool {
 	return accountDB.Exist(common.GenerateNFTSetAddress(setId))
 }
 
@@ -113,7 +113,7 @@ func (self *NFTManager) PublishNFTSet(nftSet *types.NFTSet, accountDB *account.A
 		return fmt.Sprintf("setId or maxSupply wrong, setId: %s, maxSupply: %d", nftSet.SetID, nftSet.MaxSupply), false
 	}
 
-	if strings.Contains(nftSet.SetID, ":") || self.contains(nftSet.SetID, accountDB) {
+	if strings.Contains(nftSet.SetID, ":") || self.Contains(nftSet.SetID, accountDB) {
 		return fmt.Sprintf("setId: %s, existed", nftSet.SetID), false
 	}
 
