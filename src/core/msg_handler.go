@@ -150,7 +150,7 @@ func (ch ChainHandler) newBlockHandler(msg notify.Message) {
 
 	middleware.PerfLogger.Debugf("Rcv new block from %s,hash:%v,height:%d,totalQn:%d,tx len:%d, total cost: %v", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions), time.Since(block.Header.CurTime))
 
-	blockChainImpl.AddBlockOnChain(source, block, types.NewBlock)
+	blockChainImpl.AddBlockOnChain(block)
 }
 
 func unMarshalTransactionRequestMessage(b []byte) (*transactionRequestMessage, error) {

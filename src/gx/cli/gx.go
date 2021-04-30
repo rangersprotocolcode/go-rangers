@@ -185,7 +185,7 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 	if !ok {
 		panic("Init miner start miner error!")
 	}
-	syncChainInfo()
+	syncChainInfo(*sk, minerInfo.ID.GetHexString())
 	gx.init = true
 }
 
@@ -199,31 +199,29 @@ func (gx *GX) getAccountInfo(sk string) {
 	gx.account = getAccountByPrivateKey(sk)
 }
 
-func syncChainInfo() {
+func syncChainInfo(privateKey common.PrivateKey, id string) {
 	fmt.Println("Syncing block and group info from RocketProtocol net.Waiting...")
 	core.InitGroupSyncer()
-	core.InitBlockSyncer()
+	core.InitBlockSyncer(privateKey, id)
 	go func() {
 		timer := time.NewTimer(time.Second * 10)
 		for {
 			<-timer.C
-			if core.BlockSyncer.IsInit() {
-				break
-			} else {
-				var candicateHeight uint64
-				if core.BlockSyncer != nil {
-					core.BlockSyncer.Lock.Lock("trySync")
-					_, _, candicateHeight, _ = core.BlockSyncer.GetCandidateForSync()
-					core.BlockSyncer.Lock.Unlock("trySync")
-				}
-				localBlockHeight := core.GetBlockChain().Height()
-				jsonObject := types.NewJSONObject()
-				jsonObject.Put("candidateHeight", candicateHeight)
-				jsonObject.Put("localHeight", localBlockHeight)
-				middleware.HeightLogger.Debugf(jsonObject.TOJSONString())
-				fmt.Printf("Sync candidate block height:%d,local block height:%d\n", candicateHeight, localBlockHeight)
-				timer.Reset(time.Second * 5)
+
+			var candicateHeight uint64
+			if core.BlockSyncer != nil {
+				core.BlockSyncer.Lock.Lock("trySync")
+				blockSyncInfo := core.BlockSyncer.GetSyncInfo()
+				candicateHeight = blockSyncInfo.Candidate.Height
+				core.BlockSyncer.Lock.Unlock("trySync")
 			}
+			localBlockHeight := core.GetBlockChain().Height()
+			jsonObject := types.NewJSONObject()
+			jsonObject.Put("candidateHeight", candicateHeight)
+			jsonObject.Put("localHeight", localBlockHeight)
+			middleware.HeightLogger.Debugf(jsonObject.TOJSONString())
+			fmt.Printf("Sync candidate block height:%d,local block height:%d\n", candicateHeight, localBlockHeight)
+			timer.Reset(time.Second * 5)
 		}
 		fmt.Println("Sync data finished!")
 		fmt.Println("Start Mining...")

@@ -124,14 +124,11 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 		msg := notify.NewBlockMessage{BlockByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.NewBlock, &msg)
 	case ChainPieceInfoReq:
-		msg := notify.ChainPieceInfoReqMessage{HeightByte: message.Body, Peer: from}
+		msg := notify.ChainPieceInfoReqMessage{ChainPieceReq: message.Body, Peer: from}
 		notify.BUS.Publish(notify.ChainPieceInfoReq, &msg)
 	case ChainPieceInfo:
 		msg := notify.ChainPieceInfoMessage{ChainPieceInfoByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.ChainPieceInfo, &msg)
-	case ReqChainPieceBlock:
-		msg := notify.ChainPieceBlockReqMessage{ReqHeightByte: message.Body, Peer: from}
-		notify.BUS.Publish(notify.ChainPieceBlockReq, &msg)
 	case ChainPieceBlock:
 		msg := notify.ChainPieceBlockMessage{ChainPieceBlockMsgByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.ChainPieceBlock, &msg)

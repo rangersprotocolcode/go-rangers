@@ -63,11 +63,7 @@ message TransactionSlice{
     repeated Transaction transactions = 1;
 }
 
-message ChainPieceInfo{
-    repeated BlockHeader BlockHeaders = 1;
 
-    required BlockHeader TopHeader = 2;
-}
 
 
 message BlockHeader{
@@ -387,11 +383,31 @@ message TopBlockInfo{
     required	uint64   TotalQn = 2;
     required	uint64   Height = 3;
     required	bytes   PreHash = 4;
+    required	SignData   SignInfo = 5;
+}
+
+message ChainPieceReq{
+    required uint64 Height = 1;
+    required	SignData   SignInfo = 2;
+}
+
+message ChainPieceInfo{
+    repeated BlockHeader BlockHeaders = 1;
+
+    required BlockHeader TopHeader = 2;
+
+    required SignData SignInfo = 3;
+}
+
+message BlockReq{
+    required uint64 Height = 1;
+    required	SignData   SignInfo = 2;
 }
 
 message BlockMsgResponse{
     required bool IsLast = 1;
-    optional Block Block = 2;
+    required Block Block = 2;
+    required	SignData   SignInfo = 3;
 }
 
 message ChainPieceBlockMsg{

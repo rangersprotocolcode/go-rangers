@@ -26,17 +26,6 @@ import (
 	"com.tuntun.rocket/node/src/utility"
 )
 
-type AddBlockOnChainSituation string
-
-const (
-	Sync                  AddBlockOnChainSituation = "sync"
-	NewBlock              AddBlockOnChainSituation = "newBlock"
-	FutureBlockCache      AddBlockOnChainSituation = "futureBlockCache"
-	DependGroupBlock      AddBlockOnChainSituation = "dependGroupBlock"
-	LocalGenerateNewBlock AddBlockOnChainSituation = "localGenerateNewBlock"
-	MergeFork             AddBlockOnChainSituation = "mergeFork"
-)
-
 type AddBlockResult int8
 
 const (
@@ -44,7 +33,7 @@ const (
 	AddBlockSucc              AddBlockResult = 0
 	BlockExisted              AddBlockResult = 1
 	BlockTotalQnLessThanLocal AddBlockResult = 2
-	Forking                   AddBlockResult = 3
+	NoPreOnChain              AddBlockResult = 3
 	ValidateBlockOk           AddBlockResult = 100
 )
 

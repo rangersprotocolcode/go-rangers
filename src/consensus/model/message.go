@@ -26,10 +26,6 @@ import (
 	"time"
 )
 
-type Hasher interface {
-	GenHash() common.Hash
-}
-
 //数据签名结构
 type SignInfo struct {
 	dataHash  common.Hash        //哈希值
@@ -39,7 +35,7 @@ type SignInfo struct {
 	version int32
 }
 
-func NewSignInfo(sk groupsig.Seckey, id groupsig.ID, hasher Hasher) (SignInfo, bool) {
+func NewSignInfo(sk groupsig.Seckey, id groupsig.ID, hasher common.Hasher) (SignInfo, bool) {
 	result := SignInfo{}
 	if !sk.IsValid() || !id.IsValid() {
 		return result, false

@@ -27,16 +27,15 @@ import (
 	"time"
 )
 
-func (chain *blockChain) consensusVerify(source string, b *types.Block) (types.AddBlockResult, bool) {
+func (chain *blockChain) consensusVerify(b *types.Block) (types.AddBlockResult, bool) {
 	if b == nil {
 		return types.AddBlockFailed, false
 	}
 
 	if !chain.hasPreBlock(*b.Header) {
-		logger.Warnf("coming block %s,%d has no pre on local chain.Forking...", b.Header.Hash.String(), b.Header.Height)
+		logger.Warnf("coming block %s,%d has no pre on local chain.", b.Header.Hash.String(), b.Header.Height)
 		chain.futureBlocks.Add(b.Header.PreHash, b)
-		go chain.forkProcessor.requestChainPieceInfo(source, chain.latestBlock.Height)
-		return types.Forking, false
+		return types.NoPreOnChain, false
 	}
 
 	if chain.queryBlockHeaderByHash(b.Header.Hash) != nil {
@@ -61,7 +60,7 @@ func (chain *blockChain) consensusVerify(source string, b *types.Block) (types.A
 }
 
 // 这里判断处理分叉
-func (chain *blockChain) addBlockOnChain(source string, coming *types.Block, situation types.AddBlockOnChainSituation) types.AddBlockResult {
+func (chain *blockChain) addBlockOnChain(coming *types.Block) types.AddBlockResult {
 	topBlock := chain.latestBlock
 	comingHeader := coming.Header
 
@@ -78,7 +77,6 @@ func (chain *blockChain) addBlockOnChain(source string, coming *types.Block, sit
 		logger.Errorf("Fail to VerifyCastingBlock, reason code:%d \n", verifyResult)
 		if verifyResult == 2 {
 			logger.Warnf("coming block has no pre on local chain.Forking...")
-			go chain.forkProcessor.requestChainPieceInfo(source, chain.latestBlock.Height)
 		}
 		return types.AddBlockFailed
 	}
@@ -91,11 +89,6 @@ func (chain *blockChain) addBlockOnChain(source string, coming *types.Block, sit
 
 	// 比本地链要差，丢掉
 	if comingHeader.TotalQN < topBlock.TotalQN {
-		if situation == types.Sync {
-			logger.Warnf("coming less than local.Forking...coming block:hash=%v, preH=%v, height=%v,totalQn:%d Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d", comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN)
-			go chain.forkProcessor.requestChainPieceInfo(source, chain.latestBlock.Height)
-		}
-
 		return types.BlockTotalQnLessThanLocal
 	}
 
@@ -106,30 +99,20 @@ func (chain *blockChain) addBlockOnChain(source string, coming *types.Block, sit
 			comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
 
 		chain.removeFromCommonAncestor(commonAncestor)
-		return chain.addBlockOnChain(source, coming, situation)
+		return chain.addBlockOnChain(coming)
 	}
 
 	// 不是同一块，但是QN与本地链相同，需要二次判断
-	if comingHeader.TotalQN == topBlock.TotalQN {
-		commonAncestor := chain.queryBlockHeaderByHash(comingHeader.PreHash)
-		if chain.compareValue(commonAncestor, comingHeader) {
-			if situation == types.Sync {
-				logger.Warnf("coming equal to local. but sync. coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
-					comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
-				go chain.forkProcessor.requestChainPieceInfo(source, chain.latestBlock.Height)
-			}
-			return types.BlockTotalQnLessThanLocal
-		}
-
-		// 要了
-		logger.Warnf("coming equal to local. Still Removing and Forking...coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
-			comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
-		chain.removeFromCommonAncestor(commonAncestor)
-		return chain.addBlockOnChain(source, coming, situation)
+	commonAncestor := chain.queryBlockHeaderByHash(comingHeader.PreHash)
+	if chain.compareValue(commonAncestor, comingHeader) {
+		return types.BlockTotalQnLessThanLocal
 	}
 
-	go chain.forkProcessor.requestChainPieceInfo(source, chain.latestBlock.Height)
-	return types.Forking
+	// 要了
+	logger.Warnf("coming equal to local. Still Removing and Forking...coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
+		comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
+	chain.removeFromCommonAncestor(commonAncestor)
+	return chain.addBlockOnChain(coming)
 }
 
 func (chain *blockChain) executeTransaction(block *types.Block) (bool, *account.AccountDB, types.Receipts) {
@@ -294,12 +277,11 @@ func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block) {
 		block := value.(*types.Block)
 		logger.Debugf("Get block from future blocks,hash:%s,height:%d", block.Header.Hash.String(), block.Header.Height)
 		//todo 这里为了避免死锁只能调用这个方法，但是没办法调用CheckProveRoot全量账本验证了
-		chain.addBlockOnChain("", block, types.FutureBlockCache)
+		chain.addBlockOnChain(block)
 		return
 	}
 	if BlockSyncer != nil {
-		topBlockInfo := TopBlockInfo{Hash: chain.latestBlock.Hash, TotalQn: chain.latestBlock.TotalQN, Height: chain.latestBlock.Height, PreHash: chain.latestBlock.PreHash}
-		go BlockSyncer.sendTopBlockInfoToNeighbor(topBlockInfo)
+		go BlockSyncer.broadcastTopBlockInfo(chain.latestBlock)
 	}
 }
 

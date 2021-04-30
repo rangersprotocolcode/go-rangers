@@ -17,321 +17,148 @@
 package core
 
 import (
-	"sync"
-	"time"
-
-	"com.tuntun.rocket/node/src/common"
+	"bytes"
+	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/middleware/notify"
-	"com.tuntun.rocket/node/src/middleware/pb"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/network"
+	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/utility"
-
-	"github.com/gogo/protobuf/proto"
 )
 
-const forkTimeOut = 3 * time.Second
+type fork struct {
+	header      uint64
+	sourceMiner string
+	latestBlock *types.BlockHeader
 
-type forkProcessor struct {
-	candidate string
-	reqTimer  *time.Timer
-
-	lock   sync.Mutex
+	db     db.Database
 	logger log.Logger
-
-	chain *blockChain
 }
 
-type ChainPieceBlockMsg struct {
-	Blocks    []*types.Block
-	TopHeader *types.BlockHeader
-}
-
-func initForkProcessor(chain *blockChain) *forkProcessor {
-	fh := forkProcessor{lock: sync.Mutex{}, reqTimer: time.NewTimer(forkTimeOut), chain: chain}
-	fh.logger = log.GetLoggerByIndex(log.ForkLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-
-	notify.BUS.Subscribe(notify.ChainPieceInfoReq, fh.chainPieceInfoReqHandler)
-	notify.BUS.Subscribe(notify.ChainPieceInfo, fh.chainPieceInfoHandler)
-	notify.BUS.Subscribe(notify.ChainPieceBlockReq, fh.chainPieceBlockReqHandler)
-	notify.BUS.Subscribe(notify.ChainPieceBlock, fh.chainPieceBlockHandler)
-
-	go fh.loop()
-	return &fh
-}
-
-func (fh *forkProcessor) requestChainPieceInfo(targetNode string, height uint64) {
-	if BlockSyncer == nil {
-		return
-	}
-	if targetNode == "" {
-		return
-	}
-	if fh.candidate != "" {
-		fh.logger.Debugf("Processing fork to %s! Do not req chain piece info anymore", fh.candidate)
-		return
-	}
-
-	if PeerManager.isEvil(targetNode) {
-		fh.logger.Debugf("Req id:%s is marked evil.Do not req!", targetNode)
-		return
-	}
-
-	fh.lock.Lock()
-	fh.candidate = targetNode
-	fh.reqTimer.Reset(forkTimeOut)
-	fh.lock.Unlock()
-	fh.logger.Debugf("Req chain piece info to:%s,local height:%d", targetNode, height)
-	body := utility.UInt64ToByte(height)
-	message := network.Message{Code: network.ChainPieceInfoReq, Body: body}
-	network.GetNetInstance().Send(targetNode, message)
-}
-
-func (fh *forkProcessor) chainPieceInfoReqHandler(msg notify.Message) {
-	chainPieceReqMessage, ok := msg.GetData().(*notify.ChainPieceInfoReqMessage)
-	if !ok {
-		return
-	}
-	reqHeight := utility.ByteToUInt64(chainPieceReqMessage.HeightByte)
-	id := chainPieceReqMessage.Peer
-
-	fh.logger.Debugf("Rcv chain piece info req from:%s,req height:%d", id, reqHeight)
-	chainPiece := fh.chain.getChainPieceInfo(reqHeight)
-	fh.sendChainPieceInfo(id, chainPieceInfo{ChainPiece: chainPiece, TopHeader: blockChainImpl.TopBlock()})
-}
-
-func (fh *forkProcessor) sendChainPieceInfo(targetNode string, chainPieceInfo chainPieceInfo) {
-	chainPiece := chainPieceInfo.ChainPiece
-	if len(chainPiece) == 0 {
-		return
-	}
-	fh.logger.Debugf("Send chain piece %d-%d to:%s", chainPiece[len(chainPiece)-1].Height, chainPiece[0].Height, targetNode)
-	body, e := marshalChainPieceInfo(chainPieceInfo)
-	if e != nil {
-		fh.logger.Errorf("Marshal chain piece info error:%s!", e.Error())
-		return
-	}
-	message := network.Message{Code: network.ChainPieceInfo, Body: body}
-	network.GetNetInstance().Send(targetNode, message)
-}
-
-func (fh *forkProcessor) chainPieceInfoHandler(msg notify.Message) {
-	chainPieceInfoMessage, ok := msg.GetData().(*notify.ChainPieceInfoMessage)
-	if !ok {
-		return
-	}
-	chainPieceInfo, err := fh.unMarshalChainPieceInfo(chainPieceInfoMessage.ChainPieceInfoByte)
+func newFork(commonAncestor types.Block, sourceMiner string, logger log.Logger) *fork {
+	db, err := db.NewDatabase(forkDBPrefix)
 	if err != nil {
-		fh.logger.Errorf("Unmarshal chain piece info error:%s", err.Error())
-		return
+		logger.Debugf("Init block chain error! Error:%s", err.Error())
 	}
-	source := chainPieceInfoMessage.Peer
-	if source != fh.candidate {
-		fh.logger.Debugf("Unexpected chain piece info from %s, expect from %s!", source, chainPieceInfoMessage.Peer)
-		PeerManager.markEvil(source)
-		return
-	}
-	if !fh.verifyChainPieceInfo(chainPieceInfo.ChainPiece, chainPieceInfo.TopHeader) {
-		fh.logger.Debugf("Bad chain piece info from %s", source)
-		PeerManager.markEvil(source)
-		return
-	}
-	status, reqHeight := fh.chain.processChainPieceInfo(chainPieceInfo.ChainPiece, chainPieceInfo.TopHeader)
-	if status == 0 {
-		fh.reset()
-		return
-	}
-	if status == 1 {
-		fh.requestChainPieceBlock(source, reqHeight)
-		return
-	}
+	fork := &fork{header: commonAncestor.Header.Height, latestBlock: commonAncestor.Header, sourceMiner: sourceMiner, db: db, logger: logger}
+	fork.insertBlock(commonAncestor)
 
-	if status == 2 {
-		fh.reset()
-		fh.requestChainPieceInfo(source, reqHeight)
-		return
+	err = fork.db.Put([]byte(commonAncestorHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
+	if err != nil {
+		logger.Debugf("Fork init put error:%s", err.Error())
 	}
+	err = fork.db.Put([]byte(lastestHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
+	if err != nil {
+		logger.Debugf("Fork init put error:%s", err.Error())
+	}
+	return fork
 }
 
-func (fh *forkProcessor) requestChainPieceBlock(id string, height uint64) {
-	fh.logger.Debugf("Req chain piece block to:%s,height:%d", id, height)
-	body := utility.UInt64ToByte(height)
-	message := network.Message{Code: network.ReqChainPieceBlock, Body: body}
-	go network.GetNetInstance().Send(id, message)
-}
-
-func (fh *forkProcessor) chainPieceBlockReqHandler(msg notify.Message) {
-	m, ok := msg.GetData().(*notify.ChainPieceBlockReqMessage)
-	if !ok {
-		return
-	}
-	source := m.Peer
-	reqHeight := utility.ByteToUInt64(m.ReqHeightByte)
-	fh.logger.Debugf("Rcv chain piece block req from:%s,req height:%d", source, reqHeight)
-
-	blocks := fh.chain.getChainPieceBlocks(reqHeight)
-	topHeader := blockChainImpl.TopBlock()
-	fh.sendChainPieceBlock(source, blocks, topHeader)
-}
-
-func (fh *forkProcessor) sendChainPieceBlock(targetId string, blocks []*types.Block, topHeader *types.BlockHeader) {
-	fh.logger.Debugf("Send chain piece blocks %d-%d to:%s", blocks[len(blocks)-1].Header.Height, blocks[0].Header.Height, targetId)
-	body, e := fh.marshalChainPieceBlockMsg(ChainPieceBlockMsg{Blocks: blocks, TopHeader: topHeader})
-	if e != nil {
-		fh.logger.Errorf("Marshal chain piece block msg error:%s", e.Error())
-		return
-	}
-	message := network.Message{Code: network.ChainPieceBlock, Body: body}
-	go network.GetNetInstance().Send(targetId, message)
-}
-
-func (fh *forkProcessor) chainPieceBlockHandler(msg notify.Message) {
-	m, ok := msg.GetData().(*notify.ChainPieceBlockMessage)
-	if !ok {
-		return
-	}
-	source := m.Peer
-	if source != fh.candidate {
-		fh.logger.Debugf("Unexpected chain piece block from %s, expect from %s!", source, fh.candidate)
-		PeerManager.markEvil(source)
-		return
-	}
-
-	chainPieceBlockMsg, e := fh.unmarshalChainPieceBlockMsg(m.ChainPieceBlockMsgByte)
-	if e != nil {
-		fh.logger.Debugf("Unmarshal chain piece block msg error:%d", e.Error())
-		return
-	}
-
-	blocks := chainPieceBlockMsg.Blocks
-	topHeader := chainPieceBlockMsg.TopHeader
-
-	if topHeader == nil {
-		return
-	}
-	fh.logger.Debugf("Rcv chain piece block chain piece blocks %d-%d from %s", blocks[len(blocks)-1].Header.Height, blocks[0].Header.Height, source)
-
-	if !fh.verifyChainPieceBlocks(blocks, topHeader) {
-		fh.logger.Debugf("Bad chain piece blocks from %s", source)
-		PeerManager.markEvil(source)
-		return
-	}
-	fh.chain.mergeFork(blocks, topHeader)
-	fh.reset()
-
-}
-
-func (fh *forkProcessor) reset() {
-	fh.lock.Lock()
-	defer fh.lock.Unlock()
-	fh.logger.Debugf("Fork processor reset!")
-	fh.candidate = ""
-	fh.reqTimer.Stop()
-}
-
-func (fh *forkProcessor) verifyChainPieceInfo(chainPiece []*types.BlockHeader, topHeader *types.BlockHeader) bool {
-	if len(chainPiece) == 0 {
-		return false
-	}
-	if topHeader.Hash != topHeader.GenHash() {
-		logger.Infof("Invalid topHeader! Hash:%s", topHeader.Hash.String())
+func (fork *fork) acceptBlock(coming types.Block, sourceMiner string) bool {
+	if fork.sourceMiner != sourceMiner {
 		return false
 	}
 
-	for i := 0; i < len(chainPiece)-1; i++ {
-		bh := chainPiece[i]
-		if bh.Hash != bh.GenHash() {
-			logger.Infof("Invalid chainPiece element,hash:%s", bh.Hash.String())
-			return false
-		}
-		if bh.PreHash != chainPiece[i+1].Hash {
-			logger.Infof("Invalid preHash,expect prehash:%s,real hash:%s", bh.PreHash.String(), chainPiece[i+1].Hash.String())
-			return false
-		}
+	if !fork.verifyOrder(coming) || !fork.verifyHash(coming) || !fork.verifyTxRoot(coming) || !fork.verifyStateAndReceipt(coming) {
+		return false
+	}
+	fork.insertBlock(coming)
+	fork.latestBlock = coming.Header
+	return true
+}
+
+func destoryFork(fork *fork) {
+	if fork == nil {
+		return
+	}
+	for i := fork.header; i <= fork.latestBlock.Height; i++ {
+		fork.deleteBlock(i)
+	}
+	fork.db.Delete([]byte(commonAncestorHeightKey))
+	fork.db.Delete([]byte(lastestHeightKey))
+	fork = nil
+}
+
+func (fork *fork) verifyOrder(coming types.Block) bool {
+	if coming.Header.PreHash != fork.latestBlock.Hash {
+		fork.logger.Debugf("Order error! coming pre:%s,fork lastest:%s", coming.Header.PreHash.Hex(), fork.latestBlock.Hash.Hex())
+		return false
 	}
 	return true
 }
 
-func (fh *forkProcessor) verifyChainPieceBlocks(chainPiece []*types.Block, topHeader *types.BlockHeader) bool {
-	if len(chainPiece) == 0 {
+func (fork *fork) verifyHash(coming types.Block) bool {
+	genHash := coming.Header.GenHash()
+	if coming.Header.Hash != genHash {
+		fork.logger.Debugf("Hash error! coming hash:%s,gen:%s", coming.Header.Hash.Hex(), genHash.Hex())
 		return false
-	}
-	if topHeader.Hash != topHeader.GenHash() {
-		fh.logger.Infof("Invalid topHeader! Hash:%s", topHeader.Hash.String())
-		return false
-	}
-
-	for i := len(chainPiece) - 1; i > 0; i-- {
-		block := chainPiece[i]
-		if block == nil {
-			return false
-		}
-		if block.Header.Hash != block.Header.GenHash() {
-			fh.logger.Infof("Invalid chainPiece element,hash:%s", block.Header.Hash.String())
-			return false
-		}
-		if block.Header.PreHash != chainPiece[i-1].Header.Hash {
-			fh.logger.Infof("Invalid preHash,expect preHash:%s,real hash:%s", block.Header.PreHash.String(), chainPiece[i+1].Header.Hash.String())
-			return false
-		}
 	}
 	return true
 }
 
-func (fh *forkProcessor) unMarshalChainPieceInfo(b []byte) (*chainPieceInfo, error) {
-	message := new(middleware_pb.ChainPieceInfo)
-	e := proto.Unmarshal(b, message)
-	if e != nil {
-		fh.logger.Errorf("UnMarshal chain piece info error:%s", e.Error())
-		return nil, e
+func (fork *fork) verifyTxRoot(coming types.Block) bool {
+	txTree := calcTxTree(coming.Transactions)
+	if !bytes.Equal(txTree.Bytes(), coming.Header.TxTree.Bytes()) {
+		logger.Errorf("Tx root error! coming:%s gen:%s", coming.Header.TxTree.Bytes(), txTree.Hex())
+		return false
 	}
-
-	chainPiece := make([]*types.BlockHeader, 0)
-	for _, header := range message.BlockHeaders {
-		h := types.PbToBlockHeader(header)
-		chainPiece = append(chainPiece, h)
-	}
-	topHeader := types.PbToBlockHeader(message.TopHeader)
-	chainPieceInfo := chainPieceInfo{ChainPiece: chainPiece, TopHeader: topHeader}
-	return &chainPieceInfo, nil
+	return true
 }
 
-func (fh *forkProcessor) marshalChainPieceBlockMsg(cpb ChainPieceBlockMsg) ([]byte, error) {
-	topHeader := types.BlockHeaderToPb(cpb.TopHeader)
-	blocks := make([]*middleware_pb.Block, 0)
-	for _, b := range cpb.Blocks {
-		blocks = append(blocks, types.BlockToPb(b))
+func (fork *fork) verifyStateAndReceipt(coming types.Block) bool {
+	//todo 这里会溢出嘛？
+	preBlock := fork.getBlock(coming.Header.Height - 1)
+	if preBlock == nil {
+		logger.Errorf("Pre block nil !")
+		return false
 	}
-	message := middleware_pb.ChainPieceBlockMsg{TopHeader: topHeader, Blocks: blocks}
-	return proto.Marshal(&message)
+	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(preBlock.Header.StateTree)
+	if err != nil {
+		logger.Errorf("Fail to new statedb, error:%s", err)
+		return false
+	}
+	vmExecutor := newVMExecutor(state, &coming, "fork")
+	stateRoot, _, _, receipts := vmExecutor.Execute()
+
+	if stateRoot != coming.Header.StateTree {
+		logger.Errorf("State root error!coming:%s gen:%s", coming.Header.StateTree.Hex(), stateRoot.Hex())
+		return false
+	}
+	receiptsTree := calcReceiptsTree(receipts)
+	if receiptsTree != coming.Header.ReceiptTree {
+		logger.Errorf("Receipt root error!coming:%s gen:%s", coming.Header.ReceiptTree.Hex(), receiptsTree.Hex())
+		return false
+	}
+	return true
 }
 
-func (fh *forkProcessor) unmarshalChainPieceBlockMsg(b []byte) (*ChainPieceBlockMsg, error) {
-	message := new(middleware_pb.ChainPieceBlockMsg)
-	e := proto.Unmarshal(b, message)
-	if e != nil {
-		fh.logger.Errorf("Unmarshal chain piece block msg error:%s", e.Error())
-		return nil, e
+func (fork *fork) insertBlock(block types.Block) error {
+	blockByte, err := types.MarshalBlock(&block)
+	if err != nil {
+		logger.Errorf("Fail to marshal block, error:%s", err.Error())
+		return err
 	}
-	topHeader := types.PbToBlockHeader(message.TopHeader)
-	blocks := make([]*types.Block, 0)
-	for _, b := range message.Blocks {
-		blocks = append(blocks, types.PbToBlock(b))
+	err = fork.db.Put(generateHeightKey(block.Header.Height), blockByte)
+	if err != nil {
+		logger.Errorf("Fail to insert db, error:%s", err.Error())
+		return err
 	}
-	cpb := ChainPieceBlockMsg{TopHeader: topHeader, Blocks: blocks}
-	return &cpb, nil
+	return nil
 }
 
-func (fh *forkProcessor) loop() {
-	for {
-		select {
-		case <-fh.reqTimer.C:
-			if fh.candidate != "" {
-				fh.logger.Debugf("Fork req time out to  %s", fh.candidate)
-				PeerManager.markEvil(fh.candidate)
-				fh.reset()
-			}
-		}
+func (fork *fork) getBlock(height uint64) *types.Block {
+	bytes, _ := fork.db.Get(generateHeightKey(height))
+	block, err := types.UnMarshalBlock(bytes)
+	if err != nil {
+		logger.Errorf("Fail to ummarshal block, error:%s", err.Error())
 	}
+	return block
+}
+
+func (fork *fork) deleteBlock(height uint64) bool {
+	err := fork.db.Delete(generateHeightKey(height))
+	if err != nil {
+		logger.Errorf("Fail to delete block, error:%s", err.Error())
+		return false
+	}
+	return true
 }

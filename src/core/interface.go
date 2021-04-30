@@ -45,7 +45,7 @@ type BlockChain interface {
 	//返回缺失交易列表
 	VerifyBlock(bh types.BlockHeader) ([]common.Hashes, int8)
 
-	AddBlockOnChain(source string, b *types.Block, situation types.AddBlockOnChainSituation) types.AddBlockResult
+	AddBlockOnChain(b *types.Block) types.AddBlockResult
 
 	Height() uint64
 

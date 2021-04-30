@@ -29,6 +29,7 @@ var (
 	txLogger        log.Logger
 	consensusLogger log.Logger
 	consensusHelper types.ConsensusHelper
+	blockSyncLogger log.Logger
 )
 
 func InitCore(helper types.ConsensusHelper) error {
@@ -36,9 +37,10 @@ func InitCore(helper types.ConsensusHelper) error {
 	logger = log.GetLoggerByIndex(log.CoreLogConfig, index)
 	txLogger = log.GetLoggerByIndex(log.TxLogConfig, index)
 	consensusLogger = log.GetLoggerByIndex(log.ConsensusLogConfig, index)
+	blockSyncLogger = log.GetLoggerByIndex(log.BlockSyncLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	consensusHelper = helper
 
-	initPeerManager()
+	initPeerManager(blockSyncLogger)
 	if nil == blockChainImpl {
 		err := initBlockChain()
 		if err != nil {

@@ -40,9 +40,6 @@ const (
 	addBlockMark    = "addBlockMark"
 	removeBlockMark = "removeBlockMark"
 
-	chainPieceLength      = 9
-	chainPieceBlockLength = 6
-
 	hashDBPrefix       = "block"
 	heightDBPrefix     = "height"
 	verifyHashDBPrefix = "verifyHash"
@@ -68,7 +65,6 @@ type blockChain struct {
 	heightDB     db.Database
 	verifyHashDB db.Database
 
-	forkProcessor   *forkProcessor
 	transactionPool service.TransactionPool
 
 	lock middleware.Loglock
@@ -124,7 +120,6 @@ func initBlockChain() error {
 		return err
 	}
 
-	chain.forkProcessor = initForkProcessor(chain)
 	chain.latestBlock = chain.QueryBlockHeaderByHeight([]byte(latestBlockKey), false)
 	if chain.latestBlock == nil {
 		chain.insertGenesisBlock()
@@ -284,13 +279,13 @@ func (chain *blockChain) TotalQN() uint64 {
 //        1, 丢弃该块(链上已存在该块）
 //        2,丢弃该块（链上存在QN值更大的相同高度块)
 //        3,分叉调整
-func (chain *blockChain) AddBlockOnChain(source string, b *types.Block, situation types.AddBlockOnChainSituation) types.AddBlockResult {
-	if validateCode, result := chain.consensusVerify(source, b); !result {
+func (chain *blockChain) AddBlockOnChain(b *types.Block) types.AddBlockResult {
+	if validateCode, result := chain.consensusVerify(b); !result {
 		return validateCode
 	}
 	chain.lock.Lock("AddBlockOnChain")
 	defer chain.lock.Unlock("AddBlockOnChain")
-	return chain.addBlockOnChain(source, b, situation)
+	return chain.addBlockOnChain(b)
 }
 
 func (chain *blockChain) QueryBlockByHash(hash common.Hash) *types.Block {

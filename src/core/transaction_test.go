@@ -22,6 +22,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"testing"
+	"time"
 )
 
 func TestTxHash(t *testing.T) {
@@ -92,7 +93,6 @@ func TestSign(t *testing.T) {
 	fmt.Printf("sign:%s\n", sign.GetHexString())
 }
 
-
 func TestStrToSign(t *testing.T) {
 	const PREFIX = "0x"
 	signStr := "0x0de90888c3b3447c359254cd08f5daeaf060dc46b4f718a6253d203e3fdab8e03682025ccdd6156440e75f72e19be3c6255b137be7af53016ef578bf28d6cc01"
@@ -104,5 +104,15 @@ func TestStrToSign(t *testing.T) {
 	fmt.Printf("Sign bytes:%v\n\n", signBytes)
 	sign := common.BytesToSign(signBytes)
 
-	fmt.Printf("sign:%s",sign.GetHexString())
+	fmt.Printf("sign:%s", sign.GetHexString())
+}
+
+func TestUint(t *testing.T) {
+	var a uint64 = 5
+	b := a - 10
+	fmt.Printf("%v", b)
+
+	m := time.NewTimer(3 * time.Second)
+	m.Stop()
+	m.Stop()
 }

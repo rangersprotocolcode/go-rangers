@@ -108,7 +108,7 @@ func (p *Processor) doAddOnChain(block *types.Block) (result int8) {
 
 	rlog := newRtLog("doAddOnChain")
 	rlog.log("start, height=%v, hash=%v", bh.Height, bh.Hash.ShortS())
-	result = int8(p.MainChain.AddBlockOnChain("", block, types.LocalGenerateNewBlock))
+	result = int8(p.MainChain.AddBlockOnChain(block))
 
 	//log.Printf("AddBlockOnChain header %v \n", p.blockPreview(bh))
 	//log.Printf("QueryTopBlock header %v \n", p.blockPreview(p.MainChain.QueryTopBlock()))
