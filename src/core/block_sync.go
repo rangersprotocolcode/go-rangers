@@ -406,7 +406,7 @@ func (bs *blockSyncer) syncBlock(id string, commonAncestor types.Block) {
 		return
 	}
 	message := network.Message{Code: network.ReqBlock, Body: body}
-	go network.GetNetInstance().Send(id, message)
+	go network.GetNetInstance().SendToStranger(common.FromHex(id), message)
 	bs.reqTimer.Reset(blockSyncReqTimeout)
 }
 
