@@ -280,7 +280,7 @@ func (bs *blockSyncer) chainPieceReqHandler(msg notify.Message) {
 
 	chainPieceMsg := chainPieceInfo{ChainPiece: chainPiece, TopHeader: blockChainImpl.TopBlock()}
 	chainPieceMsg.SignInfo = common.NewSignData(bs.privateKey, bs.id, &chainPieceMsg)
-	bs.logger.Debugf("Send chain piece %d-%d to:%s", chainPiece[len(chainPiece)-1].Height, chainPiece[0].Height, from)
+	bs.logger.Debugf("Send chain piece %d-%d to:%s", chainPiece[0].Height, chainPiece[len(chainPiece)-1].Height, from)
 	body, e := marshalChainPieceInfo(chainPieceMsg)
 	if e != nil {
 		bs.logger.Errorf("Marshal chain piece info error:%s!", e.Error())
@@ -352,6 +352,7 @@ func (bs *blockSyncer) chainPieceHandler(msg notify.Message) {
 		return
 	}
 
+	bs.logger.Debugf("Common ancestor height:%d", commonAncestor.Height)
 	if commonAncestor == chainPiece[len(chainPiece)-1] {
 		bs.finishCurrentSync()
 		return
@@ -371,11 +372,7 @@ func verifyChainPieceInfo(chainPiece []*types.BlockHeader, topHeader *types.Bloc
 		return false
 	}
 
-	signVerifyResult, _ := consensusHelper.VerifyBlockHeader(topHeader)
-	if !signVerifyResult {
-		return false
-	}
-
+	//can not verify top header group sign
 	for i := 0; i < len(chainPiece)-1; i++ {
 		bh := chainPiece[i]
 		if bh == nil {
@@ -386,7 +383,7 @@ func verifyChainPieceInfo(chainPiece []*types.BlockHeader, topHeader *types.Bloc
 			return false
 		}
 
-		signVerifyResult, _ := consensusHelper.VerifyBlockHeader(topHeader)
+		signVerifyResult, _ := consensusHelper.VerifyBlockHeader(bh)
 		if !signVerifyResult {
 			return false
 		}
