@@ -353,7 +353,7 @@ func (bs *blockSyncer) chainPieceHandler(msg notify.Message) {
 		return
 	}
 
-	bs.logger.Debugf("Common ancestor height:%d", commonAncestor.Height)
+	bs.logger.Debugf("Common ancestor height:%d,hash:%s", commonAncestor.Height, commonAncestor.Hash.String())
 	//if commonAncestor == chainPiece[len(chainPiece)-1] {
 	//	bs.finishCurrentSync()
 	//	return
@@ -476,9 +476,10 @@ func (bs *blockSyncer) blockResponseMsgHandler(msg notify.Message) {
 		bs.logger.Debugf("Unexpected block response from %s, expect from %s!", from, bs.candidateInfo.Id)
 		return
 	}
+	block := blockResponse.Block
+	bs.logger.Debugf("Rcv sync block.Hash:%d,%d-%d.Pre:%s", block.Header.Hash.String(), block.Header.Height, block.Header.TotalQN, block.Header.PreHash.String())
 	bs.reqTimer.Reset(blockSyncReqTimeout)
 
-	block := blockResponse.Block
 	isLastBlock := blockResponse.IsLastBlock
 	if !bs.fork.acceptBlock(*block, from) {
 		bs.logger.Debugf("Accept block failed!%s,%d-%d", block.Header.Hash.String(), block.Header.Height, block.Header.TotalQN)
