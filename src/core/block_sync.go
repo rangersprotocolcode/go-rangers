@@ -405,7 +405,7 @@ func (bs *blockSyncer) syncBlock(id string, commonAncestor types.Block) {
 		bs.logger.Errorf("marshal block req error:%s", e.Error())
 		return
 	}
-	message := network.Message{Code: network.ReqChainPieceBlock, Body: body}
+	message := network.Message{Code: network.ReqBlock, Body: body}
 	go network.GetNetInstance().Send(id, message)
 	bs.reqTimer.Reset(blockSyncReqTimeout)
 }
@@ -413,7 +413,7 @@ func (bs *blockSyncer) syncBlock(id string, commonAncestor types.Block) {
 func (bs *blockSyncer) syncBlockReqHandler(msg notify.Message) {
 	m, ok := msg.(*notify.BlockReqMessage)
 	if !ok {
-		logger.Debugf("BlockReqMessage:Message assert not ok!")
+		bs.logger.Debugf("BlockReqMessage:Message assert not ok!")
 		return
 	}
 
