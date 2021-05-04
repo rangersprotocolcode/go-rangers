@@ -411,14 +411,12 @@ func (bs *blockSyncer) syncBlock(id string, commonAncestor types.Block) {
 }
 
 func (bs *blockSyncer) syncBlockReqHandler(msg notify.Message) {
-	bs.logger.Debugf("Rcv BlockReqMessage")
 	m, ok := msg.(*notify.BlockReqMessage)
 	if !ok {
 		bs.logger.Debugf("BlockReqMessage:Message assert not ok!")
 		return
 	}
 
-	bs.logger.Debugf("Rcv BlockReqMessage.%d", m.Peer)
 	req, e := unMarshalBlockSyncReq(m.ReqInfoByte)
 	if e != nil {
 		bs.logger.Debugf("Discard block req msg because unMarshalBlockSyncReq error:%d", e.Error())
@@ -451,7 +449,7 @@ func (bs *blockSyncer) syncBlockReqHandler(msg notify.Message) {
 		}
 		message := network.Message{Code: network.BlockResponseMsg, Body: body}
 		network.GetNetInstance().SendToStranger(common.FromHex(m.Peer), message)
-		bs.logger.Debugf("Send %d to %s,is last:%v", response.Block.Header.Height, m.Peer, response.IsLastBlock)
+		bs.logger.Debugf("Send block %d to %s,is last:%v", response.Block.Header.Height, m.Peer, response.IsLastBlock)
 	}
 }
 

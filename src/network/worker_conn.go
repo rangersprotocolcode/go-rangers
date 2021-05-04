@@ -115,7 +115,6 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 		msg := notify.BlockInfoNotifyMessage{BlockInfo: message.Body, Peer: from}
 		notify.BUS.Publish(notify.BlockInfoNotify, &msg)
 	case ReqBlock:
-		workerConn.logger.Debugf("rcv ReqBlock from:%s", from)
 		msg := notify.BlockReqMessage{ReqInfoByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.BlockReq, &msg)
 	case BlockResponseMsg:

@@ -53,8 +53,8 @@ func (chain *blockChain) getChainPiece(sourceChainHeight uint64) []*types.BlockH
 }
 
 func (chain *blockChain) getSyncedBlock(reqHeight uint64) []*types.Block {
-	chain.lock.Lock("GetChainPieceInfo")
-	defer chain.lock.Unlock("GetChainPieceInfo")
+	chain.lock.Lock("getSyncedBlock")
+	defer chain.lock.Unlock("getSyncedBlock")
 
 	result := make([]*types.Block, 0)
 	count := 0
@@ -63,7 +63,12 @@ func (chain *blockChain) getSyncedBlock(reqHeight uint64) []*types.Block {
 			break
 		}
 
-		block := chain.QueryBlock(i)
+		header := chain.QueryBlockHeaderByHeight(i, true)
+		if header == nil {
+			blockSyncLogger.Errorf("Block chain get nil block!Height:%d", i)
+			break
+		}
+		block := chain.queryBlockByHash(header.Hash)
 		if block == nil {
 			blockSyncLogger.Errorf("Block chain get nil block!Height:%d", i)
 			break
