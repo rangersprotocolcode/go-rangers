@@ -354,10 +354,10 @@ func (bs *blockSyncer) chainPieceHandler(msg notify.Message) {
 	}
 
 	bs.logger.Debugf("Common ancestor height:%d", commonAncestor.Height)
-	if commonAncestor == chainPiece[len(chainPiece)-1] {
-		bs.finishCurrentSync()
-		return
-	}
+	//if commonAncestor == chainPiece[len(chainPiece)-1] {
+	//	bs.finishCurrentSync()
+	//	return
+	//}
 
 	commonAncestorBlock := bs.chain.queryBlockByHash(commonAncestor.Hash)
 	if commonAncestorBlock == nil {
@@ -411,12 +411,14 @@ func (bs *blockSyncer) syncBlock(id string, commonAncestor types.Block) {
 }
 
 func (bs *blockSyncer) syncBlockReqHandler(msg notify.Message) {
+	bs.logger.Debugf("Rcv BlockReqMessage")
 	m, ok := msg.(*notify.BlockReqMessage)
 	if !ok {
 		bs.logger.Debugf("BlockReqMessage:Message assert not ok!")
 		return
 	}
 
+	bs.logger.Debugf("Rcv BlockReqMessage.%d", m.Peer)
 	req, e := unMarshalBlockSyncReq(m.ReqInfoByte)
 	if e != nil {
 		bs.logger.Debugf("Discard block req msg because unMarshalBlockSyncReq error:%d", e.Error())
