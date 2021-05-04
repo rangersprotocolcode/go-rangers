@@ -448,8 +448,8 @@ func (bs *blockSyncer) syncBlockReqHandler(msg notify.Message) {
 			return
 		}
 		message := network.Message{Code: network.BlockResponseMsg, Body: body}
-		network.GetNetInstance().SendToStranger(common.FromHex(m.Peer), message)
-		bs.logger.Debugf("Send block %d to %s,is last:%v", response.Block.Header.Height, m.Peer, response.IsLastBlock)
+		network.GetNetInstance().SendToStranger(common.FromHex(req.SignInfo.Id), message)
+		bs.logger.Debugf("Send block %d to %s,is last:%v", response.Block.Header.Height, req.SignInfo.Id, response.IsLastBlock)
 	}
 }
 
