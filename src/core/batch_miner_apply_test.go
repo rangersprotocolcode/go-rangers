@@ -94,7 +94,7 @@ func parseFile() []piece {
 }
 
 func genMinerApplyTx(target string, data string) string {
-	source := "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"
+	source := "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
 	tx := types.Transaction{Type: 2, Source: source, Target: target, Time: time.Now().String()}
 
 	tx.Data = string(data)

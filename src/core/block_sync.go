@@ -153,6 +153,7 @@ func (bs *blockSyncer) topBlockInfoNotifyHandler(msg notify.Message) {
 		bs.logger.Errorf("BlockInfoNotifyMessage sign validate error:%s", e.Error())
 		return
 	}
+	bs.logger.Debugf("Rcv top block info! Height:%d,qn:%d,source:%s", blockInfo.Height, blockInfo.TotalQn, blockInfo.SignInfo.Id)
 	topBlock := blockChainImpl.TopBlock()
 	localTotalQn, localTopHash := topBlock.TotalQN, topBlock.Hash
 	if blockInfo.TotalQn < localTotalQn || (localTotalQn == blockInfo.TotalQn && localTopHash == blockInfo.Hash) {
@@ -170,7 +171,6 @@ func (bs *blockSyncer) topBlockInfoNotifyHandler(msg notify.Message) {
 func (bs *blockSyncer) addCandidate(id string, topBlockInfo TopBlockInfo) {
 	bs.Lock.Lock("addCandidatePool")
 	defer bs.Lock.Unlock("addCandidatePool")
-	defer bs.trySync()
 
 	if len(bs.candidatePool) < blockSyncCandidatePoolSize {
 		bs.candidatePool[id] = topBlockInfo
@@ -187,6 +187,7 @@ func (bs *blockSyncer) addCandidate(id string, topBlockInfo TopBlockInfo) {
 	if topBlockInfo.TotalQn > minTotalQn {
 		delete(bs.candidatePool, totalQnMinId)
 		bs.candidatePool[id] = topBlockInfo
+		go bs.trySync()
 	}
 }
 
