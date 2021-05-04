@@ -74,18 +74,3 @@ func marshalTransactionRequestMessage(m *transactionRequestMessage) ([]byte, err
 	message := middleware_pb.TransactionRequestMessage{TransactionHashes: txHashes, CurrentBlockHash: currentBlockHash, BlockHeight: &m.BlockHeight, BlockPv: m.BlockPv.Bytes()}
 	return proto.Marshal(&message)
 }
-
-func sendBlock(targetId string, block *types.Block, isLastBlock bool) {
-	if block == nil {
-		logger.Debugf("Send nil block to:%s", targetId)
-	} else {
-		logger.Debugf("Send local block:%d to:%s,isLastBlock:%t", block.Header.Height, targetId, isLastBlock)
-	}
-	body, e := marshalBlockMsgResponse(BlockMsgResponse{Block: block, IsLastBlock: isLastBlock})
-	if e != nil {
-		logger.Errorf("Marshal block msg response error:%s", e.Error())
-		return
-	}
-	message := network.Message{Code: network.BlockResponseMsg, Body: body}
-	network.GetNetInstance().Send(targetId, message)
-}

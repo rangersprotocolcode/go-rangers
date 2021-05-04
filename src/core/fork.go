@@ -18,6 +18,7 @@ package core
 
 import (
 	"bytes"
+	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -58,7 +59,7 @@ func (fork *fork) acceptBlock(coming types.Block, sourceMiner string) bool {
 		return false
 	}
 
-	if !fork.verifyOrder(coming) || !fork.verifyHash(coming) || !fork.verifyTxRoot(coming) || !fork.verifyStateAndReceipt(coming) {
+	if !fork.verifyOrder(coming) || !fork.verifyHash(coming) || !fork.verifyTxRoot(coming) || !fork.verifyStateAndReceipt(coming) || !fork.verifyGroupSign(coming) {
 		return false
 	}
 	fork.insertBlock(coming)
@@ -129,6 +130,16 @@ func (fork *fork) verifyStateAndReceipt(coming types.Block) bool {
 		return false
 	}
 	return true
+}
+
+func (fork *fork) verifyGroupSign(coming types.Block) bool {
+	group := groupChainImpl.GetGroupById(coming.Header.GroupId)
+	if group == nil {
+		fork.logger.Debugf("Local group is nil.Id:%s", common.ToHex(coming.Header.GroupId))
+		return false
+	}
+	result, _ := consensusHelper.VerifyBlockHeader(coming.Header)
+	return result
 }
 
 func (fork *fork) insertBlock(block types.Block) error {

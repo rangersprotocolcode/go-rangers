@@ -77,6 +77,7 @@ func InitBlockSyncer(privateKey common.PrivateKey, id string) {
 	notify.BUS.Subscribe(notify.BlockInfoNotify, BlockSyncer.topBlockInfoNotifyHandler)
 	notify.BUS.Subscribe(notify.ChainPieceInfoReq, BlockSyncer.chainPieceReqHandler)
 	notify.BUS.Subscribe(notify.ChainPieceInfo, BlockSyncer.chainPieceHandler)
+	notify.BUS.Subscribe(notify.BlockReq, BlockSyncer.syncBlockReqHandler)
 	notify.BUS.Subscribe(notify.BlockResponse, BlockSyncer.blockResponseMsgHandler)
 	go BlockSyncer.loop()
 }
@@ -379,7 +380,7 @@ func verifyChainPieceInfo(chainPiece []*types.BlockHeader, topHeader *types.Bloc
 			return false
 		}
 
-		if bh.PreHash != chainPiece[i+1].Hash {
+		if i > 0 && bh.PreHash != chainPiece[i-1].Hash {
 			return false
 		}
 
@@ -407,6 +408,49 @@ func (bs *blockSyncer) syncBlock(id string, commonAncestor types.Block) {
 	message := network.Message{Code: network.ReqChainPieceBlock, Body: body}
 	go network.GetNetInstance().Send(id, message)
 	bs.reqTimer.Reset(blockSyncReqTimeout)
+}
+
+func (bs *blockSyncer) syncBlockReqHandler(msg notify.Message) {
+	m, ok := msg.(*notify.BlockReqMessage)
+	if !ok {
+		logger.Debugf("BlockReqMessage:Message assert not ok!")
+		return
+	}
+
+	req, e := unMarshalBlockSyncReq(m.ReqInfoByte)
+	if e != nil {
+		bs.logger.Debugf("Discard block req msg because unMarshalBlockSyncReq error:%d", e.Error())
+		return
+	}
+
+	err := req.SignInfo.ValidateSign(req)
+	if err != nil {
+		bs.logger.Errorf("syncBlockReqHandler sign validate error:%s", e.Error())
+		return
+	}
+
+	reqHeight := req.Height
+	localHeight := blockChainImpl.Height()
+	bs.logger.Debugf("Rcv block request:reqHeight:%d,localHeight:%d", reqHeight, localHeight)
+
+	blockList := bs.chain.getSyncedBlock(reqHeight)
+	for i := 0; i <= len(blockList)-1; i++ {
+		block := blockList[i]
+		isLastBlock := false
+		if i == len(blockList)-1 {
+			isLastBlock = true
+		}
+		response := BlockMsgResponse{Block: block, IsLastBlock: isLastBlock}
+		response.SignInfo = common.NewSignData(bs.privateKey, bs.id, &response)
+		body, e := marshalBlockMsgResponse(response)
+		if e != nil {
+			bs.logger.Errorf("Marshal block msg response error:%s", e.Error())
+			return
+		}
+		message := network.Message{Code: network.BlockResponseMsg, Body: body}
+		network.GetNetInstance().Send(m.Peer, message)
+		bs.logger.Debugf("Send %d to %s,is last:%v", response.Block.Header.Height, m.Peer, response.IsLastBlock)
+	}
 }
 
 func (bs *blockSyncer) blockResponseMsgHandler(msg notify.Message) {
@@ -437,12 +481,19 @@ func (bs *blockSyncer) blockResponseMsgHandler(msg notify.Message) {
 	block := blockResponse.Block
 	isLastBlock := blockResponse.IsLastBlock
 	if !bs.fork.acceptBlock(*block, from) {
-		PeerManager.markEvil(from)
+		bs.logger.Debugf("Accept block failed!%s,%d-%d", block.Header.Hash.String(), block.Header.Height, block.Header.TotalQN)
+		mergeResult := bs.chain.tryMergeFork(bs.fork)
+		bs.logger.Debugf("Try merge fork result:%v", mergeResult)
+		if !mergeResult {
+			PeerManager.markEvil(from)
+		}
+		bs.finishCurrentSync()
 		return
 	}
 
 	if isLastBlock {
-		bs.chain.tryMergeFork(bs.fork)
+		mergeResult := bs.chain.tryMergeFork(bs.fork)
+		bs.logger.Debugf("Try merge fork result:%v", mergeResult)
 		bs.finishCurrentSync()
 	}
 }

@@ -20,13 +20,11 @@ import (
 	"math/big"
 
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/notify"
+	"com.tuntun.rocket/node/src/middleware/pb"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
-	"com.tuntun.rocket/node/src/utility"
-
-	"com.tuntun.rocket/node/src/middleware"
-	"com.tuntun.rocket/node/src/middleware/pb"
 	"com.tuntun.rocket/node/src/service"
 	"github.com/golang/protobuf/proto"
 	"time"
@@ -39,7 +37,6 @@ type ChainHandler struct{}
 func initChainHandler() {
 	handler := ChainHandler{}
 
-	notify.BUS.Subscribe(notify.BlockReq, handler.blockReqHandler)
 	notify.BUS.Subscribe(notify.NewBlock, handler.newBlockHandler)
 	notify.BUS.Subscribe(notify.TransactionReq, handler.transactionReqHandler)
 	notify.BUS.Subscribe(notify.TransactionGot, handler.transactionGotHandler)
@@ -102,38 +99,6 @@ func (ch ChainHandler) transactionGotHandler(msg notify.Message) {
 	m := notify.TransactionGotAddSuccMessage{Transactions: txs, Peer: tgm.Peer}
 	notify.BUS.Publish(notify.TransactionGotAddSucc, &m)
 	return
-}
-
-func (ch ChainHandler) blockReqHandler(msg notify.Message) {
-
-	m, ok := msg.(*notify.BlockReqMessage)
-	if !ok {
-		logger.Debugf("blockReqHandler:Message assert not ok!")
-		return
-	}
-	reqHeight := utility.ByteToUInt64(m.HeightByte)
-	localHeight := blockChainImpl.Height()
-
-	logger.Debugf("Rcv block request:reqHeight:%d,localHeight:%d", reqHeight, localHeight)
-	var count = 0
-	for i := reqHeight; i <= localHeight; i++ {
-		block := blockChainImpl.QueryBlock(i)
-		if block == nil {
-			continue
-		}
-		count++
-		if count == blockResponseSize || i == localHeight {
-			sendBlock(m.Peer, block, true)
-		} else {
-			sendBlock(m.Peer, block, false)
-		}
-		if count >= blockResponseSize {
-			break
-		}
-	}
-	if count == 0 {
-		sendBlock(m.Peer, nil, true)
-	}
 }
 
 func (ch ChainHandler) newBlockHandler(msg notify.Message) {

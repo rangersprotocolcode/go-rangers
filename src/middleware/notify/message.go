@@ -34,12 +34,12 @@ func (m *NewBlockMessage) GetData() interface{} {
 }
 
 type BlockReqMessage struct {
-	HeightByte []byte
-	Peer       string
+	ReqInfoByte []byte
+	Peer        string
 }
 
 func (m *BlockReqMessage) GetRaw() []byte {
-	return m.HeightByte
+	return m.ReqInfoByte
 }
 func (m *BlockReqMessage) GetData() interface{} {
 	return m

@@ -115,7 +115,7 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 		msg := notify.BlockInfoNotifyMessage{BlockInfo: message.Body, Peer: from}
 		notify.BUS.Publish(notify.BlockInfoNotify, &msg)
 	case ReqBlock:
-		msg := notify.BlockReqMessage{HeightByte: message.Body, Peer: from}
+		msg := notify.BlockReqMessage{ReqInfoByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.BlockReq, &msg)
 	case BlockResponseMsg:
 		msg := notify.BlockResponseMessage{BlockResponseByte: message.Body, Peer: from}
@@ -129,9 +129,6 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 	case ChainPieceInfo:
 		msg := notify.ChainPieceInfoMessage{ChainPieceInfoByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.ChainPieceInfo, &msg)
-	case ChainPieceBlock:
-		msg := notify.ChainPieceBlockMessage{ChainPieceBlockMsgByte: message.Body, Peer: from}
-		notify.BUS.Publish(notify.ChainPieceBlock, &msg)
 	case STMStorageReady:
 		msg := notify.STMStorageReadyMessage{FileName: message.Body}
 		notify.BUS.Publish(notify.STMStorageReady, &msg)

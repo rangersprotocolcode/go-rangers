@@ -52,13 +52,35 @@ func (chain *blockChain) getChainPiece(sourceChainHeight uint64) []*types.BlockH
 	return chainPiece
 }
 
+func (chain *blockChain) getSyncedBlock(reqHeight uint64) []*types.Block {
+	chain.lock.Lock("GetChainPieceInfo")
+	defer chain.lock.Unlock("GetChainPieceInfo")
+
+	result := make([]*types.Block, 0)
+	count := 0
+	for i := reqHeight; i <= chain.latestBlock.Height; i++ {
+		if count >= 10 {
+			break
+		}
+
+		block := chain.QueryBlock(i)
+		if block == nil {
+			blockSyncLogger.Errorf("Block chain get nil block!Height:%d", i)
+			break
+		}
+		result = append(result, block)
+		count++
+	}
+	return result
+}
 func (chain *blockChain) tryMergeFork(fork *fork) bool {
 	chain.lock.Lock("tryMergeFork")
 	defer chain.lock.Unlock("tryMergeFork")
 
 	localTopHeader := chain.latestBlock
+	blockSyncLogger.Debugf("Try merge fork.Local chain:%d-%d,fork:%d-%d", localTopHeader.Height, localTopHeader.TotalQN, fork.latestBlock.Height, fork.latestBlock.TotalQN)
 	if fork.latestBlock.TotalQN < localTopHeader.TotalQN {
-		return true
+		return false
 	}
 
 	//重新确定共同祖先
@@ -75,11 +97,11 @@ func (chain *blockChain) tryMergeFork(fork *fork) bool {
 	}
 
 	if commonAncestor == nil {
-		return true
+		return false
 	}
 
 	if fork.latestBlock.TotalQN == localTopHeader.TotalQN && chain.nextPvGreatThanFork(commonAncestor, *fork) {
-		return true
+		return false
 	}
 
 	chain.removeFromCommonAncestor(commonAncestor)
