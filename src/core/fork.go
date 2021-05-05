@@ -64,11 +64,11 @@ func (fork *fork) acceptBlock(coming types.Block, sourceMiner string) bool {
 		return false
 	}
 
-	verifyResult, state := fork.verifyStateAndReceipt(coming)
-	if !verifyResult {
-		return false
-	}
-	fork.saveState(state)
+	//verifyResult, state := fork.verifyStateAndReceipt(coming)
+	//if !verifyResult {
+	//	return false
+	//}
+	//fork.saveState(state)
 	fork.insertBlock(coming)
 	fork.latestBlock = coming.Header
 	return true
