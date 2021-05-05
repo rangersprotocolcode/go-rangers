@@ -81,6 +81,7 @@ func (chain *blockChain) getSyncedBlock(reqHeight uint64) []*types.Block {
 func (chain *blockChain) tryMergeFork(fork *fork) bool {
 	chain.lock.Lock("tryMergeFork")
 	defer chain.lock.Unlock("tryMergeFork")
+	defer blockSyncLogger.Debugf("tryMergeFork return")
 
 	localTopHeader := chain.latestBlock
 	blockSyncLogger.Debugf("Try merge fork.Local chain:%d-%d,fork:%d-%d", localTopHeader.Height, localTopHeader.TotalQN, fork.latestBlock.Height, fork.latestBlock.TotalQN)
@@ -91,6 +92,7 @@ func (chain *blockChain) tryMergeFork(fork *fork) bool {
 	//重新确定共同祖先
 	var commonAncestor *types.BlockHeader
 	for height := fork.header; height <= fork.latestBlock.Height; height++ {
+		blockSyncLogger.Debugf("height:%d", height)
 		forkBlock := fork.getBlock(height)
 		if forkBlock == nil {
 			break
