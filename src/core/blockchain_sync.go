@@ -102,9 +102,11 @@ func (chain *blockChain) tryMergeFork(fork *fork) bool {
 	}
 
 	if commonAncestor == nil {
+		blockSyncLogger.Debugf("Try merge fork. common ancestor is nil.")
 		return false
 	}
 
+	blockSyncLogger.Debugf("Try merge fork. common ancestor:%d", commonAncestor.Height)
 	if fork.latestBlock.TotalQN == localTopHeader.TotalQN && chain.nextPvGreatThanFork(commonAncestor, *fork) {
 		return false
 	}
@@ -116,6 +118,7 @@ func (chain *blockChain) tryMergeFork(fork *fork) bool {
 			return false
 		}
 		var result types.AddBlockResult
+		blockSyncLogger.Debugf("add block on chain.%d,%s", forkBlock.Header.Height, forkBlock.Header.Hash.String())
 		result = blockChainImpl.addBlockOnChain(forkBlock)
 		if result != types.AddBlockSucc {
 			return false
