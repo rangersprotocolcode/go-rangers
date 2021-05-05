@@ -119,6 +119,7 @@ func (fork *fork) verifyStateAndReceipt(coming types.Block) (bool, *account.Acco
 		fork.logger.Errorf("Pre block nil !")
 		return false, nil
 	}
+	fork.logger.Debugf("pre state root:%s", preBlock.Header.StateTree.String())
 	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(preBlock.Header.StateTree)
 	if err != nil {
 		fork.logger.Errorf("Fail to new statedb, error:%s", err)
@@ -131,6 +132,7 @@ func (fork *fork) verifyStateAndReceipt(coming types.Block) (bool, *account.Acco
 		fork.logger.Errorf("State root error!coming:%s gen:%s", coming.Header.StateTree.Hex(), stateRoot.Hex())
 		return false, state
 	}
+	fork.logger.Debugf("state root:%s", stateRoot.String())
 	receiptsTree := calcReceiptsTree(receipts)
 	if receiptsTree != coming.Header.ReceiptTree {
 		fork.logger.Errorf("Receipt root error!coming:%s gen:%s", coming.Header.ReceiptTree.Hex(), receiptsTree.Hex())
@@ -158,6 +160,7 @@ func (fork *fork) saveState(state *account.AccountDB) error {
 		fork.logger.Errorf("State commit error:%s", err.Error())
 		return err
 	}
+	fork.logger.Debugf("commit state root:%s", root.String())
 
 	trieDB := service.AccountDBManagerInstance.GetTrieDB()
 	err = trieDB.Commit(root, false)
