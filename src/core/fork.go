@@ -125,7 +125,7 @@ func (fork *fork) verifyStateAndReceipt(coming types.Block) (bool, *account.Acco
 		fork.logger.Errorf("Fail to new statedb, error:%s", err)
 		return false, state
 	}
-	vmExecutor := newVMExecutor(state, &coming, "fork")
+	vmExecutor := newVMExecutor(state, &coming, "fullverify")
 	stateRoot, _, _, receipts := vmExecutor.Execute()
 
 	if stateRoot != coming.Header.StateTree {
