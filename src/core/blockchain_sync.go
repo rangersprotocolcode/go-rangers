@@ -132,8 +132,8 @@ func (chain *blockChain) nextPvGreatThanFork(commonAncestor *types.BlockHeader, 
 	commonAncestorHeight := commonAncestor.Height
 	if commonAncestorHeight < fork.latestBlock.Height && commonAncestorHeight < chain.latestBlock.Height {
 		forkBlock := fork.getBlock(commonAncestorHeight + 1)
-		chainBlock := chain.QueryBlock(commonAncestorHeight + 1)
-		if forkBlock != nil && chainBlock != nil && chainBlock.Header.ProveValue.Cmp(forkBlock.Header.ProveValue) < 0 {
+		chainBlockHeader := chain.QueryBlockHeaderByHeight(commonAncestorHeight+1, true)
+		if forkBlock != nil && chainBlockHeader != nil && chainBlockHeader.ProveValue.Cmp(forkBlock.Header.ProveValue) < 0 {
 			return false
 		}
 	}
