@@ -58,6 +58,7 @@ type blockSyncer struct {
 	syncing bool
 	fork    *fork
 
+	blockMsgCh     chan notify.Message
 	syncTimer      *time.Timer
 	reqTimer       *time.Timer
 	broadcastTimer *time.Timer
@@ -73,6 +74,7 @@ func InitBlockSyncer(privateKey common.PrivateKey, id string) {
 	BlockSyncer.broadcastTimer = time.NewTimer(broadcastBlockInfoInterval)
 	BlockSyncer.reqTimer = time.NewTimer(blockSyncReqTimeout)
 	BlockSyncer.syncTimer = time.NewTimer(blockSyncInterval)
+	BlockSyncer.blockMsgCh = make(chan notify.Message)
 
 	notify.BUS.Subscribe(notify.BlockInfoNotify, BlockSyncer.topBlockInfoNotifyHandler)
 	notify.BUS.Subscribe(notify.ChainPieceInfoReq, BlockSyncer.chainPieceReqHandler)
@@ -93,6 +95,8 @@ func (bs *blockSyncer) loop() {
 			bs.logger.Debugf("Block sync to %s time out!", bs.candidateInfo.Id)
 			PeerManager.markEvil(bs.candidateInfo.Id)
 			bs.finishCurrentSync()
+		case msg := <-bs.blockMsgCh:
+			bs.processSyncedBlock(msg)
 		}
 	}
 }
@@ -454,6 +458,10 @@ func (bs *blockSyncer) syncBlockReqHandler(msg notify.Message) {
 }
 
 func (bs *blockSyncer) blockResponseMsgHandler(msg notify.Message) {
+	bs.blockMsgCh <- msg
+}
+
+func (bs *blockSyncer) processSyncedBlock(msg notify.Message) {
 	m, ok := msg.(*notify.BlockResponseMessage)
 	if !ok {
 		return
