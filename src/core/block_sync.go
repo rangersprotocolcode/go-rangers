@@ -479,13 +479,12 @@ func (bs *blockSyncer) processSyncedBlock(msg notify.Message) {
 		return
 	}
 	from := blockResponse.SignInfo.Id
-	bs.logger.Debugf("blockResponseMsgHandler rcv from %s!", from)
 	if from != bs.candidateInfo.Id {
 		bs.logger.Debugf("Unexpected block response from %s, expect from %s!", from, bs.candidateInfo.Id)
 		return
 	}
 	block := blockResponse.Block
-	bs.logger.Debugf("Rcv sync block.Hash:%s,%d-%d.Pre:%s", block.Header.Hash.String(), block.Header.Height, block.Header.TotalQN, block.Header.PreHash.String())
+	bs.logger.Debugf("Rcv synced block.Hash:%s,%d-%d.Pre:%s", block.Header.Hash.String(), block.Header.Height, block.Header.TotalQN, block.Header.PreHash.String())
 	bs.reqTimer.Reset(blockSyncReqTimeout)
 
 	isLastBlock := blockResponse.IsLastBlock

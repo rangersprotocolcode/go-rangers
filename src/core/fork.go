@@ -23,6 +23,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 )
 
@@ -59,9 +60,15 @@ func (fork *fork) acceptBlock(coming types.Block, sourceMiner string) bool {
 		return false
 	}
 
-	if !fork.verifyOrder(coming) || !fork.verifyHash(coming) || !fork.verifyTxRoot(coming) || !fork.verifyStateAndReceipt(coming) || !fork.verifyGroupSign(coming) {
+	if !fork.verifyOrder(coming) || !fork.verifyHash(coming) || !fork.verifyTxRoot(coming) || !fork.verifyGroupSign(coming) {
 		return false
 	}
+
+	verifyResult, state := fork.verifyStateAndReceipt(coming)
+	if !verifyResult {
+		return false
+	}
+	fork.saveState(state)
 	fork.insertBlock(coming)
 	fork.latestBlock = coming.Header
 	return true
@@ -105,31 +112,31 @@ func (fork *fork) verifyTxRoot(coming types.Block) bool {
 	return true
 }
 
-func (fork *fork) verifyStateAndReceipt(coming types.Block) bool {
+func (fork *fork) verifyStateAndReceipt(coming types.Block) (bool, *account.AccountDB) {
 	//todo 这里会溢出嘛？
 	preBlock := fork.getBlock(coming.Header.Height - 1)
 	if preBlock == nil {
 		fork.logger.Errorf("Pre block nil !")
-		return false
+		return false, nil
 	}
 	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(preBlock.Header.StateTree)
 	if err != nil {
 		fork.logger.Errorf("Fail to new statedb, error:%s", err)
-		return false
+		return false, state
 	}
 	vmExecutor := newVMExecutor(state, &coming, "fork")
 	stateRoot, _, _, receipts := vmExecutor.Execute()
 
 	if stateRoot != coming.Header.StateTree {
 		fork.logger.Errorf("State root error!coming:%s gen:%s", coming.Header.StateTree.Hex(), stateRoot.Hex())
-		return false
+		return false, state
 	}
 	receiptsTree := calcReceiptsTree(receipts)
 	if receiptsTree != coming.Header.ReceiptTree {
 		fork.logger.Errorf("Receipt root error!coming:%s gen:%s", coming.Header.ReceiptTree.Hex(), receiptsTree.Hex())
-		return false
+		return false, state
 	}
-	return true
+	return true, state
 }
 
 func (fork *fork) verifyGroupSign(coming types.Block) bool {
@@ -140,6 +147,25 @@ func (fork *fork) verifyGroupSign(coming types.Block) bool {
 	}
 	result, _ := consensusHelper.VerifyBlockHeader(coming.Header)
 	return result
+}
+
+func (fork *fork) saveState(state *account.AccountDB) error {
+	if state == nil {
+		return nil
+	}
+	root, err := state.Commit(true)
+	if err != nil {
+		fork.logger.Errorf("State commit error:%s", err.Error())
+		return err
+	}
+
+	trieDB := service.AccountDBManagerInstance.GetTrieDB()
+	err = trieDB.Commit(root, false)
+	if err != nil {
+		fork.logger.Errorf("Trie commit error:%s", err.Error())
+		return err
+	}
+	return nil
 }
 
 func (fork *fork) insertBlock(block types.Block) error {
