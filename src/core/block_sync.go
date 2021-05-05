@@ -131,7 +131,7 @@ func (bs *blockSyncer) broadcastTopBlockInfo(bh *types.BlockHeader) {
 		bs.logger.Errorf("marshal top block info error:%s", e.Error())
 		return
 	}
-	bs.logger.Debugf("Send local total qn %d to neighbor!", topBlockInfo.TotalQn)
+	bs.logger.Tracef("Send local total qn %d to neighbor!", topBlockInfo.TotalQn)
 	message := network.Message{Code: network.BlockInfoNotifyMsg, Body: body}
 	network.GetNetInstance().Broadcast(message)
 
@@ -158,7 +158,7 @@ func (bs *blockSyncer) topBlockInfoNotifyHandler(msg notify.Message) {
 		bs.logger.Errorf("BlockInfoNotifyMessage sign validate error:%s", e.Error())
 		return
 	}
-	bs.logger.Debugf("Rcv top block info! Height:%d,qn:%d,source:%s", blockInfo.Height, blockInfo.TotalQn, blockInfo.SignInfo.Id)
+	bs.logger.Tracef("Rcv top block info! Height:%d,qn:%d,source:%s", blockInfo.Height, blockInfo.TotalQn, blockInfo.SignInfo.Id)
 	topBlock := blockChainImpl.TopBlock()
 	localTotalQn, localTopHash := topBlock.TotalQN, topBlock.Hash
 	if blockInfo.TotalQn < localTotalQn || (localTotalQn == blockInfo.TotalQn && localTopHash == blockInfo.Hash) {
@@ -485,7 +485,7 @@ func (bs *blockSyncer) processSyncedBlock(msg notify.Message) {
 		return
 	}
 	block := blockResponse.Block
-	bs.logger.Debugf("Rcv sync block.Hash:%d,%d-%d.Pre:%s", block.Header.Hash.String(), block.Header.Height, block.Header.TotalQN, block.Header.PreHash.String())
+	bs.logger.Debugf("Rcv sync block.Hash:%s,%d-%d.Pre:%s", block.Header.Hash.String(), block.Header.Height, block.Header.TotalQN, block.Header.PreHash.String())
 	bs.reqTimer.Reset(blockSyncReqTimeout)
 
 	isLastBlock := blockResponse.IsLastBlock

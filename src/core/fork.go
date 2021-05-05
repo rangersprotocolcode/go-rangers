@@ -38,18 +38,18 @@ type fork struct {
 func newFork(commonAncestor types.Block, sourceMiner string, logger log.Logger) *fork {
 	db, err := db.NewDatabase(forkDBPrefix)
 	if err != nil {
-		logger.Debugf("Init block chain error! Error:%s", err.Error())
+		blockSyncLogger.Debugf("Init block chain error! Error:%s", err.Error())
 	}
 	fork := &fork{header: commonAncestor.Header.Height, latestBlock: commonAncestor.Header, sourceMiner: sourceMiner, db: db, logger: logger}
 	fork.insertBlock(commonAncestor)
 
 	err = fork.db.Put([]byte(commonAncestorHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
 	if err != nil {
-		logger.Debugf("Fork init put error:%s", err.Error())
+		blockSyncLogger.Debugf("Fork init put error:%s", err.Error())
 	}
 	err = fork.db.Put([]byte(lastestHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
 	if err != nil {
-		logger.Debugf("Fork init put error:%s", err.Error())
+		blockSyncLogger.Debugf("Fork init put error:%s", err.Error())
 	}
 	return fork
 }
@@ -99,7 +99,7 @@ func (fork *fork) verifyHash(coming types.Block) bool {
 func (fork *fork) verifyTxRoot(coming types.Block) bool {
 	txTree := calcTxTree(coming.Transactions)
 	if !bytes.Equal(txTree.Bytes(), coming.Header.TxTree.Bytes()) {
-		logger.Errorf("Tx root error! coming:%s gen:%s", coming.Header.TxTree.Bytes(), txTree.Hex())
+		fork.logger.Errorf("Tx root error! coming:%s gen:%s", coming.Header.TxTree.Bytes(), txTree.Hex())
 		return false
 	}
 	return true
@@ -109,24 +109,24 @@ func (fork *fork) verifyStateAndReceipt(coming types.Block) bool {
 	//todo 这里会溢出嘛？
 	preBlock := fork.getBlock(coming.Header.Height - 1)
 	if preBlock == nil {
-		logger.Errorf("Pre block nil !")
+		fork.logger.Errorf("Pre block nil !")
 		return false
 	}
 	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(preBlock.Header.StateTree)
 	if err != nil {
-		logger.Errorf("Fail to new statedb, error:%s", err)
+		fork.logger.Errorf("Fail to new statedb, error:%s", err)
 		return false
 	}
 	vmExecutor := newVMExecutor(state, &coming, "fork")
 	stateRoot, _, _, receipts := vmExecutor.Execute()
 
 	if stateRoot != coming.Header.StateTree {
-		logger.Errorf("State root error!coming:%s gen:%s", coming.Header.StateTree.Hex(), stateRoot.Hex())
+		fork.logger.Errorf("State root error!coming:%s gen:%s", coming.Header.StateTree.Hex(), stateRoot.Hex())
 		return false
 	}
 	receiptsTree := calcReceiptsTree(receipts)
 	if receiptsTree != coming.Header.ReceiptTree {
-		logger.Errorf("Receipt root error!coming:%s gen:%s", coming.Header.ReceiptTree.Hex(), receiptsTree.Hex())
+		fork.logger.Errorf("Receipt root error!coming:%s gen:%s", coming.Header.ReceiptTree.Hex(), receiptsTree.Hex())
 		return false
 	}
 	return true
@@ -145,12 +145,12 @@ func (fork *fork) verifyGroupSign(coming types.Block) bool {
 func (fork *fork) insertBlock(block types.Block) error {
 	blockByte, err := types.MarshalBlock(&block)
 	if err != nil {
-		logger.Errorf("Fail to marshal block, error:%s", err.Error())
+		fork.logger.Errorf("Fail to marshal block, error:%s", err.Error())
 		return err
 	}
 	err = fork.db.Put(generateHeightKey(block.Header.Height), blockByte)
 	if err != nil {
-		logger.Errorf("Fail to insert db, error:%s", err.Error())
+		fork.logger.Errorf("Fail to insert db, error:%s", err.Error())
 		return err
 	}
 	return nil
