@@ -388,9 +388,12 @@ func verifyChainPieceInfo(chainPiece []*types.BlockHeader, topHeader *types.Bloc
 			return false
 		}
 
-		signVerifyResult, _ := consensusHelper.VerifyBlockHeader(bh)
-		if !signVerifyResult {
-			return false
+		//todo 创始块组签名没写
+		if bh.Height > 0 {
+			signVerifyResult, _ := consensusHelper.VerifyBlockHeader(bh)
+			if !signVerifyResult {
+				return false
+			}
 		}
 	}
 	return true

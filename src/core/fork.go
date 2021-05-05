@@ -113,8 +113,11 @@ func (fork *fork) verifyTxRoot(coming types.Block) bool {
 }
 
 func (fork *fork) verifyStateAndReceipt(coming types.Block) (bool, *account.AccountDB) {
-	//todo 这里会溢出嘛？
-	preBlock := fork.getBlock(coming.Header.Height - 1)
+	var height uint64 = 0
+	if coming.Header.Height > 1 {
+		height = coming.Header.Height - 1
+	}
+	preBlock := fork.getBlock(height)
 	if preBlock == nil {
 		fork.logger.Errorf("Pre block nil !")
 		return false, nil
