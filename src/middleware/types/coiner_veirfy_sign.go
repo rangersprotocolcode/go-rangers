@@ -119,6 +119,7 @@ type IncomingNft struct {
 	Addr         string
 	ContractAddr string
 	Txid         string
+	Uri			 string
 }
 
 func (self *Ecc) Verify(info []byte, signed []byte) bool {
@@ -245,7 +246,7 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 			return false
 		}
 
-		var info IncomingNft = IncomingNft{de.ID, msg.Target, msg.Source, de.SetID, de.Symbol, de.Name, de.Creator, de.CreateTime, de.Data, de.Renter, de.Status, de.Condition, de.Addr, de.ContractAddr, de.TxID}
+		var info IncomingNft = IncomingNft{de.ID, msg.Target, msg.Source, de.SetID, de.Symbol, de.Name, de.Creator, de.CreateTime, de.Data, de.Renter, de.Status, de.Condition, de.Addr, de.ContractAddr, de.TxID,de.Uri}
 		signstrs := strings.Split(msg.Sign, "|")
 		if len(signstrs) < self.SignLimit {
 			return false
