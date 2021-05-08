@@ -171,7 +171,7 @@ type NFT struct {
 	Data map[string]string
 
 	// 5. 从外部导入的相关信息
-	Imported string `json:"imported,omitempty"`
+	Uri string `json:"uri,omitempty"`
 
 	// 6. 组合信息
 	ComboResource ComboResource `json:"combo,omitempty"`
@@ -214,7 +214,7 @@ func (self *NFT) ToMap() map[string]interface{} {
 	nftMap["status"] = self.Status
 	nftMap["condition"] = self.Condition
 	nftMap["appId"] = self.AppId
-	nftMap["imported"] = self.Imported
+	nftMap["uri"] = self.Uri
 	nftMap["data"] = self.Data
 	return nftMap
 }

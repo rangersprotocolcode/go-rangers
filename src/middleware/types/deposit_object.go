@@ -51,6 +51,7 @@ type DepositNFTData struct {
 	MainChainAddress string `json:"addr,omitempty"`
 	ContractAddress  string `json:"ContractAddr,omitempty"`
 	TxId             string `json:"txId,omitempty"`
+	Uri              string `json:"Uri,omitempty"`
 }
 
 type ERC20BindingData struct {

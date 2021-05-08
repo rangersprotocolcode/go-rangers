@@ -97,8 +97,8 @@ func (self *accountObject) AddNFT(db AccountDatabase, nft *types.NFT) bool {
 		self.SetData(db, conditionKey, []byte{nft.Condition})
 	}
 	self.SetData(db, appIdKey, utility.StrToBytes(nft.AppId))
-	if 0 != len(nft.Imported) {
-		self.SetData(db, importedKey, utility.StrToBytes(nft.Imported))
+	if 0 != len(nft.Uri) {
+		self.SetData(db, importedKey, utility.StrToBytes(nft.Uri))
 	}
 
 	for key, value := range nft.Data {
@@ -120,7 +120,7 @@ func (self *accountObject) GetNFT(db AccountDatabase) *types.NFT {
 		Owner:      common.ToHex(self.GetData(db, ownerKey)),
 		Renter:     common.ToHex(self.GetData(db, renterKey)),
 		AppId:      utility.BytesToStr(self.GetData(db, appIdKey)),
-		Imported:   utility.BytesToStr(self.GetData(db, importedKey)),
+		Uri:        utility.BytesToStr(self.GetData(db, importedKey)),
 		Lock:       common.Bytes2Hex(self.GetData(db, lockKey)),
 		Data:       make(map[string]string),
 	}

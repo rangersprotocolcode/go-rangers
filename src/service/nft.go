@@ -302,7 +302,7 @@ func (self *NFTManager) checkNFTConditions(nftConditions types.NFTConditions, ac
 	return "", &demand
 }
 
-func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data, creator, timeStamp, imported string, owner common.Address, fullData map[string]string, accountDB *account.AccountDB) (string, bool) {
+func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data, creator, timeStamp, Uri string, owner common.Address, fullData map[string]string, accountDB *account.AccountDB) (string, bool) {
 	txLogger.Tracef("Generate NFT! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, timeStamp, owner.String())
 	// 检查id是否存在
 	if _, ok := nftSet.OccupiedID[id]; ok {
@@ -324,7 +324,7 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 		Renter:     ownerString,
 		Status:     0,
 		AppId:      appId,
-		Imported:   imported,
+		Uri:        Uri,
 		Data:       make(map[string]string),
 	}
 
@@ -365,7 +365,7 @@ func (self *NFTManager) MarkNFTWithdrawn(owner common.Address, setId, id string,
 
 //deposit local withdrawn nft
 //only owner renter appId data will be updated,other fields will not be updated
-func (self *NFTManager) DepositWithdrawnNFT(owner, renter, appId string, fullData map[string]string, accountDB *account.AccountDB, originalNFT *types.NFT) (string, bool) {
+func (self *NFTManager) DepositWithdrawnNFT(uri, owner, renter, appId string, fullData map[string]string, accountDB *account.AccountDB, originalNFT *types.NFT) (string, bool) {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
 
@@ -376,7 +376,8 @@ func (self *NFTManager) DepositWithdrawnNFT(owner, renter, appId string, fullDat
 	nft := &types.NFT{SetID: originalNFT.SetID, ID: originalNFT.ID,
 		Name: originalNFT.Name, Symbol: originalNFT.Symbol,
 		Creator: originalNFT.Creator, CreateTime: originalNFT.CreateTime,
-		Condition: originalNFT.Condition, Imported: originalNFT.Imported}
+		Condition: originalNFT.Condition}
+	nft.Uri = uri
 	nft.Status = 0
 	nft.Owner = owner
 	nft.Renter = renter
