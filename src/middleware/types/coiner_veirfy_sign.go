@@ -69,6 +69,7 @@ type C2wDepositNft struct {
 	Addr         string            `json:"addr"`
 	ContractAddr string            `json:"contractaddr"`
 	TxID         string            `json:"TxId"`
+	Uri			 string			   `json:"Uri"`
 }
 
 type C2wDepositFt struct {
