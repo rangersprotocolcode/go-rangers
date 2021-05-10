@@ -80,6 +80,13 @@ type C2wDepositFt struct {
 	TxID         string `json:"TxId"`
 }
 
+type C2wAddErc20 struct {
+	Name   		string `json:"name"`
+	Contract 	string `json:"contract"`
+	Decimal	    int `json:"decimal"`
+	Positon		int `json:"positon"`
+}
+
 type Incoming struct {
 	Tp string
 	//Gid		string
@@ -120,6 +127,13 @@ type IncomingNft struct {
 	ContractAddr string
 	Txid         string
 	Uri			 string
+}
+
+type stErc20 struct {
+	Name	string
+	ContractAddr	string
+	Decimal	int
+	Positon int
 }
 
 func (self *Ecc) Verify(info []byte, signed []byte) bool {
@@ -281,8 +295,47 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 			return true
 		}
 	} else if msg.Type == 204 {
-		// todo
-		return true
+		var de C2wAddErc20
+		err := json.Unmarshal([]byte(msg.Data), &de)
+		if err != nil {
+			fmt.Println(err)
+			return false
+		}
+
+		var info stErc20 = stErc20{de.Name,de.Contract,de.Decimal,de.Positon}
+		signstrs := strings.Split(msg.Sign, "|")
+		if len(signstrs) < self.SignLimit {
+			return false
+		}
+
+		var signeds []string
+		var iCount = 0
+		for i := 0; i < len(signstrs); i++ {
+			if signstrs[i][0:2] == "0x" || signstrs[i][0:2] == "0X" {
+				signstrs[i] = signstrs[i][2:]
+			}
+
+			found := false
+			for j := 0; j < len(signeds); j++ {
+				if signstrs[i] == signeds[j] {
+					found = true
+					break
+				}
+			}
+			if found {
+				continue
+			} else {
+				signeds = append(signeds, signstrs[i])
+			}
+
+			sign := common.Hex2Bytes(signstrs[i])
+			if self.Verify(info.ToJson(), sign) {
+				iCount++
+			}
+		}
+		if iCount >= self.SignLimit {
+			return true
+		}
 	}
 
 	return false
@@ -352,6 +405,15 @@ func (self *IncomingNft) ToJson() []byte {
 }
 
 func (self *IncomingFt) ToJson() []byte {
+	js, err := json.Marshal(self)
+	if err != nil {
+		fmt.Println(err)
+		return nil
+	}
+	return js
+}
+
+func (self *stErc20) ToJson() []byte {
 	js, err := json.Marshal(self)
 	if err != nil {
 		fmt.Println(err)
