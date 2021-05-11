@@ -229,7 +229,7 @@ func (base *baseConn) send(method []byte, target uint64, msg []byte, nonce uint6
 	}
 
 	base.sendChan <- base.loadMsg(header, msg)
-	base.logger.Debugf("send message. wsHeader: %v, body length: %d", header, len(msg))
+	p2pLogger.Debugf("send message. wsHeader: %v, body length: %d", header, len(msg))
 }
 
 //新的单播接口使用
@@ -242,7 +242,7 @@ func (base *baseConn) unicast(method []byte, strangerId []byte, msg []byte, nonc
 
 	//todo 这里流控方法的参数不一致，暂不使用流控
 	base.sendChan <- byteArray
-	base.logger.Debugf("unicast message. strangerId:%v,msg:%v,byte: %v", strangerId, msg, byteArray)
+	p2pLogger.Debugf("unicast message. strangerId:%v,msg:%v,byte: %v", strangerId, msg, byteArray)
 }
 
 // 构建网络消息
