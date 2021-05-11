@@ -28,10 +28,12 @@ const (
 	gateAddrDaily      = "beta.gate.tuntunhz.com:80"
 )
 
-var Logger log.Logger
+var logger log.Logger
+var clientLogger log.Logger
 
 func InitNetwork(consensusHandler MsgHandler, selfMinerId []byte, env, gate string) {
-	Logger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	logger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	clientLogger = log.GetLoggerByIndex(log.P2PClientLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	gateAddr := gate
 	if len(gateAddr) == 0 {
 		if env == "production" {
@@ -43,8 +45,8 @@ func InitNetwork(consensusHandler MsgHandler, selfMinerId []byte, env, gate stri
 	fmt.Println("Connecting to: " + gateAddr)
 
 	var s server
-	s.Init(Logger, gateAddr, selfMinerId, consensusHandler)
+	s.Init(logger, clientLogger, gateAddr, selfMinerId, consensusHandler)
 
 	instance = s
-	Logger.Warnf("connected gate: %s, env: %s", gateAddr, env)
+	logger.Warnf("connected gate: %s, env: %s", gateAddr, env)
 }

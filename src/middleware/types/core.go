@@ -307,7 +307,7 @@ func (txJson TxJson) ToTransaction() Transaction {
 
 	//tx from coiner cal hash by layer2
 	//tx from coiner sign make sign nil
-	if tx.Type == TransactionTypeCoinDepositAck || tx.Type == TransactionTypeFTDepositAck || tx.Type == TransactionTypeNFTDepositAck {
+	if tx.Type == TransactionTypeCoinDepositAck || tx.Type == TransactionTypeFTDepositAck || tx.Type == TransactionTypeNFTDepositAck || tx.Type == TransactionTypeERC20Binding {
 		tx.Hash = tx.GenHash()
 		return tx
 	}

@@ -39,7 +39,7 @@ func NewNetworkServer() NetworkServer {
 func (ns *NetworkServerImpl) SendGroupPingMessage(msg *model.CreateGroupPingMessage, receiver groupsig.ID) {
 	body, e := marshalCreateGroupPingMessage(msg)
 	if e != nil {
-		network.Logger.Errorf("[peer]Discard send SendGroupPingMessage because of marshal error:%s", e.Error())
+		logger.Errorf("[peer]Discard send SendGroupPingMessage because of marshal error:%s", e.Error())
 		return
 	}
 	m := network.Message{Code: network.GroupPing, Body: body}
@@ -50,7 +50,7 @@ func (ns *NetworkServerImpl) SendGroupPingMessage(msg *model.CreateGroupPingMess
 func (ns *NetworkServerImpl) SendGroupPongMessage(msg *model.CreateGroupPongMessage, groupId string, belongGroup bool) {
 	body, e := marshalCreateGroupPongMessage(msg)
 	if e != nil {
-		network.Logger.Errorf("[peer]Discard send SendGroupPongMessage because of marshal error:%s", e.Error())
+		logger.Errorf("[peer]Discard send SendGroupPongMessage because of marshal error:%s", e.Error())
 		return
 	}
 	m := network.Message{Code: network.GroupPong, Body: body}
@@ -128,7 +128,7 @@ func (ns *NetworkServerImpl) SendKeySharePiece(spm *model.SharePieceMessage) {
 func (ns *NetworkServerImpl) SendSignPubKey(spkm *model.SignPubKeyMessage) {
 	body, e := marshalConsensusSignPubKeyMessage(spkm)
 	if e != nil {
-		network.Logger.Errorf("[peer]Discard send ConsensusSignPubKeyMessage because of marshal error:%s", e.Error())
+		logger.Errorf("[peer]Discard send ConsensusSignPubKeyMessage because of marshal error:%s", e.Error())
 		return
 	}
 
@@ -145,7 +145,7 @@ func (ns *NetworkServerImpl) SendSignPubKey(spkm *model.SignPubKeyMessage) {
 func (ns *NetworkServerImpl) BroadcastGroupInfo(cgm *model.GroupInitedMessage) {
 	body, e := marshalConsensusGroupInitedMessage(cgm)
 	if e != nil {
-		network.Logger.Errorf("[peer]Discard send ConsensusGroupInitedMessage because of marshal error:%s", e.Error())
+		logger.Errorf("[peer]Discard send ConsensusGroupInitedMessage because of marshal error:%s", e.Error())
 		return
 	}
 
@@ -222,7 +222,7 @@ func (ns *NetworkServerImpl) BroadcastNewBlock(cbm *model.ConsensusBlockMessage)
 func (ns *NetworkServerImpl) AskSignPkMessage(msg *model.SignPubkeyReqMessage, receiver groupsig.ID) {
 	body, e := marshalConsensusSignPubKeyReqMessage(msg)
 	if e != nil {
-		network.Logger.Errorf("[peer]Discard send ConsensusSignPubkeyReqMessage because of marshal error:%s", e.Error())
+		logger.Errorf("[peer]Discard send ConsensusSignPubkeyReqMessage because of marshal error:%s", e.Error())
 		return
 	}
 
@@ -236,7 +236,7 @@ func (ns *NetworkServerImpl) AskSignPkMessage(msg *model.SignPubkeyReqMessage, r
 func (ns *NetworkServerImpl) AnswerSignPkMessage(msg *model.SignPubKeyMessage, receiver groupsig.ID) {
 	body, e := marshalConsensusSignPubKeyMessage(msg)
 	if e != nil {
-		network.Logger.Errorf("[peer]Discard send ConsensusSignPubKeyMessage because of marshal error:%s", e.Error())
+		logger.Errorf("[peer]Discard send ConsensusSignPubKeyMessage because of marshal error:%s", e.Error())
 		return
 	}
 
@@ -250,7 +250,7 @@ func (ns *NetworkServerImpl) AnswerSignPkMessage(msg *model.SignPubKeyMessage, r
 func (ns *NetworkServerImpl) ReqSharePiece(msg *model.ReqSharePieceMessage, receiver groupsig.ID) {
 	body, e := marshalSharePieceReqMessage(msg)
 	if e != nil {
-		network.Logger.Errorf("[peer]Discard send marshalSharePieceReqMessage because of marshal error:%s", e.Error())
+		logger.Errorf("[peer]Discard send marshalSharePieceReqMessage because of marshal error:%s", e.Error())
 		return
 	}
 	m := network.Message{Code: network.ReqSharePiece, Body: body}
@@ -261,7 +261,7 @@ func (ns *NetworkServerImpl) ReqSharePiece(msg *model.ReqSharePieceMessage, rece
 func (ns *NetworkServerImpl) ResponseSharePiece(msg *model.ResponseSharePieceMessage, receiver groupsig.ID) {
 	body, e := marshalSharePieceResponseMessage(msg)
 	if e != nil {
-		network.Logger.Errorf("[peer]Discard send marshalSharePieceResponseMessage because of marshal error:%s", e.Error())
+		logger.Errorf("[peer]Discard send marshalSharePieceResponseMessage because of marshal error:%s", e.Error())
 		return
 	}
 	m := network.Message{Code: network.ResponseSharePiece, Body: body}

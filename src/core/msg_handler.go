@@ -122,7 +122,7 @@ func unMarshalTransactionRequestMessage(b []byte) (*transactionRequestMessage, e
 	m := new(middleware_pb.TransactionRequestMessage)
 	e := proto.Unmarshal(b, m)
 	if e != nil {
-		network.Logger.Errorf("UnMarshal transaction request message error:%s", e.Error())
+		logger.Errorf("UnMarshal transaction request message error:%s", e.Error())
 		return nil, e
 	}
 

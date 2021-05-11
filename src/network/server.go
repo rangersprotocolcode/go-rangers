@@ -35,11 +35,11 @@ type server struct {
 	coiner ConnectorConn
 }
 
-func (s *server) Init(logger log.Logger, gateAddr string, selfMinerId []byte, consensusHandler MsgHandler) {
-	s.reader.Init(gateAddr, "/srv/worker_reader", notify.ClientTransactionRead, methodCodeClientReader, logger, true)
-	s.writer.Init(gateAddr, "/srv/worker_writer", notify.ClientTransaction, methodCodeClientWriter, logger, false)
+func (s *server) Init(logger log.Logger, clientLogger log.Logger, gateAddr string, selfMinerId []byte, consensusHandler MsgHandler) {
+	s.reader.Init(gateAddr, "/srv/worker_reader", notify.ClientTransactionRead, methodCodeClientReader, clientLogger, true)
+	s.writer.Init(gateAddr, "/srv/worker_writer", notify.ClientTransaction, methodCodeClientWriter, clientLogger, false)
 	s.worker.Init(gateAddr, selfMinerId, consensusHandler, logger)
-	s.coiner.Init(gateAddr, logger)
+	s.coiner.Init(gateAddr, clientLogger)
 }
 
 func (s *server) Send(id string, msg Message) {
