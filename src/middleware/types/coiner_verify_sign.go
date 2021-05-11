@@ -69,7 +69,7 @@ type C2wDepositNft struct {
 	Addr         string            `json:"addr"`
 	ContractAddr string            `json:"contractaddr"`
 	TxID         string            `json:"TxId"`
-	Uri			 string			   `json:"Uri"`
+	Uri          string            `json:"Uri"`
 }
 
 type C2wDepositFt struct {
@@ -81,10 +81,10 @@ type C2wDepositFt struct {
 }
 
 type C2wAddErc20 struct {
-	Name   		string `json:"name"`
-	Contract 	string `json:"contract"`
-	Decimal	    int `json:"decimal"`
-	Positon		int `json:"positon"`
+	Name     string `json:"name"`
+	Contract string `json:"contract"`
+	Decimal  int    `json:"decimal"`
+	Positon  int    `json:"positon"`
 }
 
 type Incoming struct {
@@ -126,14 +126,14 @@ type IncomingNft struct {
 	Addr         string
 	ContractAddr string
 	Txid         string
-	Uri			 string
+	Uri          string
 }
 
 type stErc20 struct {
-	Name	string
-	ContractAddr	string
-	Decimal	int
-	Positon int
+	Name         string
+	ContractAddr string
+	Decimal      int
+	Positon      int
 }
 
 func (self *Ecc) Verify(info []byte, signed []byte) bool {
@@ -260,7 +260,7 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 			return false
 		}
 
-		var info IncomingNft = IncomingNft{de.ID, msg.Target, msg.Source, de.SetID, de.Symbol, de.Name, de.Creator, de.CreateTime, de.Data, de.Renter, de.Status, de.Condition, de.Addr, de.ContractAddr, de.TxID,de.Uri}
+		var info IncomingNft = IncomingNft{de.ID, msg.Target, msg.Source, de.SetID, de.Symbol, de.Name, de.Creator, de.CreateTime, de.Data, de.Renter, de.Status, de.Condition, de.Addr, de.ContractAddr, de.TxID, de.Uri}
 		signstrs := strings.Split(msg.Sign, "|")
 		if len(signstrs) < self.SignLimit {
 			return false
@@ -302,7 +302,7 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 			return false
 		}
 
-		var info stErc20 = stErc20{de.Name,de.Contract,de.Decimal,de.Positon}
+		var info stErc20 = stErc20{de.Name, de.Contract, de.Decimal, de.Positon}
 		signstrs := strings.Split(msg.Sign, "|")
 		if len(signstrs) < self.SignLimit {
 			return false
