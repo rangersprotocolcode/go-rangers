@@ -23,35 +23,23 @@ const (
 
 	NewBlock = "new_block"
 
-	NewBlockHeader = "new_block_header"
+	TopBlockInfo = "top_block_info"
 
-	BlockBodyReq = "block_body_req"
+	BlockChainPieceReq = "block_chain_piece_req"
 
-	BlockBody = "block_body"
-
-	StateInfoReq = "state_info_req"
-
-	StateInfo = "state_info"
+	BlockChainPiece = "block_chain_piece_info"
 
 	BlockReq = "block_req"
 
 	BlockResponse = "block_response"
 
-	BlockInfoNotify = "block_info_notify"
+	GroupChainPieceReq = "group_chain_piece_req"
 
-	ChainPieceInfoReq = "chain_piece_info_req"
-
-	ChainPieceInfo = "chain_piece_info"
-
-	ChainPieceBlockReq = "chain_piece_block_req"
-
-	ChainPieceBlock = "chain_piece_block"
-
-	GroupHeight = "group_height"
+	GroupChainPiece = "group_chain_piece_info"
 
 	GroupReq = "group_req"
 
-	Group = "group"
+	GroupResponse = "group_response"
 
 	TransactionReq = "transaction_req"
 

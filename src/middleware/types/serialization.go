@@ -309,11 +309,12 @@ func PbToGroup(g *middleware_pb.Group) *Group {
 	//	members = append(members, *member)
 	//}
 	group := Group{
-		Header:    PbToGroupHeader(g.Header),
-		Id:        g.Id,
-		Members:   g.Members,
-		PubKey:    g.PubKey,
-		Signature: g.Signature,
+		Header:      PbToGroupHeader(g.Header),
+		Id:          g.Id,
+		Members:     g.Members,
+		PubKey:      g.PubKey,
+		Signature:   g.Signature,
+		GroupHeight: *g.GroupHeight,
 	}
 	return &group
 }
@@ -460,11 +461,12 @@ func GroupToPb(g *Group) *middleware_pb.Group {
 	//	members = append(members, member)
 	//}
 	group := middleware_pb.Group{
-		Header:    GroupToPbHeader(g.Header),
-		Id:        g.Id,
-		Members:   g.Members,
-		PubKey:    g.PubKey,
-		Signature: g.Signature,
+		Header:      GroupToPbHeader(g.Header),
+		Id:          g.Id,
+		Members:     g.Members,
+		PubKey:      g.PubKey,
+		Signature:   g.Signature,
+		GroupHeight: &g.GroupHeight,
 	}
 	return &group
 }

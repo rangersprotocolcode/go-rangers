@@ -52,11 +52,6 @@ message TransactionRequestMessage{
     required bytes BlockPv = 4;
 }
 
-message TrieNodes{
-
-    repeated TrieNode TrieNodes = 1;
-}
-
 
 message TransactionSlice{
 
@@ -114,12 +109,6 @@ message TransactionHash{
     optional bytes subHash = 2;
 }
 
-message BlockBody{
-
-    required bytes BlockHash  = 1;
-
-    repeated Transaction transactions = 2;
-}
 
 message Block{
     required BlockHeader Header = 1;
@@ -128,10 +117,6 @@ message Block{
 
 }
 
-
-message BlockSlice{
-    repeated Block Blocks = 1;
-}
 
 
 message Member{
@@ -201,43 +186,6 @@ message Hashes{
     repeated bytes hashes = 1;
 }
 
-
-message TotalQnInfo{
-
-    required uint64 TotalQn = 1;
-
-    required uint64 Height = 2;
-}
-
-message StateInfoReq{
-
-    required uint64 Height = 1;
-
-    optional TransactionSlice Transactions = 2;
-
-    repeated  bytes Addresses = 3;
-
-    required bytes BlockHash = 4;
-}
-
-message  StateInfo  {
-    required uint64 Height = 1;
-
-    repeated TrieNode TrieNodes = 2;
-
-    required bytes BlockHash = 3;
-
-    required bytes ProBlockStateRoot = 4;
-
-}
-
-message TrieNode{
-
-    required bytes Key  = 1;
-
-    required bytes Data  = 2;
-
-}
 
 
 message SignData{
@@ -386,12 +334,12 @@ message TopBlockInfo{
     required	SignData   SignInfo = 5;
 }
 
-message ChainPieceReq{
+message BlockChainPieceReq{
     required uint64 Height = 1;
     required	SignData   SignInfo = 2;
 }
 
-message ChainPieceInfo{
+message BlockChainPiece{
     repeated BlockHeader BlockHeaders = 1;
 
     required BlockHeader TopHeader = 2;
@@ -410,10 +358,31 @@ message BlockMsgResponse{
     required	SignData   SignInfo = 3;
 }
 
-message ChainPieceBlockMsg{
-    required BlockHeader TopHeader = 1;
-    repeated Block Blocks  = 2;
+
+
+message GroupChainPieceReq{
+    required uint64 Height = 1;
+    required	SignData   SignInfo = 2;
 }
+
+message GroupChainPiece{
+    repeated Group Groups = 1;
+
+    required SignData SignInfo = 2;
+}
+
+message GroupReq{
+    required uint64 Height = 1;
+    required	SignData   SignInfo = 2;
+}
+
+message GroupMsgResponse{
+    required bool IsLast = 1;
+    required Group Group = 2;
+    required	SignData   SignInfo = 3;
+}
+
+
 
 message CreateGroupPingMessage {
     required bytes FromGroupID = 1;

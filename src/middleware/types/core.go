@@ -34,6 +34,7 @@ const (
 	BlockExisted              AddBlockResult = 1
 	BlockTotalQnLessThanLocal AddBlockResult = 2
 	NoPreOnChain              AddBlockResult = 3
+	DependOnGroup             AddBlockResult = 4
 	ValidateBlockOk           AddBlockResult = 100
 )
 

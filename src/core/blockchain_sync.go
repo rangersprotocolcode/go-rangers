@@ -20,18 +20,11 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 )
 
-const (
-	forkDBPrefix            = "fork"
-	commonAncestorHeightKey = "commonAncestor"
-	lastestHeightKey        = "lastest"
-	chainPieceLength        = 9
-)
-
 func (chain *blockChain) getChainPiece(sourceChainHeight uint64) []*types.BlockHeader {
-	chain.lock.Lock("GetChainPieceInfo")
-	defer chain.lock.Unlock("GetChainPieceInfo")
-	localHeight := chain.latestBlock.Height
+	chain.lock.Lock("getChainPiece")
+	defer chain.lock.Unlock("getChainPiece")
 
+	localHeight := chain.latestBlock.Height
 	var endHeight uint64 = 0
 	if localHeight < sourceChainHeight {
 		endHeight = localHeight
@@ -40,10 +33,9 @@ func (chain *blockChain) getChainPiece(sourceChainHeight uint64) []*types.BlockH
 	}
 
 	var height uint64 = 0
-	if sourceChainHeight > chainPieceLength {
-		height = sourceChainHeight - chainPieceLength
+	if sourceChainHeight > blockChainPieceLength {
+		height = sourceChainHeight - blockChainPieceLength
 	}
-
 	chainPiece := make([]*types.BlockHeader, 0)
 	for ; height <= endHeight; height++ {
 		header := chain.QueryBlockHeaderByHeight(height, true)
@@ -59,18 +51,18 @@ func (chain *blockChain) getSyncedBlock(reqHeight uint64) []*types.Block {
 	result := make([]*types.Block, 0)
 	count := 0
 	for i := reqHeight; i <= chain.latestBlock.Height; i++ {
-		if count >= 10 {
+		if count >= syncedBlockCount {
 			break
 		}
 
 		header := chain.QueryBlockHeaderByHeight(i, true)
 		if header == nil {
-			blockSyncLogger.Errorf("Block chain get nil block!Height:%d", i)
+			syncLogger.Errorf("Block chain get nil block!Height:%d", i)
 			break
 		}
 		block := chain.queryBlockByHash(header.Hash)
 		if block == nil {
-			blockSyncLogger.Errorf("Block chain get nil block!Height:%d", i)
+			syncLogger.Errorf("Block chain get nil block!Height:%d", i)
 			break
 		}
 		result = append(result, block)
@@ -78,57 +70,8 @@ func (chain *blockChain) getSyncedBlock(reqHeight uint64) []*types.Block {
 	}
 	return result
 }
-func (chain *blockChain) tryMergeFork(fork *fork) bool {
-	chain.lock.Lock("tryMergeFork")
-	defer chain.lock.Unlock("tryMergeFork")
 
-	localTopHeader := chain.latestBlock
-	blockSyncLogger.Debugf("Try merge fork.Local chain:%d-%d,fork:%d-%d", localTopHeader.Height, localTopHeader.TotalQN, fork.latestBlock.Height, fork.latestBlock.TotalQN)
-	if fork.latestBlock.TotalQN < localTopHeader.TotalQN {
-		return false
-	}
-
-	//重新确定共同祖先
-	var commonAncestor *types.BlockHeader
-	for height := fork.header; height <= fork.latestBlock.Height; height++ {
-		forkBlock := fork.getBlock(height)
-		chainBlockHeader := chain.QueryBlockHeaderByHeight(height, true)
-		if forkBlock == nil || chainBlockHeader == nil {
-			break
-		}
-		if chainBlockHeader.Hash != forkBlock.Header.Hash {
-			break
-		}
-		commonAncestor = forkBlock.Header
-	}
-
-	if commonAncestor == nil {
-		blockSyncLogger.Debugf("Try merge fork. common ancestor is nil.")
-		return false
-	}
-
-	blockSyncLogger.Debugf("Try merge fork. common ancestor:%d", commonAncestor.Height)
-	if fork.latestBlock.TotalQN == localTopHeader.TotalQN && chain.nextPvGreatThanFork(commonAncestor, *fork) {
-		return false
-	}
-
-	chain.removeFromCommonAncestor(commonAncestor)
-	for height := fork.header + 1; height <= fork.latestBlock.Height; height++ {
-		forkBlock := fork.getBlock(height)
-		if forkBlock == nil {
-			return false
-		}
-		var result types.AddBlockResult
-		blockSyncLogger.Debugf("add block on chain.%d,%s", forkBlock.Header.Height, forkBlock.Header.Hash.String())
-		result = blockChainImpl.addBlockOnChain(forkBlock)
-		if result != types.AddBlockSucc {
-			return false
-		}
-	}
-	return true
-}
-
-func (chain *blockChain) nextPvGreatThanFork(commonAncestor *types.BlockHeader, fork fork) bool {
+func (chain *blockChain) nextPvGreatThanFork(commonAncestor *types.BlockHeader, fork blockChainFork) bool {
 	commonAncestorHeight := commonAncestor.Height
 	if commonAncestorHeight < fork.latestBlock.Height && commonAncestorHeight < chain.latestBlock.Height {
 		forkBlock := fork.getBlock(commonAncestorHeight + 1)

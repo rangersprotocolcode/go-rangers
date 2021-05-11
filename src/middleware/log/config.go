@@ -35,21 +35,21 @@ const (
 						</formats>
 					</seelog>`
 
-	BlockSyncLogConfig = `<seelog minlevel="debug">
+	SyncLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/block_syncLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/syncLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%LEV][%File:%Line]%Msg%n" />
 						</formats>
 					</seelog>`
 
-	GroupSyncLogConfig = `<seelog minlevel="debug">
+	SyncHandleLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/group_syncLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/sync_handleLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
 						<formats>
-							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
+							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%LEV][%File:%Line]%Msg%n" />
 						</formats>
 					</seelog>`
 

@@ -44,27 +44,25 @@ const (
 
 	TransactionGotMsg uint32 = 10
 
-	//-----------块同步---------------------------------
-	BlockInfoNotifyMsg uint32 = 12
+	//-----------同步---------------------------------
+	TopBlockInfoMsg uint32 = 12
 
-	ReqBlock uint32 = 13
+	BlockChainPieceReqMsg uint32 = 13
 
-	BlockResponseMsg uint32 = 14
+	BlockChainPieceMsg uint32 = 14
 
-	//-----------组同步---------------------------------
-	GroupChainCountMsg uint32 = 15
+	ReqBlockMsg uint32 = 15
 
-	ReqGroupMsg uint32 = 16
+	BlockResponseMsg uint32 = 16
 
-	GroupMsg uint32 = 17
-	//-----------块链调整---------------------------------
-	ChainPieceInfoReq uint32 = 18
+	GroupChainPieceReqMsg uint32 = 17
 
-	ChainPieceInfo uint32 = 19
+	GroupChainPieceMsg uint32 = 18
 
-	ReqChainPieceBlock uint32 = 20
+	ReqGroupMsg uint32 = 19
 
-	ChainPieceBlock uint32 = 21
+	GroupResponseMsg uint32 = 20
+
 	//---------------------组创建确认-----------------------
 	CreateGroupaRaw uint32 = 22
 

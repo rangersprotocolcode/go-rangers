@@ -33,6 +33,55 @@ func (m *NewBlockMessage) GetData() interface{} {
 	return m
 }
 
+type BlockOnChainSuccMessage struct {
+	Block types.Block
+}
+
+func (m *BlockOnChainSuccMessage) GetRaw() []byte {
+	return []byte{}
+}
+func (m *BlockOnChainSuccMessage) GetData() interface{} {
+	return m.Block
+}
+
+//-------------------------------------sync---------------------
+type TopBlockInfoMessage struct {
+	BlockInfo []byte
+	Peer      string
+}
+
+func (m *TopBlockInfoMessage) GetRaw() []byte {
+	return m.BlockInfo
+}
+
+func (m *TopBlockInfoMessage) GetData() interface{} {
+	return m
+}
+
+type BlockChainPieceReqMessage struct {
+	BlockChainPieceReq []byte
+	Peer               string
+}
+
+func (m *BlockChainPieceReqMessage) GetRaw() []byte {
+	return nil
+}
+func (m *BlockChainPieceReqMessage) GetData() interface{} {
+	return m
+}
+
+type BlockChainPieceMessage struct {
+	BlockChainPieceByte []byte
+	Peer                string
+}
+
+func (m *BlockChainPieceMessage) GetRaw() []byte {
+	return m.BlockChainPieceByte
+}
+func (m *BlockChainPieceMessage) GetData() interface{} {
+	return m
+}
+
 type BlockReqMessage struct {
 	ReqInfoByte []byte
 	Peer        string
@@ -57,64 +106,51 @@ func (m *BlockResponseMessage) GetData() interface{} {
 	return m
 }
 
-type BlockOnChainSuccMessage struct {
-	Block types.Block
-}
-
-func (m *BlockOnChainSuccMessage) GetRaw() []byte {
-	return []byte{}
-}
-func (m *BlockOnChainSuccMessage) GetData() interface{} {
-	return m.Block
-}
-
-type BlockInfoNotifyMessage struct {
-	BlockInfo []byte
-	Peer      string
-}
-
-func (m *BlockInfoNotifyMessage) GetRaw() []byte {
-	return m.BlockInfo
-}
-
-func (m *BlockInfoNotifyMessage) GetData() interface{} {
-	return m
-}
-
-//------------------------------------------------fork------------------------------------------------------------------
-type ChainPieceInfoReqMessage struct {
-	ChainPieceReq []byte
-	Peer          string
-}
-
-func (m *ChainPieceInfoReqMessage) GetRaw() []byte {
-	return nil
-}
-func (m *ChainPieceInfoReqMessage) GetData() interface{} {
-	return m
-}
-
-type ChainPieceInfoMessage struct {
-	ChainPieceInfoByte []byte
+type GroupChainPieceReqMessage struct {
+	GroupChainPieceReq []byte
 	Peer               string
 }
 
-func (m *ChainPieceInfoMessage) GetRaw() []byte {
-	return m.ChainPieceInfoByte
+func (m *GroupChainPieceReqMessage) GetRaw() []byte {
+	return nil
 }
-func (m *ChainPieceInfoMessage) GetData() interface{} {
+func (m *GroupChainPieceReqMessage) GetData() interface{} {
 	return m
 }
 
-type ChainPieceBlockMessage struct {
-	ChainPieceBlockMsgByte []byte
-	Peer                   string
+type GroupChainPieceMessage struct {
+	GroupChainPieceByte []byte
+	Peer                string
 }
 
-func (m *ChainPieceBlockMessage) GetRaw() []byte {
-	return m.ChainPieceBlockMsgByte
+func (m *GroupChainPieceMessage) GetRaw() []byte {
+	return m.GroupChainPieceByte
 }
-func (m *ChainPieceBlockMessage) GetData() interface{} {
+func (m *GroupChainPieceMessage) GetData() interface{} {
+	return m
+}
+
+type GroupReqMessage struct {
+	ReqInfoByte []byte
+	Peer        string
+}
+
+func (m *GroupReqMessage) GetRaw() []byte {
+	return m.ReqInfoByte
+}
+func (m *GroupReqMessage) GetData() interface{} {
+	return m
+}
+
+type GroupResponseMessage struct {
+	GroupResponseByte []byte
+	Peer              string
+}
+
+func (m *GroupResponseMessage) GetRaw() []byte {
+	return m.GroupResponseByte
+}
+func (m *GroupResponseMessage) GetData() interface{} {
 	return m
 }
 
@@ -139,18 +175,6 @@ func (m *GroupHeightMessage) GetRaw() []byte {
 	return m.HeightByte
 }
 func (m *GroupHeightMessage) GetData() interface{} {
-	return m
-}
-
-type GroupReqMessage struct {
-	GroupIdByte []byte
-	Peer        string
-}
-
-func (m *GroupReqMessage) GetRaw() []byte {
-	return m.GroupIdByte
-}
-func (m *GroupReqMessage) GetData() interface{} {
 	return m
 }
 

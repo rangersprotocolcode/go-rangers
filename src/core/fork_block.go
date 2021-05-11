@@ -25,76 +25,108 @@ import (
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
+	"errors"
+	"github.com/oleiade/lane"
 )
 
-type fork struct {
-	header      uint64
-	sourceMiner string
+var verifyGroupNotOnChainErr = errors.New("Verify group not on group chain")
+var verifyBlockErr = errors.New("verify block error")
+
+type blockChainFork struct {
+	enableRcvBlock bool
+	rcvLastBlock   bool
+	waitingGroup   bool
+	header         uint64
+
 	latestBlock *types.BlockHeader
+	pending     *lane.Queue
 
 	db     db.Database
 	logger log.Logger
 }
 
-func newFork(commonAncestor types.Block, sourceMiner string, logger log.Logger) *fork {
-	db, err := db.NewDatabase(forkDBPrefix)
-	if err != nil {
-		blockSyncLogger.Debugf("Init block chain error! Error:%s", err.Error())
-	}
-	fork := &fork{header: commonAncestor.Header.Height, latestBlock: commonAncestor.Header, sourceMiner: sourceMiner, db: db, logger: logger}
-	fork.insertBlock(commonAncestor)
+func newBlockChainFork(commonAncestor types.Block) *blockChainFork {
+	fork := &blockChainFork{header: commonAncestor.Header.Height, latestBlock: commonAncestor.Header, logger: syncLogger}
+	fork.enableRcvBlock = true
+	fork.rcvLastBlock = false
+	fork.waitingGroup = false
 
-	err = fork.db.Put([]byte(commonAncestorHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
-	if err != nil {
-		blockSyncLogger.Debugf("Fork init put error:%s", err.Error())
-	}
-	err = fork.db.Put([]byte(lastestHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
-	if err != nil {
-		blockSyncLogger.Debugf("Fork init put error:%s", err.Error())
-	}
+	fork.pending = lane.NewQueue()
+	fork.db = refreshBlockForkDB(commonAncestor)
+	fork.insertBlock(&commonAncestor)
 	return fork
 }
 
-func (fork *fork) acceptBlock(coming types.Block, sourceMiner string) bool {
-	if fork.sourceMiner != sourceMiner {
-		return false
+func (fork *blockChainFork) acceptBlock(coming *types.Block) error {
+	if coming == nil || !fork.verifyOrder(coming) || !fork.verifyHash(coming) || !fork.verifyTxRoot(coming) || !fork.verifyGroupSign(coming) {
+		return verifyBlockErr
 	}
-
-	if !fork.verifyOrder(coming) || !fork.verifyHash(coming) || !fork.verifyTxRoot(coming) || !fork.verifyGroupSign(coming) {
-		return false
+	group := groupChainImpl.GetGroupById(coming.Header.GroupId)
+	if group == nil {
+		fork.logger.Debugf("Verify group not on group chain.Group id:%s", common.ToHex(coming.Header.GroupId))
+		return verifyGroupNotOnChainErr
 	}
-
+	//todo
 	//verifyResult, state := fork.verifyStateAndReceipt(coming)
 	//if !verifyResult {
 	//	return false
 	//}
 	//fork.saveState(state)
+
 	fork.insertBlock(coming)
 	fork.latestBlock = coming.Header
-	return true
+	return nil
 }
 
-func destoryFork(fork *fork) {
-	if fork == nil {
-		return
+func (fork *blockChainFork) insertBlock(block *types.Block) error {
+	blockByte, err := types.MarshalBlock(block)
+	if err != nil {
+		fork.logger.Errorf("Fail to marshal block, error:%s", err.Error())
+		return err
 	}
-	for i := fork.header; i <= fork.latestBlock.Height; i++ {
-		fork.deleteBlock(i)
+	err = fork.db.Put(generateHeightKey(block.Header.Height), blockByte)
+	if err != nil {
+		fork.logger.Errorf("Fail to insert db, error:%s", err.Error())
+		return err
 	}
-	fork.db.Delete([]byte(commonAncestorHeightKey))
-	fork.db.Delete([]byte(lastestHeightKey))
-	fork = nil
+	return nil
 }
 
-func (fork *fork) verifyOrder(coming types.Block) bool {
-	if coming.Header.PreHash != fork.latestBlock.Hash {
-		fork.logger.Debugf("Order error! coming pre:%s,fork lastest:%s", coming.Header.PreHash.Hex(), fork.latestBlock.Hash.Hex())
+func (fork *blockChainFork) getBlock(height uint64) *types.Block {
+	bytes, _ := fork.db.Get(generateHeightKey(height))
+	block, err := types.UnMarshalBlock(bytes)
+	if err != nil {
+		logger.Errorf("Fail to umMarshal block, error:%s", err.Error())
+	}
+	return block
+}
+
+func (fork *blockChainFork) deleteBlock(height uint64) bool {
+	err := fork.db.Delete(generateHeightKey(height))
+	if err != nil {
+		logger.Errorf("Fail to delete block, error:%s", err.Error())
 		return false
 	}
 	return true
 }
 
-func (fork *fork) verifyHash(coming types.Block) bool {
+func (fork *blockChainFork) destroy() {
+	for i := fork.header; i <= fork.latestBlock.Height; i++ {
+		fork.deleteBlock(i)
+	}
+	fork.db.Delete([]byte(blockCommonAncestorHeightKey))
+	fork.db.Delete([]byte(latestBlockHeightKey))
+}
+
+func (fork *blockChainFork) verifyOrder(coming *types.Block) bool {
+	if coming.Header.PreHash != fork.latestBlock.Hash {
+		fork.logger.Debugf("Order error! coming pre:%s,fork latest:%s", coming.Header.PreHash.Hex(), fork.latestBlock.Hash.Hex())
+		return false
+	}
+	return true
+}
+
+func (fork *blockChainFork) verifyHash(coming *types.Block) bool {
 	genHash := coming.Header.GenHash()
 	if coming.Header.Hash != genHash {
 		fork.logger.Debugf("Hash error! coming hash:%s,gen:%s", coming.Header.Hash.Hex(), genHash.Hex())
@@ -103,7 +135,7 @@ func (fork *fork) verifyHash(coming types.Block) bool {
 	return true
 }
 
-func (fork *fork) verifyTxRoot(coming types.Block) bool {
+func (fork *blockChainFork) verifyTxRoot(coming *types.Block) bool {
 	txTree := calcTxTree(coming.Transactions)
 	if !bytes.Equal(txTree.Bytes(), coming.Header.TxTree.Bytes()) {
 		fork.logger.Errorf("Tx root error! coming:%s gen:%s", coming.Header.TxTree.Bytes(), txTree.Hex())
@@ -112,7 +144,7 @@ func (fork *fork) verifyTxRoot(coming types.Block) bool {
 	return true
 }
 
-func (fork *fork) verifyStateAndReceipt(coming types.Block) (bool, *account.AccountDB) {
+func (fork *blockChainFork) verifyStateAndReceipt(coming *types.Block) (bool, *account.AccountDB) {
 	var height uint64 = 0
 	if coming.Header.Height > 1 {
 		height = coming.Header.Height - 1
@@ -128,7 +160,7 @@ func (fork *fork) verifyStateAndReceipt(coming types.Block) (bool, *account.Acco
 		fork.logger.Errorf("Fail to new statedb, error:%s", err)
 		return false, state
 	}
-	vmExecutor := newVMExecutor(state, &coming, "fullverify")
+	vmExecutor := newVMExecutor(state, coming, "fullverify")
 	stateRoot, _, _, receipts := vmExecutor.Execute()
 
 	if stateRoot != coming.Header.StateTree {
@@ -144,7 +176,7 @@ func (fork *fork) verifyStateAndReceipt(coming types.Block) (bool, *account.Acco
 	return true, state
 }
 
-func (fork *fork) verifyGroupSign(coming types.Block) bool {
+func (fork *blockChainFork) verifyGroupSign(coming *types.Block) bool {
 	group := groupChainImpl.GetGroupById(coming.Header.GroupId)
 	if group == nil {
 		fork.logger.Debugf("Local group is nil.Id:%s", common.ToHex(coming.Header.GroupId))
@@ -154,7 +186,7 @@ func (fork *fork) verifyGroupSign(coming types.Block) bool {
 	return result
 }
 
-func (fork *fork) saveState(state *account.AccountDB) error {
+func (fork *blockChainFork) saveState(state *account.AccountDB) error {
 	if state == nil {
 		return nil
 	}
@@ -174,34 +206,18 @@ func (fork *fork) saveState(state *account.AccountDB) error {
 	return nil
 }
 
-func (fork *fork) insertBlock(block types.Block) error {
-	blockByte, err := types.MarshalBlock(&block)
-	if err != nil {
-		fork.logger.Errorf("Fail to marshal block, error:%s", err.Error())
-		return err
-	}
-	err = fork.db.Put(generateHeightKey(block.Header.Height), blockByte)
-	if err != nil {
-		fork.logger.Errorf("Fail to insert db, error:%s", err.Error())
-		return err
-	}
-	return nil
-}
+func refreshBlockForkDB(commonAncestor types.Block) db.Database {
+	db, _ := db.NewDatabase(blockForkDBPrefix)
 
-func (fork *fork) getBlock(height uint64) *types.Block {
-	bytes, _ := fork.db.Get(generateHeightKey(height))
-	block, err := types.UnMarshalBlock(bytes)
-	if err != nil {
-		logger.Errorf("Fail to ummarshal block, error:%s", err.Error())
+	startBytes, _ := db.Get([]byte(blockCommonAncestorHeightKey))
+	start := utility.ByteToUInt64(startBytes)
+	endBytes, _ := db.Get([]byte(latestBlockHeightKey))
+	end := utility.ByteToUInt64(endBytes)
+	for i := start; i <= end; i++ {
+		db.Delete(generateHeightKey(i))
 	}
-	return block
-}
 
-func (fork *fork) deleteBlock(height uint64) bool {
-	err := fork.db.Delete(generateHeightKey(height))
-	if err != nil {
-		logger.Errorf("Fail to delete block, error:%s", err.Error())
-		return false
-	}
-	return true
+	db.Put([]byte(blockCommonAncestorHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
+	db.Put([]byte(latestBlockHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
+	return db
 }
