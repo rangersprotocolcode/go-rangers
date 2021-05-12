@@ -302,7 +302,7 @@ func (self *NFTManager) checkNFTConditions(nftConditions types.NFTConditions, ac
 	return "", &demand
 }
 
-func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data, creator, timeStamp, Uri string, owner common.Address, fullData map[string]string, accountDB *account.AccountDB) (string, bool) {
+func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data, creator, timeStamp, uri string, owner common.Address, fullData map[string]string, accountDB *account.AccountDB) (string, bool) {
 	txLogger.Tracef("Generate NFT! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, timeStamp, owner.String())
 	// 检查id是否存在
 	if _, ok := nftSet.OccupiedID[id]; ok {
@@ -324,7 +324,7 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 		Renter:     ownerString,
 		Status:     0,
 		AppId:      appId,
-		Uri:        Uri,
+		Uri:        uri,
 		Data:       make(map[string]string),
 	}
 

@@ -86,7 +86,7 @@ func FTDeposit(accountdb *account.AccountDB, transaction *types.Transaction) (bo
 	result := false
 
 	// ERC20的max，特殊处理
-	if 0 == strings.Compare(strings.ToLower(depositFTData.FTId), "max") {
+	if 0 == strings.Compare(strings.ToLower(depositFTData.FTId), "rpg") {
 		accountdb.AddBalance(common.HexToAddress(transaction.Source), value)
 		result = true
 	} else {
