@@ -36,7 +36,7 @@ const (
 	groupChainPrefix = "group"
 )
 
-var groupChainImpl GroupChain
+var groupChainImpl *groupChain
 
 type groupChain struct {
 	count uint64
@@ -210,6 +210,28 @@ func (chain *groupChain) getGroupById(id []byte) *types.Group {
 	return group
 }
 
+func (chain *groupChain) remove(group *types.Group) bool {
+	if nil == group {
+		return true
+	}
+	hash := group.Header.Hash
+	height := group.GroupHeight
+	logger.Debugf("remove hash:%s height:%d ", hash.Hex(), height)
+
+	preGroup := chain.getGroupById(group.Header.PreGroup)
+	if preGroup == nil {
+		logger.Errorf("Query nil group by hash  while removing group! Hash:%s,height:%d, preHash :%s", hash.Hex(), height, common.ToHex(group.Header.PreGroup))
+		return false
+	}
+	chain.groups.Delete(group.Id)
+	chain.groups.Put([]byte(lastGroupKey), preGroup.Id)
+	chain.groups.Put(generateKey(chain.count), preGroup.Id)
+	chain.count--
+	chain.groups.Put([]byte(groupCountKey), utility.UInt64ToByte(chain.count))
+	chain.lastGroup = preGroup
+	return true
+}
+
 func (chain *groupChain) save(group *types.Group) error {
 	group.GroupHeight = chain.count
 	data, err := json.Marshal(group)
@@ -228,9 +250,6 @@ func (chain *groupChain) save(group *types.Group) error {
 
 	if nil != notify.BUS {
 		notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group})
-	}
-	if GroupSyncer != nil {
-		GroupSyncer.sendGroupHeightToNeighbor(chain.count)
 	}
 	return nil
 }

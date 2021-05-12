@@ -87,7 +87,7 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 		return
 	}
 
-	workerConn.logger.Debugf("Rcv from node: %s,code: %d,msg size: %d,hash: %s", from, message.Code, len(data), message.Hash())
+	p2pLogger.Debugf("Rcv from node: %s,code: %d,msg size: %d,hash: %s", from, message.Code, len(data), message.Hash())
 
 	code := message.Code
 	switch code {
@@ -96,39 +96,42 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 		if nil != workerConn.consensusHandler {
 			workerConn.consensusHandler.Handle(from, *message)
 		}
+	case NewBlockMsg:
+		msg := notify.NewBlockMessage{BlockByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.NewBlock, &msg)
 	case ReqTransactionMsg:
 		msg := notify.TransactionReqMessage{TransactionReqByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.TransactionReq, &msg)
-	case GroupChainCountMsg:
-		msg := notify.GroupHeightMessage{HeightByte: message.Body, Peer: from}
-		notify.BUS.Publish(notify.GroupHeight, &msg)
-	case ReqGroupMsg:
-		msg := notify.GroupReqMessage{GroupIdByte: message.Body, Peer: from}
-		notify.BUS.Publish(notify.GroupReq, &msg)
-	case GroupMsg:
-		msg := notify.GroupInfoMessage{GroupInfoByte: message.Body, Peer: from}
-		notify.BUS.Publish(notify.Group, &msg)
 	case TransactionGotMsg:
 		msg := notify.TransactionGotMessage{TransactionGotByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.TransactionGot, &msg)
-	case BlockInfoNotifyMsg:
-		msg := notify.BlockInfoNotifyMessage{BlockInfo: message.Body, Peer: from}
-		notify.BUS.Publish(notify.BlockInfoNotify, &msg)
-	case ReqBlock:
+	case TopBlockInfoMsg:
+		msg := notify.TopBlockInfoMessage{BlockInfo: message.Body, Peer: from}
+		notify.BUS.Publish(notify.TopBlockInfo, &msg)
+	case BlockChainPieceReqMsg:
+		msg := notify.BlockChainPieceReqMessage{BlockChainPieceReq: message.Body, Peer: from}
+		notify.BUS.Publish(notify.BlockChainPieceReq, &msg)
+	case BlockChainPieceMsg:
+		msg := notify.BlockChainPieceMessage{BlockChainPieceByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.BlockChainPiece, &msg)
+	case ReqBlockMsg:
 		msg := notify.BlockReqMessage{ReqInfoByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.BlockReq, &msg)
 	case BlockResponseMsg:
 		msg := notify.BlockResponseMessage{BlockResponseByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.BlockResponse, &msg)
-	case NewBlockMsg:
-		msg := notify.NewBlockMessage{BlockByte: message.Body, Peer: from}
-		notify.BUS.Publish(notify.NewBlock, &msg)
-	case ChainPieceInfoReq:
-		msg := notify.ChainPieceInfoReqMessage{ChainPieceReq: message.Body, Peer: from}
-		notify.BUS.Publish(notify.ChainPieceInfoReq, &msg)
-	case ChainPieceInfo:
-		msg := notify.ChainPieceInfoMessage{ChainPieceInfoByte: message.Body, Peer: from}
-		notify.BUS.Publish(notify.ChainPieceInfo, &msg)
+	case GroupChainPieceReqMsg:
+		msg := notify.GroupChainPieceReqMessage{GroupChainPieceReq: message.Body, Peer: from}
+		notify.BUS.Publish(notify.GroupChainPieceReq, &msg)
+	case GroupChainPieceMsg:
+		msg := notify.GroupChainPieceMessage{GroupChainPieceByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.GroupChainPiece, &msg)
+	case ReqGroupMsg:
+		msg := notify.GroupReqMessage{ReqInfoByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.GroupReq, &msg)
+	case GroupResponseMsg:
+		msg := notify.GroupResponseMessage{GroupResponseByte: message.Body, Peer: from}
+		notify.BUS.Publish(notify.GroupResponse, &msg)
 	case STMStorageReady:
 		msg := notify.STMStorageReadyMessage{FileName: message.Body}
 		notify.BUS.Publish(notify.STMStorageReady, &msg)

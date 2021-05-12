@@ -25,22 +25,22 @@ import (
 )
 
 var (
-	logger          log.Logger
-	txLogger        log.Logger
-	consensusLogger log.Logger
-	consensusHelper types.ConsensusHelper
-	blockSyncLogger log.Logger
+	logger           log.Logger
+	txLogger         log.Logger
+	consensusHelper  types.ConsensusHelper
+	syncLogger       log.Logger
+	syncHandleLogger log.Logger
 )
 
 func InitCore(helper types.ConsensusHelper) error {
 	index := common.GlobalConf.GetString("instance", "index", "")
 	logger = log.GetLoggerByIndex(log.CoreLogConfig, index)
 	txLogger = log.GetLoggerByIndex(log.TxLogConfig, index)
-	consensusLogger = log.GetLoggerByIndex(log.ConsensusLogConfig, index)
-	blockSyncLogger = log.GetLoggerByIndex(log.BlockSyncLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	syncLogger = log.GetLoggerByIndex(log.SyncLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	syncHandleLogger = log.GetLoggerByIndex(log.SyncHandleLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	consensusHelper = helper
 
-	initPeerManager(blockSyncLogger)
+	initPeerManager(syncLogger)
 	if nil == blockChainImpl {
 		err := initBlockChain()
 		if err != nil {

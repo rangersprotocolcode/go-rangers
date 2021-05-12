@@ -30,3 +30,13 @@ func TestRequestId(t *testing.T) {
 	fmt.Println(sign.GetS())
 	fmt.Println(sign.GetHexString())
 }
+
+func TestTransferValueToBigInt(t *testing.T) {
+	s := "1000000000000000000000"
+	i, err := transferValueToBigInt(s)
+	if err != nil {
+		fmt.Printf(err.Error())
+	}
+	fmt.Printf("i:%s\n", i.String())
+	fmt.Printf("i:%v\n", i)
+}

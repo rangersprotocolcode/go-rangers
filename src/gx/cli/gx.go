@@ -201,26 +201,24 @@ func (gx *GX) getAccountInfo(sk string) {
 
 func syncChainInfo(privateKey common.PrivateKey, id string) {
 	fmt.Println("Syncing block and group info from RocketProtocol net.Waiting...")
-	core.InitGroupSyncer()
-	core.InitBlockSyncer(privateKey, id)
+	core.InitSyncerProcessor(privateKey, id)
 	go func() {
 		timer := time.NewTimer(time.Second * 10)
 		for {
 			<-timer.C
 
-			var candicateHeight uint64
-			if core.BlockSyncer != nil {
-				core.BlockSyncer.Lock.Lock("trySync")
-				blockSyncInfo := core.BlockSyncer.GetSyncInfo()
-				candicateHeight = blockSyncInfo.Candidate.Height
-				core.BlockSyncer.Lock.Unlock("trySync")
+			var candidateHeight uint64
+			if core.SyncProcessor != nil {
+				candidate := core.SyncProcessor.GetCandidateInfo()
+				candidateHeight = candidate.Height
 			}
 			localBlockHeight := core.GetBlockChain().Height()
 			jsonObject := types.NewJSONObject()
-			jsonObject.Put("candidateHeight", candicateHeight)
+			jsonObject.Put("candidateHeight", candidateHeight)
 			jsonObject.Put("localHeight", localBlockHeight)
-			middleware.HeightLogger.Debugf(jsonObject.TOJSONString())
-			fmt.Printf("Sync candidate block height:%d,local block height:%d\n", candicateHeight, localBlockHeight)
+			if candidateHeight > 0 {
+				middleware.HeightLogger.Debugf(jsonObject.TOJSONString())
+			}
 			timer.Reset(time.Second * 5)
 		}
 		fmt.Println("Sync data finished!")

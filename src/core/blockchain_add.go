@@ -44,7 +44,7 @@ func (chain *blockChain) consensusVerify(b *types.Block) (types.AddBlockResult, 
 
 	if check, err := consensusHelper.CheckProveRoot(b.Header); !check {
 		logger.Errorf("checkProveRoot fail, err=%v", err.Error())
-		return types.AddBlockFailed, false
+		return types.DependOnGroup, false
 	}
 
 	groupValidateResult, err := chain.validateGroupSig(b.Header)
@@ -280,8 +280,8 @@ func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block) {
 		chain.addBlockOnChain(block)
 		return
 	}
-	if BlockSyncer != nil {
-		go BlockSyncer.broadcastTopBlockInfo(chain.latestBlock)
+	if SyncProcessor != nil {
+		go SyncProcessor.broadcastTopBlockInfo(chain.latestBlock)
 	}
 }
 
@@ -303,9 +303,6 @@ func (chain *blockChain) validateGroupSig(bh *types.BlockHeader) (bool, error) {
 
 func (chain *blockChain) removeFromCommonAncestor(commonAncestor *types.BlockHeader) {
 	logger.Debugf("removeFromCommonAncestor hash:%s height:%d latestheight:%d", commonAncestor.Hash.Hex(), commonAncestor.Height, chain.latestBlock.Height)
-
-	consensusLogger.Infof("%v#%s#%d,%d", "ForkAdjustRemoveCommonAncestor", commonAncestor.Hash.ShortS(), commonAncestor.Height, chain.latestBlock.Height)
-
 	for height := chain.latestBlock.Height; height > commonAncestor.Height; height-- {
 		header := chain.QueryBlockHeaderByHeight(height, true)
 		if header == nil {

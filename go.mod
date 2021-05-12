@@ -15,6 +15,7 @@ require (
 	github.com/docker/docker v1.4.2-0.20190316220345-38005cfc12fb
 	github.com/docker/go-connections v0.4.1-0.20180821093606-97c2040d34df
 	github.com/docker/go-units v0.4.0 // indirect
+	github.com/eapache/queue v1.1.0 // indirect
 	github.com/glacjay/goini v0.0.0-20161120062552-fd3024d87ee2
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
@@ -27,6 +28,7 @@ require (
 	github.com/ipfs/go-ipfs-api v0.0.3
 	github.com/minio/sha256-simd v0.1.1
 	github.com/morikuni/aec v1.0.0 // indirect
+	github.com/oleiade/lane v1.0.1
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.1 // indirect
 	github.com/peterh/liner v1.2.0

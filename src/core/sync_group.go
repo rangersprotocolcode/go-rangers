@@ -1,0 +1,295 @@
+package core
+
+import (
+	"bytes"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/notify"
+	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/network"
+)
+
+func (p *syncProcessor) requestGroupChainPiece(targetNode string, localHeight uint64) {
+	req := groupChainPieceReq{Height: localHeight}
+	req.SignInfo = common.NewSignData(p.privateKey, p.id, &req)
+
+	body, e := marshalGroupChainPieceReq(req)
+	if e != nil {
+		p.logger.Errorf("marshal group chain piece req error:%s", e.Error())
+		return
+	}
+	p.logger.Debugf("req group chain piece to %d, local group height:%d", targetNode, localHeight)
+	message := network.Message{Code: network.GroupChainPieceReqMsg, Body: body}
+	network.GetNetInstance().SendToStranger(common.FromHex(targetNode), message)
+	p.reqTimer.Reset(syncReqTimeout)
+}
+
+func (p *syncProcessor) groupChainPieceReqHandler(msg notify.Message) {
+	chainPieceReqMessage, ok := msg.GetData().(*notify.GroupChainPieceReqMessage)
+	if !ok {
+		syncHandleLogger.Errorf("GroupChainPieceReqMessage assert not ok!")
+		return
+	}
+	chainPieceReq, e := unMarshalGroupChainPieceReq(chainPieceReqMessage.GroupChainPieceReq)
+	if e != nil {
+		syncHandleLogger.Errorf("Discard message! GroupChainPieceReqMessage unmarshal error:%s", e.Error())
+		return
+	}
+	err := chainPieceReq.SignInfo.ValidateSign(chainPieceReq)
+	if err != nil {
+		syncHandleLogger.Errorf("Sign verify error! GroupChainPieceReqMessage:%s", e.Error())
+		return
+	}
+
+	from := chainPieceReq.SignInfo.Id
+	syncHandleLogger.Debugf("Rcv group chain piece req from:%s,req height:%d", from, chainPieceReq.Height)
+	chainPiece := p.groupChain.getGroupChainPiece(chainPieceReq.Height)
+
+	chainPieceMsg := groupChainPiece{GroupChainPiece: chainPiece}
+	chainPieceMsg.SignInfo = common.NewSignData(p.privateKey, p.id, &chainPieceMsg)
+	syncHandleLogger.Debugf("Send group chain piece  %d-%d to:%s", chainPiece[0].GroupHeight, chainPiece[len(chainPiece)-1].GroupHeight, from)
+	body, e := marshalGroupChainPiece(chainPieceMsg)
+	if e != nil {
+		syncHandleLogger.Errorf("Marshal group chain piece error:%s!", e.Error())
+		return
+	}
+	message := network.Message{Code: network.GroupChainPieceMsg, Body: body}
+	network.GetNetInstance().SendToStranger(common.FromHex(from), message)
+}
+
+func (p *syncProcessor) groupChainPieceHandler(msg notify.Message) {
+	chainPieceInfoMessage, ok := msg.GetData().(*notify.GroupChainPieceMessage)
+	if !ok {
+		p.logger.Errorf("GroupChainPieceMessage assert not ok!")
+		return
+	}
+	chainPieceInfo, err := unMarshalGroupChainPiece(chainPieceInfoMessage.GroupChainPieceByte)
+	if err != nil {
+		p.logger.Errorf("Discard message! GroupChainPieceMessage unmarshal error:%s", err.Error())
+		return
+	}
+
+	err = chainPieceInfo.SignInfo.ValidateSign(chainPieceInfo)
+	if err != nil {
+		p.logger.Errorf("Sign verify error! GroupChainPieceMessage:%s", err.Error())
+		return
+	}
+
+	from := chainPieceInfo.SignInfo.Id
+	if from != p.candidateInfo.Id {
+		p.logger.Debugf("[GroupChainPieceMessage]Unexpected candidate! Expect from:%s, actual:%s,!", p.candidateInfo.Id, from)
+		PeerManager.markEvil(from)
+		return
+	}
+	p.reqTimer.Stop()
+
+	chainPiece := chainPieceInfo.GroupChainPiece
+	p.logger.Debugf("Rcv group chain piece from:%s,%d-%d", p.candidateInfo.Id, chainPiece[0].GroupHeight, chainPiece[len(chainPiece)-1].GroupHeight)
+	if !verifyGroupChainPieceInfo(chainPiece) {
+		p.logger.Debugf("Illegal group chain piece!", from)
+		PeerManager.markEvil(from)
+		p.finishCurrentSync(false)
+		return
+	}
+
+	//index bigger,height bigger
+	var commonAncestor *types.Group
+	for i := 0; i < len(chainPiece); i++ {
+		height := chainPiece[i].GroupHeight
+		group := p.groupChain.getGroupByHeight(height)
+		if group == nil {
+			syncLogger.Errorf("Group chain get nil group!Height:%d", height)
+			p.finishCurrentSync(true)
+			return
+		}
+		if group.Header.Hash != chainPiece[i].Header.Hash {
+			break
+		}
+		commonAncestor = chainPiece[i]
+	}
+
+	if commonAncestor == nil {
+		if chainPiece[0].GroupHeight == 0 {
+			p.logger.Error("Genesis block is different.Can not sync!")
+			p.finishCurrentSync(true)
+			return
+		}
+		p.logger.Debugf("Do not find group common ancestor.Req:%d", chainPiece[len(chainPiece)-1].GroupHeight)
+		go p.requestGroupChainPiece(from, chainPiece[len(chainPiece)-1].GroupHeight)
+		return
+	}
+
+	p.logger.Debugf("Common ancestor group.height:%d,hash:%s", commonAncestor.GroupHeight, commonAncestor.Header.Hash.String())
+
+	commonAncestorGroup := p.groupChain.GetGroupById(commonAncestor.Id)
+	if commonAncestorGroup == nil {
+		p.logger.Error("GroupChain get common ancestor nil! Height:%d,Hash:%s", commonAncestor.GroupHeight, commonAncestor.Header.Hash.String())
+		p.finishCurrentSync(true)
+		return
+	}
+	go p.syncGroup(from, commonAncestorGroup)
+}
+
+func verifyGroupChainPieceInfo(chainPiece []*types.Group) bool {
+	if len(chainPiece) == 0 {
+		return false
+	}
+
+	//can not verify top header group sign
+	for i := 0; i < len(chainPiece)-1; i++ {
+		group := chainPiece[i]
+		if group == nil {
+			return false
+		}
+
+		if i > 0 && !bytes.Equal(group.Header.PreGroup, chainPiece[i-1].Id) {
+			return false
+		}
+
+		//todo 创始块组签名没写
+		//if bh.Height > 0 {
+		//	signVerifyResult, _ := consensusHelper.VerifyBlockHeader(bh)
+		//	if !signVerifyResult {
+		//		return false
+		//	}
+		//}
+	}
+	return true
+}
+
+func (p *syncProcessor) syncGroup(id string, commonAncestor *types.Group) {
+	p.lock.Lock("syncGroup")
+	if p.blockFork == nil {
+		p.groupFork = newGroupChainFork(commonAncestor)
+	}
+	p.lock.Unlock("syncGroup")
+
+	syncHeight := commonAncestor.GroupHeight + 1
+	p.logger.Debugf("Sync group from:%s,reqHeight:%d", id, syncHeight)
+	req := groupSyncReq{Height: syncHeight}
+	req.SignInfo = common.NewSignData(p.privateKey, p.id, &req)
+
+	body, e := marshalGroupSyncReq(req)
+	if e != nil {
+		p.logger.Errorf("marshal group req error:%s", e.Error())
+		return
+	}
+	message := network.Message{Code: network.ReqGroupMsg, Body: body}
+	go network.GetNetInstance().SendToStranger(common.FromHex(id), message)
+	p.reqTimer.Reset(syncReqTimeout)
+}
+
+func (p *syncProcessor) syncGroupReqHandler(msg notify.Message) {
+	m, ok := msg.(*notify.GroupReqMessage)
+	if !ok {
+		syncHandleLogger.Errorf("GroupReqMessage assert not ok!")
+		return
+	}
+	req, err := unMarshalGroupSyncReq(m.ReqInfoByte)
+	if err != nil {
+		syncHandleLogger.Errorf("Discard message! GroupReqMessage unmarshal error:%s", err.Error())
+		return
+	}
+	err = req.SignInfo.ValidateSign(req)
+	if err != nil {
+		syncHandleLogger.Errorf("Sign verify error! GroupReqMessage:%s", err.Error())
+		return
+	}
+
+	reqHeight := req.Height
+	localHeight := p.groupChain.count
+	syncHandleLogger.Debugf("Rcv group request from %s.reqHeight:%d,localHeight:%d", req.SignInfo.Id, reqHeight, localHeight)
+
+	groupList := p.groupChain.getSyncedGroup(reqHeight)
+	isLastGroup := false
+	for i := 0; i <= len(groupList)-1; i++ {
+		group := groupList[i]
+		if i == len(groupList)-1 && localHeight == group.GroupHeight {
+			isLastGroup = true
+		}
+		response := groupMsgResponse{Group: group, IsLastGroup: isLastGroup}
+		response.SignInfo = common.NewSignData(p.privateKey, p.id, &response)
+		body, e := marshalGroupMsgResponse(response)
+		if e != nil {
+			syncHandleLogger.Errorf("Marshal group msg response error:%s", e.Error())
+			return
+		}
+		message := network.Message{Code: network.GroupResponseMsg, Body: body}
+		network.GetNetInstance().SendToStranger(common.FromHex(req.SignInfo.Id), message)
+	}
+
+	if len(groupList) == 0 {
+		syncHandleLogger.Debugf("Synced group len 0!")
+	} else {
+		syncHandleLogger.Debugf("Send block %d-%d to %s,last:%v", groupList[0].GroupHeight, groupList[len(groupList)-1].GroupHeight, isLastGroup)
+	}
+}
+
+func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
+	m, ok := msg.(*notify.GroupResponseMessage)
+	if !ok {
+		p.logger.Errorf("GroupResponseMessage assert not ok!")
+		return
+	}
+	groupResponse, err := unMarshalGroupMsgResponse(m.GroupResponseByte)
+	if err != nil {
+		p.logger.Errorf("Discard message! GroupResponseMessage unmarshal error:%s", err.Error())
+		return
+	}
+	err = groupResponse.SignInfo.ValidateSign(groupResponse)
+	if err != nil {
+		p.logger.Errorf("Sign verify error! GroupResponseMessage:%s", err.Error())
+		return
+	}
+	from := groupResponse.SignInfo.Id
+	if from != p.candidateInfo.Id {
+		p.logger.Debugf("[GroupResponseMessage]Unexpected candidate! Expect from:%s, actual:%s,!", p.candidateInfo.Id, from)
+		return
+	}
+	group := groupResponse.Group
+	p.logger.Debugf("Rcv synced group.Hash:%s,Height:%d.Pre:%s", group.Header.Hash.String(), group.GroupHeight, common.ToHex(group.Header.PreGroup))
+	p.reqTimer.Reset(syncReqTimeout)
+
+	if p.groupFork == nil || !p.groupFork.enableRcvGroup {
+		return
+	}
+	p.groupFork.pending.Enqueue(group)
+	p.groupFork.rcvLastGroup = groupResponse.IsLastGroup
+	if p.groupFork.rcvLastGroup || p.blockFork.pending.Size() >= syncedGroupCount {
+		p.reqTimer.Stop()
+		p.groupFork.enableRcvGroup = false
+		p.tryAcceptGroup()
+	}
+
+}
+
+func (p *syncProcessor) tryAcceptGroup() {
+	p.logger.Debugf("Try accept group")
+	var err error
+	var group *types.Group
+	for !p.groupFork.pending.Empty() {
+		g := p.groupFork.pending.Head().(*types.Group)
+		err = p.groupFork.acceptGroup(g)
+		if err != nil {
+			p.logger.Debugf("Accept group failed!%s-%d", g.Header.Hash.String(), g.GroupHeight)
+			break
+		}
+		group = p.groupFork.pending.Pop().(*types.Group)
+		p.groupFork.waitingBlock = false
+	}
+
+	if err == createBlockNotOnChain {
+		p.groupFork.waitingBlock = true
+		p.logger.Debugf("group fork waiting block..")
+		go p.triggerSync()
+		return
+	}
+	if err == verifyGroupErr {
+		p.finishCurrentSync(false)
+		return
+	}
+
+	if p.groupFork.rcvLastGroup && group != nil {
+		p.groupFork.enableRcvGroup = true
+		go p.syncGroup(p.candidateInfo.Id, group)
+	}
+}
