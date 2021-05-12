@@ -359,8 +359,10 @@ func (self *NFTManager) MarkNFTWithdrawn(owner common.Address, setId, id string,
 	}
 
 	//change nft status to be withdrawn
-	accountDB.ChangeNFTStatus(owner, "", setId, id, 2)
-	return nft
+	if accountDB.ChangeNFTStatus(owner, "", setId, id, 2) {
+		return nft
+	}
+	return nil
 }
 
 //deposit local withdrawn nft

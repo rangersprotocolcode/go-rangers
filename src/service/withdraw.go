@@ -107,7 +107,7 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction) (str
 		for _, k := range withDrawReq.NFT {
 			nft := NFTManagerInstance.MarkNFTWithdrawn(source, k.SetId, k.Id, accountdb)
 			if nil == nft {
-				return "NFT Not Exist In This Game", false
+				return "NFT Not Exist In This Game or owner error", false
 			}
 
 			nftInfo = append(nftInfo, types.NFTID{SetId: k.SetId, Id: k.Id, Data: nft.ToJSONString()})
