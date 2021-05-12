@@ -272,7 +272,7 @@ func (p *syncProcessor) processSyncedBlock(msg notify.Message) {
 	if p.blockFork.rcvLastBlock || p.blockFork.pending.Size() >= syncedBlockCount {
 		p.reqTimer.Stop()
 		p.blockFork.enableRcvBlock = false
-		p.tryAcceptBlock()
+		go p.tryAcceptBlock()
 	}
 }
 

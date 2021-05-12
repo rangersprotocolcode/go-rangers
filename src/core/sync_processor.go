@@ -80,7 +80,8 @@ func InitSyncerProcessor(privateKey common.PrivateKey, id string) {
 	notify.BUS.Subscribe(notify.BlockChainPieceReq, SyncProcessor.blockChainPieceReqHandler)
 	notify.BUS.Subscribe(notify.BlockChainPiece, SyncProcessor.blockChainPieceHandler)
 	notify.BUS.Subscribe(notify.BlockReq, SyncProcessor.syncBlockReqHandler)
-	notify.BUS.Subscribe(notify.BlockResponse, SyncProcessor.blockResponseMsgHandler)
+	//notify.BUS.Subscribe(notify.BlockResponse, SyncProcessor.blockResponseMsgHandler)
+	network.SyncedBlockHandler = SyncProcessor.blockResponseMsgHandler
 
 	notify.BUS.Subscribe(notify.GroupChainPieceReq, SyncProcessor.groupChainPieceReqHandler)
 	notify.BUS.Subscribe(notify.GroupChainPiece, SyncProcessor.groupChainPieceHandler)

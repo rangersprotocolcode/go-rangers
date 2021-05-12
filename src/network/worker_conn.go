@@ -119,7 +119,10 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 		notify.BUS.Publish(notify.BlockReq, &msg)
 	case BlockResponseMsg:
 		msg := notify.BlockResponseMessage{BlockResponseByte: message.Body, Peer: from}
-		notify.BUS.Publish(notify.BlockResponse, &msg)
+		if SyncedBlockHandler != nil {
+			SyncedBlockHandler(&msg)
+		}
+		//notify.BUS.Publish(notify.BlockResponse, &msg)
 	case GroupChainPieceReqMsg:
 		msg := notify.GroupChainPieceReqMessage{GroupChainPieceReq: message.Body, Peer: from}
 		notify.BUS.Publish(notify.GroupChainPieceReq, &msg)
