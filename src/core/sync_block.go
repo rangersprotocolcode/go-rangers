@@ -236,6 +236,10 @@ func (p *syncProcessor) syncBlockReqHandler(msg notify.Message) {
 }
 
 func (p *syncProcessor) blockResponseMsgHandler(msg notify.Message) {
+	p.syncedBlockCh <- msg
+}
+
+func (p *syncProcessor) processSyncedBlock(msg notify.Message) {
 	m, ok := msg.(*notify.BlockResponseMessage)
 	if !ok {
 		p.logger.Errorf("BlockResponseMessage assert not ok!")

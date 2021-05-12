@@ -50,6 +50,8 @@ type syncProcessor struct {
 	reqTimer       *time.Timer
 	broadcastTimer *time.Timer
 
+	syncedBlockCh chan notify.Message
+
 	blockFork *blockChainFork
 	groupFork *groupChainFork
 
@@ -67,6 +69,7 @@ func InitSyncerProcessor(privateKey common.PrivateKey, id string) {
 	SyncProcessor.reqTimer = time.NewTimer(syncReqTimeout)
 	SyncProcessor.syncTimer = time.NewTimer(blockSyncInterval)
 
+	SyncProcessor.syncedBlockCh = make(chan notify.Message)
 	SyncProcessor.blockChain = blockChainImpl
 	SyncProcessor.groupChain = groupChainImpl
 
@@ -100,6 +103,8 @@ func (p *syncProcessor) loop() {
 		case <-p.reqTimer.C:
 			p.logger.Debugf("Sync to %s time out!", p.candidateInfo.Id)
 			p.finishCurrentSync(false)
+		case msg := <-p.syncedBlockCh:
+			p.processSyncedBlock(msg)
 		}
 	}
 }
