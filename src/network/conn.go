@@ -448,7 +448,9 @@ func (connectorConn *ConnectorConn) Send(msg []byte) {
 func (connectorConn *ConnectorConn) Init(ipPort string, logger log.Logger) {
 	connectorConn.doRcv = func(wsHeader wsHeader, body []byte) {
 		if !bytes.Equal(wsHeader.method, methodRcvFromCoinConnector) {
-			connectorConn.logger.Error("%s received wrong method. wsHeader: %v", connectorConn.path, wsHeader)
+			msg := fmt.Sprintf("%s received wrong method. wsHeader: %v", connectorConn.path, wsHeader)
+			connectorConn.logger.Error(msg)
+			connectorConn.sendWrongNonce(wsHeader.nonce, msg)
 			return
 		}
 		connectorConn.handleConnectorMessage(body, wsHeader.nonce)
@@ -471,7 +473,7 @@ func (connectorConn *ConnectorConn) handleConnectorMessage(data []byte, nonce ui
 	tx.RequestId = nonce
 	connectorConn.logger.Debugf("Rcv message from coiner.Tx info:%s", tx.ToTxJson().ToString())
 	if !types.CoinerSignVerifier.VerifyDeposit(txJson) {
-		msg := fmt.Sprintf("tx from coiner verify sign error! Tx Info: %s", txJson.ToString())
+		msg := fmt.Sprintf("tx from coiner verify sign error! Tx Info: %s", tx.ToTxJson().ToString())
 		connectorConn.logger.Infof(msg)
 		connectorConn.sendWrongNonce(nonce, msg)
 		return
