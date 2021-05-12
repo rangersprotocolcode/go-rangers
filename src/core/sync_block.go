@@ -210,36 +210,52 @@ func (p *syncProcessor) syncBlockReqHandler(msg notify.Message) {
 	localHeight := blockChainImpl.Height()
 	syncHandleLogger.Debugf("Rcv block request from %s.reqHeight:%d,localHeight:%d", req.SignInfo.Id, reqHeight, localHeight)
 
-	blockList := p.blockChain.getSyncedBlock(reqHeight)
+	block := p.blockChain.QueryBlock(reqHeight)
+	if block == nil {
+		syncHandleLogger.Errorf("Block chain get nil block!Height:%d", reqHeight)
+		return
+	}
 	isLastBlock := false
-	for i := 0; i <= len(blockList)-1; i++ {
-		block := blockList[i]
-		if i == len(blockList)-1 && localHeight <= block.Header.Height {
-			isLastBlock = true
-		}
-		response := blockMsgResponse{Block: block, IsLastBlock: isLastBlock}
-		response.SignInfo = common.NewSignData(p.privateKey, p.id, &response)
-		body, e := marshalBlockMsgResponse(response)
-		if e != nil {
-			syncHandleLogger.Errorf("Marshal block msg response error:%s", e.Error())
-			return
-		}
-		message := network.Message{Code: network.BlockResponseMsg, Body: body}
-		network.GetNetInstance().SendToStranger(common.FromHex(req.SignInfo.Id), message)
+	if reqHeight == localHeight {
+		isLastBlock = true
 	}
+	response := blockMsgResponse{Block: block, IsLastBlock: isLastBlock}
+	response.SignInfo = common.NewSignData(p.privateKey, p.id, &response)
+	body, e := marshalBlockMsgResponse(response)
+	if e != nil {
+		syncHandleLogger.Errorf("Marshal block msg response error:%s", e.Error())
+		return
+	}
+	message := network.Message{Code: network.BlockResponseMsg, Body: body}
+	network.GetNetInstance().SendToStranger(common.FromHex(req.SignInfo.Id), message)
+	syncHandleLogger.Debugf("Send block %d to %s,last:%v", block.Header.Height, req.SignInfo.Id, isLastBlock)
 
-	if len(blockList) == 0 {
-		syncHandleLogger.Debugf("Synced block len 0!")
-	} else {
-		syncHandleLogger.Debugf("Send block %d-%d to %s,last:%v", blockList[0].Header.Height, blockList[len(blockList)-1].Header.Height, req.SignInfo.Id, isLastBlock)
-	}
+	//blockList := p.blockChain.getSyncedBlock(reqHeight)
+	//isLastBlock := false
+	//for i := 0; i <= len(blockList)-1; i++ {
+	//	block := blockList[i]
+	//	if i == len(blockList)-1 && localHeight <= block.Header.Height {
+	//		isLastBlock = true
+	//	}
+	//	response := blockMsgResponse{Block: block, IsLastBlock: isLastBlock}
+	//	response.SignInfo = common.NewSignData(p.privateKey, p.id, &response)
+	//	body, e := marshalBlockMsgResponse(response)
+	//	if e != nil {
+	//		syncHandleLogger.Errorf("Marshal block msg response error:%s", e.Error())
+	//		return
+	//	}
+	//	message := network.Message{Code: network.BlockResponseMsg, Body: body}
+	//	network.GetNetInstance().SendToStranger(common.FromHex(req.SignInfo.Id), message)
+	//}
+	//
+	//if len(blockList) == 0 {
+	//	syncHandleLogger.Debugf("Synced block len 0!")
+	//} else {
+	//	syncHandleLogger.Debugf("Send block %d-%d to %s,last:%v", blockList[0].Header.Height, blockList[len(blockList)-1].Header.Height, req.SignInfo.Id, isLastBlock)
+	//}
 }
 
 func (p *syncProcessor) blockResponseMsgHandler(msg notify.Message) {
-	p.syncedBlockCh <- msg
-}
-
-func (p *syncProcessor) processSyncedBlock(msg notify.Message) {
 	m, ok := msg.(*notify.BlockResponseMessage)
 	if !ok {
 		p.logger.Errorf("BlockResponseMessage assert not ok!")
@@ -273,6 +289,8 @@ func (p *syncProcessor) processSyncedBlock(msg notify.Message) {
 		p.reqTimer.Stop()
 		p.blockFork.enableRcvBlock = false
 		go p.tryAcceptBlock()
+	} else {
+		go p.syncBlock(from, *block)
 	}
 }
 

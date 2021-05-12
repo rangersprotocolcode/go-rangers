@@ -18,7 +18,6 @@ package network
 
 import (
 	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/middleware/notify"
 )
 
 const (
@@ -126,5 +125,3 @@ func GetNetInstance() Network {
 type MsgHandler interface {
 	Handle(sourceId string, msg Message) error
 }
-
-var SyncedBlockHandler func(msg notify.Message)

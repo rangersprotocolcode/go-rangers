@@ -50,8 +50,6 @@ type syncProcessor struct {
 	reqTimer       *time.Timer
 	broadcastTimer *time.Timer
 
-	syncedBlockCh chan notify.Message
-
 	blockFork *blockChainFork
 	groupFork *groupChainFork
 
@@ -69,7 +67,6 @@ func InitSyncerProcessor(privateKey common.PrivateKey, id string) {
 	SyncProcessor.reqTimer = time.NewTimer(syncReqTimeout)
 	SyncProcessor.syncTimer = time.NewTimer(blockSyncInterval)
 
-	SyncProcessor.syncedBlockCh = make(chan notify.Message)
 	SyncProcessor.blockChain = blockChainImpl
 	SyncProcessor.groupChain = groupChainImpl
 
@@ -80,8 +77,7 @@ func InitSyncerProcessor(privateKey common.PrivateKey, id string) {
 	notify.BUS.Subscribe(notify.BlockChainPieceReq, SyncProcessor.blockChainPieceReqHandler)
 	notify.BUS.Subscribe(notify.BlockChainPiece, SyncProcessor.blockChainPieceHandler)
 	notify.BUS.Subscribe(notify.BlockReq, SyncProcessor.syncBlockReqHandler)
-	//notify.BUS.Subscribe(notify.BlockResponse, SyncProcessor.blockResponseMsgHandler)
-	network.SyncedBlockHandler = SyncProcessor.blockResponseMsgHandler
+	notify.BUS.Subscribe(notify.BlockResponse, SyncProcessor.blockResponseMsgHandler)
 
 	notify.BUS.Subscribe(notify.GroupChainPieceReq, SyncProcessor.groupChainPieceReqHandler)
 	notify.BUS.Subscribe(notify.GroupChainPiece, SyncProcessor.groupChainPieceHandler)
@@ -104,8 +100,6 @@ func (p *syncProcessor) loop() {
 		case <-p.reqTimer.C:
 			p.logger.Debugf("Sync to %s time out!", p.candidateInfo.Id)
 			p.finishCurrentSync(false)
-		case msg := <-p.syncedBlockCh:
-			p.processSyncedBlock(msg)
 		}
 	}
 }
