@@ -284,7 +284,7 @@ func (p *syncProcessor) tryAcceptBlock() {
 		b := p.blockFork.pending.Head().(*types.Block)
 		err = p.blockFork.acceptBlock(b)
 		if err != nil {
-			p.blockFork.logger.Debugf("Accept block failed!%s,%d-%d", b.Header.Hash.String(), block.Header.Height, block.Header.TotalQN)
+			p.blockFork.logger.Debugf("Accept block failed!%s,%d-%d", b.Header.Hash.String(), b.Header.Height, b.Header.TotalQN)
 			break
 		}
 		block = p.blockFork.pending.Pop().(*types.Block)
