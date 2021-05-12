@@ -152,6 +152,20 @@ func TestStrToBigInt12(t *testing.T) {
 	fmt.Println(BigIntToStr(bigInt))
 }
 
+func TestStrToBigInt13(t *testing.T) {
+	a := "3000.000000000000000000"
+	bigIntA, _ := StrToBigInt(a)
+	fmt.Println(bigIntA.String())
+
+	b := "0.033000000000000002"
+	bigIntB, _ := StrToBigInt(b)
+	fmt.Println(bigIntB.String())
+
+	bigIntC := bigIntA.Sub(bigIntA, bigIntB)
+	fmt.Println(bigIntC.String())
+	fmt.Println(BigIntToStr(bigIntC))
+}
+
 func TestFloat64ToBigInt(t *testing.T) {
 	number := float64(11.2222222222222222)
 	result := Float64ToBigInt(number)

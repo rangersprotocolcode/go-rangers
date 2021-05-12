@@ -64,7 +64,7 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 		vmCtx.GasLimit = uint64(gasLimit)
 	}
 
-	transferValue, err := transferValueToBigInt(data.TransferValue)
+	transferValue, err := utility.StrToBigInt(data.TransferValue)
 	if err != nil {
 		txLogger.Errorf("Contract TransferValue convert error:%s", err.Error())
 		return false, fmt.Sprintf("Contract data TransferValue eror, data: %s", data.TransferValue)
@@ -104,20 +104,4 @@ func getBlockHashFn(chain ChainContext) func(n uint64) common.Hash {
 
 type ChainContext interface {
 	GetBlockHash(height uint64) common.Hash
-}
-
-func transferValueToBigInt(s string) (*big.Int, error) {
-	// 空字符串，默认返回0
-	if 0 == len(s) {
-		return big.NewInt(0), nil
-	}
-
-	target, _, err := big.ParseFloat(s, 10, 18, big.ToNearestEven)
-	if err != nil {
-		return nil, err
-	}
-
-	result := new(big.Int)
-	target.Int(result)
-	return result, nil
 }
