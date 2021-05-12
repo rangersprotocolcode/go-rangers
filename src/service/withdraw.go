@@ -45,6 +45,21 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction) (str
 	result := types.NewJSONObject()
 	result.Put("txHash", transaction.Hash.String())
 
+	// rpg 提现
+	requestRPGString := withDrawReq.Balance
+	if 0 != len(requestRPGString) {
+		requestRPG, err := utility.StrToBigInt(requestRPGString)
+		if err != nil {
+			return requestRPGString + " error", false
+		}
+		balance := accountdb.GetBalance(source)
+		if balance.Cmp(requestRPG) < 0 {
+			return "not enough rpg", false
+		}
+
+		accountdb.SubBalance(source, requestRPG)
+	}
+
 	//主链币检查
 	if withDrawReq.BNT.TokenType != "" {
 		withdrawAmount, err := utility.StrToBigInt(withDrawReq.BNT.Value)
