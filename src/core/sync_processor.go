@@ -367,5 +367,5 @@ func (p *syncProcessor) finishCurrentSync(syncResult bool) {
 	p.reqTimer.Stop()
 	p.candidateInfo = CandidateInfo{}
 	p.syncing = false
-	p.logger.Debugf("finish current sync!")
+	p.logger.Debugf("finish current sync:%v", syncResult)
 }

@@ -269,7 +269,7 @@ func (p *syncProcessor) processSyncedBlock(msg notify.Message) {
 	}
 	p.blockFork.pending.Enqueue(block)
 	p.blockFork.rcvLastBlock = blockResponse.IsLastBlock
-	if p.blockFork.rcvLastBlock || p.blockFork.pending.Capacity() >= syncedBlockCount {
+	if p.blockFork.rcvLastBlock || p.blockFork.pending.Size() >= syncedBlockCount {
 		p.reqTimer.Stop()
 		p.blockFork.enableRcvBlock = false
 		p.tryAcceptBlock()
