@@ -109,7 +109,7 @@ func (p *syncProcessor) broadcastChainInfo(bh *types.BlockHeader) {
 	if bh.Height == 0 {
 		return
 	}
-	topBlockInfo := chainInfo{TopBlockHash: bh.Hash, TotalQn: bh.TotalQN, TopBlockHeight: bh.Height, PreHash: bh.PreHash, TopGroupHeight: p.groupChain.count}
+	topBlockInfo := chainInfo{TopBlockHash: bh.Hash, TotalQn: bh.TotalQN, TopBlockHeight: bh.Height, PreHash: bh.PreHash, TopGroupHeight: p.groupChain.height()}
 	topBlockInfo.SignInfo = common.NewSignData(p.privateKey, p.id, &topBlockInfo)
 
 	body, e := marshalChainInfo(topBlockInfo)
@@ -143,7 +143,7 @@ func (p *syncProcessor) chainInfoNotifyHandler(msg notify.Message) {
 	p.logger.Tracef("Rcv chain info! Height:%d,qn:%d,group height:%d,source:%s", chainInfo.TopBlockHeight, chainInfo.TotalQn, chainInfo.TopGroupHeight, chainInfo.SignInfo.Id)
 	topBlock := blockChainImpl.TopBlock()
 	localTotalQn, localTopHash := topBlock.TotalQN, topBlock.Hash
-	localGroupHeight := p.groupChain.count
+	localGroupHeight := p.groupChain.height()
 	if chainInfo.TotalQn < localTotalQn {
 		return
 	}
@@ -158,16 +158,6 @@ func (p *syncProcessor) chainInfoNotifyHandler(msg notify.Message) {
 	p.addCandidate(source, *chainInfo)
 }
 
-func (p *syncProcessor) isGroupSyncNode(chainInfo chainInfo) bool {
-	topBlock := p.blockChain.TopBlock()
-	localTotalQn, localTopHash := topBlock.TotalQN, topBlock.Hash
-	localGroupHeight := p.groupChain.count
-	if localTotalQn == chainInfo.TotalQn && localTopHash == chainInfo.TopBlockHash && localGroupHeight < chainInfo.TopGroupHeight {
-		return true
-	} else {
-		return false
-	}
-}
 func (p *syncProcessor) addCandidate(id string, chainInfo chainInfo) {
 	p.lock.Lock("addCandidatePool")
 	defer p.lock.Unlock("addCandidatePool")
@@ -203,7 +193,7 @@ func (p *syncProcessor) trySyncBlock() {
 
 	topBlock := blockChainImpl.TopBlock()
 	localTotalQN, localBlockHeight := topBlock.TotalQN, topBlock.Height
-	localGroupHeight := p.groupChain.count
+	localGroupHeight := p.groupChain.height()
 	p.logger.Tracef("Local totalQn:%d,height:%d,topHash:%s,groupHeight:%d", localTotalQN, localBlockHeight, topBlock.Hash.String(), localGroupHeight)
 	candidateInfo := p.chooseSyncCandidate()
 	if candidateInfo.Id == "" || candidateInfo.TotalQn < localTotalQN {
@@ -257,7 +247,7 @@ func (p *syncProcessor) candidatePoolDump() {
 
 func (p *syncProcessor) triggerSync() {
 	if p.groupFork == nil {
-		go p.requestGroupChainPiece(p.candidateInfo.Id, p.groupChain.count)
+		go p.requestGroupChainPiece(p.candidateInfo.Id, p.groupChain.height())
 		return
 	}
 

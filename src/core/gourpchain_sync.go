@@ -2,13 +2,23 @@ package core
 
 import "com.tuntun.rocket/node/src/middleware/types"
 
+func (chain *groupChain) height() uint64 {
+	count := chain.count
+	if count > 1 {
+		return count - 1
+	} else {
+		return 0
+	}
+}
+
 func (chain *groupChain) getGroupChainPiece(sourceChainHeight uint64) []*types.Group {
 	chain.lock.RLock()
 	defer chain.lock.RUnlock()
 
 	var endHeight uint64 = 0
-	if chain.count < sourceChainHeight {
-		endHeight = chain.count
+	localHeight := chain.height()
+	if localHeight < sourceChainHeight {
+		endHeight = localHeight
 	} else {
 		endHeight = sourceChainHeight
 	}
@@ -34,8 +44,8 @@ func (chain *groupChain) getGroupChainPiece(sourceChainHeight uint64) []*types.G
 func (chain *groupChain) removeFromCommonAncestor(commonAncestor *types.Group) {
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
-	logger.Debugf("[GroupChain]remove from common ancestor.hash:%s,height:%d,local height:%d", commonAncestor.Header.Hash.String(), commonAncestor.GroupHeight, chain.count)
-	for height := chain.count; height > commonAncestor.GroupHeight; height-- {
+	logger.Debugf("[GroupChain]remove from common ancestor.hash:%s,height:%d,local height:%d", commonAncestor.Header.Hash.String(), commonAncestor.GroupHeight, chain.height())
+	for height := chain.height(); height > commonAncestor.GroupHeight; height-- {
 		group := chain.getGroupByHeight(height)
 		if group == nil {
 			logger.Debugf("Group chain get nil height:%d", height)

@@ -196,7 +196,7 @@ func (p *syncProcessor) syncGroupReqHandler(msg notify.Message) {
 	}
 
 	reqHeight := req.Height
-	localHeight := p.groupChain.count
+	localHeight := p.groupChain.height()
 	syncHandleLogger.Debugf("Rcv group request from %s.reqHeight:%d,localHeight:%d", req.SignInfo.Id, reqHeight, localHeight)
 
 	group := p.groupChain.getGroupByHeight(reqHeight)

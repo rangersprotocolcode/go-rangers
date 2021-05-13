@@ -133,7 +133,7 @@ message GroupHeader{
 
     optional bytes PreGroup = 3;
 
-    required bytes CreateBlockHash = 4;
+    optional bytes CreateBlockHash = 4;
 
     optional bytes BeginTime = 5;
 
