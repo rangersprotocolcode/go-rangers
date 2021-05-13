@@ -30,9 +30,10 @@ const (
 )
 
 type CandidateInfo struct {
-	Id      string
-	Height  uint64
-	TotalQn uint64
+	Id          string
+	Height      uint64
+	TotalQn     uint64
+	GroupHeight uint64
 }
 
 var SyncProcessor *syncProcessor
@@ -239,6 +240,7 @@ func (p *syncProcessor) chooseSyncCandidate() CandidateInfo {
 			candidateInfo.Id = id
 			candidateInfo.TotalQn = chainInfo.TotalQn
 			candidateInfo.Height = chainInfo.TopBlockHeight
+			candidateInfo.GroupHeight = chainInfo.TopGroupHeight
 		}
 	}
 	return candidateInfo
@@ -246,8 +248,8 @@ func (p *syncProcessor) chooseSyncCandidate() CandidateInfo {
 
 func (p *syncProcessor) candidatePoolDump() {
 	p.logger.Debugf("Candidate Pool Dump:")
-	for id, topBlockInfo := range p.candidatePool {
-		p.logger.Debugf("Candidate id:%s,totalQn:%d,height:%d,topHash:%s", id, topBlockInfo.TotalQn, topBlockInfo.TopBlockHeight, topBlockInfo.TopBlockHash.String())
+	for id, chainInfo := range p.candidatePool {
+		p.logger.Debugf("Candidate id:%s,totalQn:%d,height:%d,topHash:%s,groupHeight:%d", id, chainInfo.TotalQn, chainInfo.TopBlockHeight, chainInfo.TopBlockHash.String(), chainInfo.TopGroupHeight)
 	}
 }
 

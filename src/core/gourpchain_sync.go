@@ -22,36 +22,13 @@ func (chain *groupChain) getGroupChainPiece(sourceChainHeight uint64) []*types.G
 	for ; height <= endHeight; height++ {
 		group := chain.getGroupByHeight(height)
 		if group == nil {
-			syncLogger.Errorf("Group chain get nil group!Height:%d", height)
+			syncHandleLogger.Errorf("Group chain get nil group!Height:%d", height)
 			break
 		}
 		group.GroupHeight = height
 		chainPiece = append(chainPiece, group)
 	}
 	return chainPiece
-}
-
-func (chain *groupChain) getSyncedGroup(reqHeight uint64) []*types.Group {
-	chain.lock.RLock()
-	defer chain.lock.RUnlock()
-
-	result := make([]*types.Group, 0)
-	count := 0
-	for i := reqHeight; i <= chain.count; i++ {
-		if count >= syncedGroupCount {
-			break
-		}
-
-		group := chain.getGroupByHeight(i)
-		if group == nil {
-			syncLogger.Errorf("Group chain get nil group!Height:%d", i)
-			break
-		}
-		group.GroupHeight = i
-		result = append(result, group)
-		count++
-	}
-	return result
 }
 
 func (chain *groupChain) removeFromCommonAncestor(commonAncestor *types.Group) {

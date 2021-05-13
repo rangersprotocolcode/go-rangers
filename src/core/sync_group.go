@@ -17,7 +17,7 @@ func (p *syncProcessor) requestGroupChainPiece(targetNode string, localHeight ui
 		p.logger.Errorf("marshal group chain piece req error:%s", e.Error())
 		return
 	}
-	p.logger.Debugf("req group chain piece to %d, local group height:%d", targetNode, localHeight)
+	p.logger.Debugf("req group chain piece to %s, local group height:%d", targetNode, localHeight)
 	message := network.Message{Code: network.GroupChainPieceReqMsg, Body: body}
 	network.GetNetInstance().SendToStranger(common.FromHex(targetNode), message)
 	p.reqTimer.Reset(syncReqTimeout)
