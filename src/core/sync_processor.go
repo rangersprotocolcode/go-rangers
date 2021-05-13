@@ -140,7 +140,7 @@ func (p *syncProcessor) chainInfoNotifyHandler(msg notify.Message) {
 		p.logger.Errorf("Sign verify error! ChainInfoMessage:%s", e.Error())
 		return
 	}
-	p.logger.Tracef("Rcv chain info! Height:%d,qn:%d,group height:%d,source:%s", chainInfo.TopBlockHeight, chainInfo.TotalQn, chainInfo.TopGroupHeight, chainInfo.SignInfo.Id)
+	p.logger.Debugf("Rcv chain info! Height:%d,qn:%d,group height:%d,source:%s", chainInfo.TopBlockHeight, chainInfo.TotalQn, chainInfo.TopGroupHeight, chainInfo.SignInfo.Id)
 	topBlock := blockChainImpl.TopBlock()
 	localTotalQn, localTopHash := topBlock.TotalQN, topBlock.Hash
 	localGroupHeight := p.groupChain.height()
@@ -207,7 +207,7 @@ func (p *syncProcessor) trySyncBlock() {
 		p.logger.Debugf("Begin sync!Candidate:%s!Req block height:%d", candidateInfo.Id, localBlockHeight)
 		go p.requestBlockChainPiece(candidateInfo.Id, localBlockHeight)
 	} else {
-		p.logger.Debugf("Begin sync!Candidate:%s!Req group height:%d", candidateInfo.Id, localGroupHeight)
+		p.logger.Debugf("Begin sync!Candidate:%s!Req group height:%d,candidate group height:%d", candidateInfo.Id, localGroupHeight, candidateInfo.GroupHeight)
 		go p.requestGroupChainPiece(candidateInfo.Id, localGroupHeight)
 	}
 
@@ -342,8 +342,9 @@ func (p *syncProcessor) tryAddGroupOnChain() bool {
 	if p.groupFork == nil {
 		return false
 	}
-	p.logger.Debugf("try add group on chain...")
+	p.logger.Debugf("try add group on chain...current:%d", p.groupFork.current)
 	for p.groupFork.current <= p.groupFork.latestGroup.GroupHeight {
+		p.logger.Debugf("current:%d", p.groupFork.current)
 		forkGroup := p.groupFork.getGroup(p.groupFork.current)
 		if forkGroup == nil {
 			return false

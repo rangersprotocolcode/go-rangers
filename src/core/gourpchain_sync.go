@@ -44,14 +44,14 @@ func (chain *groupChain) getGroupChainPiece(sourceChainHeight uint64) []*types.G
 func (chain *groupChain) removeFromCommonAncestor(commonAncestor *types.Group) {
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
-	logger.Debugf("[GroupChain]remove from common ancestor.hash:%s,height:%d,local height:%d", commonAncestor.Header.Hash.String(), commonAncestor.GroupHeight, chain.height())
+	syncLogger.Debugf("[GroupChain]remove from common ancestor.hash:%s,height:%d,local height:%d", commonAncestor.Header.Hash.String(), commonAncestor.GroupHeight, chain.height())
 	for height := chain.height(); height > commonAncestor.GroupHeight; height-- {
 		group := chain.getGroupByHeight(height)
 		if group == nil {
-			logger.Debugf("Group chain get nil height:%d", height)
+			syncLogger.Debugf("Group chain get nil height:%d", height)
 			continue
 		}
 		chain.remove(group)
-		logger.Debugf("Remove local group hash:%s, height %d", group.Header.Hash.String(), group.GroupHeight)
+		syncLogger.Debugf("Remove local group hash:%s, height %d", group.Header.Hash.String(), group.GroupHeight)
 	}
 }

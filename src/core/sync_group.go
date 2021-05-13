@@ -217,7 +217,7 @@ func (p *syncProcessor) syncGroupReqHandler(msg notify.Message) {
 	}
 	message := network.Message{Code: network.GroupResponseMsg, Body: body}
 	network.GetNetInstance().SendToStranger(common.FromHex(req.SignInfo.Id), message)
-	syncHandleLogger.Debugf("Send group %d to %s,last:%v", group.GroupHeight, common.FromHex(req.SignInfo.Id), isLastGroup)
+	syncHandleLogger.Debugf("Send group %d to %s,last:%v", group.GroupHeight, req.SignInfo.Id, isLastGroup)
 }
 
 func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
