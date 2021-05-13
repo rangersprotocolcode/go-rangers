@@ -106,7 +106,7 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 		msg := notify.TransactionGotMessage{TransactionGotByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.TransactionGot, &msg)
 	case TopBlockInfoMsg:
-		msg := notify.TopBlockInfoMessage{BlockInfo: message.Body, Peer: from}
+		msg := notify.ChainInfoMessage{ChainInfo: message.Body, Peer: from}
 		notify.BUS.Publish(notify.TopBlockInfo, &msg)
 	case BlockChainPieceReqMsg:
 		msg := notify.BlockChainPieceReqMessage{BlockChainPieceReq: message.Body, Peer: from}

@@ -281,7 +281,7 @@ func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block) {
 		return
 	}
 	if SyncProcessor != nil {
-		go SyncProcessor.broadcastTopBlockInfo(chain.latestBlock)
+		go SyncProcessor.broadcastChainInfo(chain.latestBlock)
 	}
 }
 

@@ -9,38 +9,40 @@ import (
 	"strconv"
 )
 
-type topBlockInfo struct {
-	TotalQn uint64
-	Hash    common.Hash
-	Height  uint64
-	PreHash common.Hash
+type chainInfo struct {
+	TotalQn        uint64
+	TopBlockHash   common.Hash
+	TopBlockHeight uint64
+	PreHash        common.Hash
 
-	SignInfo common.SignData
+	TopGroupHeight uint64
+	SignInfo       common.SignData
 }
 
-func (topBlockInfo *topBlockInfo) GenHash() common.Hash {
+func (chainInfo *chainInfo) GenHash() common.Hash {
 	buffer := bytes.Buffer{}
 
-	buffer.Write([]byte(strconv.FormatUint(topBlockInfo.TotalQn, 10)))
-	buffer.Write(topBlockInfo.Hash.Bytes())
-	buffer.Write([]byte(strconv.FormatUint(topBlockInfo.Height, 10)))
-	buffer.Write(topBlockInfo.PreHash.Bytes())
+	buffer.Write([]byte(strconv.FormatUint(chainInfo.TotalQn, 10)))
+	buffer.Write(chainInfo.TopBlockHash.Bytes())
+	buffer.Write([]byte(strconv.FormatUint(chainInfo.TopBlockHeight, 10)))
+	buffer.Write(chainInfo.PreHash.Bytes())
+	buffer.Write([]byte(strconv.FormatUint(chainInfo.TopGroupHeight, 10)))
 	return common.BytesToHash(common.Sha256(buffer.Bytes()))
 }
 
-func marshalTopBlockInfo(bi topBlockInfo) ([]byte, error) {
-	blockInfo := middleware_pb.TopBlockInfo{Hash: bi.Hash.Bytes(), TotalQn: &bi.TotalQn, Height: &bi.Height, PreHash: bi.PreHash.Bytes()}
+func marshalChainInfo(bi chainInfo) ([]byte, error) {
+	blockInfo := middleware_pb.ChainInfo{TopBlockHash: bi.TopBlockHash.Bytes(), TotalQn: &bi.TotalQn, TopBlockHeight: &bi.TopBlockHeight, PreHash: bi.PreHash.Bytes(), TopGroupHeight: &bi.TopGroupHeight}
 	blockInfo.SignInfo = signDataToPb(bi.SignInfo)
 	return proto.Marshal(&blockInfo)
 }
 
-func unMarshalTopBlockInfo(b []byte) (*topBlockInfo, error) {
-	message := new(middleware_pb.TopBlockInfo)
+func unMarshalChainInfo(b []byte) (*chainInfo, error) {
+	message := new(middleware_pb.ChainInfo)
 	e := proto.Unmarshal(b, message)
 	if e != nil {
 		return nil, e
 	}
-	blockInfo := topBlockInfo{Hash: common.BytesToHash(message.Hash), TotalQn: *message.TotalQn, Height: *message.Height, PreHash: common.BytesToHash(message.PreHash)}
+	blockInfo := chainInfo{TopBlockHash: common.BytesToHash(message.TopBlockHash), TotalQn: *message.TotalQn, TopBlockHeight: *message.TopBlockHeight, PreHash: common.BytesToHash(message.PreHash), TopGroupHeight: *message.TopGroupHeight}
 	blockInfo.SignInfo = pbToSignData(*message.SignInfo)
 	return &blockInfo, nil
 }
@@ -79,12 +81,14 @@ type blockChainPiece struct {
 	SignInfo   common.SignData
 }
 
-func (chainPieceInfo *blockChainPiece) GenHash() common.Hash {
+func (blockChainPiece *blockChainPiece) GenHash() common.Hash {
 	buffer := bytes.Buffer{}
-	for _, bh := range chainPieceInfo.ChainPiece {
+	for _, bh := range blockChainPiece.ChainPiece {
 		buffer.Write(bh.Hash.Bytes())
 	}
-	buffer.Write(chainPieceInfo.TopHeader.Hash.Bytes())
+	if blockChainPiece.TopHeader != nil {
+		buffer.Write(blockChainPiece.TopHeader.Hash.Bytes())
+	}
 	return common.BytesToHash(common.Sha256(buffer.Bytes()))
 }
 
@@ -154,7 +158,9 @@ type blockMsgResponse struct {
 
 func (syncedBlockMessage *blockMsgResponse) GenHash() common.Hash {
 	buffer := bytes.Buffer{}
-	buffer.Write(syncedBlockMessage.Block.Header.Hash.Bytes())
+	if syncedBlockMessage.Block != nil {
+		buffer.Write(syncedBlockMessage.Block.Header.Hash.Bytes())
+	}
 	if syncedBlockMessage.IsLastBlock {
 		buffer.Write([]byte{0})
 	} else {
@@ -285,7 +291,9 @@ type groupMsgResponse struct {
 
 func (groupMsgResponse *groupMsgResponse) GenHash() common.Hash {
 	buffer := bytes.Buffer{}
-	buffer.Write(groupMsgResponse.Group.Header.Hash.Bytes())
+	if groupMsgResponse != nil {
+		buffer.Write(groupMsgResponse.Group.Header.Hash.Bytes())
+	}
 	if groupMsgResponse.IsLastGroup {
 		buffer.Write([]byte{0})
 	} else {

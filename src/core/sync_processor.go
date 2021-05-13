@@ -42,7 +42,7 @@ type syncProcessor struct {
 	id         string
 
 	candidateInfo CandidateInfo
-	candidatePool map[string]topBlockInfo
+	candidatePool map[string]chainInfo
 
 	syncing bool
 
@@ -61,7 +61,7 @@ type syncProcessor struct {
 }
 
 func InitSyncerProcessor(privateKey common.PrivateKey, id string) {
-	SyncProcessor = &syncProcessor{privateKey: privateKey, id: id, syncing: false, candidatePool: make(map[string]topBlockInfo)}
+	SyncProcessor = &syncProcessor{privateKey: privateKey, id: id, syncing: false, candidatePool: make(map[string]chainInfo)}
 
 	SyncProcessor.broadcastTimer = time.NewTimer(broadcastBlockInfoInterval)
 	SyncProcessor.reqTimer = time.NewTimer(syncReqTimeout)
@@ -73,7 +73,7 @@ func InitSyncerProcessor(privateKey common.PrivateKey, id string) {
 	SyncProcessor.lock = middleware.NewLoglock("sync")
 	SyncProcessor.logger = syncLogger
 
-	notify.BUS.Subscribe(notify.TopBlockInfo, SyncProcessor.topBlockInfoNotifyHandler)
+	notify.BUS.Subscribe(notify.TopBlockInfo, SyncProcessor.chainInfoNotifyHandler)
 	notify.BUS.Subscribe(notify.BlockChainPieceReq, SyncProcessor.blockChainPieceReqHandler)
 	notify.BUS.Subscribe(notify.BlockChainPiece, SyncProcessor.blockChainPieceHandler)
 	notify.BUS.Subscribe(notify.BlockReq, SyncProcessor.syncBlockReqHandler)
@@ -94,7 +94,7 @@ func (p *syncProcessor) loop() {
 	for {
 		select {
 		case <-p.broadcastTimer.C:
-			go p.broadcastTopBlockInfo(p.blockChain.TopBlock())
+			go p.broadcastChainInfo(p.blockChain.TopBlock())
 		case <-p.syncTimer.C:
 			go p.trySyncBlock()
 		case <-p.reqTimer.C:
@@ -104,17 +104,16 @@ func (p *syncProcessor) loop() {
 	}
 }
 
-//broadcast local top block info to neighborhood
-func (p *syncProcessor) broadcastTopBlockInfo(bh *types.BlockHeader) {
+func (p *syncProcessor) broadcastChainInfo(bh *types.BlockHeader) {
 	if bh.Height == 0 {
 		return
 	}
-	topBlockInfo := topBlockInfo{Hash: bh.Hash, TotalQn: bh.TotalQN, Height: bh.Height, PreHash: bh.PreHash}
+	topBlockInfo := chainInfo{TopBlockHash: bh.Hash, TotalQn: bh.TotalQN, TopBlockHeight: bh.Height, PreHash: bh.PreHash, TopGroupHeight: p.groupChain.count}
 	topBlockInfo.SignInfo = common.NewSignData(p.privateKey, p.id, &topBlockInfo)
 
-	body, e := marshalTopBlockInfo(topBlockInfo)
+	body, e := marshalChainInfo(topBlockInfo)
 	if e != nil {
-		p.logger.Errorf("marshal top block info error:%s", e.Error())
+		p.logger.Errorf("marshal chain info error:%s", e.Error())
 		return
 	}
 	p.logger.Tracef("Send local total qn %d to neighbor!", topBlockInfo.TotalQn)
@@ -123,44 +122,55 @@ func (p *syncProcessor) broadcastTopBlockInfo(bh *types.BlockHeader) {
 	p.broadcastTimer.Reset(broadcastBlockInfoInterval)
 }
 
-//rcv block info from neighborhood
-func (p *syncProcessor) topBlockInfoNotifyHandler(msg notify.Message) {
-	bnm, ok := msg.GetData().(*notify.TopBlockInfoMessage)
+//rcv chain info from neighborhood
+func (p *syncProcessor) chainInfoNotifyHandler(msg notify.Message) {
+	bnm, ok := msg.GetData().(*notify.ChainInfoMessage)
 	if !ok {
-		p.logger.Errorf("TopBlockInfoMessage assert not ok!")
+		p.logger.Errorf("ChainInfoMessage assert not ok!")
 		return
 	}
-	blockInfo, e := unMarshalTopBlockInfo(bnm.BlockInfo)
+	chainInfo, e := unMarshalChainInfo(bnm.ChainInfo)
 	if e != nil {
-		p.logger.Errorf("Discard message! BlockInfoNotifyMessage unmarshal error:%s", e.Error())
+		p.logger.Errorf("Discard message! ChainInfoMessage unmarshal error:%s", e.Error())
 		return
 	}
-	err := blockInfo.SignInfo.ValidateSign(blockInfo)
+	err := chainInfo.SignInfo.ValidateSign(chainInfo)
 	if err != nil {
-		p.logger.Errorf("Sign verify error! BlockInfoNotifyMessage:%s", e.Error())
+		p.logger.Errorf("Sign verify error! ChainInfoMessage:%s", e.Error())
 		return
 	}
-	p.logger.Tracef("Rcv top block info! Height:%d,qn:%d,source:%s", blockInfo.Height, blockInfo.TotalQn, blockInfo.SignInfo.Id)
+	p.logger.Tracef("Rcv chain info! Height:%d,qn:%d,group height:%d,source:%s", chainInfo.TopBlockHeight, chainInfo.TotalQn, chainInfo.TopGroupHeight, chainInfo.SignInfo.Id)
 	topBlock := blockChainImpl.TopBlock()
-	localTotalQn, localTopHash := topBlock.TotalQN, topBlock.Hash
-	if blockInfo.TotalQn < localTotalQn || (localTotalQn == blockInfo.TotalQn && localTopHash == blockInfo.Hash) {
+	localTotalQn := topBlock.TotalQN
+	if chainInfo.TotalQn < localTotalQn {
 		return
 	}
 
-	source := blockInfo.SignInfo.Id
+	source := chainInfo.SignInfo.Id
 	if PeerManager.isEvil(source) {
-		p.logger.Debugf("[TopBlockInfoNotify]%s is marked evil.Drop!", source)
+		p.logger.Debugf("[chainInfoNotifyHandler]%s is marked evil.Drop!", source)
 		return
 	}
-	p.addCandidate(source, *blockInfo)
+	isGroupSyncNode := p.isGroupSyncNode(*chainInfo)
+	p.addCandidate(source, *chainInfo, isGroupSyncNode)
 }
 
-func (p *syncProcessor) addCandidate(id string, topBlockInfo topBlockInfo) {
+func (p *syncProcessor) isGroupSyncNode(chainInfo chainInfo) bool {
+	topBlock := p.blockChain.TopBlock()
+	localTotalQn, localTopHash := topBlock.TotalQN, topBlock.Hash
+	localGroupHeight := p.groupChain.count
+	if localTotalQn == chainInfo.TotalQn && localTopHash == chainInfo.TopBlockHash && localGroupHeight < chainInfo.TopGroupHeight {
+		return true
+	} else {
+		return false
+	}
+}
+func (p *syncProcessor) addCandidate(id string, chainInfo chainInfo, isGroupSyncNode bool) {
 	p.lock.Lock("addCandidatePool")
 	defer p.lock.Unlock("addCandidatePool")
 
 	if len(p.candidatePool) < syncCandidatePoolSize {
-		p.candidatePool[id] = topBlockInfo
+		p.candidatePool[id] = chainInfo
 		return
 	}
 	totalQnMinId := ""
@@ -171,9 +181,9 @@ func (p *syncProcessor) addCandidate(id string, topBlockInfo topBlockInfo) {
 			minTotalQn = tbi.TotalQn
 		}
 	}
-	if topBlockInfo.TotalQn > minTotalQn {
+	if chainInfo.TotalQn > minTotalQn || chainInfo.TotalQn == minTotalQn && isGroupSyncNode {
 		delete(p.candidatePool, totalQnMinId)
-		p.candidatePool[id] = topBlockInfo
+		p.candidatePool[id] = chainInfo
 		go p.trySyncBlock()
 	}
 }
@@ -189,18 +199,25 @@ func (p *syncProcessor) trySyncBlock() {
 	p.syncTimer.Reset(blockSyncInterval)
 
 	topBlock := blockChainImpl.TopBlock()
-	localTotalQN, localHeight := topBlock.TotalQN, topBlock.Height
-	p.logger.Tracef("Local totalQn:%d,height:%d,topHash:%s", localTotalQN, localHeight, topBlock.Hash.String())
+	localTotalQN, localBlockHeight := topBlock.TotalQN, topBlock.Height
+	localGroupHeight := p.groupChain.count
+	p.logger.Tracef("Local totalQn:%d,height:%d,topHash:%s,groupHeight:%d", localTotalQN, localBlockHeight, topBlock.Hash.String(), localGroupHeight)
 	candidateInfo := p.chooseSyncCandidate()
-	if candidateInfo.Id == "" || candidateInfo.TotalQn <= localTotalQN {
+	if candidateInfo.Id == "" || candidateInfo.TotalQn < localTotalQN {
 		p.logger.Debugf("No valid candidate for sync!")
 		return
 	}
-	p.logger.Debugf("Begin sync!Candidate:%s!Req block height:%d", candidateInfo.Id, localHeight)
+
 	p.syncing = true
 	p.candidateInfo = candidateInfo
+	if candidateInfo.TotalQn > localTotalQN {
+		p.logger.Debugf("Begin sync!Candidate:%s!Req block height:%d", candidateInfo.Id, localBlockHeight)
+		go p.requestBlockChainPiece(candidateInfo.Id, localBlockHeight)
+	} else {
+		p.logger.Debugf("Begin sync!Candidate:%s!Req group height:%d", candidateInfo.Id, localGroupHeight)
+		go p.requestGroupChainPiece(candidateInfo.Id, localGroupHeight)
+	}
 
-	go p.requestBlockChainPiece(candidateInfo.Id, localHeight)
 }
 
 func (p *syncProcessor) chooseSyncCandidate() CandidateInfo {
@@ -217,11 +234,11 @@ func (p *syncProcessor) chooseSyncCandidate() CandidateInfo {
 	}
 
 	candidateInfo := CandidateInfo{}
-	for id, topBlockInfo := range p.candidatePool {
-		if topBlockInfo.TotalQn > candidateInfo.TotalQn {
+	for id, chainInfo := range p.candidatePool {
+		if chainInfo.TotalQn >= candidateInfo.TotalQn {
 			candidateInfo.Id = id
-			candidateInfo.TotalQn = topBlockInfo.TotalQn
-			candidateInfo.Height = topBlockInfo.Height
+			candidateInfo.TotalQn = chainInfo.TotalQn
+			candidateInfo.Height = chainInfo.TopBlockHeight
 		}
 	}
 	return candidateInfo
@@ -230,7 +247,7 @@ func (p *syncProcessor) chooseSyncCandidate() CandidateInfo {
 func (p *syncProcessor) candidatePoolDump() {
 	p.logger.Debugf("Candidate Pool Dump:")
 	for id, topBlockInfo := range p.candidatePool {
-		p.logger.Debugf("Candidate id:%s,totalQn:%d,height:%d,topHash:%s", id, topBlockInfo.TotalQn, topBlockInfo.Height, topBlockInfo.Hash.String())
+		p.logger.Debugf("Candidate id:%s,totalQn:%d,height:%d,topHash:%s", id, topBlockInfo.TotalQn, topBlockInfo.TopBlockHeight, topBlockInfo.TopBlockHash.String())
 	}
 }
 

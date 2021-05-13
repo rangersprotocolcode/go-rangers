@@ -326,12 +326,13 @@ message ConsensusCreateGroupSignMessage{
 
 }
 
-message TopBlockInfo{
-    required	bytes   Hash = 1;
+message ChainInfo{
+    required	bytes   TopBlockHash = 1;
     required	uint64   TotalQn = 2;
-    required	uint64   Height = 3;
+    required	uint64   TopBlockHeight = 3;
     required	bytes   PreHash = 4;
-    required	SignData   SignInfo = 5;
+    required	uint64   TopGroupHeight = 5;
+    required	SignData   SignInfo = 6;
 }
 
 message BlockChainPieceReq{

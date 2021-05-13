@@ -199,29 +199,25 @@ func (p *syncProcessor) syncGroupReqHandler(msg notify.Message) {
 	localHeight := p.groupChain.count
 	syncHandleLogger.Debugf("Rcv group request from %s.reqHeight:%d,localHeight:%d", req.SignInfo.Id, reqHeight, localHeight)
 
-	groupList := p.groupChain.getSyncedGroup(reqHeight)
+	group := p.groupChain.getGroupByHeight(reqHeight)
+	if group == nil {
+		syncHandleLogger.Errorf("Group chain get nil group!Height:%d", reqHeight)
+		return
+	}
 	isLastGroup := false
-	for i := 0; i <= len(groupList)-1; i++ {
-		group := groupList[i]
-		if i == len(groupList)-1 && localHeight == group.GroupHeight {
-			isLastGroup = true
-		}
-		response := groupMsgResponse{Group: group, IsLastGroup: isLastGroup}
-		response.SignInfo = common.NewSignData(p.privateKey, p.id, &response)
-		body, e := marshalGroupMsgResponse(response)
-		if e != nil {
-			syncHandleLogger.Errorf("Marshal group msg response error:%s", e.Error())
-			return
-		}
-		message := network.Message{Code: network.GroupResponseMsg, Body: body}
-		network.GetNetInstance().SendToStranger(common.FromHex(req.SignInfo.Id), message)
+	if reqHeight == localHeight {
+		isLastGroup = true
 	}
-
-	if len(groupList) == 0 {
-		syncHandleLogger.Debugf("Synced group len 0!")
-	} else {
-		syncHandleLogger.Debugf("Send block %d-%d to %s,last:%v", groupList[0].GroupHeight, groupList[len(groupList)-1].GroupHeight, isLastGroup)
+	response := groupMsgResponse{Group: group, IsLastGroup: isLastGroup}
+	response.SignInfo = common.NewSignData(p.privateKey, p.id, &response)
+	body, e := marshalGroupMsgResponse(response)
+	if e != nil {
+		syncHandleLogger.Errorf("Marshal group msg response error:%s", e.Error())
+		return
 	}
+	message := network.Message{Code: network.GroupResponseMsg, Body: body}
+	network.GetNetInstance().SendToStranger(common.FromHex(req.SignInfo.Id), message)
+	syncHandleLogger.Debugf("Send group %d %s,last:%v", group.GroupHeight, isLastGroup)
 }
 
 func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
@@ -258,8 +254,9 @@ func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
 		p.reqTimer.Stop()
 		p.groupFork.enableRcvGroup = false
 		p.tryAcceptGroup()
+	} else {
+		go p.syncGroup(from, group)
 	}
-
 }
 
 func (p *syncProcessor) tryAcceptGroup() {

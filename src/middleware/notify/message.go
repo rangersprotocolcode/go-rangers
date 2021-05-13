@@ -45,16 +45,16 @@ func (m *BlockOnChainSuccMessage) GetData() interface{} {
 }
 
 //-------------------------------------sync---------------------
-type TopBlockInfoMessage struct {
-	BlockInfo []byte
+type ChainInfoMessage struct {
+	ChainInfo []byte
 	Peer      string
 }
 
-func (m *TopBlockInfoMessage) GetRaw() []byte {
-	return m.BlockInfo
+func (m *ChainInfoMessage) GetRaw() []byte {
+	return m.ChainInfo
 }
 
-func (m *TopBlockInfoMessage) GetData() interface{} {
+func (m *ChainInfoMessage) GetData() interface{} {
 	return m
 }
 
