@@ -250,7 +250,7 @@ func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
 	}
 	p.groupFork.pending.Enqueue(group)
 	p.groupFork.rcvLastGroup = groupResponse.IsLastGroup
-	if p.groupFork.rcvLastGroup || p.blockFork.pending.Size() >= syncedGroupCount {
+	if p.groupFork.rcvLastGroup || p.groupFork.pending.Size() >= syncedGroupCount {
 		p.reqTimer.Stop()
 		p.groupFork.enableRcvGroup = false
 		p.tryAcceptGroup()
