@@ -131,7 +131,7 @@ message GroupHeader{
 
     optional bytes Parent = 2;
 
-    required bytes PreGroup = 3;
+    optional bytes PreGroup = 3;
 
     required bytes CreateBlockHash = 4;
 
