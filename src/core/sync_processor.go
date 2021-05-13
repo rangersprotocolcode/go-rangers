@@ -142,18 +142,20 @@ func (p *syncProcessor) chainInfoNotifyHandler(msg notify.Message) {
 	}
 	p.logger.Tracef("Rcv chain info! Height:%d,qn:%d,group height:%d,source:%s", chainInfo.TopBlockHeight, chainInfo.TotalQn, chainInfo.TopGroupHeight, chainInfo.SignInfo.Id)
 	topBlock := blockChainImpl.TopBlock()
-	localTotalQn := topBlock.TotalQN
+	localTotalQn, localTopHash := topBlock.TotalQN, topBlock.Hash
+	localGroupHeight := p.groupChain.count
 	if chainInfo.TotalQn < localTotalQn {
 		return
 	}
 
+	if localTotalQn == chainInfo.TotalQn && localTopHash == chainInfo.TopBlockHash && localGroupHeight >= chainInfo.TopGroupHeight {
+	}
 	source := chainInfo.SignInfo.Id
 	if PeerManager.isEvil(source) {
 		p.logger.Debugf("[chainInfoNotifyHandler]%s is marked evil.Drop!", source)
 		return
 	}
-	isGroupSyncNode := p.isGroupSyncNode(*chainInfo)
-	p.addCandidate(source, *chainInfo, isGroupSyncNode)
+	p.addCandidate(source, *chainInfo)
 }
 
 func (p *syncProcessor) isGroupSyncNode(chainInfo chainInfo) bool {
@@ -166,7 +168,7 @@ func (p *syncProcessor) isGroupSyncNode(chainInfo chainInfo) bool {
 		return false
 	}
 }
-func (p *syncProcessor) addCandidate(id string, chainInfo chainInfo, isGroupSyncNode bool) {
+func (p *syncProcessor) addCandidate(id string, chainInfo chainInfo) {
 	p.lock.Lock("addCandidatePool")
 	defer p.lock.Unlock("addCandidatePool")
 
@@ -182,7 +184,7 @@ func (p *syncProcessor) addCandidate(id string, chainInfo chainInfo, isGroupSync
 			minTotalQn = tbi.TotalQn
 		}
 	}
-	if chainInfo.TotalQn > minTotalQn || chainInfo.TotalQn == minTotalQn && isGroupSyncNode {
+	if chainInfo.TotalQn >= minTotalQn {
 		delete(p.candidatePool, totalQnMinId)
 		p.candidatePool[id] = chainInfo
 		go p.trySyncBlock()

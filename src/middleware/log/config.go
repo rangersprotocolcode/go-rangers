@@ -35,7 +35,7 @@ const (
 						</formats>
 					</seelog>`
 
-	SyncLogConfig = `<seelog minlevel="trace">
+	SyncLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/syncLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
