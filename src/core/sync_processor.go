@@ -334,24 +334,31 @@ func (p *syncProcessor) tryMergeFork() bool {
 		}
 		height++
 	}
+	p.tryAddGroupOnChain()
 	return true
 }
 
-func (p *syncProcessor) tryAddGroupOnChain() {
+func (p *syncProcessor) tryAddGroupOnChain() bool {
+	if p.groupFork == nil {
+		return false
+	}
 	for p.groupFork.current <= p.groupFork.latestGroup.GroupHeight {
 		forkGroup := p.groupFork.getGroup(p.groupFork.current)
 		if forkGroup == nil {
-			return
+			return false
 		}
 		//todo verify
 		err := p.groupChain.AddGroup(forkGroup)
 		if err == nil {
 			p.groupFork.current++
+			p.logger.Debugf("add group on chain success.%d-%s", forkGroup.GroupHeight, common.ToHex(forkGroup.Id))
 			continue
 		} else {
-			return
+			p.logger.Debugf("add group on chain failed.%d-%s,err:%s", forkGroup.GroupHeight, common.ToHex(forkGroup.Id), err.Error())
+			return false
 		}
 	}
+	return true
 }
 
 func (p *syncProcessor) finishCurrentSync(syncResult bool) {

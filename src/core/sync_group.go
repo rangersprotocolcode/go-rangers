@@ -217,7 +217,7 @@ func (p *syncProcessor) syncGroupReqHandler(msg notify.Message) {
 	}
 	message := network.Message{Code: network.GroupResponseMsg, Body: body}
 	network.GetNetInstance().SendToStranger(common.FromHex(req.SignInfo.Id), message)
-	syncHandleLogger.Debugf("Send group %d %s,last:%v", group.GroupHeight, isLastGroup)
+	syncHandleLogger.Debugf("Send group %d to %s,last:%v", group.GroupHeight, common.FromHex(req.SignInfo.Id), isLastGroup)
 }
 
 func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
@@ -285,7 +285,17 @@ func (p *syncProcessor) tryAcceptGroup() {
 		return
 	}
 
-	if p.groupFork.rcvLastGroup && group != nil {
+	if p.groupFork.rcvLastGroup && p.blockFork == nil {
+		p.groupChain.removeFromCommonAncestor(p.groupFork.getGroup(p.groupFork.header))
+		if p.tryAddGroupOnChain() {
+			p.finishCurrentSync(true)
+		} else {
+			p.finishCurrentSync(false)
+		}
+		return
+	}
+
+	if group != nil {
 		p.groupFork.enableRcvGroup = true
 		go p.syncGroup(p.candidateInfo.Id, group)
 	}
