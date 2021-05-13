@@ -149,6 +149,7 @@ func (p *syncProcessor) chainInfoNotifyHandler(msg notify.Message) {
 	}
 
 	if localTotalQn == chainInfo.TotalQn && localTopHash == chainInfo.TopBlockHash && localGroupHeight >= chainInfo.TopGroupHeight {
+		return
 	}
 	source := chainInfo.SignInfo.Id
 	if PeerManager.isEvil(source) {
