@@ -158,7 +158,7 @@ func verifyGroupChainPieceInfo(chainPiece []*types.Group) bool {
 
 func (p *syncProcessor) syncGroup(id string, commonAncestor *types.Group) {
 	p.lock.Lock("syncGroup")
-	if p.blockFork == nil {
+	if p.groupFork == nil {
 		p.groupFork = newGroupChainFork(commonAncestor)
 	}
 	p.lock.Unlock("syncGroup")
