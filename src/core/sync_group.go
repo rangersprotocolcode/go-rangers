@@ -267,8 +267,10 @@ func (p *syncProcessor) tryAcceptGroup() {
 		g := p.groupFork.pending.Head().(*types.Group)
 		err = p.groupFork.acceptGroup(g)
 		if err != nil {
-			p.logger.Debugf("Accept group failed!%s-%d", g.Header.Hash.String(), g.GroupHeight)
+			p.logger.Debugf("Accept group failed!%s-%d", common.ToHex(g.Id), g.GroupHeight)
 			break
+		} else {
+			p.logger.Debugf("Accept group success!%s-%d", common.ToHex(g.Id), g.GroupHeight)
 		}
 		group = p.groupFork.pending.Pop().(*types.Group)
 		p.groupFork.waitingBlock = false
@@ -285,9 +287,14 @@ func (p *syncProcessor) tryAcceptGroup() {
 		return
 	}
 
-	if p.groupFork.rcvLastGroup && p.blockFork == nil {
+	if p.groupFork.rcvLastGroup {
 		p.groupChain.removeFromCommonAncestor(p.groupFork.getGroup(p.groupFork.header))
-		if p.tryAddGroupOnChain() {
+		result := p.tryAddGroupOnChain()
+		if p.blockFork != nil {
+			go p.tryAcceptBlock()
+			return
+		}
+		if result {
 			p.finishCurrentSync(true)
 		} else {
 			p.finishCurrentSync(false)

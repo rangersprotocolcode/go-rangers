@@ -300,9 +300,6 @@ func (p *syncProcessor) tryMergeFork() bool {
 	}
 
 	p.blockChain.removeFromCommonAncestor(commonAncestor)
-	if p.groupFork != nil {
-		p.groupChain.removeFromCommonAncestor(p.groupFork.getGroup(p.groupFork.header))
-	}
 	for height := p.blockFork.header + 1; height <= p.blockFork.latestBlock.Height; {
 		forkBlock := p.blockFork.getBlock(height)
 		if forkBlock == nil {
@@ -343,7 +340,7 @@ func (p *syncProcessor) tryAddGroupOnChain() bool {
 	if p.groupFork == nil {
 		return false
 	}
-	p.logger.Debugf("try add group on chain...", p.groupFork.current)
+	p.logger.Debugf("try add group on chain.current:%d,fork latest:%d", p.groupFork.current, p.groupFork.latestGroup.GroupHeight)
 	for p.groupFork.current <= p.groupFork.latestGroup.GroupHeight {
 		forkGroup := p.groupFork.getGroup(p.groupFork.current)
 		if forkGroup == nil {

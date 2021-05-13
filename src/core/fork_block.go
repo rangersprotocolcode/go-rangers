@@ -58,13 +58,17 @@ func newBlockChainFork(commonAncestor types.Block) *blockChainFork {
 }
 
 func (fork *blockChainFork) acceptBlock(coming *types.Block) error {
-	if coming == nil || !fork.verifyOrder(coming) || !fork.verifyHash(coming) || !fork.verifyTxRoot(coming) || !fork.verifyGroupSign(coming) {
+	if coming == nil || !fork.verifyOrder(coming) || !fork.verifyHash(coming) || !fork.verifyTxRoot(coming) {
 		return verifyBlockErr
 	}
 	group := groupChainImpl.GetGroupById(coming.Header.GroupId)
 	if group == nil {
 		fork.logger.Debugf("Verify group not on group chain.Group id:%s", common.ToHex(coming.Header.GroupId))
 		return verifyGroupNotOnChainErr
+	}
+
+	if !fork.verifyGroupSign(coming) {
+		return verifyBlockErr
 	}
 	//todo
 	//verifyResult, state := fork.verifyStateAndReceipt(coming)
@@ -177,12 +181,10 @@ func (fork *blockChainFork) verifyStateAndReceipt(coming *types.Block) (bool, *a
 }
 
 func (fork *blockChainFork) verifyGroupSign(coming *types.Block) bool {
-	group := groupChainImpl.GetGroupById(coming.Header.GroupId)
-	if group == nil {
-		fork.logger.Debugf("Local group is nil.Id:%s", common.ToHex(coming.Header.GroupId))
-		return false
+	result, err := consensusHelper.VerifyBlockHeader(coming.Header)
+	if err != nil {
+		fork.logger.Errorf("Verify group sign error:%s", err.Error())
 	}
-	result, _ := consensusHelper.VerifyBlockHeader(coming.Header)
 	return result
 }
 
