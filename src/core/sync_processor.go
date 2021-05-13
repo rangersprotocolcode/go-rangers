@@ -140,7 +140,7 @@ func (p *syncProcessor) chainInfoNotifyHandler(msg notify.Message) {
 		p.logger.Errorf("Sign verify error! ChainInfoMessage:%s", e.Error())
 		return
 	}
-	p.logger.Debugf("Rcv chain info! Height:%d,qn:%d,group height:%d,source:%s", chainInfo.TopBlockHeight, chainInfo.TotalQn, chainInfo.TopGroupHeight, chainInfo.SignInfo.Id)
+	syncHandleLogger.Tracef("Rcv chain info! Height:%d,qn:%d,group height:%d,source:%s", chainInfo.TopBlockHeight, chainInfo.TotalQn, chainInfo.TopGroupHeight, chainInfo.SignInfo.Id)
 	topBlock := blockChainImpl.TopBlock()
 	localTotalQn, localTopHash := topBlock.TotalQN, topBlock.Hash
 	localGroupHeight := p.groupChain.height()
