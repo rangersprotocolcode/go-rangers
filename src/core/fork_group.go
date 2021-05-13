@@ -43,7 +43,7 @@ type groupChainFork struct {
 }
 
 func newGroupChainFork(commonAncestor *types.Group) *groupChainFork {
-	fork := &groupChainFork{header: commonAncestor.GroupHeight, current: commonAncestor.GroupHeight, latestGroup: commonAncestor, logger: syncLogger}
+	fork := &groupChainFork{header: commonAncestor.GroupHeight, current: commonAncestor.GroupHeight + 1, latestGroup: commonAncestor, logger: syncLogger}
 	fork.enableRcvGroup = true
 	fork.rcvLastGroup = false
 	fork.waitingBlock = false

@@ -342,6 +342,7 @@ func (p *syncProcessor) tryAddGroupOnChain() bool {
 	if p.groupFork == nil {
 		return false
 	}
+	p.logger.Debugf("try add group on chain...")
 	for p.groupFork.current <= p.groupFork.latestGroup.GroupHeight {
 		forkGroup := p.groupFork.getGroup(p.groupFork.current)
 		if forkGroup == nil {

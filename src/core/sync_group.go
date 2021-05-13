@@ -242,7 +242,7 @@ func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
 		return
 	}
 	group := groupResponse.Group
-	p.logger.Debugf("Rcv synced group.Hash:%s,Height:%d.Pre:%s", group.Header.Hash.String(), group.GroupHeight, common.ToHex(group.Header.PreGroup))
+	p.logger.Debugf("Rcv synced group.ID:%s,Height:%d.Pre:%s", common.ToHex(group.Id), group.GroupHeight, common.ToHex(group.Header.PreGroup))
 	p.reqTimer.Reset(syncReqTimeout)
 
 	if p.groupFork == nil || !p.groupFork.enableRcvGroup {
