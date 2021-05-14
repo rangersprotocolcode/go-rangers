@@ -9,7 +9,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/big"
-	"strconv"
+)
+
+var (
+	gasPrice        = big.NewInt(1)
+	gasLimit uint64 = 20000000
 )
 
 type contractData struct {
@@ -41,27 +45,14 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 	vmCtx.Time = new(big.Int).SetUint64(uint64(header.CurTime.Unix()))
 	//set constant value
 	vmCtx.Difficulty = new(big.Int).SetUint64(123)
+	vmCtx.GasPrice = gasPrice
+	vmCtx.GasLimit = gasLimit
 
 	var data contractData
 	err := json.Unmarshal([]byte(transaction.Data), &data)
 	if err != nil {
 		txLogger.Errorf("Contract data unmarshal error:%s", err.Error())
 		return false, fmt.Sprintf("Contract data error, data: %s", transaction.Data)
-	}
-
-	vmCtx.GasPrice, err = utility.StrToBigInt(data.GasPrice)
-	if err != nil {
-		txLogger.Errorf("Contract GasPrice convert error:%s", err.Error())
-		return false, fmt.Sprintf("Contract data GasPrice error, data: %s", data.GasPrice)
-	}
-
-	if data.GasLimit != "" {
-		gasLimit, err := strconv.Atoi(data.GasLimit)
-		if err != nil {
-			txLogger.Errorf("Contract gasLimit convert error:%s", err.Error())
-			return false, fmt.Sprintf("Contract data gasLimit error, data: %s", data.GasLimit)
-		}
-		vmCtx.GasLimit = uint64(gasLimit)
 	}
 
 	transferValue, err := utility.StrToBigInt(data.TransferValue)

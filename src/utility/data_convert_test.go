@@ -214,6 +214,39 @@ func TestFormatDecimalForERC20(t *testing.T) {
 	fmt.Println(FormatDecimalForERC20(number, 10))
 }
 
+func TestFormatDecimalForERC20_1(t *testing.T) {
+
+	number, _ := StrToBigInt("3000.000000000000000000")
+	fmt.Println(number)
+	fmt.Println(BigIntToStr(number))
+
+	//numberString := bigIntToStr(number, 6)
+	//fmt.Println(numberString)
+	//result, _ := StrToBigInt(numberString)
+	//fmt.Println(result)
+	//fmt.Println(BigIntToStr(result))
+
+	b := FormatDecimalForERC20(number, 6)
+	fmt.Println(BigIntToStr(FormatDecimalForRocket(b, 6)))
+
+	//c := FormatDecimalForERC20(number, 18)
+	//fmt.Println(BigIntToStr(c))
+	//
+	//d := FormatDecimalForERC20(number, 17)
+	//fmt.Println(BigIntToStr(d))
+}
+
+func TestFormatDecimalForERC20_2(t *testing.T) {
+	number := Uint64ToBigInt(100)
+	fmt.Println(number)
+
+	a := BigIntToStr(FormatDecimalForERC20(number, 18))
+	b := BigIntToStr(FormatDecimalForERC20(number, 17))
+	c := BigIntToStr(FormatDecimalForERC20(number, 10))
+	fmt.Println(a)
+	fmt.Println(b)
+	fmt.Println(c)
+}
 func TestFormat(t *testing.T) {
 	numberBytes := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 69, 149, 22, 20, 1, 72, 74, 0, 0, 0}
 	fmt.Println(len(numberBytes))
