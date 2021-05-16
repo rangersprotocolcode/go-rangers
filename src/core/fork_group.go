@@ -155,8 +155,6 @@ func (fork *groupChainFork) destroy() {
 }
 
 func (fork *groupChainFork) getGroupById(id []byte) *types.Group {
-	fork.lock.RLock("group chain fork getGroupById")
-	defer fork.lock.RUnlock("group chain fork getGroupById")
 	bytes, _ := fork.db.Get(id)
 	group, err := types.UnMarshalGroup(bytes)
 	if err != nil {
