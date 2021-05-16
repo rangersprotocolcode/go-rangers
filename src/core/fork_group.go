@@ -27,7 +27,6 @@ import (
 	"github.com/oleiade/lane"
 )
 
-var createBlockNotOnChain = errors.New("create block not on chain")
 var verifyGroupErr = errors.New("verify group error")
 var preGroupNilErr = errors.New("pre group is nil")
 var parentGroupNilErr = errors.New("parent group is nil")

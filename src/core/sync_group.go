@@ -256,7 +256,7 @@ func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
 
 func (p *syncProcessor) triggerGroupOnFork() {
 	err, rcvLastGroup, group := p.groupFork.triggerOnFork(p.blockFork)
-	if err == createBlockNotOnChain {
+	if err == common.ErrCreateBlockNil {
 		go p.triggerOnFork(false)
 		return
 	}
