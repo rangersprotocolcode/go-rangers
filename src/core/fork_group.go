@@ -168,8 +168,9 @@ func (fork *groupChainFork) addGroupOnFork(coming *types.Group, blockFork *block
 	if verifyResult {
 		fork.insertGroup(coming)
 		fork.latestGroup = coming
+	} else {
+		fork.logger.Debugf("Verify group on fork failed.Id:%d,%s", common.ToHex(coming.Id), err.Error())
 	}
-	fork.logger.Debugf("Verify group on fork failed.Id:%d,%s", common.ToHex(coming.Id), err.Error())
 	return err
 }
 
