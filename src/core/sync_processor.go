@@ -256,7 +256,7 @@ func (p *syncProcessor) triggerOnFork(blockSyncPaused bool) {
 	}
 	if p.blockFork.isWaiting() && p.groupFork.isWaiting() {
 		syncLogger.Warnf("Sync deadlock!Block waiting verify group and group waiting create block.")
-		p.finishCurrentSync(false)
+		go p.finishCurrentSync(false)
 		return
 	}
 }
