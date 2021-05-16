@@ -269,6 +269,12 @@ func (p *syncProcessor) blockResponseMsgHandler(msg notify.Message) {
 
 func (p *syncProcessor) triggerBlockOnFork() {
 	err, rcvLastBlock, block := p.blockFork.triggerOnFork(p.groupFork)
+	result := p.blockFork.triggerOnChain(p.blockChain, p.groupChain, p.groupFork)
+	p.logger.Debugf("Trigger on chain result:%v", result)
+	if result {
+		p.finishCurrentSync(true)
+		return
+	}
 	if err == verifyGroupNotOnChainErr {
 		go p.triggerOnFork(true)
 		return
@@ -279,8 +285,7 @@ func (p *syncProcessor) triggerBlockOnFork() {
 	}
 
 	if rcvLastBlock {
-		result := p.blockFork.triggerOnChain(p.blockChain, p.groupChain, p.groupFork)
-		p.finishCurrentSync(result)
+		p.finishCurrentSync(false)
 		return
 	}
 

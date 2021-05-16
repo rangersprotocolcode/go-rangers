@@ -265,17 +265,14 @@ func (p *syncProcessor) triggerGroupOnFork() {
 		return
 	}
 
-	if rcvLastGroup {
-		result := p.groupFork.triggerOnChain(p.groupChain)
-		if p.blockFork != nil {
-			go p.triggerBlockOnFork()
-		} else {
-			p.finishCurrentSync(result)
-		}
+	result := p.groupFork.triggerOnChain(p.groupChain)
+	if p.blockFork == nil {
+		p.finishCurrentSync(result)
 		return
 	}
 
-	if group != nil {
+	go p.triggerBlockOnFork()
+	if !rcvLastGroup && group != nil {
 		go p.syncGroup(p.candidateInfo.Id, group)
 	}
 }
