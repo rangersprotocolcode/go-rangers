@@ -248,16 +248,16 @@ func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
 	}
 	needMore := p.groupFork.rcv(group, groupResponse.IsLastGroup)
 	if needMore {
-		go p.syncGroup(from, group)
+		p.syncGroup(from, group)
 	} else {
-		go p.triggerGroupOnFork()
+		p.triggerGroupOnFork()
 	}
 }
 
 func (p *syncProcessor) triggerGroupOnFork() {
 	err, rcvLastGroup, group := p.groupFork.triggerOnFork(p.blockFork)
 	if err == common.ErrCreateBlockNil {
-		go p.triggerOnFork(false)
+		p.triggerOnFork(false)
 		return
 	}
 	if err == verifyGroupErr {
@@ -265,14 +265,15 @@ func (p *syncProcessor) triggerGroupOnFork() {
 		return
 	}
 
-	result := p.groupFork.triggerOnChain(p.groupChain)
 	if p.blockFork == nil {
+		result := p.groupFork.triggerOnChain(p.groupChain)
 		p.finishCurrentSync(result)
 		return
 	}
 
-	go p.triggerBlockOnFork()
 	if !rcvLastGroup && group != nil {
-		go p.syncGroup(p.candidateInfo.Id, group)
+		p.syncGroup(p.candidateInfo.Id, group)
+		return
 	}
+	p.triggerBlockOnFork()
 }

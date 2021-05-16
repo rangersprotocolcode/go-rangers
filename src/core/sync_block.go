@@ -100,7 +100,6 @@ func (p *syncProcessor) blockChainPieceHandler(m notify.Message) {
 	p.logger.Debugf("Rcv block chain piece from:%s,%d-%d", p.candidateInfo.Id, chainPiece[0].Height, chainPiece[len(chainPiece)-1].Height)
 	if !verifyBlockChainPiece(chainPiece, chainPieceInfo.TopHeader) {
 		p.logger.Debugf("Illegal block chain piece!", from)
-		PeerManager.markEvil(from)
 		p.finishCurrentSync(false)
 		return
 	}
@@ -276,7 +275,7 @@ func (p *syncProcessor) triggerBlockOnFork() {
 		return
 	}
 	if err == verifyGroupNotOnChainErr {
-		go p.triggerOnFork(true)
+		p.triggerOnFork(true)
 		return
 	}
 	if err == verifyBlockErr {
@@ -290,6 +289,6 @@ func (p *syncProcessor) triggerBlockOnFork() {
 	}
 
 	if block != nil {
-		go p.syncBlock(p.candidateInfo.Id, *block)
+		p.syncBlock(p.candidateInfo.Id, *block)
 	}
 }

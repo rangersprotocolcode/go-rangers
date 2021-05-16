@@ -122,7 +122,11 @@ func (fork *groupChainFork) triggerOnFork(blockFork *blockChainFork) (err error,
 	if !fork.rcvLastGroup {
 		fork.enableRcvGroup = true
 	}
-	return err, fork.rcvLastGroup, group
+
+	if fork.pending.Empty() {
+		return err, fork.rcvLastGroup, group
+	}
+	return err, fork.rcvLastGroup, nil
 }
 
 func (fork *groupChainFork) triggerOnChain(groupChain *groupChain) bool {
