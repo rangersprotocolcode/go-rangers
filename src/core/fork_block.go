@@ -93,10 +93,10 @@ func (fork *blockChainFork) triggerOnFork(groupFork *groupChainFork) (err error,
 		b := fork.pending.Head().(*types.Block)
 		err = fork.addBlockOnFork(b, groupFork)
 		if err != nil {
-			fork.logger.Debugf("Block on fork failed!%s-%d", b.Header.Hash.String(), b.Header.Height, b.Header.TotalQN)
+			fork.logger.Debugf("Block on fork failed!%s,%d-%d", b.Header.Hash.String(), b.Header.Height, b.Header.TotalQN)
 			break
 		}
-		fork.logger.Debugf("Block on fork success!%s-%d", b.Header.Hash.String(), b.Header.Height, b.Header.TotalQN)
+		fork.logger.Debugf("Block on fork success!%s,%d-%d", b.Header.Hash.String(), b.Header.Height, b.Header.TotalQN)
 		block = fork.pending.Pop().(*types.Block)
 		fork.waitingGroup = false
 	}
@@ -323,6 +323,7 @@ func (fork *blockChainFork) verifyStateAndReceipt(coming *types.Block) (bool, *a
 		fork.logger.Errorf("State root error!coming:%s gen:%s", coming.Header.StateTree.Hex(), stateRoot.Hex())
 		return false, state
 	}
+	fork.logger.Debugf("state root correct:%s", stateRoot.Hex())
 	receiptsTree := calcReceiptsTree(receipts)
 	if receiptsTree != coming.Header.ReceiptTree {
 		fork.logger.Errorf("Receipt root error!coming:%s gen:%s", coming.Header.ReceiptTree.Hex(), receiptsTree.Hex())
@@ -348,7 +349,7 @@ func (fork *blockChainFork) saveState(state *account.AccountDB) error {
 		fork.logger.Errorf("State commit error:%s", err.Error())
 		return err
 	}
-	fork.logger.Debugf("commit state root:%s", root.String())
+	fork.logger.Debugf("commit state root:%s", root.Hex())
 
 	trieDB := service.AccountDBManagerInstance.GetTrieDB()
 	err = trieDB.Commit(root, false)
