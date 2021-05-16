@@ -216,11 +216,11 @@ func (fork *blockChainFork) addBlockOnFork(coming *types.Block, groupFork *group
 	if !fork.verifyGroupSign(coming, group.PubKey) {
 		return verifyBlockErr
 	}
-	verifyResult, state := fork.verifyStateAndReceipt(coming)
-	if !verifyResult {
-		return verifyBlockErr
-	}
-	fork.saveState(state)
+	//verifyResult, state := fork.verifyStateAndReceipt(coming)
+	//if !verifyResult {
+	//	return verifyBlockErr
+	//}
+	//fork.saveState(state)
 
 	fork.insertBlock(coming)
 	fork.latestBlock = coming.Header
