@@ -192,10 +192,10 @@ func (fork *blockChainFork) getBlockByHash(hash common.Hash) *types.Block {
 	defer fork.lock.RUnlock("block chain fork getBlockByHash")
 
 	bytes, _ := fork.db.Get(hash.Bytes())
-	block, err := types.UnMarshalBlock(bytes)
-	if err != nil {
-		logger.Errorf("Fail to umMarshal block, error:%s", err.Error())
-	}
+	block, _ := types.UnMarshalBlock(bytes)
+	//if err != nil {
+	//	logger.Errorf("Fail to umMarshal block, error:%s", err.Error())
+	//}
 	return block
 }
 

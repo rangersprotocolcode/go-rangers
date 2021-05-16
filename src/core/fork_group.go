@@ -102,7 +102,7 @@ func (fork *groupChainFork) triggerOnFork(blockFork *blockChainFork) (err error,
 		fork.waitingBlock = false
 	}
 
-	if err == createBlockNotOnChain {
+	if err == common.ErrCreateBlockNil {
 		fork.waitingBlock = true
 		fork.logger.Debugf("Trigger group on fork paused. waiting block..")
 	}
@@ -156,10 +156,10 @@ func (fork *groupChainFork) destroy() {
 
 func (fork *groupChainFork) getGroupById(id []byte) *types.Group {
 	bytes, _ := fork.db.Get(id)
-	group, err := types.UnMarshalGroup(bytes)
-	if err != nil {
-		fork.logger.Errorf("Fail to umMarshal group, error:%s,id:%s", err.Error(), common.ToHex(id))
-	}
+	group, _ := types.UnMarshalGroup(bytes)
+	//if err != nil {
+	//	fork.logger.Errorf("Fail to umMarshal group, error:%s,id:%s", err.Error(), common.ToHex(id))
+	//}
 	return group
 }
 
@@ -169,7 +169,7 @@ func (fork *groupChainFork) addGroupOnFork(coming *types.Group, blockFork *block
 		fork.insertGroup(coming)
 		fork.latestGroup = coming
 	} else {
-		fork.logger.Debugf("Verify group on fork failed.Id:%d,%s", common.ToHex(coming.Id), err.Error())
+		fork.logger.Debugf("Verify group on fork failed.Id:%s,%s", common.ToHex(coming.Id), err.Error())
 	}
 	return err
 }
