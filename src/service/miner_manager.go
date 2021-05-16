@@ -134,7 +134,7 @@ func (mm *MinerManager) GetProposerTotalStake(height uint64, hash common.Hash) u
 func (mm *MinerManager) MinerIterator(minerType byte, hash common.Hash) *MinerIterator {
 	accountDB, err := AccountDBManagerInstance.GetAccountDBByHash(hash)
 	if err != nil {
-		mm.logger.Error("Get account db by hash %d error:%s", hash.Hex(), err.Error())
+		mm.logger.Error("Get account db by hash %s,error:%s", hash.Hex(), err.Error())
 		return nil
 	}
 
