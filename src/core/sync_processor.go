@@ -24,7 +24,7 @@ const (
 
 	groupForkDBPrefix            = "groupFork"
 	groupCommonAncestorHeightKey = "groupCommonAncestorGroup"
-	latestGroupHeightKey         = "lastestGroup"
+	latestGroupHeightKey         = "latestGroup"
 	groupChainPieceLength        = 9
 	syncedGroupCount             = 16
 )
@@ -61,7 +61,7 @@ type syncProcessor struct {
 	logger log.Logger
 }
 
-func InitSyncerProcessor(privateKey common.PrivateKey, id string) {
+func InitSyncProcessor(privateKey common.PrivateKey, id string) {
 	SyncProcessor = &syncProcessor{privateKey: privateKey, id: id, syncing: false, candidatePool: make(map[string]chainInfo)}
 
 	SyncProcessor.broadcastTimer = time.NewTimer(broadcastBlockInfoInterval)
@@ -97,7 +97,7 @@ func (p *syncProcessor) loop() {
 		case <-p.broadcastTimer.C:
 			go p.broadcastChainInfo(p.blockChain.TopBlock())
 		case <-p.syncTimer.C:
-			go p.trySyncBlock()
+			go p.trySync()
 		case <-p.reqTimer.C:
 			p.logger.Debugf("Sync to %s time out!", p.candidateInfo.Id)
 			p.finishCurrentSync(false)
@@ -127,36 +127,33 @@ func (p *syncProcessor) broadcastChainInfo(bh *types.BlockHeader) {
 func (p *syncProcessor) chainInfoNotifyHandler(msg notify.Message) {
 	bnm, ok := msg.GetData().(*notify.ChainInfoMessage)
 	if !ok {
-		p.logger.Errorf("ChainInfoMessage assert not ok!")
+		syncHandleLogger.Errorf("ChainInfoMessage assert not ok!")
 		return
 	}
 	chainInfo, e := unMarshalChainInfo(bnm.ChainInfo)
 	if e != nil {
-		p.logger.Errorf("Discard message! ChainInfoMessage unmarshal error:%s", e.Error())
+		syncHandleLogger.Errorf("Discard message! ChainInfoMessage unmarshal error:%s", e.Error())
 		return
 	}
 	err := chainInfo.SignInfo.ValidateSign(chainInfo)
 	if err != nil {
-		p.logger.Errorf("Sign verify error! ChainInfoMessage:%s", e.Error())
+		syncHandleLogger.Errorf("Sign verify error! ChainInfoMessage:%s", e.Error())
 		return
 	}
 	syncHandleLogger.Tracef("Rcv chain info! Height:%d,qn:%d,group height:%d,source:%s", chainInfo.TopBlockHeight, chainInfo.TotalQn, chainInfo.TopGroupHeight, chainInfo.SignInfo.Id)
-	topBlock := blockChainImpl.TopBlock()
-	localTotalQn, localTopHash := topBlock.TotalQN, topBlock.Hash
-	localGroupHeight := p.groupChain.height()
-	if chainInfo.TotalQn < localTotalQn {
+	source := chainInfo.SignInfo.Id
+	if PeerManager.isEvil(source) {
+		syncHandleLogger.Debugf("[chainInfoNotifyHandler]%s is marked evil.Drop!", source)
 		return
 	}
 
-	if localTotalQn == chainInfo.TotalQn && localTopHash == chainInfo.TopBlockHash && localGroupHeight >= chainInfo.TopGroupHeight {
-		return
+	topBlock := blockChainImpl.TopBlock()
+	localTotalQn, localTopHash := topBlock.TotalQN, topBlock.Hash
+	localGroupHeight := p.groupChain.height()
+	if chainInfo.TotalQn > localTotalQn || localTotalQn == chainInfo.TotalQn && localTopHash == chainInfo.TopBlockHash && localGroupHeight < chainInfo.TopGroupHeight {
+		p.addCandidate(source, *chainInfo)
+
 	}
-	source := chainInfo.SignInfo.Id
-	if PeerManager.isEvil(source) {
-		p.logger.Debugf("[chainInfoNotifyHandler]%s is marked evil.Drop!", source)
-		return
-	}
-	p.addCandidate(source, *chainInfo)
 }
 
 func (p *syncProcessor) addCandidate(id string, chainInfo chainInfo) {
@@ -178,11 +175,11 @@ func (p *syncProcessor) addCandidate(id string, chainInfo chainInfo) {
 	if chainInfo.TotalQn >= minTotalQn {
 		delete(p.candidatePool, totalQnMinId)
 		p.candidatePool[id] = chainInfo
-		go p.trySyncBlock()
+		go p.trySync()
 	}
 }
 
-func (p *syncProcessor) trySyncBlock() {
+func (p *syncProcessor) trySync() {
 	if p.syncing {
 		p.logger.Debugf("Syncing to %s,do not sync!", p.candidateInfo.Id)
 		return
@@ -205,13 +202,12 @@ func (p *syncProcessor) trySyncBlock() {
 	p.syncing = true
 	p.candidateInfo = candidateInfo
 	if candidateInfo.TotalQn > localTotalQN {
-		p.logger.Debugf("Begin sync!Candidate:%s!Req block height:%d", candidateInfo.Id, localBlockHeight)
+		p.logger.Debugf("Begin sync!Candidate:%s!Local block height:%d", candidateInfo.Id, localBlockHeight)
 		go p.requestBlockChainPiece(candidateInfo.Id, localBlockHeight)
 	} else {
-		p.logger.Debugf("Begin sync!Candidate:%s!Req group height:%d,candidate group height:%d", candidateInfo.Id, localGroupHeight, candidateInfo.GroupHeight)
+		p.logger.Debugf("Begin sync!Candidate:%s!Local group height:%d,candidate group height:%d", candidateInfo.Id, localGroupHeight, candidateInfo.GroupHeight)
 		go p.requestGroupChainPiece(candidateInfo.Id, localGroupHeight)
 	}
-
 }
 
 func (p *syncProcessor) chooseSyncCandidate() CandidateInfo {
@@ -239,125 +235,30 @@ func (p *syncProcessor) chooseSyncCandidate() CandidateInfo {
 	return candidateInfo
 }
 
-func (p *syncProcessor) candidatePoolDump() {
-	p.logger.Debugf("Candidate Pool Dump:")
-	for id, chainInfo := range p.candidatePool {
-		p.logger.Debugf("Candidate id:%s,totalQn:%d,height:%d,topHash:%s,groupHeight:%d", id, chainInfo.TotalQn, chainInfo.TopBlockHeight, chainInfo.TopBlockHash.String(), chainInfo.TopGroupHeight)
-	}
-}
+func (p *syncProcessor) triggerOnFork(blockSyncPaused bool) {
+	p.lock.Lock("triggerOnFork")
+	defer p.lock.Unlock("triggerOnFork")
 
-func (p *syncProcessor) triggerSync() {
 	if p.groupFork == nil {
 		go p.requestGroupChainPiece(p.candidateInfo.Id, p.groupChain.height())
 		return
 	}
 
-	if p.groupFork == nil {
+	if p.blockFork == nil {
+		go p.requestBlockChainPiece(p.candidateInfo.Id, p.blockChain.Height())
 		return
 	}
 
-	if p.blockFork.waitingGroup && p.groupFork.waitingBlock {
+	if blockSyncPaused {
+		p.triggerGroupOnFork()
+	} else {
+		p.triggerBlockOnFork()
+	}
+	if p.blockFork.isWaiting() && p.groupFork.isWaiting() {
+		syncLogger.Warnf("Sync deadlock!Block waiting verify group and group waiting create block.")
 		p.finishCurrentSync(false)
 		return
 	}
-	if p.blockFork.waitingGroup {
-		p.tryAcceptGroup()
-	} else {
-		p.tryAcceptBlock()
-	}
-}
-
-func (p *syncProcessor) tryMergeFork() bool {
-	if p.blockFork == nil {
-		return false
-	}
-	localTopHeader := p.blockChain.latestBlock
-	syncLogger.Debugf("Try merge fork.Local chain:%d-%d,fork:%d-%d", localTopHeader.Height, localTopHeader.TotalQN, p.blockFork.latestBlock.Height, p.blockFork.latestBlock.TotalQN)
-	if p.blockFork.latestBlock.TotalQN < localTopHeader.TotalQN {
-		return false
-	}
-
-	var commonAncestor *types.BlockHeader
-	for height := p.blockFork.header; height <= p.blockFork.latestBlock.Height; height++ {
-		forkBlock := p.blockFork.getBlock(height)
-		chainBlockHeader := p.blockChain.QueryBlockHeaderByHeight(height, true)
-		if forkBlock == nil || chainBlockHeader == nil {
-			break
-		}
-		if chainBlockHeader.Hash != forkBlock.Header.Hash {
-			break
-		}
-		commonAncestor = forkBlock.Header
-	}
-
-	if commonAncestor == nil {
-		syncLogger.Debugf("Try merge fork. common ancestor is nil.")
-		return false
-	}
-	syncLogger.Debugf("Try merge fork. common ancestor:%d", commonAncestor.Height)
-	if p.blockFork.latestBlock.TotalQN == localTopHeader.TotalQN && p.blockChain.nextPvGreatThanFork(commonAncestor, *p.blockFork) {
-		return false
-	}
-
-	p.blockChain.removeFromCommonAncestor(commonAncestor)
-	for height := p.blockFork.header + 1; height <= p.blockFork.latestBlock.Height; {
-		forkBlock := p.blockFork.getBlock(height)
-		if forkBlock == nil {
-			return false
-		}
-		validateCode, consensusVerifyResult := p.blockChain.consensusVerify(forkBlock)
-		if consensusVerifyResult {
-			var result types.AddBlockResult
-			syncLogger.Debugf("add block on chain.%d,%s", forkBlock.Header.Height, forkBlock.Header.Hash.String())
-			result = blockChainImpl.addBlockOnChain(forkBlock)
-			if result != types.AddBlockSucc {
-				return false
-			}
-			height++
-			continue
-		} else if validateCode != types.DependOnGroup {
-			return false
-		}
-		p.tryAddGroupOnChain()
-
-		_, consensusVerifyResult = p.blockChain.consensusVerify(forkBlock)
-		if consensusVerifyResult {
-			return false
-		}
-		var result types.AddBlockResult
-		syncLogger.Debugf("add block on chain.%d,%s", forkBlock.Header.Height, forkBlock.Header.Hash.String())
-		result = blockChainImpl.addBlockOnChain(forkBlock)
-		if result != types.AddBlockSucc {
-			return false
-		}
-		height++
-	}
-	p.tryAddGroupOnChain()
-	return true
-}
-
-func (p *syncProcessor) tryAddGroupOnChain() bool {
-	if p.groupFork == nil {
-		return false
-	}
-	p.logger.Debugf("try add group on chain.current:%d,fork latest:%d", p.groupFork.current, p.groupFork.latestGroup.GroupHeight)
-	for p.groupFork.current <= p.groupFork.latestGroup.GroupHeight {
-		forkGroup := p.groupFork.getGroup(p.groupFork.current)
-		if forkGroup == nil {
-			return false
-		}
-		//todo verify
-		err := p.groupChain.AddGroup(forkGroup)
-		if err == nil {
-			p.groupFork.current++
-			p.logger.Debugf("add group on chain success.%d-%s", forkGroup.GroupHeight, common.ToHex(forkGroup.Id))
-			continue
-		} else {
-			p.logger.Debugf("add group on chain failed.%d-%s,err:%s", forkGroup.GroupHeight, common.ToHex(forkGroup.Id), err.Error())
-			return false
-		}
-	}
-	return true
 }
 
 func (p *syncProcessor) finishCurrentSync(syncResult bool) {

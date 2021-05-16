@@ -86,7 +86,6 @@ func (p *syncProcessor) groupChainPieceHandler(msg notify.Message) {
 	p.logger.Debugf("Rcv group chain piece from:%s,%d-%d", p.candidateInfo.Id, chainPiece[0].GroupHeight, chainPiece[len(chainPiece)-1].GroupHeight)
 	if !verifyGroupChainPieceInfo(chainPiece) {
 		p.logger.Debugf("Illegal group chain piece!", from)
-		PeerManager.markEvil(from)
 		p.finishCurrentSync(false)
 		return
 	}
@@ -117,7 +116,6 @@ func (p *syncProcessor) groupChainPieceHandler(msg notify.Message) {
 		go p.requestGroupChainPiece(from, chainPiece[len(chainPiece)-1].GroupHeight)
 		return
 	}
-
 	p.logger.Debugf("Common ancestor group.height:%d,hash:%s", commonAncestor.GroupHeight, commonAncestor.Header.Hash.String())
 
 	commonAncestorGroup := p.groupChain.GetGroupById(commonAncestor.Id)
@@ -243,43 +241,23 @@ func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
 	}
 	group := groupResponse.Group
 	p.logger.Debugf("Rcv synced group.ID:%s,Height:%d.Pre:%s", common.ToHex(group.Id), group.GroupHeight, common.ToHex(group.Header.PreGroup))
-	p.reqTimer.Reset(syncReqTimeout)
+	p.reqTimer.Stop()
 
-	if p.groupFork == nil || !p.groupFork.enableRcvGroup {
+	if p.groupFork == nil {
 		return
 	}
-	p.groupFork.pending.Enqueue(group)
-	p.groupFork.rcvLastGroup = groupResponse.IsLastGroup
-	if p.groupFork.rcvLastGroup || p.groupFork.pending.Size() >= syncedGroupCount {
-		p.reqTimer.Stop()
-		p.groupFork.enableRcvGroup = false
-		p.tryAcceptGroup()
-	} else {
+	needMore := p.groupFork.rcv(group, groupResponse.IsLastGroup)
+	if needMore {
 		go p.syncGroup(from, group)
+	} else {
+		go p.triggerGroupOnFork()
 	}
 }
 
-func (p *syncProcessor) tryAcceptGroup() {
-	p.logger.Debugf("Try accept group")
-	var err error
-	var group *types.Group
-	for !p.groupFork.pending.Empty() {
-		g := p.groupFork.pending.Head().(*types.Group)
-		err = p.groupFork.acceptGroup(g)
-		if err != nil {
-			p.logger.Debugf("Accept group failed!%s-%d", common.ToHex(g.Id), g.GroupHeight)
-			break
-		} else {
-			p.logger.Debugf("Accept group success!%s-%d", common.ToHex(g.Id), g.GroupHeight)
-		}
-		group = p.groupFork.pending.Pop().(*types.Group)
-		p.groupFork.waitingBlock = false
-	}
-
+func (p *syncProcessor) triggerGroupOnFork() {
+	err, rcvLastGroup, group := p.groupFork.triggerOnFork(p.blockFork)
 	if err == createBlockNotOnChain {
-		p.groupFork.waitingBlock = true
-		p.logger.Debugf("group fork waiting block..")
-		go p.triggerSync()
+		go p.triggerOnFork(false)
 		return
 	}
 	if err == verifyGroupErr {
@@ -287,23 +265,17 @@ func (p *syncProcessor) tryAcceptGroup() {
 		return
 	}
 
-	if p.groupFork.rcvLastGroup {
-		p.groupChain.removeFromCommonAncestor(p.groupFork.getGroup(p.groupFork.header))
-		result := p.tryAddGroupOnChain()
+	if rcvLastGroup {
+		result := p.groupFork.triggerOnChain(p.groupChain)
 		if p.blockFork != nil {
-			go p.tryAcceptBlock()
-			return
-		}
-		if result {
-			p.finishCurrentSync(true)
+			go p.triggerBlockOnFork()
 		} else {
-			p.finishCurrentSync(false)
+			p.finishCurrentSync(result)
 		}
 		return
 	}
 
 	if group != nil {
-		p.groupFork.enableRcvGroup = true
 		go p.syncGroup(p.candidateInfo.Id, group)
 	}
 }

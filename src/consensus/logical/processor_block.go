@@ -285,6 +285,18 @@ func (p *Processor) VerifyBlockHeader(bh *types.BlockHeader) (ok bool, err error
 	return
 }
 
+func (p *Processor) VerifyGroupSign(groupPubkey []byte, blockHash common.Hash, sign []byte) (ok bool, err error) {
+	gpk := groupsig.ByteToPublicKey(groupPubkey)
+	sig := groupsig.DeserializeSign(sign)
+	b := groupsig.VerifySig(gpk, blockHash.Bytes(), *sig)
+	if !b {
+		err = fmt.Errorf("signature verify fail")
+		return
+	}
+	ok = true
+	return
+}
+
 func (p *Processor) VerifyGroup(g *types.Group) (ok bool, err error) {
 	if len(g.Signature) == 0 {
 		return false, fmt.Errorf("sign is empty")

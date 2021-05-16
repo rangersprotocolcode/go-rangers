@@ -254,60 +254,37 @@ func (p *syncProcessor) blockResponseMsgHandler(msg notify.Message) {
 	}
 	block := blockResponse.Block
 	p.logger.Debugf("Rcv synced block.Hash:%s,%d-%d.Pre:%s", block.Header.Hash.String(), block.Header.Height, block.Header.TotalQN, block.Header.PreHash.String())
-	p.reqTimer.Reset(syncReqTimeout)
+	p.reqTimer.Stop()
 
-	if p.blockFork == nil || !p.blockFork.enableRcvBlock {
+	if p.blockFork == nil {
 		return
 	}
-	p.blockFork.pending.Enqueue(block)
-	p.blockFork.rcvLastBlock = blockResponse.IsLastBlock
-	if p.blockFork.rcvLastBlock || p.blockFork.pending.Size() >= syncedBlockCount {
-		p.reqTimer.Stop()
-		p.blockFork.enableRcvBlock = false
-		go p.tryAcceptBlock()
-	} else {
+	needMore := p.blockFork.rcv(block, blockResponse.IsLastBlock)
+	if needMore {
 		go p.syncBlock(from, *block)
+	} else {
+		go p.triggerBlockOnFork()
 	}
 }
 
-func (p *syncProcessor) tryAcceptBlock() {
-	p.logger.Debugf("Try accept block")
-	var err error
-	var block *types.Block
-	for !p.blockFork.pending.Empty() {
-		b := p.blockFork.pending.Head().(*types.Block)
-		err = p.blockFork.acceptBlock(b)
-		if err != nil {
-			p.blockFork.logger.Debugf("Accept block failed!%s,%d-%d", b.Header.Hash.String(), b.Header.Height, b.Header.TotalQN)
-			break
-		}
-		block = p.blockFork.pending.Pop().(*types.Block)
-		p.blockFork.waitingGroup = false
-	}
-
-	mergeResult := p.tryMergeFork()
-	p.logger.Debugf("Try merge fork result:%v", mergeResult)
-	if mergeResult {
-		p.finishCurrentSync(true)
-		return
-	}
-
+func (p *syncProcessor) triggerBlockOnFork() {
+	err, rcvLastBlock, block := p.blockFork.triggerOnFork(p.groupFork)
 	if err == verifyGroupNotOnChainErr {
-		p.logger.Debugf("block fork waiting group..")
-		p.blockFork.waitingGroup = true
-		go p.triggerSync()
+		go p.triggerOnFork(true)
 		return
 	}
 	if err == verifyBlockErr {
 		p.finishCurrentSync(false)
 		return
 	}
-	if p.blockFork.rcvLastBlock {
-		p.finishCurrentSync(true)
+
+	if rcvLastBlock {
+		result := p.blockFork.triggerOnChain(p.blockChain, p.groupChain, p.groupFork)
+		p.finishCurrentSync(result)
 		return
 	}
+
 	if block != nil {
-		p.blockFork.enableRcvBlock = true
 		go p.syncBlock(p.candidateInfo.Id, *block)
 	}
 }

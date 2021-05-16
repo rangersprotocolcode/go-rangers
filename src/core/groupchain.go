@@ -156,6 +156,14 @@ func (chain *groupChain) Iterator() *GroupIterator {
 	return &GroupIterator{current: chain.lastGroup}
 }
 
+func (chain *groupChain) ForkIterator() *GroupForkIterator {
+	iterator := GroupForkIterator{}
+	if SyncProcessor != nil && SyncProcessor.groupFork != nil {
+		iterator.current = SyncProcessor.groupFork.latestGroup
+	}
+	return &iterator
+}
+
 func (chain *groupChain) availableGroupsAt(h uint64) []*types.Group {
 	iter := chain.Iterator()
 	gs := make([]*types.Group, 0)

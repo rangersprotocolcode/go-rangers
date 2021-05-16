@@ -19,6 +19,7 @@ package core
 import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -42,6 +43,7 @@ type blockChainFork struct {
 	pending     *lane.Queue
 
 	db     db.Database
+	lock   middleware.Loglock
 	logger log.Logger
 }
 
@@ -52,30 +54,173 @@ func newBlockChainFork(commonAncestor types.Block) *blockChainFork {
 	fork.waitingGroup = false
 
 	fork.pending = lane.NewQueue()
+	fork.lock = middleware.NewLoglock("blockChainFork")
 	fork.db = refreshBlockForkDB(commonAncestor)
 	fork.insertBlock(&commonAncestor)
 	return fork
 }
 
-func (fork *blockChainFork) acceptBlock(coming *types.Block) error {
+func (fork *blockChainFork) isWaiting() bool {
+	fork.lock.RLock("block chain fork is Waiting")
+	defer fork.lock.RUnlock("block chain fork is Waiting")
+
+	return fork.waitingGroup
+}
+
+func (fork *blockChainFork) rcv(block *types.Block, isLastBlock bool) (needMore bool) {
+	fork.lock.Lock("block chain fork rcv")
+	defer fork.lock.Unlock("block chain fork rcv")
+
+	if !fork.enableRcvBlock {
+		return false
+	}
+	fork.pending.Enqueue(block)
+	fork.rcvLastBlock = isLastBlock
+	if isLastBlock || fork.pending.Size() >= syncedBlockCount {
+		fork.enableRcvBlock = false
+		return false
+	}
+	return true
+}
+
+func (fork *blockChainFork) triggerOnFork(groupFork *groupChainFork) (err error, rcvLastBlock bool, tail *types.Block) {
+	fork.lock.Lock("block chain fork triggerOnFork")
+	defer fork.lock.Unlock("block chain fork triggerOnFork")
+
+	fork.logger.Debugf("Trigger block on fork..")
+	var block *types.Block
+	for !fork.pending.Empty() {
+		b := fork.pending.Head().(*types.Block)
+		err = fork.addBlockOnFork(b, groupFork)
+		if err != nil {
+			fork.logger.Debugf("Block on fork failed!%s-%d", b.Header.Hash.String(), b.Header.Height, b.Header.TotalQN)
+			break
+		}
+		fork.logger.Debugf("Block on fork success!%s-%d", b.Header.Hash.String(), b.Header.Height, b.Header.TotalQN)
+		block = fork.pending.Pop().(*types.Block)
+		fork.waitingGroup = false
+	}
+
+	if err == verifyGroupNotOnChainErr {
+		fork.waitingGroup = true
+		fork.logger.Debugf("Trigger block on fork paused. waiting group..")
+	}
+
+	if err != nil {
+		return err, fork.rcvLastBlock, nil
+	}
+
+	if !fork.rcvLastBlock {
+		fork.enableRcvBlock = true
+	}
+	return err, fork.rcvLastBlock, block
+}
+
+func (blockFork *blockChainFork) triggerOnChain(chain *blockChain, groupChain *groupChain, groupFork *groupChainFork) bool {
+	blockFork.lock.Lock("block chain fork triggerOnChain")
+	defer blockFork.lock.Unlock("block chain fork triggerOnFork")
+
+	localTopHeader := chain.latestBlock
+	syncLogger.Debugf("Trigger block on chain...Local chain:%d-%d,fork:%d-%d", localTopHeader.Height, localTopHeader.TotalQN, blockFork.latestBlock.Height, blockFork.latestBlock.TotalQN)
+	if blockFork.latestBlock.TotalQN < localTopHeader.TotalQN {
+		return false
+	}
+
+	var commonAncestor *types.BlockHeader
+	for height := blockFork.header; height <= blockFork.latestBlock.Height; height++ {
+		forkBlock := blockFork.getBlock(height)
+		chainBlockHeader := chain.QueryBlockHeaderByHeight(height, true)
+		if forkBlock == nil || chainBlockHeader == nil {
+			break
+		}
+		if chainBlockHeader.Hash != forkBlock.Header.Hash {
+			break
+		}
+		commonAncestor = forkBlock.Header
+	}
+
+	if commonAncestor == nil {
+		syncLogger.Debugf("[TriggerBlockOnChain]common ancestor is nil.")
+		return false
+	}
+	syncLogger.Debugf("[TriggerBlockOnChain]. common ancestor:%d", commonAncestor.Height)
+	if blockFork.latestBlock.TotalQN == localTopHeader.TotalQN && chain.nextPvGreatThanFork(commonAncestor, *blockFork) {
+		return false
+	}
+
+	chain.removeFromCommonAncestor(commonAncestor)
+	for height := blockFork.header + 1; height <= blockFork.latestBlock.Height; {
+		forkBlock := blockFork.getBlock(height)
+		if forkBlock == nil {
+			return false
+		}
+		success, dependOnGroup := tryAddBlockOnChain(chain, forkBlock)
+		if success {
+			height++
+			continue
+		} else if !dependOnGroup {
+			return false
+		}
+		if groupFork != nil {
+			groupFork.triggerOnChain(groupChain)
+		}
+
+		success, dependOnGroup = tryAddBlockOnChain(chain, forkBlock)
+		if !success {
+			return false
+		}
+	}
+	if groupFork != nil {
+		groupFork.triggerOnChain(groupChain)
+	}
+	return true
+}
+
+func (fork *blockChainFork) destroy() {
+	fork.lock.Lock("block chain fork destroy")
+	defer fork.lock.Unlock("block chain fork destroy")
+
+	for i := fork.header; i <= fork.latestBlock.Height; i++ {
+		fork.deleteBlock(i)
+	}
+	fork.db.Delete([]byte(blockCommonAncestorHeightKey))
+	fork.db.Delete([]byte(latestBlockHeightKey))
+}
+
+func (fork *blockChainFork) getBlockByHash(hash common.Hash) *types.Block {
+	fork.lock.RLock("block chain fork getBlockByHash")
+	defer fork.lock.RUnlock("block chain fork getBlockByHash")
+
+	bytes, _ := fork.db.Get(hash.Bytes())
+	block, err := types.UnMarshalBlock(bytes)
+	if err != nil {
+		logger.Errorf("Fail to umMarshal block, error:%s", err.Error())
+	}
+	return block
+}
+
+func (fork *blockChainFork) addBlockOnFork(coming *types.Block, groupFork *groupChainFork) error {
 	if coming == nil || !fork.verifyOrder(coming) || !fork.verifyHash(coming) || !fork.verifyTxRoot(coming) {
 		return verifyBlockErr
 	}
-	group := groupChainImpl.GetGroupById(coming.Header.GroupId)
+	var group *types.Group
+	group = groupChainImpl.GetGroupById(coming.Header.GroupId)
+	if group == nil && groupFork != nil {
+		group = groupFork.getGroupById(coming.Header.GroupId)
+	}
 	if group == nil {
 		fork.logger.Debugf("Verify group not on group chain.Group id:%s", common.ToHex(coming.Header.GroupId))
 		return verifyGroupNotOnChainErr
 	}
 
-	if !fork.verifyGroupSign(coming) {
+	if !fork.verifyGroupSign(coming, group.PubKey) {
 		return verifyBlockErr
 	}
-	//todo
-	//verifyResult, state := fork.verifyStateAndReceipt(coming)
-	//if !verifyResult {
-	//	return false
-	//}
-	//fork.saveState(state)
+	verifyResult, state := fork.verifyStateAndReceipt(coming)
+	if !verifyResult {
+		return verifyBlockErr
+	}
+	fork.saveState(state)
 
 	fork.insertBlock(coming)
 	fork.latestBlock = coming.Header
@@ -93,6 +238,12 @@ func (fork *blockChainFork) insertBlock(block *types.Block) error {
 		fork.logger.Errorf("Fail to insert db, error:%s", err.Error())
 		return err
 	}
+
+	err = fork.db.Put(block.Header.Hash.Bytes(), blockByte)
+	if err != nil {
+		fork.logger.Errorf("Fail to insert db, error:%s", err.Error())
+		return err
+	}
 	return nil
 }
 
@@ -106,20 +257,21 @@ func (fork *blockChainFork) getBlock(height uint64) *types.Block {
 }
 
 func (fork *blockChainFork) deleteBlock(height uint64) bool {
+	block := fork.getBlock(height)
+	if block != nil {
+		err := fork.db.Delete(block.Header.Hash.Bytes())
+		if err != nil {
+			logger.Errorf("Fail to delete block, error:%s", err.Error())
+			return false
+		}
+	}
+
 	err := fork.db.Delete(generateHeightKey(height))
 	if err != nil {
 		logger.Errorf("Fail to delete block, error:%s", err.Error())
 		return false
 	}
 	return true
-}
-
-func (fork *blockChainFork) destroy() {
-	for i := fork.header; i <= fork.latestBlock.Height; i++ {
-		fork.deleteBlock(i)
-	}
-	fork.db.Delete([]byte(blockCommonAncestorHeightKey))
-	fork.db.Delete([]byte(latestBlockHeightKey))
 }
 
 func (fork *blockChainFork) verifyOrder(coming *types.Block) bool {
@@ -171,7 +323,6 @@ func (fork *blockChainFork) verifyStateAndReceipt(coming *types.Block) (bool, *a
 		fork.logger.Errorf("State root error!coming:%s gen:%s", coming.Header.StateTree.Hex(), stateRoot.Hex())
 		return false, state
 	}
-	fork.logger.Debugf("state root:%s", stateRoot.String())
 	receiptsTree := calcReceiptsTree(receipts)
 	if receiptsTree != coming.Header.ReceiptTree {
 		fork.logger.Errorf("Receipt root error!coming:%s gen:%s", coming.Header.ReceiptTree.Hex(), receiptsTree.Hex())
@@ -180,8 +331,8 @@ func (fork *blockChainFork) verifyStateAndReceipt(coming *types.Block) (bool, *a
 	return true, state
 }
 
-func (fork *blockChainFork) verifyGroupSign(coming *types.Block) bool {
-	result, err := consensusHelper.VerifyBlockHeader(coming.Header)
+func (fork *blockChainFork) verifyGroupSign(coming *types.Block, groupPubkey []byte) bool {
+	result, err := consensusHelper.VerifyGroupSign(groupPubkey, coming.Header.Hash, coming.Header.Signature)
 	if err != nil {
 		fork.logger.Errorf("Verify group sign error:%s", err.Error())
 	}
@@ -222,4 +373,23 @@ func refreshBlockForkDB(commonAncestor types.Block) db.Database {
 	db.Put([]byte(blockCommonAncestorHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
 	db.Put([]byte(latestBlockHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
 	return db
+}
+
+func tryAddBlockOnChain(chain *blockChain, forkBlock *types.Block) (success bool, dependOnGroup bool) {
+	validateCode, consensusVerifyResult := chain.consensusVerify(forkBlock)
+	if !consensusVerifyResult {
+		if validateCode == types.DependOnGroup {
+			return false, true
+		} else {
+			return false, false
+		}
+	}
+	var result types.AddBlockResult
+	result = blockChainImpl.addBlockOnChain(forkBlock)
+	if result == types.AddBlockSucc {
+		syncLogger.Debugf("add block on chain success.%s,%d-%d", forkBlock.Header.Hash.String(), forkBlock.Header.Height, forkBlock.Header.TotalQN)
+		return true, false
+	}
+	syncLogger.Debugf("add block on chain failed.%s,%d-%d", forkBlock.Header.Hash.String(), forkBlock.Header.Height, forkBlock.Header.TotalQN)
+	return false, false
 }

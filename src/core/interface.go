@@ -27,6 +27,10 @@ type GroupIterator struct {
 	current *types.Group
 }
 
+type GroupForkIterator struct {
+	current *types.Group
+}
+
 func GetBlockChain() BlockChain {
 	return blockChainImpl
 }
@@ -96,4 +100,6 @@ type GroupChain interface {
 	GetJoinedGroup(id []byte) ([]byte, error)
 
 	DeleteJoinedGroup(id []byte) bool
+
+	ForkIterator() *GroupForkIterator
 }

@@ -86,6 +86,14 @@ func (helper *ConsensusHelperImpl) VerifyBlockHeader(bh *types.BlockHeader) (boo
 	return Proc.VerifyBlockHeader(bh)
 }
 
+func (helper *ConsensusHelperImpl) VerifyGroupSign(groupPubkey []byte, blockHash common.Hash, sign []byte) (bool, error) {
+	return Proc.VerifyGroupSign(groupPubkey, blockHash, sign)
+}
+
 func (helper *ConsensusHelperImpl) CheckGroup(g *types.Group) (ok bool, err error) {
 	return Proc.VerifyGroup(g)
+}
+
+func (helper *ConsensusHelperImpl) VerifyGroupForFork(g *types.Group, preGroup *types.Group, parentGroup *types.Group, baseBlock *types.Block) (ok bool, err error) {
+	return group_create.GroupCreateProcessor.VerifyGroupForFork(g, preGroup, parentGroup, baseBlock)
 }

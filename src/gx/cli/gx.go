@@ -201,7 +201,7 @@ func (gx *GX) getAccountInfo(sk string) {
 
 func syncChainInfo(privateKey common.PrivateKey, id string) {
 	fmt.Println("Syncing block and group info from RocketProtocol net.Waiting...")
-	core.InitSyncerProcessor(privateKey, id)
+	core.InitSyncProcessor(privateKey, id)
 	go func() {
 		timer := time.NewTimer(time.Second * 10)
 		for {
