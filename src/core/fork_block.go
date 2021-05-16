@@ -164,6 +164,7 @@ func (blockFork *blockChainFork) triggerOnChain(chain *blockChain, groupChain *g
 	for height := blockFork.header + 1; height <= blockFork.latestBlock.Height; {
 		forkBlock := blockFork.getBlock(height)
 		if forkBlock == nil {
+			blockFork.logger.Debugf("block fork get nil block.height:%d", height)
 			return false
 		}
 		success, dependOnGroup := tryAddBlockOnChain(chain, forkBlock)
@@ -391,6 +392,7 @@ func refreshBlockForkDB(commonAncestor types.Block) db.Database {
 func tryAddBlockOnChain(chain *blockChain, forkBlock *types.Block) (success bool, dependOnGroup bool) {
 	validateCode, consensusVerifyResult := chain.consensusVerify(forkBlock)
 	if !consensusVerifyResult {
+		syncLogger.Debugf("[TriggerBlockOnChain]block verify error.height:%d,code%s", forkBlock.Header.Height, validateCode)
 		if validateCode == types.DependOnGroup {
 			return false, true
 		} else {
