@@ -43,12 +43,12 @@ func (groupAccessor *GroupAccessor) getCastQualifiedGroupFromFork(height uint64)
 			break
 		}
 	}
-	logger.Debugf("GetCastQualifiedGroupFromChains height:%d", height)
+	logger.Debugf("getCastQualifiedGroupFromFork height:%d", height)
 	n := len(groups)
 	reverseGroups := make([]*types.Group, n)
 	for i := 0; i < n; i++ {
 		reverseGroups[n-i-1] = groups[i]
-		logger.Debugf("GetCastQualifiedGroupFromChains group id:%s", hex.EncodeToString(groups[i].Id))
+		logger.Debugf("getCastQualifiedGroupFromFork group id:%s", hex.EncodeToString(groups[i].Id))
 	}
 	return reverseGroups
 }
