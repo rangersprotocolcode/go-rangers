@@ -250,9 +250,9 @@ func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
 	}
 	needMore := p.groupFork.rcv(group, groupResponse.IsLastGroup)
 	if needMore {
-		p.syncGroup(from, group)
+		go p.syncGroup(from, group)
 	} else {
-		p.triggerGroupOnFork()
+		go p.triggerGroupOnFork()
 	}
 }
 

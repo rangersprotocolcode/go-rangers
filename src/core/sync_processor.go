@@ -140,17 +140,14 @@ func (p *syncProcessor) chainInfoNotifyHandler(msg notify.Message) {
 		syncHandleLogger.Errorf("Sign verify error! ChainInfoMessage:%s", e.Error())
 		return
 	}
-	syncHandleLogger.Debugf("Rcv chain info! Height:%d,qn:%d,group height:%d,source:%s", chainInfo.TopBlockHeight, chainInfo.TotalQn, chainInfo.TopGroupHeight, chainInfo.SignInfo.Id)
+	syncHandleLogger.Tracef("Rcv chain info! Height:%d,qn:%d,group height:%d,source:%s", chainInfo.TopBlockHeight, chainInfo.TotalQn, chainInfo.TopGroupHeight, chainInfo.SignInfo.Id)
 	source := chainInfo.SignInfo.Id
 	if PeerManager.isEvil(source) {
 		syncHandleLogger.Debugf("[chainInfoNotifyHandler]%s is marked evil.Drop!", source)
 		return
 	}
 
-	topBlock := blockChainImpl.TopBlock()
-	localTotalQn, localTopHash := topBlock.TotalQN, topBlock.Hash
-	localGroupHeight := p.groupChain.height()
-	if chainInfo.TotalQn > localTotalQn || localTotalQn == chainInfo.TotalQn && localTopHash == chainInfo.TopBlockHash && localGroupHeight < chainInfo.TopGroupHeight {
+	if p.isUseful(*chainInfo) {
 		p.addCandidate(source, *chainInfo)
 	}
 }
@@ -209,6 +206,16 @@ func (p *syncProcessor) trySync() {
 	}
 }
 
+func (p *syncProcessor) isUseful(candidateInfo chainInfo) bool {
+	topBlock := blockChainImpl.TopBlock()
+	localTotalQn, localTopHash := topBlock.TotalQN, topBlock.Hash
+	localGroupHeight := p.groupChain.height()
+	if candidateInfo.TotalQn > localTotalQn || localTotalQn == candidateInfo.TotalQn && localTopHash == candidateInfo.TopBlockHash && localGroupHeight < candidateInfo.TopGroupHeight {
+		return true
+	}
+	return false
+}
+
 func (p *syncProcessor) chooseSyncCandidate() CandidateInfo {
 	evilCandidates := make([]string, 0, syncCandidatePoolSize)
 	for id, _ := range p.candidatePool {
@@ -224,11 +231,12 @@ func (p *syncProcessor) chooseSyncCandidate() CandidateInfo {
 
 	candidateInfo := CandidateInfo{}
 	for id, chainInfo := range p.candidatePool {
-		if chainInfo.TotalQn >= candidateInfo.TotalQn {
+		if p.isUseful(chainInfo) {
 			candidateInfo.Id = id
 			candidateInfo.TotalQn = chainInfo.TotalQn
 			candidateInfo.Height = chainInfo.TopBlockHeight
 			candidateInfo.GroupHeight = chainInfo.TopGroupHeight
+			break
 		}
 	}
 	return candidateInfo
