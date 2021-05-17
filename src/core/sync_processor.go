@@ -140,7 +140,7 @@ func (p *syncProcessor) chainInfoNotifyHandler(msg notify.Message) {
 		syncHandleLogger.Errorf("Sign verify error! ChainInfoMessage:%s", e.Error())
 		return
 	}
-	syncHandleLogger.Tracef("Rcv chain info! Height:%d,qn:%d,group height:%d,source:%s", chainInfo.TopBlockHeight, chainInfo.TotalQn, chainInfo.TopGroupHeight, chainInfo.SignInfo.Id)
+	syncHandleLogger.Debugf("Rcv chain info! Height:%d,qn:%d,group height:%d,source:%s", chainInfo.TopBlockHeight, chainInfo.TotalQn, chainInfo.TopGroupHeight, chainInfo.SignInfo.Id)
 	source := chainInfo.SignInfo.Id
 	if PeerManager.isEvil(source) {
 		syncHandleLogger.Debugf("[chainInfoNotifyHandler]%s is marked evil.Drop!", source)
@@ -152,7 +152,6 @@ func (p *syncProcessor) chainInfoNotifyHandler(msg notify.Message) {
 	localGroupHeight := p.groupChain.height()
 	if chainInfo.TotalQn > localTotalQn || localTotalQn == chainInfo.TotalQn && localTopHash == chainInfo.TopBlockHash && localGroupHeight < chainInfo.TopGroupHeight {
 		p.addCandidate(source, *chainInfo)
-
 	}
 }
 

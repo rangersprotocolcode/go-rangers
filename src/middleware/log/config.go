@@ -53,7 +53,7 @@ const (
 						</formats>
 					</seelog>`
 
-	LockLogConfig = `<seelog minlevel="error">
+	LockLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/lockLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
