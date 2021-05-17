@@ -19,7 +19,6 @@ package core
 import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -45,7 +44,6 @@ type groupChainFork struct {
 	current uint64
 	db      db.Database
 
-	lock   middleware.Loglock
 	logger log.Logger
 }
 
@@ -55,16 +53,15 @@ func newGroupChainFork(commonAncestor *types.Group) *groupChainFork {
 	fork.rcvLastGroup = false
 
 	fork.pending = lane.NewQueue()
-	fork.lock = middleware.NewLoglock("groupChainFork")
 	fork.db = refreshGroupForkDB(*commonAncestor)
 	fork.insertGroup(commonAncestor)
 	return fork
 }
 
 func (fork *groupChainFork) isWaiting() bool {
-	fork.lock.RLock("group chain fork isWaiting")
-	defer fork.lock.RUnlock("group chain fork isWaiting")
-
+	if fork.rcvLastGroup && fork.pending.Empty() {
+		return true
+	}
 	if fork.lastWaitingBlockHash == nil || len(fork.lastWaitingBlockHash) == 0 {
 		return false
 	}
@@ -75,9 +72,6 @@ func (fork *groupChainFork) isWaiting() bool {
 }
 
 func (fork *groupChainFork) rcv(group *types.Group, isLastGroup bool) (needMore bool) {
-	fork.lock.Lock("group chain fork rcv")
-	defer fork.lock.Unlock("group chain fork rcv")
-
 	if !fork.enableRcvGroup {
 		return false
 	}
@@ -91,9 +85,6 @@ func (fork *groupChainFork) rcv(group *types.Group, isLastGroup bool) (needMore 
 }
 
 func (fork *groupChainFork) triggerOnFork(blockFork *blockChainFork) (err error, rcvLastGroup bool, tail *types.Group) {
-	fork.lock.Lock("group chain fork triggerOnFork")
-	defer fork.lock.Unlock("group chain fork triggerOnFork")
-
 	fork.logger.Debugf("Trigger group on fork..")
 	var group *types.Group
 	for !fork.pending.Empty() {
@@ -130,9 +121,6 @@ func (fork *groupChainFork) triggerOnFork(blockFork *blockChainFork) (err error,
 }
 
 func (fork *groupChainFork) triggerOnChain(groupChain *groupChain) bool {
-	fork.lock.Lock("group chain fork triggerOnChain")
-	defer fork.lock.Unlock("group chain fork triggerOnChain")
-
 	if fork.current == fork.header {
 		groupChain.removeFromCommonAncestor(fork.getGroup(fork.header))
 		fork.current++
@@ -157,8 +145,6 @@ func (fork *groupChainFork) triggerOnChain(groupChain *groupChain) bool {
 }
 
 func (fork *groupChainFork) destroy() {
-	fork.lock.Lock("group chain fork destroy")
-	defer fork.lock.Unlock("group chain fork destroy")
 	for i := fork.header; i <= fork.latestGroup.GroupHeight; i++ {
 		fork.deleteGroup(i)
 	}

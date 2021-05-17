@@ -19,7 +19,6 @@ package core
 import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -44,7 +43,6 @@ type blockChainFork struct {
 	pending               *lane.Queue
 
 	db     db.Database
-	lock   middleware.Loglock
 	logger log.Logger
 }
 
@@ -54,16 +52,12 @@ func newBlockChainFork(commonAncestor types.Block) *blockChainFork {
 	fork.rcvLastBlock = false
 
 	fork.pending = lane.NewQueue()
-	fork.lock = middleware.NewLoglock("blockChainFork")
 	fork.db = refreshBlockForkDB(commonAncestor)
 	fork.insertBlock(&commonAncestor)
 	return fork
 }
 
 func (fork *blockChainFork) isWaiting() bool {
-	fork.lock.RLock("block chain fork is Waiting")
-	defer fork.lock.RUnlock("block chain fork is Waiting")
-
 	if fork.lastWaitingGroupId == nil || len(fork.lastWaitingGroupId) == 0 {
 		return false
 	}
@@ -74,9 +68,6 @@ func (fork *blockChainFork) isWaiting() bool {
 }
 
 func (fork *blockChainFork) rcv(block *types.Block, isLastBlock bool) (needMore bool) {
-	fork.lock.Lock("block chain fork rcv")
-	defer fork.lock.Unlock("block chain fork rcv")
-
 	if !fork.enableRcvBlock {
 		return false
 	}
@@ -90,9 +81,6 @@ func (fork *blockChainFork) rcv(block *types.Block, isLastBlock bool) (needMore 
 }
 
 func (fork *blockChainFork) triggerOnFork(groupFork *groupChainFork) (err error, rcvLastBlock bool, tail *types.Block) {
-	fork.lock.Lock("block chain fork triggerOnFork")
-	defer fork.lock.Unlock("block chain fork triggerOnFork")
-
 	fork.logger.Debugf("Trigger block on fork..")
 	var block *types.Block
 	for !fork.pending.Empty() {
@@ -129,8 +117,8 @@ func (fork *blockChainFork) triggerOnFork(groupFork *groupChainFork) (err error,
 }
 
 func (blockFork *blockChainFork) triggerOnChain(chain *blockChain, groupChain *groupChain, groupFork *groupChainFork) bool {
-	blockFork.lock.Lock("block chain fork triggerOnChain")
-	defer blockFork.lock.Unlock("block chain fork triggerOnFork")
+	chain.lock.Lock("block chain fork triggerOnChain")
+	defer chain.lock.Unlock("block chain fork triggerOnFork")
 
 	localTopHeader := chain.latestBlock
 	syncLogger.Debugf("Trigger block on chain...Local chain:%d-%d,fork:%d-%d", localTopHeader.Height, localTopHeader.TotalQN, blockFork.latestBlock.Height, blockFork.latestBlock.TotalQN)
@@ -190,9 +178,6 @@ func (blockFork *blockChainFork) triggerOnChain(chain *blockChain, groupChain *g
 }
 
 func (fork *blockChainFork) destroy() {
-	fork.lock.Lock("block chain fork destroy")
-	defer fork.lock.Unlock("block chain fork destroy")
-
 	for i := fork.header; i <= fork.latestBlock.Height; i++ {
 		fork.deleteBlock(i)
 	}
@@ -201,9 +186,6 @@ func (fork *blockChainFork) destroy() {
 }
 
 func (fork *blockChainFork) getBlockByHash(hash common.Hash) *types.Block {
-	fork.lock.RLock("block chain fork getBlockByHash")
-	defer fork.lock.RUnlock("block chain fork getBlockByHash")
-
 	bytes, _ := fork.db.Get(hash.Bytes())
 	block, _ := types.UnMarshalBlock(bytes)
 	//if err != nil {
@@ -329,7 +311,7 @@ func (fork *blockChainFork) verifyStateAndReceipt(coming *types.Block) (bool, *a
 		fork.logger.Errorf("Fail to new statedb, error:%s", err)
 		return false, state
 	}
-	vmExecutor := newVMExecutor(state, coming, "fullverify")
+	vmExecutor := newVMExecutor(state, coming, "fork")
 	stateRoot, _, _, receipts := vmExecutor.Execute()
 
 	if stateRoot != coming.Header.StateTree {

@@ -255,6 +255,8 @@ func (p *syncProcessor) blockResponseMsgHandler(msg notify.Message) {
 	p.logger.Debugf("Rcv synced block.Hash:%s,%d-%d.Pre:%s", block.Header.Hash.String(), block.Header.Height, block.Header.TotalQN, block.Header.PreHash.String())
 	p.reqTimer.Stop()
 
+	p.lock.Lock("rcv block")
+	defer p.lock.Unlock("rcv block")
 	if p.blockFork == nil {
 		return
 	}
@@ -267,28 +269,36 @@ func (p *syncProcessor) blockResponseMsgHandler(msg notify.Message) {
 }
 
 func (p *syncProcessor) triggerBlockOnFork() {
-	err, rcvLastBlock, block := p.blockFork.triggerOnFork(p.groupFork)
-	result := p.blockFork.triggerOnChain(p.blockChain, p.groupChain, p.groupFork)
-	p.logger.Debugf("Trigger on chain result:%v", result)
-	if result {
-		p.finishCurrentSync(true)
+	p.lock.Lock("triggerBlockOnFork")
+	defer p.lock.Unlock("triggerBlockOnFork")
+
+	if p.blockFork == nil {
 		return
 	}
+	err, rcvLastBlock, block := p.blockFork.triggerOnFork(p.groupFork)
+	if p.blockFork.latestBlock.TotalQN >= p.blockChain.latestBlock.TotalQN {
+		result := p.blockFork.triggerOnChain(p.blockChain, p.groupChain, p.groupFork)
+		p.logger.Debugf("Trigger on chain result:%v", result)
+		if result {
+			go p.finishCurrentSync(true)
+			return
+		}
+	}
 	if err == verifyGroupNotOnChainErr {
-		p.triggerOnFork(true)
+		go p.triggerOnFork(true)
 		return
 	}
 	if err == verifyBlockErr {
-		p.finishCurrentSync(false)
+		go p.finishCurrentSync(false)
 		return
 	}
 
 	if rcvLastBlock {
-		p.finishCurrentSync(false)
+		go p.finishCurrentSync(false)
 		return
 	}
 
 	if block != nil {
-		p.syncBlock(p.candidateInfo.Id, *block)
+		go p.syncBlock(p.candidateInfo.Id, *block)
 	}
 }

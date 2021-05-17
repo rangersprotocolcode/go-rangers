@@ -236,9 +236,6 @@ func (p *syncProcessor) chooseSyncCandidate() CandidateInfo {
 }
 
 func (p *syncProcessor) triggerOnFork(blockSyncPaused bool) {
-	p.lock.Lock("triggerOnFork")
-	defer p.lock.Unlock("triggerOnFork")
-
 	if p.groupFork == nil {
 		go p.requestGroupChainPiece(p.candidateInfo.Id, p.groupChain.height())
 		return
@@ -254,7 +251,10 @@ func (p *syncProcessor) triggerOnFork(blockSyncPaused bool) {
 	} else {
 		p.triggerBlockOnFork()
 	}
-	if p.blockFork.isWaiting() && p.groupFork.isWaiting() {
+
+	p.lock.RLock("isWaiting")
+	p.lock.RUnlock("isWaiting")
+	if p.blockFork != nil && p.groupFork != nil && p.blockFork.isWaiting() && p.groupFork.isWaiting() {
 		syncLogger.Warnf("Sync deadlock!Block waiting verify group and group waiting create block.")
 		go p.finishCurrentSync(false)
 		return

@@ -243,6 +243,8 @@ func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
 	p.logger.Debugf("Rcv synced group.ID:%s,Height:%d.Pre:%s", common.ToHex(group.Id), group.GroupHeight, common.ToHex(group.Header.PreGroup))
 	p.reqTimer.Stop()
 
+	p.lock.Lock("rcv group")
+	defer p.lock.Unlock("rcv group")
 	if p.groupFork == nil {
 		return
 	}
@@ -255,25 +257,31 @@ func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
 }
 
 func (p *syncProcessor) triggerGroupOnFork() {
+	p.lock.Lock("triggerGroupOnFork")
+	defer p.lock.Unlock("triggerGroupOnFork")
+
+	if p.groupFork == nil {
+		return
+	}
 	err, rcvLastGroup, group := p.groupFork.triggerOnFork(p.blockFork)
 	if err == common.ErrCreateBlockNil {
-		p.triggerOnFork(false)
+		go p.triggerOnFork(false)
 		return
 	}
 	if err == verifyGroupErr {
-		p.finishCurrentSync(false)
+		go p.finishCurrentSync(false)
 		return
 	}
 
 	if p.blockFork == nil {
 		result := p.groupFork.triggerOnChain(p.groupChain)
-		p.finishCurrentSync(result)
+		go p.finishCurrentSync(result)
 		return
 	}
 
 	if !rcvLastGroup && group != nil {
-		p.syncGroup(p.candidateInfo.Id, group)
+		go p.syncGroup(p.candidateInfo.Id, group)
 		return
 	}
-	p.triggerBlockOnFork()
+	go p.triggerBlockOnFork()
 }
