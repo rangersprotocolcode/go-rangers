@@ -248,8 +248,7 @@ func (fork *groupChainFork) verifyGroup(coming *types.Group, blockFork *blockCha
 	if baseBlock == nil {
 		return false, common.ErrCreateBlockNil
 	}
-	//return consensusHelper.VerifyGroupForFork(coming, preGroup, parentGroup, baseBlock)
-	return true, nil
+	return consensusHelper.VerifyGroupForFork(coming, preGroup, parentGroup, baseBlock)
 }
 
 func refreshGroupForkDB(commonAncestor types.Group) db.Database {
