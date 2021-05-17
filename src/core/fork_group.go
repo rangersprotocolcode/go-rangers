@@ -267,20 +267,3 @@ func refreshGroupForkDB(commonAncestor types.Group) db.Database {
 	db.Put([]byte(latestBlockHeightKey), utility.UInt64ToByte(commonAncestor.GroupHeight))
 	return db
 }
-
-func (iterator *GroupForkIterator) Current() *types.Group {
-	return iterator.current
-}
-
-func (iterator *GroupForkIterator) MovePre() *types.Group {
-	if SyncProcessor == nil || SyncProcessor.groupFork == nil || iterator.current == nil {
-		return nil
-	}
-	preGroupId := iterator.current.Header.PreGroup
-	if iterator.current.GroupHeight > SyncProcessor.groupFork.header {
-		iterator.current = SyncProcessor.groupFork.getGroupById(preGroupId)
-	} else {
-		iterator.current = groupChainImpl.GetGroupById(iterator.current.Header.PreGroup)
-	}
-	return iterator.current
-}

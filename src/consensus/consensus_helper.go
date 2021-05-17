@@ -57,10 +57,10 @@ func (helper *ConsensusHelperImpl) VerifyHash(b *types.Block) common.Hash {
 }
 
 func (helper *ConsensusHelperImpl) CheckProveRoot(bh *types.BlockHeader) (bool, error) {
-	preBlock := Proc.MainChain.QueryBlockByHash(bh.PreHash)
-	if preBlock == nil {
-		return false, errors.New(fmt.Sprintf("preBlock is nil,hash %v", bh.PreHash.ShortS()))
-	}
+	//preBlock := Proc.MainChain.QueryBlockByHash(bh.PreHash)
+	//if preBlock == nil {
+	//	return false, errors.New(fmt.Sprintf("preBlock is nil,hash %v", bh.PreHash.ShortS()))
+	//}
 	gid := groupsig.DeserializeID(bh.GroupId)
 	group := Proc.GetGroup(gid)
 	if !group.GroupID.IsValid() {
