@@ -96,7 +96,7 @@ func (fork *blockChainFork) triggerOnFork(groupFork *groupChainFork) (err error,
 		fork.currentWaitingGroupId = nil
 	}
 
-	if err == verifyGroupNotOnChainErr {
+	if err == verifyGroupNotOnChainErr || err == common.ErrSelectGroupInequal {
 		fork.lastWaitingGroupId = fork.currentWaitingGroupId
 		fork.currentWaitingGroupId = block.Header.GroupId
 		fork.logger.Debugf("Trigger block on fork paused. waiting group %s", common.ToHex(fork.currentWaitingGroupId))
@@ -210,6 +210,14 @@ func (fork *blockChainFork) addBlockOnFork(coming *types.Block, groupFork *group
 
 	if !fork.verifyGroupSign(coming, group.PubKey) {
 		return verifyBlockErr
+	}
+
+	if result, err := fork.verifyMemberLegal(coming); !result {
+		fork.logger.Debugf("Block cast or verify member illegal.error:%s", err.Error())
+		if err != common.ErrSelectGroupInequal {
+			return verifyBlockErr
+		}
+		return err
 	}
 	//verifyResult, state := fork.verifyStateAndReceipt(coming)
 	//if !verifyResult {
@@ -333,6 +341,20 @@ func (fork *blockChainFork) verifyGroupSign(coming *types.Block, groupPubkey []b
 		fork.logger.Errorf("Verify group sign error:%s", err.Error())
 	}
 	return result
+}
+
+func (fork *blockChainFork) verifyMemberLegal(coming *types.Block) (bool, error) {
+	preBlock := fork.getBlockByHash(coming.Header.PreHash)
+	if preBlock == nil {
+		fork.logger.Debugf("Fork get pre block nil! coming pre:%s", coming.Header.PreHash.Hex())
+		return false, verifyBlockErr
+	}
+
+	if fork.getBlockByHash(coming.Header.Hash) != nil {
+		fork.logger.Debugf("Coming block existed on the fork! coming hash:%s", coming.Header.Hash.Hex())
+		return false, verifyBlockErr
+	}
+	return consensusHelper.VerifyMemberInfo(coming.Header, preBlock.Header)
 }
 
 func (fork *blockChainFork) saveState(state *account.AccountDB) error {

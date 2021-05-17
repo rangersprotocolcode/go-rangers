@@ -97,3 +97,7 @@ func (helper *ConsensusHelperImpl) CheckGroup(g *types.Group) (ok bool, err erro
 func (helper *ConsensusHelperImpl) VerifyGroupForFork(g *types.Group, preGroup *types.Group, parentGroup *types.Group, baseBlock *types.Block) (ok bool, err error) {
 	return group_create.GroupCreateProcessor.VerifyGroupForFork(g, preGroup, parentGroup, baseBlock)
 }
+
+func (helper *ConsensusHelperImpl) VerifyMemberInfo(bh *types.BlockHeader, preBH *types.BlockHeader) (bool, error) {
+	return Proc.IsCastLegalForFork(bh, preBH)
+}
