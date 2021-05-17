@@ -14,7 +14,7 @@ func (iterator *GroupForkIterator) MovePre() *types.Group {
 		return nil
 	}
 	preGroupId := iterator.current.Header.PreGroup
-	if iterator.current.GroupHeight > SyncProcessor.groupFork.header && SyncProcessor.groupFork != nil {
+	if SyncProcessor.groupFork != nil && iterator.current.GroupHeight > SyncProcessor.groupFork.header {
 		iterator.current = SyncProcessor.groupFork.getGroupById(preGroupId)
 	} else {
 		iterator.current = groupChainImpl.GetGroupById(iterator.current.Header.PreGroup)
