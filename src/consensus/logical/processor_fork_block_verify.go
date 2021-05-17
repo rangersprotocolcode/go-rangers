@@ -50,7 +50,7 @@ func (p *Processor) CalcVerifyGroupFromFork(preBH *types.BlockHeader, castTime t
 
 	selectGroup, err := p.globalGroups.SelectVerifyGroupFromFork(hash, height)
 	if err != nil {
-		stdLogger.Errorf("SelectNextGroupFromChain height=%v, err:%v", height, err)
+		stdLogger.Errorf("CalcVerifyGroupFromFork height=%v, err:%v", height, err)
 		return nil
 	}
 	return selectGroup

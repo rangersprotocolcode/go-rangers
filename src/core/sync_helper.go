@@ -10,11 +10,11 @@ func (iterator *GroupForkIterator) Current() *types.Group {
 }
 
 func (iterator *GroupForkIterator) MovePre() *types.Group {
-	if SyncProcessor == nil || SyncProcessor.groupFork == nil || iterator.current == nil {
+	if SyncProcessor == nil || iterator.current == nil {
 		return nil
 	}
 	preGroupId := iterator.current.Header.PreGroup
-	if iterator.current.GroupHeight > SyncProcessor.groupFork.header {
+	if iterator.current.GroupHeight > SyncProcessor.groupFork.header && SyncProcessor.groupFork != nil {
 		iterator.current = SyncProcessor.groupFork.getGroupById(preGroupId)
 	} else {
 		iterator.current = groupChainImpl.GetGroupById(iterator.current.Header.PreGroup)
