@@ -219,11 +219,11 @@ func (fork *blockChainFork) addBlockOnFork(coming *types.Block, groupFork *group
 		}
 		return err
 	}
-	//verifyResult, state := fork.verifyStateAndReceipt(coming)
-	//if !verifyResult {
-	//	return verifyBlockErr
-	//}
-	//fork.saveState(state)
+	verifyResult, state := fork.verifyStateAndReceipt(coming)
+	if !verifyResult {
+		return verifyBlockErr
+	}
+	fork.saveState(state)
 
 	fork.insertBlock(coming)
 	fork.latestBlock = coming.Header

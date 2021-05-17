@@ -1,6 +1,9 @@
 package core
 
-import "com.tuntun.rocket/node/src/middleware/types"
+import (
+	"bytes"
+	"com.tuntun.rocket/node/src/middleware/types"
+)
 
 func (iterator *GroupForkIterator) Current() *types.Group {
 	return iterator.current
@@ -30,9 +33,6 @@ func (p *syncProcessor) GetBlockHeader(height uint64) *types.BlockHeader {
 	}
 	return bh
 }
-func (p *syncProcessor) GetAvailableGroupsByMinerId(height uint64, minerId []byte) []*types.Group {
-	return nil
-}
 
 func (p *syncProcessor) GetGroupById(id []byte) *types.Group {
 	var group *types.Group
@@ -41,4 +41,36 @@ func (p *syncProcessor) GetGroupById(id []byte) *types.Group {
 		group = p.groupFork.getGroupById(id)
 	}
 	return group
+}
+
+func (p *syncProcessor) GetAvailableGroupsByMinerId(height uint64, minerId []byte) []*types.Group {
+	allGroups := p.groupChain.availableGroupsAtFromFork(height)
+	group := make([]*types.Group, 0)
+
+	for _, g := range allGroups {
+		for _, mem := range g.Members {
+			if bytes.Equal(mem, minerId) {
+				group = append(group, g)
+				break
+			}
+		}
+	}
+
+	return group
+	return nil
+}
+
+func (chain *groupChain) availableGroupsAtFromFork(h uint64) []*types.Group {
+	iter := chain.ForkIterator()
+	gs := make([]*types.Group, 0)
+	for g := iter.Current(); g != nil; g = iter.MovePre() {
+		if g.Header.DismissHeight > h {
+			gs = append(gs, g)
+		} else {
+			genesis := chain.GetGroupByHeight(0)
+			gs = append(gs, genesis)
+			break
+		}
+	}
+	return gs
 }

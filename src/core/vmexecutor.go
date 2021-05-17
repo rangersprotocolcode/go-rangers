@@ -146,9 +146,5 @@ func (executor *VMExecutor) after() {
 	service.RefundManagerImpl.CheckAndMove(height, executor.accountdb)
 
 	// 计算出块奖励
-	if 0 == strings.Compare("fork", executor.situation) {
-		service.RewardCalculatorImpl.CalculateRewardForFork(height, executor.accountdb)
-	} else {
-		service.RewardCalculatorImpl.CalculateReward(height, executor.accountdb)
-	}
+	service.RewardCalculatorImpl.CalculateReward(height, executor.accountdb, executor.situation)
 }
