@@ -25,7 +25,6 @@ const (
 	groupForkDBPrefix            = "groupFork"
 	groupCommonAncestorHeightKey = "groupCommonAncestorGroup"
 	latestGroupHeightKey         = "latestGroup"
-	groupChainPieceLength        = 9
 	syncedGroupCount             = 16
 )
 
@@ -48,7 +47,8 @@ type syncProcessor struct {
 	syncing bool
 
 	syncTimer      *time.Timer
-	reqTimer       *time.Timer
+	blockReqTimer  *time.Timer
+	groupReqTimer  *time.Timer
 	broadcastTimer *time.Timer
 
 	blockFork *blockChainFork
@@ -65,7 +65,8 @@ func InitSyncProcessor(privateKey common.PrivateKey, id string) {
 	SyncProcessor = &syncProcessor{privateKey: privateKey, id: id, syncing: false, candidatePool: make(map[string]chainInfo)}
 
 	SyncProcessor.broadcastTimer = time.NewTimer(broadcastBlockInfoInterval)
-	SyncProcessor.reqTimer = time.NewTimer(syncReqTimeout)
+	SyncProcessor.blockReqTimer = time.NewTimer(syncReqTimeout)
+	SyncProcessor.groupReqTimer = time.NewTimer(syncReqTimeout)
 	SyncProcessor.syncTimer = time.NewTimer(blockSyncInterval)
 
 	SyncProcessor.blockChain = blockChainImpl
@@ -79,9 +80,6 @@ func InitSyncProcessor(privateKey common.PrivateKey, id string) {
 	notify.BUS.Subscribe(notify.BlockChainPiece, SyncProcessor.blockChainPieceHandler)
 	notify.BUS.Subscribe(notify.BlockReq, SyncProcessor.syncBlockReqHandler)
 	notify.BUS.Subscribe(notify.BlockResponse, SyncProcessor.blockResponseMsgHandler)
-
-	notify.BUS.Subscribe(notify.GroupChainPieceReq, SyncProcessor.groupChainPieceReqHandler)
-	notify.BUS.Subscribe(notify.GroupChainPiece, SyncProcessor.groupChainPieceHandler)
 	notify.BUS.Subscribe(notify.GroupReq, SyncProcessor.syncGroupReqHandler)
 	notify.BUS.Subscribe(notify.GroupResponse, SyncProcessor.groupResponseMsgHandler)
 	go SyncProcessor.loop()
@@ -98,7 +96,10 @@ func (p *syncProcessor) loop() {
 			go p.broadcastChainInfo(p.blockChain.TopBlock())
 		case <-p.syncTimer.C:
 			go p.trySync()
-		case <-p.reqTimer.C:
+		case <-p.blockReqTimer.C:
+			p.logger.Debugf("Sync to %s time out!", p.candidateInfo.Id)
+			p.finishCurrentSync(false)
+		case <-p.groupReqTimer.C:
 			p.logger.Debugf("Sync to %s time out!", p.candidateInfo.Id)
 			p.finishCurrentSync(false)
 		}
@@ -197,13 +198,10 @@ func (p *syncProcessor) trySync() {
 
 	p.syncing = true
 	p.candidateInfo = candidateInfo
-	if candidateInfo.TotalQn > localTotalQN {
-		p.logger.Debugf("Begin sync!Candidate:%s!Local block height:%d", candidateInfo.Id, localBlockHeight)
-		go p.requestBlockChainPiece(candidateInfo.Id, localBlockHeight)
-	} else {
-		p.logger.Debugf("Begin sync!Candidate:%s!Local group height:%d,candidate group height:%d", candidateInfo.Id, localGroupHeight, candidateInfo.GroupHeight)
-		go p.requestGroupChainPiece(candidateInfo.Id, localGroupHeight)
-	}
+	p.logger.Debugf("Begin sync!")
+	p.logger.Debugf("Candidate info:%s,%d-%d,%d", candidateInfo.Id, candidateInfo.Height, candidateInfo.TotalQn, candidateInfo.GroupHeight)
+	p.logger.Debugf("Local info:%d-%d,%d", localBlockHeight, localTotalQN, localGroupHeight)
+	go p.requestBlockChainPiece(candidateInfo.Id, localBlockHeight)
 }
 
 func (p *syncProcessor) isUseful(candidateInfo chainInfo) bool {
@@ -242,30 +240,74 @@ func (p *syncProcessor) chooseSyncCandidate() CandidateInfo {
 	return candidateInfo
 }
 
-func (p *syncProcessor) triggerOnFork(blockSyncPaused bool) {
-	if p.groupFork == nil {
-		go p.requestGroupChainPiece(p.candidateInfo.Id, p.groupChain.height())
+func (p *syncProcessor) readyOnFork() bool {
+	if p.blockFork == nil || p.groupFork == nil {
+		return false
+	}
+	blockReady := p.blockFork.rcvLastBlock || p.blockFork.pending.Size() >= syncedBlockCount
+	groupReady := p.groupFork.rcvLastGroup || p.groupFork.pending.Size() >= syncedGroupCount
+	return blockReady && groupReady
+}
+
+func (p *syncProcessor) triggerOnFork() {
+	p.lock.Lock("triggerBlockOnFork")
+	defer p.lock.Unlock("triggerBlockOnFork")
+
+	if p.blockFork == nil || p.groupFork == nil {
 		return
 	}
+	var pausedBlock *types.Block
+	p.logger.Debugf("Trigger on fork..")
+	for {
+		blockForkErr, currentBlock := p.blockFork.triggerOnFork(p.groupFork)
+		groupForkErr, _ := p.groupFork.triggerOnFork(p.blockFork)
+		if p.tryTriggerOnChain() {
+			go p.finishCurrentSync(true)
+			return
+		}
+		if blockForkErr == nil && !p.blockFork.rcvLastBlock {
+			go p.syncBlock(p.candidateInfo.Id, *p.blockFork.latestBlock)
+			return
+		}
+		if groupForkErr == nil && !p.groupFork.rcvLastGroup {
+			go p.syncGroup(p.candidateInfo.Id, p.groupFork.latestGroup)
+			return
+		}
+		if blockForkErr != nil && blockForkErr != verifyGroupNotOnChainErr && blockForkErr != common.ErrSelectGroupInequal {
+			go p.finishCurrentSync(false)
+			return
+		}
+		if groupForkErr != nil && groupForkErr != common.ErrCreateBlockNil {
+			go p.finishCurrentSync(false)
+			return
+		}
 
-	if p.blockFork == nil {
-		go p.requestBlockChainPiece(p.candidateInfo.Id, p.blockChain.Height())
-		return
+		if pausedBlock == currentBlock {
+			p.logger.Warnf("sync deadlock!")
+			go p.finishCurrentSync(false)
+			return
+		}
+		pausedBlock = currentBlock
 	}
+}
 
-	if blockSyncPaused {
-		p.triggerGroupOnFork()
-	} else {
-		p.triggerBlockOnFork()
+func (p *syncProcessor) tryTriggerOnChain() bool {
+	if p.blockFork.latestBlock.TotalQN >= p.blockChain.latestBlock.TotalQN {
+		result := p.blockFork.triggerOnChain(p.blockChain, p.groupChain, p.groupFork)
+		p.logger.Debugf("Trigger on chain result:%v", result)
+		if result {
+			go p.finishCurrentSync(true)
+			return true
+		}
+	} else if p.groupFork.latestGroup.GroupHeight > p.groupChain.height() {
+		result := p.groupFork.triggerOnChain(p.groupChain)
+		p.logger.Debugf("Trigger on chain result:%v", result)
+		if result {
+			go p.finishCurrentSync(true)
+			return true
+		}
 	}
-
-	p.lock.RLock("isWaiting")
-	p.lock.RUnlock("isWaiting")
-	if p.blockFork != nil && p.groupFork != nil && p.blockFork.isWaiting() && p.groupFork.isWaiting() {
-		syncLogger.Warnf("Sync deadlock!Block waiting verify group and group waiting create block.")
-		go p.finishCurrentSync(false)
-		return
-	}
+	return false
 }
 
 func (p *syncProcessor) finishCurrentSync(syncResult bool) {
@@ -284,7 +326,8 @@ func (p *syncProcessor) finishCurrentSync(syncResult bool) {
 		p.groupFork.destroy()
 		p.groupFork = nil
 	}
-	p.reqTimer.Stop()
+	p.blockReqTimer.Stop()
+	p.groupReqTimer.Stop()
 	p.candidateInfo = CandidateInfo{}
 	p.syncing = false
 	p.logger.Debugf("finish current sync:%v", syncResult)

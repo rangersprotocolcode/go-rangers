@@ -57,10 +57,6 @@ const (
 
 	BlockResponseMsg uint32 = 16
 
-	GroupChainPieceReqMsg uint32 = 17
-
-	GroupChainPieceMsg uint32 = 18
-
 	ReqGroupMsg uint32 = 19
 
 	GroupResponseMsg uint32 = 20

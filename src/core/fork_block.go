@@ -33,14 +33,11 @@ var verifyGroupNotOnChainErr = errors.New("Verify group not on group chain")
 var verifyBlockErr = errors.New("verify block error")
 
 type blockChainFork struct {
-	enableRcvBlock bool
-	rcvLastBlock   bool
-	header         uint64
+	rcvLastBlock bool
+	header       uint64
 
-	currentWaitingGroupId []byte
-	lastWaitingGroupId    []byte
-	latestBlock           *types.BlockHeader
-	pending               *lane.Queue
+	latestBlock *types.BlockHeader
+	pending     *lane.Queue
 
 	db     db.Database
 	logger log.Logger
@@ -48,7 +45,6 @@ type blockChainFork struct {
 
 func newBlockChainFork(commonAncestor types.Block) *blockChainFork {
 	fork := &blockChainFork{header: commonAncestor.Header.Height, latestBlock: commonAncestor.Header, logger: syncLogger}
-	fork.enableRcvBlock = true
 	fork.rcvLastBlock = false
 
 	fork.pending = lane.NewQueue()
@@ -57,63 +53,34 @@ func newBlockChainFork(commonAncestor types.Block) *blockChainFork {
 	return fork
 }
 
-func (fork *blockChainFork) isWaiting() bool {
-	if fork.lastWaitingGroupId == nil || len(fork.lastWaitingGroupId) == 0 {
-		return false
-	}
-	if fork.currentWaitingGroupId == nil || len(fork.currentWaitingGroupId) == 0 {
-		return false
-	}
-	return bytes.Equal(fork.lastWaitingGroupId, fork.currentWaitingGroupId)
-}
-
 func (fork *blockChainFork) rcv(block *types.Block, isLastBlock bool) (needMore bool) {
-	if !fork.enableRcvBlock {
-		return false
+	if block != nil {
+		fork.pending.Enqueue(block)
 	}
-	fork.pending.Enqueue(block)
 	fork.rcvLastBlock = isLastBlock
 	if isLastBlock || fork.pending.Size() >= syncedBlockCount {
-		fork.enableRcvBlock = false
 		return false
 	}
 	return true
 }
 
-func (fork *blockChainFork) triggerOnFork(groupFork *groupChainFork) (err error, rcvLastBlock bool, tail *types.Block) {
+func (fork *blockChainFork) triggerOnFork(groupFork *groupChainFork) (err error, current *types.Block) {
 	fork.logger.Debugf("Trigger block on fork..")
-	var block *types.Block
 	for !fork.pending.Empty() {
-		block = fork.pending.Head().(*types.Block)
-		err = fork.addBlockOnFork(block, groupFork)
+		current = fork.pending.Head().(*types.Block)
+		err = fork.addBlockOnFork(current, groupFork)
 		if err != nil {
-			fork.logger.Debugf("Block on fork failed!%s,%d-%d", block.Header.Hash.String(), block.Header.Height, block.Header.TotalQN)
+			fork.logger.Debugf("Block on fork failed!%s,%d-%d", current.Header.Hash.String(), current.Header.Height, current.Header.TotalQN)
 			break
 		}
-		fork.logger.Debugf("Block on fork success!%s,%d-%d", block.Header.Hash.String(), block.Header.Height, block.Header.TotalQN)
-		block = fork.pending.Pop().(*types.Block)
-		fork.lastWaitingGroupId = fork.currentWaitingGroupId
-		fork.currentWaitingGroupId = nil
+		fork.logger.Debugf("Block on fork success!%s,%d-%d", current.Header.Hash.String(), current.Header.Height, current.Header.TotalQN)
+		fork.pending.Pop()
 	}
 
 	if err == verifyGroupNotOnChainErr || err == common.ErrSelectGroupInequal {
-		fork.lastWaitingGroupId = fork.currentWaitingGroupId
-		fork.currentWaitingGroupId = block.Header.GroupId
-		fork.logger.Debugf("Trigger block on fork paused. waiting group %s", common.ToHex(fork.currentWaitingGroupId))
+		fork.logger.Debugf("Trigger block on fork paused. waiting group..")
 	}
-
-	if err != nil {
-		return err, fork.rcvLastBlock, nil
-	}
-
-	if !fork.rcvLastBlock {
-		fork.enableRcvBlock = true
-	}
-
-	if fork.pending.Empty() {
-		return err, fork.rcvLastBlock, block
-	}
-	return err, fork.rcvLastBlock, nil
+	return
 }
 
 func (blockFork *blockChainFork) triggerOnChain(chain *blockChain, groupChain *groupChain, groupFork *groupChainFork) bool {

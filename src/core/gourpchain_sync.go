@@ -11,36 +11,6 @@ func (chain *groupChain) height() uint64 {
 	}
 }
 
-func (chain *groupChain) getGroupChainPiece(sourceChainHeight uint64) []*types.Group {
-	chain.lock.RLock()
-	defer chain.lock.RUnlock()
-
-	var endHeight uint64 = 0
-	localHeight := chain.height()
-	if localHeight < sourceChainHeight {
-		endHeight = localHeight
-	} else {
-		endHeight = sourceChainHeight
-	}
-
-	var height uint64 = 0
-	if sourceChainHeight > groupChainPieceLength {
-		height = sourceChainHeight - groupChainPieceLength
-	}
-
-	chainPiece := make([]*types.Group, 0)
-	for ; height <= endHeight; height++ {
-		group := chain.getGroupByHeight(height)
-		if group == nil {
-			syncHandleLogger.Errorf("Group chain get nil group!Height:%d", height)
-			break
-		}
-		group.GroupHeight = height
-		chainPiece = append(chainPiece, group)
-	}
-	return chainPiece
-}
-
 func (chain *groupChain) removeFromCommonAncestor(commonAncestor *types.Group) {
 	chain.lock.Lock()
 	defer chain.lock.Unlock()
@@ -54,4 +24,14 @@ func (chain *groupChain) removeFromCommonAncestor(commonAncestor *types.Group) {
 		chain.remove(group)
 		syncLogger.Debugf("Remove local group hash:%s, height %d", group.Header.Hash.String(), group.GroupHeight)
 	}
+}
+
+func (chain *groupChain) getFirstGroupBelowHeight(createBlockHeight uint64) *types.Group {
+	iterator := chain.Iterator()
+	for g := iterator.Current(); g != nil; g = iterator.MovePre() {
+		if g.Header.CreateHeight <= createBlockHeight {
+			return g
+		}
+	}
+	return nil
 }

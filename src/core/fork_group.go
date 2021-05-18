@@ -17,7 +17,6 @@
 package core
 
 import (
-	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
@@ -32,14 +31,11 @@ var preGroupNilErr = errors.New("pre group is nil")
 var parentGroupNilErr = errors.New("parent group is nil")
 
 type groupChainFork struct {
-	enableRcvGroup bool
-	rcvLastGroup   bool
-	pending        *lane.Queue
+	rcvLastGroup bool
+	pending      *lane.Queue
 
-	currentWaitingBlockHash []byte
-	lastWaitingBlockHash    []byte
-	header                  uint64
-	latestGroup             *types.Group
+	header      uint64
+	latestGroup *types.Group
 
 	current uint64
 	db      db.Database
@@ -49,7 +45,6 @@ type groupChainFork struct {
 
 func newGroupChainFork(commonAncestor *types.Group) *groupChainFork {
 	fork := &groupChainFork{header: commonAncestor.GroupHeight, current: commonAncestor.GroupHeight, latestGroup: commonAncestor, logger: syncLogger}
-	fork.enableRcvGroup = true
 	fork.rcvLastGroup = false
 
 	fork.pending = lane.NewQueue()
@@ -58,66 +53,34 @@ func newGroupChainFork(commonAncestor *types.Group) *groupChainFork {
 	return fork
 }
 
-func (fork *groupChainFork) isWaiting() bool {
-	if fork.rcvLastGroup && fork.pending.Empty() {
-		return true
-	}
-	if fork.lastWaitingBlockHash == nil || len(fork.lastWaitingBlockHash) == 0 {
-		return false
-	}
-	if fork.currentWaitingBlockHash == nil || len(fork.currentWaitingBlockHash) == 0 {
-		return false
-	}
-	return bytes.Equal(fork.lastWaitingBlockHash, fork.currentWaitingBlockHash)
-}
-
 func (fork *groupChainFork) rcv(group *types.Group, isLastGroup bool) (needMore bool) {
-	if !fork.enableRcvGroup {
-		return false
+	if group != nil {
+		fork.pending.Enqueue(group)
 	}
-	fork.pending.Enqueue(group)
 	fork.rcvLastGroup = isLastGroup
 	if isLastGroup || fork.pending.Size() >= syncedGroupCount {
-		fork.enableRcvGroup = false
 		return false
 	}
 	return true
 }
 
-func (fork *groupChainFork) triggerOnFork(blockFork *blockChainFork) (err error, rcvLastGroup bool, tail *types.Group) {
+func (fork *groupChainFork) triggerOnFork(blockFork *blockChainFork) (err error, current *types.Group) {
 	fork.logger.Debugf("Trigger group on fork..")
-	var group *types.Group
 	for !fork.pending.Empty() {
-		group = fork.pending.Head().(*types.Group)
-		err = fork.addGroupOnFork(group, blockFork)
+		current = fork.pending.Head().(*types.Group)
+		err = fork.addGroupOnFork(current, blockFork)
 		if err != nil {
-			fork.logger.Debugf("Group on fork failed!%s-%d", common.ToHex(group.Id), group.GroupHeight)
+			fork.logger.Debugf("Group on fork failed!%s-%d", common.ToHex(current.Id), current.GroupHeight)
 			break
 		}
-		fork.logger.Debugf("Group on fork success!%s-%d", common.ToHex(group.Id), group.GroupHeight)
+		fork.logger.Debugf("Group on fork success!%s-%d", common.ToHex(current.Id), current.GroupHeight)
 		fork.pending.Pop()
-		fork.lastWaitingBlockHash = fork.currentWaitingBlockHash
-		fork.currentWaitingBlockHash = nil
 	}
 
 	if err == common.ErrCreateBlockNil {
-		fork.lastWaitingBlockHash = fork.currentWaitingBlockHash
-		fork.currentWaitingBlockHash = group.Header.CreateBlockHash
-		fork.logger.Debugf("Trigger group on fork paused. waiting block %s", common.ToHex(fork.currentWaitingBlockHash))
+		fork.logger.Debugf("Trigger group on fork paused. waiting block..")
 	}
-
-	if err != nil {
-		return err, fork.rcvLastGroup, nil
-	}
-
-	if !fork.rcvLastGroup {
-		fork.enableRcvGroup = true
-	}
-
-	if fork.pending.Empty() {
-		return err, fork.rcvLastGroup, group
-	}
-	return err, fork.rcvLastGroup, nil
+	return
 }
 
 func (fork *groupChainFork) triggerOnChain(groupChain *groupChain) bool {

@@ -106,30 +106,6 @@ func (m *BlockResponseMessage) GetData() interface{} {
 	return m
 }
 
-type GroupChainPieceReqMessage struct {
-	GroupChainPieceReq []byte
-	Peer               string
-}
-
-func (m *GroupChainPieceReqMessage) GetRaw() []byte {
-	return nil
-}
-func (m *GroupChainPieceReqMessage) GetData() interface{} {
-	return m
-}
-
-type GroupChainPieceMessage struct {
-	GroupChainPieceByte []byte
-	Peer                string
-}
-
-func (m *GroupChainPieceMessage) GetRaw() []byte {
-	return m.GroupChainPieceByte
-}
-func (m *GroupChainPieceMessage) GetData() interface{} {
-	return m
-}
-
 type GroupReqMessage struct {
 	ReqInfoByte []byte
 	Peer        string
