@@ -580,7 +580,7 @@ func unMarshalGroupSyncReq(b []byte) (*groupSyncReq, error) {
 
 func (groupMsgResponse *groupMsgResponse) GenHash() common.Hash {
 	buffer := bytes.Buffer{}
-	if groupMsgResponse != nil {
+	if groupMsgResponse.Group != nil {
 		buffer.Write(groupMsgResponse.Group.Header.Hash.Bytes())
 	}
 	if groupMsgResponse.IsLastGroup {
