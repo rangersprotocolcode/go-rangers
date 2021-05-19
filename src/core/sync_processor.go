@@ -260,7 +260,7 @@ func (p *syncProcessor) triggerOnFork() {
 	p.logger.Debugf("Trigger on fork..")
 	for {
 		blockForkErr, currentBlock := p.blockFork.triggerOnFork(p.groupFork)
-		groupForkErr, _ := p.groupFork.triggerOnFork(p.blockFork)
+		groupForkErr, currentGroup := p.groupFork.triggerOnFork(p.blockFork)
 		if p.tryTriggerOnChain() {
 			go p.finishCurrentSync(true)
 			return
@@ -283,7 +283,13 @@ func (p *syncProcessor) triggerOnFork() {
 		}
 
 		if pausedBlock == currentBlock {
-			p.logger.Warnf("sync deadlock!")
+			p.logger.Warnf("sync deadlock! rcv last block:%v,rcv last group:%v", p.blockFork.rcvLastBlock, p.groupFork.rcvLastGroup)
+			if currentBlock != nil {
+				p.logger.Debugf("paused block %s,%d-%d,verify group:%s", currentBlock.Header.Hash.Str(), currentBlock.Header.Height, currentBlock.Header.TotalQN, common.ToHex(currentBlock.Header.GroupId))
+			}
+			if currentGroup != nil {
+				p.logger.Debugf("paused group %s,%d,create block:%s", common.ToHex(currentGroup.Id), currentBlock.Header.Height, common.ToHex(currentGroup.Header.CreateBlockHash))
+			}
 			go p.finishCurrentSync(false)
 			return
 		}
