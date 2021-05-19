@@ -258,6 +258,8 @@ func (p *syncProcessor) triggerOnFork() {
 	}
 	var pausedBlock *types.Block
 	p.logger.Debugf("Trigger on fork..")
+	p.logger.Debugf("Block fork head %d,tail %d", p.blockFork.header, p.blockFork.latestBlock.Height)
+	p.logger.Debugf("Group fork head %d,tail %d", p.groupFork.header, p.groupFork.latestGroup.GroupHeight)
 	for {
 		blockForkErr, currentBlock := p.blockFork.triggerOnFork(p.groupFork)
 		groupForkErr, currentGroup := p.groupFork.triggerOnFork(p.blockFork)
