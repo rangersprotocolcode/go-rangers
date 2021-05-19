@@ -157,7 +157,7 @@ func (p *syncProcessor) blockChainPieceHandler(m notify.Message) {
 			p.finishCurrentSync(true)
 			return
 		}
-		p.logger.Debugf("Do not find block common ancestor.Req:%d", chainPiece[len(chainPiece)-1].Height)
+		p.logger.Debugf("Do not find block common ancestor.Req:%d", chainPiece[0].Height)
 		go p.requestBlockChainPiece(from, chainPiece[len(chainPiece)-1].Height)
 		return
 	}
