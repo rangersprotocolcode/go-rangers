@@ -66,6 +66,7 @@ func (p *syncProcessor) requestBlockChainPiece(targetNode string, reqHeight uint
 	message := network.Message{Code: network.BlockChainPieceReqMsg, Body: body}
 	network.GetNetInstance().SendToStranger(common.FromHex(targetNode), message)
 	p.blockReqTimer.Reset(syncReqTimeout)
+	p.logger.Debugf("req block chain piece from %s,height:%d", targetNode, reqHeight)
 }
 
 func (p *syncProcessor) blockChainPieceReqHandler(m notify.Message) {
@@ -131,13 +132,13 @@ func (p *syncProcessor) blockChainPieceHandler(m notify.Message) {
 	p.logger.Debugf("Rcv block chain piece from:%s,%d-%d", p.candidateInfo.Id, chainPiece[0].Height, chainPiece[len(chainPiece)-1].Height)
 	if !verifyBlockChainPiece(chainPiece, chainPieceInfo.TopHeader) {
 		p.logger.Debugf("Illegal block chain piece!", from)
-		p.finishCurrentSync(false)
+		p.finishCurrentSyncWithLock(false)
 		return
 	}
 
 	localTopHeader := p.blockChain.TopBlock()
 	if chainPieceInfo.TopHeader.TotalQN < localTopHeader.TotalQN {
-		p.finishCurrentSync(true)
+		p.finishCurrentSyncWithLock(true)
 		return
 	}
 
@@ -154,7 +155,7 @@ func (p *syncProcessor) blockChainPieceHandler(m notify.Message) {
 	if commonAncestor == nil {
 		if chainPiece[0].Height == 0 {
 			p.logger.Error("Genesis block is different.Can not sync!")
-			p.finishCurrentSync(true)
+			p.finishCurrentSyncWithLock(true)
 			return
 		}
 		p.logger.Debugf("Do not find block common ancestor.Req:%d", chainPiece[0].Height)
@@ -166,7 +167,7 @@ func (p *syncProcessor) blockChainPieceHandler(m notify.Message) {
 	commonAncestorBlock := p.blockChain.queryBlockByHash(commonAncestor.Hash)
 	if commonAncestorBlock == nil {
 		p.logger.Error("Chain get common ancestor nil! Height:%d,Hash:%s", commonAncestor.Height, commonAncestor.Hash.String())
-		p.finishCurrentSync(true)
+		p.finishCurrentSyncWithLock(true)
 		return
 	}
 	go p.startSync(from, *commonAncestorBlock)
@@ -206,10 +207,10 @@ func (p *syncProcessor) startSync(id string, commonAncestorBlock types.Block) {
 	commonAncestorGroup := p.groupChain.getFirstGroupBelowHeight(commonAncestorBlock.Header.Height)
 	if commonAncestorGroup == nil {
 		p.logger.Error("Common ancestor group is nil!")
-		go p.finishCurrentSync(false)
+		p.finishCurrentSync(false)
 		return
 	}
-	p.logger.Debugf("Common ancestor group %s,height:%d,createBlock height:%s", common.ToHex(commonAncestorGroup.Id), commonAncestorGroup.GroupHeight, commonAncestorGroup.Header.CreateHeight)
+	p.logger.Debugf("Common ancestor group %s,height:%d,createBlock height:%d", common.ToHex(commonAncestorGroup.Id), commonAncestorGroup.GroupHeight, commonAncestorGroup.Header.CreateHeight)
 	p.groupFork = newGroupChainFork(commonAncestorGroup)
 
 	go p.syncBlock(id, *commonAncestorBlock.Header)
@@ -218,7 +219,7 @@ func (p *syncProcessor) startSync(id string, commonAncestorBlock types.Block) {
 
 func (p *syncProcessor) syncBlock(id string, commonAncestor types.BlockHeader) {
 	syncHeight := commonAncestor.Height + 1
-	p.logger.Debugf("Sync block to:%s,reqHeight:%d", id, syncHeight)
+	p.logger.Debugf("Sync block from:%s,reqHeight:%d", id, syncHeight)
 	req := blockSyncReq{Height: syncHeight}
 	req.SignInfo = common.NewSignData(p.privateKey, p.id, &req)
 

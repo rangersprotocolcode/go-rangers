@@ -98,10 +98,10 @@ func (p *syncProcessor) loop() {
 			go p.trySync()
 		case <-p.blockReqTimer.C:
 			p.logger.Debugf("Sync to %s time out!", p.candidateInfo.Id)
-			p.finishCurrentSync(false)
+			p.finishCurrentSyncWithLock(false)
 		case <-p.groupReqTimer.C:
 			p.logger.Debugf("Sync to %s time out!", p.candidateInfo.Id)
-			p.finishCurrentSync(false)
+			p.finishCurrentSyncWithLock(false)
 		}
 	}
 }
@@ -183,6 +183,10 @@ func (p *syncProcessor) trySync() {
 	}
 	p.lock.Lock("trySync")
 	defer p.lock.Unlock("trySync")
+	if p.syncing {
+		p.logger.Debugf("Syncing to %s,do not sync!", p.candidateInfo.Id)
+		return
+	}
 	p.logger.Debugf("Try sync!")
 	p.syncTimer.Reset(blockSyncInterval)
 
@@ -273,11 +277,11 @@ func (p *syncProcessor) triggerOnFork() {
 			return
 		}
 		if blockForkErr != nil && blockForkErr != verifyGroupNotOnChainErr && blockForkErr != common.ErrSelectGroupInequal {
-			go p.finishCurrentSync(false)
+			p.finishCurrentSync(false)
 			return
 		}
 		if groupForkErr != nil && groupForkErr != common.ErrCreateBlockNil {
-			go p.finishCurrentSync(false)
+			p.finishCurrentSync(false)
 			return
 		}
 
@@ -289,7 +293,7 @@ func (p *syncProcessor) triggerOnFork() {
 			if currentGroup != nil {
 				p.logger.Debugf("paused group %s,%d,create block:%s", common.ToHex(currentGroup.Id), currentBlock.Header.Height, common.ToHex(currentGroup.Header.CreateBlockHash))
 			}
-			go p.finishCurrentSync(false)
+			p.finishCurrentSync(false)
 			return
 		}
 		pausedBlock = currentBlock
@@ -304,13 +308,13 @@ func (p *syncProcessor) tryTriggerOnChain() (canOnChain bool) {
 			addGroupResult := p.groupFork.triggerOnChain(p.groupChain)
 			if addBlockResult && addGroupResult {
 				p.logger.Debugf("Trigger on chain success.")
-				go p.finishCurrentSync(true)
+				p.finishCurrentSync(true)
 				return true
 			}
 
 			if pausedBlockHeight == p.blockFork.current && pausedGroupHeight == p.groupFork.current {
 				p.logger.Debugf("Trigger on chain failed.")
-				go p.finishCurrentSync(false)
+				p.finishCurrentSync(false)
 				return true
 			}
 			pausedBlockHeight = p.blockFork.current
@@ -320,10 +324,13 @@ func (p *syncProcessor) tryTriggerOnChain() (canOnChain bool) {
 	return false
 }
 
-func (p *syncProcessor) finishCurrentSync(syncResult bool) {
+func (p *syncProcessor) finishCurrentSyncWithLock(syncResult bool) {
 	p.lock.Lock("finish sync")
-	p.lock.Unlock("finish sync")
+	defer p.lock.Unlock("finish sync")
+	p.finishCurrentSync(syncResult)
+}
 
+func (p *syncProcessor) finishCurrentSync(syncResult bool) {
 	if !syncResult {
 		PeerManager.markEvil(p.candidateInfo.Id)
 	}
