@@ -116,11 +116,15 @@ func (fork *groupChainFork) destroy() {
 }
 
 func (fork *groupChainFork) getGroupById(id []byte) *types.Group {
+	syncLogger.Debugf("group chain fork get block by id:%d", common.ToHex(id))
 	bytes, _ := fork.db.Get(id)
-	group, _ := types.UnMarshalGroup(bytes)
-	//if err != nil {
-	//	fork.logger.Errorf("Fail to umMarshal group, error:%s,id:%s", err.Error(), common.ToHex(id))
-	//}
+	if bytes == nil || len(bytes) == 0 {
+		return nil
+	}
+	group, err := types.UnMarshalGroup(bytes)
+	if err != nil {
+		fork.logger.Errorf("Fail to umMarshal group, error:%s,id:%s", err.Error(), common.ToHex(id))
+	}
 	return group
 }
 
@@ -156,10 +160,14 @@ func (fork *groupChainFork) insertGroup(group *types.Group) error {
 }
 
 func (fork *groupChainFork) getGroup(height uint64) *types.Group {
+	syncLogger.Debugf("group chain fork get block :%d", height)
 	bytes, _ := fork.db.Get(generateHeightKey(height))
+	if bytes == nil || len(bytes) == 0 {
+		return nil
+	}
 	group, err := types.UnMarshalGroup(bytes)
 	if err != nil {
-		logger.Errorf("Fail to umMarshal group, error:%s", err.Error())
+		syncLogger.Errorf("Fail to umMarshal group, error:%s", err.Error())
 	}
 	return group
 }

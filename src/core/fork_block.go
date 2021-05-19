@@ -146,11 +146,15 @@ func (fork *blockChainFork) destroy() {
 }
 
 func (fork *blockChainFork) getBlockByHash(hash common.Hash) *types.Block {
+	syncLogger.Debugf("block chain fork get block by hash:%d", hash.Str())
 	bytes, _ := fork.db.Get(hash.Bytes())
-	block, _ := types.UnMarshalBlock(bytes)
-	//if err != nil {
-	//	logger.Errorf("Fail to umMarshal block, error:%s", err.Error())
-	//}
+	if bytes == nil || len(bytes) == 0 {
+		return nil
+	}
+	block, err := types.UnMarshalBlock(bytes)
+	if err != nil {
+		syncLogger.Errorf("Fail to umMarshal block, error:%s", err.Error())
+	}
 	return block
 }
 
@@ -211,10 +215,14 @@ func (fork *blockChainFork) insertBlock(block *types.Block) error {
 }
 
 func (fork *blockChainFork) getBlock(height uint64) *types.Block {
+	syncLogger.Debugf("block chain fork get block:%d", height)
 	bytes, _ := fork.db.Get(generateHeightKey(height))
+	if bytes == nil || len(bytes) == 0 {
+		return nil
+	}
 	block, err := types.UnMarshalBlock(bytes)
 	if err != nil {
-		logger.Errorf("Fail to umMarshal block, error:%s", err.Error())
+		syncLogger.Errorf("Fail to umMarshal block, error:%s", err.Error())
 	}
 	return block
 }
