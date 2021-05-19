@@ -32,7 +32,7 @@ var (
 	syncHandleLogger log.Logger
 )
 
-func InitCore(helper types.ConsensusHelper, privateKey common.PrivateKey, id string) error {
+func InitCore(helper types.ConsensusHelper) error {
 	index := common.GlobalConf.GetString("instance", "index", "")
 	logger = log.GetLoggerByIndex(log.CoreLogConfig, index)
 	txLogger = log.GetLoggerByIndex(log.TxLogConfig, index)
@@ -51,7 +51,6 @@ func InitCore(helper types.ConsensusHelper, privateKey common.PrivateKey, id str
 	if nil == groupChainImpl {
 		initGroupChain()
 	}
-	InitSyncProcessor(privateKey, id)
 
 	executor.InitExecutors()
 	service.InitRewardCalculator(blockChainImpl, groupChainImpl, SyncProcessor)
