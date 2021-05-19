@@ -24,21 +24,25 @@ func (iterator *GroupForkIterator) MovePre() *types.Group {
 
 func (p *syncProcessor) GetBlockHeader(height uint64) *types.BlockHeader {
 	var bh *types.BlockHeader
-	bh = p.blockChain.QueryBlockHeaderByHeight(height, true)
-	if bh == nil && p.blockFork != nil {
+	if p.blockFork != nil {
 		forkBlock := p.blockFork.getBlock(height)
 		if forkBlock != nil {
 			bh = forkBlock.Header
 		}
+	}
+	if bh == nil {
+		bh = p.blockChain.QueryBlockHeaderByHeight(height, true)
 	}
 	return bh
 }
 
 func (p *syncProcessor) GetGroupById(id []byte) *types.Group {
 	var group *types.Group
-	group = p.groupChain.getGroupById(id)
-	if group == nil && p.groupFork != nil {
+	if p.groupFork != nil {
 		group = p.groupFork.getGroupById(id)
+	}
+	if group == nil {
+		group = p.groupChain.getGroupById(id)
 	}
 	return group
 }

@@ -45,7 +45,6 @@ func InitRewardCalculator(blockChainImpl types.BlockChainHelper, groupChain type
 }
 
 func (reward *RewardCalculator) CalculateReward(height uint64, db *account.AccountDB, situation string) bool {
-	reward.logger.Warnf("cal reward, height: %d", height)
 	if !reward.needReward(height) {
 		reward.logger.Warnf("no need to reward, height: %d", height)
 		return false

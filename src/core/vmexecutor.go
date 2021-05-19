@@ -146,7 +146,5 @@ func (executor *VMExecutor) after() {
 	service.RefundManagerImpl.CheckAndMove(height, executor.accountdb)
 
 	// 计算出块奖励
-	logger.Debugf("before cal reward,height:%d", height)
 	service.RewardCalculatorImpl.CalculateReward(height, executor.accountdb, executor.situation)
-	logger.Debugf("after cal reward,height:%d", height)
 }
