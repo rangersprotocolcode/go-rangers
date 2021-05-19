@@ -355,7 +355,7 @@ message BlockReq{
 
 message BlockMsgResponse{
     required bool IsLast = 1;
-    required Block Block = 2;
+    optional Block Block = 2;
     required	SignData   SignInfo = 3;
 }
 
@@ -379,7 +379,7 @@ message GroupReq{
 
 message GroupMsgResponse{
     required bool IsLast = 1;
-    required Group Group = 2;
+    optional Group Group = 2;
     required	SignData   SignInfo = 3;
 }
 
