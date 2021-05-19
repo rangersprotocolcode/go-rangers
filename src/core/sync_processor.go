@@ -44,6 +44,7 @@ type syncProcessor struct {
 	candidateInfo CandidateInfo
 	candidatePool map[string]chainInfo
 
+	canSync bool
 	syncing bool
 
 	syncTimer      *time.Timer
@@ -87,6 +88,12 @@ func InitSyncProcessor(privateKey common.PrivateKey, id string) {
 
 func (p *syncProcessor) GetCandidateInfo() CandidateInfo {
 	return p.candidateInfo
+}
+
+func StartSync() {
+	if SyncProcessor != nil {
+		SyncProcessor.canSync = true
+	}
 }
 
 func (p *syncProcessor) loop() {
@@ -177,6 +184,9 @@ func (p *syncProcessor) addCandidate(id string, chainInfo chainInfo) {
 }
 
 func (p *syncProcessor) trySync() {
+	if !p.canSync {
+		return
+	}
 	if p.syncing {
 		p.logger.Debugf("Syncing to %s,do not sync!", p.candidateInfo.Id)
 		return
