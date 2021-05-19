@@ -33,7 +33,7 @@ type RewardCalculator struct {
 	minerManager *MinerManager
 	blockChain   types.BlockChainHelper
 	groupChain   types.GroupChainHelper
-	fork         types.ForkHelper
+	fork         *types.ForkHelper
 	logger       log.Logger
 }
 
