@@ -299,6 +299,7 @@ func (p *syncProcessor) blockResponseMsgHandler(msg notify.Message) {
 		p.logger.Debugf("Rcv synced block.Hash:%s,%d-%d.Pre:%s,is last:%v", block.Header.Hash.String(), block.Header.Height, block.Header.TotalQN, block.Header.PreHash.String(), blockResponse.IsLastBlock)
 	} else {
 		p.logger.Debugf("Rcv nil block.is last:%v", blockResponse.IsLastBlock)
+		blockResponse.IsLastBlock = true
 	}
 	p.blockReqTimer.Stop()
 
@@ -401,6 +402,7 @@ func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
 		p.logger.Debugf("Rcv synced group.ID:%s,Height:%d.Pre:%s,is last:%v", common.ToHex(group.Id), group.GroupHeight, common.ToHex(group.Header.PreGroup), groupResponse.IsLastGroup)
 	} else {
 		p.logger.Debugf("Rcv nil group.is last:%v", groupResponse.IsLastGroup)
+		groupResponse.IsLastGroup = true
 	}
 	p.groupReqTimer.Stop()
 
