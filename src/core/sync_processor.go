@@ -264,7 +264,6 @@ func (p *syncProcessor) triggerOnFork() {
 		blockForkErr, currentBlock := p.blockFork.triggerOnFork(p.groupFork)
 		groupForkErr, currentGroup := p.groupFork.triggerOnFork(p.blockFork)
 		if p.tryTriggerOnChain() {
-			go p.finishCurrentSync(true)
 			return
 		}
 		if blockForkErr == nil && !p.blockFork.rcvLastBlock {
@@ -299,20 +298,25 @@ func (p *syncProcessor) triggerOnFork() {
 	}
 }
 
-func (p *syncProcessor) tryTriggerOnChain() bool {
-	if p.blockFork.latestBlock.TotalQN >= p.blockChain.latestBlock.TotalQN {
-		result := p.blockFork.triggerOnChain(p.blockChain, p.groupChain, p.groupFork)
-		p.logger.Debugf("Trigger on chain result:%v", result)
-		if result {
-			go p.finishCurrentSync(true)
-			return true
-		}
-	} else if p.groupFork.latestGroup.GroupHeight > p.groupChain.height() {
-		result := p.groupFork.triggerOnChain(p.groupChain)
-		p.logger.Debugf("Trigger on chain result:%v", result)
-		if result {
-			go p.finishCurrentSync(true)
-			return true
+func (p *syncProcessor) tryTriggerOnChain() (canOnChain bool) {
+	if p.blockFork.latestBlock.TotalQN >= p.blockChain.latestBlock.TotalQN || p.groupFork.latestGroup.GroupHeight > p.groupChain.height() {
+		var pausedBlockHeight, pausedGroupHeight uint64
+		for {
+			addBlockResult := p.blockFork.triggerOnChain(p.blockChain)
+			addGroupResult := p.groupFork.triggerOnChain(p.groupChain)
+			if addBlockResult && addGroupResult {
+				p.logger.Debugf("Trigger on chain success.")
+				go p.finishCurrentSync(true)
+				return true
+			}
+
+			if pausedBlockHeight == p.blockFork.current && pausedGroupHeight == p.groupFork.current {
+				p.logger.Debugf("Trigger on chain failed.")
+				go p.finishCurrentSync(false)
+				return true
+			}
+			pausedBlockHeight = p.blockFork.current
+			pausedGroupHeight = p.groupFork.current
 		}
 	}
 	return false

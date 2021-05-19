@@ -36,6 +36,7 @@ type blockChainFork struct {
 	rcvLastBlock bool
 	header       uint64
 
+	current     uint64
 	latestBlock *types.BlockHeader
 	pending     *lane.Queue
 
@@ -44,7 +45,7 @@ type blockChainFork struct {
 }
 
 func newBlockChainFork(commonAncestor types.Block) *blockChainFork {
-	fork := &blockChainFork{header: commonAncestor.Header.Height, latestBlock: commonAncestor.Header, logger: syncLogger}
+	fork := &blockChainFork{header: commonAncestor.Header.Height, current: commonAncestor.Header.Height, latestBlock: commonAncestor.Header, logger: syncLogger}
 	fork.rcvLastBlock = false
 
 	fork.pending = lane.NewQueue()
@@ -83,18 +84,18 @@ func (fork *blockChainFork) triggerOnFork(groupFork *groupChainFork) (err error,
 	return
 }
 
-func (blockFork *blockChainFork) triggerOnChain(chain *blockChain, groupChain *groupChain, groupFork *groupChainFork) bool {
+func (blockFork *blockChainFork) triggerOnChain(chain *blockChain) bool {
 	chain.lock.Lock("block chain fork triggerOnChain")
 	defer chain.lock.Unlock("block chain fork triggerOnFork")
 
 	localTopHeader := chain.latestBlock
 	syncLogger.Debugf("Trigger block on chain...Local chain:%d-%d,fork:%d-%d", localTopHeader.Height, localTopHeader.TotalQN, blockFork.latestBlock.Height, blockFork.latestBlock.TotalQN)
 	if blockFork.latestBlock.TotalQN < localTopHeader.TotalQN {
-		return false
+		return true
 	}
 
 	var commonAncestor *types.BlockHeader
-	for height := blockFork.header; height <= blockFork.latestBlock.Height; height++ {
+	for height := blockFork.current; height <= blockFork.latestBlock.Height; height++ {
 		forkBlock := blockFork.getBlock(height)
 		chainBlockHeader := chain.QueryBlockHeaderByHeight(height, true)
 		if forkBlock == nil || chainBlockHeader == nil {
@@ -108,38 +109,30 @@ func (blockFork *blockChainFork) triggerOnChain(chain *blockChain, groupChain *g
 
 	if commonAncestor == nil {
 		syncLogger.Debugf("[TriggerBlockOnChain]common ancestor is nil.")
-		return false
+		return true
 	}
 	syncLogger.Debugf("[TriggerBlockOnChain]. common ancestor:%d", commonAncestor.Height)
 	if blockFork.latestBlock.TotalQN == localTopHeader.TotalQN && chain.nextPvGreatThanFork(commonAncestor, *blockFork) {
-		return false
+		return true
 	}
 
-	chain.removeFromCommonAncestor(commonAncestor)
-	for height := blockFork.header + 1; height <= blockFork.latestBlock.Height; {
-		forkBlock := blockFork.getBlock(height)
+	if blockFork.current == blockFork.header {
+		chain.removeFromCommonAncestor(commonAncestor)
+		blockFork.current++
+	}
+	for blockFork.current <= blockFork.latestBlock.Height {
+		forkBlock := blockFork.getBlock(blockFork.current)
 		if forkBlock == nil {
-			blockFork.logger.Debugf("block fork get nil block.height:%d", height)
+			blockFork.logger.Debugf("block fork get nil block.height:%d", blockFork.current)
 			return false
 		}
-		success, dependOnGroup := tryAddBlockOnChain(chain, forkBlock)
+		success, _ := tryAddBlockOnChain(chain, forkBlock)
 		if success {
-			height++
+			blockFork.current++
 			continue
-		} else if !dependOnGroup {
+		} else {
 			return false
 		}
-		if groupFork != nil {
-			groupFork.triggerOnChain(groupChain)
-		}
-
-		success, dependOnGroup = tryAddBlockOnChain(chain, forkBlock)
-		if !success {
-			return false
-		}
-	}
-	if groupFork != nil {
-		groupFork.triggerOnChain(groupChain)
 	}
 	return true
 }
