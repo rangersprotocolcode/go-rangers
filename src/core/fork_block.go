@@ -146,7 +146,6 @@ func (fork *blockChainFork) destroy() {
 }
 
 func (fork *blockChainFork) getBlockByHash(hash common.Hash) *types.Block {
-	syncLogger.Debugf("block chain fork get block by hash:%s", hash.Str())
 	bytes, _ := fork.db.Get(hash.Bytes())
 	if bytes == nil || len(bytes) == 0 {
 		return nil
@@ -215,7 +214,6 @@ func (fork *blockChainFork) insertBlock(block *types.Block) error {
 }
 
 func (fork *blockChainFork) getBlock(height uint64) *types.Block {
-	syncLogger.Debugf("block chain fork get block:%d", height)
 	bytes, _ := fork.db.Get(generateHeightKey(height))
 	if bytes == nil || len(bytes) == 0 {
 		return nil

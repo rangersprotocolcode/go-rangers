@@ -116,7 +116,6 @@ func (fork *groupChainFork) destroy() {
 }
 
 func (fork *groupChainFork) getGroupById(id []byte) *types.Group {
-	syncLogger.Debugf("group chain fork get block by id:%d", common.ToHex(id))
 	bytes, _ := fork.db.Get(id)
 	if bytes == nil || len(bytes) == 0 {
 		return nil
@@ -160,7 +159,6 @@ func (fork *groupChainFork) insertGroup(group *types.Group) error {
 }
 
 func (fork *groupChainFork) getGroup(height uint64) *types.Group {
-	syncLogger.Debugf("group chain fork get block :%d", height)
 	bytes, _ := fork.db.Get(generateHeightKey(height))
 	if bytes == nil || len(bytes) == 0 {
 		return nil
