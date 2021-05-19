@@ -295,7 +295,11 @@ func (p *syncProcessor) blockResponseMsgHandler(msg notify.Message) {
 		return
 	}
 	block := blockResponse.Block
-	p.logger.Debugf("Rcv synced block.Hash:%s,%d-%d.Pre:%s", block.Header.Hash.String(), block.Header.Height, block.Header.TotalQN, block.Header.PreHash.String())
+	if block != nil {
+		p.logger.Debugf("Rcv synced block.Hash:%s,%d-%d.Pre:%s,is last:%v", block.Header.Hash.String(), block.Header.Height, block.Header.TotalQN, block.Header.PreHash.String(), blockResponse.IsLastBlock)
+	} else {
+		p.logger.Debugf("Rcv nil block.is last:%v", blockResponse.IsLastBlock)
+	}
 	p.blockReqTimer.Stop()
 
 	p.lock.Lock("rcv block")
@@ -393,7 +397,11 @@ func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
 		return
 	}
 	group := groupResponse.Group
-	p.logger.Debugf("Rcv synced group.ID:%s,Height:%d.Pre:%s", common.ToHex(group.Id), group.GroupHeight, common.ToHex(group.Header.PreGroup))
+	if group != nil {
+		p.logger.Debugf("Rcv synced group.ID:%s,Height:%d.Pre:%s,is last:%v", common.ToHex(group.Id), group.GroupHeight, common.ToHex(group.Header.PreGroup), groupResponse.IsLastGroup)
+	} else {
+		p.logger.Debugf("Rcv nil group.is last:%v", groupResponse.IsLastGroup)
+	}
 	p.groupReqTimer.Stop()
 
 	p.lock.Lock("rcv group")
