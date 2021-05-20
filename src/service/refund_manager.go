@@ -32,14 +32,16 @@ import (
 type RefundManager struct {
 	logger           log.Logger
 	groupChainHelper types.GroupChainHelper
+	forkHelper       types.ForkHelper
 }
 
 var RefundManagerImpl *RefundManager
 
-func InitRefundManager(groupChainHelper types.GroupChainHelper) {
+func InitRefundManager(groupChainHelper types.GroupChainHelper, forkHelper types.ForkHelper) {
 	RefundManagerImpl = &RefundManager{}
 	RefundManagerImpl.logger = log.GetLoggerByIndex(log.RefundLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	RefundManagerImpl.groupChainHelper = groupChainHelper
+	RefundManagerImpl.forkHelper = forkHelper
 }
 
 func (refund *RefundManager) CheckAndMove(height uint64, db *account.AccountDB) {
@@ -104,7 +106,7 @@ func (refund *RefundManager) Add(data map[uint64]types.RefundInfoList, db *accou
 	}
 }
 
-func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint64, accountdb *account.AccountDB) (uint64, *big.Int, error) {
+func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint64, accountdb *account.AccountDB, situation string) (uint64, *big.Int, error) {
 	this.logger.Debugf("getRefund, minerId:%s, height: %d, money: %d", common.ToHex(minerId), now, money)
 	miner := MinerManagerImpl.GetMiner(minerId, accountdb)
 	if nil == miner {
@@ -137,7 +139,12 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint
 	// 验证节点，计算最多能加入的组数，来确定解锁块高
 	if miner.Type == common.MinerTypeValidator {
 		// 检查当前加入了多少组
-		groups := this.groupChainHelper.GetAvailableGroupsByMinerId(now, minerId)
+		var groups []*types.Group
+		if situation != "fork" {
+			groups = this.groupChainHelper.GetAvailableGroupsByMinerId(now, minerId)
+		} else {
+			groups = this.forkHelper.GetAvailableGroupsByMinerId(now, minerId)
+		}
 		// 扣完质押之后，还能加入多少组
 		leftGroups := int(left / common.ValidatorStake)
 		delta := len(groups) - leftGroups

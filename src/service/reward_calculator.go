@@ -33,14 +33,14 @@ type RewardCalculator struct {
 	minerManager *MinerManager
 	blockChain   types.BlockChainHelper
 	groupChain   types.GroupChainHelper
-	fork         types.ForkHelper
+	forkHelper   types.ForkHelper
 	logger       log.Logger
 }
 
 var RewardCalculatorImpl *RewardCalculator
 
-func InitRewardCalculator(blockChainImpl types.BlockChainHelper, groupChain types.GroupChainHelper, fork types.ForkHelper) {
-	RewardCalculatorImpl = &RewardCalculator{minerManager: MinerManagerImpl, blockChain: blockChainImpl, groupChain: groupChain, fork: fork}
+func InitRewardCalculator(blockChainImpl types.BlockChainHelper, groupChain types.GroupChainHelper, forkHelper types.ForkHelper) {
+	RewardCalculatorImpl = &RewardCalculator{minerManager: MinerManagerImpl, blockChain: blockChainImpl, groupChain: groupChain, forkHelper: forkHelper}
 	RewardCalculatorImpl.logger = log.GetLoggerByIndex(log.RewardLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 }
 
@@ -98,7 +98,7 @@ func (reward *RewardCalculator) calculateReward(height uint64, situation string)
 		if situation != "fork" {
 			bh = reward.blockChain.QueryBlockHeaderByHeight(i, true)
 		} else {
-			bh = reward.fork.GetBlockHeader(i)
+			bh = reward.forkHelper.GetBlockHeader(i)
 		}
 		if nil == bh {
 			reward.logger.Errorf("fail to get blockHeader. height: %d", i)
@@ -169,7 +169,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, s
 	if situation != "fork" {
 		group = reward.groupChain.GetGroupById(bh.GroupId)
 	} else {
-		group = reward.fork.GetGroupById(bh.GroupId)
+		group = reward.forkHelper.GetGroupById(bh.GroupId)
 	}
 	if group == nil {
 		reward.logger.Errorf("fail to get group. id: %v", bh.GroupId)

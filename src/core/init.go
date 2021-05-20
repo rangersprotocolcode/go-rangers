@@ -55,7 +55,7 @@ func InitCore(helper types.ConsensusHelper, privateKey common.PrivateKey, id str
 
 	executor.InitExecutors()
 	service.InitRewardCalculator(blockChainImpl, groupChainImpl, SyncProcessor)
-	service.InitRefundManager(groupChainImpl)
+	service.InitRefundManager(groupChainImpl, SyncProcessor)
 
 	initChainHandler()
 

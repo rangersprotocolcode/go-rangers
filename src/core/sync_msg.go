@@ -92,7 +92,9 @@ func (p *syncProcessor) blockChainPieceReqHandler(m notify.Message) {
 	chainPieceMsg := blockChainPiece{ChainPiece: chainPiece, TopHeader: p.blockChain.TopBlock()}
 	chainPieceMsg.SignInfo = common.NewSignData(p.privateKey, p.id, &chainPieceMsg)
 
-	syncHandleLogger.Debugf("Send chain piece %d-%d to:%s", chainPiece[0].Height, chainPiece[len(chainPiece)-1].Height, from)
+	if len(chainPiece) > 0 {
+		syncHandleLogger.Debugf("Send chain piece %d-%d to:%s", chainPiece[0].Height, chainPiece[len(chainPiece)-1].Height, from)
+	}
 	body, e := marshalBlockChainPiece(chainPieceMsg)
 	if e != nil {
 		syncHandleLogger.Errorf("Marshal block chain piece error:%s!", e.Error())
