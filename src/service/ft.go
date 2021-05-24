@@ -121,7 +121,7 @@ func (self *FTManager) PublishFTSet(ftSet *types.FTSet, accountDB *account.Accou
 
 	// 检查id是否已存在
 	ftAddress := common.GenerateFTSetAddress(ftSet.ID)
-	if !accountDB.Exist(ftAddress) {
+	if accountDB.Exist(ftAddress) {
 		return ftSet.ID, false
 	}
 
