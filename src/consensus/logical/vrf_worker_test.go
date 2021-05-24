@@ -17,6 +17,7 @@
 package logical
 
 import (
+	"com.tuntun.rocket/node/src/consensus/model"
 	"com.tuntun.rocket/node/src/consensus/vrf"
 	cryptorand "crypto/rand"
 	"fmt"
@@ -24,6 +25,18 @@ import (
 	"math/big"
 	"testing"
 )
+
+func TestCalcPotentialProposal(t *testing.T) {
+	param := model.ConsensusParam{
+		PotentialProposalIndex: 30,
+		PotentialProposal:      3,
+		PotentialProposalMax:   8,
+	}
+
+	fmt.Println(calcPotentialProposal(20, param))  // 6
+	fmt.Println(calcPotentialProposal(7, param))   // 3
+	fmt.Println(calcPotentialProposal(200, param)) // 8
+}
 
 func TestBigInt(t *testing.T) {
 	t.Log(max256, max256.String(), max256.FloatString(10))

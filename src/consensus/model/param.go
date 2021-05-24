@@ -57,7 +57,10 @@ type ConsensusParam struct {
 	GroupCreateGap      uint64
 	GroupWaitPongGap    uint64
 	//EffectGapAfterApply uint64	//矿工申请后，到生效的高度间隔
-	PotentialProposal int //潜在提案者
+
+	PotentialProposal      uint64 //潜在提案者
+	PotentialProposalMax   uint64
+	PotentialProposalIndex int
 
 	ProposalBonus uint64 //提案奖励
 	PackBonus     uint64 //打包一个分红交易奖励
@@ -82,7 +85,10 @@ func InitParam(cc common.SectionConfManager) {
 		CandidatesMinRatio:  cc.GetInt("candidates_min_ratio", CANDIDATES_MIN_RATIO),
 		GroupReadyGap:       uint64(cc.GetInt("group_ready_gap", GROUP_Ready_GAP)),
 		//EffectGapAfterApply: EPOCH,
-		PotentialProposal:   3,
+		PotentialProposal:      3,
+		PotentialProposalMax:   8,
+		PotentialProposalIndex: 30,
+
 		CreateGroupInterval: uint64(Group_Create_Interval),
 		GroupCreateGap:      uint64(common.Group_Create_Gap),
 		GroupWaitPongGap:    uint64(Group_Wait_Pong_Gap),

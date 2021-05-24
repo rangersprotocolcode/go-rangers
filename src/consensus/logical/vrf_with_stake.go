@@ -90,9 +90,21 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 }
 
 func stakeRatio(stake, totalStake uint64) *big.Rat {
-	stakeRat := new(big.Rat).SetInt64(int64(stake * uint64(model.Param.PotentialProposal)))
+	stakeRat := new(big.Rat).SetInt64(int64(stake * calcPotentialProposal(totalStake, model.Param)))
 	totalStakeRat := new(big.Rat).SetFloat64(float64(totalStake))
 	return new(big.Rat).Quo(stakeRat, totalStakeRat)
+}
+
+func calcPotentialProposal(totalStake uint64, param model.ConsensusParam) uint64 {
+	potentialProposal := totalStake * uint64(param.PotentialProposalIndex) / 100
+
+	if potentialProposal < param.PotentialProposal {
+		return param.PotentialProposal
+	}
+	if potentialProposal > param.PotentialProposalMax {
+		return param.PotentialProposalMax
+	}
+	return potentialProposal
 }
 
 func vrfValueRatio(prove vrf.VRFProve) *big.Rat {
