@@ -199,7 +199,7 @@ func setup(id string) {
 	logger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
 	service.InitMinerManager()
-	service.InitRefundManager(groupChainImpl)
+	service.InitRefundManager(groupChainImpl, SyncProcessor)
 }
 
 func teardown(id string) {
