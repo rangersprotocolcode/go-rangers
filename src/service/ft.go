@@ -55,11 +55,11 @@ func (self *FTManager) GetFTSet(id string, accountDB *account.AccountDB) *types.
 	self.lock.RLock()
 	defer self.lock.RUnlock()
 
-	if !self.contains(id, accountDB) {
+	ftAddress := common.GenerateFTSetAddress(id)
+	if !accountDB.Exist(ftAddress) {
 		return nil
 	}
 
-	ftAddress := common.BytesToAddress(utility.StrToBytes(id))
 	ftSet := types.FTSet{ID: id,
 		Name:        utility.BytesToStr(accountDB.GetData(ftAddress, name)),
 		Symbol:      utility.BytesToStr(accountDB.GetData(ftAddress, symbol)),
@@ -80,7 +80,7 @@ func (self *FTManager) GetFTSet(id string, accountDB *account.AccountDB) *types.
 
 func (self *FTManager) GenerateFTSet(name, symbol, appId, total, owner, createTime string, kind byte) *types.FTSet {
 	// 生成id
-	id := self.genID(appId, symbol)
+	id := fmt.Sprintf("%s-%s", appId, symbol)
 
 	// 生成ftSet
 	ftSet := &types.FTSet{
@@ -120,11 +120,11 @@ func (self *FTManager) PublishFTSet(ftSet *types.FTSet, accountDB *account.Accou
 	}
 
 	// 检查id是否已存在
-	if self.contains(ftSet.ID, accountDB) {
+	ftAddress := common.GenerateFTSetAddress(ftSet.ID)
+	if !accountDB.Exist(ftAddress) {
 		return ftSet.ID, false
 	}
 
-	ftAddress := common.BytesToAddress(utility.StrToBytes(ftSet.ID))
 	accountDB.SetData(ftAddress, name, utility.StrToBytes(ftSet.Name))
 	accountDB.SetData(ftAddress, symbol, utility.StrToBytes(ftSet.Symbol))
 	accountDB.SetData(ftAddress, appId, utility.StrToBytes(ftSet.AppId))
@@ -149,11 +149,10 @@ func (self *FTManager) SubFTSet(triedOwner, ftId string, amount *big.Int, accoun
 	defer self.lock.Unlock()
 
 	// check ftId
-	if !self.contains(ftId, accountDB) {
+	ftAddress := common.GenerateFTSetAddress(ftId)
+	if !accountDB.Exist(ftAddress) {
 		return false
 	}
-
-	ftAddress := common.BytesToAddress(utility.StrToBytes(ftId))
 
 	// check owner
 	ftSetOwner := utility.BytesToStr(accountDB.GetData(ftAddress, owner))
@@ -242,14 +241,6 @@ func (self *FTManager) MintFT(owner, ftId, target, supply string, accountDB *acc
 
 }
 
-func (self *FTManager) genID(appId, symbol string) string {
-	return fmt.Sprintf("%s-%s", appId, symbol)
-}
-
-func (self *FTManager) contains(id string, accountDB *account.AccountDB) bool {
-	return accountDB.Exist(common.BytesToAddress(utility.StrToBytes(id)))
-}
-
 func (self *FTManager) convert(value string) *big.Int {
 	supply, err := utility.StrToBigInt(value)
 	if err != nil {
@@ -258,4 +249,3 @@ func (self *FTManager) convert(value string) *big.Int {
 
 	return supply
 }
-
