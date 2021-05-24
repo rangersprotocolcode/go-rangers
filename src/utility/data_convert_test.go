@@ -145,7 +145,7 @@ func TestStrToBigInt11(t *testing.T) {
 }
 
 func TestStrToBigInt12(t *testing.T) {
-	str := "999999999999999999.999999999999999999"
+	str := "2.232481527522570897"
 	fmt.Println(str)
 	bigInt, _ := StrToBigInt(str)
 	fmt.Println(bigInt.String())
@@ -164,6 +164,14 @@ func TestStrToBigInt13(t *testing.T) {
 	bigIntC := bigIntA.Sub(bigIntA, bigIntB)
 	fmt.Println(bigIntC.String())
 	fmt.Println(BigIntToStr(bigIntC))
+}
+
+func TestStrToBigInt14(t *testing.T) {
+	str := "4.560060699"
+	fmt.Println(str)
+	bigInt, _ := StrToBigInt(str)
+	fmt.Println(bigInt.String())
+	fmt.Println(BigIntToStr(bigInt))
 }
 
 func TestFloat64ToBigInt(t *testing.T) {
