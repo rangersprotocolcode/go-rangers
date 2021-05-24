@@ -163,7 +163,7 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 	service.InitService()
 	vm.InitVM()
 
-	err := core.InitCore(consensus.NewConsensusHelper(minerInfo.ID))
+	err := core.InitCore(consensus.NewConsensusHelper(minerInfo.ID), *sk, minerInfo.ID.GetHexString())
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
 	}
@@ -201,7 +201,7 @@ func (gx *GX) getAccountInfo(sk string) {
 
 func syncChainInfo(privateKey common.PrivateKey, id string) {
 	fmt.Println("Syncing block and group info from RocketProtocol net.Waiting...")
-	core.InitSyncProcessor(privateKey, id)
+	core.StartSync()
 	go func() {
 		timer := time.NewTimer(time.Second * 10)
 		for {

@@ -62,5 +62,9 @@ type ConsensusHelper interface {
 	//check group
 	CheckGroup(g *Group) (bool, error)
 
+	//check the new block
+	//mainly verify the cast legality, group selected ok
+	VerifyMemberInfo(bh *BlockHeader, preBH *BlockHeader) (bool, error)
+
 	VerifyGroupForFork(g *Group, preGroup *Group, parentGroup *Group, baseBlock *Block) (bool, error)
 }

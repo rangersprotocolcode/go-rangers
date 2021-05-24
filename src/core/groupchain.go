@@ -160,6 +160,8 @@ func (chain *groupChain) ForkIterator() *GroupForkIterator {
 	iterator := GroupForkIterator{}
 	if SyncProcessor != nil && SyncProcessor.groupFork != nil {
 		iterator.current = SyncProcessor.groupFork.latestGroup
+	} else {
+		iterator.current = chain.lastGroup
 	}
 	return &iterator
 }

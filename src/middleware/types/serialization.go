@@ -308,6 +308,9 @@ func PbToGroup(g *middleware_pb.Group) *Group {
 	//	member := pbToMember(m)
 	//	members = append(members, *member)
 	//}
+	if g == nil {
+		return nil
+	}
 	group := Group{
 		Header:      PbToGroupHeader(g.Header),
 		Id:          g.Id,
@@ -460,6 +463,9 @@ func GroupToPb(g *Group) *middleware_pb.Group {
 	//	member := memberToPb(&m)
 	//	members = append(members, member)
 	//}
+	if g == nil {
+		return nil
+	}
 	group := middleware_pb.Group{
 		Header:      GroupToPbHeader(g.Header),
 		Id:          g.Id,

@@ -126,7 +126,7 @@ func vmExecutorSetup(name string) {
 	service.InitService()
 	setup(name)
 	executor.InitExecutors()
-	service.InitRewardCalculator(blockChainImpl, groupChainImpl)
+	service.InitRewardCalculator(blockChainImpl, groupChainImpl, SyncProcessor)
 }
 
 func testFee(kind int32, t *testing.T) {

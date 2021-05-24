@@ -17,9 +17,7 @@
 package core
 
 import (
-	"bytes"
 	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -33,106 +31,59 @@ var preGroupNilErr = errors.New("pre group is nil")
 var parentGroupNilErr = errors.New("parent group is nil")
 
 type groupChainFork struct {
-	enableRcvGroup bool
-	rcvLastGroup   bool
-	pending        *lane.Queue
+	rcvLastGroup bool
+	pending      *lane.Queue
 
-	currentWaitingBlockHash []byte
-	lastWaitingBlockHash    []byte
-	header                  uint64
-	latestGroup             *types.Group
+	header      uint64
+	latestGroup *types.Group
 
 	current uint64
 	db      db.Database
 
-	lock   middleware.Loglock
 	logger log.Logger
 }
 
 func newGroupChainFork(commonAncestor *types.Group) *groupChainFork {
 	fork := &groupChainFork{header: commonAncestor.GroupHeight, current: commonAncestor.GroupHeight, latestGroup: commonAncestor, logger: syncLogger}
-	fork.enableRcvGroup = true
 	fork.rcvLastGroup = false
 
 	fork.pending = lane.NewQueue()
-	fork.lock = middleware.NewLoglock("groupChainFork")
 	fork.db = refreshGroupForkDB(*commonAncestor)
 	fork.insertGroup(commonAncestor)
 	return fork
 }
 
-func (fork *groupChainFork) isWaiting() bool {
-	fork.lock.RLock("group chain fork isWaiting")
-	defer fork.lock.RUnlock("group chain fork isWaiting")
-
-	if fork.lastWaitingBlockHash == nil || len(fork.lastWaitingBlockHash) == 0 {
-		return false
-	}
-	if fork.currentWaitingBlockHash == nil || len(fork.currentWaitingBlockHash) == 0 {
-		return false
-	}
-	return bytes.Equal(fork.lastWaitingBlockHash, fork.currentWaitingBlockHash)
-}
-
 func (fork *groupChainFork) rcv(group *types.Group, isLastGroup bool) (needMore bool) {
-	fork.lock.Lock("group chain fork rcv")
-	defer fork.lock.Unlock("group chain fork rcv")
-
-	if !fork.enableRcvGroup {
-		return false
+	if group != nil {
+		fork.pending.Enqueue(group)
 	}
-	fork.pending.Enqueue(group)
 	fork.rcvLastGroup = isLastGroup
 	if isLastGroup || fork.pending.Size() >= syncedGroupCount {
-		fork.enableRcvGroup = false
 		return false
 	}
 	return true
 }
 
-func (fork *groupChainFork) triggerOnFork(blockFork *blockChainFork) (err error, rcvLastGroup bool, tail *types.Group) {
-	fork.lock.Lock("group chain fork triggerOnFork")
-	defer fork.lock.Unlock("group chain fork triggerOnFork")
-
+func (fork *groupChainFork) triggerOnFork(blockFork *blockChainFork) (err error, current *types.Group) {
 	fork.logger.Debugf("Trigger group on fork..")
-	var group *types.Group
 	for !fork.pending.Empty() {
-		group = fork.pending.Head().(*types.Group)
-		err = fork.addGroupOnFork(group, blockFork)
+		current = fork.pending.Head().(*types.Group)
+		err = fork.addGroupOnFork(current, blockFork)
 		if err != nil {
-			fork.logger.Debugf("Group on fork failed!%s-%d", common.ToHex(group.Id), group.GroupHeight)
+			fork.logger.Debugf("Group on fork failed!%s-%d", common.ToHex(current.Id), current.GroupHeight)
 			break
 		}
-		fork.logger.Debugf("Group on fork success!%s-%d", common.ToHex(group.Id), group.GroupHeight)
+		fork.logger.Debugf("Group on fork success!%s-%d", common.ToHex(current.Id), current.GroupHeight)
 		fork.pending.Pop()
-		fork.lastWaitingBlockHash = fork.currentWaitingBlockHash
-		fork.currentWaitingBlockHash = nil
 	}
 
 	if err == common.ErrCreateBlockNil {
-		fork.lastWaitingBlockHash = fork.currentWaitingBlockHash
-		fork.currentWaitingBlockHash = group.Header.CreateBlockHash
-		fork.logger.Debugf("Trigger group on fork paused. waiting block %s", common.ToHex(fork.currentWaitingBlockHash))
+		fork.logger.Debugf("Trigger group on fork paused. waiting block..")
 	}
-
-	if err != nil {
-		return err, fork.rcvLastGroup, nil
-	}
-
-	if !fork.rcvLastGroup {
-		fork.enableRcvGroup = true
-	}
-
-	if fork.pending.Empty() {
-		return err, fork.rcvLastGroup, group
-	}
-	return err, fork.rcvLastGroup, nil
+	return
 }
 
 func (fork *groupChainFork) triggerOnChain(groupChain *groupChain) bool {
-	fork.lock.Lock("group chain fork triggerOnChain")
-	defer fork.lock.Unlock("group chain fork triggerOnChain")
-
 	if fork.current == fork.header {
 		groupChain.removeFromCommonAncestor(fork.getGroup(fork.header))
 		fork.current++
@@ -157,8 +108,6 @@ func (fork *groupChainFork) triggerOnChain(groupChain *groupChain) bool {
 }
 
 func (fork *groupChainFork) destroy() {
-	fork.lock.Lock("group chain fork destroy")
-	defer fork.lock.Unlock("group chain fork destroy")
 	for i := fork.header; i <= fork.latestGroup.GroupHeight; i++ {
 		fork.deleteGroup(i)
 	}
@@ -168,10 +117,13 @@ func (fork *groupChainFork) destroy() {
 
 func (fork *groupChainFork) getGroupById(id []byte) *types.Group {
 	bytes, _ := fork.db.Get(id)
-	group, _ := types.UnMarshalGroup(bytes)
-	//if err != nil {
-	//	fork.logger.Errorf("Fail to umMarshal group, error:%s,id:%s", err.Error(), common.ToHex(id))
-	//}
+	if bytes == nil || len(bytes) == 0 {
+		return nil
+	}
+	group, err := types.UnMarshalGroup(bytes)
+	if err != nil {
+		fork.logger.Errorf("Fail to umMarshal group, error:%s,id:%s", err.Error(), common.ToHex(id))
+	}
 	return group
 }
 
@@ -208,9 +160,12 @@ func (fork *groupChainFork) insertGroup(group *types.Group) error {
 
 func (fork *groupChainFork) getGroup(height uint64) *types.Group {
 	bytes, _ := fork.db.Get(generateHeightKey(height))
+	if bytes == nil || len(bytes) == 0 {
+		return nil
+	}
 	group, err := types.UnMarshalGroup(bytes)
 	if err != nil {
-		logger.Errorf("Fail to umMarshal group, error:%s", err.Error())
+		syncLogger.Errorf("Fail to umMarshal group, error:%s", err.Error())
 	}
 	return group
 }
@@ -262,8 +217,7 @@ func (fork *groupChainFork) verifyGroup(coming *types.Group, blockFork *blockCha
 	if baseBlock == nil {
 		return false, common.ErrCreateBlockNil
 	}
-	//return consensusHelper.VerifyGroupForFork(coming, preGroup, parentGroup, baseBlock)
-	return true, nil
+	return consensusHelper.VerifyGroupForFork(coming, preGroup, parentGroup, baseBlock)
 }
 
 func refreshGroupForkDB(commonAncestor types.Group) db.Database {
@@ -280,21 +234,4 @@ func refreshGroupForkDB(commonAncestor types.Group) db.Database {
 	db.Put([]byte(blockCommonAncestorHeightKey), utility.UInt64ToByte(commonAncestor.GroupHeight))
 	db.Put([]byte(latestBlockHeightKey), utility.UInt64ToByte(commonAncestor.GroupHeight))
 	return db
-}
-
-func (iterator *GroupForkIterator) Current() *types.Group {
-	return iterator.current
-}
-
-func (iterator *GroupForkIterator) MovePre() *types.Group {
-	if SyncProcessor == nil || SyncProcessor.groupFork == nil || iterator.current == nil {
-		return nil
-	}
-	preGroupId := iterator.current.Header.PreGroup
-	if iterator.current.GroupHeight > SyncProcessor.groupFork.header {
-		iterator.current = SyncProcessor.groupFork.getGroupById(preGroupId)
-	} else {
-		iterator.current = groupChainImpl.GetGroupById(iterator.current.Header.PreGroup)
-	}
-	return iterator.current
 }

@@ -120,12 +120,6 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 	case BlockResponseMsg:
 		msg := notify.BlockResponseMessage{BlockResponseByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.BlockResponse, &msg)
-	case GroupChainPieceReqMsg:
-		msg := notify.GroupChainPieceReqMessage{GroupChainPieceReq: message.Body, Peer: from}
-		notify.BUS.Publish(notify.GroupChainPieceReq, &msg)
-	case GroupChainPieceMsg:
-		msg := notify.GroupChainPieceMessage{GroupChainPieceByte: message.Body, Peer: from}
-		notify.BUS.Publish(notify.GroupChainPiece, &msg)
 	case ReqGroupMsg:
 		msg := notify.GroupReqMessage{ReqInfoByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.GroupReq, &msg)

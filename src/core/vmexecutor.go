@@ -47,6 +47,7 @@ func newVMExecutor(accountdb *account.AccountDB, block *types.Block, situation s
 		context:   make(map[string]interface{}),
 	}
 	vm.context["chain"] = blockChainImpl
+	vm.context["situation"] = situation
 
 	return vm
 }
@@ -146,5 +147,5 @@ func (executor *VMExecutor) after() {
 	service.RefundManagerImpl.CheckAndMove(height, executor.accountdb)
 
 	// 计算出块奖励
-	service.RewardCalculatorImpl.CalculateReward(height, executor.accountdb)
+	service.RewardCalculatorImpl.CalculateReward(height, executor.accountdb, executor.situation)
 }

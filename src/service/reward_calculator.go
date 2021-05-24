@@ -33,23 +33,24 @@ type RewardCalculator struct {
 	minerManager *MinerManager
 	blockChain   types.BlockChainHelper
 	groupChain   types.GroupChainHelper
+	forkHelper   types.ForkHelper
 	logger       log.Logger
 }
 
 var RewardCalculatorImpl *RewardCalculator
 
-func InitRewardCalculator(blockChainImpl types.BlockChainHelper, groupChain types.GroupChainHelper) {
-	RewardCalculatorImpl = &RewardCalculator{minerManager: MinerManagerImpl, blockChain: blockChainImpl, groupChain: groupChain}
+func InitRewardCalculator(blockChainImpl types.BlockChainHelper, groupChain types.GroupChainHelper, forkHelper types.ForkHelper) {
+	RewardCalculatorImpl = &RewardCalculator{minerManager: MinerManagerImpl, blockChain: blockChainImpl, groupChain: groupChain, forkHelper: forkHelper}
 	RewardCalculatorImpl.logger = log.GetLoggerByIndex(log.RewardLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 }
 
-func (reward *RewardCalculator) CalculateReward(height uint64, db *account.AccountDB) bool {
+func (reward *RewardCalculator) CalculateReward(height uint64, db *account.AccountDB, situation string) bool {
 	if !reward.needReward(height) {
 		reward.logger.Warnf("no need to reward, height: %d", height)
 		return false
 	}
 
-	total := reward.calculateReward(height)
+	total := reward.calculateReward(height, situation)
 	if nil == total || 0 == len(total) {
 		reward.logger.Errorf("fail to reward, height: %d", height)
 		return false
@@ -82,7 +83,7 @@ func (reward *RewardCalculator) notify(total map[common.Address]*big.Int, height
 
 // 计算完整奖励
 // 假定每10000块计算一次奖励，则这里会计算例如高度为0-9999，10000-19999的结果
-func (reward *RewardCalculator) calculateReward(height uint64) map[common.Address]*big.Int {
+func (reward *RewardCalculator) calculateReward(height uint64, situation string) map[common.Address]*big.Int {
 	result := make(map[common.Address]*big.Int, 0)
 	from := height - common.RewardBlocks
 	reward.logger.Debugf("start to calculate, from %d to %d", from, height-1)
@@ -93,13 +94,18 @@ func (reward *RewardCalculator) calculateReward(height uint64) map[common.Addres
 			continue
 		}
 
-		bh := reward.blockChain.QueryBlockHeaderByHeight(i, true)
+		var bh *types.BlockHeader
+		if situation != "fork" {
+			bh = reward.blockChain.QueryBlockHeaderByHeight(i, true)
+		} else {
+			bh = reward.forkHelper.GetBlockHeader(i)
+		}
 		if nil == bh {
 			reward.logger.Errorf("fail to get blockHeader. height: %d", i)
 			continue
 		}
 
-		piece := reward.calculateRewardPerBlock(bh)
+		piece := reward.calculateRewardPerBlock(bh, situation)
 		if nil == piece {
 			continue
 		}
@@ -113,7 +119,7 @@ func (reward *RewardCalculator) calculateReward(height uint64) map[common.Addres
 }
 
 // 计算某一块的奖励
-func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) map[common.Address]*big.Int {
+func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, situation string) map[common.Address]*big.Int {
 	result := make(map[common.Address]*big.Int)
 
 	height := bh.Height
@@ -159,7 +165,12 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader) m
 	}
 
 	// 验证者奖励
-	group := reward.groupChain.GetGroupById(bh.GroupId)
+	var group *types.Group
+	if situation != "fork" {
+		group = reward.groupChain.GetGroupById(bh.GroupId)
+	} else {
+		group = reward.forkHelper.GetGroupById(bh.GroupId)
+	}
 	if group == nil {
 		reward.logger.Errorf("fail to get group. id: %v", bh.GroupId)
 		return nil
