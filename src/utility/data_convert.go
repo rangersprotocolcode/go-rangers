@@ -26,7 +26,7 @@ import (
 
 const (
 	zeroString     = "0"
-	prec           = 2048
+	prec           = 4096
 	baseNumber     = 1000000000000000000
 	defaultDecimal = 18
 )
