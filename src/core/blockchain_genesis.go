@@ -102,24 +102,25 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	valueBillion, _ := utility.StrToBigInt("1000000000")
 
 	//创建创始合约
-	usdtContractAddress := createGenesisContract(block.Header, stateDB)
+	usdtContractAddress, wethContractAddress := createGenesisContract(block.Header, stateDB)
 	stateDB.AddERC20Binding("SYSTEM-ETH.USDT", usdtContractAddress, 2, 6)
+	stateDB.AddERC20Binding("ETH.ETH", wethContractAddress, 2, 18)
 
 	// 测试用
 	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("tuntun", "pig", "hz", "0", "hz", "10086", 0), stateDB)
 	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("tuntunhz", "tuntun", "t", "hz", "hz", types.NFTConditions{}, 0, "10000"), stateDB)
-	stateDB.SetBNT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"), "ETH.ETH", valueTen)
+	stateDB.SetFT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"), "ETH.ETH", valueTen)
 	/**
 		测试账户
 		id:0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443
 	    adderss:0x38780174572fb5b4735df1b7c69aee77ff6e9f49
 	    sk:0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea
 	*/
-	stateDB.SetBNT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "ETH.ETH", valueTen)
+	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "ETH.ETH", valueTen)
 	stateDB.SetBalance(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), valueBillion)
 
 	//客户端测试使用账号
-	stateDB.SetBNT(common.HexToAddress("0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"), "ETH.ETH", valueTen)
+	stateDB.SetFT(common.HexToAddress("0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"), "ETH.ETH", valueTen)
 	stateDB.SetFT(common.HexToAddress("0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"), "SYSTEM-ETH.USDT", valueTen)
 	stateDB.SetBalance(common.HexToAddress("0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"), valueBillion)
 
@@ -130,7 +131,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	address:0x2c616a97d3d10e008f901b392986b1a65e0abbb7
 	sk:0x083f3fb13ffa99a18283a7fd5e2f831a52f39afdd90f5310a3d8fd4ffbd00d49
 	*/
-	stateDB.SetBNT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "ETH.ETH", valueTen)
+	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "ETH.ETH", valueTen)
 	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-ETH.USDT", valueTen)
 	stateDB.SetBalance(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), valueBillion)
 
@@ -179,7 +180,7 @@ func addMiners(miners []*types.Miner, accountdb *account.AccountDB) {
 	}
 }
 
-func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB) common.Address {
+func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB) (common.Address, common.Address) {
 	source := "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
 	vmCtx := vm.Context{}
 	vmCtx.CanTransfer = vm.CanTransfer
@@ -200,6 +201,13 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
 	}
-	logger.Debugf("After execute usdt contract create!Contract address:%s", usdtContractAddress.GetHexString())
-	return usdtContractAddress
+	logger.Debugf("After execute usdt contract create! Contract address:%s", usdtContractAddress.GetHexString())
+
+	_, wethContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(usdtContractData), vmCtx.GasLimit, big.NewInt(0))
+	if err != nil {
+		panic("Genesis contract create error:" + err.Error())
+	}
+	logger.Debugf("After execute weth contract create! Contract address:%s", wethContractAddress.GetHexString())
+
+	return usdtContractAddress, wethContractAddress
 }
