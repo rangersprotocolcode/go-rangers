@@ -26,7 +26,7 @@ import (
 
 const (
 	zeroString     = "0"
-	prec           = 2049
+	prec           = 129
 	baseNumber     = 1000000000000000000
 	defaultDecimal = 18
 )
@@ -91,7 +91,7 @@ func strToBigInt(s string, decimal int64) (*big.Int, error) {
 		return big.NewInt(0), nil
 	}
 
-	target, _, err := big.ParseFloat(s, 10, prec, big.ToNearestEven)
+	target, _, err := big.ParseFloat(s, 10, prec, big.AwayFromZero)
 	if err != nil {
 		return nil, err
 	}
