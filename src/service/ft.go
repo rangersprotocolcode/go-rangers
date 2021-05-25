@@ -181,12 +181,12 @@ func (self *FTManager) TransferBNT(source, bntId, target, supply string, account
 	}
 
 	balance := self.convert(supply)
-	left, ok := accountDB.SubBNT(common.HexToAddress(source), bntId, balance)
+	left, ok := accountDB.SubFT(common.HexToAddress(source), bntId, balance)
 	if !ok {
 		return fmt.Sprintf("not enough bnt. ftId: %s, supply: %s", bntId, supply), nil, false
 	}
 
-	if accountDB.AddBNT(common.HexToAddress(target), bntId, balance) {
+	if accountDB.AddFT(common.HexToAddress(target), bntId, balance) {
 		return "success", left, true
 	} else {
 		return "overflow", nil, false
