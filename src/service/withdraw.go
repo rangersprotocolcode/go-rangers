@@ -68,9 +68,9 @@ func Withdraw(accountdb *account.AccountDB, transaction *types.Transaction) (str
 			return "Withdraw Data BNT Bad Format", false
 		}
 
-		left, ok := accountdb.SubBNT(source, withDrawReq.BNT.TokenType, withdrawAmount)
+		left, ok := accountdb.SubFT(source, withDrawReq.BNT.TokenType, withdrawAmount)
 		if !ok {
-			subAccountBalance := accountdb.GetBNT(source, withDrawReq.BNT.TokenType)
+			subAccountBalance := accountdb.GetFT(source, withDrawReq.BNT.TokenType)
 			txLogger.Errorf("Execute withdraw balance not enough:current balance:%d,withdraw balance:%d", subAccountBalance.Uint64(), withdrawAmount.Uint64())
 			return "BNT Not Enough", false
 		} else {
