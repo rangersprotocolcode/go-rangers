@@ -215,7 +215,7 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
 	}
-	logger.Debugf("After execute weth contract create! Contract address:%s", wethContractAddress.GetHexString())
+	logger.Debugf("After execute mix contract create! Contract address:%s", mixContractAddress.GetHexString())
 
 	return usdtContractAddress, wethContractAddress, mixContractAddress
 }
