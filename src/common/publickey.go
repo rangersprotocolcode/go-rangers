@@ -33,7 +33,6 @@ type PublicKey struct {
 
 //公钥验证函数
 func (pk PublicKey) Verify(hash []byte, s *Sign) bool {
-	//return ecdsa.Verify(&pk.PubKey, hash, &s.r, &s.s)
 	return secp256k1.VerifySignature(pk.ToBytes(), hash, s.Bytes()[:64])
 }
 
@@ -61,7 +60,6 @@ func (pk PublicKey) GetID() []byte {
 //把公钥转换成字节切片
 func (pk PublicKey) ToBytes() []byte {
 	buf := elliptic.Marshal(pk.PubKey.Curve, pk.PubKey.X, pk.PubKey.Y)
-	//fmt.Printf("end pub key marshal, len=%v, data=%v\n", len(buf), buf)
 	return buf
 }
 
@@ -69,7 +67,6 @@ func (pk PublicKey) ToBytes() []byte {
 func BytesToPublicKey(data []byte) (pk *PublicKey) {
 	pk = new(PublicKey)
 	pk.PubKey.Curve = getDefaultCurve()
-	//fmt.Printf("begin pub key unmarshal, len=%v, data=%v.\n", len(data), data)
 	x, y := elliptic.Unmarshal(pk.PubKey.Curve, data)
 	if x == nil || y == nil {
 		panic("unmarshal public key failed.")

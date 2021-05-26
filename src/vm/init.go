@@ -14,19 +14,12 @@ type LogConfig struct {
 	DisableReturnData bool // disable return data capture
 }
 
-/**
-chainID:
-0  main net
-1  dev net
-2  test net
-*/
 var chainID *big.Int
 var vmTracer Tracer
 var logger log.Logger
 
 func InitVM() {
-	//todo configurable?
-	chainID = big.NewInt(0)
+	chainID, _ = big.NewInt(0).SetString(common.ChainId, 10)
 
 	index := common.GlobalConf.GetString("instance", "index", "")
 	logger = log.GetLoggerByIndex(log.VMLogConfig, index)

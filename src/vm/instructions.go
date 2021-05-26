@@ -18,6 +18,7 @@ package vm
 
 import (
 	"bytes"
+	"com.tuntun.rocket/node/src/utility"
 	"fmt"
 	"math"
 
@@ -925,7 +926,7 @@ func makePush(size uint64, pushByteSize int) executionFunc {
 		}
 
 		integer := new(uint256.Int)
-		callContext.stack.push(integer.SetBytes(common.RightPadBytes(
+		callContext.stack.push(integer.SetBytes(utility.RightPadBytes(
 			callContext.contract.Code[startMin:endMin], pushByteSize)))
 
 		*pc += size
@@ -1057,7 +1058,6 @@ func opMintNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 	arg_appId := popString(callContext)
 	arg_owner := popString(callContext)
 
-	// TODO
 	evm := interpreter.evm
 	nftSetOwner := common.ToHex(common.FromHex(arg_owner))
 	_, ret_bool := evm.nftManagerInstance.MintNFT(nftSetOwner, arg_appId, arg_setId, arg_nftId, arg_data, evm.Time.String(), arg_targetAddress, evm.accountDB)
@@ -1072,7 +1072,6 @@ func opTransferNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx
 	arg_nftId := popString(callContext)
 	arg_setId := popString(callContext)
 
-	// TODO
 	evm := interpreter.evm
 	_, ret_bool := evm.nftManagerInstance.Transfer(arg_setId, arg_nftId, callContext.contract.CallerAddress, arg_targetAddress, evm.accountDB)
 
@@ -1087,7 +1086,6 @@ func opShuttleNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx)
 	arg_nftId := popString(callContext)
 	arg_setId := popString(callContext)
 
-	// TODO
 	evm := interpreter.evm
 	_, ret_bool := evm.nftManagerInstance.Shuttle(callContext.contract.CallerAddress.GetHexString(), arg_setId, arg_nftId, arg_targetAppId, evm.accountDB)
 
@@ -1101,7 +1099,6 @@ func opApproveNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx)
 	arg_nftId := popString(callContext)
 	arg_setId := popString(callContext)
 
-	// TODO
 	accountDB := interpreter.evm.accountDB
 	ret_bool := accountDB.ApproveNFT(callContext.contract.CallerAddress, "", arg_setId, arg_nftId, arg_targetAddress.GetHexString())
 
@@ -1114,7 +1111,6 @@ func opRevokeNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) 
 	arg_nftId := popString(callContext)
 	arg_setId := popString(callContext)
 
-	// TODO
 	accountDB := interpreter.evm.accountDB
 	ret_bool := accountDB.ApproveNFT(callContext.contract.CallerAddress, "", arg_setId, arg_nftId, callContext.contract.CallerAddress.GetHexString())
 
@@ -1127,7 +1123,6 @@ func opRemoveNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) 
 	arg_nftId := popString(callContext)
 	arg_setId := popString(callContext)
 
-	// TODO
 	accountDB := interpreter.evm.accountDB
 	ret_bool := accountDB.RemoveNFTByGameId(callContext.contract.CallerAddress, arg_setId, arg_nftId)
 
@@ -1143,7 +1138,6 @@ func opUpdateData(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx)
 	arg_setId := popString(callContext)
 	arg_appId := popString(callContext)
 
-	// TODO
 	evm := interpreter.evm
 	ret_bool := evm.nftManagerInstance.UpdateNFT(arg_appId, arg_setId, arg_nftId, arg_value, arg_key, evm.accountDB)
 
@@ -1159,7 +1153,6 @@ func opGetData(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 	arg_setId := popString(callContext)
 	arg_appId := popString(callContext)
 
-	// TODO
 	evm := interpreter.evm
 	nft := evm.nftManagerInstance.GetNFT(arg_setId, arg_id, evm.accountDB)
 	if nil == nft {
@@ -1177,7 +1170,6 @@ func opGetData(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 func opIsExistedNFTSet(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
 	arg_setId := popString(callContext)
 
-	// TODO
 	evm := interpreter.evm
 	ret_bool := evm.nftManagerInstance.Contains(arg_setId, evm.accountDB)
 
@@ -1190,7 +1182,6 @@ func opIsExistedNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCt
 	arg_nftId := popString(callContext)
 	arg_setId := popString(callContext)
 
-	// TODO
 	evm := interpreter.evm
 	nft := evm.nftManagerInstance.GetNFT(arg_setId, arg_nftId, evm.accountDB)
 	ret_bool := nft != nil
@@ -1204,7 +1195,6 @@ func opGetNFTList(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx)
 	ret_stringarray := make([]string, 0)
 	arg_ownerAddress := popAddress(callContext)
 
-	// TODO
 	evm := interpreter.evm
 	nftList := evm.nftManagerInstance.GetNFTListByAddress(arg_ownerAddress, "", evm.accountDB)
 	for _, nft := range nftList {
