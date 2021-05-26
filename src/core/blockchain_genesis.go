@@ -102,9 +102,10 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	valueBillion, _ := utility.StrToBigInt("1000000000")
 
 	//创建创始合约
-	usdtContractAddress, wethContractAddress := createGenesisContract(block.Header, stateDB)
+	usdtContractAddress, wethContractAddress, mixContractAddress := createGenesisContract(block.Header, stateDB)
 	stateDB.AddERC20Binding("SYSTEM-ETH.USDT", usdtContractAddress, 2, 6)
 	stateDB.AddERC20Binding("ETH.ETH", wethContractAddress, 2, 18)
+	stateDB.AddERC20Binding("SYSTEM-ETH.MIX", mixContractAddress, 2, 18)
 
 	// 测试用
 	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("tuntun", "pig", "hz", "0", "hz", "10086", 0), stateDB)
@@ -180,7 +181,8 @@ func addMiners(miners []*types.Miner, accountdb *account.AccountDB) {
 	}
 }
 
-func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB) (common.Address, common.Address) {
+
+func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB) (common.Address, common.Address, common.Address) {
 	source := "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
 	vmCtx := vm.Context{}
 	vmCtx.CanTransfer = vm.CanTransfer
@@ -191,9 +193,9 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 	vmCtx.Coinbase = common.BytesToAddress(header.Castor)
 	vmCtx.BlockNumber = new(big.Int).SetUint64(header.Height)
 	vmCtx.Time = new(big.Int).SetUint64(uint64(header.CurTime.Unix()))
+
 	vmCtx.GasPrice = big.NewInt(1)
 	vmCtx.GasLimit = 30000000
-
 	vmInstance := vm.NewEVM(vmCtx, statedb)
 	caller := vm.AccountRef(vmCtx.Origin)
 
@@ -201,7 +203,7 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
 	}
-	logger.Debugf("After execute usdt contract create! Contract address:%s", usdtContractAddress.GetHexString())
+	logger.Debugf("After execute usdt contract create!Contract address:%s", usdtContractAddress.GetHexString())
 
 	_, wethContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(usdtContractData), vmCtx.GasLimit, big.NewInt(0))
 	if err != nil {
@@ -209,5 +211,11 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 	}
 	logger.Debugf("After execute weth contract create! Contract address:%s", wethContractAddress.GetHexString())
 
-	return usdtContractAddress, wethContractAddress
+	_, mixContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(usdtContractData), vmCtx.GasLimit, big.NewInt(0))
+	if err != nil {
+		panic("Genesis contract create error:" + err.Error())
+	}
+	logger.Debugf("After execute weth contract create! Contract address:%s", wethContractAddress.GetHexString())
+
+	return usdtContractAddress, wethContractAddress, mixContractAddress
 }
