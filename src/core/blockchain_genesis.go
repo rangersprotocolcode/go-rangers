@@ -69,7 +69,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	block.Header = &types.BlockHeader{
 		Height:       0,
 		ExtraData:    common.Sha256([]byte("Rocket Protocol")),
-		CurTime:      time.Date(2020, 12, 21, 10, 0, 0, 0, time.UTC),
+		CurTime:      time.Date(2021, 5, 27, 10, 0, 0, 0, time.UTC),
 		ProveValue:   pv,
 		TotalQN:      0,
 		Transactions: make([]common.Hashes, 0), //important!!
@@ -180,7 +180,6 @@ func addMiners(miners []*types.Miner, accountdb *account.AccountDB) {
 		service.MinerManagerImpl.InsertMiner(miner, accountdb)
 	}
 }
-
 
 func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB) (common.Address, common.Address, common.Address) {
 	source := "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
