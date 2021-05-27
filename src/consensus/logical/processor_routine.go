@@ -47,7 +47,6 @@ func (p *Processor) checkSelfCastRoutine() bool {
 	top := p.MainChain.TopBlock()
 
 	delta := utility.GetTime().Sub(top.CurTime)
-	blog.log("time:", utility.GetTime().String())
 	if delta.Seconds() < common.CastingInterval/1000 {
 		blog.log("time cost %vs from chain casting last block,less than %vs,do not proposal.last block cast time:%v ", delta.Seconds(), common.CastingInterval/1000, top.CurTime)
 		return false
