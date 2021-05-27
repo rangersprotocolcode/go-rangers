@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	MAX_GROUP_BLOCK_TIME   int = 5            //组铸块最大允许时间=5s
+	MAX_GROUP_BLOCK_TIME   int = 1            //组铸块最大允许时间=5s
 	MAX_WAIT_BLOCK_TIME    int = 0            //广播出块前等待最大时间=2s
 	CONSENSUS_VERSION          = 1            //共识版本号
 	MAX_UNKNOWN_BLOCKS         = 5            //内存保存最大不能上链的未来块（中间块没有收到）
