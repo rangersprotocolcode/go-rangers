@@ -17,6 +17,7 @@
 package logical
 
 import (
+	"com.tuntun.rocket/node/src/common/ed25519"
 	"errors"
 	"fmt"
 	"math"
@@ -78,6 +79,7 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 		return false, 0
 	}
 	blog := newBizLog("vrfSatisfy")
+	prove = tryZeroPadding(prove)
 	vrfValueRatio := vrfValueRatio(prove)
 	stakeRatio := stakeRatio(1, totalStake)
 	ok = vrfValueRatio.Cmp(stakeRatio) < 0
@@ -122,4 +124,13 @@ func calQn(vrfValueRatio, stakeRatio *big.Rat) uint64 {
 	r, _ := new(big.Rat).Quo(vrfValueRatio, step).Float64()
 	qn := uint64(math.Floor(r) + 1)
 	return qn
+}
+
+func tryZeroPadding(pi vrf.VRFProve) vrf.VRFProve {
+	if len(pi) >= ed25519.ProveSize {
+		return pi
+	}
+	piPadding := make([]byte, ed25519.ProveSize)
+	copy(piPadding[ed25519.ProveSize-len(pi):], pi[:])
+	return piPadding
 }

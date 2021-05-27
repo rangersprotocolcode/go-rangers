@@ -17,13 +17,13 @@
 package rpc
 
 import (
+	"com.tuntun.rocket/node/src/utility"
 	"fmt"
 	"math"
 	"reflect"
 	"strings"
 	"sync"
 
-	"com.tuntun.rocket/node/src/common"
 	"gopkg.in/fatih/set.v0"
 )
 
@@ -86,7 +86,6 @@ type Error interface {
 	ErrorCode() int // returns the code
 }
 
-
 type ServerCodec interface {
 	// Read next request
 	ReadRequestHeaders() ([]rpcRequest, bool, Error)
@@ -134,7 +133,7 @@ func (bn *BlockNumber) UnmarshalJSON(data []byte) error {
 		return nil
 	}
 
-	blckNum, err := common.DecodeUint64(input)
+	blckNum, err := utility.DecodeUint64(input)
 	if err != nil {
 		return err
 	}

@@ -167,7 +167,7 @@ func (executor *GameExecutor) onBlockAddSuccess(message notify.Message) {
 	count := 0
 	for _, tx := range transactions {
 		count++
-		executor.tempTx.Delete(common.Uint64ToByte(tx.RequestId))
+		executor.tempTx.Delete(utility.UInt64ToByte(tx.RequestId))
 	}
 	msg += fmt.Sprintf(", deleted %d txs", count)
 }
@@ -241,7 +241,7 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 
 func (executor *GameExecutor) saveTempTx(txRaw types.Transaction) {
 	txBytes, _ := types.MarshalTransaction(&txRaw)
-	executor.tempTx.Put(common.Uint64ToByte(txRaw.RequestId), txBytes)
+	executor.tempTx.Put(utility.UInt64ToByte(txRaw.RequestId), txBytes)
 }
 
 func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, height uint64, txRaw types.Transaction) (bool, string) {

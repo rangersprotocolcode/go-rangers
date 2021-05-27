@@ -7,6 +7,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
+	"com.tuntun.rocket/node/src/utility"
 	"time"
 )
 
@@ -169,7 +170,7 @@ func (p *syncProcessor) addCandidate(id string, chainInfo chainInfo) {
 		return
 	}
 	totalQnMinId := ""
-	var minTotalQn uint64 = common.MaxUint64
+	var minTotalQn uint64 = utility.MaxUint64
 	for id, tbi := range p.candidatePool {
 		if tbi.TotalQn <= minTotalQn {
 			totalQnMinId = id

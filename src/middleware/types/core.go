@@ -205,7 +205,7 @@ func (gh *GroupHeader) GenHash() common.Hash {
 	//bt, _ := gh.BeginTime.MarshalBinary()
 	//buf.Write(bt)
 	buf.Write(gh.MemberRoot.Bytes())
-	buf.Write(common.Uint64ToByte(gh.CreateHeight))
+	buf.Write(utility.UInt64ToByte(gh.CreateHeight))
 	buf.WriteString(gh.Extends)
 	return common.BytesToHash(common.Sha256(buf.Bytes()))
 }

@@ -87,3 +87,10 @@ func TestVrfValueRatio(t *testing.T) {
 	f, e := rat.Float64()
 	fmt.Printf("%v,%v\n", f, e)
 }
+
+func TestBigIntBytes(t *testing.T) {
+	a := []byte{0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+	bigA := big.NewInt(0).SetBytes(a)
+	b := bigA.Bytes()
+	fmt.Printf("%v\n", b)
+}

@@ -29,7 +29,6 @@ import (
 )
 
 func getDefaultCurve() elliptic.Curve {
-	//return elliptic.P256()
 	return secp256k1.S256()
 }
 
@@ -88,20 +87,7 @@ func (a *Address) UnmarshalJSON(input []byte) error {
 	return utility.UnmarshalFixedJSON(addressT, input, a[:])
 }
 
-//判断一个字符串是否能转成TAS地址格式
-//支持三种类型的字符串，"0xFA10..."，"0XFA10..."和"FA10..."
-func IsHexAddress(s string) bool {
-	if len(s) == 2+2*AddressLength && IsHex(s) {
-		return true
-	}
-	if len(s) == 2*AddressLength && IsHex("0x"+s) {
-		return true
-	}
-	return false
-}
-
 //类型转换输出函数
-func (a Address) Str() string          { return string(a[:]) }
 func (a Address) Bytes() []byte        { return a[:] }
 func (a Address) BigInteger() *big.Int { return new(big.Int).SetBytes(a[:]) }
 func (a Address) Hash() Hash           { return BytesToHash(a[:]) }
@@ -130,29 +116,6 @@ func HexStringToAddress(s string) (a Address) {
 	return
 }
 
-/*
-// Format implements fmt.Formatter, forcing the byte slice to be formatted as is,
-// without going through the stringer interface used for logging.
-func (a Address) Format(s fmt.State, c rune) {
-	fmt.Fprintf(s, "%"+string(c), a[:])
-}
-
-// UnprefixedHash allows marshaling an Address without 0x prefix.
-type UnprefixedAddress Address //无前缀地址
-
-// UnmarshalText decodes the address from hex. The 0x prefix is optional.
-//把十六进制字节数组解码成无前缀地址
-func (a *UnprefixedAddress) UnmarshalText(input []byte) error {
-	return utility.UnmarshalFixedUnprefixedText("UnprefixedAddress", input, a[:])
-}
-
-// MarshalText encodes the address as hex.
-//把无前缀地址编码成十六进制字节数组
-func (a UnprefixedAddress) MarshalText() ([]byte, error) {
-	return []byte(hex.EncodeToString(a[:])), nil
-}
-*/
-///////////////////////////////////////////////////////////////////////////////
 //256位哈希
 type Hash [HashLength]byte
 
@@ -161,9 +124,8 @@ func BytesToHash(b []byte) Hash {
 	h.SetBytes(b)
 	return h
 }
-func StringToHash(s string) Hash { return BytesToHash([]byte(s)) }
-func BigToHash(b *big.Int) Hash  { return BytesToHash(b.Bytes()) }
-func HexToHash(s string) Hash    { return BytesToHash(FromHex(s)) }
+func BigToHash(b *big.Int) Hash { return BytesToHash(b.Bytes()) }
+func HexToHash(s string) Hash   { return BytesToHash(FromHex(s)) }
 
 // Get the string representation of the underlying hash
 func (h Hash) Str() string   { return string(h[:]) }
@@ -239,10 +201,6 @@ func (h Hash) Generate(rand *rand.Rand, size int) reflect.Value {
 		h[i] = byte(rand.Uint32()) //rand.Uint32为32位非负伪随机数
 	}
 	return reflect.ValueOf(h)
-}
-
-func EmptyHash(h Hash) bool {
-	return h == Hash{}
 }
 
 // UnprefixedHash allows marshaling a Hash without 0x prefix.

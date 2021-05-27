@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/storage/account"
+	"com.tuntun.rocket/node/src/utility"
 	"fmt"
 	"math/big"
 	"strings"
@@ -373,7 +374,7 @@ type dummyChain struct {
 func (d *dummyChain) getHeader(h common.Hash, n uint64) *dummyHeader {
 	d.counter++
 	parentHash := common.Hash{}
-	s := common.LeftPadBytes(big.NewInt(int64(n-1)).Bytes(), 32)
+	s := utility.LeftPadBytes(big.NewInt(int64(n-1)).Bytes(), 32)
 	copy(parentHash[:], s)
 
 	//parentHash := common.Hash{byte(n - 1)}
@@ -434,7 +435,7 @@ func TestBlockhash(t *testing.T) {
 	// Current head
 	n := uint64(1000)
 	parentHash := common.Hash{}
-	s := common.LeftPadBytes(big.NewInt(int64(n-1)).Bytes(), 32)
+	s := utility.LeftPadBytes(big.NewInt(int64(n-1)).Bytes(), 32)
 	copy(parentHash[:], s)
 	header := fakeHeader(n, parentHash)
 

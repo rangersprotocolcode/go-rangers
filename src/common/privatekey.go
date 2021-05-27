@@ -38,11 +38,9 @@ func (pk PrivateKey) Sign(hash []byte) Sign {
 	var sign Sign
 	sig, err := secp256k1.Sign(hash, pk.PrivKey.D.Bytes())
 	if err == nil {
-		//achates testing <<
 		if len(sig) != 65 {
 			fmt.Printf("secp256k1 sign wrong! hash = %v\n", hash)
 		}
-		//>>achates testing
 		sign = *BytesToSign(sig)
 	} else {
 		panic(fmt.Sprintf("Sign Failed, reason : %v.\n", err.Error()))
@@ -94,7 +92,6 @@ func HexStringToSecKey(s string) (sk *PrivateKey) {
 }
 
 func (pk *PrivateKey) ToBytes() []byte {
-	//fmt.Printf("begin seckey ToBytes...\n")
 	buf := make([]byte, SecKeyLength)
 	copy(buf[:PubKeyLength], pk.GetPubKey().ToBytes())
 	d := pk.PrivKey.D.Bytes() //D序列化
@@ -103,13 +100,10 @@ func (pk *PrivateKey) ToBytes() []byte {
 	}
 	copy(buf[SecKeyLength-len(d):SecKeyLength], d)
 
-	//fmt.Printf("sec key tobytes, len=%v, data=%v.\n", len(buf), buf)
-	//fmt.Printf("end seckey ToBytes.\n")
 	return buf
 }
 
 func BytesToSecKey(data []byte) (sk *PrivateKey) {
-	//fmt.Printf("begin bytesToSecKey, len=%v, data=%v.\n", len(data), data)
 	if len(data) < SecKeyLength {
 		return nil
 	}

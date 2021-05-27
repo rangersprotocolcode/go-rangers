@@ -23,18 +23,6 @@ import (
 	"strconv"
 )
 
-// RightPadBytes zero-pads slice to the right up to length l.
-func RightPadBytes(slice []byte, l int) []byte {
-	if l <= len(slice) {
-		return slice
-	}
-
-	padded := make([]byte, l)
-	copy(padded, slice)
-
-	return padded
-}
-
 const (
 	// number of bits in a big.Word
 	wordBits = 32 << (uint64(^big.Word(0)) >> 63)
@@ -188,4 +176,27 @@ func MustParseBig256(s string) *big.Int {
 		panic("invalid 256 bit integer: " + s)
 	}
 	return v
+}
+
+// RightPadBytes zero-pads slice to the right up to length l.
+func RightPadBytes(slice []byte, l int) []byte {
+	if l <= len(slice) {
+		return slice
+	}
+
+	padded := make([]byte, l)
+	copy(padded, slice)
+
+	return padded
+}
+
+func LeftPadBytes(slice []byte, l int) []byte {
+	if l <= len(slice) {
+		return slice
+	}
+
+	padded := make([]byte, l)
+	copy(padded[l-len(slice):], slice)
+
+	return padded
 }
