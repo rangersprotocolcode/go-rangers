@@ -302,7 +302,7 @@ func (p *syncProcessor) triggerOnFork() {
 				p.logger.Debugf("paused block %s,%d-%d,verify group:%s", currentBlock.Header.Hash.Str(), currentBlock.Header.Height, currentBlock.Header.TotalQN, common.ToHex(currentBlock.Header.GroupId))
 			}
 			if currentGroup != nil {
-				p.logger.Debugf("paused group %s,%d,create block:%s", common.ToHex(currentGroup.Id), currentBlock.Header.Height, common.ToHex(currentGroup.Header.CreateBlockHash))
+				p.logger.Debugf("paused group %s,%d,create block:%s", common.ToHex(currentGroup.Id), currentGroup.GroupHeight, common.ToHex(currentGroup.Header.CreateBlockHash))
 			}
 			p.finishCurrentSync(false)
 			return
@@ -332,6 +332,7 @@ func (p *syncProcessor) tryTriggerOnChain() (canOnChain bool) {
 			pausedGroupHeight = p.groupFork.current
 		}
 	}
+	p.logger.Debugf("Try trigger on chain failed.Local:%d,%d,fork:%d,%d", p.blockChain.latestBlock.TotalQN, p.groupChain.height(), p.blockFork.latestBlock.TotalQN, p.groupFork.latestGroup.GroupHeight)
 	return false
 }
 
