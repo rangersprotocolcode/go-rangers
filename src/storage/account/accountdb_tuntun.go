@@ -142,7 +142,7 @@ func (self *AccountDB) SubFT(addr common.Address, ftName string, balance *big.In
 
 		remain.Sub(remain, value)
 		account.setData(key, remain.Bytes())
-		return remain, true
+		return utility.FormatDecimalForRocket(remain, int64(decimal)), true
 	}
 
 	account := self.getOrNewAccountObject(addr)
