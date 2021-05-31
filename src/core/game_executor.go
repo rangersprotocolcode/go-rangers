@@ -266,7 +266,9 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 	result := true
 
 	start := time.Now()
-	defer executor.logger.Debugf("finish tx. result: %t, message: %s, cost time : %v, txhash: %s, requestId: %d", result, message, time.Since(start), txhash, txRaw.RequestId)
+	defer func() {
+		executor.logger.Debugf("finish tx. result: %t, message: %s, cost time : %v, txhash: %s, requestId: %d", result, message, time.Since(start), txhash, txRaw.RequestId)
+	}()
 
 	result, message = processor.BeforeExecute(&txRaw, nil, accountDB, context)
 	if !result {
