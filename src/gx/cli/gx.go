@@ -29,7 +29,6 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/statemachine"
 	"com.tuntun.rocket/node/src/vm"
 	"encoding/json"
 	"fmt"
@@ -167,9 +166,6 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
 	}
-
-	//todo: 刷新requestId
-	statemachine.InitSTMManager(common.GlobalConf.GetString("docker", "config", ""), common.ToHex(gx.account.Miner.ID[:]))
 
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
 	if !ok {

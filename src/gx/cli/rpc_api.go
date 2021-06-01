@@ -24,7 +24,6 @@ import (
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/statemachine"
 	"encoding/hex"
 	"fmt"
 	"math"
@@ -101,12 +100,6 @@ func (api *GtasAPI) TransPool() (*Result, error) {
 	}
 
 	return successResult(transList)
-}
-
-// STMStatus 查询STM状态
-func (api *GtasAPI) StmStatus() (*Result, error) {
-	result := statemachine.STMManger.GetStmStatus()
-	return successResult(result)
 }
 
 func (api *GtasAPI) GetTransaction(hash string) (*Result, error) {

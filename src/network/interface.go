@@ -76,9 +76,6 @@ const (
 
 	ReqSharePiece      uint32 = 39
 	ResponseSharePiece uint32 = 40
-
-	//-----------stm状态通知---------------------------------
-	STMStorageReady uint32 = 50
 )
 
 //与coin connector 通信的消息CODE

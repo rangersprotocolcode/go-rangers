@@ -63,7 +63,7 @@ func (ch ChainHandler) transactionReqHandler(msg notify.Message) {
 	if nil == blockChainImpl {
 		return
 	}
-	transactions, need, _, e := blockChainImpl.queryTxsByBlockHash(m.CurrentBlockHash, m.TransactionHashes)
+	transactions, need, e := blockChainImpl.queryTxsByBlockHash(m.CurrentBlockHash, m.TransactionHashes)
 	if e == service.ErrNil {
 		m.TransactionHashes = need
 	}
