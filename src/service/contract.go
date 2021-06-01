@@ -27,7 +27,7 @@ type contractData struct {
 type executeResultData struct {
 	ContractAddress string `json:"contractAddress,omitempty"`
 
-	ExecuteResult []byte `json:"result,omitempty"`
+	ExecuteResult string `json:"result,omitempty"`
 
 	Logs []*types.Log `json:"logs,omitempty"`
 }
@@ -82,7 +82,7 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 	if err != nil {
 		return false, err.Error()
 	}
-	returnData := executeResultData{contractAddress.GetHexString(), result, logs}
+	returnData := executeResultData{contractAddress.GetHexString(), toHex(result), logs}
 	json, _ := json.Marshal(returnData)
 	return true, string(json)
 }
@@ -95,4 +95,9 @@ func getBlockHashFn(chain ChainContext) func(n uint64) common.Hash {
 
 type ChainContext interface {
 	GetBlockHash(height uint64) common.Hash
+}
+
+func toHex(b []byte) string {
+	hex := common.Bytes2Hex(b)
+	return "0x" + hex
 }
