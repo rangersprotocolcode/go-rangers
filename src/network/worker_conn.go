@@ -126,10 +126,6 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 	case GroupResponseMsg:
 		msg := notify.GroupResponseMessage{GroupResponseByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.GroupResponse, &msg)
-	case STMStorageReady:
-		msg := notify.STMStorageReadyMessage{FileName: message.Body}
-		notify.BUS.Publish(notify.STMStorageReady, &msg)
-		break
 	}
 }
 

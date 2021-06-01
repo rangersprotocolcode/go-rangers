@@ -53,8 +53,6 @@ const (
 
 	CoinProxyNotify = "coin_proxy_notify"
 
-	STMStorageReady = "STMStorageReady"
-
 	AcceptGroup = "accept_group"
 
 	WrongTxNonce = "wrongTxNonce"

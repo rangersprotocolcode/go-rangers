@@ -62,7 +62,7 @@ const (
 	TransactionTypeTransferNFT    = 124 // 状态机给用户转NFT
 	TransactionTypeUpdateNFT      = 125 // 更新NFT数据
 	TransactionTypeBatchUpdateNFT = 126 // 批量更新NFT数据 deprecated
-	TransactionTypeImportNFT      = 128 // 从外部导入NFT/NFTSet
+
 
 	TransactionTypeLockResource   = 129 // 锁定 nft/ft/bnt
 	TransactionTypeUnLockResource = 130 // 解锁 nft/ft/bnt
@@ -78,14 +78,6 @@ const (
 	TransactionTypeFTDepositAck   = 202 // 充值
 	TransactionTypeNFTDepositAck  = 203 // 充值
 	TransactionTypeERC20Binding   = 204 // 绑定ERC-20
-
-	// 状态机管理
-	TransactionTypeAddStateMachine = 901 // 新增状态机
-	TransactionTypeUpdateStorage   = 902 // 刷新状态机存储
-	TransactionTypeStartSTM        = 903 // 重启状态机
-	TransactionTypeStopSTM         = 904 // 关闭状态机
-	TransactionTypeUpgradeSTM      = 905 // 更新状态机（停机->删除本地镜像->下载新镜像->启动）
-	TransactionTypeQuitSTM         = 906 // 关服（停机->删除本地镜像->删除配置项）
 
 	// 系统管理
 	TransactionTypeSetExchangeRate = 801 // 新增汇率表

@@ -236,7 +236,7 @@ func (chain *blockChain) GenerateBlock(bh types.BlockHeader) *types.Block {
 		Header: &bh,
 	}
 
-	txs, missTxs, _, _ := chain.queryTxsByBlockHash(bh.Hash, bh.Transactions)
+	txs, missTxs, _ := chain.queryTxsByBlockHash(bh.Hash, bh.Transactions)
 
 	if len(missTxs) != 0 {
 		logger.Debugf("GenerateBlock can not get all txs,return nil block!")
@@ -464,9 +464,9 @@ func (chain *blockChain) queryBlockHeaderByHash(hash common.Hash) *types.BlockHe
 	return block.Header
 }
 
-func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList []common.Hashes) ([]*types.Transaction, []common.Hashes, map[string]bool, error) {
+func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList []common.Hashes) ([]*types.Transaction, []common.Hashes, error) {
 	if nil == txHashList || 0 == len(txHashList) {
-		return nil, nil, nil, service.ErrNil
+		return nil, nil, service.ErrNil
 	}
 
 	verifiedBody, _ := chain.verifiedBodyCache.Get(blockHash)
@@ -477,7 +477,6 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 
 	txs := make([]*types.Transaction, 0)
 	need := make([]common.Hashes, 0)
-	abnormal := make(map[string]bool, 0)
 	var err error
 
 	for _, hash := range txHashList {
@@ -512,7 +511,7 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 
 		txs = append(txs, tx)
 	}
-	return txs, need, abnormal, err
+	return txs, need, err
 }
 
 func (chain *blockChain) versionValidate() bool {

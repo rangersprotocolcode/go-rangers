@@ -160,9 +160,7 @@ func testVMExecutorFeeFail(t *testing.T) {
 	kinds := []int32{types.TransactionTypeOperatorEvent, types.TransactionTypeWithdraw, types.TransactionTypeMinerApply,
 		types.TransactionTypeMinerAdd, types.TransactionTypeMinerRefund, types.TransactionTypePublishFT, types.TransactionTypePublishNFTSet,
 		types.TransactionTypeMintFT, types.TransactionTypeMintNFT, types.TransactionTypeShuttleNFT, types.TransactionTypeUpdateNFT,
-		types.TransactionTypeApproveNFT, types.TransactionTypeRevokeNFT, types.TransactionTypeAddStateMachine, types.TransactionTypeUpdateStorage,
-		types.TransactionTypeStartSTM, types.TransactionTypeStopSTM, types.TransactionTypeUpgradeSTM,
-		types.TransactionTypeQuitSTM, types.TransactionTypeImportNFT,
+		types.TransactionTypeApproveNFT, types.TransactionTypeRevokeNFT,
 	}
 
 	for _, kind := range kinds {

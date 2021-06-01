@@ -26,6 +26,19 @@ import (
 )
 
 func TestGetEpoch(t *testing.T) {
+	f := big.NewInt(92)
+	f.Exp(f, big.NewInt(20), nil)
+	s := new(big.Int).Exp(big.NewInt(100), big.NewInt(20), nil)
+	fmt.Println(f)
+	fmt.Println(s.String())
+
+	ff, _, _ := big.ParseFloat(f.String(), 10, 256, big.ToNearestEven)
+	sf, _, _ := big.ParseFloat(s.String(), 10, 256, big.ToNearestEven)
+	fmt.Println(ff.Text('f',256))
+	fmt.Println(sf.Text('f',256))
+	r := new(big.Float).Quo(ff, sf)
+	fmt.Println(r.Text('f',256))
+
 	year := getEpoch(1)
 	if 0 != year {
 		t.Fatalf("year error for 1")

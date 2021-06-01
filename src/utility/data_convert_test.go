@@ -248,3 +248,25 @@ func TestFormat(t *testing.T) {
 	number := new(big.Int).SetBytes(numberBytes)
 	fmt.Println(number)
 }
+
+func TestStrToBigInt15(t *testing.T) {
+	str := "4.425213942348953822"
+	fmt.Println("origin: " + str)
+	bigInt, _ := StrToBigInt(str)
+	fmt.Println(bigInt.String())
+	fmt.Println(BigIntToStr(bigInt))
+
+	str1 := "1.00000000000E-7"
+	fmt.Println("origin: " + str1)
+	bigInt1, _ := StrToBigInt(str1)
+	fmt.Println(bigInt1.String())
+	fmt.Println(BigIntToStr(bigInt1))
+
+	bigInt.Sub(bigInt, bigInt1)
+	fmt.Println(bigInt.String())
+	fmt.Println(BigIntToStr(bigInt))
+
+	bigInt2 := FormatDecimalForERC20(bigInt, 18)
+	fmt.Println(bigInt2)
+	fmt.Println(FormatDecimalForRocket(bigInt2, 18))
+}
