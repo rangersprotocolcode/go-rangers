@@ -131,14 +131,18 @@ func (self *AccountDB) SubFT(addr common.Address, ftName string, balance *big.In
 	found, contract, position, decimal := self.GetERC20Binding(ftName)
 	if found {
 		account := self.getOrNewAccountObject(contract)
+
 		key := self.GetERC20Key(addr, position)
 		remain := new(big.Int).SetBytes(account.GetData(self.db, key))
-		if remain.Cmp(balance) < 0 {
+
+		value := utility.FormatDecimalForERC20(balance, int64(decimal))
+		if remain.Cmp(value) < 0 {
 			return remain, false
 		}
-		remain.Sub(remain, utility.FormatDecimalForERC20(balance, int64(decimal)))
+
+		remain.Sub(remain, value)
 		account.setData(key, remain.Bytes())
-		return remain, true
+		return utility.FormatDecimalForRocket(remain, int64(decimal)), true
 	}
 
 	account := self.getOrNewAccountObject(addr)
