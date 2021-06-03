@@ -94,6 +94,8 @@ type Network interface {
 
 	Broadcast(msg Message)
 
+	SendToJSONRPC(msg string, sessionId, requestId uint64)
+
 	SendToClientReader(id string, msg []byte, nonce uint64)
 
 	SendToClientWriter(id string, msg []byte, nonce uint64)

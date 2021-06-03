@@ -56,4 +56,6 @@ const (
 	AcceptGroup = "accept_group"
 
 	WrongTxNonce = "wrongTxNonce"
+
+	ETHRPC = "eth_rpc"
 )

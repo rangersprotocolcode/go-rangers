@@ -33,6 +33,8 @@ type server struct {
 
 	// coiner消息
 	coiner ConnectorConn
+
+	jsonrpc JSONRPCConn
 }
 
 func (s *server) Init(logger log.Logger, gateAddr string, selfMinerId []byte, consensusHandler MsgHandler) {
@@ -40,6 +42,11 @@ func (s *server) Init(logger log.Logger, gateAddr string, selfMinerId []byte, co
 	s.writer.Init(gateAddr, "/srv/worker_writer", notify.ClientTransaction, methodCodeClientWriter, logger, false)
 	s.worker.Init(gateAddr, selfMinerId, consensusHandler, logger)
 	s.coiner.Init(gateAddr, logger)
+	s.jsonrpc.Init(gateAddr, logger)
+}
+
+func (s *server) SendToJSONRPC(msg string, sessionId, requestId uint64) {
+	s.jsonrpc.Send(msg, sessionId, requestId)
 }
 
 func (s *server) Send(id string, msg Message) {

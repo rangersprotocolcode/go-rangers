@@ -273,3 +273,21 @@ func (m *NonceNotifyMessage) GetRaw() []byte {
 func (m *NonceNotifyMessage) GetData() interface{} {
 	return m
 }
+
+
+type ETHRPCMessage struct {
+	Id     uint64          `json:"id"`
+	Method string          `json:"method"`
+	Params json.RawMessage `json:"params"`
+
+	Nonce     uint64 `json:"nonce"`
+	RequestId uint64 `json:"request_id"`
+	SessionId uint64 `json:"session_id"`
+}
+
+func (m *ETHRPCMessage) GetRaw() []byte {
+	return nil
+}
+func (m *ETHRPCMessage) GetData() interface{} {
+	return m
+}
