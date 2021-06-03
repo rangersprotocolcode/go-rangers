@@ -23,6 +23,7 @@ import (
 	"com.tuntun.rocket/node/src/consensus/model"
 	cnet "com.tuntun.rocket/node/src/consensus/net"
 	"com.tuntun.rocket/node/src/core"
+	"com.tuntun.rocket/node/src/eth_rpc"
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
@@ -182,6 +183,8 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 		panic("Init miner start miner error!")
 	}
 	syncChainInfo(*sk, minerInfo.ID.GetHexString())
+
+	eth_rpc.InitEthMsgHandler()
 	gx.init = true
 }
 

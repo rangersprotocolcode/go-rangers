@@ -10,8 +10,8 @@ import (
 	"bytes"
 	"math/big"
 
-	cloudflare "com.tuntun.rocket/node/src/vm/crypto/bn256/cloudflare"
-	google "com.tuntun.rocket/node/src/vm/crypto/bn256/google"
+	cloudflare "com.tuntun.rocket/node/src/eth_crypto/bn256/cloudflare"
+	google "com.tuntun.rocket/node/src/eth_crypto/bn256/google"
 )
 
 // FuzzAdd fuzzez bn256 addition between the Google and Cloudflare libraries.

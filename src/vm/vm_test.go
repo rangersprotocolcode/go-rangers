@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/eth_crypto"
 	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/vm/crypto"
 	"github.com/holiman/uint256"
 )
 
@@ -472,4 +472,3 @@ func TestBase64(t *testing.T) {
 	a.SetBytes(b)
 	fmt.Printf("%v\n", a.String())
 }
-

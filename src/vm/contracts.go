@@ -18,11 +18,11 @@ package vm
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	crypto "com.tuntun.rocket/node/src/eth_crypto"
+	"com.tuntun.rocket/node/src/eth_crypto/blake2b"
+	"com.tuntun.rocket/node/src/eth_crypto/bls12381"
+	"com.tuntun.rocket/node/src/eth_crypto/bn256"
 	"com.tuntun.rocket/node/src/utility"
-	"com.tuntun.rocket/node/src/vm/crypto"
-	"com.tuntun.rocket/node/src/vm/crypto/blake2b"
-	"com.tuntun.rocket/node/src/vm/crypto/bls12381"
-	"com.tuntun.rocket/node/src/vm/crypto/bn256"
 	"crypto/sha256"
 	"encoding/binary"
 	"errors"

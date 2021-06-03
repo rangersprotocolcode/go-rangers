@@ -9,11 +9,11 @@ import (
 	"time"
 
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/eth_crypto"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/vm"
-	"com.tuntun.rocket/node/src/vm/crypto"
 )
 
 func TestRocketProtocol(t *testing.T) {

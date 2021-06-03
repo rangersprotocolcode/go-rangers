@@ -16,6 +16,8 @@
 
 package common
 
+import "math/big"
+
 const Version = "0.9"
 
 const ConsensusVersion = 1
@@ -25,3 +27,10 @@ const NetworkId = "1"
 
 //用于区分不同的分叉
 const ChainId = "1"
+
+const ProtocolVersion = 1
+
+func GetChainId() *big.Int {
+	chainId, _ := big.NewInt(0).SetString(ChainId, 10)
+	return chainId
+}

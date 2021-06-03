@@ -63,10 +63,11 @@ const (
 	TransactionTypeUpdateNFT      = 125 // 更新NFT数据
 	TransactionTypeBatchUpdateNFT = 126 // 批量更新NFT数据 deprecated
 
-
 	TransactionTypeLockResource   = 129 // 锁定 nft/ft/bnt
 	TransactionTypeUnLockResource = 130 // 解锁 nft/ft/bnt
 	TransactionTypeComboNFT       = 131 // 组合nft
+
+	TransactionTypeETHTX = 188 //以太坊的交易改造而成的交易
 
 	// 状态机通知客户端
 	TransactionTypeNotify          = 301 // 通知某个用户

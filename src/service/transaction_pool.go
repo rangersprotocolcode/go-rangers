@@ -346,6 +346,10 @@ func (pool *TxPool) VerifyTransaction(tx *types.Transaction) error {
 		return nil
 	}
 
+	if tx.Type == types.TransactionTypeETHTX {
+		return nil
+	}
+
 	err := pool.verifyTransactionHash(tx)
 	if nil != err {
 		return err

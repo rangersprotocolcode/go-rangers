@@ -57,7 +57,6 @@ func InitExecutors() {
 	executors[types.TransactionTypeApproveNFT] = &ftExecutor{}
 	executors[types.TransactionTypeRevokeNFT] = &ftExecutor{}
 
-
 	executors[types.TransactionTypeSetExchangeRate] = &exchangeRateExecutor{}
 
 	executors[types.TransactionTypeLockResource] = &resourceLockUnLockExecutor{logger: logger}
@@ -67,6 +66,7 @@ func InitExecutors() {
 	executors[types.TransactionTypeJackpot] = &lotteryExecutor{}
 
 	executors[types.TransactionTypeContract] = &contractExecutor{}
+	executors[types.TransactionTypeETHTX] = &contractExecutor{}
 
 	txExecutorsImpl = &txExecutors{executors: executors}
 }

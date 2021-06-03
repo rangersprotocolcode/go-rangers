@@ -16,7 +16,7 @@ var (
 	gasLimit uint64 = 20000000
 )
 
-type contractData struct {
+type ContractData struct {
 	GasPrice string `json:"gasPrice,omitempty"`
 	GasLimit string `json:"gasLimit,omitempty"`
 
@@ -48,7 +48,7 @@ func ExecuteContract(accountdb *account.AccountDB, transaction *types.Transactio
 	vmCtx.GasPrice = gasPrice
 	vmCtx.GasLimit = gasLimit
 
-	var data contractData
+	var data ContractData
 	err := json.Unmarshal([]byte(transaction.Data), &data)
 	if err != nil {
 		txLogger.Errorf("Contract data unmarshal error:%s", err.Error())

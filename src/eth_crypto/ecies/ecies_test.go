@@ -31,7 +31,7 @@ package ecies
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/vm/crypto"
+	crypto "com.tuntun.rocket/node/src/eth_crypto"
 	"crypto/elliptic"
 	"crypto/rand"
 	"crypto/sha256"

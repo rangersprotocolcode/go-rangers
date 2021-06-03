@@ -18,9 +18,9 @@ package vm
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	crypto "com.tuntun.rocket/node/src/eth_crypto"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/storage/account"
-	"com.tuntun.rocket/node/src/vm/crypto"
 	"math"
 	"math/big"
 	"time"

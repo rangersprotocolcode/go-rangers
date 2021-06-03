@@ -17,7 +17,7 @@
 package vm
 
 import (
-	"com.tuntun.rocket/node/src/vm/crypto"
+	"com.tuntun.rocket/node/src/eth_crypto"
 	"testing"
 )
 
