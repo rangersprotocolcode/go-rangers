@@ -42,7 +42,7 @@ func (handler ethMsgHandler) process(message notify.Message) {
 		logger.Errorf("ETHRPCMessage assert not ok!")
 		return
 	}
-	logger.Debugf("Rcv eth prc message.Method:%s,params:%s,nonce:%d,requestId:%d,id:%d", ethRpcMessage.Method, ethRpcMessage.Params, ethRpcMessage.Nonce, ethRpcMessage.RequestId, ethRpcMessage.Id)
+	logger.Debugf("Rcv eth prc message.Method:%s,params:%s,nonce:%d,requestId:%d,id:%v", ethRpcMessage.Method, ethRpcMessage.Params, ethRpcMessage.Nonce, ethRpcMessage.RequestId, ethRpcMessage.Id)
 	handlerFunc, arguments, err := handler.parseRequest(ethRpcMessage)
 
 	if err != nil {

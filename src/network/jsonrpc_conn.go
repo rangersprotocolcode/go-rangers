@@ -23,7 +23,7 @@ func (conn *JSONRPCConn) Init(ipPort string, logger log.Logger) {
 		message := notify.ETHRPCMessage{}
 		err := json.Unmarshal(body, &message)
 		if nil != err {
-			conn.logger.Errorf("fail to get body from jsonrpcConn, bodyHex: %s", string(body))
+			conn.logger.Errorf("fail to get body from jsonrpcConn, bodyHex: %s,err:%s", string(body), err.Error())
 			return
 		}
 

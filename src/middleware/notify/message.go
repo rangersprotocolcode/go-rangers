@@ -274,9 +274,8 @@ func (m *NonceNotifyMessage) GetData() interface{} {
 	return m
 }
 
-
 type ETHRPCMessage struct {
-	Id     uint64          `json:"id"`
+	Id     interface{}     `json:"id"`
 	Method string          `json:"method"`
 	Params json.RawMessage `json:"params"`
 
