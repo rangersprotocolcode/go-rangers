@@ -57,8 +57,6 @@ type BlockChain interface {
 
 	TopBlock() *types.BlockHeader
 
-	CurrentBlock() *types.Block
-
 	QueryBlockByHash(hash common.Hash) *types.Block
 
 	QueryBlock(height uint64) *types.Block

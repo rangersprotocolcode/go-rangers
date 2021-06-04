@@ -190,18 +190,17 @@ func (api *GtasAPI) GetBlockByHash(hash string) (*Result, error) {
 }
 
 func (api *GtasAPI) GetCurrentBlock() (*Result, error) {
-	b := core.GetBlockChain().CurrentBlock()
+	b := core.GetBlockChain().TopBlock()
 	if b == nil {
 		return failResult("layer2 error")
 	}
-	bh := b.Header
-	preBlock := core.GetBlockChain().QueryBlockByHash(bh.PreHash)
+	preBlock := core.GetBlockChain().QueryBlockByHash(b.PreHash)
 	preBH := preBlock.Header
-	block := convertBlockHeader(bh)
+	block := convertBlockHeader(b)
 	if preBH != nil {
-		block.Qn = bh.TotalQN - preBH.TotalQN
+		block.Qn = b.TotalQN - preBH.TotalQN
 	} else {
-		block.Qn = bh.TotalQN
+		block.Qn = b.TotalQN
 	}
 	return successResult(block)
 }

@@ -52,9 +52,8 @@ var blockChainImpl *blockChain
 type blockChain struct {
 	init bool
 
-	latestBlock  *types.BlockHeader
-	currentBlock *types.Block
-	requestIds   map[string]uint64
+	latestBlock *types.BlockHeader
+	requestIds  map[string]uint64
 
 	topBlocks         *lru.Cache // key：块高，value：header
 	futureBlocks      *lru.Cache // key：块hash，value：block（体积很大）
@@ -332,11 +331,6 @@ func (chain *blockChain) GetVerifyHash(height uint64) (common.Hash, error) {
 
 func (chain *blockChain) TopBlock() *types.BlockHeader {
 	result := chain.latestBlock
-	return result
-}
-
-func (chain *blockChain) CurrentBlock() *types.Block {
-	result := chain.currentBlock
 	return result
 }
 

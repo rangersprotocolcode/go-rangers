@@ -248,7 +248,6 @@ func (chain *blockChain) updateLastBlock(state *account.AccountDB, block *types.
 		return false
 	}
 
-	chain.currentBlock = block
 	chain.latestBlock = header
 	chain.requestIds = header.RequestIds
 
