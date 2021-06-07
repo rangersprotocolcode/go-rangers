@@ -3,7 +3,6 @@ package eth_rpc
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/rlp"
 	"com.tuntun.rocket/node/src/utility"
 )
@@ -25,6 +24,5 @@ func (api *ethAPIService) SendRawTransaction(encodedTx utility.Bytes) (common.Ha
 	}
 
 	rocketTx := convertTx(tx, sender)
-	service.GetTransactionPool().AddTransaction(rocketTx)
 	return rocketTx.Hash, rocketTx, nil
 }

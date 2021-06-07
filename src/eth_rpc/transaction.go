@@ -255,7 +255,6 @@ func convertTx(txRaw *Transaction, sender common.Address) *types.Transaction {
 	data.AbiData = string(txRaw.Data())
 	transferValue := txRaw.Value()
 	if transferValue != nil {
-		transferValue := big.NewInt(0).Mod(transferValue, big.NewInt(1000000000000000000))
 		data.TransferValue = utility.BigIntToStr(transferValue)
 	}
 	dataByes, _ := json.Marshal(data)
