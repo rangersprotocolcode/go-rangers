@@ -12,14 +12,17 @@ type ethAPIService struct{}
 // SendRawTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
 func (api *ethAPIService) SendRawTransaction(encodedTx utility.Bytes) (common.Hash, *types.Transaction, error) {
+	logger.Debugf("SendRawTransaction encodeTx:%v", encodedTx)
 	tx := new(Transaction)
 	if err := rlp.DecodeBytes(encodedTx, tx); err != nil {
+		logger.Debugf("SendRawTransaction DecodeBytes error:%v", err)
 		return common.Hash{}, nil, err
 	}
 
 	signer := NewEIP155Signer(common.GetChainId())
 	sender, err := Sender(signer, tx)
 	if err != nil {
+		logger.Debugf("SendRawTransaction sender error:%v", err)
 		return common.Hash{}, nil, err
 	}
 

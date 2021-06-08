@@ -252,7 +252,7 @@ func convertTx(txRaw *Transaction, sender common.Address) *types.Transaction {
 	result.Type = types.TransactionTypeETHTX
 
 	data := service.ContractData{}
-	data.AbiData = string(txRaw.Data())
+	data.AbiData = common.ToHex(txRaw.Data())
 	transferValue := txRaw.Value()
 	if transferValue != nil {
 		data.TransferValue = utility.BigIntToStr(transferValue)
