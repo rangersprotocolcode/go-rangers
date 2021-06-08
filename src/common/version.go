@@ -26,7 +26,7 @@ const ConsensusVersion = 1
 const NetworkId = "1"
 
 //用于区分不同的分叉
-const ChainId = "1"
+const ChainId = "101"
 
 const ProtocolVersion = 1
 
