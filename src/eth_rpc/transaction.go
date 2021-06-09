@@ -252,7 +252,8 @@ func convertTx(txRaw *Transaction, sender common.Address) *types.Transaction {
 		result.Target = txRaw.To().String()
 	}
 	result.Type = types.TransactionTypeETHTX
-	result.Time = txRaw.time.String()
+	//can not ues time!
+	//result.Time = txRaw.time.String()
 	result.Nonce = txRaw.data.AccountNonce
 
 	data := service.ContractData{}
