@@ -248,7 +248,9 @@ func TxDifference(a, b Transactions) Transactions {
 func convertTx(txRaw *Transaction, sender common.Address) *types.Transaction {
 	result := &types.Transaction{}
 	result.Source = sender.String()
-	result.Target = txRaw.To().String()
+	if txRaw.To() != nil {
+		result.Target = txRaw.To().String()
+	}
 	result.Type = types.TransactionTypeETHTX
 
 	data := service.ContractData{}
