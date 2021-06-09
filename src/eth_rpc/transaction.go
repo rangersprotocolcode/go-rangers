@@ -35,6 +35,7 @@ import (
 
 var (
 	ErrInvalidSig = errors.New("invalid transaction v, r, s values")
+	emptyTime     = time.Time{}
 )
 
 type Transaction struct {
@@ -252,6 +253,12 @@ func convertTx(txRaw *Transaction, sender common.Address) *types.Transaction {
 		result.Target = txRaw.To().String()
 	}
 	result.Type = types.TransactionTypeETHTX
+
+	if txRaw.time == emptyTime {
+		result.Time = utility.GetTime().String()
+	} else {
+		result.Time = txRaw.time.String()
+	}
 
 	data := service.ContractData{}
 	data.AbiData = common.ToHex(txRaw.Data())
