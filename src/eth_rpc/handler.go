@@ -154,6 +154,7 @@ func (handler ethMsgHandler) exec(handlerFunc *execFunc, arguments []reflect.Val
 	if handlerFunc.errPos >= 0 { // test if method returned an error
 		if !reply[handlerFunc.errPos].IsNil() {
 			e := reply[handlerFunc.errPos].Interface().(error)
+			logger.Debugf("after exec.error:%v", e)
 			return &callbackError{e.Error()}, nil
 		}
 	}

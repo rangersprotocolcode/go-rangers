@@ -248,11 +248,16 @@ func TxDifference(a, b Transactions) Transactions {
 func convertTx(txRaw *Transaction, sender common.Address) *types.Transaction {
 	result := &types.Transaction{}
 	result.Source = sender.String()
-	result.Target = txRaw.To().String()
+	if txRaw.To() != nil {
+		result.Target = txRaw.To().String()
+	}
 	result.Type = types.TransactionTypeETHTX
+	//can not ues time!
+	//result.Time = txRaw.time.String()
+	result.Nonce = txRaw.data.AccountNonce
 
 	data := service.ContractData{}
-	data.AbiData = string(txRaw.Data())
+	data.AbiData = common.ToHex(txRaw.Data())
 	transferValue := txRaw.Value()
 	if transferValue != nil {
 		data.TransferValue = utility.BigIntToStr(transferValue)
