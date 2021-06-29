@@ -107,8 +107,8 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	//创建创始合约
 	usdtContractAddress, wethContractAddress, mixContractAddress := createGenesisContract(block.Header, stateDB)
 	stateDB.AddERC20Binding("SYSTEM-ETH.USDT", usdtContractAddress, 2, 6)
-	stateDB.AddERC20Binding("ETH.ETH", wethContractAddress, 4, 18)
-	stateDB.AddERC20Binding("SYSTEM-ETH.MIX", mixContractAddress, 5, 18)
+	stateDB.AddERC20Binding("ETH.ETH", wethContractAddress, 6, 18)
+	stateDB.AddERC20Binding("SYSTEM-ETH.MIX", mixContractAddress, 7, 18)
 
 	// 测试用
 	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("tuntun", "pig", "hz", "0", "hz", "10086", 0), stateDB)
