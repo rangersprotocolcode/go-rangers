@@ -30,6 +30,7 @@ import (
 )
 
 const minerApplyInfoFile = "batch_miner_apply_info.txt"
+const testnetMinerApplyInfoFile = "batch_miner_apply_info_testnet.txt"
 
 type piece struct {
 	id        string
@@ -45,7 +46,7 @@ func TestBatchMinerApply(t *testing.T) {
 			continue
 		}
 		piece := pieceList[i]
-		if i < 8 {
+		if i < 9 {
 			piece.minerInfo.Type = common.MinerTypeProposer
 			piece.minerInfo.Stake = 5000000
 		} else {
@@ -64,7 +65,8 @@ func TestBatchMinerApply(t *testing.T) {
 }
 
 func parseFile() []piece {
-	bytes, err := ioutil.ReadFile(minerApplyInfoFile)
+	//bytes, err := ioutil.ReadFile(minerApplyInfoFile)
+	bytes, err := ioutil.ReadFile(testnetMinerApplyInfoFile)
 	if err != nil {
 		panic("read account info  file error:" + err.Error())
 	}
@@ -111,7 +113,8 @@ func genMinerApplyTx(target string, data string) string {
 
 func sendTxToGate(txList []string) {
 	d := websocket.Dialer{ReadBufferSize: 1024 * 1024 * 16, WriteBufferSize: 1024 * 1024 * 16}
-	url := url.URL{Scheme: "ws", Host: "gate.tuntunhz.com:8888", Path: "/api/writer/1"}
+	//url := url.URL{Scheme: "ws", Host: "gate.tuntunhz.com:8888", Path: "/api/writer/1"}
+	url := url.URL{Scheme: "ws", Host: "116.62.167.219", Path: "/api/writer/1"}
 
 	conn, _, err := d.Dial(url.String(), nil)
 	if err != nil {
