@@ -209,7 +209,7 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 	}
 	logger.Debugf("After execute usdt contract create!Contract address:%s", usdtContractAddress.GetHexString())
 
-	_, wethContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(mixContractData), vmCtx.GasLimit, big.NewInt(0))
+	_, wethContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(wethContractData), vmCtx.GasLimit, big.NewInt(0))
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
 	}
