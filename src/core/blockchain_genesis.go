@@ -108,7 +108,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	//创建创始合约
 	usdtContractAddress, wethContractAddress, mixContractAddress := createGenesisContract(block.Header, stateDB)
 	stateDB.AddERC20Binding("SYSTEM-ETH.USDT", usdtContractAddress, 2, 6)
-	stateDB.AddERC20Binding("ETH.ETH", wethContractAddress, 0, 18)
+	stateDB.AddERC20Binding("ETH.ETH", wethContractAddress, 1, 18)
 	stateDB.AddERC20Binding("SYSTEM-ETH.MIX", mixContractAddress, 0, 18)
 
 	// 测试用
