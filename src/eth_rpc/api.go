@@ -16,6 +16,7 @@ func (api *ethAPIService) SendRawTransaction(encodedTx utility.Bytes) (common.Ha
 	if err := rlp.DecodeBytes(encodedTx, tx); err != nil {
 		return common.Hash{}, nil, err
 	}
+	logger.Debugf("raw tx hash:%v", tx.Hash().String())
 
 	signer := NewEIP155Signer(common.GetChainId())
 	sender, err := Sender(signer, tx)
