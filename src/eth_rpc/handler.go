@@ -46,7 +46,7 @@ func (handler ethMsgHandler) process(message notify.Message) {
 
 	batchMessage, batch := message.GetData().(*notify.ETHRPCBatchMessage)
 	if batch {
-		logger.Debugf("Rcv batch eth prc message.requestId:%d,session id:%d", singleMessage.RequestId, singleMessage.SessionId)
+		logger.Debugf("Rcv batch eth prc message.requestId:%d,session id:%d", batchMessage.RequestId, batchMessage.SessionId)
 		handler.processBatchRequest(batchMessage.Message)
 		return
 	}
