@@ -235,9 +235,6 @@ func (mm *MinerManager) UpdateMiner(miner *types.Miner, accountdb *account.Accou
 	db := mm.getMinerDatabaseAddress(miner.Type)
 	data, _ := json.Marshal(miner)
 	accountdb.SetData(db, id, data)
-
-	address := getAddressFromID(id)
-	accountdb.SetData(db, address.Bytes(), emptyValue[:])
 }
 
 // 创世矿工用
