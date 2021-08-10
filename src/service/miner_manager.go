@@ -237,7 +237,7 @@ func (mm *MinerManager) UpdateMiner(miner *types.Miner, accountdb *account.Accou
 	accountdb.SetData(db, id, data)
 
 	address := getAddressFromID(id)
-	accountdb.SetData(db, address.Bytes(), data)
+	accountdb.SetData(db, address.Bytes(), emptyValue[:])
 }
 
 // 创世矿工用
@@ -259,10 +259,8 @@ func (mm *MinerManager) InsertMiner(miner *types.Miner, accountdb *account.Accou
 func (mm *MinerManager) RemoveMiner(id []byte, ttype byte, accountdb *account.AccountDB) {
 	mm.logger.Debugf("Miner manager remove miner %d", ttype)
 	db := mm.getMinerDatabaseAddress(ttype)
-	accountdb.SetData(db, id, emptyValue[:])
 
-	address := getAddressFromID(id)
-	accountdb.SetData(db, address.Bytes(), emptyValue[:])
+	accountdb.SetData(db, id, emptyValue[:])
 }
 
 func (mm *MinerManager) abortMiner(id []byte, ttype byte, height uint64, accountdb *account.AccountDB) bool {
