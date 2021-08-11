@@ -39,7 +39,7 @@ const (
 	oneDay = 24 * 3600 * 1000
 
 	// 释放周期
-	epoch  = 180 * oneDay
+	epoch = 180 * oneDay
 
 	// 一个epoch内，出块总量
 	BlocksPerEpoch = epoch / CastingInterval
@@ -65,7 +65,7 @@ const (
 // 最小质押量
 const (
 	ValidatorStake = uint64(200)
-	ProposerStake  = uint64(10000)
+	ProposerStake  = uint64(1250)
 
 	HeightAfterStake = RewardBlocks
 )
