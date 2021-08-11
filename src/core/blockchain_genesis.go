@@ -84,9 +84,9 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	block.Header.Signature = common.Sha256([]byte("tuntunhz"))
 	block.Header.Random = common.Sha256([]byte("RocketProtocolVRF"))
 
-	//genesisProposers := getGenesisProposer()
-	//addMiners(genesisProposers, stateDB)
-	//
+	genesisProposers := getGenesisProposer()
+	addMiners(genesisProposers, stateDB)
+
 	//verifyMiners := make([]*types.Miner, 0)
 	//for _, genesis := range genesisInfo {
 	//	for i, member := range genesis.Group.Members {
