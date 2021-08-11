@@ -24,6 +24,8 @@ import (
 	"math/big"
 )
 
+var flagForERC20Binding = big.NewInt(-2)
+
 func (self *AccountDB) GetBNT(addr common.Address, bntName string) *big.Int {
 	accountObject := self.getOrNewAccountObject(addr)
 	raw := accountObject.getFT(self.db, common.GenerateBNTName(bntName))
@@ -58,7 +60,17 @@ func (self *AccountDB) GetAllBNT(addr common.Address) map[string]*big.Int {
 
 func (self *AccountDB) GetAllFT(addr common.Address) map[string]*big.Int {
 	accountObject := self.getOrNewAccountObject(addr)
-	return accountObject.getAllFT(self.db, false)
+	result := accountObject.getAllFT(self.db, false)
+	if 0 == len(result) {
+		return result
+	}
+
+	for ftName, value := range result {
+		if 0 == flagForERC20Binding.Cmp(value) {
+			result[ftName] = self.GetFT(addr, ftName)
+		}
+	}
+	return result
 }
 
 func (self *AccountDB) SetBNT(addr common.Address, bntName string, balance *big.Int) {
@@ -78,6 +90,9 @@ func (self *AccountDB) SetFT(addr common.Address, ftName string, balance *big.In
 	if found {
 		account := self.getOrNewAccountObject(contract)
 		account.SetData(self.db, self.GetERC20Key(addr, position), utility.FormatDecimalForERC20(balance, int64(decimal)).Bytes())
+
+		account = self.getOrNewAccountObject(addr)
+		account.SetFT(self.db, flagForERC20Binding, ftName)
 		return
 	}
 
