@@ -275,11 +275,8 @@ func (m *NonceNotifyMessage) GetData() interface{} {
 }
 
 type ETHRPCMessage struct {
-	Id     interface{}     `json:"id"`
-	Method string          `json:"method"`
-	Params json.RawMessage `json:"params"`
+	Message ETHRPCPiece `json:"jsonrpc"`
 
-	Nonce     uint64 `json:"nonce"`
 	RequestId uint64 `json:"request_id"`
 	SessionId uint64 `json:"session_id"`
 }
@@ -289,4 +286,26 @@ func (m *ETHRPCMessage) GetRaw() []byte {
 }
 func (m *ETHRPCMessage) GetData() interface{} {
 	return m
+}
+
+type ETHRPCBatchMessage struct {
+	Message []ETHRPCPiece `json:"jsonrpc"`
+
+	RequestId uint64 `json:"request_id"`
+	SessionId uint64 `json:"session_id"`
+}
+
+func (m *ETHRPCBatchMessage) GetRaw() []byte {
+	return nil
+}
+func (m *ETHRPCBatchMessage) GetData() interface{} {
+	return m
+}
+
+type ETHRPCPiece struct {
+	Id     interface{}     `json:"id"`
+	Method string          `json:"method"`
+	Params json.RawMessage `json:"params"`
+
+	Nonce uint64 `json:"nonce"`
 }

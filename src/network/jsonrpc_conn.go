@@ -22,13 +22,19 @@ func (conn *JSONRPCConn) Init(ipPort string, logger log.Logger) {
 
 		message := notify.ETHRPCMessage{}
 		err := json.Unmarshal(body, &message)
-		if nil != err {
-			conn.logger.Errorf("fail to get body from jsonrpcConn, bodyHex: %s,err:%s", string(body), err.Error())
-			return
+		if err == nil {
+			conn.logger.Debugf("get body from jsonrpcConn, bodyHex: %s, publishing", string(body))
+			notify.BUS.Publish(notify.ETHRPC, &message)
+		} else {
+			message := notify.ETHRPCBatchMessage{}
+			err := json.Unmarshal(body, &message)
+			if err == nil {
+				conn.logger.Debugf("get body from jsonrpcConn, bodyHex: %s, publishing", string(body))
+				notify.BUS.Publish(notify.ETHRPC, &message)
+			} else {
+				conn.logger.Errorf("fail to get body from jsonrpcConn, bodyHex: %s,err:%s", string(body), err.Error())
+			}
 		}
-
-		conn.logger.Debugf("get body from jsonrpcConn, bodyHex: %s, publishing", string(body))
-		notify.BUS.Publish(notify.ETHRPC, &message)
 	}
 
 	conn.init(ipPort, "/srv/jsonrpc", logger)

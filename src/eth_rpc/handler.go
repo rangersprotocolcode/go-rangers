@@ -37,14 +37,34 @@ func InitEthMsgHandler() {
 }
 
 func (handler ethMsgHandler) process(message notify.Message) {
-	ethRpcMessage, ok := message.GetData().(*notify.ETHRPCMessage)
-	if !ok {
-		logger.Errorf("ETHRPCMessage assert not ok!")
+	singleMessage, single := message.GetData().(*notify.ETHRPCMessage)
+	if single {
+		logger.Debugf("Rcv single eth prc message.requestId:%d,session id:%d", singleMessage.RequestId, singleMessage.SessionId)
+		handler.processSingleRequest(singleMessage.Message)
 		return
 	}
-	logger.Debugf("Rcv eth prc message.Method:%s,params:%s,nonce:%d,requestId:%d,id:%v", ethRpcMessage.Method, ethRpcMessage.Params, ethRpcMessage.Nonce, ethRpcMessage.RequestId, ethRpcMessage.Id)
-	handlerFunc, arguments, err := handler.parseRequest(ethRpcMessage)
 
+	batchMessage, batch := message.GetData().(*notify.ETHRPCBatchMessage)
+	if batch {
+		logger.Debugf("Rcv batch eth prc message.requestId:%d,session id:%d", batchMessage.RequestId, batchMessage.SessionId)
+		handler.processBatchRequest(batchMessage.Message)
+		return
+	}
+}
+
+func (handler ethMsgHandler) processBatchRequest(ethRpcMessage []notify.ETHRPCPiece) {
+	if ethRpcMessage == nil {
+		return
+	}
+
+	for _, msg := range ethRpcMessage {
+		handler.processSingleRequest(msg)
+	}
+}
+
+func (handler ethMsgHandler) processSingleRequest(ethRpcMessage notify.ETHRPCPiece) {
+	logger.Debugf("Method:%s,params:%s,nonce:%d,id:%v", ethRpcMessage.Method, ethRpcMessage.Params, ethRpcMessage.Nonce, ethRpcMessage.Id)
+	handlerFunc, arguments, err := handler.parseRequest(&ethRpcMessage)
 	if err != nil {
 		return
 	} else {
@@ -120,7 +140,7 @@ METHODS:
 	}
 }
 
-func (handler ethMsgHandler) parseRequest(ethRpcMessage *notify.ETHRPCMessage) (handlerFunc *execFunc, arguments []reflect.Value, error Error) {
+func (handler ethMsgHandler) parseRequest(ethRpcMessage *notify.ETHRPCPiece) (handlerFunc *execFunc, arguments []reflect.Value, error Error) {
 	handlerFunc = handler.service[ethRpcMessage.Method]
 	if handlerFunc == nil {
 		return nil, nil, &methodNotFoundError{ethRpcMessage.Method}

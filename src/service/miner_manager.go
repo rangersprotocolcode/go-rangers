@@ -234,7 +234,6 @@ func (mm *MinerManager) UpdateMiner(miner *types.Miner, accountdb *account.Accou
 	id := miner.Id
 	db := mm.getMinerDatabaseAddress(miner.Type)
 	data, _ := json.Marshal(miner)
-
 	accountdb.SetData(db, id, data)
 }
 
@@ -257,6 +256,7 @@ func (mm *MinerManager) InsertMiner(miner *types.Miner, accountdb *account.Accou
 func (mm *MinerManager) RemoveMiner(id []byte, ttype byte, accountdb *account.AccountDB) {
 	mm.logger.Debugf("Miner manager remove miner %d", ttype)
 	db := mm.getMinerDatabaseAddress(ttype)
+
 	accountdb.SetData(db, id, emptyValue[:])
 }
 

@@ -264,7 +264,7 @@ func convertTx(txRaw *Transaction, sender common.Address) *types.Transaction {
 	}
 	dataByes, _ := json.Marshal(data)
 	result.Data = string(dataByes)
-	result.Hash = result.GenHash()
+	result.Hash = txRaw.Hash()
 	return result
 }
 

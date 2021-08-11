@@ -22,11 +22,9 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
 	"errors"
+	"github.com/holiman/uint256"
 	"math/big"
 	"sync/atomic"
-	"time"
-
-	"github.com/holiman/uint256"
 )
 
 // emptyCodeHash is used by create to ensure deployment is disallowed to already
@@ -206,10 +204,10 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 		if !isPrecompile && value.Sign() == 0 {
 			// Calling a non existing account, don't do anything, but ping the tracer
 			//if evm.vmConfig.Debug && evm.depth == 0
-			if evm.depth == 0 {
-				evm.tracer.CaptureStart(caller.Address(), addr, false, input, gas, value)
-				evm.tracer.CaptureEnd(ret, 0, 0, nil)
-			}
+			//if evm.depth == 0 {
+			//	evm.tracer.CaptureStart(caller.Address(), addr, false, input, gas, value)
+			//	evm.tracer.CaptureEnd(ret, 0, 0, nil)
+			//}
 			return nil, gas, nil, nil
 		}
 		evm.StateDB.CreateAccount(addr)
@@ -218,12 +216,12 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 
 	// Capture the tracer start/end events in debug mode
 	//if evm.vmConfig.Debug && evm.depth == 0
-	if evm.depth == 0 {
-		evm.tracer.CaptureStart(caller.Address(), addr, false, input, gas, value)
-		defer func(startGas uint64, startTime time.Time) { // Lazy evaluation of the parameters
-			evm.tracer.CaptureEnd(ret, startGas-gas, time.Since(startTime), err)
-		}(gas, time.Now())
-	}
+	//if evm.depth == 0 {
+	//	evm.tracer.CaptureStart(caller.Address(), addr, false, input, gas, value)
+	//	defer func(startGas uint64, startTime time.Time) { // Lazy evaluation of the parameters
+	//		evm.tracer.CaptureEnd(ret, startGas-gas, time.Since(startTime), err)
+	//	}(gas, time.Now())
+	//}
 
 	if isPrecompile {
 		ret, gas, err = RunPrecompiledContract(p, input, gas)
@@ -454,10 +452,10 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	//}
 
 	//if evm.vmConfig.Debug && evm.depth == 0
-	if evm.depth == 0 {
-		evm.tracer.CaptureStart(caller.Address(), address, true, codeAndHash.code, gas, value)
-	}
-	start := time.Now()
+	//if evm.depth == 0 {
+	//	evm.tracer.CaptureStart(caller.Address(), address, true, codeAndHash.code, gas, value)
+	//}
+	//start := time.Now()
 
 	ret, logs, err := run(evm, contract, nil, false)
 
@@ -499,9 +497,9 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 		err = ErrMaxCodeSizeExceeded
 	}
 	//if evm.vmConfig.Debug && evm.depth == 0
-	if evm.depth == 0 {
-		evm.tracer.CaptureEnd(ret, gas-contract.Gas, time.Since(start), err)
-	}
+	//if evm.depth == 0 {
+	//	evm.tracer.CaptureEnd(ret, gas-contract.Gas, time.Since(start), err)
+	//}
 	return ret, address, contract.Gas, logs, err
 
 }
