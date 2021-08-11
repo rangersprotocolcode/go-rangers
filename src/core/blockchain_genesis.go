@@ -102,7 +102,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	stateDB.SetNonce(common.ProposerDBAddress, 1)
 	stateDB.SetNonce(common.ValidatorDBAddress, 1)
 
-	valueTen, _ := utility.StrToBigInt("10")
+	valueTenThousand, _ := utility.StrToBigInt("10000")
 	valueBillion, _ := utility.StrToBigInt("1000000000")
 
 	//创建创始合约
@@ -114,23 +114,18 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	// 测试用
 	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("tuntun", "pig", "hz", "0", "hz", "10086", 0), stateDB)
 	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("tuntunhz", "tuntun", "t", "hz", "hz", types.NFTConditions{}, 0, "10000"), stateDB)
-	stateDB.SetFT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"), "ETH.ETH", valueTen)
+	stateDB.SetFT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"), "ETH.ETH", valueTenThousand)
 	/**
 		测试账户
 		id:0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443
 	    adderss:0x38780174572fb5b4735df1b7c69aee77ff6e9f49
 	    sk:0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea
 	*/
-	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "ETH.ETH", valueTen)
+	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "ETH.ETH", valueTenThousand)
+	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-ETH.USDT", valueTenThousand)
 	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-ETH.MIX", valueBillion)
 	stateDB.SetBalance(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), valueBillion)
 
-	//客户端测试使用账号
-	stateDB.SetFT(common.HexToAddress("0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"), "ETH.ETH", valueTen)
-	stateDB.SetFT(common.HexToAddress("0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"), "SYSTEM-ETH.USDT", valueTen)
-	stateDB.SetBalance(common.HexToAddress("0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"), valueBillion)
-
-	stateDB.SetBalance(common.HexToAddress("0xa72263e15d3a48de8cbde1f75c889c85a15567b990aab402691938f4511581ab"), valueBillion)
 	/**
 	自动化测试框架专用账户
 	id:0x7dba6865f337148e5887d6bea97e6a98701a2fa774bd00474ea68bcc645142f2
@@ -139,6 +134,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	*/
 	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "ETH.ETH", valueBillion)
 	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-ETH.USDT", valueBillion)
+	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-ETH.MIX", valueBillion)
 	stateDB.SetBalance(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), valueBillion)
 
 	root, _ := stateDB.Commit(true)
