@@ -134,29 +134,18 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, s
 		return nil
 	}
 
-	// 社区奖励
-	communityReward := utility.Float64ToBigInt(total * common.CommunityReward)
-	result[common.CommunityAddress] = communityReward
-	reward.logger.Debugf("calculating, height: %d, hash: %s, CommunityAddress: %s, reward: %d", height, hashString, common.CommunityAddress.String(), communityReward)
-
 	// 提案者奖励
-	rewardAllProposer := total * common.AllProposerReward
-	rewardProposer := utility.Float64ToBigInt(rewardAllProposer * common.ProposerReward)
-
+	rewardProposer := utility.Float64ToBigInt(total * common.ProposerReward)
 	proposerAddr := getAddressFromID(bh.Castor)
 	addReward(result, proposerAddr, rewardProposer)
 	proposerResult := result[proposerAddr].String()
 	reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, reward: %d, result: %s", height, hashString, proposerAddr.String(), rewardProposer, proposerResult)
 
 	// 其他提案者奖励
+	otherRewardProposer := total * common.AllProposerReward
 	totalProposerStake, proposersStake := reward.minerManager.GetProposerTotalStakeWithDetail(height, accountDB)
 	if totalProposerStake != 0 {
-		otherRewardProposer := rewardAllProposer * (1 - common.ProposerReward)
 		for addr, stake := range proposersStake {
-			// todo: 本块的提案者要拿钱么
-			//if addr == proposerAddr {
-			//	continue
-			//}
 			delta := utility.Float64ToBigInt(float64(stake) / float64(totalProposerStake) * otherRewardProposer)
 			addReward(result, addr, delta)
 			proposerResult := result[addr].String()

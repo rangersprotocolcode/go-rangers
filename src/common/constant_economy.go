@@ -52,17 +52,14 @@ const (
 
 	ReleaseRate = 0.08
 
-	// 社区比例
-	CommunityReward = 0.3
-
 	// 验证组比例
-	ValidatorsReward = 0.2
+	ValidatorsReward = 2 / 7
 
 	// 所有提案者比例
-	AllProposerReward = 0.5
+	AllProposerReward = 1 / 2
 
 	// 出块的提案者比例
-	ProposerReward = 0.3
+	ProposerReward = 3 / 14
 )
 
 // 最小质押量
