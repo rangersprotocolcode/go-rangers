@@ -53,13 +53,13 @@ const (
 	ReleaseRate = 0.08
 
 	// 验证组比例
-	ValidatorsReward = 2 / 7
+	ValidatorsReward = float64(2) / 7
 
 	// 所有提案者比例
-	AllProposerReward = 1 / 2
+	AllProposerReward = float64(1) / 2
 
 	// 出块的提案者比例
-	ProposerReward = 3 / 14
+	ProposerReward = float64(3) / 14
 )
 
 // 最小质押量
@@ -68,10 +68,4 @@ const (
 	ProposerStake  = uint64(1250)
 
 	HeightAfterStake = RewardBlocks
-)
-
-var (
-	CommunityAddress = HexToAddress("0xffffff")
-
-	//todo 核心开发团队 孵化团队地址
 )

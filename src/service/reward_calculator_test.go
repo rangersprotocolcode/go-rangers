@@ -93,20 +93,6 @@ func TestFloat64Stake(t *testing.T) {
 	fmt.Println(prop)
 }
 
-func TestAddReward(t *testing.T) {
-	all := make(map[common.Address]*big.Int)
-	addr := common.CommunityAddress
-	delta := big.NewInt(1000)
-	fmt.Println(all[addr])
-
-	addReward(all, addr, delta)
-	fmt.Println(all[addr])
-
-	addReward(all, addr, delta)
-	fmt.Println(all[addr])
-
-}
-
 func TestProposerReward(t *testing.T) {
 	stake := uint64(190000)
 	fmt.Println(math.Ceil(float64(stake) / float64(common.ValidatorStake)))
