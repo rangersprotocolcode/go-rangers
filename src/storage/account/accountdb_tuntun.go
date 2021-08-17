@@ -125,6 +125,9 @@ func (self *AccountDB) AddFT(addr common.Address, ftName string, balance *big.In
 		remain := new(big.Int).SetBytes(account.GetData(self.db, key))
 		remain.Add(remain, utility.FormatDecimalForERC20(balance, int64(decimal)))
 		account.setData(key, remain.Bytes())
+
+		account = self.getOrNewAccountObject(addr)
+		account.SetFT(self.db, flagForERC20Binding, ftName)
 		return true
 	}
 
