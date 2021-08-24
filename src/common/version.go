@@ -23,10 +23,18 @@ const Version = "0.9"
 const ConsensusVersion = 1
 
 //用于区分不同的网络环境
-const NetworkId = "9527"
+//testnet
+//const NetworkId = "9527"
+
+//dev
+const NetworkId = "9500"
 
 //用于区分不同的分叉
-const ChainId = "9527"
+//testnet
+//const ChainId = "9527"
+
+//dev
+const ChainId = "9500"
 
 const ProtocolVersion = 1
 
