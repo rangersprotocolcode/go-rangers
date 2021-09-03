@@ -73,7 +73,7 @@ func (refund *RefundManager) CheckAndMove(height uint64, db *account.AccountDB) 
 }
 
 func (refund *RefundManager) Add(data map[uint64]types.RefundInfoList, db *account.AccountDB) {
-	if nil == db {
+	if nil == db || nil == data || 0 == len(data) {
 		return
 	}
 
