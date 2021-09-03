@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
+	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"math"
@@ -43,11 +44,11 @@ func InitRewardCalculator(blockChainImpl types.BlockChainHelper, groupChain type
 	RewardCalculatorImpl.logger = log.GetLoggerByIndex(log.RewardLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 }
 
-func (reward *RewardCalculator) CalculateReward(height uint64, bh *types.BlockHeader, situation string) map[uint64]types.RefundInfoList {
+func (reward *RewardCalculator) CalculateReward(height uint64, accountDB *account.AccountDB, bh *types.BlockHeader, situation string) map[uint64]types.RefundInfoList {
 	reward.logger.Debugf("start to calculate, height: %d, situation: %s", height, situation)
 	defer reward.logger.Debugf("end to calculate, height: %d, situation: %s", height, situation)
 
-	total := reward.calculateRewardPerBlock(bh, situation)
+	total := reward.calculateRewardPerBlock(bh, accountDB, situation)
 	if nil == total || 0 == len(total) {
 		reward.logger.Errorf("fail to reward, height: %d", height)
 		return nil
@@ -82,7 +83,7 @@ func (reward *RewardCalculator) notify(total map[common.Address]*big.Int, height
 }
 
 // 计算某一块的奖励
-func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, situation string) map[common.Address]*big.Int {
+func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, accountDB *account.AccountDB,situation string) map[common.Address]*big.Int {
 	result := make(map[common.Address]*big.Int)
 
 	height := bh.Height
@@ -90,12 +91,6 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, s
 	hashString := bh.Hash.String()
 	reward.logger.Debugf("start to calculate, height: %d, hash: %s, proposer: %s, groupId: %s, totalReward %f", height, hashString, common.ToHex(bh.Castor), common.ToHex(bh.GroupId), total)
 	defer reward.logger.Warnf("end to calculate, height %d, hash: %s, result: %v", height, hashString, result)
-
-	accountDB, err := AccountDBManagerInstance.GetAccountDBByHash(bh.StateTree)
-	if err != nil {
-		reward.logger.Errorf("get account db by height: %d error:%s", height, err.Error())
-		return nil
-	}
 
 	// 提案者奖励
 	rewardProposer := utility.Float64ToBigInt(total * common.ProposerReward)
