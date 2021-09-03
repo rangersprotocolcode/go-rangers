@@ -261,6 +261,7 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 	context := make(map[string]interface{})
 	context["gameExecutor"] = 1
 	context["chain"] = blockChainImpl
+	context["situation"] = "gameExecutor"
 
 	message := ""
 	result := true
