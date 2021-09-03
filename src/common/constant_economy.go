@@ -26,7 +26,7 @@ const (
 
 	// 10个小时，单位ms
 	// 计算一次奖励的时间间隔
-	RewardTime = 1 * 1000
+	RewardTime = 60 * 1000
 
 	RefundTime = 50 * 1000
 
