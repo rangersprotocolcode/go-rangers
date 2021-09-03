@@ -21,7 +21,6 @@ import (
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
-	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"math"
@@ -44,26 +43,27 @@ func InitRewardCalculator(blockChainImpl types.BlockChainHelper, groupChain type
 	RewardCalculatorImpl.logger = log.GetLoggerByIndex(log.RewardLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 }
 
-func (reward *RewardCalculator) CalculateReward(height uint64, db *account.AccountDB, situation string) bool {
-	if !reward.needReward(height) {
-		reward.logger.Warnf("no need to reward, height: %d", height)
-		return false
-	}
+func (reward *RewardCalculator) CalculateReward(height uint64, bh *types.BlockHeader, situation string) map[uint64]types.RefundInfoList {
+	reward.logger.Debugf("start to calculate, height: %d, situation: %s", height, situation)
+	defer reward.logger.Debugf("end to calculate, height: %d, situation: %s", height, situation)
 
-	total := reward.calculateReward(height, situation)
+	total := reward.calculateRewardPerBlock(bh, situation)
 	if nil == total || 0 == len(total) {
 		reward.logger.Errorf("fail to reward, height: %d", height)
-		return false
+		return nil
 	}
-
 	go reward.notify(total, height)
 
+	nextHeight := reward.NextRewardHeight(height)
+	refundInfoList := types.RefundInfoList{}
 	for addr, money := range total {
-		from := db.GetBalance(addr).String()
-		db.AddBalance(addr, money)
-		reward.logger.Debugf("add reward, addr: %s, from: %s to %v", addr.String(), from, db.GetBalance(addr))
+		refundInfoList.AddRefundInfo(addr.Bytes(), money)
+		reward.logger.Debugf("add reward, addr: %s, delta: %s, expected height: %d", addr.String(), money.String(), nextHeight)
 	}
-	return true
+
+	data := make(map[uint64]types.RefundInfoList, 1)
+	data[nextHeight] = refundInfoList
+	return data
 }
 
 // send reward detail
@@ -79,43 +79,6 @@ func (reward *RewardCalculator) notify(total map[common.Address]*big.Int, height
 
 	resultByte, _ := json.Marshal(result)
 	network.GetNetInstance().Notify(false, "rocketprotocol", "reward", string(resultByte))
-}
-
-// 计算完整奖励
-// 假定每10000块计算一次奖励，则这里会计算例如高度为0-9999，10000-19999的结果
-func (reward *RewardCalculator) calculateReward(height uint64, situation string) map[common.Address]*big.Int {
-	result := make(map[common.Address]*big.Int, 0)
-	from := height - common.RewardBlocks
-	reward.logger.Debugf("start to calculate, from %d to %d", from, height-1)
-	defer reward.logger.Debugf("end to calculate, from %d to %d", from, height-1)
-
-	for i := from; i < height; i++ {
-		if i == 0 {
-			continue
-		}
-
-		var bh *types.BlockHeader
-		if situation != "fork" {
-			bh = reward.blockChain.QueryBlockHeaderByHeight(i, true)
-		} else {
-			bh = reward.forkHelper.GetBlockHeader(i)
-		}
-		if nil == bh {
-			reward.logger.Errorf("fail to get blockHeader. height: %d", i)
-			continue
-		}
-
-		piece := reward.calculateRewardPerBlock(bh, situation)
-		if nil == piece {
-			continue
-		}
-
-		for addr, value := range piece {
-			addReward(result, addr, value)
-		}
-	}
-
-	return result
 }
 
 // 计算某一块的奖励
@@ -175,10 +138,6 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, s
 	}
 
 	return result
-}
-
-func (reward *RewardCalculator) needReward(height uint64) bool {
-	return 0 == (height % common.RewardBlocks)
 }
 
 func (reward *RewardCalculator) NextRewardHeight(height uint64) uint64 {

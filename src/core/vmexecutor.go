@@ -144,8 +144,10 @@ func (executor *VMExecutor) after() {
 
 	// 计算定时任务（冻结、退款等等）
 	service.RefundManagerImpl.Add(types.GetRefundInfo(executor.context), executor.accountdb)
-	service.RefundManagerImpl.CheckAndMove(height, executor.accountdb)
 
 	// 计算出块奖励
-	service.RewardCalculatorImpl.CalculateReward(height, executor.accountdb, executor.situation)
+	data := service.RewardCalculatorImpl.CalculateReward(height, executor.block.Header, executor.situation)
+	service.RefundManagerImpl.Add(data, executor.accountdb)
+
+	service.RefundManagerImpl.CheckAndMove(height, executor.accountdb)
 }
