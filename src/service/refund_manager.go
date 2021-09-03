@@ -22,11 +22,11 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
-	"encoding/json"
 	"github.com/pkg/errors"
 	"math"
 	"math/big"
 	"sort"
+	"strconv"
 )
 
 type RefundManager struct {
@@ -35,7 +35,10 @@ type RefundManager struct {
 	forkHelper       types.ForkHelper
 }
 
-var RefundManagerImpl *RefundManager
+var (
+	RefundManagerImpl *RefundManager
+	prefix            = "refund"
+)
 
 func InitRefundManager(groupChainHelper types.GroupChainHelper, forkHelper types.ForkHelper) {
 	RefundManagerImpl = &RefundManager{}
@@ -44,32 +47,29 @@ func InitRefundManager(groupChainHelper types.GroupChainHelper, forkHelper types
 	RefundManagerImpl.forkHelper = forkHelper
 }
 
+func (refund *RefundManager) generateAddress(height uint64) common.Address {
+	keyString := prefix + strconv.FormatUint(height, 10)
+	return common.BytesToAddress(common.Sha256(utility.StrToBytes(keyString)))
+}
+
 func (refund *RefundManager) CheckAndMove(height uint64, db *account.AccountDB) {
 	if nil == db {
 		return
 	}
 
-	key := utility.UInt64ToByte(height)
-	data := db.GetData(common.RefundAddress, key)
-	if nil == data || 0 == len(data) {
-		refund.logger.Warnf("no data at height: %d", height)
+	address := refund.generateAddress(height)
+
+	refundList := db.GetAllRefund(address)
+	if nil == refundList || 0 == len(refundList) {
+		refund.logger.Debugf("no refundList for height: %d", height)
 		return
 	}
 
-	var refundInfoList types.RefundInfoList
-	err := json.Unmarshal(data, &refundInfoList)
-	if err != nil {
-		refund.logger.Errorf("fail to unmarshal", err.Error())
-		return
+	for addr, value := range refundList {
+		db.AddBalance(addr, value)
+		db.RemoveData(address, addr.Bytes())
+		refund.logger.Warnf("refunded, height: %d, address: %s, delta: %d", height, addr.String(), value)
 	}
-
-	for _, refundInfo := range refundInfoList.List {
-		addr := common.BytesToAddress(refundInfo.Id)
-		db.AddBalance(addr, refundInfo.Value)
-		refund.logger.Warnf("refunded, height: %d, address: %s, delta: %d", height, addr.String(), refundInfo.Value)
-	}
-
-	db.RemoveData(common.RefundAddress, key)
 }
 
 func (refund *RefundManager) Add(data map[uint64]types.RefundInfoList, db *account.AccountDB) {
@@ -82,27 +82,21 @@ func (refund *RefundManager) Add(data map[uint64]types.RefundInfoList, db *accou
 			continue
 		}
 
-		// 查询一下
-		existedBytes := db.GetData(common.RefundAddress, utility.UInt64ToByte(height))
-		if nil == existedBytes || 0 == len(existedBytes) {
-			db.SetData(common.RefundAddress, utility.UInt64ToByte(height), list.TOJSON())
-			refund.logger.Warnf("add RefundInfoList: %v, height: %d", list, height)
-			continue
-		}
+		address := refund.generateAddress(height)
+		for _, refundInfo := range list.List {
+			existedBytes := db.GetData(address, refundInfo.Id)
+			if nil == existedBytes || 0 == len(existedBytes) {
+				db.SetData(address, refundInfo.Id, refundInfo.Value.Bytes())
+				refund.logger.Debugf("height: %d, set address: %s, value: %s", height, common.ToHex(refundInfo.Id), refundInfo.Value)
+			} else {
+				existed := new(big.Int).SetBytes(existedBytes)
+				refund.logger.Debugf("height: %d, add address: %s, value: %s, existed: %s", height, common.ToHex(refundInfo.Id), refundInfo.Value, existed.String())
 
-		// 已有数据，需要叠加
-		var refundInfoList types.RefundInfoList
-		err := json.Unmarshal(existedBytes, &refundInfoList)
-		if err != nil {
-			refund.logger.Errorf("fail to unmarshal", err.Error())
-			continue
+				existed.Add(existed, refundInfo.Value)
+				db.SetData(address, refundInfo.Id, existed.Bytes())
+				refund.logger.Debugf("height: %d, after, add address: %s, value: %s, existed: %s", height, common.ToHex(refundInfo.Id), refundInfo.Value, existed.String())
+			}
 		}
-
-		for _, item := range list.List {
-			refundInfoList.AddRefundInfo(item.Id, item.Value)
-		}
-		db.SetData(common.RefundAddress, utility.UInt64ToByte(height), refundInfoList.TOJSON())
-		refund.logger.Warnf("add RefundInfoList: %v, height: %d", refundInfoList, height)
 	}
 }
 

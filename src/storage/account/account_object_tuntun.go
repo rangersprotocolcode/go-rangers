@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/utility"
+	"math/big"
 	"strings"
 )
 
@@ -145,5 +146,28 @@ func (self *accountObject) getAllNFT(db AccountDatabase, filter string) []*types
 	if 0 == len(result) {
 		return nil
 	}
+	return result
+}
+
+func (c *accountObject) getAllRefund(db AccountDatabase) map[common.Address]*big.Int {
+	c.cachedLock.Lock()
+	defer c.cachedLock.Unlock()
+
+	result := make(map[common.Address]*big.Int)
+	for key, value := range c.cachedStorage {
+		result[common.BytesToAddress(utility.StrToBytes(key))] = new(big.Int).SetBytes(value)
+	}
+
+	iterator := c.DataIterator(db, []byte{})
+	for iterator.Next() {
+		cachedKey := utility.BytesToStr(iterator.Key)
+		_, contains := c.cachedStorage[cachedKey]
+		if !contains {
+			c.cachedStorage[cachedKey] = iterator.Value
+			result[common.BytesToAddress(iterator.Key)] = new(big.Int).SetBytes(iterator.Value)
+		}
+
+	}
+
 	return result
 }

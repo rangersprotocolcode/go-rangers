@@ -670,7 +670,7 @@ func setup(id string) {
 
 	groupChainImplLocal = dummyGroupChain{}
 	service.InitMinerManager()
-	service.InitRefundManager(&groupChainImplLocal)
+	service.InitRefundManager(&groupChainImplLocal, nil)
 }
 
 func teardown(id string) {

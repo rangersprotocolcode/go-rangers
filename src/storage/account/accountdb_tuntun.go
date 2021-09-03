@@ -53,6 +53,11 @@ func (self *AccountDB) GetFT(addr common.Address, ftName string) *big.Int {
 	return raw
 }
 
+func (self *AccountDB) GetAllRefund(addr common.Address) map[common.Address]*big.Int {
+	accountObject := self.getOrNewAccountObject(addr)
+	return accountObject.getAllRefund(self.db)
+}
+
 func (self *AccountDB) GetAllBNT(addr common.Address) map[string]*big.Int {
 	accountObject := self.getOrNewAccountObject(addr)
 	return accountObject.getAllFT(self.db, true)
