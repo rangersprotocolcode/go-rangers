@@ -34,7 +34,7 @@ type minerRefundExecutor struct {
 }
 
 func (this *minerRefundExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
-	if nil == header {
+	if nil == header || nil == transaction || nil == transaction.Sign {
 		return true, ""
 	}
 
@@ -45,8 +45,15 @@ func (this *minerRefundExecutor) Execute(transaction *types.Transaction, header 
 		return false, msg
 	}
 
-	minerId := common.FromHex(transaction.Source)
+	pubKey, err := transaction.Sign.RecoverPubkey(transaction.Hash.Bytes())
+	if nil != err {
+		msg := fmt.Sprintf("fail to refund %s, recoverPubkey failed", transaction.Data)
+		this.logger.Errorf(msg)
+		return false, msg
+	}
+	minerId := pubKey.GetID()
 	this.logger.Debugf("before refund, addr: %s, money: %d, minerId: %v", transaction.Source, value, minerId)
+
 	situation := context["situation"].(string)
 	refundHeight, money, refundErr := service.RefundManagerImpl.GetRefundStake(header.Height, minerId, value, accountdb, situation)
 	if refundErr != nil {
