@@ -392,8 +392,8 @@ func (db *NodeDatabase) Nodes() []common.Hash {
 
 // Reference adds a new reference from a parent node to a child node.
 func (db *NodeDatabase) Reference(child common.Hash, parent common.Hash) {
-	db.lock.RLock()
-	defer db.lock.RUnlock()
+	db.lock.Lock()
+	defer db.lock.Unlock()
 
 	db.reference(child, parent)
 }
