@@ -1171,5 +1171,49 @@ func newInstructionSet() JumpTable {
 		memorySize:  memoryNFT_GetNFTList,
 	}
 
+	//crypto defined InstructionSet----------------------------------------------------------------------------------------------
+
+	instructionSet[CRYPTO_SECP256R1KEYPAIR] = &operation{
+		execute:     opSECP256R1KEYPAIR,
+		constantGas: 0,
+		minStack:    minStack(0, 0),
+		maxStack:    maxStack(0, 0),
+	}
+
+	instructionSet[CRYPTO_SECP256R1SIGN] = &operation{
+		execute:     opSECP256R1SIGN,
+		constantGas: 0,
+		minStack:    minStack(2, 2),
+		maxStack:    maxStack(2, 2),
+	}
+
+	instructionSet[CRYPTO_SECP256R1VERIFY] = &operation{
+		execute:     opSECP256R1VERIFY,
+		constantGas: 0,
+		minStack:    minStack(3, 3),
+		maxStack:    maxStack(3, 3),
+	}
+
+	instructionSet[CRYPTO_RSAPKCS1KEYPAIR] = &operation{
+		execute:     opRSAPKCS1KEYPAIR,
+		constantGas: 0,
+		minStack:    minStack(1, 1),
+		maxStack:    maxStack(1, 1),
+	}
+
+	instructionSet[CRYPTO_RSAPKCS1SIGN] = &operation{
+		execute:     opRSAPKCS1SIGN,
+		constantGas: 0,
+		minStack:    minStack(2, 2),
+		maxStack:    maxStack(2, 2),
+	}
+
+	instructionSet[CRYPTO_RSAPKCS1VERIFY] = &operation{
+		execute:     opRSAPKCS1VERIFY,
+		constantGas: 0,
+		minStack:    minStack(3, 3),
+		maxStack:    maxStack(3, 3),
+	}
+
 	return instructionSet
 }

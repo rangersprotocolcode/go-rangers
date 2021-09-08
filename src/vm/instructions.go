@@ -984,6 +984,13 @@ func popString(callContext *callCtx) string {
 	return str
 }
 
+func popBytes(callContext *callCtx) []byte {
+	offset := callContext.stack.pop()
+	size := int64(uint256.NewInt().SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()), 32)).Uint64())
+	bytes := []byte(callContext.memory.GetPtr(int64(offset.Uint64()+32), size))
+	return bytes
+}
+
 func pushBool(callContext *callCtx, value bool) {
 	if value {
 		callContext.stack.push(&uint256.Int{1})
@@ -1022,6 +1029,13 @@ func pushStringArray(callContext *callCtx, value []string) {
 		appendUint256(callContext, len(s))
 		appendBytes(callContext, []byte(s))
 	}
+	callContext.stack.push(uint256.NewInt().SetUint64(offset))
+}
+
+func pushBytes(callContext *callCtx, bytes []byte) {
+	offset := uint64(callContext.memory.Len())
+	appendUint256(callContext, len(bytes))
+	appendBytes(callContext, []byte(bytes))
 	callContext.stack.push(uint256.NewInt().SetUint64(offset))
 }
 
@@ -1213,5 +1227,92 @@ func opGetNFTList(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx)
 	}
 
 	pushStringArray(callContext, ret_stringarray)
+	return nil, nil
+}
+
+// []byte, []byte crypto.Secp256r1Keypair();
+func opSECP256R1KEYPAIR(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_private_key := make([]byte, 0)
+	ret_public_key := make([]byte, 0)
+
+	// TODO
+	ret_private_key = append(ret_private_key, 0x01, 0x02, 0x03, 0x04)
+	ret_public_key = append(ret_public_key, 0x0a, 0x0b, 0x0c, 0x0d)
+
+	pushBytes(callContext, ret_private_key)
+	pushBytes(callContext, ret_public_key)
+	fmt.Printf("crypto.Secp256r1Keypair() return %v,%v\n", ret_private_key, ret_public_key)
+	return nil, nil
+}
+
+// []byte crypto.Secp256r1Sign([]byte msg, []byte private_key)
+func opSECP256R1SIGN(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_signature := make([]byte, 0)
+	arg_private_key := popBytes(callContext)
+	arg_msg := popBytes(callContext)
+
+	// TODO
+	ret_signature = append(ret_signature, 0xaa, 0xbb, 0xcc, 0xdd)
+
+	pushBytes(callContext, ret_signature)
+	fmt.Printf("crypto.Secp256r1Sign(%v, %v) return %v\n", arg_msg, arg_private_key, ret_signature)
+	return nil, nil
+}
+
+// bool crypto.Secp256r1Verify([]byte signature, []byte msg, []byte public_key);
+func opSECP256R1VERIFY(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_bool := false
+	arg_public_key := popBytes(callContext)
+	arg_msg := popBytes(callContext)
+	arg_signature := popBytes(callContext)
+
+	// TODO
+
+	pushBool(callContext, ret_bool)
+	fmt.Printf("crypto.Secp256r1Verify(%v, %v, %v) return %v\n", arg_signature, arg_msg, arg_public_key, ret_bool)
+	return nil, nil
+}
+
+// []byte, []byte crypto.Rsapkcs1Keypair(uint bits);
+func opRSAPKCS1KEYPAIR(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_private_key := make([]byte, 0)
+	ret_public_key := make([]byte, 0)
+	arg_bits := popUint256(callContext)
+
+	// TODO
+	ret_private_key = append(ret_private_key, 0x01, 0x02, 0x03, 0x04)
+	ret_public_key = append(ret_public_key, 0x0a, 0x0b, 0x0c, 0x0d)
+
+	pushBytes(callContext, ret_private_key)
+	pushBytes(callContext, ret_public_key)
+	fmt.Printf("crypto.Rsapkcs1Keypair(%v) return %v,%v\n", arg_bits, ret_private_key, ret_public_key)
+	return nil, nil
+}
+
+// []byte crypto.Rsapkcs1Sign([]byte msg, []byte private_key)
+func opRSAPKCS1SIGN(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_signature := make([]byte, 0)
+	arg_private_key := popBytes(callContext)
+	arg_msg := popBytes(callContext)
+
+	// TODO
+	ret_signature = append(ret_signature, 0xaa, 0xbb, 0xcc, 0xdd)
+
+	pushBytes(callContext, ret_signature)
+	fmt.Printf("crypto.Rsapkcs1Sign(%v, %v) return %v\n", arg_msg, arg_private_key, ret_signature)
+	return nil, nil
+}
+
+// bool crypto.Rsapkcs1Verify([]byte signature, []byte msg, []byte public_key);
+func opRSAPKCS1VERIFY(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret_bool := false
+	arg_public_key := popBytes(callContext)
+	arg_msg := popBytes(callContext)
+	arg_signature := popBytes(callContext)
+
+	// TODO
+
+	pushBool(callContext, ret_bool)
+	fmt.Printf("crypto.Rsapkcs1Verify(%v, %v, %v) return %v\n", arg_signature, arg_msg, arg_public_key, ret_bool)
 	return nil, nil
 }

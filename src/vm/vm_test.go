@@ -282,6 +282,33 @@ func TestVM9(t *testing.T) {
 	fmt.Printf("New create contract costGas:%v,createErr:%v\n", config.GasLimit-createLeftGas, createErr)
 }
 
+func TestSolidity(t *testing.T) {
+	mockInit()
+	config := new(testConfig)
+	setDefaults(config)
+	defer log.Close()
+
+	config.Origin = common.HexToAddress("0x407988d14785a6ae45e3106b4f9799c0ab0af3d0c85447ce1ddb09f089872257")
+	config.GasLimit = 3000000
+	config.GasPrice = big.NewInt(1)
+
+	// solidity code
+	// bytes memory msg = new bytes(8);
+	// (bytes memory specp256r1_private_key, bytes memory specp256r1_public_key) = crypto.Secp256r1Keypair();
+	// bytes memory specp256r1_signature = crypto.Secp256r1Sign(msg, specp256r1_private_key);
+	// bool specp256r1_verify = crypto.Secp256r1Verify(specp256r1_signature, msg, specp256r1_public_key);
+	// (bytes memory rsapkcs1_private_key, bytes memory rsapkcs1_public_key) = crypto.Rsapkcs1Keypair(1024);
+	// bytes memory rsapkcs1_signature = crypto.Rsapkcs1Sign(msg, rsapkcs1_private_key);
+	// crypto.Rsapkcs1Verify(rsapkcs1_signature, msg, rsapkcs1_public_key);
+
+	contractCodeBytes := common.Hex2Bytes("6080604052348015600f57600080fd5b506060600867ffffffffffffffff81118015602957600080fd5b506040519080825280601f01601f191660200182016040528015605b5781602001600182028036833780820191505090505b509050606080d09150915060608383d190506000818584d29050606080610400d39150915060608783d49050808883d550505050505050505060288060a16000396000f3fe6080604052600080fdfea164736f6c6375302e372e352b636f6d6d69742e6562373765643038001c")
+	createResult, contractAddress, createLeftGas, createErr := mockCreate(contractCodeBytes, config)
+	fmt.Printf("New create contract address:%s\n", contractAddress.GetHexString())
+	fmt.Printf("New create contract createResult:%v,%d\n", createResult, len(createResult))
+	fmt.Printf("New create contract createResult:%s,%d\n", common.ToHex(createResult), len(createResult))
+	fmt.Printf("New create contract costGas:%v,createErr:%v\n", config.GasLimit-createLeftGas, createErr)
+}
+
 func TestAddress(t *testing.T) {
 	addr := common.HexToAddress("0xbfaf6e5211f2c4aff8eeccf0bdf6965cb7d37e88bb6244ab08c77bf055497302")
 	fmt.Printf("addr:%v\n", addr.Bytes()[:20])
@@ -472,4 +499,3 @@ func TestBase64(t *testing.T) {
 	a.SetBytes(b)
 	fmt.Printf("%v\n", a.String())
 }
-
