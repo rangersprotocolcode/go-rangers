@@ -15,6 +15,13 @@
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package groupsig
+
+import (
+	"com.tuntun.rocket/node/src/common"
+	"fmt"
+	"testing"
+)
+
 //
 //import (
 //	"testing"
@@ -66,3 +73,26 @@ package groupsig
 //	}
 //	fmt.Printf("end test ID.\n")
 //}
+
+func TestID(t *testing.T) {
+	for {
+		sk := common.GenerateKey("")
+		//secretSeed := base.RandFromBytes(sk.PrivKey.D.Bytes())
+		//secKey := NewSeckeyFromRand(secretSeed)
+		//pubKey := GeneratePubkey(*secKey)
+		idBytes := sk.GetPubKey().GetID()
+		fmt.Printf("id bytes:%v\n", idBytes)
+		//big int deserialize
+		id := DeserializeID(idBytes[:])
+
+		//big int serialize
+		idStr := id.GetHexString()
+		fmt.Printf("id string:%s\n", idStr)
+		fmt.Printf("send to id:%v\n", common.FromHex(idStr))
+		fmt.Printf("set net id:%v\n", id.Serialize())
+
+		if idBytes[0] == 0 {
+			break
+		}
+	}
+}

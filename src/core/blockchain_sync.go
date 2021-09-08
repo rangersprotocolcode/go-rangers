@@ -76,8 +76,12 @@ func (chain *blockChain) nextPvGreatThanFork(commonAncestor *types.BlockHeader, 
 	if commonAncestorHeight < fork.latestBlock.Height && commonAncestorHeight < chain.latestBlock.Height {
 		forkBlock := fork.getBlock(commonAncestorHeight + 1)
 		chainBlockHeader := chain.QueryBlockHeaderByHeight(commonAncestorHeight+1, true)
-		if forkBlock != nil && chainBlockHeader != nil && chainBlockHeader.ProveValue.Cmp(forkBlock.Header.ProveValue) < 0 {
-			return false
+		if forkBlock != nil && chainBlockHeader != nil {
+			chainProveValue := consensusHelper.VRFProve2Value(chainBlockHeader.ProveValue)
+			forkProveValue := consensusHelper.VRFProve2Value(forkBlock.Header.ProveValue)
+			if chainProveValue.Cmp(forkProveValue) < 0 {
+				return false
+			}
 		}
 	}
 	return true
