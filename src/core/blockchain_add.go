@@ -24,7 +24,6 @@ import (
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"errors"
-	"time"
 )
 
 func (chain *blockChain) consensusVerify(b *types.Block) (types.AddBlockResult, bool) {
@@ -92,24 +91,31 @@ func (chain *blockChain) addBlockOnChain(coming *types.Block) types.AddBlockResu
 		return types.BlockTotalQnLessThanLocal
 	}
 
+	commonAncestor := chain.queryBlockHeaderByHash(comingHeader.PreHash)
+	if commonAncestor == nil {
+		logger.Warnf("Block chain query nil block!Hash:%s", comingHeader.PreHash)
+		return types.AddBlockFailed
+	}
 	// 比本地链好，要
 	if comingHeader.TotalQN > topBlock.TotalQN {
-		commonAncestor := chain.queryBlockHeaderByHash(comingHeader.PreHash)
-		logger.Warnf("coming greater than local. Removing and Forking...coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
+		logger.Warnf("coming qn great than local. Remove from common ancestor and add...coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
 			comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
-
 		chain.removeFromCommonAncestor(commonAncestor)
 		return chain.addBlockOnChain(coming)
 	}
 
 	// 不是同一块，但是QN与本地链相同，需要二次判断
-	commonAncestor := chain.queryBlockHeaderByHash(comingHeader.PreHash)
-	if chain.compareValue(commonAncestor, comingHeader) {
+	localNextBlock := chain.QueryBlockHeaderByHeight(commonAncestor.Height+1, true)
+	if localNextBlock == nil {
+		logger.Warnf("Block chain query nil block!Height:%s", commonAncestor.Height+1)
+		return types.AddBlockFailed
+	}
+	if chainPvGreatThanRemote(localNextBlock, comingHeader) {
 		return types.BlockTotalQnLessThanLocal
 	}
 
 	// 要了
-	logger.Warnf("coming equal to local. Still Removing and Forking...coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
+	logger.Warnf("coming pv great to local. Remove from common ancestor and add...coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
 		comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
 	chain.removeFromCommonAncestor(commonAncestor)
 	return chain.addBlockOnChain(coming)
@@ -315,47 +321,6 @@ func (chain *blockChain) removeFromCommonAncestor(commonAncestor *types.BlockHea
 		chain.remove(block)
 		logger.Debugf("Remove local block hash:%s, height %d", header.Hash.String(), header.Height)
 	}
-}
-
-// 找到commonAncestor在本地链的下一块，然后与remoteHeader比较
-func (chain *blockChain) compareValue(commonAncestor *types.BlockHeader, remoteHeader *types.BlockHeader) bool {
-	if commonAncestor == nil || chain.latestBlock == nil {
-		logger.Debugf("Debug2:compareValue commonAncestor:%v,chain.latestBlock:%v", commonAncestor, chain.latestBlock)
-		time.Sleep(time.Second * 3)
-	}
-	if commonAncestor.Height == chain.latestBlock.Height {
-		return false
-	}
-
-	remoteValue := consensusHelper.VRFProve2Value(remoteHeader.ProveValue)
-	logger.Debugf("coming hash:%s,coming value is:%v", remoteHeader.Hash.String(), remoteValue)
-	logger.Debugf("compareValue hash:%s height:%d latestHeight:%d", commonAncestor.Hash.Hex(), commonAncestor.Height, chain.latestBlock.Height)
-
-	var target *types.BlockHeader
-	for height := commonAncestor.Height + 1; height <= chain.latestBlock.Height; height++ {
-		logger.Debugf("compareValue queryBlockHeaderByHeight height:%d ", height)
-		header := chain.QueryBlockHeaderByHeight(height, true)
-		// 跳块时，高度会不连续
-		if header == nil {
-			logger.Debugf("compareValue queryBlockHeaderByHeight nil !height:%d ", height)
-			continue
-		}
-
-		target = header
-		break
-	}
-
-	localValue := consensusHelper.VRFProve2Value(target.ProveValue)
-	logger.Debugf("local hash:%s,local value is:%v", target.Hash.String(), localValue)
-
-	result := localValue.Cmp(remoteValue)
-
-	// 又相等了，说明同一个人在同一个高度出了多块，可能有问题
-	if result == 0 {
-		return target.CurTime.After(remoteHeader.CurTime)
-	}
-
-	return result > 0
 }
 
 func dumpTxs(txs []*types.Transaction, blockHeight uint64) {

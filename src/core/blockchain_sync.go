@@ -77,12 +77,17 @@ func (chain *blockChain) nextPvGreatThanFork(commonAncestor *types.BlockHeader, 
 		forkBlock := fork.getBlock(commonAncestorHeight + 1)
 		chainBlockHeader := chain.QueryBlockHeaderByHeight(commonAncestorHeight+1, true)
 		if forkBlock != nil && chainBlockHeader != nil {
-			chainProveValue := consensusHelper.VRFProve2Value(chainBlockHeader.ProveValue)
-			forkProveValue := consensusHelper.VRFProve2Value(forkBlock.Header.ProveValue)
-			if chainProveValue.Cmp(forkProveValue) < 0 {
-				return false
-			}
+			return chainPvGreatThanRemote(chainBlockHeader, forkBlock.Header)
 		}
 	}
 	return true
+}
+
+func chainPvGreatThanRemote(chainNextBlock *types.BlockHeader, remoteBlock *types.BlockHeader) bool {
+	logger.Debugf("[ComparePV]coming block:%s-%d,coming value is:%v", remoteBlock.Hash.String(), remoteBlock.Height, remoteBlock.ProveValue)
+	logger.Debugf("[ComparePV]local next block:%s-%d,local value is:%v", chainNextBlock.Hash.String(), chainNextBlock.Height, chainNextBlock.ProveValue)
+	if chainNextBlock.ProveValue.Cmp(remoteBlock.ProveValue) > 0 {
+		return true
+	}
+	return false
 }
