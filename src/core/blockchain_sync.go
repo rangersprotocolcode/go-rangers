@@ -97,6 +97,7 @@ func chainPvGreatThanRemote(chainNextBlock *types.BlockHeader, remoteBlock *type
 
 	chainNextHashBig := new(big.Int).SetBytes(chainNextBlock.Hash.Bytes())
 	remoteHashBig := new(big.Int).SetBytes(remoteBlock.Hash.Bytes())
+	logger.Debugf("[ComparePV]PV is the same,compare hash big:%v,%v", chainNextHashBig, remoteHashBig)
 	hashBigCompareValue := chainNextHashBig.Cmp(remoteHashBig)
 	if hashBigCompareValue > 0 {
 		return true
