@@ -200,7 +200,7 @@ func (gx *GX) getAccountInfo(sk string) {
 }
 
 func syncChainInfo() {
-	fmt.Println("Syncing block and group info from RocketProtocol net.Waiting...")
+	fmt.Println("Syncing block and group info from RangersProtocol net.Waiting...")
 	core.InitGroupSyncer()
 	core.InitBlockSyncer()
 	go func() {
