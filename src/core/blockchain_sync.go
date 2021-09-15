@@ -18,6 +18,7 @@ package core
 
 import (
 	"com.tuntun.rocket/node/src/middleware/types"
+	"math/big"
 )
 
 func (chain *blockChain) getChainPiece(sourceChainHeight uint64) []*types.BlockHeader {
@@ -86,7 +87,19 @@ func (chain *blockChain) nextPvGreatThanFork(commonAncestor *types.BlockHeader, 
 func chainPvGreatThanRemote(chainNextBlock *types.BlockHeader, remoteBlock *types.BlockHeader) bool {
 	logger.Debugf("[ComparePV]coming block:%s-%d,coming value is:%v", remoteBlock.Hash.String(), remoteBlock.Height, remoteBlock.ProveValue)
 	logger.Debugf("[ComparePV]local next block:%s-%d,local value is:%v", chainNextBlock.Hash.String(), chainNextBlock.Height, chainNextBlock.ProveValue)
-	if chainNextBlock.ProveValue.Cmp(remoteBlock.ProveValue) > 0 {
+	compareValue := chainNextBlock.ProveValue.Cmp(remoteBlock.ProveValue)
+	if compareValue > 0 {
+		return true
+	}
+	if compareValue < 0 {
+		return false
+	}
+
+	chainNextHashBig := new(big.Int).SetBytes(chainNextBlock.Hash.Bytes())
+	remoteHashBig := new(big.Int).SetBytes(remoteBlock.Hash.Bytes())
+	logger.Debugf("[ComparePV]PV is the same,compare hash big:%v,%v", chainNextHashBig, remoteHashBig)
+	hashBigCompareValue := chainNextHashBig.Cmp(remoteHashBig)
+	if hashBigCompareValue > 0 {
 		return true
 	}
 	return false

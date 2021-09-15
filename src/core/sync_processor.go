@@ -223,7 +223,13 @@ func (p *syncProcessor) isUseful(candidateInfo chainInfo) bool {
 	topBlock := blockChainImpl.TopBlock()
 	localTotalQn, localTopHash := topBlock.TotalQN, topBlock.Hash
 	localGroupHeight := p.groupChain.height()
-	if candidateInfo.TotalQn > localTotalQn || localTotalQn == candidateInfo.TotalQn && localTopHash == candidateInfo.TopBlockHash && localGroupHeight < candidateInfo.TopGroupHeight {
+	if candidateInfo.TotalQn > localTotalQn {
+		return true
+	}
+	if localTotalQn == candidateInfo.TotalQn && localTopHash != candidateInfo.TopBlockHash {
+		return true
+	}
+	if localTotalQn == candidateInfo.TotalQn && localTopHash == candidateInfo.TopBlockHash && localGroupHeight < candidateInfo.TopGroupHeight {
 		return true
 	}
 	return false
