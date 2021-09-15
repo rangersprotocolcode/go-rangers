@@ -25,7 +25,7 @@ import (
 //默认
 const (
 	gateAddrProduction = "gate.tuntunhz.com:10000"
-	gateAddrDaily      = "beta.gate.tuntunhz.com:80"
+	gateAddrDaily      = "testnet.rangersprotocol.com"
 )
 
 var Logger log.Logger
