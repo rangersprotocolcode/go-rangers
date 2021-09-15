@@ -313,12 +313,12 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {
 	if ok, err := service.GetTransactionPool().AddTransaction(tx); err != nil || !ok {
 		executor.logger.Errorf("Add tx error:%s", err.Error())
+
+		transaction := types.Transaction{Type: types.TransactionTypeWrongTxNonce, Data: tx.Hash.Hex(), RequestId: tx.RequestId}
+		transaction.Hash = common.BytesToHash(common.Sha256(tx.Hash.Bytes()))
+		service.GetTransactionPool().AddTransaction(&transaction)
 		return
 	}
-
-	transaction := types.Transaction{Type: types.TransactionTypeWrongTxNonce, Data: tx.Hash.Hex(), RequestId: tx.RequestId}
-	transaction.Hash = common.BytesToHash(common.Sha256(tx.Hash.Bytes()))
-	service.GetTransactionPool().AddTransaction(&transaction)
 
 	executor.logger.Debugf("Add tx success, tx: %s", tx.Hash.String())
 }

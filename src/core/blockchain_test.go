@@ -17,6 +17,10 @@
 package core
 
 import (
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware"
+	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rocket/node/src/vm"
 	"fmt"
 	"testing"
 )
@@ -24,5 +28,13 @@ import (
 func TestBlockChain_GenerateHeightKey(t *testing.T) {
 	result := generateHeightKey(10)
 	fmt.Println(len(result))
-	fmt.Printf("%v",result)
+	fmt.Printf("%v", result)
+}
+
+func TestBlockChain_Init(t *testing.T) {
+	common.InitConf("1.ini")
+	middleware.InitMiddleware()
+	service.InitService()
+	vm.InitVM()
+	InitCore(nil)
 }
