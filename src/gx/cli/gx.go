@@ -75,13 +75,13 @@ func (gx *GX) Run() {
 	pprofPort := app.Flag("pprof", "enable pprof").Default("23333").Uint()
 
 	//控制台
-	consoleCmd := app.Command("console", "start RocketProtocol console")
+	consoleCmd := app.Command("console", "start RangersProtocol console")
 	showRequest := consoleCmd.Flag("show", "show the request json").Short('v').Bool()
 	remoteHost := consoleCmd.Flag("host", "the node host address to connect").Short('i').String()
 	remotePort := consoleCmd.Flag("port", "the node host port to connect").Short('p').Default("8101").Int()
-	rpcPort := consoleCmd.Flag("rpcport", "RocketProtocol console will listen at the port for wallet service").Short('r').Default("0").Int()
+	rpcPort := consoleCmd.Flag("rpcport", "RangersProtocol console will listen at the port for wallet service").Short('r').Default("0").Int()
 	//版本号
-	versionCmd := app.Command("version", "show RocketProtocol version")
+	versionCmd := app.Command("version", "show RangersProtocol version")
 	// mine
 	mineCmd := app.Command("miner", "miner start")
 	// rpc解析
@@ -113,7 +113,7 @@ func (gx *GX) Run() {
 	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString(instanceSection, indexKey, ""))
 
 	walletManager = newWallets()
-	fmt.Println("Welcome to be a rocketProtocol miner!")
+	fmt.Println("Welcome to be a RangersProtocol miner!")
 	switch command {
 	case versionCmd.FullCommand():
 		fmt.Println("GX Version:", GXVersion)
@@ -199,7 +199,7 @@ func (gx *GX) getAccountInfo(sk string) {
 }
 
 func syncChainInfo(privateKey common.PrivateKey, id string) {
-	fmt.Println("Syncing block and group info from RocketProtocol net.Waiting...")
+	fmt.Println("Syncing block and group info from RangersProtocol net. Waiting...")
 	core.StartSync()
 	go func() {
 		timer := time.NewTimer(time.Second * 10)
