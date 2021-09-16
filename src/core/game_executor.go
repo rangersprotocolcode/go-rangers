@@ -148,7 +148,8 @@ func (executor *GameExecutor) wrongTxNonceHandler(msg notify.Message) {
 	}
 
 	executor.logger.Warnf("process wrong nonce: %d, reason: %s", cpn.Nonce, cpn.Msg)
-	tx := types.Transaction{Type: types.TransactionTypeWrongTxNonce}
+	tx := types.Transaction{Type: types.TransactionTypeWrongTxNonce, RequestId: cpn.Nonce}
+	tx.Hash = common.BytesToHash(common.Sha256(utility.UInt64ToByte(tx.RequestId)))
 	writeMessage := notify.ClientTransactionMessage{Nonce: cpn.Nonce, Tx: tx}
 	executor.writeChan <- writeMessage
 }
@@ -229,6 +230,7 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
 
 	if types.TransactionTypeWrongTxNonce == txRaw.Type {
+		executor.sendTransaction(&txRaw)
 		return
 	}
 
@@ -247,12 +249,13 @@ func (executor *GameExecutor) saveTempTx(txRaw types.Transaction) {
 func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, height uint64, txRaw types.Transaction) (bool, string) {
 	txhash := txRaw.Hash.String()
 	executor.logger.Debugf("run tx. hash: %s", txhash)
+	defer executor.sendTransaction(&txRaw)
 
 	if executor.isExisted(txRaw) {
 		executor.logger.Errorf("tx is existed: hash: %s", txhash)
 		return false, "Tx Is Existed"
 	}
-	defer executor.sendTransaction(&txRaw)
+
 
 	processor := executors.GetTxExecutor(txRaw.Type)
 	if nil == processor {
@@ -314,6 +317,14 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {
 	if ok, err := service.GetTransactionPool().AddTransaction(tx); err != nil || !ok {
 		executor.logger.Errorf("Add tx error:%s", err.Error())
+		transaction := types.Transaction{Type: types.TransactionTypeWrongTxNonce, Data: tx.Hash.Hex(), RequestId: tx.RequestId}
+		transaction.Hash = common.BytesToHash(common.Sha256(tx.Hash.Bytes()))
+		ok, err = service.GetTransactionPool().AddTransaction(&transaction)
+		if err == nil {
+			executor.logger.Errorf("Add tx again no error,  %t %v", ok, transaction)
+		} else {
+			executor.logger.Errorf("Add tx error:%s", err.Error())
+		}
 		return
 	}
 
