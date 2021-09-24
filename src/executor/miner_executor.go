@@ -95,10 +95,19 @@ func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *
 	if nil != header {
 		miner.ApplyHeight = header.Height + common.HeightAfterStake
 	}
+
 	miner.Status = common.MinerStatusNormal
+
 	if utility.IsEmptyByteSlice(miner.Id) {
-		miner.Id = common.FromHex(transaction.Source)
+		pubKey, err := transaction.Sign.RecoverPubkey(transaction.Hash.Bytes())
+		if nil != err {
+			msg := fmt.Sprintf("fail to refund %s, recoverPubkey failed", transaction.Data)
+			this.logger.Errorf(msg)
+			return false, msg
+		}
+		miner.Id = pubKey.GetID()
 	}
+
 	return service.MinerManagerImpl.AddMiner(common.HexToAddress(transaction.Source), &miner, accountdb)
 }
 
@@ -118,7 +127,14 @@ func (this *minerAddExecutor) Execute(transaction *types.Transaction, header *ty
 	}
 
 	if utility.IsEmptyByteSlice(miner.Id) {
-		miner.Id = common.FromHex(transaction.Source)
+		pubKey, err := transaction.Sign.RecoverPubkey(transaction.Hash.Bytes())
+		if nil != err {
+			msg := fmt.Sprintf("fail to refund %s, recoverPubkey failed", transaction.Data)
+			this.logger.Errorf(msg)
+			return false, msg
+		}
+		miner.Id = pubKey.GetID()
 	}
+
 	return service.MinerManagerImpl.AddStake(common.HexToAddress(transaction.Source), miner.Id, miner.Stake, accountdb)
 }
