@@ -108,7 +108,6 @@ func (reader *MinerPoolReader) convert2MinerDO(miner *types.Miner) *model.MinerI
 		Stake:       miner.Stake,
 		MinerType:   miner.Type,
 		ApplyHeight: miner.ApplyHeight,
-		AbortHeight: miner.AbortHeight,
 	}
 	if !md.ID.IsValid() || !md.PubKey.IsValid() {
 		logger.Warnf("Invalid miner! id %v, %v,miner public key:%v,%v", miner.Id, md.ID.GetHexString(), md.PubKey, md.PubKey.GetHexString())

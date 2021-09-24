@@ -343,16 +343,13 @@ func (api *GtasAPI) NodeInfo() (*Result, error) {
 		heavyInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeProposer, service.AccountDBManagerInstance.GetLatestStateDB())
 		if heavyInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(heavyInfo))
-			if heavyInfo.AbortHeight == 0 {
-				t = "提案节点"
-			}
+			t = "提案节点"
 		}
+
 		lightInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeValidator, service.AccountDBManagerInstance.GetLatestStateDB())
 		if lightInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(lightInfo))
-			if lightInfo.AbortHeight == 0 {
-				t += " 验证节点"
-			}
+			t = " 验证节点"
 		}
 		ni.NType = t
 		ni.MortGages = morts

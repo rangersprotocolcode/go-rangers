@@ -28,7 +28,6 @@ type Miner struct {
 	Stake uint64 `json:"stake,omitempty"`
 
 	ApplyHeight uint64
-	AbortHeight uint64 `json:"-"`
 
 	// 当前状态
 	Status byte

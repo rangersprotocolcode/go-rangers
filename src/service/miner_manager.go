@@ -102,7 +102,7 @@ func (mm *MinerManager) GetProposerTotalStakeWithDetail(height uint64, accountDB
 	iter := mm.minerIterator(common.MinerTypeProposer, accountDB)
 	for iter.Next() {
 		miner, _ := iter.Current()
-		if height >= miner.ApplyHeight && (miner.Status == common.MinerStatusNormal || height < miner.AbortHeight) {
+		if height >= miner.ApplyHeight && miner.Status == common.MinerStatusNormal {
 			total += miner.Stake
 			membersDetail[getAddressFromID(miner.Id)] = miner.Stake
 		}
@@ -264,7 +264,6 @@ func (mm *MinerManager) abortMiner(id []byte, ttype byte, height uint64, account
 	miner := mm.GetMinerById(id, ttype, accountdb)
 	if miner != nil && miner.Status == common.MinerStatusNormal {
 		miner.Status = common.MinerStatusAbort
-		miner.AbortHeight = height
 		mm.UpdateMiner(miner, accountdb)
 		//mm.updateMinerCount(ttype, minerCountDecrease, accountdb)
 		mm.logger.Debugf("Miner manager abort miner update success %+v", miner)

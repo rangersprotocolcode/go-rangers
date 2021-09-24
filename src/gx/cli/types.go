@@ -108,7 +108,6 @@ func NewMortGageFromMiner(miner *types.Miner) *MortGage {
 	mg := &MortGage{
 		Stake:       miner.Stake,
 		ApplyHeight: miner.ApplyHeight,
-		AbortHeight: miner.AbortHeight,
 		Type:        t,
 	}
 	return mg
