@@ -20,15 +20,12 @@ type Miner struct {
 	Id           []byte `json:"id,omitempty"`
 	PublicKey    []byte `json:"publicKey,omitempty"`
 	VrfPublicKey []byte `json:"vrfPublicKey,omitempty"`
-
+	ApplyHeight  uint64
+	// 当前状态
+	Status byte
 	// 提案者 还是验证者
 	Type byte `json:"type,omitempty"`
 
 	// 质押数
-	Stake uint64 `json:"stake,omitempty"`
-
-	ApplyHeight uint64
-
-	// 当前状态
-	Status byte
+	Stake uint64 `json:"-"`
 }

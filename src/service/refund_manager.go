@@ -124,7 +124,7 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint
 	} else {
 		// update miner
 		miner.Stake = left
-		MinerManagerImpl.UpdateMiner(miner, accountdb)
+		MinerManagerImpl.UpdateMiner(miner, accountdb, false)
 	}
 
 	// 计算解锁高度
