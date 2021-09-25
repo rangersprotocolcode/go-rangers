@@ -249,6 +249,7 @@ func (mm *MinerManager) UpdateMiner(miner *types.Miner, accountdb *account.Accou
 
 	if isNew {
 		data, _ := json.Marshal(miner)
+		mm.logger.Debugf("UpdateMiner, %s", utility.BytesToStr(data))
 		accountdb.SetData(db, id, data)
 	}
 
