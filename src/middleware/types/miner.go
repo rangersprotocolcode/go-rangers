@@ -17,6 +17,13 @@
 package types
 
 type Miner struct {
+	MinerInfo
+
+	// 质押数
+	Stake uint64
+}
+
+type MinerInfo struct {
 	Id           []byte `json:"id,omitempty"`
 	PublicKey    []byte `json:"publicKey,omitempty"`
 	VrfPublicKey []byte `json:"vrfPublicKey,omitempty"`
@@ -25,7 +32,10 @@ type Miner struct {
 	Status byte
 	// 提案者 还是验证者
 	Type byte `json:"type,omitempty"`
+}
 
-	// 质押数
-	Stake uint64 `json:"-"`
+func (miner *Miner) GetMinerInfo() MinerInfo {
+	info := MinerInfo{Id: miner.Id, PublicKey: miner.PublicKey, VrfPublicKey: miner.VrfPublicKey, ApplyHeight: miner.ApplyHeight, Status: miner.Status, Type: miner.Type}
+
+	return info
 }
