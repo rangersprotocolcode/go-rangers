@@ -86,9 +86,10 @@ func (reader *MinerPoolReader) getAllMiner(minerType byte, hash common.Hash) []*
 	mds := make([]*model.MinerInfo, 0)
 	for iter.Next() {
 		if curr, err := iter.Current(); err != nil {
-			continue
 			logger.Errorf("minerManager iterator error %v", err)
+			continue
 		} else {
+			logger.Debugf("minerManager iterator got %v", common.ToHex(curr.Id))
 			md := reader.convert2MinerDO(curr)
 			mds = append(mds, md)
 		}
