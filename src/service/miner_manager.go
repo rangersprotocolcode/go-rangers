@@ -307,7 +307,6 @@ func (mi *MinerIterator) Current() (*types.Miner, error) {
 	var miner types.Miner
 	err := json.Unmarshal(mi.iterator.Value, &miner)
 	if err != nil {
-		mi.logger.Debugf("MinerIterator Unmarshal Error %+v %+v %+v", mi.iterator.Key, err, mi.iterator.Value)
 		return nil, err
 	}
 
