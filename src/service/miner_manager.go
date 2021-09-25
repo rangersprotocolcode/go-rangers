@@ -115,6 +115,10 @@ func (mm *MinerManager) GetProposerTotalStakeWithDetail(height uint64, accountDB
 	iter := mm.minerIterator(common.MinerTypeProposer, accountDB)
 	for iter.Next() {
 		miner, _ := iter.Current()
+		if nil == miner {
+			continue
+		}
+
 		if height >= miner.ApplyHeight && miner.Status == common.MinerStatusNormal {
 			total += miner.Stake
 			membersDetail[getAddressFromID(miner.Id)] = miner.Stake
@@ -125,6 +129,9 @@ func (mm *MinerManager) GetProposerTotalStakeWithDetail(height uint64, accountDB
 		iter = mm.minerIterator(common.MinerTypeProposer, accountDB)
 		for iter.Next() {
 			miner, _ := iter.Current()
+			if nil == miner {
+				continue
+			}
 			mm.logger.Debugf("GetTotalStakeByHeight %+v", miner)
 		}
 	}
