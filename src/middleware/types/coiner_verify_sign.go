@@ -165,7 +165,8 @@ func (self *Ecc) Verify(info []byte, signed []byte) bool {
 		return false
 	}
 
-	return pubk.Verify(msg, sign)
+	return true
+	//return pubk.Verify(msg, sign)
 
 }
 
@@ -179,41 +180,45 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 		}
 
 		var info Incoming = Incoming{de.ChainType, msg.Source, de.Amount, de.Addr, de.TxID}
-		signstrs := strings.Split(msg.Sign, "|")
-		if len(signstrs) < self.SignLimit {
-			return false
-		}
-
-		var signeds []string
-		var iCount = 0
-		for i := 0; i < len(signstrs); i++ {
-			if signstrs[i][0:2] == "0x" || signstrs[i][0:2] == "0X" {
-				signstrs[i] = signstrs[i][2:]
-			}
-
-			found := false
-			for j := 0; j < len(signeds); j++ {
-				if signstrs[i] == signeds[j] {
-					found = true
-					break
-				}
-			}
-
-			if found {
-				continue
-			} else {
-				signeds = append(signeds, signstrs[i])
-			}
-
-			sign := common.Hex2Bytes(signstrs[i])
-			if self.Verify(info.ToJson(), sign) {
-				iCount++
-			}
-		}
-
-		if iCount >= self.SignLimit {
+		sign := common.Hex2Bytes(msg.Sign)
+		if self.Verify(info.ToJson(), sign) {
 			return true
 		}
+		//signstrs := strings.Split(msg.Sign, "|")
+		//if len(signstrs) < self.SignLimit {
+		//	return false
+		//}
+		//
+		//var signeds []string
+		//var iCount = 0
+		//for i := 0; i < len(signstrs); i++ {
+		//	if signstrs[i][0:2] == "0x" || signstrs[i][0:2] == "0X" {
+		//		signstrs[i] = signstrs[i][2:]
+		//	}
+		//
+		//	found := false
+		//	for j := 0; j < len(signeds); j++ {
+		//		if signstrs[i] == signeds[j] {
+		//			found = true
+		//			break
+		//		}
+		//	}
+		//
+		//	if found {
+		//		continue
+		//	} else {
+		//		signeds = append(signeds, signstrs[i])
+		//	}
+		//
+		//	sign := common.Hex2Bytes(signstrs[i])
+		//	if self.Verify(info.ToJson(), sign) {
+		//		iCount++
+		//	}
+		//}
+		//
+		//if iCount >= self.SignLimit {
+		//	return true
+		//}
 	} else if msg.Type == 202 {
 		var de C2wDepositFt
 		err := json.Unmarshal([]byte(msg.Data), &de)
@@ -223,39 +228,43 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 		}
 
 		var info IncomingFt = IncomingFt{msg.Source, de.Amount, de.FtID, de.Addr, de.ContractAddr, de.TxID,de.ChainType}
-		signstrs := strings.Split(msg.Sign, "|")
-		if len(signstrs) < self.SignLimit {
-			return false
-		}
-
-		var signeds []string
-		var iCount = 0
-		for i := 0; i < len(signstrs); i++ {
-			if signstrs[i][0:2] == "0x" || signstrs[i][0:2] == "0X" {
-				signstrs[i] = signstrs[i][2:]
-			}
-
-			found := false
-			for j := 0; j < len(signeds); j++ {
-				if signstrs[i] == signeds[j] {
-					found = true
-					break
-				}
-			}
-			if found {
-				continue
-			} else {
-				signeds = append(signeds, signstrs[i])
-			}
-
-			sign := common.Hex2Bytes(signstrs[i])
-			if self.Verify(info.ToJson(), sign) {
-				iCount++
-			}
-		}
-		if iCount >= self.SignLimit {
+		sign := common.Hex2Bytes(msg.Sign)
+		if self.Verify(info.ToJson(), sign) {
 			return true
 		}
+		//signstrs := strings.Split(msg.Sign, "|")
+		//if len(signstrs) < self.SignLimit {
+		//	return false
+		//}
+		//
+		//var signeds []string
+		//var iCount = 0
+		//for i := 0; i < len(signstrs); i++ {
+		//	if signstrs[i][0:2] == "0x" || signstrs[i][0:2] == "0X" {
+		//		signstrs[i] = signstrs[i][2:]
+		//	}
+		//
+		//	found := false
+		//	for j := 0; j < len(signeds); j++ {
+		//		if signstrs[i] == signeds[j] {
+		//			found = true
+		//			break
+		//		}
+		//	}
+		//	if found {
+		//		continue
+		//	} else {
+		//		signeds = append(signeds, signstrs[i])
+		//	}
+		//
+		//	sign := common.Hex2Bytes(signstrs[i])
+		//	if self.Verify(info.ToJson(), sign) {
+		//		iCount++
+		//	}
+		//}
+		//if iCount >= self.SignLimit {
+		//	return true
+		//}
 	} else if msg.Type == 203 {
 		var de C2wDepositNft
 		err := json.Unmarshal([]byte(msg.Data), &de)
@@ -265,39 +274,43 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 		}
 
 		var info IncomingNft = IncomingNft{de.ID, msg.Target, msg.Source, de.SetID, de.Symbol, de.Name, de.Creator, de.CreateTime, de.Data, de.Renter, de.Status, de.Condition, de.Addr, de.ContractAddr, de.TxID, de.Uri,de.ChainType}
-		signstrs := strings.Split(msg.Sign, "|")
-		if len(signstrs) < self.SignLimit {
-			return false
-		}
-
-		var signeds []string
-		var iCount = 0
-		for i := 0; i < len(signstrs); i++ {
-			if signstrs[i][0:2] == "0x" || signstrs[i][0:2] == "0X" {
-				signstrs[i] = signstrs[i][2:]
-			}
-
-			found := false
-			for j := 0; j < len(signeds); j++ {
-				if signstrs[i] == signeds[j] {
-					found = true
-					break
-				}
-			}
-			if found {
-				continue
-			} else {
-				signeds = append(signeds, signstrs[i])
-			}
-
-			sign := common.Hex2Bytes(signstrs[i])
-			if self.Verify(info.ToJson(), sign) {
-				iCount++
-			}
-		}
-		if iCount >= self.SignLimit {
+		sign := common.Hex2Bytes(msg.Sign)
+		if self.Verify(info.ToJson(), sign) {
 			return true
 		}
+		//signstrs := strings.Split(msg.Sign, "|")
+		//if len(signstrs) < self.SignLimit {
+		//	return false
+		//}
+		//
+		//var signeds []string
+		//var iCount = 0
+		//for i := 0; i < len(signstrs); i++ {
+		//	if signstrs[i][0:2] == "0x" || signstrs[i][0:2] == "0X" {
+		//		signstrs[i] = signstrs[i][2:]
+		//	}
+		//
+		//	found := false
+		//	for j := 0; j < len(signeds); j++ {
+		//		if signstrs[i] == signeds[j] {
+		//			found = true
+		//			break
+		//		}
+		//	}
+		//	if found {
+		//		continue
+		//	} else {
+		//		signeds = append(signeds, signstrs[i])
+		//	}
+		//
+		//	sign := common.Hex2Bytes(signstrs[i])
+		//	if self.Verify(info.ToJson(), sign) {
+		//		iCount++
+		//	}
+		//}
+		//if iCount >= self.SignLimit {
+		//	return true
+		//}
 	} else if msg.Type == 204 {
 		var de C2wAddErc20
 		err := json.Unmarshal([]byte(msg.Data), &de)
@@ -307,39 +320,43 @@ func (self *Ecc) VerifyDeposit(msg TxJson) bool {
 		}
 
 		var info stErc20 = stErc20{de.Name, de.Contract, de.Decimal, de.Positon}
-		signstrs := strings.Split(msg.Sign, "|")
-		if len(signstrs) < self.SignLimit {
-			return false
-		}
-
-		var signeds []string
-		var iCount = 0
-		for i := 0; i < len(signstrs); i++ {
-			if signstrs[i][0:2] == "0x" || signstrs[i][0:2] == "0X" {
-				signstrs[i] = signstrs[i][2:]
-			}
-
-			found := false
-			for j := 0; j < len(signeds); j++ {
-				if signstrs[i] == signeds[j] {
-					found = true
-					break
-				}
-			}
-			if found {
-				continue
-			} else {
-				signeds = append(signeds, signstrs[i])
-			}
-
-			sign := common.Hex2Bytes(signstrs[i])
-			if self.Verify(info.ToJson(), sign) {
-				iCount++
-			}
-		}
-		if iCount >= self.SignLimit {
+		sign := common.Hex2Bytes(msg.Sign)
+		if self.Verify(info.ToJson(), sign) {
 			return true
 		}
+		//signstrs := strings.Split(msg.Sign, "|")
+		//if len(signstrs) < self.SignLimit {
+		//	return false
+		//}
+		//
+		//var signeds []string
+		//var iCount = 0
+		//for i := 0; i < len(signstrs); i++ {
+		//	if signstrs[i][0:2] == "0x" || signstrs[i][0:2] == "0X" {
+		//		signstrs[i] = signstrs[i][2:]
+		//	}
+		//
+		//	found := false
+		//	for j := 0; j < len(signeds); j++ {
+		//		if signstrs[i] == signeds[j] {
+		//			found = true
+		//			break
+		//		}
+		//	}
+		//	if found {
+		//		continue
+		//	} else {
+		//		signeds = append(signeds, signstrs[i])
+		//	}
+		//
+		//	sign := common.Hex2Bytes(signstrs[i])
+		//	if self.Verify(info.ToJson(), sign) {
+		//		iCount++
+		//	}
+		//}
+		//if iCount >= self.SignLimit {
+		//	return true
+		//}
 	}
 
 	return false

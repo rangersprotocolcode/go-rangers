@@ -35,11 +35,12 @@ func InitMiddleware() error {
 
 	threshold := common.GlobalConf.GetInt("coiner", "threshold", 2)
 	privateKey := common.GlobalConf.GetString("coiner", "privateKey", "10695fe7b429427aa01044d97f48e14e1244d206eda8dfa812996310100f4cd1")
-	signer0 := common.GlobalConf.GetString("coiner", "signer0", "0xf89eebcc07e820f5a8330f52111fa51dd9dfb925")
-	signer1 := common.GlobalConf.GetString("coiner", "signer1", "0x9951146d4fdbd0903d450b315725880a90383f38")
-	signer2 := common.GlobalConf.GetString("coiner", "signer2", "0x7edd0ef9da9cec334a7887966cc8dd71d590eeb7")
+	//signer0 := common.GlobalConf.GetString("coiner", "signer0", "0xf89eebcc07e820f5a8330f52111fa51dd9dfb925")
+	//signer1 := common.GlobalConf.GetString("coiner", "signer1", "0x9951146d4fdbd0903d450b315725880a90383f38")
+	//signer2 := common.GlobalConf.GetString("coiner", "signer2", "0x7edd0ef9da9cec334a7887966cc8dd71d590eeb7")
+	signer0 := common.GlobalConf.GetString("coiner", "signer0", "0x02380c84420993B7A3A90111eE3b3CCDa15D8A27")
 
-	types.CoinerSignVerifier = types.Ecc{SignLimit: threshold, Privkey: privateKey, Whitelist: []string{signer0, signer1, signer2}}
+	types.CoinerSignVerifier = types.Ecc{SignLimit: threshold, Privkey: privateKey, Whitelist: []string{signer0}}
 	if nil != common.DefaultLogger {
 		common.DefaultLogger.Debugf("coiner sign verifier:%v", types.CoinerSignVerifier)
 	}
