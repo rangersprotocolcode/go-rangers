@@ -40,9 +40,6 @@ const (
 	addBlockMark    = "addBlockMark"
 	removeBlockMark = "removeBlockMark"
 
-	chainPieceLength      = 9
-	chainPieceBlockLength = 6
-
 	hashDBPrefix       = "block"
 	heightDBPrefix     = "height"
 	verifyHashDBPrefix = "verifyHash"
@@ -55,9 +52,8 @@ var blockChainImpl *blockChain
 type blockChain struct {
 	init bool
 
-	latestBlock  *types.BlockHeader
-	currentBlock *types.Block
-	requestIds   map[string]uint64
+	latestBlock *types.BlockHeader
+	requestIds  map[string]uint64
 
 	topBlocks         *lru.Cache // key：块高，value：header
 	futureBlocks      *lru.Cache // key：块hash，value：block（体积很大）
@@ -68,7 +64,6 @@ type blockChain struct {
 	heightDB     db.Database
 	verifyHashDB db.Database
 
-	forkProcessor   *forkProcessor
 	transactionPool service.TransactionPool
 
 	lock middleware.Loglock
@@ -124,7 +119,6 @@ func initBlockChain() error {
 		return err
 	}
 
-	chain.forkProcessor = initForkProcessor(chain)
 	chain.latestBlock = chain.QueryBlockHeaderByHeight([]byte(latestBlockKey), false)
 	if chain.latestBlock == nil {
 		chain.insertGenesisBlock()
@@ -135,7 +129,7 @@ func initBlockChain() error {
 		if nil != err {
 			panic(err)
 		}
-		service.AccountDBManagerInstance.SetLatestStateDB(state, chain.latestBlock.RequestIds)
+		service.AccountDBManagerInstance.SetLatestStateDB(state, chain.latestBlock.RequestIds, chain.latestBlock.Height)
 		logger.Debugf("refreshed latestStateDB, state: %v, height: %d", chain.latestBlock.StateTree, chain.latestBlock.Height)
 
 		if !chain.versionValidate() {
@@ -241,7 +235,7 @@ func (chain *blockChain) GenerateBlock(bh types.BlockHeader) *types.Block {
 		Header: &bh,
 	}
 
-	txs, missTxs, _, _ := chain.queryTxsByBlockHash(bh.Hash, bh.Transactions)
+	txs, missTxs, _ := chain.queryTxsByBlockHash(bh.Hash, bh.Transactions)
 
 	if len(missTxs) != 0 {
 		logger.Debugf("GenerateBlock can not get all txs,return nil block!")
@@ -284,13 +278,13 @@ func (chain *blockChain) TotalQN() uint64 {
 //        1, 丢弃该块(链上已存在该块）
 //        2,丢弃该块（链上存在QN值更大的相同高度块)
 //        3,分叉调整
-func (chain *blockChain) AddBlockOnChain(source string, b *types.Block, situation types.AddBlockOnChainSituation) types.AddBlockResult {
-	if validateCode, result := chain.consensusVerify(source, b); !result {
+func (chain *blockChain) AddBlockOnChain(b *types.Block) types.AddBlockResult {
+	if validateCode, result := chain.consensusVerify(b); !result {
 		return validateCode
 	}
 	chain.lock.Lock("AddBlockOnChain")
 	defer chain.lock.Unlock("AddBlockOnChain")
-	return chain.addBlockOnChain(source, b, situation)
+	return chain.addBlockOnChain(b)
 }
 
 func (chain *blockChain) QueryBlockByHash(hash common.Hash) *types.Block {
@@ -337,11 +331,6 @@ func (chain *blockChain) GetVerifyHash(height uint64) (common.Hash, error) {
 
 func (chain *blockChain) TopBlock() *types.BlockHeader {
 	result := chain.latestBlock
-	return result
-}
-
-func (chain *blockChain) CurrentBlock() *types.Block {
-	result := chain.currentBlock
 	return result
 }
 
@@ -438,6 +427,14 @@ func (chain *blockChain) HasBlockByHash(hash common.Hash) bool {
 	return result
 }
 
+func (chain *blockChain) GetBlockHash(height uint64) common.Hash {
+	block := chain.QueryBlock(height)
+	if block != nil {
+		return block.Header.Hash
+	}
+	return common.Hash{}
+}
+
 func (chain *blockChain) queryBlockByHash(hash common.Hash) *types.Block {
 	result, err := chain.hashDB.Get(hash.Bytes())
 
@@ -461,9 +458,9 @@ func (chain *blockChain) queryBlockHeaderByHash(hash common.Hash) *types.BlockHe
 	return block.Header
 }
 
-func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList []common.Hashes) ([]*types.Transaction, []common.Hashes, map[string]bool, error) {
+func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList []common.Hashes) ([]*types.Transaction, []common.Hashes, error) {
 	if nil == txHashList || 0 == len(txHashList) {
-		return nil, nil, nil, service.ErrNil
+		return nil, nil, service.ErrNil
 	}
 
 	verifiedBody, _ := chain.verifiedBodyCache.Get(blockHash)
@@ -474,7 +471,6 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 
 	txs := make([]*types.Transaction, 0)
 	need := make([]common.Hashes, 0)
-	abnormal := make(map[string]bool, 0)
 	var err error
 
 	for _, hash := range txHashList {
@@ -509,7 +505,7 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 
 		txs = append(txs, tx)
 	}
-	return txs, need, abnormal, err
+	return txs, need, err
 }
 
 func (chain *blockChain) versionValidate() bool {

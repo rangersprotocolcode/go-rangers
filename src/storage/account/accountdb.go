@@ -17,9 +17,13 @@
 package account
 
 import (
+	crypto "com.tuntun.rocket/node/src/eth_crypto"
+	"com.tuntun.rocket/node/src/middleware/log"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"fmt"
 	"math/big"
 	"sort"
+	"strconv"
 	"sync"
 
 	"com.tuntun.rocket/node/src/storage/trie"
@@ -41,6 +45,9 @@ var (
 
 	// emptyCode is the known hash of the empty TVM bytecode.
 	emptyCode = sha3.Sum256(nil)
+
+	// log
+	accountLog = log.GetLoggerByIndex(log.AccountLogConfig, strconv.Itoa(common.InstanceIndex))
 )
 
 // AccountDB are used to store anything
@@ -51,6 +58,9 @@ var (
 type AccountDB struct {
 	db   AccountDatabase
 	trie Trie
+
+	// Per-transaction access list
+	accessList *accessList
 
 	accountObjectsLock  *sync.Mutex
 	accountObjects      *sync.Map
@@ -68,6 +78,11 @@ type AccountDB struct {
 	transitions    transition
 	validRevisions []revision
 	nextRevisionID int
+
+	thash, bhash common.Hash
+	txIndex      int
+	logs         map[common.Hash][]*types.Log
+	logSize      uint
 }
 
 // Create a new account from a given trie.
@@ -82,6 +97,8 @@ func NewAccountDB(root common.Hash, db AccountDatabase) (*AccountDB, error) {
 		accountObjects:      new(sync.Map),
 		accountObjectsDirty: make(map[common.Address]struct{}),
 		accountObjectsLock:  new(sync.Mutex),
+		accessList:          newAccessList(),
+		logs:                make(map[common.Hash][]*types.Log),
 	}
 	return accountDb, nil
 }
@@ -115,6 +132,12 @@ func (adb *AccountDB) Reset(root common.Hash) error {
 	adb.accountObjectsLock = new(sync.Mutex)
 	adb.accountObjectsDirty = make(map[common.Address]struct{})
 	adb.clearJournalAndRefund()
+	adb.accessList = newAccessList()
+	adb.thash = common.Hash{}
+	adb.bhash = common.Hash{}
+	adb.txIndex = 0
+	adb.logs = make(map[common.Hash][]*types.Log)
+	adb.logSize = 0
 	return nil
 }
 
@@ -123,6 +146,15 @@ func (adb *AccountDB) Clean() {
 	adb.accountObjectsLock = new(sync.Mutex)
 	adb.accountObjectsDirty = make(map[common.Address]struct{})
 	adb.clearJournalAndRefund()
+}
+
+// Prepare sets the current transaction hash and index and block hash which is
+// used when the EVM emits new state logs.
+func (s *AccountDB) Prepare(thash, bhash common.Hash, ti int) {
+	s.thash = thash
+	s.bhash = bhash
+	s.txIndex = ti
+	s.accessList = newAccessList()
 }
 
 // AddRefund adds gas to the refund counter
@@ -228,11 +260,14 @@ func (adb *AccountDB) SetNonce(addr common.Address, nonce uint64) {
 	}
 }
 
-func (adb *AccountDB) IncreaseNonce(addr common.Address) {
+func (adb *AccountDB) IncreaseNonce(addr common.Address) uint64 {
 	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {
-		stateObject.IncreaseNonce()
+		result := stateObject.IncreaseNonce()
+		accountLog.Debugf("addr: %s, nonce: %d", addr.GetHexString(), result)
+		return result
 	}
+	return 0
 }
 
 func (adb *AccountDB) SetData(addr common.Address, key []byte, value []byte) {
@@ -242,11 +277,38 @@ func (adb *AccountDB) SetData(addr common.Address, key []byte, value []byte) {
 	}
 }
 
-func (adb *AccountDB) SetNFTSetDefinition(addr common.Address, code []byte) {
+func (adb *AccountDB) SetNFTSetDefinition(addr common.Address, code []byte, owner string) {
 	stateObject := adb.getOrNewAccountObject(addr)
 	if stateObject != nil {
 		stateObject.SetNFTSetDefinition(sha3.Sum256(code), code)
+		stateObject.SetNFTSetOwner(adb.db, owner)
 	}
+}
+
+func (adb *AccountDB) SetLotteryDefinition(addr common.Address, code []byte, owner string) {
+	stateObject := adb.getOrNewAccountObject(addr)
+	if stateObject != nil {
+		stateObject.SetLotteryDefinition(sha3.Sum256(code), code)
+		stateObject.SetLotteryOwner(adb.db, owner)
+	}
+}
+
+func (adb *AccountDB) GetLotteryDefinition(addr common.Address) []byte {
+	accountObject := adb.getAccountObject(addr, false)
+	if nil == accountObject {
+		return nil
+	}
+
+	return accountObject.GetLotteryDefinition(adb.db)
+}
+
+func (adb *AccountDB) GetLotteryOwner(addr common.Address) string {
+	accountObject := adb.getAccountObject(addr, false)
+	if nil == accountObject {
+		return ""
+	}
+
+	return accountObject.GetLotteryOwner(adb.db)
 }
 
 // GetCode returns the contract code associated with this object, if any.
@@ -542,4 +604,143 @@ func (adb *AccountDB) Commit(deleteEmptyObjects bool) (root common.Hash, err err
 		return nil
 	})
 	return root, err
+}
+
+//----------------------------------------------------add interface method to implement-------------------------------
+// CreateAccount explicitly creates a state object. If a state object with the address
+// already exists the balance is carried over to the new account.
+//
+// CreateAccount is called during the EVM CREATE operation. The situation might arise that
+// a contract does the following:
+//
+//   1. sends funds to sha(account ++ (nonce + 1))
+//   2. tx_create(sha(account ++ nonce)) (note that this gets the address of 1)
+//
+// Carrying over the balance ensures that Ether doesn't disappear.
+func (adb *AccountDB) CreateAccount(addr common.Address) {
+	adb.getOrNewAccountObject(addr)
+}
+
+func (adb *AccountDB) GetCode(addr common.Address) []byte {
+	stateObject := adb.getAccountObject(addr, false)
+	if stateObject != nil {
+		return stateObject.Code(adb.db)
+	}
+	return nil
+}
+
+func (adb *AccountDB) GetCodeSize(addr common.Address) int {
+	stateObject := adb.getAccountObject(addr, false)
+	if stateObject != nil {
+		return stateObject.CodeSize(adb.db)
+	}
+	return 0
+}
+
+func (adb *AccountDB) GetCodeHash(addr common.Address) common.Hash {
+	stateObject := adb.getAccountObject(addr, false)
+	if stateObject == nil {
+		return common.Hash{}
+	}
+	return common.BytesToHash(stateObject.CodeHash())
+
+	return common.Hash{}
+}
+
+func (adb *AccountDB) SetCode(addr common.Address, code []byte) {
+	stateObject := adb.getAccountObject(addr, true)
+	if stateObject != nil {
+		stateObject.SetCode(crypto.Keccak256Hash(code), code)
+	}
+
+}
+
+// SubRefund removes gas from the refund counter.
+// This method will panic if the refund counter goes below zero
+func (adb *AccountDB) SubRefund(gas uint64) {
+	adb.transitions = append(adb.transitions, refundChange{prev: adb.refund})
+	if gas > adb.refund {
+		panic(fmt.Sprintf("Refund counter below zero (gas: %d > refund: %d)", gas, adb.refund))
+	}
+	adb.refund -= gas
+
+}
+
+// GetCommittedState retrieves a value from the given account's committed storage trie.
+func (adb *AccountDB) GetCommittedState(addr common.Address, hash common.Hash) common.Hash {
+	stateObject := adb.getAccountObject(addr, false)
+	if stateObject != nil {
+		return common.BytesToHash(stateObject.GetCommittedData(adb.db, hash.Bytes()))
+	}
+
+	return common.Hash{}
+}
+
+// GetState retrieves a value from the given account's storage trie.
+func (adb *AccountDB) GetState(addr common.Address, hash common.Hash) common.Hash {
+	stateObject := adb.getAccountObject(addr, false)
+	if stateObject != nil {
+		data := stateObject.GetData(adb.db, hash.Bytes())
+		return common.BytesToHash(data)
+	}
+
+	return common.Hash{}
+}
+
+func (adb *AccountDB) SetState(addr common.Address, key, value common.Hash) {
+	stateObject := adb.getAccountObject(addr, true)
+	if stateObject != nil {
+		stateObject.SetData(adb.db, key.Bytes(), value.Bytes())
+	}
+}
+
+// AddressInAccessList returns true if the given address is in the access list.
+func (adb *AccountDB) AddressInAccessList(addr common.Address) bool {
+	return adb.accessList.ContainsAddress(addr)
+}
+
+// SlotInAccessList returns true if the given (address, slot)-tuple is in the access list.
+func (adb *AccountDB) SlotInAccessList(addr common.Address, slot common.Hash) (addressPresent bool, slotPresent bool) {
+	return adb.accessList.Contains(addr, slot)
+}
+
+// AddAddressToAccessList adds the given address to the access list
+func (adb *AccountDB) AddAddressToAccessList(addr common.Address) {
+	if adb.accessList.AddAddress(addr) {
+		adb.transitions = append(adb.transitions, accessListAddAccountChange{&addr})
+	}
+}
+
+// AddSlotToAccessList adds the given (address, slot)-tuple to the access list
+func (adb *AccountDB) AddSlotToAccessList(addr common.Address, slot common.Hash) {
+	addrMod, slotMod := adb.accessList.AddSlot(addr, slot)
+	if addrMod {
+		// In practice, this should not happen, since there is no way to enter the
+		// scope of 'address' without having the 'address' become already added
+		// to the access list (via call-variant, create, etc).
+		// Better safe than sorry, though
+		adb.transitions = append(adb.transitions, accessListAddAccountChange{&addr})
+	}
+	if slotMod {
+		adb.transitions = append(adb.transitions, accessListAddSlotChange{
+			address: &addr,
+			slot:    &slot,
+		})
+	}
+
+}
+
+func (adb *AccountDB) AddLog(log *types.Log) {
+	adb.transitions = append(adb.transitions, addLogChange{txhash: adb.thash})
+
+	log.TxHash = adb.thash
+	log.BlockHash = adb.bhash
+	log.TxIndex = uint(adb.txIndex)
+	log.Index = adb.logSize
+	adb.logs[adb.thash] = append(adb.logs[adb.thash], log)
+	adb.logSize++
+}
+
+func (s *AccountDB) GetLogs(hash common.Hash) []*types.Log {
+	return s.logs[hash]
 }

@@ -108,7 +108,7 @@ func (p *Processor) doAddOnChain(block *types.Block) (result int8) {
 
 	rlog := newRtLog("doAddOnChain")
 	rlog.log("start, height=%v, hash=%v", bh.Height, bh.Hash.ShortS())
-	result = int8(p.MainChain.AddBlockOnChain("", block, types.LocalGenerateNewBlock))
+	result = int8(p.MainChain.AddBlockOnChain(block))
 
 	//log.Printf("AddBlockOnChain header %v \n", p.blockPreview(bh))
 	//log.Printf("QueryTopBlock header %v \n", p.blockPreview(p.MainChain.QueryTopBlock()))
@@ -277,6 +277,18 @@ func (p *Processor) VerifyBlockHeader(bh *types.BlockHeader) (ok bool, err error
 	gpk := p.getGroupPubKey(gid)
 	sig := groupsig.DeserializeSign(bh.Signature)
 	b := groupsig.VerifySig(gpk, bh.Hash.Bytes(), *sig)
+	if !b {
+		err = fmt.Errorf("signature verify fail")
+		return
+	}
+	ok = true
+	return
+}
+
+func (p *Processor) VerifyGroupSign(groupPubkey []byte, blockHash common.Hash, sign []byte) (ok bool, err error) {
+	gpk := groupsig.ByteToPublicKey(groupPubkey)
+	sig := groupsig.DeserializeSign(sign)
+	b := groupsig.VerifySig(gpk, blockHash.Bytes(), *sig)
 	if !b {
 		err = fmt.Errorf("signature verify fail")
 		return

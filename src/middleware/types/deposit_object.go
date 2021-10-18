@@ -31,6 +31,7 @@ type DepositFTData struct {
 	MainChainAddress string `json:"addr,omitempty"`
 	ContractAddress  string `json:"ContractAddr,omitempty"`
 	TxId             string `json:"txId,omitempty"`
+	ChainType        string `json:"ChainType"`
 }
 
 //NFT充值确认数据结构
@@ -51,6 +52,15 @@ type DepositNFTData struct {
 	MainChainAddress string `json:"addr,omitempty"`
 	ContractAddress  string `json:"ContractAddr,omitempty"`
 	TxId             string `json:"txId,omitempty"`
+	Uri              string `json:"Uri,omitempty"`
+	ChainType        string `json:"ChainType"`
+}
+
+type ERC20BindingData struct {
+	Name            string `json:"name,omitempty"`
+	Decimal         int64  `json:"decimal,omitempty"`
+	Position        int64  `json:"position,omitempty"`
+	ContractAddress string `json:"contract,omitempty"`
 }
 
 type DepositNotify struct {

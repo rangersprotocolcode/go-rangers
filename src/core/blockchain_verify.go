@@ -21,7 +21,6 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/consensus/groupsig"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/statemachine"
 	"encoding/json"
 )
 
@@ -73,11 +72,10 @@ func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Tran
 	var (
 		missing      []common.Hashes
 		transactions []*types.Transaction
-		abnormal     map[string]bool
 	)
 
 	if nil == txs {
-		transactions, missing, abnormal, _ = chain.queryTxsByBlockHash(bh.Hash, bh.Transactions)
+		transactions, missing, _ = chain.queryTxsByBlockHash(bh.Hash, bh.Transactions)
 	} else {
 		transactions = txs
 	}
@@ -97,9 +95,6 @@ func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Tran
 		return true, missing, transactions
 	}
 
-	if 0 != len(abnormal) {
-		statemachine.STMManger.SetAsyncApps(abnormal)
-	}
 	return false, missing, transactions
 }
 

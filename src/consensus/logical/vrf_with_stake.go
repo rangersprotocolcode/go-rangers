@@ -17,6 +17,7 @@
 package logical
 
 import (
+	"com.tuntun.rocket/node/src/common/ed25519"
 	"errors"
 	"fmt"
 	"math"
@@ -78,6 +79,7 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 		return false, 0
 	}
 	blog := newBizLog("vrfSatisfy")
+	prove = tryZeroPadding(prove)
 	vrfValueRatio := vrfValueRatio(prove)
 	stakeRatio := stakeRatio(1, totalStake)
 	ok = vrfValueRatio.Cmp(stakeRatio) < 0
@@ -85,14 +87,26 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 	qn = calQn(vrfValueRatio, stakeRatio)
 	vrfValueRatioFloat, _ := vrfValueRatio.Float64()
 	stakeRatioFloat, _ := stakeRatio.Float64()
-	blog.log("Vrf validate result:%v! miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v,  qn %v", ok, 1, totalStake, vrfValueRatioFloat, stakeRatioFloat, qn)
+	blog.log("Vrf validate result:%v! miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v, qn %v,prove:%v", ok, 1, totalStake, vrfValueRatioFloat, stakeRatioFloat, qn, prove)
 	return
 }
 
 func stakeRatio(stake, totalStake uint64) *big.Rat {
-	stakeRat := new(big.Rat).SetInt64(int64(stake * uint64(model.Param.PotentialProposal)))
+	stakeRat := new(big.Rat).SetInt64(int64(stake * calcPotentialProposal(totalStake, model.Param)))
 	totalStakeRat := new(big.Rat).SetFloat64(float64(totalStake))
 	return new(big.Rat).Quo(stakeRat, totalStakeRat)
+}
+
+func calcPotentialProposal(totalStake uint64, param model.ConsensusParam) uint64 {
+	potentialProposal := totalStake * uint64(param.PotentialProposalIndex) / 100
+
+	if potentialProposal < param.PotentialProposal {
+		return param.PotentialProposal
+	}
+	if potentialProposal > param.PotentialProposalMax {
+		return param.PotentialProposalMax
+	}
+	return potentialProposal
 }
 
 func vrfValueRatio(prove vrf.VRFProve) *big.Rat {
@@ -110,4 +124,13 @@ func calQn(vrfValueRatio, stakeRatio *big.Rat) uint64 {
 	r, _ := new(big.Rat).Quo(vrfValueRatio, step).Float64()
 	qn := uint64(math.Floor(r) + 1)
 	return qn
+}
+
+func tryZeroPadding(pi vrf.VRFProve) vrf.VRFProve {
+	if len(pi) >= ed25519.ProveSize {
+		return pi
+	}
+	piPadding := make([]byte, ed25519.ProveSize)
+	copy(piPadding[ed25519.ProveSize-len(pi):], pi[:])
+	return piPadding
 }

@@ -24,7 +24,6 @@ import (
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/statemachine"
 	"encoding/hex"
 	"fmt"
 	"math"
@@ -101,12 +100,6 @@ func (api *GtasAPI) TransPool() (*Result, error) {
 	}
 
 	return successResult(transList)
-}
-
-// STMStatus 查询STM状态
-func (api *GtasAPI) StmStatus() (*Result, error) {
-	result := statemachine.STMManger.GetStmStatus()
-	return successResult(result)
 }
 
 func (api *GtasAPI) GetTransaction(hash string) (*Result, error) {
@@ -197,18 +190,17 @@ func (api *GtasAPI) GetBlockByHash(hash string) (*Result, error) {
 }
 
 func (api *GtasAPI) GetCurrentBlock() (*Result, error) {
-	b := core.GetBlockChain().CurrentBlock()
+	b := core.GetBlockChain().TopBlock()
 	if b == nil {
 		return failResult("layer2 error")
 	}
-	bh := b.Header
-	preBlock := core.GetBlockChain().QueryBlockByHash(bh.PreHash)
+	preBlock := core.GetBlockChain().QueryBlockByHash(b.PreHash)
 	preBH := preBlock.Header
-	block := convertBlockHeader(bh)
+	block := convertBlockHeader(b)
 	if preBH != nil {
-		block.Qn = bh.TotalQN - preBH.TotalQN
+		block.Qn = b.TotalQN - preBH.TotalQN
 	} else {
-		block.Qn = bh.TotalQN
+		block.Qn = b.TotalQN
 	}
 	return successResult(block)
 }
@@ -340,11 +332,8 @@ func (api *GtasAPI) NodeInfo() (*Result, error) {
 	ni := &NodeInfo{}
 	p := consensus.Proc
 	ni.ID = p.GetMinerID().GetHexString()
-	balance, err := walletManager.getBalance(p.GetMinerID().GetHexString())
-	if err != nil {
-		return failResult(err.Error())
-	}
-	ni.Balance = float64(balance) / float64(1000000000)
+	balance := walletManager.getBalance(p.GetMinerID().GetHexString())
+	ni.Balance = balance
 	if !p.Ready() {
 		ni.Status = "节点未准备就绪"
 	} else {
@@ -354,16 +343,13 @@ func (api *GtasAPI) NodeInfo() (*Result, error) {
 		heavyInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeProposer, service.AccountDBManagerInstance.GetLatestStateDB())
 		if heavyInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(heavyInfo))
-			if heavyInfo.AbortHeight == 0 {
-				t = "提案节点"
-			}
+			t = "提案节点"
 		}
+
 		lightInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeValidator, service.AccountDBManagerInstance.GetLatestStateDB())
 		if lightInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(lightInfo))
-			if lightInfo.AbortHeight == 0 {
-				t += " 验证节点"
-			}
+			t = " 验证节点"
 		}
 		ni.NType = t
 		ni.MortGages = morts

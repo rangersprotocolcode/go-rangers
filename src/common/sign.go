@@ -18,10 +18,16 @@ package common
 
 import (
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"math/big"
 
 	"com.tuntun.rocket/node/src/common/secp256k1"
 )
+
+type Hasher interface {
+	GenHash() Hash
+}
 
 type Sign struct {
 	r     big.Int
@@ -34,6 +40,31 @@ type SignData struct {
 	DataHash Hash   //哈希值
 	DataSign Sign   //签名
 	Id       string //用户ID
+}
+
+func NewSignData(privateKey PrivateKey, id string, hasher Hasher) SignData {
+	result := SignData{}
+
+	hash := hasher.GenHash()
+	result.DataHash = hash
+	result.Id = id
+	result.DataSign = privateKey.Sign(hash.Bytes())
+	return result
+}
+
+func (signData SignData) ValidateSign(hasher Hasher) error {
+	if signData.DataHash != hasher.GenHash() {
+		return errors.New(fmt.Sprintf("Invalid hash:except %s,real %s", signData.DataHash.String(), hasher.GenHash().String()))
+	}
+	pubkey, err := signData.DataSign.RecoverPubkey(signData.DataHash.Bytes())
+	if err != nil {
+		return err
+	}
+
+	if !pubkey.Verify(signData.DataHash.Bytes(), &signData.DataSign) {
+		return errors.New("sign verify failed")
+	}
+	return nil
 }
 
 //签名构造函数

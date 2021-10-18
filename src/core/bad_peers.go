@@ -17,87 +17,72 @@
 package core
 
 import (
+	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/utility"
 	"sync"
 	"time"
 )
 
-const (
-	badPeersCleanInterval = time.Minute * 3
-	evilMaxCount          = 3
-)
+const badPeersCleanInterval = time.Second * 30
 
 var PeerManager *peerManager
 
 type peerManager struct {
-	badPeerMeter map[string]uint64
-	badPeers     map[string]time.Time
-	cleaner      *time.Ticker
+	badPeers map[string]time.Time
+	cleaner  *time.Ticker
 
-	lock sync.RWMutex
+	lock   sync.RWMutex
+	logger log.Logger
 }
 
-func initPeerManager() {
-	badPeerMeter := peerManager{badPeerMeter: make(map[string]uint64), badPeers: make(map[string]time.Time), cleaner: time.NewTicker(badPeersCleanInterval), lock: sync.RWMutex{}}
+func initPeerManager(logger log.Logger) {
+	badPeerMeter := peerManager{badPeers: make(map[string]time.Time), cleaner: time.NewTicker(badPeersCleanInterval), lock: sync.RWMutex{}, logger: logger}
 	go badPeerMeter.loop()
 	PeerManager = &badPeerMeter
 }
 
-func (bpm *peerManager) markEvil(id string) {
+func (manager *peerManager) markEvil(id string) {
 	if id == "" {
 		return
 	}
-	bpm.lock.Lock()
-	defer bpm.lock.Unlock()
-	_, exit := bpm.badPeers[id]
+	manager.lock.Lock()
+	defer manager.lock.Unlock()
+	_, exit := manager.badPeers[id]
 	if exit {
 		return
 	}
 
-	evilCount, meterExit := bpm.badPeerMeter[id]
-	if !meterExit {
-		bpm.badPeerMeter[id] = 1
-		return
-	} else {
-		evilCount++
-		if evilCount > evilMaxCount {
-			delete(bpm.badPeerMeter, id)
-			bpm.badPeers[id] = utility.GetTime()
-			logger.Debugf("[PeerManager]Add bad peer:%s", id)
-		} else {
-			bpm.badPeerMeter[id] = evilCount
-			logger.Debugf("[PeerManager]EvilCount:%s,%d", id, evilCount)
-		}
-	}
+	manager.badPeers[id] = utility.GetTime()
+	manager.logger.Debugf("[PeerManager]Mark evil:%s", id)
 }
 
-func (bpm *peerManager) isEvil(id string) bool {
+func (manager *peerManager) isEvil(id string) bool {
 	if id == "" {
 		return false
 	}
-	bpm.lock.RLock()
-	defer bpm.lock.RUnlock()
-	_, exit := bpm.badPeers[id]
+	manager.lock.RLock()
+	defer manager.lock.RUnlock()
+	_, exit := manager.badPeers[id]
 	return exit
 }
 
-func (bpm *peerManager) loop() {
+func (manager *peerManager) loop() {
 	for {
 		select {
-		case <-bpm.cleaner.C:
-			bpm.lock.Lock()
-			logger.Debugf("[PeerManager]Bad peers cleaner time up!")
-			cleanIds := make([]string, 0, len(bpm.badPeers))
-			for id, markTime := range bpm.badPeers {
+		case <-manager.cleaner.C:
+			manager.lock.Lock()
+			manager.logger.Debugf("Bad peers cleaner time up!")
+			cleanIds := make([]string, 0, len(manager.badPeers))
+			for id, markTime := range manager.badPeers {
 				if utility.GetTime().Sub(markTime) >= badPeersCleanInterval {
 					cleanIds = append(cleanIds, id)
 				}
 			}
 			for _, id := range cleanIds {
-				delete(bpm.badPeers, id)
-				logger.Debugf("[PeerManager]Clean id:%s", id)
+				delete(manager.badPeers, id)
+				manager.logger.Debugf("[PeerManager]Release id:%s", id)
 			}
-			bpm.lock.Unlock()
+			manager.lock.Unlock()
 		}
 	}
 }

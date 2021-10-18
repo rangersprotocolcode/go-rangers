@@ -46,6 +46,8 @@ func newVMExecutor(accountdb *account.AccountDB, block *types.Block, situation s
 		situation: situation,
 		context:   make(map[string]interface{}),
 	}
+	vm.context["chain"] = blockChainImpl
+	vm.context["situation"] = situation
 
 	return vm
 }
@@ -72,6 +74,11 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		}
 		logger.Debugf("Execute %s, type:%d", transaction.Hash.String(), transaction.Type)
 
+		if types.TransactionTypeWrongTxNonce == transaction.Type {
+			evictedTxs = append(evictedTxs, transaction.Hash)
+			continue
+		}
+
 		txExecutor := executor.GetTxExecutor(transaction.Type)
 		success := false
 		msg := ""
@@ -88,7 +95,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 					this.accountdb.RevertToSnapshot(snapshot)
 				} else {
 					if transaction.Source != "" {
-						this.accountdb.SetNonce(common.HexToAddress(transaction.Source), transaction.Nonce)
+						this.accountdb.IncreaseNonce(common.HexToAddress(transaction.Source))
 					}
 
 					logger.Debugf("Execute success, txhash: %s, type: %d", transaction.Hash.String(), transaction.Type)
@@ -97,9 +104,24 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		}
 
 		transactions = append(transactions, transaction)
-		receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height, msg, transaction.Source)
-		receipt.TxHash = transaction.Hash
-		receipts = append(receipts, receipt)
+		if types.TransactionTypeJackpot == transaction.Type {
+			receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height, msg, transaction.Source, msg)
+			receipt.TxHash = transaction.Hash
+			receipts = append(receipts, receipt)
+		} else {
+			receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height, msg, transaction.Source, "")
+			logs := this.context["logs"]
+			if logs != nil {
+				receipt.Logs = logs.([]*types.Log)
+			}
+			contractAddress := this.context["contractAddress"]
+			if contractAddress != nil {
+				receipt.ContractAddress = contractAddress.(common.Address)
+			}
+			receipt.TxHash = transaction.Hash
+			receipts = append(receipts, receipt)
+		}
+
 	}
 
 	this.after()
@@ -127,8 +149,10 @@ func (executor *VMExecutor) after() {
 
 	// 计算定时任务（冻结、退款等等）
 	service.RefundManagerImpl.Add(types.GetRefundInfo(executor.context), executor.accountdb)
-	service.RefundManagerImpl.CheckAndMove(height, executor.accountdb)
 
 	// 计算出块奖励
-	service.RewardCalculatorImpl.CalculateReward(height, executor.accountdb)
+	data := service.RewardCalculatorImpl.CalculateReward(height, executor.accountdb, executor.block.Header, executor.situation)
+	service.RefundManagerImpl.Add(data, executor.accountdb)
+
+	service.RefundManagerImpl.CheckAndMove(height, executor.accountdb)
 }

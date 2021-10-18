@@ -19,20 +19,51 @@ package types
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/storage/rlp"
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"math/big"
 	"strconv"
 )
 
-type NftSetDefinition struct {
-	SetID      string `json:"setId,omitempty"`
-	Name       string `json:"name,omitempty"`
-	Symbol     string `json:"symbol,omitempty"`
-	MaxSupply  uint64 `json:"maxSupply,omitempty"` // 最大发行量，等于0则表示无限量
-	Creator    string `json:"creator,omitempty"`
-	Owner      string `json:"owner,omitempty"`
-	CreateTime string `json:"createTime,omitempty"`
+type NFTConditions struct {
+	Balance string                  `json:"balance,omitempty"`
+	Coin    map[string]string       `json:"coin,omitempty"`
+	FT      map[string]string       `json:"ft,omitempty"`
+	NFT     map[string]NFTCondition `json:"nft,omitempty"`
 }
+
+func (self *NFTConditions) IsEmpty() bool {
+	if 0 != len(self.Balance) || 0 != len(self.Coin) || 0 != len(self.FT) || 0 != len(self.NFT) {
+		return false
+	}
+
+	return true
+}
+
+func (self *NFTConditions) String() string {
+	data, _ := json.Marshal(self)
+	return utility.BytesToStr(data)
+}
+
+type NFTCondition struct {
+	Num       int                          `json:"num,omitempty"`
+	Attribute map[string]map[string]string `json:"attribute,omitempty"`
+}
+
+type (
+	ComboResource TransferData
+	LockResource  TransferData
+
+	NftSetDefinition struct {
+		SetID      string `json:"setId,omitempty"`
+		Name       string `json:"name,omitempty"`
+		Symbol     string `json:"symbol,omitempty"`
+		MaxSupply  uint64 `json:"maxSupply,omitempty"` // 最大发行量，等于0则表示无限量
+		Creator    string `json:"creator,omitempty"`
+		CreateTime string `json:"createTime,omitempty"`
+		Conditions []byte `json:"condition,omitempty"`
+	}
+)
 
 func (definition *NftSetDefinition) ToNFTSet() NFTSet {
 	var nftSet NFTSet
@@ -42,21 +73,21 @@ func (definition *NftSetDefinition) ToNFTSet() NFTSet {
 	nftSet.MaxSupply = definition.MaxSupply
 	nftSet.CreateTime = definition.CreateTime
 	nftSet.Creator = definition.Creator
-	nftSet.Owner = definition.Owner
-
+	json.Unmarshal(definition.Conditions, &nftSet.Conditions)
 	return nftSet
 }
 
 // NFTSet 数据结构综述
 type NFTSet struct {
-	SetID       string `json:"setId,omitempty"`
-	Name        string `json:"name,omitempty"`
-	Symbol      string `json:"symbol,omitempty"`
-	MaxSupply   uint64 `json:"maxSupply,omitempty"`   // 最大发行量，等于0则表示无限量
-	TotalSupply uint64 `json:"totalSupply,omitempty"` // 历史上发行量
-	Creator     string `json:"creator,omitempty"`
-	Owner       string `json:"owner,omitempty"`
-	CreateTime  string `json:"createTime,omitempty"`
+	SetID       string        `json:"setId,omitempty"`
+	Name        string        `json:"name,omitempty"`
+	Symbol      string        `json:"symbol,omitempty"`
+	MaxSupply   uint64        `json:"maxSupply,omitempty"`   // 最大发行量，等于0则表示无限量
+	TotalSupply uint64        `json:"totalSupply,omitempty"` // 历史上发行量
+	Creator     string        `json:"creator,omitempty"`
+	Owner       string        `json:"owner,omitempty"`
+	CreateTime  string        `json:"createTime,omitempty"`
+	Conditions  NFTConditions `json:"conditions,omitempty"`
 
 	// 已经发行的NFTID及其拥有者
 	OccupiedID map[string]common.Address `json:"occupied,omitempty"` // 当前在layer2里的nft(包含已经被提现走的NFT)
@@ -69,10 +100,9 @@ func (self *NFTSet) ToBlob() []byte {
 		Symbol:     self.Symbol,
 		MaxSupply:  self.MaxSupply,
 		Creator:    self.Creator,
-		Owner:      self.Owner,
 		CreateTime: self.CreateTime,
 	}
-
+	definition.Conditions, _ = json.Marshal(self.Conditions)
 	data, _ := rlp.EncodeToBytes(definition)
 	return data
 }
@@ -89,6 +119,8 @@ func (self *NFTSet) ToJSONString() string {
 	nftSetMap["owner"] = self.Owner
 	nftSetMap["createTime"] = self.CreateTime
 	nftSetMap["occupied"] = self.OccupiedID
+	nftSetMap["conditions"] = self.Conditions
+
 	bytes, _ := json.Marshal(nftSetMap)
 	return string(bytes)
 }
@@ -105,6 +137,7 @@ func (self *NFTSet) ToJSON() map[string]interface{} {
 	nftSetMap["owner"] = self.Owner
 	nftSetMap["createTime"] = self.CreateTime
 	nftSetMap["occupied"] = self.OccupiedID
+	nftSetMap["conditions"] = self.Conditions
 
 	return nftSetMap
 }
@@ -138,7 +171,13 @@ type NFT struct {
 	Data map[string]string
 
 	// 5. 从外部导入的相关信息
-	Imported string `json:"imported,omitempty"`
+	Uri string `json:"uri,omitempty"`
+
+	// 6. 组合信息
+	ComboResource ComboResource `json:"combo,omitempty"`
+
+	// 7. 被锁定
+	Lock string `json:"lockedTo,omitempty"` // 锁定账号
 }
 
 func (self *NFT) GetData(gameId string) string {
@@ -147,6 +186,10 @@ func (self *NFT) GetData(gameId string) string {
 
 func (self *NFT) GetProperty(appId, propertyName string) string {
 	return self.Data[common.GenerateAppIdProperty(appId, propertyName)]
+}
+
+func (self *NFT) SetProperty(appId, propertyName, data string) {
+	self.Data[common.GenerateAppIdProperty(appId, propertyName)] = data
 }
 
 func (self *NFT) SetData(gameId, data string) {
@@ -171,7 +214,7 @@ func (self *NFT) ToMap() map[string]interface{} {
 	nftMap["status"] = self.Status
 	nftMap["condition"] = self.Condition
 	nftMap["appId"] = self.AppId
-	nftMap["imported"] = self.Imported
+	nftMap["uri"] = self.Uri
 	nftMap["data"] = self.Data
 	return nftMap
 }

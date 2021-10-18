@@ -21,40 +21,36 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 )
 
-func GetBalance(source common.Address) string {
-	logger.Debugf("Get balance before get balance.source:%s", source)
-	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	logger.Debugf("Get balance after get balance.")
+func GetBalance(source common.Address, accountDB *account.AccountDB) string {
+	if accountDB == nil {
+		return ""
+	}
 	balance := accountDB.GetBalance(source)
 
 	return utility.BigIntToStr(balance)
 }
 
-func GetCoinBalance(source common.Address, ft string) string {
-	ftName := fmt.Sprintf("official-%s", ft)
-	logger.Debugf("Get coin balance before get balance.source:%s,ft:%s", source, ft)
+func GetCoinBalance(source common.Address, bnt string) string {
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	logger.Debugf("Get coin balance after get balance.")
-	balance := accountDB.GetFT(source, ftName)
+	balance := accountDB.GetBNT(source, bnt)
 
 	return utility.BigIntToStr(balance)
 }
 
 func GetAllCoinInfo(source common.Address) string {
 	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	ftMap := accountDB.GetAllFT(source)
+	ftMap := accountDB.GetAllBNT(source)
 	data := make(map[string]string, 0)
 	for key, value := range ftMap {
-		keyItems := strings.Split(key, "-")
-		if "official" == keyItems[0] {
-			data[keyItems[1]] = utility.BigIntToStr(value)
-		}
+		data[key] = utility.BigIntToStr(value)
 	}
 	bytes, _ := json.Marshal(data)
 	return string(bytes)
@@ -72,10 +68,7 @@ func GetAllFT(source common.Address) string {
 	ftMap := accountDB.GetAllFT(source)
 	data := make(map[string]string, 0)
 	for key, value := range ftMap {
-		keyItems := strings.Split(key, "-")
-		if "official" != keyItems[0] {
-			data[key] = utility.BigIntToStr(value)
-		}
+		data[key] = utility.BigIntToStr(value)
 	}
 	bytes, _ := json.Marshal(data)
 	return string(bytes)
@@ -172,6 +165,43 @@ func GetFTSet(id string) string {
 	return ""
 }
 
+func GetChainId() string {
+	return common.ChainId
+}
+
+func GetNonce(address common.Address, accountDB *account.AccountDB) string {
+	if accountDB == nil {
+		return ""
+	}
+	nonce := accountDB.GetNonce(address)
+	return strconv.FormatUint(nonce, 10)
+}
+
+func GetReceipt(txHash common.Hash) string {
+	transaction := GetTransactionPool().GetExecuted(txHash)
+	if transaction == nil {
+		return ""
+	}
+	result, _ := json.Marshal(transaction.Receipt)
+	return string(result)
+}
+
+func GetStorageAt(address string, key string, accountDB *account.AccountDB) string {
+	if accountDB == nil {
+		return ""
+	}
+	value := accountDB.GetData(common.HexToAddress(address), []byte(key))
+	return base64.StdEncoding.EncodeToString(value)
+}
+
+func GetCode(address string, accountDB *account.AccountDB) string {
+	if accountDB == nil {
+		return ""
+	}
+	value := accountDB.GetCode(common.HexToAddress(address))
+	return base64.StdEncoding.EncodeToString(value)
+}
+
 // 状态机更新资产
 // 包括货币转账、NFT资产修改
 func UpdateAsset(user types.UserData, appId string, accountDB *account.AccountDB) bool {
@@ -209,7 +239,7 @@ func UpdateAsset(user types.UserData, appId string, accountDB *account.AccountDB
 	nftList := user.NFT
 	if 0 != len(nftList) {
 		for _, nft := range nftList {
-			if !NFTManagerInstance.UpdateNFT(userAddr, appId, nft.SetId, nft.Id, nft.Data, accountDB) {
+			if !NFTManagerInstance.UpdateNFT(appId, nft.SetId, nft.Id, nft.Data, nft.Property, accountDB) {
 				return false
 			}
 		}
@@ -349,7 +379,7 @@ func transferFT(ft map[string]string, source string, target string, accountDB *a
 			return nil, false
 		}
 
-		response.Put(strings.TrimPrefix(ftName, "official-"), left)
+		response.Put(ftName, left)
 	}
 
 	return &response, true
@@ -359,13 +389,19 @@ func transferCoin(coin map[string]string, source string, target string, accountD
 	if 0 == len(coin) {
 		return nil, true
 	}
+	response := types.NewJSONObject()
 
-	ft := make(map[string]string, len(coin))
-	for key, value := range coin {
-		ft[fmt.Sprintf("official-%s", key)] = value
+	for ftName, valueString := range coin {
+		message, left, ok := FTManagerInstance.TransferBNT(source, ftName, target, valueString, accountDB)
+		if !ok {
+			logger.Debugf("Transfer FT Failed:%s", message)
+			return nil, false
+		}
+
+		response.Put(ftName, left)
 	}
 
-	return transferFT(ft, source, target, accountDB)
+	return &response, true
 }
 
 // tx.source : 发币方
@@ -398,7 +434,7 @@ func PublishNFTSet(accountdb *account.AccountDB, tx *types.Transaction) (bool, s
 	}
 
 	appId := tx.Source
-	message, flag := NFTManagerInstance.PublishNFTSet(NFTManagerInstance.GenerateNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime), accountdb)
+	message, flag := NFTManagerInstance.PublishNFTSet(NFTManagerInstance.GenerateNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.Conditions, nftSet.MaxSupply, nftSet.CreateTime), accountdb)
 	return flag, message
 }
 
@@ -423,7 +459,7 @@ func MintNFT(accountdb *account.AccountDB, tx *types.Transaction) (bool, string)
 	data := make(map[string]string)
 	json.Unmarshal([]byte(tx.Data), &data)
 
-	message, ok := NFTManagerInstance.MintNFT(tx.Source, data["setId"], data["id"], data["data"], data["createTime"], common.HexToAddress(data["target"]), accountdb)
+	message, ok := NFTManagerInstance.MintNFT(tx.Source, data["appId"], data["setId"], data["id"], data["data"], data["createTime"], common.HexToAddress(data["target"]), accountdb)
 	return ok, message
 }
 
@@ -435,19 +471,13 @@ func UpdateNFT(accountDB *account.AccountDB, tx *types.Transaction) (bool, strin
 	setId := params["setId"]
 	id := params["id"]
 	data := params["data"]
+	propertyString := params["property"]
 
 	if 0 == len(appId) || 0 == len(setId) || 0 == len(id) {
 		return false, "param error"
 	}
 
-	addr := NFTManagerInstance.GetNFTOwner(setId, id, accountDB)
-	if nil == addr {
-		msg := fmt.Sprintf("wrong setId %s or id %s", setId, id)
-		txLogger.Debugf(msg)
-		return false, msg
-	}
-
-	if NFTManagerInstance.UpdateNFT(*addr, appId, setId, id, data, accountDB) {
+	if NFTManagerInstance.UpdateNFT(appId, setId, id, data, propertyString, accountDB) {
 		return true, "success update nft"
 	} else {
 		msg := fmt.Sprintf("fail to update setId %s or id %s", setId, id)
@@ -487,4 +517,45 @@ func RevokeNFT(accountDB *account.AccountDB, tx *types.Transaction) (bool, strin
 
 	params["target"] = tx.Source
 	return approveNFT(accountDB, params, tx.Source)
+}
+
+func ComboNFT(accountDB *account.AccountDB, transaction *types.Transaction) (bool, string) {
+	nftId := strings.Split(transaction.Target, ":")
+	if 2 != len(nftId) {
+		return false, "nftId error: " + transaction.Target
+	}
+
+	// nftSet owner check
+	setId := nftId[0]
+	if !accountDB.CheckNFTSetOwner(setId, transaction.Source) {
+		return false, "nftSetOwner error: " + transaction.Source
+	}
+
+	// nft check
+	id := nftId[1]
+	nft := accountDB.GetNFTById(setId, id)
+	if nil == nft {
+		return false, fmt.Sprintf("no such nft: %s %s", setId, id)
+	}
+
+	// 资源提供方
+	var sourceAddr common.Address
+	if 0 == len(transaction.ExtraData) {
+		sourceAddr = common.HexToAddress(nft.Owner)
+	} else {
+		sourceAddr = common.HexToAddress(transaction.ExtraData)
+	}
+
+	// 所需的资源
+	var resource types.LockResource
+	if err := json.Unmarshal(utility.StrToBytes(transaction.Data), resource); nil != err {
+		return false, "resource data error: " + transaction.Data
+	}
+
+	success, msg := accountDB.ComboResource(sourceAddr, common.GenerateNFTSetAddress(setId), setId, id, resource)
+	if success {
+		return success, "nft combo successful"
+	} else {
+		return success, msg
+	}
 }

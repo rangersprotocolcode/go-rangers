@@ -50,9 +50,9 @@ func CoinDeposit(accountdb *account.AccountDB, transaction *types.Transaction) (
 	}
 
 	value, _ := utility.StrToBigInt(depositCoinData.Amount)
-	result := accountdb.AddFT(common.HexToAddress(transaction.Source), fmt.Sprintf("official-%s", depositCoinData.ChainType), value)
+	result := accountdb.AddFT(common.HexToAddress(transaction.Source), depositCoinData.ChainType, value)
 	if result {
-		return result, fmt.Sprintf("coin: %s, deposit %s", fmt.Sprintf("official-%s", depositCoinData.ChainType), value)
+		return result, fmt.Sprintf("coin: %s, deposit %s", depositCoinData.ChainType, value)
 	}
 	return result, fmt.Sprintf("too much value %s", value)
 
@@ -86,7 +86,7 @@ func FTDeposit(accountdb *account.AccountDB, transaction *types.Transaction) (bo
 	result := false
 
 	// ERC20的max，特殊处理
-	if 0 == strings.Compare(strings.ToLower(depositFTData.FTId), "max") {
+	if 0 == strings.Compare(strings.ToLower(depositFTData.FTId), "rpg") {
 		accountdb.AddBalance(common.HexToAddress(transaction.Source), value)
 		result = true
 	} else {
@@ -120,7 +120,7 @@ func NFTDeposit(accountdb *account.AccountDB, transaction *types.Transaction) (b
 	// 检查setId
 	nftSet := NFTManagerInstance.GetNFTSet(depositNFTData.SetId, accountdb)
 	if nil == nftSet {
-		nftSet = NFTManagerInstance.GenerateNFTSet(depositNFTData.SetId, depositNFTData.Name, depositNFTData.Symbol, depositNFTData.Creator, depositNFTData.Owner, 0, depositNFTData.CreateTime)
+		nftSet = NFTManagerInstance.GenerateNFTSet(depositNFTData.SetId, depositNFTData.Name, depositNFTData.Symbol, depositNFTData.Creator, depositNFTData.Owner, types.NFTConditions{}, 0, depositNFTData.CreateTime)
 		NFTManagerInstance.PublishNFTSet(nftSet, accountdb)
 	}
 
@@ -130,17 +130,46 @@ func NFTDeposit(accountdb *account.AccountDB, transaction *types.Transaction) (b
 	if nft != nil {
 		if nft.Status == 2 {
 			//仅更新 owner renter data appId,data 其他字段不更新
-			str, ok = NFTManagerInstance.DepositWithdrawnNFT(depositNFTData.Owner, depositNFTData.Renter, depositNFTData.AppId, depositNFTData.Data, accountdb, nft)
+			str, ok = NFTManagerInstance.DepositWithdrawnNFT(depositNFTData.Uri, depositNFTData.Owner, depositNFTData.Renter, depositNFTData.AppId, depositNFTData.Data, accountdb, nft)
 		} else {
 			str = fmt.Sprintf("cannot deposit existed NFT. setId: %s, id: %s ", depositNFTData.SetId, depositNFTData.ID)
 			ok = false
 		}
 	} else {
 		appId := transaction.Target
-		str, ok = NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, "", depositNFTData.Creator, depositNFTData.CreateTime, "official", common.HexToAddress(transaction.Source), depositNFTData.Data, accountdb)
+		str, ok = NFTManagerInstance.GenerateNFT(nftSet, appId, depositNFTData.SetId, depositNFTData.ID, "", depositNFTData.Creator, depositNFTData.CreateTime, depositNFTData.Uri, common.HexToAddress(transaction.Source), depositNFTData.Data, accountdb)
 	}
 
 	msg := fmt.Sprintf("depositNFT result: %s, %t", str, ok)
 	txLogger.Debugf(msg)
 	return ok, msg
+}
+
+// ERC20Binding 确认
+func ERC20Binding(accountdb *account.AccountDB, transaction *types.Transaction) (bool, string) {
+	txLogger.Tracef("Execute ERC20Binding ack tx:%s", transaction.ToTxJson().ToString())
+	if transaction.Data == "" {
+		return false, fmt.Sprintf("data error, data: %s", transaction.Data)
+	}
+	var erc20BindingData types.ERC20BindingData
+	err := json.Unmarshal([]byte(transaction.Data), &erc20BindingData)
+	if err != nil {
+		txLogger.Errorf("Deposit ERC20Binding data unmarshal error:%s", err.Error())
+		return false, fmt.Sprintf("ERC20Binding data error, data: %s", transaction.Data)
+	}
+
+	if 0 == len(erc20BindingData.Name) || 0 == len(erc20BindingData.ContractAddress) {
+		txLogger.Errorf("ERC20Binding data error, data: %s", transaction.Data)
+		return false, fmt.Sprintf("ERC20Binding data error, data: %s", transaction.Data)
+	}
+	if 0 == erc20BindingData.Decimal {
+		erc20BindingData.Decimal = 18
+	}
+
+	txLogger.Tracef("ERC20Binding nft data:%v,target address:%s", erc20BindingData, transaction.Source)
+	if !accountdb.AddERC20Binding(erc20BindingData.Name, common.HexToAddress(erc20BindingData.ContractAddress), uint64(erc20BindingData.Position), uint64(erc20BindingData.Decimal)) {
+		txLogger.Errorf("ERC20Binding name error, name: %s", erc20BindingData.Name)
+		return false, fmt.Sprintf("ERC20Binding name error, name: %s", erc20BindingData.Name)
+	}
+	return true, ""
 }

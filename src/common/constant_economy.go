@@ -26,7 +26,7 @@ const (
 
 	// 10个小时，单位ms
 	// 计算一次奖励的时间间隔
-	RewardTime = 1 * 1000
+	RewardTime = 1 * 60 * 60 * 1000
 
 	RefundTime = 50 * 1000
 
@@ -35,43 +35,37 @@ const (
 
 	RefundBlocks = uint64(RefundTime / CastingInterval)
 
-	// 一年，单位ms
-	//OneYear = 365 * 24 * 3600 * 1000
-	OneYear = 7 * 24 * 3600 * 1000
+	// 一天，单位ms
+	oneDay = 24 * 3600 * 1000
 
-	// 一年出得块数量
-	BlocksPerYear = uint64(OneYear / CastingInterval)
+	// 释放周期
+	epoch = 180 * oneDay
+
+	// 一个epoch内，出块总量
+	BlocksPerEpoch = epoch / CastingInterval
 )
 
 // 奖励
 const (
-	// 第一年的奖励
-	FirstYearRewardPerBlock = float64(15.85)
+	// 矿工总奖励
+	TotalRPGSupply = 2100 * 10000 * 0.49
 
-	// 通胀率
-	Inflation = float64(1.05)
-
-	// 社区比例
-	CommunityReward = 0.2
+	ReleaseRate = 0.08
 
 	// 验证组比例
-	ValidatorsReward = 0.3
+	ValidatorsReward = float64(2) / 7
 
 	// 所有提案者比例
-	AllProposerReward = 0.5
+	AllProposerReward = float64(1) / 2
 
 	// 出块的提案者比例
-	ProposerReward = 0.3
+	ProposerReward = float64(3) / 14
 )
 
 // 最小质押量
 const (
-	ValidatorStake = uint64(100000)
-	ProposerStake  = uint64(5000000)
+	ValidatorStake = uint64(250)
+	ProposerStake  = uint64(1250)
 
 	HeightAfterStake = RewardBlocks
-)
-
-var (
-	CommunityAddress = HexToAddress("0xffffff")
 )

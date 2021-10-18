@@ -19,32 +19,11 @@ package core
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/statemachine"
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"fmt"
 	"testing"
 )
-
-func TestStartStateMachineTx(t *testing.T) {
-	containerConfig := statemachine.ContainerConfig{Priority: 0, Game: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54",
-		Image: "littlebear234/genesis_image:latest", Detached: true, Hostname: "genesis_host_name"}
-
-	port := statemachine.Port{Host: 0, Target: 0}
-	ports := statemachine.Ports{port}
-	containerConfig.Ports = ports
-
-	containerConfig.DownloadUrl = "littlebear234/genesis_image:latest"
-	containerConfig.DownloadProtocol = "pull"
-
-	tx := types.Transaction{Source: "0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54", Target: "", Type: types.TransactionTypeAddStateMachine, Time: "12121"}
-	tx.Data = containerConfig.TOJSONString()
-
-	tx.Hash = tx.GenHash()
-
-	j, _ := json.Marshal(tx.ToTxJson())
-	fmt.Printf("TX JSON:\n%s\n", string(j))
-}
 
 func TestProposerApplyTx(t *testing.T) {
 	source := "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"
@@ -122,4 +101,155 @@ func TestAddMinerStakeTx(t *testing.T) {
 	tx.Sign = &sign
 
 	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+//------------------------------------------------------------------------------------------------
+func TestGetBlockNumberTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 602, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"height":"11","hash":""}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetBalanceTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 99, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"height":"11","hash":""}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetStorageTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 609, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"height":"11","hash":"","address":"0x0200000000000000000000000000000000000000","key":"0x51ba50a9b4730aea7ecee86df6536297900f5b77"}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetCodeTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 610, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"height":"","hash":"","address":"0x9ddeb4a196da90824feceeac57e6d5f1d82b2ad7"}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetBlockTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 603, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"height":"","hash":"",address:"0x9ddeb4a196da90824feceeac57e6d5f1d82b2ad7"}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetBlockTransactionCountTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 607, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"height":"","hash":""}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetTransactionTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 605, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"txHash":"0xf58b553d58d2ff88a01bcf936681984802d2006b6512b5eb4e47573c81400926"}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetTransactionFromBlockTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 608, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"height":"","hash":"","index":"0"}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetReceiptTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 606, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"txHash":"0xf58b553d58d2ff88a01bcf936681984802d2006b6512b5eb4e47573c81400926"}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetNonceTx(t *testing.T) {
+	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
+	tx := types.Transaction{Type: 604, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := `{"height":"","hash":""}`
+	tx.Data = string(data)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestTransferTx(t *testing.T) {
+	source := "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
+	target := "0x51ba50a9b4730aea7ecee86df6536297900f5b78"
+	tx := types.Transaction{Type: 200, Source: source, Target: target, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := contractData{GasPrice: "1", GasLimit: "100000", TransferValue: "3", AbiData: "11"}
+	dataBytes, _ := json.Marshal(data)
+	tx.Data = string(dataBytes)
+
+	tx.Hash = tx.GenHash()
+
+	privateKeyStr := "0x040a0c4baa2e0b927a2b1f6f93b317c320d4aa3a5b54c0a83f5872c23155dcf1455fb015a7699d4ef8491cc4c7a770e580ab1362a0e3af9f784dd2485cfc9ba7c1e7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"
+	privateKey := common.HexStringToSecKey(privateKeyStr)
+	sign := privateKey.Sign(tx.Hash.Bytes())
+	tx.Sign = &sign
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestGetPastLogsTx(t *testing.T) {
+	source := "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
+	tx := types.Transaction{Type: 611, Source: source, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	topics := [][]string{{"0x3a406d3871dab9676f7dbfa824f81f599698603527e1521006603c9118171e18"}}
+	data := QueryLogData{FromBlock: 596173, ToBlock: 596173, Topics: topics}
+	dataBytes, err := json.Marshal(&data)
+	if err != nil {
+		panic(err)
+	}
+	tx.Data = string(dataBytes)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+type contractData struct {
+	GasPrice string `json:"gasPrice,omitempty"`
+	GasLimit string `json:"gasLimit,omitempty"`
+
+	TransferValue string `json:"transferValue,omitempty"`
+	AbiData       string `json:"abiData,omitempty"`
+}
+
+type QueryLogData struct {
+	FromBlock uint64 `json:"fromBlock,omitempty"`
+	ToBlock   uint64 `json:"toBlock,omitempty"`
+
+	Address []string   `json:"address,omitempty"`
+	Topics  [][]string `json:"topics,omitempty"`
 }

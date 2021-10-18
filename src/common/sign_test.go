@@ -219,11 +219,12 @@ func TestStrToBigInt(t *testing.T) {
 	fmt.Printf("%v\n", i)
 }
 
-
 func TestKey(t *testing.T) {
 	privateKey := GenerateKey("")
 	publicKey := privateKey.GetPubKey()
+	id := publicKey.GetID()
 	address := publicKey.GetAddress()
-	fmt.Printf("Private key:%s\n",privateKey.GetHexString())
-	fmt.Printf("Address:%s\n",address.String())
+	fmt.Printf("Private key:%s\n", privateKey.GetHexString())
+	fmt.Printf("Address:%s\n", address.String())
+	fmt.Printf("Id:%s\n", ToHex(id[:]))
 }

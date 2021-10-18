@@ -16,7 +16,9 @@
 
 package network
 
-import "com.tuntun.rocket/node/src/middleware/log"
+import (
+	"com.tuntun.rocket/node/src/middleware/log"
+)
 
 const (
 	//-----------组初始化---------------------------------
@@ -44,27 +46,21 @@ const (
 
 	TransactionGotMsg uint32 = 10
 
-	//-----------块同步---------------------------------
-	BlockInfoNotifyMsg uint32 = 12
+	//-----------同步---------------------------------
+	TopBlockInfoMsg uint32 = 12
 
-	ReqBlock uint32 = 13
+	BlockChainPieceReqMsg uint32 = 13
 
-	BlockResponseMsg uint32 = 14
+	BlockChainPieceMsg uint32 = 14
 
-	//-----------组同步---------------------------------
-	GroupChainCountMsg uint32 = 15
+	ReqBlockMsg uint32 = 15
 
-	ReqGroupMsg uint32 = 16
+	BlockResponseMsg uint32 = 16
 
-	GroupMsg uint32 = 17
-	//-----------块链调整---------------------------------
-	ChainPieceInfoReq uint32 = 18
+	ReqGroupMsg uint32 = 19
 
-	ChainPieceInfo uint32 = 19
+	GroupResponseMsg uint32 = 20
 
-	ReqChainPieceBlock uint32 = 20
-
-	ChainPieceBlock uint32 = 21
 	//---------------------组创建确认-----------------------
 	CreateGroupaRaw uint32 = 22
 
@@ -80,9 +76,6 @@ const (
 
 	ReqSharePiece      uint32 = 39
 	ResponseSharePiece uint32 = 40
-
-	//-----------stm状态通知---------------------------------
-	STMStorageReady uint32 = 50
 )
 
 //与coin connector 通信的消息CODE
@@ -100,6 +93,8 @@ type Network interface {
 	SpreadToGroup(groupId string, msg Message)
 
 	Broadcast(msg Message)
+
+	SendToJSONRPC(msg string, sessionId, requestId uint64)
 
 	SendToClientReader(id string, msg []byte, nonce uint64)
 

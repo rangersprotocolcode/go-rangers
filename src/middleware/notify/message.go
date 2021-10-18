@@ -33,13 +33,62 @@ func (m *NewBlockMessage) GetData() interface{} {
 	return m
 }
 
+type BlockOnChainSuccMessage struct {
+	Block types.Block
+}
+
+func (m *BlockOnChainSuccMessage) GetRaw() []byte {
+	return []byte{}
+}
+func (m *BlockOnChainSuccMessage) GetData() interface{} {
+	return m.Block
+}
+
+//-------------------------------------sync---------------------
+type ChainInfoMessage struct {
+	ChainInfo []byte
+	Peer      string
+}
+
+func (m *ChainInfoMessage) GetRaw() []byte {
+	return m.ChainInfo
+}
+
+func (m *ChainInfoMessage) GetData() interface{} {
+	return m
+}
+
+type BlockChainPieceReqMessage struct {
+	BlockChainPieceReq []byte
+	Peer               string
+}
+
+func (m *BlockChainPieceReqMessage) GetRaw() []byte {
+	return nil
+}
+func (m *BlockChainPieceReqMessage) GetData() interface{} {
+	return m
+}
+
+type BlockChainPieceMessage struct {
+	BlockChainPieceByte []byte
+	Peer                string
+}
+
+func (m *BlockChainPieceMessage) GetRaw() []byte {
+	return m.BlockChainPieceByte
+}
+func (m *BlockChainPieceMessage) GetData() interface{} {
+	return m
+}
+
 type BlockReqMessage struct {
-	HeightByte []byte
-	Peer       string
+	ReqInfoByte []byte
+	Peer        string
 }
 
 func (m *BlockReqMessage) GetRaw() []byte {
-	return m.HeightByte
+	return m.ReqInfoByte
 }
 func (m *BlockReqMessage) GetData() interface{} {
 	return m
@@ -57,119 +106,29 @@ func (m *BlockResponseMessage) GetData() interface{} {
 	return m
 }
 
-type BlockOnChainSuccMessage struct {
-	Block types.Block
+type GroupReqMessage struct {
+	ReqInfoByte []byte
+	Peer        string
 }
 
-func (m *BlockOnChainSuccMessage) GetRaw() []byte {
-	return []byte{}
+func (m *GroupReqMessage) GetRaw() []byte {
+	return m.ReqInfoByte
 }
-func (m *BlockOnChainSuccMessage) GetData() interface{} {
-	return m.Block
-}
-
-type BlockInfoNotifyMessage struct {
-	BlockInfo []byte
-	Peer      string
-}
-
-func (m *BlockInfoNotifyMessage) GetRaw() []byte {
-	return m.BlockInfo
-}
-
-func (m *BlockInfoNotifyMessage) GetData() interface{} {
+func (m *GroupReqMessage) GetData() interface{} {
 	return m
 }
 
-//------------------------------------------------fork------------------------------------------------------------------
-type ChainPieceInfoReqMessage struct {
-	HeightByte []byte
-	Peer       string
+type GroupResponseMessage struct {
+	GroupResponseByte []byte
+	Peer              string
 }
 
-func (m *ChainPieceInfoReqMessage) GetRaw() []byte {
-	return nil
+func (m *GroupResponseMessage) GetRaw() []byte {
+	return m.GroupResponseByte
 }
-func (m *ChainPieceInfoReqMessage) GetData() interface{} {
+func (m *GroupResponseMessage) GetData() interface{} {
 	return m
 }
-
-type ChainPieceInfoMessage struct {
-	ChainPieceInfoByte []byte
-	Peer               string
-}
-
-func (m *ChainPieceInfoMessage) GetRaw() []byte {
-	return m.ChainPieceInfoByte
-}
-func (m *ChainPieceInfoMessage) GetData() interface{} {
-	return m
-}
-
-type ChainPieceBlockReqMessage struct {
-	ReqHeightByte []byte
-	Peer          string
-}
-
-func (m *ChainPieceBlockReqMessage) GetRaw() []byte {
-	return m.ReqHeightByte
-}
-func (m *ChainPieceBlockReqMessage) GetData() interface{} {
-	return m
-}
-
-type ChainPieceBlockMessage struct {
-	ChainPieceBlockMsgByte []byte
-	Peer                   string
-}
-
-func (m *ChainPieceBlockMessage) GetRaw() []byte {
-	return m.ChainPieceBlockMsgByte
-}
-func (m *ChainPieceBlockMessage) GetData() interface{} {
-	return m
-}
-
-//type BlockHeaderNotifyMessage struct {
-//	HeaderByte []byte
-//
-//	Peer string
-//}
-//
-//func (m *BlockHeaderNotifyMessage) GetRaw() []byte {
-//	return nil
-//}
-//
-//func (m *BlockHeaderNotifyMessage) GetData() interface{} {
-//	return m
-//}
-//
-//type BlockBodyReqMessage struct {
-//	BlockHashByte []byte
-//
-//	Peer string
-//}
-//
-//func (m *BlockBodyReqMessage) GetRaw() []byte {
-//	return nil
-//}
-//
-//func (m *BlockBodyReqMessage) GetData() interface{} {
-//	return m
-//}
-//
-//type BlockBodyNotifyMessage struct {
-//	BodyByte []byte
-//
-//	Peer string
-//}
-//
-//func (m *BlockBodyNotifyMessage) GetRaw() []byte {
-//	return nil
-//}
-//func (m *BlockBodyNotifyMessage) GetData() interface{} {
-//	return m
-//}
 
 //--------------------------------------------------------------------------------------------------------------------
 type GroupMessage struct {
@@ -192,18 +151,6 @@ func (m *GroupHeightMessage) GetRaw() []byte {
 	return m.HeightByte
 }
 func (m *GroupHeightMessage) GetData() interface{} {
-	return m
-}
-
-type GroupReqMessage struct {
-	GroupIdByte []byte
-	Peer        string
-}
-
-func (m *GroupReqMessage) GetRaw() []byte {
-	return m.GroupIdByte
-}
-func (m *GroupReqMessage) GetData() interface{} {
 	return m
 }
 
@@ -268,32 +215,6 @@ func (m *TransactionGotAddSuccMessage) GetData() interface{} {
 	return m.Transactions
 }
 
-//type StateInfoReqMessage struct {
-//	StateInfoReqByte []byte
-//
-//	Peer string
-//}
-//
-//func (m *StateInfoReqMessage) GetRaw() []byte {
-//	return nil
-//}
-//func (m *StateInfoReqMessage) GetData() interface{} {
-//	return m
-//}
-//
-//type StateInfoMessage struct {
-//	StateInfoByte []byte
-//
-//	Peer string
-//}
-//
-//func (m *StateInfoMessage) GetRaw() []byte {
-//	return nil
-//}
-//func (m *StateInfoMessage) GetData() interface{} {
-//	return m
-//}
-
 type ClientTransactionMessage struct {
 	Tx     types.Transaction
 	UserId string
@@ -351,4 +272,40 @@ func (m *NonceNotifyMessage) GetRaw() []byte {
 }
 func (m *NonceNotifyMessage) GetData() interface{} {
 	return m
+}
+
+type ETHRPCMessage struct {
+	Message ETHRPCPiece `json:"jsonrpc"`
+
+	RequestId uint64 `json:"request_id"`
+	SessionId uint64 `json:"session_id"`
+}
+
+func (m *ETHRPCMessage) GetRaw() []byte {
+	return nil
+}
+func (m *ETHRPCMessage) GetData() interface{} {
+	return m
+}
+
+type ETHRPCBatchMessage struct {
+	Message []ETHRPCPiece `json:"jsonrpc"`
+
+	RequestId uint64 `json:"request_id"`
+	SessionId uint64 `json:"session_id"`
+}
+
+func (m *ETHRPCBatchMessage) GetRaw() []byte {
+	return nil
+}
+func (m *ETHRPCBatchMessage) GetData() interface{} {
+	return m
+}
+
+type ETHRPCPiece struct {
+	Id     interface{}     `json:"id"`
+	Method string          `json:"method"`
+	Params json.RawMessage `json:"params"`
+
+	Nonce uint64 `json:"nonce"`
 }

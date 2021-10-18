@@ -20,9 +20,9 @@ import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/storage/rlp"
 	"com.tuntun.rocket/node/src/utility"
 	"fmt"
+	"math/big"
 	"strings"
 )
 
@@ -39,7 +39,13 @@ var (
 	conditionKey  = utility.StrToBytes("co")
 	appIdKey      = utility.StrToBytes("a")
 	importedKey   = utility.StrToBytes("im")
-	dataPrefix    = "d:"
+	lockKey       = utility.StrToBytes("l")
+
+	dataPrefix  = "d:"
+	comboPrefix = "cm:"
+	bntPrefix   = fmt.Sprintf("%s%s", comboPrefix, "bn:")
+	ftPrefix    = fmt.Sprintf("%s%s", comboPrefix, "f:")
+	nftPrefix   = fmt.Sprintf("%s%s", comboPrefix, "n:")
 )
 
 func (self *accountObject) generateNFTDataKey(key string) string {
@@ -48,16 +54,24 @@ func (self *accountObject) generateNFTDataKey(key string) string {
 
 func (self *accountObject) checkOwner(db AccountDatabase, addr common.Address) bool {
 	ownerAddressBytes := self.GetData(db, ownerKey)
-	ownerAddress := common.HexStringToAddress(utility.BytesToStr(ownerAddressBytes))
-	return 0 == bytes.Compare(ownerAddress.Bytes(), addr.Bytes())
+
+	result := 0 == bytes.Compare(ownerAddressBytes, addr.Bytes())
+	if !result {
+		accountLog.Errorf("check owner error: %s,expect: %s, approve failed", addr.String(), common.ToHex(ownerAddressBytes))
+	}
+	return result
 }
 
 func (self *accountObject) SetOwner(db AccountDatabase, owner string) {
-	self.SetData(db, ownerKey, utility.StrToBytes(owner))
+	self.SetData(db, ownerKey, common.FromHex(owner))
 }
 
 func (self *accountObject) SetAppId(db AccountDatabase, appId string) {
 	self.SetData(db, appIdKey, utility.StrToBytes(appId))
+}
+
+func (self *accountObject) SetLock(db AccountDatabase, lock []byte) {
+	self.SetData(db, lockKey, lock)
 }
 
 // 新增一个nft实例
@@ -70,18 +84,28 @@ func (self *accountObject) AddNFT(db AccountDatabase, nft *types.NFT) bool {
 	self.SetData(db, nameKey, utility.StrToBytes(nft.Name))
 	self.SetData(db, symbolKey, utility.StrToBytes(nft.Symbol))
 	self.SetData(db, idKey, utility.StrToBytes(nft.ID))
-	self.SetData(db, creatorKey, utility.StrToBytes(nft.Creator))
+	self.SetData(db, creatorKey, common.FromHex(nft.Creator))
 	self.SetData(db, createTimeKey, utility.StrToBytes(nft.CreateTime))
-	self.SetData(db, ownerKey, utility.StrToBytes(nft.Owner))
-	self.SetData(db, renterKey, utility.StrToBytes(nft.Renter))
-	self.SetData(db, statusKey, []byte{nft.Status})
-	self.SetData(db, conditionKey, []byte{nft.Condition})
+	self.SetData(db, ownerKey, common.FromHex(nft.Owner))
+	if 0 != len(nft.Renter) {
+		self.SetData(db, renterKey, common.FromHex(nft.Renter))
+	}
+	if 0 != nft.Status {
+		self.SetData(db, statusKey, []byte{nft.Status})
+	}
+	if 0 != nft.Condition {
+		self.SetData(db, conditionKey, []byte{nft.Condition})
+	}
 	self.SetData(db, appIdKey, utility.StrToBytes(nft.AppId))
-	self.SetData(db, importedKey, utility.StrToBytes(nft.Imported))
+	if 0 != len(nft.Uri) {
+		self.SetData(db, importedKey, utility.StrToBytes(nft.Uri))
+	}
 
 	for key, value := range nft.Data {
 		self.SetData(db, utility.StrToBytes(self.generateNFTDataKey(key)), utility.StrToBytes(value))
 	}
+
+	self.data.kind = NFT_TYPE
 	return true
 }
 
@@ -91,24 +115,26 @@ func (self *accountObject) GetNFT(db AccountDatabase) *types.NFT {
 		Name:       utility.BytesToStr(self.GetData(db, nameKey)),
 		Symbol:     utility.BytesToStr(self.GetData(db, symbolKey)),
 		ID:         utility.BytesToStr(self.GetData(db, idKey)),
-		Creator:    utility.BytesToStr(self.GetData(db, creatorKey)),
+		Creator:    common.ToHex(self.GetData(db, creatorKey)),
 		CreateTime: utility.BytesToStr(self.GetData(db, createTimeKey)),
-		Owner:      utility.BytesToStr(self.GetData(db, ownerKey)),
-		Renter:     utility.BytesToStr(self.GetData(db, renterKey)),
+		Owner:      common.ToHex(self.GetData(db, ownerKey)),
+		Renter:     common.ToHex(self.GetData(db, renterKey)),
 		AppId:      utility.BytesToStr(self.GetData(db, appIdKey)),
-		Imported:   utility.BytesToStr(self.GetData(db, importedKey)),
+		Uri:        utility.BytesToStr(self.GetData(db, importedKey)),
+		Lock:       common.Bytes2Hex(self.GetData(db, lockKey)),
 		Data:       make(map[string]string),
 	}
 
-	status := self.GetData(db, statusKey)
-	if nil != status && 1 == len(status) {
-		nft.Status = status[0]
-	}
+	nft.Status = self.getNFTStatus(db)
 
 	contidion := self.GetData(db, conditionKey)
 	if nil != contidion && 1 == len(contidion) {
 		nft.Condition = contidion[0]
 	}
+
+	// getLockedBalance
+	key := utility.StrToBytes(fmt.Sprintf("%s%s", comboPrefix, "b"))
+	value := self.GetData(db, key)
 
 	self.cachedLock.RLock()
 	defer self.cachedLock.RUnlock()
@@ -129,39 +155,58 @@ func (self *accountObject) GetNFT(db AccountDatabase) *types.NFT {
 		nft.Data[key[2:]] = utility.BytesToStr(iterator.Value)
 	}
 
+	nft.ComboResource = self.getCombo(db)
+	if nil == value || utility.IsEmptyByteSlice(value) {
+		nft.ComboResource.Balance = "0"
+	} else {
+		now := new(big.Int).SetBytes(value)
+		nft.ComboResource.Balance = utility.BigIntToStr(now)
+	}
 	return nft
 }
 func (self *accountObject) ApproveNFT(db AccountDatabase, owner common.Address, renter string) bool {
 	if !self.checkOwner(db, owner) {
+		accountLog.Errorf("check owner error, approve failed")
 		return false
 	}
 
-	status := self.GetData(db, statusKey)
-	if nil == status || 1 != len(status) || status[0] != 0 {
+	status := self.getNFTStatus(db)
+	if status != 0 {
+		accountLog.Errorf("check status error. status: %d, owner: %s, approve failed", status, owner.String())
 		return false
 	}
 
-	self.SetData(db, renterKey, utility.StrToBytes(renter))
+	self.SetData(db, renterKey, common.FromHex(renter))
 	return true
 }
 
 // 更新nft属性值
-func (self *accountObject) SetNFTValue(db AccountDatabase, addr common.Address, appId, propertyName, value string) bool {
+func (self *accountObject) SetNFTProperty(db AccountDatabase, appId, propertyName, value string) bool {
 	if 0 != strings.Compare(appId, utility.BytesToStr(self.GetData(db, appIdKey))) {
 		return false
 	}
 
-	self.SetData(db, utility.StrToBytes(self.generateNFTDataKey(common.GenerateAppIdProperty(appId, propertyName))), utility.StrToBytes(value))
+	key := utility.StrToBytes(self.generateNFTDataKey(common.GenerateAppIdProperty(appId, propertyName)))
+	if 0 == len(value) {
+		self.RemoveData(db, key)
+	} else {
+		self.SetData(db, key, utility.StrToBytes(value))
+	}
 	return true
 }
 
 // 更新nft属性值
-func (self *accountObject) SetNFTValueByGameId(db AccountDatabase, addr common.Address, appId, value string) bool {
+func (self *accountObject) SetNFTValueByGameId(db AccountDatabase, appId, value string) bool {
 	if 0 != strings.Compare(appId, utility.BytesToStr(self.GetData(db, appIdKey))) {
 		return false
 	}
 
-	self.SetData(db, utility.StrToBytes(self.generateNFTDataKey(appId)), utility.StrToBytes(value))
+	key := utility.StrToBytes(self.generateNFTDataKey(appId))
+	if 0 == len(value) {
+		self.RemoveData(db, key)
+	} else {
+		self.SetData(db, key, utility.StrToBytes(value))
+	}
 	return true
 }
 
@@ -170,45 +215,131 @@ func (self *accountObject) ChangeNFTStatus(db AccountDatabase, addr common.Addre
 		return false
 	}
 
-	self.SetData(db, statusKey, []byte{status})
+	if 0 == status {
+		self.RemoveData(db, statusKey)
+	} else {
+		self.SetData(db, statusKey, []byte{status})
+	}
 	return true
 }
 
-func (self *accountObject) GetNFTSet(db AccountDatabase) *types.NFTSet {
-	valueByte := self.nftSetDefinition(db)
-	if nil == valueByte || 0 == len(valueByte) {
-		return nil
+func (self *accountObject) getNFTStatus(db AccountDatabase) byte {
+	status := self.GetData(db, statusKey)
+	if nil == status || 1 != len(status) {
+		return 0
 	}
 
-	var definition types.NftSetDefinition
-	err := rlp.DecodeBytes(valueByte, &definition)
-	if err != nil {
-		return nil
+	return status[0]
+}
+
+// nft记录锁定的target
+func (ao *accountObject) lockNFTSelf(db AccountDatabase, owner, target common.Address) bool {
+	if !ao.checkOwner(db, owner) {
+		return false
 	}
 
-	self.cachedLock.RLock()
-	defer self.cachedLock.RUnlock()
+	if 0 != ao.getNFTStatus(db) {
+		return false
+	}
 
-	nftSet := definition.ToNFTSet()
-	nftSet.OccupiedID = make(map[string]common.Address)
-	nftSet.TotalSupply = self.Nonce()
+	ao.SetLock(db, target.Bytes())
+	ao.SetData(db, statusKey, []byte{3})
+	return true
+}
 
-	iterator := self.DataIterator(db, []byte{})
+func (ao *accountObject) unlockNFTSelf(db AccountDatabase) {
+	ao.SetLock(db, nil)
+	ao.RemoveData(db, statusKey)
+}
+
+func (ao *accountObject) setComboCoin(db AccountDatabase, key []byte, amount *big.Int) {
+	if nil == amount || 0 == amount.Sign() {
+		return
+	}
+
+	value := ao.GetData(db, key)
+	if nil == value || utility.IsEmptyByteSlice(value) {
+		ao.SetData(db, key, amount.Bytes())
+	} else {
+		now := new(big.Int).SetBytes(value)
+		now = now.Add(now, amount)
+		ao.SetData(db, key, now.Bytes())
+	}
+}
+
+func (ao *accountObject) setComboBalance(db AccountDatabase, amount *big.Int) {
+	ao.setComboCoin(db, utility.StrToBytes(fmt.Sprintf("%s%s", comboPrefix, "b")), amount)
+}
+
+func (ao *accountObject) setComboBNT(db AccountDatabase, amount *big.Int, bnt string) {
+	ao.setComboCoin(db, utility.StrToBytes(fmt.Sprintf("%s%s", bntPrefix, bnt)), amount)
+}
+
+func (ao *accountObject) setComboFT(db AccountDatabase, amount *big.Int, ft string) {
+	ao.setComboCoin(db, utility.StrToBytes(fmt.Sprintf("%s%s", ftPrefix, ft)), amount)
+}
+
+func (ao *accountObject) setComboNFT(db AccountDatabase, setId, id string) {
+	key := utility.StrToBytes(fmt.Sprintf("%s%s:%s", nftPrefix, setId, id))
+	ao.SetData(db, key, []byte{0})
+}
+
+// 调用的地方已经加锁了，这里不用加锁了
+func (ao *accountObject) getCombo(db AccountDatabase) types.ComboResource {
+	result := types.ComboResource{
+		Coin: make(map[string]string),
+		FT:   make(map[string]string),
+		NFT:  make([]types.NFTID, 0),
+	}
+
+	//	bnt/ft/nft
+	for key, value := range ao.cachedStorage {
+		if strings.HasPrefix(key, bntPrefix) {
+			result.Coin[key[len(bntPrefix):]] = utility.BigIntBytesToStr(value)
+		}
+		if strings.HasPrefix(key, ftPrefix) {
+			result.FT[key[len(ftPrefix):]] = utility.BigIntBytesToStr(value)
+		}
+		if strings.HasPrefix(key, nftPrefix) {
+			ids := strings.Split(key[len(nftPrefix):], ":")
+			if 2 == len(ids) {
+				nft := types.NFTID{
+					SetId: ids[0],
+					Id:    ids[1],
+				}
+				result.NFT = append(result.NFT, nft)
+			}
+		}
+	}
+
+	iterator := ao.DataIterator(db, utility.StrToBytes(comboPrefix))
 	for iterator.Next() {
-		nftSet.OccupiedID[utility.BytesToStr(iterator.Key)] = common.BytesToAddress(iterator.Value)
-	}
+		key := utility.BytesToStr(iterator.Key)
 
-	for id, addr := range self.cachedStorage {
-		if addr == nil {
-			delete(nftSet.OccupiedID, id)
+		_, contains := ao.cachedStorage[key]
+		if contains {
 			continue
 		}
-		nftSet.OccupiedID[id] = common.BytesToAddress(addr)
+
+		ao.cachedStorage[key] = iterator.Value
+
+		if strings.HasPrefix(key, bntPrefix) {
+			result.Coin[key[len(bntPrefix):]] = utility.BigIntBytesToStr(iterator.Value)
+		}
+		if strings.HasPrefix(key, ftPrefix) {
+			result.FT[key[len(ftPrefix):]] = utility.BigIntBytesToStr(iterator.Value)
+		}
+		if strings.HasPrefix(key, nftPrefix) {
+			ids := strings.Split(key[len(nftPrefix):], ":")
+			if 2 == len(ids) {
+				nft := types.NFTID{
+					SetId: ids[0],
+					Id:    ids[1],
+				}
+				result.NFT = append(result.NFT, nft)
+			}
+		}
 	}
 
-	if 0 == len(nftSet.OccupiedID) {
-		nftSet.OccupiedID = nil
-	}
-
-	return &nftSet
+	return result
 }

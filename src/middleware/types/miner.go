@@ -20,16 +20,29 @@ type Miner struct {
 	Id           []byte `json:"id,omitempty"`
 	PublicKey    []byte `json:"publicKey,omitempty"`
 	VrfPublicKey []byte `json:"vrfPublicKey,omitempty"`
-
+	ApplyHeight  uint64
+	// 当前状态
+	Status byte
 	// 提案者 还是验证者
 	Type byte `json:"type,omitempty"`
 
 	// 质押数
-	Stake uint64 `json:"stake,omitempty"`
+	Stake uint64
+}
 
-	ApplyHeight uint64
-	AbortHeight uint64 `json:"-"`
-
+type MinerInfo struct {
+	Id           []byte `json:"id,omitempty"`
+	PublicKey    []byte `json:"publicKey,omitempty"`
+	VrfPublicKey []byte `json:"vrfPublicKey,omitempty"`
+	ApplyHeight  uint64
 	// 当前状态
 	Status byte
+	// 提案者 还是验证者
+	Type byte `json:"type,omitempty"`
+}
+
+func (miner *Miner) GetMinerInfo() MinerInfo {
+	info := MinerInfo{Id: miner.Id, PublicKey: miner.PublicKey, VrfPublicKey: miner.VrfPublicKey, ApplyHeight: miner.ApplyHeight, Status: miner.Status, Type: miner.Type}
+
+	return info
 }

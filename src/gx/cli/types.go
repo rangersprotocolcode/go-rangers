@@ -108,7 +108,6 @@ func NewMortGageFromMiner(miner *types.Miner) *MortGage {
 	mg := &MortGage{
 		Stake:       miner.Stake,
 		ApplyHeight: miner.ApplyHeight,
-		AbortHeight: miner.AbortHeight,
 		Type:        t,
 	}
 	return mg
@@ -116,7 +115,7 @@ func NewMortGageFromMiner(miner *types.Miner) *MortGage {
 
 type NodeInfo struct {
 	ID           string     `json:"id"`
-	Balance      float64    `json:"balance"`
+	Balance      string     `json:"balance"`
 	Status       string     `json:"status"`
 	WGroupNum    int        `json:"w_group_num"`
 	AGroupNum    int        `json:"a_group_num"`

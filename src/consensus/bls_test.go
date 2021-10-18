@@ -105,8 +105,8 @@ func runSignAndVerifyOnce(test *testing.T) {
 }
 
 func TestMockGroupSign(test *testing.T) {
-	for i := 0; i < 1000; i++ {
-		groupSignAndVerify(10)
+	for i := 0; i < 1; i++ {
+		groupSignAndVerify(3, []string{"0x043b1e81d607ab0cd11fa5050437f15d3fbc074d422640686f8c6f4473473c63ebc4e43f0a5faa75216b3d62c0326bf11c33f0c8847d9dc68bded297e28d7cc0a88114f89b10266958149b3d9dc3fb85601e30332636e44d85f00ed2de368e0db8", "0x04e7254f4b44e77255b8e36e23c4586a71089f115b4529811ac71d306dfee91a24e8856c63714bd66f6339c2305e5d29e5f7adfdef58adb5f0e74c957f22fb9c7548bd8da5c8ed43ea9803473ce09eec2beb16d1ef593d98f70d6c63f9042a8eb1", "0x04c0814a21657f55b954012e376402020d03653d4db35dc6e66b815b543590f49c5818c359f345447042a266c89cc8fbeab6f78d3d8a33904a8f564ec685e5e7527baa9329ba1bc8344d947f405bba23a271b5fef8780203b37ab8bf4bbc1cc395"})
 	}
 }
 
@@ -123,8 +123,8 @@ type testMinerInfo struct {
 	ID groupsig.ID
 }
 
-func groupSignAndVerify(groupMemberNum uint64) {
-	groupMemberList := createGroupMembers(groupMemberNum)
+func groupSignAndVerify(groupMemberNum uint64, pks []string) {
+	groupMemberList := createGroupMembers(groupMemberNum, pks)
 	threshold := int(math.Ceil(float64(groupMemberNum*51) / 100))
 
 	mockGenSharePiece(threshold, groupMemberList)
@@ -150,12 +150,13 @@ func groupSignAndVerify(groupMemberNum uint64) {
 	}
 }
 
-func createGroupMembers(groupMemberNum uint64) []*testMinerInfo {
+func createGroupMembers(groupMemberNum uint64, pks []string) []*testMinerInfo {
 	groupMemberList := make([]*testMinerInfo, 0)
 	var i uint64 = 0
 	for ; i < groupMemberNum; i++ {
 		miner := testMinerInfo{}
-		miner.AccountPrivateKey = common.GenerateKey("")
+		//miner.AccountPrivateKey = common.GenerateKey("")
+		miner.AccountPrivateKey = *common.HexStringToSecKey(pks[i])
 		id := miner.AccountPrivateKey.GetPubKey().GetID()
 		miner.ID.Deserialize(id[:])
 

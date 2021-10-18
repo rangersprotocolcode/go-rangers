@@ -26,17 +26,6 @@ import (
 	"com.tuntun.rocket/node/src/utility"
 )
 
-type AddBlockOnChainSituation string
-
-const (
-	Sync                  AddBlockOnChainSituation = "sync"
-	NewBlock              AddBlockOnChainSituation = "newBlock"
-	FutureBlockCache      AddBlockOnChainSituation = "futureBlockCache"
-	DependGroupBlock      AddBlockOnChainSituation = "dependGroupBlock"
-	LocalGenerateNewBlock AddBlockOnChainSituation = "localGenerateNewBlock"
-	MergeFork             AddBlockOnChainSituation = "mergeFork"
-)
-
 type AddBlockResult int8
 
 const (
@@ -44,7 +33,8 @@ const (
 	AddBlockSucc              AddBlockResult = 0
 	BlockExisted              AddBlockResult = 1
 	BlockTotalQnLessThanLocal AddBlockResult = 2
-	Forking                   AddBlockResult = 3
+	NoPreOnChain              AddBlockResult = 3
+	DependOnGroup             AddBlockResult = 4
 	ValidateBlockOk           AddBlockResult = 100
 )
 
@@ -215,7 +205,7 @@ func (gh *GroupHeader) GenHash() common.Hash {
 	//bt, _ := gh.BeginTime.MarshalBinary()
 	//buf.Write(bt)
 	buf.Write(gh.MemberRoot.Bytes())
-	buf.Write(common.Uint64ToByte(gh.CreateHeight))
+	buf.Write(utility.UInt64ToByte(gh.CreateHeight))
 	buf.WriteString(gh.Extends)
 	return common.BytesToHash(common.Sha256(buf.Bytes()))
 }
@@ -254,9 +244,15 @@ type TransferData struct {
 }
 
 type NFTID struct {
-	SetId string `json:"setId,omitempty"`
+	SetId    string `json:"setId,omitempty"`
+	Id       string `json:"id,omitempty"`
+	Data     string `json:"data,omitempty"`
+	Property string `json:"property,omitempty"`
+}
+
+type FTID struct {
 	Id    string `json:"id,omitempty"`
-	Data  string `json:"data,omitempty"`
+	Value string `json:"value,omitempty"`
 }
 
 //提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链
@@ -312,7 +308,7 @@ func (txJson TxJson) ToTransaction() Transaction {
 
 	//tx from coiner cal hash by layer2
 	//tx from coiner sign make sign nil
-	if tx.Type == TransactionTypeCoinDepositAck || tx.Type == TransactionTypeFTDepositAck || tx.Type == TransactionTypeNFTDepositAck {
+	if tx.Type == TransactionTypeCoinDepositAck || tx.Type == TransactionTypeFTDepositAck || tx.Type == TransactionTypeNFTDepositAck || tx.Type == TransactionTypeERC20Binding {
 		tx.Hash = tx.GenHash()
 		return tx
 	}

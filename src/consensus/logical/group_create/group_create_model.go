@@ -299,7 +299,7 @@ func (collector *groupPubkeyCollector) tryGenGroupPubkey() {
 
 	// Find the most elements
 	var groupPubkey groupsig.Pubkey
-	var maxCnt = common.MinInt64
+	var maxCnt = utility.MinInt64
 	for _, v := range countMap {
 		if v.count > maxCnt {
 			maxCnt = v.count

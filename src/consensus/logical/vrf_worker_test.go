@@ -17,6 +17,7 @@
 package logical
 
 import (
+	"com.tuntun.rocket/node/src/consensus/model"
 	"com.tuntun.rocket/node/src/consensus/vrf"
 	cryptorand "crypto/rand"
 	"fmt"
@@ -24,6 +25,18 @@ import (
 	"math/big"
 	"testing"
 )
+
+func TestCalcPotentialProposal(t *testing.T) {
+	param := model.ConsensusParam{
+		PotentialProposalIndex: 30,
+		PotentialProposal:      3,
+		PotentialProposalMax:   8,
+	}
+
+	fmt.Println(calcPotentialProposal(20, param))  // 6
+	fmt.Println(calcPotentialProposal(7, param))   // 3
+	fmt.Println(calcPotentialProposal(200, param)) // 8
+}
 
 func TestBigInt(t *testing.T) {
 	t.Log(max256, max256.String(), max256.FloatString(10))
@@ -73,4 +86,11 @@ func TestVrfValueRatio(t *testing.T) {
 	rat := vrfValueRatio(vrf.VRFProve(b))
 	f, e := rat.Float64()
 	fmt.Printf("%v,%v\n", f, e)
+}
+
+func TestBigIntBytes(t *testing.T) {
+	a := []byte{0, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+	bigA := big.NewInt(0).SetBytes(a)
+	b := bigA.Bytes()
+	fmt.Printf("%v\n", b)
 }

@@ -31,6 +31,9 @@ type ftDepositExecutor struct {
 type nftDepositExecutor struct {
 }
 
+type erc20BindingExecutor struct {
+}
+
 func (this *coinDepositExecutor) BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	return true, ""
 }
@@ -56,4 +59,14 @@ func (this *nftDepositExecutor) BeforeExecute(tx *types.Transaction, header *typ
 //NFT充值确认
 func (this *nftDepositExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	return service.NFTDeposit(accountdb, transaction)
+}
+
+
+func (this *erc20BindingExecutor) BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	return true, ""
+}
+
+//NFT充值确认
+func (this *erc20BindingExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	return service.ERC20Binding(accountdb, transaction)
 }

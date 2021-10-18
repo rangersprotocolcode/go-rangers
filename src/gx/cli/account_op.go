@@ -76,7 +76,7 @@ type MinerRaw struct {
 	BSk   string
 	VrfPk string
 	VrfSk string
-	ID    [32]byte
+	ID    []byte
 }
 
 func getAccountByPrivateKey(pk string) Account {

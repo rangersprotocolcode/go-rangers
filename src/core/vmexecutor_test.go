@@ -102,11 +102,13 @@ func getTestBlockHeader() *types.BlockHeader {
 }
 
 func TestVMExecutorAll(t *testing.T) {
-	fs := []func(*testing.T){testVMExecutorFeeFail, testVMExecutorCoinDeposit, testVMExecutorFtDepositExecutor,
+	fs := []func(*testing.T){
+		testVMExecutorFeeFail, testVMExecutorCoinDeposit, testVMExecutorFtDepositExecutor,
 		testVMExecutorNFTDepositExecutor, testVMExecutorNFTDepositExecutorWithAppId, testVMExecutorPublishFTSet,
 		testVMExecutorPublishFTSetError, testVMExecutorPublishNFTSet, testVMExecutorPublishNFTSetError,
 		testVMExecutorMintFT, testVMExecutorMintFTError, testVMExecutorMintFTGoodAndEvil, testVMExecutorMintNFT,
-		testVMExecutorMintNFTWithoutLimit,testVMExecutorMintNFTWithoutLimitGoodAndEvil,
+		testVMExecutorMintNFTWithoutLimit, testVMExecutorMintNFTWithoutLimitGoodAndEvil,
+		testVMExecutorJackPot,
 	}
 
 	for i, f := range fs {
@@ -124,7 +126,7 @@ func vmExecutorSetup(name string) {
 	service.InitService()
 	setup(name)
 	executor.InitExecutors()
-	service.InitRewardCalculator(blockChainImpl, groupChainImpl)
+	service.InitRewardCalculator(blockChainImpl, groupChainImpl, SyncProcessor)
 }
 
 func testFee(kind int32, t *testing.T) {
@@ -158,9 +160,7 @@ func testVMExecutorFeeFail(t *testing.T) {
 	kinds := []int32{types.TransactionTypeOperatorEvent, types.TransactionTypeWithdraw, types.TransactionTypeMinerApply,
 		types.TransactionTypeMinerAdd, types.TransactionTypeMinerRefund, types.TransactionTypePublishFT, types.TransactionTypePublishNFTSet,
 		types.TransactionTypeMintFT, types.TransactionTypeMintNFT, types.TransactionTypeShuttleNFT, types.TransactionTypeUpdateNFT,
-		types.TransactionTypeApproveNFT, types.TransactionTypeRevokeNFT, types.TransactionTypeAddStateMachine, types.TransactionTypeUpdateStorage,
-		types.TransactionTypeStartSTM, types.TransactionTypeStopSTM, types.TransactionTypeUpgradeSTM,
-		types.TransactionTypeQuitSTM, types.TransactionTypeImportNFT,
+		types.TransactionTypeApproveNFT, types.TransactionTypeRevokeNFT,
 	}
 
 	for _, kind := range kinds {
@@ -168,9 +168,10 @@ func testVMExecutorFeeFail(t *testing.T) {
 	}
 
 }
+
 var (
-	leveldb             *db.LDBDatabase
-	triedb              account.AccountDatabase
+	leveldb *db.LDBDatabase
+	triedb  account.AccountDatabase
 )
 
 func getTestAccountDB() *account.AccountDB {
@@ -182,7 +183,6 @@ func getTestAccountDB() *account.AccountDB {
 	accountdb, _ := account.NewAccountDB(common.Hash{}, triedb)
 	return accountdb
 }
-
 
 func clean() {
 	os.RemoveAll("storage0")
@@ -197,7 +197,7 @@ func setup(id string) {
 	logger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
 	service.InitMinerManager()
-	service.InitRefundManager(groupChainImpl)
+	service.InitRefundManager(groupChainImpl, SyncProcessor)
 }
 
 func teardown(id string) {

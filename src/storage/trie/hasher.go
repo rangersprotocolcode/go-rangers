@@ -17,7 +17,7 @@
 package trie
 
 import (
-	"com.tuntun.rocket/node/src/storage/sha3"
+	"com.tuntun.rocket/node/src/common/sha3"
 	"hash"
 	"sync"
 

@@ -23,13 +23,12 @@ import (
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/binary"
 	"encoding/json"
 	"fmt"
-	"strconv"
 	"time"
 )
 
@@ -94,7 +93,7 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor.tempTx = tempTxLDB
 	gameExecutor.recover()
 
-	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
+	//notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.write)
 	notify.BUS.Subscribe(notify.CoinProxyNotify, gameExecutor.coinProxyHandler)
 	notify.BUS.Subscribe(notify.WrongTxNonce, gameExecutor.wrongTxNonceHandler)
@@ -125,116 +124,6 @@ func (executor *GameExecutor) recover() {
 	executor.logger.Warnf("end recover")
 }
 
-func (executor *GameExecutor) read(msg notify.Message) {
-	message, ok := msg.(*notify.ClientTransactionMessage)
-	if !ok {
-		executor.logger.Errorf("blockReqHandler:Message assert not ok!")
-		return
-	}
-	executor.logger.Debugf("rcv message: %v", message)
-	txRaw := message.Tx
-	//if err := service.GetTransactionPool().VerifyTransactionHash(&txRaw); err != nil {
-	//	txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
-	//	response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
-	//	go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
-	//	return
-	//}
-
-	var result string
-	sourceString := txRaw.Source
-	source := common.HexToAddress(sourceString)
-	gameId := txRaw.Target
-	switch txRaw.Type {
-
-	// 查询账户余额
-	case types.TransactionTypeOperatorBalance:
-		result = service.GetBalance(source)
-		executor.logger.Debugf("balance,addr: %s, result: %s", sourceString, result)
-		break
-
-		// 查询主链币
-	case types.TransactionTypeGetCoin:
-		result = service.GetCoinBalance(source, txRaw.Data)
-		break
-
-		// 查询所有主链币
-	case types.TransactionTypeGetAllCoin:
-		result = service.GetAllCoinInfo(source)
-		break
-
-		// 查询FT
-	case types.TransactionTypeFT:
-		result = service.GetFTInfo(source, txRaw.Data)
-		break
-
-		// 查询用户所有FT
-	case types.TransactionTypeAllFT:
-		result = service.GetAllFT(source)
-		break
-
-		//查询特定NFT
-	case types.TransactionTypeNFT:
-		var id types.NFTID
-		err := json.Unmarshal([]byte(txRaw.Data), &id)
-		if nil == err {
-			result = service.GetNFTInfo(id.SetId, id.Id, gameId)
-		}
-		break
-
-		// 查询账户下某个游戏的所有NFT
-	case types.TransactionTypeNFTListByAddress:
-		result = service.GetAllNFT(source, gameId)
-		break
-
-		// 查询NFTSet信息
-	case types.TransactionTypeNFTSet:
-		result = service.GetNFTSet(txRaw.Data)
-		break
-
-	case types.TransactionTypeFTSet:
-		result = service.GetFTSet(txRaw.Data)
-		break
-
-	case types.TransactionTypeNFTCount:
-		param := make(map[string]string, 0)
-		json.Unmarshal([]byte(txRaw.Data), &param)
-
-		result = strconv.Itoa(service.GetNFTCount(param["address"], param["setId"], ""))
-		break
-
-	case types.TransactionTypeNFTList:
-		param := make(map[string]string, 0)
-		json.Unmarshal([]byte(txRaw.Data), &param)
-		result = service.GetAllNFTBySetId(param["address"], param["setId"])
-		break
-
-	case types.TransactionTypeNFTGtZero:
-		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
-		nftList := service.NFTManagerInstance.GetNFTListByAddress(source, "", accountDB)
-		resultMap := make(map[string]int, 0)
-		for _, nft := range nftList {
-			value, ok := resultMap[nft.SetID]
-			if ok {
-				value++
-			} else {
-				value = 1
-			}
-			resultMap[nft.SetID] = value
-		}
-
-		bytes, _ := json.Marshal(resultMap)
-		result = string(bytes)
-		break
-	}
-
-	responseId := txRaw.SocketRequestId
-
-	// reply to the client
-	go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
-
-	return
-}
-
 func (executor *GameExecutor) write(msg notify.Message) {
 	message, ok := msg.(*notify.ClientTransactionMessage)
 	if !ok {
@@ -259,7 +148,8 @@ func (executor *GameExecutor) wrongTxNonceHandler(msg notify.Message) {
 	}
 
 	executor.logger.Warnf("process wrong nonce: %d, reason: %s", cpn.Nonce, cpn.Msg)
-	tx := types.Transaction{Type: types.TransactionTypeWrongTxNonce}
+	tx := types.Transaction{Type: types.TransactionTypeWrongTxNonce, RequestId: cpn.Nonce}
+	tx.Hash = common.BytesToHash(common.Sha256(utility.UInt64ToByte(tx.RequestId)))
 	writeMessage := notify.ClientTransactionMessage{Nonce: cpn.Nonce, Tx: tx}
 	executor.writeChan <- writeMessage
 }
@@ -278,7 +168,7 @@ func (executor *GameExecutor) onBlockAddSuccess(message notify.Message) {
 	count := 0
 	for _, tx := range transactions {
 		count++
-		executor.tempTx.Delete(common.Uint64ToByte(tx.RequestId))
+		executor.tempTx.Delete(utility.UInt64ToByte(tx.RequestId))
 	}
 	msg += fmt.Sprintf(", deleted %d txs", count)
 }
@@ -333,54 +223,39 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
 	go executor.saveTempTx(txRaw)
 
-	accountDB := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
+	accountDB, height := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
 	if nil == accountDB {
 		return
 	}
-	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor")
+	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
 
 	if types.TransactionTypeWrongTxNonce == txRaw.Type {
+		executor.sendTransaction(&txRaw)
 		return
 	}
 
 	if err := service.GetTransactionPool().VerifyTransaction(&txRaw); err != nil {
-		response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
-		go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
 		return
 	}
 
-	executor.runTransaction(accountDB, txRaw)
-
-	//result, execMessage := executor.runTransaction(accountDB, txRaw)
-	//
-	//if 0 == len(message.UserId) {
-	//	return
-	//}
-	//
-	//// reply to the client
-	//var response []byte
-	//if result {
-	//	response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
-	//} else {
-	//	response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
-	//}
-	//go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+	executor.runTransaction(accountDB, height, txRaw)
 }
 
 func (executor *GameExecutor) saveTempTx(txRaw types.Transaction) {
 	txBytes, _ := types.MarshalTransaction(&txRaw)
-	executor.tempTx.Put(common.Uint64ToByte(txRaw.RequestId), txBytes)
+	executor.tempTx.Put(utility.UInt64ToByte(txRaw.RequestId), txBytes)
 }
 
-func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw types.Transaction) (bool, string) {
+func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, height uint64, txRaw types.Transaction) (bool, string) {
 	txhash := txRaw.Hash.String()
 	executor.logger.Debugf("run tx. hash: %s", txhash)
+	defer executor.sendTransaction(&txRaw)
 
 	if executor.isExisted(txRaw) {
 		executor.logger.Errorf("tx is existed: hash: %s", txhash)
 		return false, "Tx Is Existed"
 	}
-	defer executor.sendTransaction(&txRaw)
+
 
 	processor := executors.GetTxExecutor(txRaw.Type)
 	if nil == processor {
@@ -388,23 +263,29 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw
 	}
 	context := make(map[string]interface{})
 	context["gameExecutor"] = 1
+	context["chain"] = blockChainImpl
+	context["situation"] = "gameExecutor"
 
 	message := ""
 	result := true
 
 	start := time.Now()
-	defer executor.logger.Debugf("finish tx. result: %t, message: %s, cost time : %v, txhash: %s, requestId: %d", result, message, time.Since(start), txhash, txRaw.RequestId)
+	defer func() {
+		executor.logger.Debugf("finish tx. result: %t, message: %s, cost time : %v, txhash: %s, requestId: %d", result, message, time.Since(start), txhash, txRaw.RequestId)
+	}()
 
 	result, message = processor.BeforeExecute(&txRaw, nil, accountDB, context)
 	if !result {
 		executor.logger.Errorf("finish tx. hash: %s, failed. not enough max", txhash)
 		return result, message
 	}
-
+	accountDB.Prepare(txRaw.Hash, common.Hash{}, 0)
 	snapshot := accountDB.Snapshot()
-	result, message = processor.Execute(&txRaw, nil, accountDB, context)
+	result, message = processor.Execute(&txRaw, &types.BlockHeader{Height: height, CurTime: utility.GetTime()}, accountDB, context)
 	if !result {
 		accountDB.RevertToSnapshot(snapshot)
+	} else if txRaw.Source != "" {
+		accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
 	}
 
 	// 特殊处理返回
@@ -436,6 +317,14 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, txRaw
 func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {
 	if ok, err := service.GetTransactionPool().AddTransaction(tx); err != nil || !ok {
 		executor.logger.Errorf("Add tx error:%s", err.Error())
+		transaction := types.Transaction{Type: types.TransactionTypeWrongTxNonce, Data: tx.Hash.Hex(), RequestId: tx.RequestId}
+		transaction.Hash = common.BytesToHash(common.Sha256(tx.Hash.Bytes()))
+		ok, err = service.GetTransactionPool().AddTransaction(&transaction)
+		if err == nil {
+			executor.logger.Errorf("Add tx again no error,  %t %v", ok, transaction)
+		} else {
+			executor.logger.Errorf("Add tx error:%s", err.Error())
+		}
 		return
 	}
 
@@ -445,3 +334,190 @@ func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {
 func (executor *GameExecutor) isExisted(tx types.Transaction) bool {
 	return service.GetTransactionPool().IsExisted(tx.Hash)
 }
+
+// read method in mimer do not return
+//func (executor *GameExecutor) read(msg notify.Message) {
+//	message, ok := msg.(*notify.ClientTransactionMessage)
+//	if !ok {
+//		executor.logger.Errorf("blockReqHandler:Message assert not ok!")
+//		return
+//	}
+//	executor.logger.Debugf("rcv message: %v", message)
+//	txRaw := message.Tx
+//	//if err := service.GetTransactionPool().VerifyTransactionHash(&txRaw); err != nil {
+//	//	txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
+//	//	response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
+//	//	go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+//	//	return
+//	//}
+//
+//	var result string
+//	sourceString := txRaw.Source
+//	source := common.HexToAddress(sourceString)
+//	gameId := txRaw.Target
+//	switch txRaw.Type {
+//
+//	// 查询账户余额
+//	case types.TransactionTypeOperatorBalance:
+//		param := make(map[string]string, 0)
+//		json.Unmarshal([]byte(txRaw.Data), &param)
+//		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
+//		result = service.GetBalance(source, accountDB)
+//		break
+//
+//		// 查询主链币
+//	case types.TransactionTypeGetCoin:
+//		result = service.GetCoinBalance(source, txRaw.Data)
+//		break
+//
+//		// 查询所有主链币
+//	case types.TransactionTypeGetAllCoin:
+//		result = service.GetAllCoinInfo(source)
+//		break
+//
+//		// 查询FT
+//	case types.TransactionTypeFT:
+//		result = service.GetFTInfo(source, txRaw.Data)
+//		break
+//
+//		// 查询用户所有FT
+//	case types.TransactionTypeAllFT:
+//		result = service.GetAllFT(source)
+//		break
+//
+//		//查询特定NFT
+//	case types.TransactionTypeNFT:
+//		var id types.NFTID
+//		err := json.Unmarshal([]byte(txRaw.Data), &id)
+//		if nil == err {
+//			result = service.GetNFTInfo(id.SetId, id.Id, gameId)
+//		}
+//		break
+//
+//		// 查询账户下某个游戏的所有NFT
+//	case types.TransactionTypeNFTListByAddress:
+//		result = service.GetAllNFT(source, gameId)
+//		break
+//
+//		// 查询NFTSet信息
+//	case types.TransactionTypeNFTSet:
+//		result = service.GetNFTSet(txRaw.Data)
+//		break
+//
+//	case types.TransactionTypeFTSet:
+//		result = service.GetFTSet(txRaw.Data)
+//		break
+//
+//	case types.TransactionTypeNFTCount:
+//		param := make(map[string]string, 0)
+//		json.Unmarshal([]byte(txRaw.Data), &param)
+//
+//		result = strconv.Itoa(service.GetNFTCount(param["address"], param["setId"], ""))
+//		break
+//
+//	case types.TransactionTypeNFTList:
+//		param := make(map[string]string, 0)
+//		json.Unmarshal([]byte(txRaw.Data), &param)
+//		result = service.GetAllNFTBySetId(param["address"], param["setId"])
+//		break
+//
+//	case types.TransactionTypeNFTGtZero:
+//		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
+//		nftList := service.NFTManagerInstance.GetNFTListByAddress(source, "", accountDB)
+//		resultMap := make(map[string]int, 0)
+//		for _, nft := range nftList {
+//			value, ok := resultMap[nft.SetID]
+//			if ok {
+//				value++
+//			} else {
+//				value = 1
+//			}
+//			resultMap[nft.SetID] = value
+//		}
+//
+//		bytes, _ := json.Marshal(resultMap)
+//		result = string(bytes)
+//		break
+//		//查询CHAIN ID
+//	case types.TransactionTypeGetChainId:
+//		result = service.GetChainId()
+//		break
+//		//查询最新块
+//	case types.TransactionTypeGetBlockNumber:
+//		param := make(map[string]string, 0)
+//		json.Unmarshal([]byte(txRaw.Data), &param)
+//		result = getBlockNumber(param["height"], param["hash"])
+//		break
+//		//根据高度或者HASH查询block
+//	case types.TransactionTypeGetBlock:
+//		param := make(map[string]string, 0)
+//		json.Unmarshal([]byte(txRaw.Data), &param)
+//		result = getBlock(param["height"], param["hash"])
+//		break
+//		//查询NONCE
+//	case types.TransactionTypeGetNonce:
+//		param := make(map[string]string, 0)
+//		json.Unmarshal([]byte(txRaw.Data), &param)
+//		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
+//		result = service.GetNonce(source, accountDB)
+//		break
+//		//查询交易
+//	case types.TransactionTypeGetTx:
+//		param := make(map[string]string, 0)
+//		json.Unmarshal([]byte(txRaw.Data), &param)
+//		result = getTransaction(common.HexToHash(param["txHash"]))
+//		break
+//		//查询收据
+//	case types.TransactionTypeGetReceipt:
+//		param := make(map[string]string, 0)
+//		json.Unmarshal([]byte(txRaw.Data), &param)
+//		result = service.GetReceipt(common.HexToHash(param["txHash"]))
+//		break
+//		//查询交易数量
+//	case types.TransactionTypeGetTxCount:
+//		param := make(map[string]string, 0)
+//		json.Unmarshal([]byte(txRaw.Data), &param)
+//		result = getTransactionCount(param["height"], param["hash"])
+//		break
+//		//根据索引查询块中交易
+//	case types.TransactionTypeGetTxFromBlock:
+//		param := make(map[string]string, 0)
+//		json.Unmarshal([]byte(txRaw.Data), &param)
+//		result = getTransactionFromBlock(param["height"], param["hash"], param["index"])
+//		break
+//		//查询存储信息
+//	case types.TransactionTypeGetStorage:
+//		param := make(map[string]string, 0)
+//		json.Unmarshal([]byte(txRaw.Data), &param)
+//		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
+//		result = service.GetStorageAt(param["address"], param["key"], accountDB)
+//		break
+//		//查询CODE
+//	case types.TransactionTypeGetCode:
+//		param := make(map[string]string, 0)
+//		json.Unmarshal([]byte(txRaw.Data), &param)
+//		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
+//		result = service.GetCode(param["address"], accountDB)
+//		break
+//
+//	case types.TransactionTypeGetPastLogs:
+//		param := make(map[string]interface{}, 0)
+//		json.Unmarshal([]byte(txRaw.Data), &param)
+//		from := param["fromBlock"].(uint64)
+//		to := param["toBlock"].(uint64)
+//		var addressList []common.Address
+//		for _, address := range param["address"].([]string) {
+//			addressList = append(addressList, common.HexToAddress(address))
+//		}
+//		topics := param["topics"].([][]string)
+//		result = getPastLogs(from, to, addressList, topics)
+//		break
+//	}
+//
+//	responseId := txRaw.SocketRequestId
+//
+//	// reply to the client
+//	go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
+//
+//	return
+//}

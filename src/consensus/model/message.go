@@ -22,13 +22,10 @@ import (
 	"com.tuntun.rocket/node/src/consensus/base"
 	"com.tuntun.rocket/node/src/consensus/groupsig"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/utility"
 	"strconv"
 	"time"
 )
-
-type Hasher interface {
-	GenHash() common.Hash
-}
 
 //数据签名结构
 type SignInfo struct {
@@ -39,7 +36,7 @@ type SignInfo struct {
 	version int32
 }
 
-func NewSignInfo(sk groupsig.Seckey, id groupsig.ID, hasher Hasher) (SignInfo, bool) {
+func NewSignInfo(sk groupsig.Seckey, id groupsig.ID, hasher common.Hasher) (SignInfo, bool) {
 	result := SignInfo{}
 	if !sk.IsValid() || !id.IsValid() {
 		return result, false
@@ -103,7 +100,7 @@ type CreateGroupPingMessage struct {
 func (msg *CreateGroupPingMessage) GenHash() common.Hash {
 	buf := msg.FromGroupID.Serialize()
 	buf = append(buf, []byte(msg.PingID)...)
-	buf = append(buf, common.Uint64ToByte(msg.BaseHeight)...)
+	buf = append(buf, utility.UInt64ToByte(msg.BaseHeight)...)
 	return base.Data2CommonHash(buf)
 }
 
@@ -216,7 +213,7 @@ func (msg *GroupInitedMessage) GenHash() common.Hash {
 	buf.Write(msg.GroupHash.Bytes())
 	buf.Write(msg.GroupID.Serialize())
 	buf.Write(msg.GroupPK.Serialize())
-	buf.Write(common.Uint64ToByte(msg.CreateHeight))
+	buf.Write(utility.UInt64ToByte(msg.CreateHeight))
 	buf.Write(msg.ParentGroupSign.Serialize())
 	buf.Write(msg.MemberMask)
 	return base.Data2CommonHash(buf.Bytes())

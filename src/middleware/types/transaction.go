@@ -61,8 +61,13 @@ const (
 	TransactionTypeRevokeNFT      = 123 // 回收NFT
 	TransactionTypeTransferNFT    = 124 // 状态机给用户转NFT
 	TransactionTypeUpdateNFT      = 125 // 更新NFT数据
-	TransactionTypeBatchUpdateNFT = 126 // 批量更新NFT数据
-	TransactionTypeImportNFT      = 128 // 从外部导入NFT/NFTSet
+	TransactionTypeBatchUpdateNFT = 126 // 批量更新NFT数据 deprecated
+
+	TransactionTypeLockResource   = 129 // 锁定 nft/ft/bnt
+	TransactionTypeUnLockResource = 130 // 解锁 nft/ft/bnt
+	TransactionTypeComboNFT       = 131 // 组合nft
+
+	TransactionTypeETHTX = 188 //以太坊的交易改造而成的交易
 
 	// 状态机通知客户端
 	TransactionTypeNotify          = 301 // 通知某个用户
@@ -73,19 +78,34 @@ const (
 	TransactionTypeCoinDepositAck = 201 // 充值
 	TransactionTypeFTDepositAck   = 202 // 充值
 	TransactionTypeNFTDepositAck  = 203 // 充值
-
-	// 状态机管理
-	TransactionTypeAddStateMachine = 901 // 新增状态机
-	TransactionTypeUpdateStorage   = 902 // 刷新状态机存储
-	TransactionTypeStartSTM        = 903 // 重启状态机
-	TransactionTypeStopSTM         = 904 // 关闭状态机
-	TransactionTypeUpgradeSTM      = 905 // 更新状态机（停机->删除本地镜像->下载新镜像->启动）
-	TransactionTypeQuitSTM         = 906 // 关服（停机->删除本地镜像->删除配置项）
+	TransactionTypeERC20Binding   = 204 // 绑定ERC-20
 
 	// 系统管理
 	TransactionTypeSetExchangeRate = 801 // 新增汇率表
 
 	TransactionTypeWrongTxNonce = 404
+
+	// 奖池
+	TransactionTypeLotteryCreate = 501 // 创建奖池
+	TransactionTypeJackpot       = 502 // 抽奖
+
+	//合约交易
+	TransactionTypeContract = 200
+
+	//查询接口
+	TransactionTypeGetChainId     = 601 //查询CHAIN ID
+	TransactionTypeGetBlockNumber = 602 //查询块高
+	TransactionTypeGetBlock       = 603 //根据高度或者hash查询块
+	TransactionTypeGetNonce       = 604 //查询NONCE
+	TransactionTypeGetTx          = 605 //查询交易
+	TransactionTypeGetReceipt     = 606 //查询收据
+	TransactionTypeGetTxCount     = 607 //查询交易数量
+	TransactionTypeGetTxFromBlock = 608 //根据索引查询块中交易
+	TransactionTypeGetStorage     = 609 //查询存储信息
+	TransactionTypeGetCode        = 610 //查询CODE
+
+	TransactionTypeGetPastLogs = 611
+	TransactionTypeCallVM      = 612
 )
 
 type Transaction struct {

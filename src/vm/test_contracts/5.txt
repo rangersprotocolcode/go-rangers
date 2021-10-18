@@ -1,0 +1,77 @@
+1.初始信息
+合约原文:
+pragma solidity 0.5.6;
+
+import "./IERC20.sol";
+
+contract Wallet {
+    address internal token = 0x6A47c06BCfabc079e4c3b196A47f3B5A2fA998B9;
+    address internal hotWallet = 0xeAd5853f4D54d0718C568a589f0087C5eb385645;
+    int i = 0;
+
+    constructor() public {
+        i = i+1;
+        // send all tokens from this contract to hotwallet
+        //IERC20(token).transfer(
+        //    hotWallet,
+        //    IERC20(token).balanceOf(address(this))
+        //);
+        // selfdestruct to receive gas refund and reset nonce to 0
+        selfdestruct(address(0x0));
+    }
+}
+
+contract Fabric {
+    event Deployed(address addr, uint256 salt);
+
+    function createContract(uint256 salt) public {
+        // get wallet init_code
+        bytes memory bytecode = type(Wallet).creationCode;
+        address newAddr;
+        assembly {
+            let codeSize := mload(bytecode) // get size of init_bytecode
+            newAddr := create2(
+                0, // 0 wei
+                add(bytecode, 32), // the bytecode itself starts at the second slot. The first slot contains array length
+                codeSize, // size of init_code
+                salt // salt from function arguments
+            )
+        }
+        emit Deployed(newAddr, salt);
+    }
+}
+
+GasLimit:3000000
+GasPrice:1
+
+2.合约编译后的字节码：
+"608060405234801561001057600080fd5b50610223806100206000396000f3fe608060405234801561001057600080fd5b506004361061002b5760003560e01c80639db8d7d514610030575b600080fd5b61005c6004803603602081101561004657600080fd5b810190808035906020019092919050505061005e565b005b60606040518060200161007090610106565b6020820181038252601f19601f820116604052509050600081518381602085016000f59150507fb03c53b28e78a88e31607a27e1fa48234dce28d5d9d9ec7b295aeb02e674a1e18184604051808373ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1681526020018281526020019250505060405180910390a1505050565b60e5806101138339019056fe6080604052736a47c06bcfabc079e4c3b196a47f3b5a2fa998b96000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555073ead5853f4d54d0718c568a589f0087c5eb385645600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff160217905550600060025534801560bd57600080fd5b50600160025401600281905550600073ffffffffffffffffffffffffffffffffffffffff16fffea165627a7a72305820819896a9eac1488592d8328ef846692c4cb6c760d247250e56013d5ca20d6e760029"
+
+
+3.创建合约
+hash: 0x45d91818cf66e1417f401bf6cc93f79a56ce9279ab91e73da08a21189287dbcf
+消耗的GAS：109559
+Contain opcode:[POP PUSH1 MSTORE CALLVALUE DUP1 ISZERO JUMPI JUMPDEST RETURN PUSH2 CODECOPY]
+
+4.调用合约的输入
+调用方法：createContract
+hash: 0x98c6e2d8cd5a4101160801096613b1b7ef16d027ef65a0bc9c3c8e09d63dbe85
+参数：1个，数字1
+abi编码：0x9db8d7d50000000000000000000000000000000000000000000000000000000000000001
+返回：无
+log：
+[
+	{
+		"from": "0x81f74558Af07F4DDa77D851A1c86b6E6b17a64d4",
+		"topic": "0xb03c53b28e78a88e31607a27e1fa48234dce28d5d9d9ec7b295aeb02e674a1e1",
+		"event": "Deployed",
+		"args": {
+			"0": "0xCd2D9c5E9F9746B00A94f599Ba7Bc5Fe4107d9Ed",
+			"1": "1",
+			"addr": "0xCd2D9c5E9F9746B00A94f599Ba7Bc5Fe4107d9Ed",
+			"salt": "1"
+		}
+	}
+]
+消耗的GAS:102230
+Contain opcode:[LOG1 CALLDATASIZE ADD DUP4 CODECOPY PUSH20 JUMP AND EXP MSTORE CALLVALUE SWAP1 SWAP3 SWAP2 STOP CREATE2 SLOAD PUSH1 POP EQ DUP3 NOT MLOAD LT PUSH2 PUSH4 MUL OR SSTORE SELFDESTRUCT DUP1 ISZERO JUMPI JUMPDEST SHR PUSH32 DUP5 CALLDATALOAD SUB DUP2 DUP6]

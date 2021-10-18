@@ -23,14 +23,21 @@ import (
 	"strings"
 )
 
-func (c *accountObject) getAllFT(db AccountDatabase) map[string]*big.Int {
+func (c *accountObject) getAllFT(db AccountDatabase, isBNT bool) map[string]*big.Int {
 	c.cachedLock.Lock()
 	defer c.cachedLock.Unlock()
 
 	result := make(map[string]*big.Int)
 	for key, value := range c.cachedStorage {
 		if strings.HasPrefix(key, common.FTPrefix) {
-			result[key[2:]] = new(big.Int).SetBytes(value)
+			name := key[len(common.FTPrefix):]
+			if isBNT {
+				if strings.HasPrefix(name, common.BNTPrefix) {
+					result[common.FormatBNTName(name)] = new(big.Int).SetBytes(value)
+				}
+			} else if !strings.HasPrefix(name, common.BNTPrefix) {
+				result[name] = new(big.Int).SetBytes(value)
+			}
 		}
 	}
 
@@ -39,8 +46,16 @@ func (c *accountObject) getAllFT(db AccountDatabase) map[string]*big.Int {
 		ftName := utility.BytesToStr(iterator.Key)
 		_, contains := c.cachedStorage[ftName]
 		if !contains {
-			result[ftName[2:]] = new(big.Int).SetBytes(iterator.Value)
 			c.cachedStorage[ftName] = iterator.Value
+
+			name := ftName[len(common.FTPrefix):]
+			if isBNT {
+				if strings.HasPrefix(name, common.BNTPrefix) {
+					result[common.FormatBNTName(name)] = new(big.Int).SetBytes(iterator.Value)
+				}
+			} else if !strings.HasPrefix(name, common.BNTPrefix) {
+				result[name] = new(big.Int).SetBytes(iterator.Value)
+			}
 		}
 
 	}
@@ -54,6 +69,10 @@ func (c *accountObject) getFT(db AccountDatabase, name string) *big.Int {
 		return nil
 	}
 	return new(big.Int).SetBytes(value)
+}
+
+func (c *accountObject) AddBNT(db AccountDatabase, amount *big.Int, name string) bool {
+	return c.AddFT(db, amount, common.GenerateBNTName(name))
 }
 
 func (c *accountObject) AddFT(db AccountDatabase, amount *big.Int, name string) bool {
@@ -72,6 +91,10 @@ func (c *accountObject) AddFT(db AccountDatabase, amount *big.Int, name string) 
 		return c.SetFT(db, new(big.Int).Add(raw, amount), name)
 	}
 
+}
+
+func (c *accountObject) SubBNT(db AccountDatabase, amount *big.Int, name string) (*big.Int, bool) {
+	return c.SubFT(db, amount, common.GenerateBNTName(name))
 }
 
 func (c *accountObject) SubFT(db AccountDatabase, amount *big.Int, name string) (*big.Int, bool) {

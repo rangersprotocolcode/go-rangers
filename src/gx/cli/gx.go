@@ -23,13 +23,14 @@ import (
 	"com.tuntun.rocket/node/src/consensus/model"
 	cnet "com.tuntun.rocket/node/src/consensus/net"
 	"com.tuntun.rocket/node/src/core"
+	"com.tuntun.rocket/node/src/eth_rpc"
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/statemachine"
+	"com.tuntun.rocket/node/src/vm"
 	"encoding/json"
 	"fmt"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -74,13 +75,13 @@ func (gx *GX) Run() {
 	pprofPort := app.Flag("pprof", "enable pprof").Default("23333").Uint()
 
 	//控制台
-	consoleCmd := app.Command("console", "start RocketProtocol console")
+	consoleCmd := app.Command("console", "start RangersProtocol console")
 	showRequest := consoleCmd.Flag("show", "show the request json").Short('v').Bool()
 	remoteHost := consoleCmd.Flag("host", "the node host address to connect").Short('i').String()
 	remotePort := consoleCmd.Flag("port", "the node host port to connect").Short('p').Default("8101").Int()
-	rpcPort := consoleCmd.Flag("rpcport", "RocketProtocol console will listen at the port for wallet service").Short('r').Default("0").Int()
+	rpcPort := consoleCmd.Flag("rpcport", "RangersProtocol console will listen at the port for wallet service").Short('r').Default("0").Int()
 	//版本号
-	versionCmd := app.Command("version", "show RocketProtocol version")
+	versionCmd := app.Command("version", "show RangersProtocol version")
 	// mine
 	mineCmd := app.Command("miner", "miner start")
 	// rpc解析
@@ -112,7 +113,7 @@ func (gx *GX) Run() {
 	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString(instanceSection, indexKey, ""))
 
 	walletManager = newWallets()
-	fmt.Println("Welcome to be a rocketProtocol miner!")
+	fmt.Println("Welcome to be a RangersProtocol miner!")
 	switch command {
 	case versionCmd.FullCommand():
 		fmt.Println("GX Version:", GXVersion)
@@ -160,14 +161,12 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 
 	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr)
 	service.InitService()
+	vm.InitVM()
 
-	err := core.InitCore(consensus.NewConsensusHelper(minerInfo.ID))
+	err := core.InitCore(consensus.NewConsensusHelper(minerInfo.ID), *sk, minerInfo.ID.GetHexString())
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
 	}
-
-	//todo: 刷新requestId
-	statemachine.InitSTMManager(common.GlobalConf.GetString("docker", "config", ""), common.ToHex(gx.account.Miner.ID[:]))
 
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
 	if !ok {
@@ -183,7 +182,9 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 	if !ok {
 		panic("Init miner start miner error!")
 	}
-	syncChainInfo()
+	syncChainInfo(*sk, minerInfo.ID.GetHexString())
+
+	eth_rpc.InitEthMsgHandler()
 	gx.init = true
 }
 
@@ -197,31 +198,27 @@ func (gx *GX) getAccountInfo(sk string) {
 	gx.account = getAccountByPrivateKey(sk)
 }
 
-func syncChainInfo() {
-	fmt.Println("Syncing block and group info from RocketProtocol net.Waiting...")
-	core.InitGroupSyncer()
-	core.InitBlockSyncer()
+func syncChainInfo(privateKey common.PrivateKey, id string) {
+	fmt.Println("Syncing block and group info from RangersProtocol net. Waiting...")
+	core.StartSync()
 	go func() {
 		timer := time.NewTimer(time.Second * 10)
 		for {
 			<-timer.C
-			if core.BlockSyncer.IsInit() {
-				break
-			} else {
-				var candicateHeight uint64
-				if core.BlockSyncer != nil {
-					core.BlockSyncer.Lock.Lock("trySync")
-					_, _, candicateHeight, _ = core.BlockSyncer.GetCandidateForSync()
-					core.BlockSyncer.Lock.Unlock("trySync")
-				}
-				localBlockHeight := core.GetBlockChain().Height()
-				jsonObject := types.NewJSONObject()
-				jsonObject.Put("candidateHeight", candicateHeight)
-				jsonObject.Put("localHeight", localBlockHeight)
-				middleware.HeightLogger.Debugf(jsonObject.TOJSONString())
-				fmt.Printf("Sync candidate block height:%d,local block height:%d\n", candicateHeight, localBlockHeight)
-				timer.Reset(time.Second * 5)
+
+			var candidateHeight uint64
+			if core.SyncProcessor != nil {
+				candidate := core.SyncProcessor.GetCandidateInfo()
+				candidateHeight = candidate.Height
 			}
+			localBlockHeight := core.GetBlockChain().Height()
+			jsonObject := types.NewJSONObject()
+			jsonObject.Put("candidateHeight", candidateHeight)
+			jsonObject.Put("localHeight", localBlockHeight)
+			if candidateHeight > 0 {
+				middleware.HeightLogger.Debugf(jsonObject.TOJSONString())
+			}
+			timer.Reset(time.Second * 5)
 		}
 		fmt.Println("Sync data finished!")
 		fmt.Println("Start Mining...")

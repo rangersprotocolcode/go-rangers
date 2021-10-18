@@ -21,25 +21,20 @@ import (
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/statemachine"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
-	"encoding/json"
 	"errors"
-	"strconv"
-	"time"
 )
 
-func (chain *blockChain) consensusVerify(source string, b *types.Block) (types.AddBlockResult, bool) {
+func (chain *blockChain) consensusVerify(b *types.Block) (types.AddBlockResult, bool) {
 	if b == nil {
 		return types.AddBlockFailed, false
 	}
 
 	if !chain.hasPreBlock(*b.Header) {
-		logger.Warnf("coming block %s,%d has no pre on local chain.Forking...", b.Header.Hash.String(), b.Header.Height)
+		logger.Warnf("coming block %s,%d has no pre on local chain.", b.Header.Hash.String(), b.Header.Height)
 		chain.futureBlocks.Add(b.Header.PreHash, b)
-		go chain.forkProcessor.requestChainPieceInfo(source, chain.latestBlock.Height)
-		return types.Forking, false
+		return types.NoPreOnChain, false
 	}
 
 	if chain.queryBlockHeaderByHash(b.Header.Hash) != nil {
@@ -48,7 +43,7 @@ func (chain *blockChain) consensusVerify(source string, b *types.Block) (types.A
 
 	if check, err := consensusHelper.CheckProveRoot(b.Header); !check {
 		logger.Errorf("checkProveRoot fail, err=%v", err.Error())
-		return types.AddBlockFailed, false
+		return types.DependOnGroup, false
 	}
 
 	groupValidateResult, err := chain.validateGroupSig(b.Header)
@@ -64,7 +59,7 @@ func (chain *blockChain) consensusVerify(source string, b *types.Block) (types.A
 }
 
 // 这里判断处理分叉
-func (chain *blockChain) addBlockOnChain(source string, coming *types.Block, situation types.AddBlockOnChainSituation) types.AddBlockResult {
+func (chain *blockChain) addBlockOnChain(coming *types.Block) types.AddBlockResult {
 	topBlock := chain.latestBlock
 	comingHeader := coming.Header
 
@@ -81,7 +76,6 @@ func (chain *blockChain) addBlockOnChain(source string, coming *types.Block, sit
 		logger.Errorf("Fail to VerifyCastingBlock, reason code:%d \n", verifyResult)
 		if verifyResult == 2 {
 			logger.Warnf("coming block has no pre on local chain.Forking...")
-			go chain.forkProcessor.requestChainPieceInfo(source, chain.latestBlock.Height)
 		}
 		return types.AddBlockFailed
 	}
@@ -94,45 +88,37 @@ func (chain *blockChain) addBlockOnChain(source string, coming *types.Block, sit
 
 	// 比本地链要差，丢掉
 	if comingHeader.TotalQN < topBlock.TotalQN {
-		if situation == types.Sync {
-			logger.Warnf("coming less than local.Forking...coming block:hash=%v, preH=%v, height=%v,totalQn:%d Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d", comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN)
-			go chain.forkProcessor.requestChainPieceInfo(source, chain.latestBlock.Height)
-		}
-
 		return types.BlockTotalQnLessThanLocal
 	}
 
+	commonAncestor := chain.queryBlockHeaderByHash(comingHeader.PreHash)
+	if commonAncestor == nil {
+		logger.Warnf("Block chain query nil block!Hash:%s", comingHeader.PreHash)
+		return types.AddBlockFailed
+	}
 	// 比本地链好，要
 	if comingHeader.TotalQN > topBlock.TotalQN {
-		commonAncestor := chain.queryBlockHeaderByHash(comingHeader.PreHash)
-		logger.Warnf("coming greater than local. Removing and Forking...coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
+		logger.Warnf("coming qn great than local. Remove from common ancestor and add...coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
 			comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
-
 		chain.removeFromCommonAncestor(commonAncestor)
-		return chain.addBlockOnChain(source, coming, situation)
+		return chain.addBlockOnChain(coming)
 	}
 
 	// 不是同一块，但是QN与本地链相同，需要二次判断
-	if comingHeader.TotalQN == topBlock.TotalQN {
-		commonAncestor := chain.queryBlockHeaderByHash(comingHeader.PreHash)
-		if chain.compareValue(commonAncestor, comingHeader) {
-			if situation == types.Sync {
-				logger.Warnf("coming equal to local. but sync. coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
-					comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
-				go chain.forkProcessor.requestChainPieceInfo(source, chain.latestBlock.Height)
-			}
-			return types.BlockTotalQnLessThanLocal
-		}
-
-		// 要了
-		logger.Warnf("coming equal to local. Still Removing and Forking...coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
-			comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
-		chain.removeFromCommonAncestor(commonAncestor)
-		return chain.addBlockOnChain(source, coming, situation)
+	localNextBlock := chain.QueryBlockHeaderByHeight(commonAncestor.Height+1, true)
+	if localNextBlock == nil {
+		logger.Warnf("Block chain query nil block!Height:%s", commonAncestor.Height+1)
+		return types.AddBlockFailed
+	}
+	if chainPvGreatThanRemote(localNextBlock, comingHeader) {
+		return types.BlockTotalQnLessThanLocal
 	}
 
-	go chain.forkProcessor.requestChainPieceInfo(source, chain.latestBlock.Height)
-	return types.Forking
+	// 要了
+	logger.Warnf("coming pv great to local. Remove from common ancestor and add...coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
+		comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
+	chain.removeFromCommonAncestor(commonAncestor)
+	return chain.addBlockOnChain(coming)
 }
 
 func (chain *blockChain) executeTransaction(block *types.Block) (bool, *account.AccountDB, types.Receipts) {
@@ -268,11 +254,10 @@ func (chain *blockChain) updateLastBlock(state *account.AccountDB, block *types.
 		return false
 	}
 
-	chain.currentBlock = block
 	chain.latestBlock = header
 	chain.requestIds = header.RequestIds
 
-	service.AccountDBManagerInstance.SetLatestStateDB(state, block.Header.RequestIds)
+	service.AccountDBManagerInstance.SetLatestStateDB(state, block.Header.RequestIds, block.Header.Height)
 	logger.Debugf("Update latestStateDB:%s height:%d", header.StateTree.Hex(), header.Height)
 
 	return true
@@ -285,7 +270,8 @@ func (chain *blockChain) updateVerifyHash(block *types.Block) {
 }
 
 func (chain *blockChain) updateTxPool(block *types.Block, receipts types.Receipts) {
-	go chain.notifyReceipts(receipts)
+	//go chain.notifyReceipts(receipts)
+	//go chain.notifyVMEvents(receipts)
 	chain.transactionPool.MarkExecuted(receipts, block.Transactions, block.Header.EvictedTxs)
 }
 
@@ -296,95 +282,11 @@ func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block) {
 		block := value.(*types.Block)
 		logger.Debugf("Get block from future blocks,hash:%s,height:%d", block.Header.Hash.String(), block.Header.Height)
 		//todo 这里为了避免死锁只能调用这个方法，但是没办法调用CheckProveRoot全量账本验证了
-		chain.addBlockOnChain("", block, types.FutureBlockCache)
+		chain.addBlockOnChain(block)
 		return
 	}
-	if BlockSyncer != nil {
-		topBlockInfo := TopBlockInfo{Hash: chain.latestBlock.Hash, TotalQn: chain.latestBlock.TotalQN, Height: chain.latestBlock.Height, PreHash: chain.latestBlock.PreHash}
-		go BlockSyncer.sendTopBlockInfoToNeighbor(topBlockInfo)
-	}
-
-	go chain.notifyWallet(remoteBlock)
-	//check txs
-	go chain.publishSet(remoteBlock.Transactions)
-}
-
-// 块上链成功之后，调用Connector
-func (chain *blockChain) publishSet(txs []*types.Transaction) {
-	if 0 == len(txs) {
-		return
-	}
-
-	for _, tx := range txs {
-		appId := tx.Source
-
-		// 直接发交易的nftSet publish
-		if tx.Type == types.TransactionTypePublishNFTSet {
-			var nftSet types.NFTSet
-			if err := json.Unmarshal([]byte(tx.Data), &nftSet); nil != err {
-				logger.Errorf("Unmarshal data error:%s", err.Error())
-				continue
-			}
-
-			set := service.NFTManagerInstance.GenerateNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.MaxSupply, nftSet.CreateTime)
-			service.NFTManagerInstance.SendPublishNFTSetToConnector(set)
-			continue
-		}
-
-		// 直接发交易的ftSet publish
-		if tx.Type == types.TransactionTypePublishFT {
-			var ftSetMap map[string]string
-			if err := json.Unmarshal([]byte(tx.Data), &ftSetMap); nil != err {
-				logger.Errorf("Unmarshal data error:%s", err.Error())
-				continue
-			}
-
-			appId := tx.Source
-			createTime := ftSetMap["createTime"]
-			ftSet := service.FTManagerInstance.GenerateFTSet(ftSetMap["name"], ftSetMap["symbol"], appId, ftSetMap["maxSupply"], appId, createTime, 1)
-			service.FTManagerInstance.SendPublishFTSetToConnector(ftSet)
-			continue
-		}
-
-		if tx.Type == types.TransactionTypeImportNFT {
-			appId := tx.Source
-			if !statemachine.STMManger.IsAppId(appId) {
-				txLogger.Errorf("fail to import NFTSetAndNFT, appId: %s", appId)
-				continue
-			}
-
-			var data map[string]string
-			err := json.Unmarshal([]byte(tx.Data), &data)
-			if err != nil {
-				txLogger.Errorf("fail to import NFTSetAndNFT, error: %s", err)
-				continue
-			}
-
-			service.NFTManagerInstance.ImportNFTSet(data["setId"], data["contract"], data["chainType"])
-		}
-
-		// 状态机内调用
-		if 0 != len(tx.SubTransactions) {
-			for _, user := range tx.SubTransactions {
-				if user.Address == "StartFT" {
-					ftSet := service.FTManagerInstance.GenerateFTSet(user.Assets["name"], user.Assets["symbol"], user.Assets["gameId"], user.Assets["totalSupply"], user.Assets["owner"], user.Assets["createTime"], 1)
-					service.FTManagerInstance.SendPublishFTSetToConnector(ftSet)
-					continue
-				}
-
-				if user.Address == "PublishNFTSet" {
-					maxSupplyString := user.Assets["maxSupply"]
-					maxSupply, err := strconv.ParseUint(maxSupplyString, 10, 64)
-					if err != nil {
-						logger.Errorf("Publish nft set! MaxSupply bad format:%s", maxSupplyString)
-						continue
-					}
-					appId := user.Assets["appId"]
-					nftSet := service.NFTManagerInstance.GenerateNFTSet(user.Assets["setId"], user.Assets["name"], user.Assets["symbol"], appId, appId, maxSupply, user.Assets["createTime"])
-					service.NFTManagerInstance.SendPublishNFTSetToConnector(nftSet)
-				}
-			}
-		}
+	if SyncProcessor != nil {
+		go SyncProcessor.broadcastChainInfo(chain.latestBlock)
 	}
 }
 
@@ -406,9 +308,6 @@ func (chain *blockChain) validateGroupSig(bh *types.BlockHeader) (bool, error) {
 
 func (chain *blockChain) removeFromCommonAncestor(commonAncestor *types.BlockHeader) {
 	logger.Debugf("removeFromCommonAncestor hash:%s height:%d latestheight:%d", commonAncestor.Hash.Hex(), commonAncestor.Height, chain.latestBlock.Height)
-
-	consensusLogger.Infof("%v#%s#%d,%d", "ForkAdjustRemoveCommonAncestor", commonAncestor.Hash.ShortS(), commonAncestor.Height, chain.latestBlock.Height)
-
 	for height := chain.latestBlock.Height; height > commonAncestor.Height; height-- {
 		header := chain.QueryBlockHeaderByHeight(height, true)
 		if header == nil {
@@ -422,47 +321,6 @@ func (chain *blockChain) removeFromCommonAncestor(commonAncestor *types.BlockHea
 		chain.remove(block)
 		logger.Debugf("Remove local block hash:%s, height %d", header.Hash.String(), header.Height)
 	}
-}
-
-// 找到commonAncestor在本地链的下一块，然后与remoteHeader比较
-func (chain *blockChain) compareValue(commonAncestor *types.BlockHeader, remoteHeader *types.BlockHeader) bool {
-	if commonAncestor == nil || chain.latestBlock == nil {
-		logger.Debugf("Debug2:compareValue commonAncestor:%v,chain.latestBlock:%v", commonAncestor, chain.latestBlock)
-		time.Sleep(time.Second * 3)
-	}
-	if commonAncestor.Height == chain.latestBlock.Height {
-		return false
-	}
-
-	remoteValue := consensusHelper.VRFProve2Value(remoteHeader.ProveValue)
-	logger.Debugf("coming hash:%s,coming value is:%v", remoteHeader.Hash.String(), remoteValue)
-	logger.Debugf("compareValue hash:%s height:%d latestHeight:%d", commonAncestor.Hash.Hex(), commonAncestor.Height, chain.latestBlock.Height)
-
-	var target *types.BlockHeader
-	for height := commonAncestor.Height + 1; height <= chain.latestBlock.Height; height++ {
-		logger.Debugf("compareValue queryBlockHeaderByHeight height:%d ", height)
-		header := chain.QueryBlockHeaderByHeight(height, true)
-		// 跳块时，高度会不连续
-		if header == nil {
-			logger.Debugf("compareValue queryBlockHeaderByHeight nil !height:%d ", height)
-			continue
-		}
-
-		target = header
-		break
-	}
-
-	localValue := consensusHelper.VRFProve2Value(target.ProveValue)
-	logger.Debugf("local hash:%s,local value is:%v", target.Hash.String(), localValue)
-
-	result := localValue.Cmp(remoteValue)
-
-	// 又相等了，说明同一个人在同一个高度出了多块，可能有问题
-	if result == 0 {
-		return target.CurTime.After(remoteHeader.CurTime)
-	}
-
-	return result > 0
 }
 
 func dumpTxs(txs []*types.Transaction, blockHeight uint64) {

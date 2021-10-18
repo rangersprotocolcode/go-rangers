@@ -1,0 +1,75 @@
+1.初始信息
+合约原文:
+pragma solidity ^0.5.17;
+
+contract Helloworld {
+    int256 i = 0;
+    address g_addr;
+    
+    //int256 add sub mul div--------------------------------
+    function add(int a,int b,int c,int d) public
+    {
+        i = i+a;
+        i = i-b;
+        i = i*c;
+        i = i/d;
+    }
+    
+    function geti() public view returns(int256)
+    {
+        return i;
+    }
+    
+    //address --------------------------------
+    function setaddr(address addr) public
+    {
+        g_addr = addr;
+    }
+    
+    function getaddrbalance() public returns(uint)
+    {
+        return g_addr.balance;
+    }
+    
+    function getaddrbalanceview() public view returns(uint)
+    {
+        return g_addr.balance;
+    }
+}
+GasLimit:3000000
+GasPrice:1
+
+2.合约编译后的字节码：
+"60806040526000805534801561001457600080fd5b50610283806100246000396000f3fe608060405234801561001057600080fd5b50600436106100575760003560e01c80630d56562c1461005c5780632beaa90f146100a05780635b3357d2146100be5780636271f50e146100dc578063d4b6f21c14610128575b600080fd5b61009e6004803603602081101561007257600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190505050610146565b005b6100a861018a565b6040518082815260200191505060405180910390f35b6100c6610193565b6040518082815260200191505060405180910390f35b610126600480360360808110156100f257600080fd5b81019080803590602001909291908035906020019092919080359060200190929190803590602001909291905050506101d4565b005b61013061020d565b6040518082815260200191505060405180910390f35b80600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555050565b60008054905090565b6000600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff1631905090565b836000540160008190555082600054036000819055508160005402600081905550806000548161020057fe5b0560008190555050505050565b6000600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163190509056fea265627a7a72315820d99c4e269ce7a3842ef1d4ed91588b73c5883a822de11215136baf18c0761dcc64736f6c63430005110032",
+
+
+3.创建合约
+hash: 0xeb05426ce491b8de38a511a1a6f0787f7cef3534f15ca547d670ee73bcc25491
+消耗gas:129583
+
+4.调用合约的输入
+调用方法：setaddr
+hash: 0x6c13b19cafaf824c0e2bdb36175d56107352b8ae316ea6eaeea1595f2e2c12c7
+参数：1个参数--0xf89eebcc07e820f5a8330f52111fa51dd9dfb925
+abi编码：0x0d56562c000000000000000000000000f89eebcc07e820f5a8330f52111fa51dd9dfb925
+消耗gas:21079
+
+5.给0xf89eebcc07e820f5a8330f52111fa51dd9dfb925充值5个eth
+
+6.调用合约的输入
+hash：0xc24c2d922290cbf963238d7f2201523e3d3c504b901872f7d8dbfff442d9aae6
+调用方法：getaddrbalance
+abi编码：0x5b3357d2
+调用结果：
+消耗的GA：21079
+
+7.调用合约的输入
+hash：call0xB64A5EcE9Bc1E48d9FB895301a1BA1Abc30Abda50x78cBeC3c8eA0749C880e92E2aF52209C7FEF66600xd4b6f21c
+调用方法：getaddrbalanceview
+abi编码：0xd4b6f21c
+调用结果：{
+	"0": "uint256: 5000000000000000000"
+}
+
+包含的OPCOD：
+PUSH1,MSTORE,DUP1,SSTORE,CALLVALUE,ISZERO,PUSH2,JUMPI,JUMPDEST,POP,CODECOPY,RETURN,CALLDATASIZE,LT,CALLDATALOAD,SHR,PUSH4,EQ,SUB,ADD,DUP2,PUSH20,AND,SWAP1,SWAP2,SWAP3,EXP,SLOAD,MUL,NOT,DUP4,OR,STOP,DIV,BALANCE,MLOAD,RETURN

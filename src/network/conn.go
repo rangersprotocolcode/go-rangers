@@ -229,7 +229,7 @@ func (base *baseConn) send(method []byte, target uint64, msg []byte, nonce uint6
 	}
 
 	base.sendChan <- base.loadMsg(header, msg)
-	base.logger.Debugf("send message. wsHeader: %v, body length: %d", header, len(msg))
+	p2pLogger.Debugf("send message. wsHeader: %v, body length: %d", header, len(msg))
 }
 
 //新的单播接口使用
@@ -242,7 +242,7 @@ func (base *baseConn) unicast(method []byte, strangerId []byte, msg []byte, nonc
 
 	//todo 这里流控方法的参数不一致，暂不使用流控
 	base.sendChan <- byteArray
-	base.logger.Debugf("unicast message. strangerId:%v,msg:%v,byte: %v", strangerId, msg, byteArray)
+	p2pLogger.Debugf("unicast message. strangerId:%v,msg:%v,byte: %v", strangerId, msg, byteArray)
 }
 
 // 构建网络消息
@@ -448,7 +448,9 @@ func (connectorConn *ConnectorConn) Send(msg []byte) {
 func (connectorConn *ConnectorConn) Init(ipPort string, logger log.Logger) {
 	connectorConn.doRcv = func(wsHeader wsHeader, body []byte) {
 		if !bytes.Equal(wsHeader.method, methodRcvFromCoinConnector) {
-			connectorConn.logger.Error("%s received wrong method. wsHeader: %v", connectorConn.path, wsHeader)
+			msg := fmt.Sprintf("%s received wrong method. wsHeader: %v", connectorConn.path, wsHeader)
+			connectorConn.logger.Error(msg)
+			connectorConn.sendWrongNonce(wsHeader.nonce, msg)
 			return
 		}
 		connectorConn.handleConnectorMessage(body, wsHeader.nonce)
@@ -471,13 +473,13 @@ func (connectorConn *ConnectorConn) handleConnectorMessage(data []byte, nonce ui
 	tx.RequestId = nonce
 	connectorConn.logger.Debugf("Rcv message from coiner.Tx info:%s", tx.ToTxJson().ToString())
 	if !types.CoinerSignVerifier.VerifyDeposit(txJson) {
-		msg := fmt.Sprintf("tx from coiner verify sign error! Tx Info: %s", txJson.ToString())
+		msg := fmt.Sprintf("tx from coiner verify sign error! Tx Info: %s", tx.ToTxJson().ToString())
 		connectorConn.logger.Infof(msg)
 		connectorConn.sendWrongNonce(nonce, msg)
 		return
 	}
 
-	if tx.Type == types.TransactionTypeCoinDepositAck || tx.Type == types.TransactionTypeFTDepositAck || tx.Type == types.TransactionTypeNFTDepositAck {
+	if tx.Type == types.TransactionTypeCoinDepositAck || tx.Type == types.TransactionTypeFTDepositAck || tx.Type == types.TransactionTypeNFTDepositAck || tx.Type == types.TransactionTypeERC20Binding {
 		msg := notify.CoinProxyNotifyMessage{Tx: tx}
 		notify.BUS.Publish(notify.CoinProxyNotify, &msg)
 	} else {

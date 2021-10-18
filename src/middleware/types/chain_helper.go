@@ -27,3 +27,9 @@ type GroupChainHelper interface {
 type BlockChainHelper interface {
 	QueryBlockHeaderByHeight(height interface{}, cache bool) *BlockHeader
 }
+
+type ForkHelper interface {
+	GetBlockHeader(height uint64) *BlockHeader
+	GetAvailableGroupsByMinerId(height uint64, minerId []byte) []*Group
+	GetGroupById(id []byte) *Group
+}

@@ -19,10 +19,8 @@ package service
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
-	"encoding/json"
 	"fmt"
 	"math/big"
 	"strings"
@@ -57,11 +55,11 @@ func (self *FTManager) GetFTSet(id string, accountDB *account.AccountDB) *types.
 	self.lock.RLock()
 	defer self.lock.RUnlock()
 
-	if !self.contains(id, accountDB) {
+	ftAddress := common.GenerateFTSetAddress(id)
+	if !accountDB.Exist(ftAddress) {
 		return nil
 	}
 
-	ftAddress := common.BytesToAddress(utility.StrToBytes(id))
 	ftSet := types.FTSet{ID: id,
 		Name:        utility.BytesToStr(accountDB.GetData(ftAddress, name)),
 		Symbol:      utility.BytesToStr(accountDB.GetData(ftAddress, symbol)),
@@ -82,7 +80,7 @@ func (self *FTManager) GetFTSet(id string, accountDB *account.AccountDB) *types.
 
 func (self *FTManager) GenerateFTSet(name, symbol, appId, total, owner, createTime string, kind byte) *types.FTSet {
 	// 生成id
-	id := self.genID(appId, symbol)
+	id := fmt.Sprintf("%s-%s", appId, symbol)
 
 	// 生成ftSet
 	ftSet := &types.FTSet{
@@ -117,16 +115,16 @@ func (self *FTManager) PublishFTSet(ftSet *types.FTSet, accountDB *account.Accou
 	}
 
 	// checkId
-	if 0 == len(ftSet.AppId) || 0 == len(symbol) || strings.Contains(ftSet.AppId, "-") || strings.Contains(ftSet.Symbol, "-") || ftSet.AppId == "official" {
+	if 0 == len(ftSet.AppId) || 0 == len(ftSet.Symbol) || strings.Contains(ftSet.AppId, "-") || strings.Contains(ftSet.Symbol, "-") || ftSet.AppId == common.Official {
 		return "appId or symbol wrong", false
 	}
 
 	// 检查id是否已存在
-	if self.contains(ftSet.ID, accountDB) {
+	ftAddress := common.GenerateFTSetAddress(ftSet.ID)
+	if accountDB.Exist(ftAddress) {
 		return ftSet.ID, false
 	}
 
-	ftAddress := common.BytesToAddress(utility.StrToBytes(ftSet.ID))
 	accountDB.SetData(ftAddress, name, utility.StrToBytes(ftSet.Name))
 	accountDB.SetData(ftAddress, symbol, utility.StrToBytes(ftSet.Symbol))
 	accountDB.SetData(ftAddress, appId, utility.StrToBytes(ftSet.AppId))
@@ -151,11 +149,10 @@ func (self *FTManager) SubFTSet(triedOwner, ftId string, amount *big.Int, accoun
 	defer self.lock.Unlock()
 
 	// check ftId
-	if !self.contains(ftId, accountDB) {
+	ftAddress := common.GenerateFTSetAddress(ftId)
+	if !accountDB.Exist(ftAddress) {
 		return false
 	}
-
-	ftAddress := common.BytesToAddress(utility.StrToBytes(ftId))
 
 	// check owner
 	ftSetOwner := utility.BytesToStr(accountDB.GetData(ftAddress, owner))
@@ -178,10 +175,29 @@ func (self *FTManager) SubFTSet(triedOwner, ftId string, amount *big.Int, accoun
 	return true
 }
 
-func (self *FTManager) TransferFT(source string, ftId string, target string, supply string, accountDB *account.AccountDB) (string, *big.Int, bool) {
+func (self *FTManager) TransferBNT(source, bntId, target, supply string, accountDB *account.AccountDB) (string, *big.Int, bool) {
+	if 0 == len(bntId) || 0 == len(supply) {
+		return "", nil, true
+	}
+
+	balance := self.convert(supply)
+	left, ok := accountDB.SubFT(common.HexToAddress(source), bntId, balance)
+	if !ok {
+		return fmt.Sprintf("not enough bnt. ftId: %s, supply: %s", bntId, supply), nil, false
+	}
+
+	if accountDB.AddFT(common.HexToAddress(target), bntId, balance) {
+		return "success", left, true
+	} else {
+		return "overflow", nil, false
+	}
+}
+
+func (self *FTManager) TransferFT(source, ftId, target, supply string, accountDB *account.AccountDB) (string, *big.Int, bool) {
 	if 0 == len(ftId) || 0 == len(supply) {
 		return "", nil, true
 	}
+	// 检查ftId的格式 xxx-xxxx
 	ftInfo := strings.Split(ftId, "-")
 	if 2 != len(ftInfo) {
 		return fmt.Sprintf("invalid ftId: %s", ftId), nil, false
@@ -225,14 +241,6 @@ func (self *FTManager) MintFT(owner, ftId, target, supply string, accountDB *acc
 
 }
 
-func (self *FTManager) genID(appId, symbol string) string {
-	return fmt.Sprintf("%s-%s", appId, symbol)
-}
-
-func (self *FTManager) contains(id string, accountDB *account.AccountDB) bool {
-	return accountDB.Exist(common.BytesToAddress(utility.StrToBytes(id)))
-}
-
 func (self *FTManager) convert(value string) *big.Int {
 	supply, err := utility.StrToBigInt(value)
 	if err != nil {
@@ -240,33 +248,4 @@ func (self *FTManager) convert(value string) *big.Int {
 	}
 
 	return supply
-}
-
-func (self *FTManager) SendPublishFTSetToConnector(ftSet *types.FTSet) {
-	data := make(map[string]string, 7)
-	data["setId"] = ftSet.ID
-	data["name"] = ftSet.Name
-	data["symbol"] = ftSet.Symbol
-	data["maxSupply"] = utility.BigIntToStr(ftSet.MaxSupply)
-	data["creator"] = ftSet.AppId
-	data["owner"] = ftSet.Owner
-	data["createTime"] = ftSet.CreateTime
-
-	b, err := json.Marshal(data)
-	if err != nil {
-		txLogger.Error("json marshal err, err:%s", err.Error())
-		return
-	}
-
-	t := types.Transaction{Source: ftSet.AppId, Target: "", Data: string(b), Type: types.TransactionTypePublishFT, Time: ftSet.CreateTime}
-	t.Hash = t.GenHash()
-
-	msg, err := json.Marshal(t.ToTxJson())
-	if err != nil {
-		txLogger.Debugf("Json marshal tx json error:%s", err.Error())
-		return
-	}
-
-	txLogger.Tracef("After publish ft.Send msg to coiner:%s", t.ToTxJson().ToString())
-	go network.GetNetInstance().SendToCoinConnector(msg)
 }

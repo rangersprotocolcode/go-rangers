@@ -19,11 +19,17 @@ package account
 import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/trie"
 	"fmt"
 	"golang.org/x/crypto/sha3"
 	"math/big"
 	"sync"
+)
+
+const (
+	NFTSET_TYPE = 1
+	NFT_TYPE    = 2
 )
 
 var emptyCodeHash = sha3.Sum256(nil)
@@ -90,9 +96,9 @@ func (ao *accountObject) empty() bool {
 // Account is the consensus representation of accounts.
 // These objects are stored in the main account trie.
 type Account struct {
-	Nonce uint64
-	Root  common.Hash
-
+	Nonce                uint64
+	Root                 common.Hash
+	kind                 byte
 	NFTSetDefinitionHash []byte
 	Balance              *big.Int
 }
@@ -173,10 +179,15 @@ func (ao *accountObject) GetData(db AccountDatabase, key []byte) []byte {
 	if exists {
 		return value
 	}
+
 	// Otherwise load the value from the database
+	return ao.GetCommittedData(db, key)
+}
+
+func (ao *accountObject) GetCommittedData(db AccountDatabase, key []byte) []byte {
 	trie := ao.getTrie(db)
 	if nil == trie {
-		common.DefaultLogger.Errorf("Account Obj get date nil! address:%s,key:%s", ao.address.GetHexString(), common.ToHex(key))
+		accountLog.Errorf("Account Obj get date nil! address:%s,key:%s", ao.address.GetHexString(), common.ToHex(key))
 		return nil
 	}
 	value, err := trie.TryGet(key)
@@ -195,10 +206,15 @@ func (ao *accountObject) GetData(db AccountDatabase, key []byte) []byte {
 
 // SetData updates a value in account storage.
 func (ao *accountObject) SetData(db AccountDatabase, key []byte, value []byte) {
+	preValue := ao.GetData(db, key)
+	if 0 == bytes.Compare(value, preValue) {
+		return
+	}
+
 	ao.db.transitions = append(ao.db.transitions, storageChange{
 		account:  &ao.address,
 		key:      key,
-		prevalue: ao.GetData(db, key),
+		prevalue: preValue,
 	})
 	ao.setData(key, value)
 }
@@ -317,41 +333,6 @@ func (ao *accountObject) Address() common.Address {
 	return ao.address
 }
 
-func (ao *accountObject) nftSetDefinition(db AccountDatabase) []byte {
-	if ao.nftSet != nil {
-		return ao.nftSet
-	}
-	if bytes.Equal(ao.NFTSetDefinitionHash(), emptyCodeHash[:]) {
-		return nil
-	}
-	code, err := db.ContractCode(ao.addrHash, common.BytesToHash(ao.NFTSetDefinitionHash()))
-	if err != nil {
-		ao.setError(fmt.Errorf("can't load code hash %x: %v", ao.NFTSetDefinitionHash(), err))
-	}
-	ao.nftSet = code
-	return code
-}
-
-func (ao *accountObject) SetNFTSetDefinition(hash common.Hash, code []byte) {
-	prevCode := ao.nftSetDefinition(ao.db.db)
-	ao.db.transitions = append(ao.db.transitions, nftSetDefinitionChange{
-		account:  &ao.address,
-		prevhash: ao.NFTSetDefinitionHash(),
-		prev:     prevCode,
-	})
-	ao.setNFTSetDefinition(hash, code)
-}
-
-func (ao *accountObject) setNFTSetDefinition(hash common.Hash, code []byte) {
-	ao.nftSet = code
-	ao.data.NFTSetDefinitionHash = hash[:]
-	ao.dirtyNFTSet = true
-	if ao.onDirty != nil {
-		ao.onDirty(ao.Address())
-		ao.onDirty = nil
-	}
-}
-
 // DataIterator returns a new key-value iterator from a node iterator
 func (ao *accountObject) DataIterator(db AccountDatabase, prefix []byte) *trie.Iterator {
 	if ao.trie == nil {
@@ -360,12 +341,13 @@ func (ao *accountObject) DataIterator(db AccountDatabase, prefix []byte) *trie.I
 	return trie.NewIterator(ao.trie.NodeIterator(prefix))
 }
 
-func (ao *accountObject) IncreaseNonce() {
+func (ao *accountObject) IncreaseNonce() uint64 {
 	ao.db.transitions = append(ao.db.transitions, nonceChange{
 		account: &ao.address,
 		prev:    ao.data.Nonce,
 	})
 	ao.setNonce(ao.data.Nonce + 1)
+	return ao.data.Nonce
 }
 
 // setNFTSetDefinition update nonce in account storage.
@@ -396,4 +378,48 @@ func (ao *accountObject) Balance() *big.Int {
 
 func (ao *accountObject) Nonce() uint64 {
 	return ao.data.Nonce
+}
+
+func (ao *accountObject) IsNFT() bool {
+	return ao.data.kind == NFT_TYPE
+}
+
+func (ao *accountObject) getOrCreateLockResource(result map[string]*types.LockResource, key string) *types.LockResource {
+	lockResource := result[key]
+	if nil == lockResource {
+		lockResource = &types.LockResource{
+			Coin: make(map[string]string),
+			FT:   make(map[string]string),
+			NFT:  make([]types.NFTID, 0),
+		}
+		result[key] = lockResource
+	}
+
+	return lockResource
+}
+
+func (ao *accountObject) SetCode(codeHash common.Hash, code []byte) {
+	ao.SetNFTSetDefinition(codeHash, code)
+}
+
+func (ao *accountObject) CodeHash() []byte {
+	return ao.data.NFTSetDefinitionHash
+}
+
+func (ao *accountObject) Code(db AccountDatabase) []byte {
+	return ao.nftSetDefinition(db)
+}
+
+func (ao *accountObject) CodeSize(db AccountDatabase) int {
+	if ao.nftSet != nil {
+		return len(ao.nftSet)
+	}
+	if bytes.Equal(ao.CodeHash(), emptyCodeHash[:]) {
+		return 0
+	}
+	size, err := db.ContractCodeSize(ao.addrHash, common.BytesToHash(ao.CodeHash()))
+	if err != nil {
+		ao.setError(fmt.Errorf("can't load code size %x: %v", ao.CodeHash(), err))
+	}
+	return size
 }

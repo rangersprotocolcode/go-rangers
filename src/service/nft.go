@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
@@ -42,7 +41,7 @@ type NFTManager struct {
 }
 
 // 检查setId是否存在
-func (self *NFTManager) contains(setId string, accountDB *account.AccountDB) bool {
+func (self *NFTManager) Contains(setId string, accountDB *account.AccountDB) bool {
 	return accountDB.Exist(common.GenerateNFTSetAddress(setId))
 }
 
@@ -71,7 +70,7 @@ func (self *NFTManager) insertNewNFTSet(nftSet *types.NFTSet, db *account.Accoun
 	}
 
 	nftSetAddress := common.GenerateNFTSetAddress(nftSet.SetID)
-	db.SetNFTSetDefinition(nftSetAddress, nftSet.ToBlob())
+	db.SetNFTSetDefinition(nftSetAddress, nftSet.ToBlob(), nftSet.Owner)
 }
 
 // 获取NFTSet信息
@@ -83,7 +82,7 @@ func (self *NFTManager) GetNFTSet(setId string, accountDB *account.AccountDB) *t
 	return accountDB.GetNFTSet(setId)
 }
 
-func (self *NFTManager) GenerateNFTSet(setId, name, symbol, creator, owner string, maxSupply uint64, createTime string) *types.NFTSet {
+func (self *NFTManager) GenerateNFTSet(setId, name, symbol, creator, owner string, conditions types.NFTConditions, maxSupply uint64, createTime string) *types.NFTSet {
 	// 创建NFTSet
 	nftSet := &types.NFTSet{
 		SetID:      setId,
@@ -93,6 +92,7 @@ func (self *NFTManager) GenerateNFTSet(setId, name, symbol, creator, owner strin
 		Owner:      owner,
 		MaxSupply:  maxSupply,
 		CreateTime: createTime,
+		Conditions: conditions,
 	}
 
 	return nftSet
@@ -113,7 +113,7 @@ func (self *NFTManager) PublishNFTSet(nftSet *types.NFTSet, accountDB *account.A
 		return fmt.Sprintf("setId or maxSupply wrong, setId: %s, maxSupply: %d", nftSet.SetID, nftSet.MaxSupply), false
 	}
 
-	if strings.Contains(nftSet.SetID, ":") || self.contains(nftSet.SetID, accountDB) {
+	if strings.Contains(nftSet.SetID, ":") || self.Contains(nftSet.SetID, accountDB) {
 		return fmt.Sprintf("setId: %s, existed", nftSet.SetID), false
 	}
 
@@ -123,7 +123,7 @@ func (self *NFTManager) PublishNFTSet(nftSet *types.NFTSet, accountDB *account.A
 
 // L2创建NFT
 // 状态机调用
-func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner common.Address, accountDB *account.AccountDB) (string, bool) {
+func (self *NFTManager) MintNFT(nftSetOwner, appId, setId, id, data, createTime string, owner common.Address, accountDB *account.AccountDB) (string, bool) {
 	txLogger.Debugf("Mint NFT! appId: %s, setId: %s, id: %s, data: %s, createTime: %s, owner: %s", appId, setId, id, data, createTime, owner.String())
 	self.lock.Lock()
 	defer self.lock.Unlock()
@@ -135,19 +135,174 @@ func (self *NFTManager) MintNFT(appId, setId, id, data, createTime string, owner
 
 	// 检查setId是否存在
 	nftSet := accountDB.GetNFTSet(setId)
-	if nil == nftSet || nftSet.Owner != appId {
-		txLogger.Debugf("Mint nft! wrong setId or not setOwner! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, createTime, owner.String())
+	if nil == nftSet || 0 != strings.Compare(common.FormatHexString(nftSet.Owner), common.FormatHexString(nftSetOwner)) {
+		txLogger.Errorf("Mint nft! wrong setId or not setOwner! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, createTime, owner.String())
 		return "wrong setId or not setOwner", false
 	}
 
 	if nftSet.MaxSupply != 0 && uint64(len(nftSet.OccupiedID)) == nftSet.MaxSupply {
-		return "not enough nftSet", false
+		txLogger.Errorf("not enough nftSet: " + setId)
+		return fmt.Sprintf("not enough nftSet %s, MaxSupply: %d, Occupied: %d", setId, nftSet.MaxSupply, len(nftSet.OccupiedID)), false
 	}
 
-	return self.GenerateNFT(nftSet, appId, setId, id, data, appId, createTime, "", owner, nil, accountDB)
+	if 0 == len(appId) {
+		appId = nftSetOwner
+	}
+
+	// 定义了组合规则的
+	if !nftSet.Conditions.IsEmpty() {
+		msg, demand := self.checkNFTConditions(nftSet.Conditions, accountDB, setId, owner)
+		if nil == demand {
+			txLogger.Errorf(msg)
+			return msg, false
+		}
+
+		flag, message := accountDB.DestroyResource(owner, common.GenerateNFTSetAddress(setId), *demand)
+		if !flag {
+			txLogger.Errorf(message)
+			return message, false
+		}
+	}
+	return self.GenerateNFT(nftSet, appId, setId, id, data, nftSetOwner, createTime, "", owner, nil, accountDB)
 }
 
-func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data, creator, timeStamp, imported string, owner common.Address, fullData map[string]string, accountDB *account.AccountDB) (string, bool) {
+func (self *NFTManager) checkNFTConditions(nftConditions types.NFTConditions, accountDB *account.AccountDB, nftSetId string, owner common.Address) (string, *types.LockResource) {
+	demand := types.LockResource{}
+	if 0 != len(nftConditions.Balance) {
+		demand.Balance = nftConditions.Balance
+	}
+	if 0 != len(nftConditions.FT) {
+		demand.FT = nftConditions.FT
+	}
+	if 0 != len(nftConditions.Coin) {
+		demand.Coin = nftConditions.Coin
+	}
+	if 0 != len(nftConditions.NFT) {
+		demand.NFT = make([]types.NFTID, 0)
+		lockedResource := accountDB.GetLockedResourceByAddress(common.GenerateNFTSetAddress(nftSetId), owner)
+		if nil == lockedResource || 0 == len(lockedResource.NFT) {
+			return fmt.Sprintf("owner: %s has no lockedResource in NFTSet %s for conditions: %s", owner.GetHexString(), nftSetId, nftConditions.String()), nil
+		}
+
+		for setId, nftCondition := range nftConditions.NFT {
+			num := nftCondition.Num
+			if 0 >= num {
+				num = 1
+			}
+
+			found := 0
+			for i := 0; i < len(lockedResource.NFT); i++ {
+				lockedNFT := lockedResource.NFT[i]
+				if lockedNFT.SetId != setId {
+					continue
+				}
+
+				nft := accountDB.GetNFTById(setId, lockedNFT.Id)
+				if nil == nft {
+					continue
+				}
+
+				match := true
+				if 0 != len(nftCondition.Attribute) {
+					for property, conditionMap := range nftCondition.Attribute {
+						var valueString string
+						if strings.Contains(property, ":") {
+							list := strings.Split(property, ":")
+							if 2 != len(list) {
+								return fmt.Sprintf("bad conditions: %s for property: %s in NFTSet %s", nftConditions.String(), property, nftSetId), nil
+							}
+							valueString = nft.GetProperty(list[0], list[1])
+						} else {
+							valueString = nft.GetProperty(nft.AppId, property)
+						}
+
+						value, err := strconv.Atoi(valueString)
+						if err != nil {
+							continue
+						}
+
+						targetValue := strings.TrimSpace(conditionMap["value"])
+						switch strings.ToLower(conditionMap["operate"]) {
+						case "eq":
+							target, err := strconv.Atoi(targetValue)
+							if err != nil || value != target {
+								match = false
+							}
+							break
+						case "ne":
+							target, err := strconv.Atoi(targetValue)
+							if err != nil || value == target {
+								match = false
+							}
+						case "gt":
+							target, err := strconv.Atoi(targetValue)
+							if err != nil || value <= target {
+								match = false
+							}
+							break
+						case "lt":
+							target, err := strconv.Atoi(targetValue)
+							if err != nil || value >= target {
+								match = false
+							}
+							break
+						case "ge":
+							target, err := strconv.Atoi(targetValue)
+							if err != nil || value < target {
+								match = false
+							}
+							break
+						case "le":
+							target, err := strconv.Atoi(targetValue)
+							if err != nil || value > target {
+								match = false
+							}
+							break
+						case "between":
+							borders := targetValue[1 : len(targetValue)-1]
+							borderList := strings.Split(borders, ",")
+							if 2 != len(borderList) {
+								return fmt.Sprintf("bad conditions: %s for borders: %s in NFTSet %s", nftConditions.String(), borders, nftSetId), nil
+							}
+							border, err := strconv.Atoi(strings.TrimSpace(borderList[0]))
+							if err != nil || value < border {
+								match = false
+							}
+							border, err = strconv.Atoi(strings.TrimSpace(borderList[1]))
+							if err != nil || value > border {
+								match = false
+							}
+							break
+						default:
+							match = false
+						}
+						if !match {
+							break
+						}
+					}
+				}
+				if match {
+					demand.NFT = append(demand.NFT, types.NFTID{SetId: setId, Id: lockedNFT.Id})
+					found++
+					lockedResource.NFT = append(lockedResource.NFT[:i], lockedResource.NFT[i+1:]...)
+					i--
+				}
+			}
+
+			if num != found {
+				return fmt.Sprintf("owner: %s bad num: %d Vs found: %d for nftSet: %s in conditons: %s", owner.GetHexString(), num, found, nftSetId, nftConditions.String()), nil
+			}
+		}
+
+	}
+
+	if 0 == len(demand.Balance) && 0 == len(demand.FT) && 0 == len(demand.Coin) && 0 == len(demand.NFT) {
+		return fmt.Sprintf("owner: %s has no lockedResource in NFTSet %s for conditions: %s", owner.GetHexString(), nftSetId, nftConditions.String()), nil
+	}
+	return "", &demand
+}
+
+func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data, creator, timeStamp, uri string, owner common.Address, fullData map[string]string, accountDB *account.AccountDB) (string, bool) {
 	txLogger.Tracef("Generate NFT! appId%s,setId:%s,id:%s,data:%s,createTime:%s,owner:%s", appId, setId, id, data, timeStamp, owner.String())
 	// 检查id是否存在
 	if _, ok := nftSet.OccupiedID[id]; ok {
@@ -169,7 +324,7 @@ func (self *NFTManager) GenerateNFT(nftSet *types.NFTSet, appId, setId, id, data
 		Renter:     ownerString,
 		Status:     0,
 		AppId:      appId,
-		Imported:   imported,
+		Uri:        uri,
 		Data:       make(map[string]string),
 	}
 
@@ -204,13 +359,15 @@ func (self *NFTManager) MarkNFTWithdrawn(owner common.Address, setId, id string,
 	}
 
 	//change nft status to be withdrawn
-	accountDB.ChangeNFTStatus(owner, "", setId, id, 2)
-	return nft
+	if accountDB.ChangeNFTStatus(owner, "", setId, id, 2) {
+		return nft
+	}
+	return nil
 }
 
 //deposit local withdrawn nft
 //only owner renter appId data will be updated,other fields will not be updated
-func (self *NFTManager) DepositWithdrawnNFT(owner, renter, appId string, fullData map[string]string, accountDB *account.AccountDB, originalNFT *types.NFT) (string, bool) {
+func (self *NFTManager) DepositWithdrawnNFT(uri, owner, renter, appId string, fullData map[string]string, accountDB *account.AccountDB, originalNFT *types.NFT) (string, bool) {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
 
@@ -221,7 +378,8 @@ func (self *NFTManager) DepositWithdrawnNFT(owner, renter, appId string, fullDat
 	nft := &types.NFT{SetID: originalNFT.SetID, ID: originalNFT.ID,
 		Name: originalNFT.Name, Symbol: originalNFT.Symbol,
 		Creator: originalNFT.Creator, CreateTime: originalNFT.CreateTime,
-		Condition: originalNFT.Condition, Imported: originalNFT.Imported}
+		Condition: originalNFT.Condition}
+	nft.Uri = uri
 	nft.Status = 0
 	nft.Owner = owner
 	nft.Renter = renter
@@ -234,7 +392,7 @@ func (self *NFTManager) DepositWithdrawnNFT(owner, renter, appId string, fullDat
 		}
 	}
 
-	if accountDB.RemoveNFTByGameId(common.HexStringToAddress(originalNFT.Owner), originalNFT.AppId, originalNFT.SetID, originalNFT.ID) && accountDB.AddNFTByGameId(common.HexStringToAddress(nft.Owner), nft.AppId, nft) {
+	if accountDB.RemoveNFTByGameId(common.HexStringToAddress(originalNFT.Owner), originalNFT.SetID, originalNFT.ID) && accountDB.AddNFTByGameId(common.HexStringToAddress(nft.Owner), nft.AppId, nft) {
 		if nft.Owner != originalNFT.Owner {
 			self.updateOwnerFromNFTSet(originalNFT.SetID, originalNFT.ID, common.HexStringToAddress(nft.Owner), accountDB)
 		}
@@ -290,20 +448,31 @@ func (self *NFTManager) GetNFTOwner(setId, id string, accountDB *account.Account
 
 // 更新用户当前游戏的NFT数据属性
 // 状态机调用
-func (self *NFTManager) UpdateNFT(addr common.Address, appId, setId, id, data string, accountDB *account.AccountDB) bool {
-	return accountDB.SetNFTValueByGameId(addr, appId, setId, id, data)
+func (self *NFTManager) UpdateNFT(appId, setId, id, data, propertyString string, accountDB *account.AccountDB) bool {
+	result := accountDB.SetNFTValueByGameId(appId, setId, id, data)
+	if !result {
+		return false
+	}
+
+	property := make(map[string]string)
+	if 0 != len(propertyString) {
+		if err := json.Unmarshal(utility.StrToBytes(propertyString), &property); nil != err {
+			return false
+		}
+	}
+	if 0 != len(property) {
+		for key, value := range property {
+			if !self.updateNFTProperty(appId, setId, id, key, value, accountDB) {
+				return false
+			}
+		}
+	}
+
+	return true
 }
 
-// 批量更新用户当前游戏的NFT数据属性
-// 状态机调用
-func (self *NFTManager) BatchUpdateNFT(addr common.Address, appId, setId string, idList, data []string, accountDB *account.AccountDB) (string, bool) {
-	if 0 == len(idList) || 0 == len(data) || len(idList) != len(data) {
-		return "wrong idList/data", false
-	}
-	for i := range idList {
-		self.UpdateNFT(addr, appId, setId, idList[i], data[i], accountDB)
-	}
-	return "batchUpdate successful", true
+func (self *NFTManager) updateNFTProperty(appId, setId, id, property, data string, accountDB *account.AccountDB) bool {
+	return accountDB.SetNFTValueByProperty(appId, setId, id, property, data)
 }
 
 // NFT 迁移
@@ -372,75 +541,9 @@ func (self *NFTManager) shuttle(owner, setId, id, newAppId string, accountDB *ac
 	}
 
 	// 修改数据
-	accountDB.SetNFTAppId(common.HexStringToAddress(owner),setId,id,newAppId)
+	accountDB.SetNFTAppId(common.HexStringToAddress(owner), setId, id, newAppId)
 
 	// 通知当前状态机
 	// 通知接收状态机
 	return "nft shuttle successful", true
 }
-
-//todo:delete after test
-func (self *NFTManager) SendPublishNFTSetToConnector(nftSet *types.NFTSet) {
-	data := make(map[string]string, 8)
-	data["setId"] = nftSet.SetID
-	data["name"] = nftSet.Name
-	data["symbol"] = nftSet.Symbol
-	data["maxSupply"] = strconv.FormatUint(nftSet.MaxSupply, 10)
-	data["creator"] = nftSet.Creator
-	data["owner"] = nftSet.Owner
-	data["createTime"] = nftSet.CreateTime
-	data["contract"] = "" // 标记为源生layer2的数据
-
-	self.publishNFTSetToConnector(data, nftSet.Creator, nftSet.CreateTime)
-}
-
-//todo:delete after test
-func (self *NFTManager) ImportNFTSet(setId, contract, chainType string) {
-	data := make(map[string]string)
-	data["setId"] = setId
-	data["maxSupply"] = "0"
-	data["contract"] = contract // 标记为外部导入的数据
-	data["chainType"] = chainType
-
-	self.publishNFTSetToConnector(data, "", "")
-}
-
-//todo:delete after test
-func (self *NFTManager) publishNFTSetToConnector(data map[string]string, source, time string) {
-	b, err := json.Marshal(data)
-	if err != nil {
-		txLogger.Error("json marshal err, err:%s", err.Error())
-		return
-	}
-
-	t := types.Transaction{Source: source, Target: "", Data: string(b), Type: types.TransactionTypePublishNFTSet, Time: time}
-	t.Hash = t.GenHash()
-
-	msg, err := json.Marshal(t.ToTxJson())
-	if err != nil {
-		txLogger.Debugf("Json marshal tx json error:%s", err.Error())
-		return
-	}
-
-	txLogger.Tracef("After publish nft.Send msg to coiner:%s", t.ToTxJson().ToString())
-	go network.GetNetInstance().SendToCoinConnector(msg)
-}
-
-//// 从layer2 层面删除
-//func (self *NFTManager) DeleteNFT(owner common.Address, setId, id string, accountDB *account.AccountDB) *types.NFT {
-//	self.lock.RLock()
-//	defer self.lock.RUnlock()
-//
-//	nft := accountDB.GetNFTById(owner, setId, id)
-//	if nil == nft {
-//		return nil
-//	}
-//
-//	//删除要提现的NFT
-//	accountDB.RemoveNFT(owner, nft)
-//
-//	// 更新nftSet
-//	self.deleteNFTFromNFTSet(setId, id, accountDB)
-//
-//	return nft
-//}

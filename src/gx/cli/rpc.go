@@ -72,6 +72,7 @@ func StartRPC(host string, port uint, privateKey string) error {
 	gxLock = &sync.RWMutex{}
 	apis := []rpc.API{
 		{Namespace: "Rocket", Version: "1", Service: GtasAPIImpl, Public: true},
+		{Namespace: "Rangers", Version: "1", Service: GtasAPIImpl, Public: true},
 	}
 	for plus := 0; plus < 40; plus++ {
 		err = startHTTP(fmt.Sprintf("%s:%d", host, port+uint(plus)), apis, []string{}, []string{}, []string{})

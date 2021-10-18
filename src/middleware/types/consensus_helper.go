@@ -57,7 +57,14 @@ type ConsensusHelper interface {
 	//verify the blockheader: mainly verify the group signature
 	VerifyBlockHeader(bh *BlockHeader) (bool, error)
 
+	VerifyGroupSign(groupPubkey []byte, blockHash common.Hash, sign []byte) (bool, error)
+
 	//check group
 	CheckGroup(g *Group) (bool, error)
 
+	//check the new block
+	//mainly verify the cast legality, group selected ok
+	VerifyMemberInfo(bh *BlockHeader, preBH *BlockHeader) (bool, error)
+
+	VerifyGroupForFork(g *Group, preGroup *Group, parentGroup *Group, baseBlock *Block) (bool, error)
 }

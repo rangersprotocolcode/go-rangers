@@ -22,7 +22,7 @@ import (
 )
 
 const (
-	MAX_GROUP_BLOCK_TIME   int = 5            //组铸块最大允许时间=5s
+	MAX_GROUP_BLOCK_TIME   int = 2            //组铸块最大允许时间=5s
 	MAX_WAIT_BLOCK_TIME    int = 0            //广播出块前等待最大时间=2s
 	CONSENSUS_VERSION          = 1            //共识版本号
 	MAX_UNKNOWN_BLOCKS         = 5            //内存保存最大不能上链的未来块（中间块没有收到）
@@ -57,7 +57,10 @@ type ConsensusParam struct {
 	GroupCreateGap      uint64
 	GroupWaitPongGap    uint64
 	//EffectGapAfterApply uint64	//矿工申请后，到生效的高度间隔
-	PotentialProposal int //潜在提案者
+
+	PotentialProposal      uint64 //潜在提案者
+	PotentialProposalMax   uint64
+	PotentialProposalIndex int
 
 	ProposalBonus uint64 //提案奖励
 	PackBonus     uint64 //打包一个分红交易奖励
@@ -82,7 +85,10 @@ func InitParam(cc common.SectionConfManager) {
 		CandidatesMinRatio:  cc.GetInt("candidates_min_ratio", CANDIDATES_MIN_RATIO),
 		GroupReadyGap:       uint64(cc.GetInt("group_ready_gap", GROUP_Ready_GAP)),
 		//EffectGapAfterApply: EPOCH,
-		PotentialProposal:   3,
+		PotentialProposal:      3,
+		PotentialProposalMax:   8,
+		PotentialProposalIndex: 30,
+
 		CreateGroupInterval: uint64(Group_Create_Interval),
 		GroupCreateGap:      uint64(common.Group_Create_Gap),
 		GroupWaitPongGap:    uint64(Group_Wait_Pong_Gap),

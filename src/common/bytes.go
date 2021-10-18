@@ -17,8 +17,6 @@
 package common
 
 import (
-	"bytes"
-	"encoding/binary"
 	"encoding/hex"
 )
 
@@ -57,11 +55,6 @@ func CopyBytes(b []byte) (copiedBytes []byte) {
 	return
 }
 
-func HasHexPrefix(str string) bool {
-	l := len(str)
-	return l >= 2 && str[0:2] == "0x"
-}
-
 func IsHex(str string) bool {
 	l := len(str)
 	return l >= 4 && l%2 == 0 && str[0:2] == "0x"
@@ -73,55 +66,5 @@ func Bytes2Hex(d []byte) string {
 
 func Hex2Bytes(str string) []byte {
 	h, _ := hex.DecodeString(str)
-
 	return h
-}
-
-func Hex2BytesFixed(str string, flen int) []byte {
-	h, _ := hex.DecodeString(str)
-	if len(h) == flen {
-		return h
-	} else {
-		if len(h) > flen {
-			return h[len(h)-flen:]
-		} else {
-			hh := make([]byte, flen)
-			copy(hh[flen-len(h):flen], h[:])
-			return hh
-		}
-	}
-}
-
-func RightPadBytes(slice []byte, l int) []byte {
-	if l <= len(slice) {
-		return slice
-	}
-
-	padded := make([]byte, l)
-	copy(padded, slice)
-
-	return padded
-}
-
-func LeftPadBytes(slice []byte, l int) []byte {
-	if l <= len(slice) {
-		return slice
-	}
-
-	padded := make([]byte, l)
-	copy(padded[l-len(slice):], slice)
-
-	return padded
-}
-
-func Uint64ToByte(i uint64) []byte {
-	buf := bytes.NewBuffer([]byte{})
-	binary.Write(buf, binary.BigEndian, i)
-	return buf.Bytes()
-}
-
-func UInt32ToByte(i int32) []byte {
-	buf := bytes.NewBuffer([]byte{})
-	binary.Write(buf, binary.BigEndian, i)
-	return buf.Bytes()
 }

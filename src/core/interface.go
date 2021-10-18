@@ -27,6 +27,10 @@ type GroupIterator struct {
 	current *types.Group
 }
 
+type GroupForkIterator struct {
+	current *types.Group
+}
+
 func GetBlockChain() BlockChain {
 	return blockChainImpl
 }
@@ -45,15 +49,13 @@ type BlockChain interface {
 	//返回缺失交易列表
 	VerifyBlock(bh types.BlockHeader) ([]common.Hashes, int8)
 
-	AddBlockOnChain(source string, b *types.Block, situation types.AddBlockOnChainSituation) types.AddBlockResult
+	AddBlockOnChain(b *types.Block) types.AddBlockResult
 
 	Height() uint64
 
 	TotalQN() uint64
 
 	TopBlock() *types.BlockHeader
-
-	CurrentBlock() *types.Block
 
 	QueryBlockByHash(hash common.Hash) *types.Block
 
@@ -96,4 +98,6 @@ type GroupChain interface {
 	GetJoinedGroup(id []byte) ([]byte, error)
 
 	DeleteJoinedGroup(id []byte) bool
+
+	ForkIterator() *GroupForkIterator
 }

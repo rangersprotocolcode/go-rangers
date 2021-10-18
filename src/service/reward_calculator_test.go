@@ -25,23 +25,36 @@ import (
 	"testing"
 )
 
-func TestGetYear(t *testing.T) {
-	year := getYear(1)
+func TestGetEpoch(t *testing.T) {
+	f := big.NewInt(92)
+	f.Exp(f, big.NewInt(20), nil)
+	s := new(big.Int).Exp(big.NewInt(100), big.NewInt(20), nil)
+	fmt.Println(f)
+	fmt.Println(s.String())
+
+	ff, _, _ := big.ParseFloat(f.String(), 10, 256, big.ToNearestEven)
+	sf, _, _ := big.ParseFloat(s.String(), 10, 256, big.ToNearestEven)
+	fmt.Println(ff.Text('f',256))
+	fmt.Println(sf.Text('f',256))
+	r := new(big.Float).Quo(ff, sf)
+	fmt.Println(r.Text('f',256))
+
+	year := getEpoch(1)
 	if 0 != year {
 		t.Fatalf("year error for 1")
 	}
 
-	year = getYear(100000)
+	year = getEpoch(100000)
 	if 0 != year {
 		t.Fatalf("year error for 100000")
 	}
 
-	year = getYear(common.BlocksPerYear)
+	year = getEpoch(common.BlocksPerEpoch)
 	if 1 != year {
 		t.Fatalf("year error for BlocksPerYear")
 	}
 
-	year = getYear(common.BlocksPerYear + 1)
+	year = getEpoch(common.BlocksPerEpoch + 1)
 	if 1 != year {
 		t.Fatalf("year error for BlocksPerYear+1")
 	}
@@ -49,23 +62,23 @@ func TestGetYear(t *testing.T) {
 
 func TestGetTotalReward(t *testing.T) {
 	reward := getTotalReward(1)
-	if 15.9 != reward {
+	if 0.052932098765432097 != reward {
 		t.Fatalf("reward error for 1")
 	}
 	reward = getTotalReward(1000000)
-	if 15.9 != reward {
+	if 0.052932098765432097 != reward {
 		t.Fatalf("reward error for 1000000")
 	}
-	reward = getTotalReward(common.BlocksPerYear)
-	if 16.695 != reward {
+	reward = getTotalReward(common.BlocksPerEpoch)
+	if 0.04869753086419753 != reward {
 		t.Fatalf("reward error for BlocksPerYear, %v", reward)
 	}
-	reward = getTotalReward(common.BlocksPerYear + 1)
-	if 16.695 != reward {
+	reward = getTotalReward(common.BlocksPerEpoch + 1)
+	if 0.04869753086419753 != reward {
 		t.Fatalf("reward error for BlocksPerYear+1")
 	}
-	reward = getTotalReward(common.BlocksPerYear * 2)
-	if 17.52975 != reward {
+	reward = getTotalReward(common.BlocksPerEpoch * 2)
+	if 0.044801728395061725 != reward {
 		t.Fatalf("reward error for BlocksPerYear*2, %v", reward)
 	}
 
@@ -78,20 +91,6 @@ func TestFloat64Stake(t *testing.T) {
 	prop := utility.Float64ToBigInt(money)
 	fmt.Println(money)
 	fmt.Println(prop)
-}
-
-func TestAddReward(t *testing.T) {
-	all := make(map[common.Address]*big.Int)
-	addr := common.CommunityAddress
-	delta := big.NewInt(1000)
-	fmt.Println(all[addr])
-
-	addReward(all, addr, delta)
-	fmt.Println(all[addr])
-
-	addReward(all, addr, delta)
-	fmt.Println(all[addr])
-
 }
 
 func TestProposerReward(t *testing.T) {

@@ -25,20 +25,22 @@ import (
 )
 
 var (
-	logger          log.Logger
-	txLogger        log.Logger
-	consensusLogger log.Logger
-	consensusHelper types.ConsensusHelper
+	logger           log.Logger
+	txLogger         log.Logger
+	consensusHelper  types.ConsensusHelper
+	syncLogger       log.Logger
+	syncHandleLogger log.Logger
 )
 
-func InitCore(helper types.ConsensusHelper) error {
+func InitCore(helper types.ConsensusHelper, privateKey common.PrivateKey, id string) error {
 	index := common.GlobalConf.GetString("instance", "index", "")
 	logger = log.GetLoggerByIndex(log.CoreLogConfig, index)
 	txLogger = log.GetLoggerByIndex(log.TxLogConfig, index)
-	consensusLogger = log.GetLoggerByIndex(log.ConsensusLogConfig, index)
+	syncLogger = log.GetLoggerByIndex(log.SyncLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	syncHandleLogger = log.GetLoggerByIndex(log.SyncHandleLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	consensusHelper = helper
 
-	initPeerManager()
+	initPeerManager(syncLogger)
 	if nil == blockChainImpl {
 		err := initBlockChain()
 		if err != nil {
@@ -49,10 +51,11 @@ func InitCore(helper types.ConsensusHelper) error {
 	if nil == groupChainImpl {
 		initGroupChain()
 	}
+	InitSyncProcessor(privateKey, id)
 
 	executor.InitExecutors()
-	service.InitRewardCalculator(blockChainImpl, groupChainImpl)
-	service.InitRefundManager(groupChainImpl)
+	service.InitRewardCalculator(blockChainImpl, groupChainImpl, SyncProcessor)
+	service.InitRefundManager(groupChainImpl, SyncProcessor)
 
 	initChainHandler()
 

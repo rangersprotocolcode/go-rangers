@@ -35,25 +35,25 @@ const (
 						</formats>
 					</seelog>`
 
-	BlockSyncLogConfig = `<seelog minlevel="debug">
+	SyncLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/block_syncLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/syncLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
 						<formats>
-							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
+							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%LEV][%File:%Line]%Msg%n" />
 						</formats>
 					</seelog>`
 
-	GroupSyncLogConfig = `<seelog minlevel="debug">
+	SyncHandleLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/group_syncLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+							<rollingfile type="size" filename="./logs/sync_handleLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
 						<formats>
-							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
+							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%LEV][%File:%Line]%Msg%n" />
 						</formats>
 					</seelog>`
 
-	LockLogConfig = `<seelog minlevel="error">
+	LockLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/lockLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
@@ -65,6 +65,15 @@ const (
 	P2PLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/p2pLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+						</outputs>
+						<formats>
+							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
+						</formats>
+					</seelog>`
+
+	P2PBizLogConfig = `<seelog minlevel="debug">
+						<outputs formatid="default">
+							<rollingfile type="size" filename="./logs/p2p_bizLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
@@ -161,6 +170,14 @@ const (
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
 						</formats>
 					</seelog>`
+	AccountLogConfig = `<seelog minlevel="trace">
+						<outputs formatid="default">
+							<rollingfile type="size" filename="./logs/accountLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+						</outputs>
+						<formats>
+							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
+						</formats>
+					</seelog>`
 	AccountDBLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/accountDBLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
@@ -210,22 +227,6 @@ const (
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)|height|%Msg%n" />
 						</formats>
 					</seelog>`
-	STMLogConfig = `<seelog minlevel="debug">
-						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/stmLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
-						</outputs>
-						<formats>
-							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
-						</formats>
-					</seelog>`
-	WSLogConfig = `<seelog minlevel="debug">
-						<outputs formatid="default">
-							<rollingfile type="size" filename="./logs/stmwsLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
-						</outputs>
-						<formats>
-							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
-						</formats>
-					</seelog>`
 
 	AccessLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
@@ -263,6 +264,23 @@ const (
 	LdbLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/ldbLOG_INDEX.log" maxsize="50000000" maxrolls="1"/>
+						</outputs>
+						<formats>
+							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
+						</formats>
+					</seelog>`
+
+	VMLogConfig = `<seelog minlevel="debug">
+						<outputs formatid="default">
+							<rollingfile type="size" filename="./logs/vmLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
+						</outputs>
+						<formats>
+							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
+						</formats>
+					</seelog>`
+	ETHRPCLogConfig = `<seelog minlevel="debug">
+						<outputs formatid="default">
+							<rollingfile type="size" filename="./logs/eth_rpcLOG_INDEX.log" maxsize="100000000" maxrolls="1"/>
 						</outputs>
 						<formats>
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />

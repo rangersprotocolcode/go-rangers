@@ -18,16 +18,24 @@ package service
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"os"
 	"sort"
 	"testing"
 
 	"crypto/sha256"
 	"golang.org/x/crypto/sha3"
+)
+
+var (
+	leveldb *db.LDBDatabase
+	triedb  account.AccountDatabase
 )
 
 func TestRefundInfoList_AddRefundInfo(t *testing.T) {
@@ -75,4 +83,73 @@ func TestDismissHeightList_Len(t *testing.T) {
 	fmt.Println(addr_buf)
 	addr_buf = sha256.Sum256([]byte("12345"))
 	fmt.Println(addr_buf)
+}
+
+func TestRefundManager_Add(t *testing.T) {
+	os.RemoveAll("logs")
+	defer os.Remove("1.ini")
+	defer os.RemoveAll("storage0")
+
+	common.InitConf("1.ini")
+	InitRefundManager(nil, nil)
+
+	data := make(map[uint64]types.RefundInfoList, 2)
+	refundInfoList := types.RefundInfoList{}
+	refundInfoList.AddRefundInfo([]byte{0, 0, 0, 1}, big.NewInt(10090))
+	refundInfoList.AddRefundInfo([]byte{0, 0, 2, 1}, big.NewInt(90090))
+	data[10086] = refundInfoList
+
+	db := getTestAccountDB()
+	RefundManagerImpl.Add(data, db)
+
+	data = make(map[uint64]types.RefundInfoList, 2)
+	refundInfoList = types.RefundInfoList{}
+	refundInfoList.AddRefundInfo([]byte{0, 0, 0, 1}, big.NewInt(20090))
+	refundInfoList.AddRefundInfo([]byte{0, 0, 3, 1}, big.NewInt(190090))
+	data[10086] = refundInfoList
+	RefundManagerImpl.Add(data, db)
+}
+
+func TestRefundManager_CheckAndMove(t *testing.T) {
+	os.RemoveAll("logs")
+	defer os.Remove("1.ini")
+	defer os.RemoveAll("storage0")
+
+	common.InitConf("1.ini")
+	InitRefundManager(nil, nil)
+
+	addr := common.HexToAddress("0x4c1a42165e9009d747e4bcedc5654252b6bc9b8b")
+
+	db := getTestAccountDB()
+	if 0 != db.GetBalance(addr).Int64() {
+		t.Fatalf("fail to get DB")
+	}
+
+	data := make(map[uint64]types.RefundInfoList, 2)
+	refundInfoList := types.RefundInfoList{}
+	refundInfoList.AddRefundInfo([]byte{0, 0, 0, 1}, big.NewInt(10090))
+	refundInfoList.AddRefundInfo([]byte{0, 0, 2, 1}, big.NewInt(90090))
+	refundInfoList.AddRefundInfo(addr.Bytes(), big.NewInt(290090))
+	data[10086] = refundInfoList
+
+	RefundManagerImpl.Add(data, db)
+
+	RefundManagerImpl.CheckAndMove(10086, db)
+
+	if 10090 != db.GetBalance(common.BytesToAddress([]byte{0, 0, 0, 1})).Int64() {
+		t.Fatalf("fail to checkAnd move, 0001")
+	}
+	if 290090 != db.GetBalance(addr).Int64() {
+		t.Fatalf("fail to checkAnd move, %s", addr.GetHexString())
+	}
+}
+
+func getTestAccountDB() *account.AccountDB {
+	if nil == leveldb {
+		leveldb, _ = db.NewLDBDatabase("test", 0, 0)
+		triedb = account.NewDatabase(leveldb)
+	}
+
+	accountdb, _ := account.NewAccountDB(common.Hash{}, triedb)
+	return accountdb
 }

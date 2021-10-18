@@ -35,13 +35,15 @@ func GetTxExecutor(txType int32) executor {
 func InitExecutors() {
 	logger := log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
-	executors := make(map[int32]executor, 21)
+	executors := make(map[int32]executor)
 
 	executors[types.TransactionTypeOperatorEvent] = &operatorExecutor{logger: logger}
 	executors[types.TransactionTypeWithdraw] = &withdrawExecutor{}
 	executors[types.TransactionTypeCoinDepositAck] = &coinDepositExecutor{}
 	executors[types.TransactionTypeFTDepositAck] = &ftDepositExecutor{}
 	executors[types.TransactionTypeNFTDepositAck] = &nftDepositExecutor{}
+	executors[types.TransactionTypeERC20Binding] = &erc20BindingExecutor{}
+
 	executors[types.TransactionTypeMinerApply] = &minerApplyExecutor{logger: logger}
 	executors[types.TransactionTypeMinerAdd] = &minerAddExecutor{logger: logger}
 	executors[types.TransactionTypeMinerRefund] = &minerRefundExecutor{logger: logger}
@@ -55,15 +57,16 @@ func InitExecutors() {
 	executors[types.TransactionTypeApproveNFT] = &ftExecutor{}
 	executors[types.TransactionTypeRevokeNFT] = &ftExecutor{}
 
-	executors[types.TransactionTypeAddStateMachine] = &stmExecutor{}
-	executors[types.TransactionTypeUpdateStorage] = &stmExecutor{}
-	executors[types.TransactionTypeStartSTM] = &stmExecutor{}
-	executors[types.TransactionTypeStopSTM] = &stmExecutor{}
-	executors[types.TransactionTypeUpgradeSTM] = &stmExecutor{}
-	executors[types.TransactionTypeQuitSTM] = &stmExecutor{}
-	executors[types.TransactionTypeImportNFT] = &stmExecutor{}
-
 	executors[types.TransactionTypeSetExchangeRate] = &exchangeRateExecutor{}
+
+	executors[types.TransactionTypeLockResource] = &resourceLockUnLockExecutor{logger: logger}
+	executors[types.TransactionTypeUnLockResource] = &resourceLockUnLockExecutor{logger: logger}
+	executors[types.TransactionTypeComboNFT] = &resourceLockUnLockExecutor{logger: logger}
+	executors[types.TransactionTypeLotteryCreate] = &lotteryExecutor{}
+	executors[types.TransactionTypeJackpot] = &lotteryExecutor{}
+
+	executors[types.TransactionTypeContract] = &contractExecutor{}
+	executors[types.TransactionTypeETHTX] = &contractExecutor{}
 
 	txExecutorsImpl = &txExecutors{executors: executors}
 }

@@ -22,7 +22,6 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 )
 
-
 // MustNewLRUCache creates a new lru cache.
 // Caution: if fail, the function will cause panic
 func CreateLRUCache(size int) *lru.Cache {
@@ -31,4 +30,12 @@ func CreateLRUCache(size int) *lru.Cache {
 		panic(fmt.Errorf("new cache fail:%v", err))
 	}
 	return cache
+}
+
+func ShortHex12(hex string) string {
+	s := len(hex)
+	if s < 12 {
+		return hex
+	}
+	return hex[0:6] + "-" + hex[s-6:]
 }

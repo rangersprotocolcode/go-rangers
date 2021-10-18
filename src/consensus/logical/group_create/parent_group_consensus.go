@@ -332,6 +332,9 @@ func (p *groupCreateProcessor) tryRecoverParentGroupSig(msg *model.ParentGroupCo
 	if ctx.timeout(height) {
 		return false, fmt.Errorf("ready timeout")
 	}
+	if !ctx.genGroupInitInfo(height) {
+		return false, fmt.Errorf("generate group init info fail")
+	}
 	if ctx.groupInitInfo.GroupHash() != msg.GroupHash {
 		return false, fmt.Errorf("gHash diff")
 	}
