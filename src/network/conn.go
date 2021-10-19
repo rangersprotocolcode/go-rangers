@@ -392,7 +392,13 @@ func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, no
 	tx := txJson.ToTransaction()
 	tx.RequestId = nonce
 	clientConn.logger.Debugf("Rcv event: %s from client.Tx info:%s", event, tx.ToTxJson().ToString())
-
+	//TransactionTypeETHTX is a inner tx type,forbid from client
+	if tx.Type == types.TransactionTypeETHTX {
+		msg := fmt.Sprintf("illegal tx type from client:%v", tx.Type)
+		clientConn.logger.Errorf(msg)
+		clientConn.sendWrongNonce(nonce, msg)
+		return
+	}
 	msg := notify.ClientTransactionMessage{Tx: tx, UserId: userId, Nonce: nonce}
 	notify.BUS.Publish(event, &msg)
 }
