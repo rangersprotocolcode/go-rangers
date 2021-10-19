@@ -165,8 +165,8 @@ func (self *Ecc) Verify(info []byte, signed []byte) bool {
 		return false
 	}
 
-	return true
-	//return pubk.Verify(msg, sign)
+	//return true
+	return pubk.Verify(msg, sign)
 
 }
 
