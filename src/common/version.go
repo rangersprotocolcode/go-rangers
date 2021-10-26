@@ -17,7 +17,6 @@
 package common
 
 import (
-	"fmt"
 	"math/big"
 )
 
@@ -30,10 +29,10 @@ const (
 )
 
 //used　to distinguish different network env
-var NetworkId string
+var NetworkId = "9500"
 
 //used　to distinguish different fork
-var ChainId string
+var ChainId = "9500"
 
 func GetChainId() *big.Int {
 	chainId, _ := big.NewInt(0).SetString(ChainId, 10)
@@ -41,13 +40,10 @@ func GetChainId() *big.Int {
 }
 
 func InitChainId(env string) {
-	fmt.Printf("env:%v\n", env)
 	if env == ENV_DEV {
-		fmt.Println("in dev\n")
-		ChainId = "10000"
-		NetworkId = "10000"
+		ChainId = "9500"
+		NetworkId = "9500"
 	} else if env == ENV_TESTNET_ROBIN {
-		fmt.Println("in test\n")
 		ChainId = "9527"
 		NetworkId = "9527"
 	}
