@@ -27,10 +27,10 @@ const (
 )
 
 //used　to distinguish different network env
-var NetworkId = "9500"
+var NetworkId string
 
 //used　to distinguish different fork
-var ChainId = "9500"
+var ChainId string
 
 func GetChainId() *big.Int {
 	chainId, _ := big.NewInt(0).SetString(ChainId, 10)
