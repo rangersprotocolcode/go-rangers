@@ -91,7 +91,7 @@ func (gx *GX) Run() {
 	instanceIndex := mineCmd.Flag("instance", "instance index").Short('i').Default("0").Int()
 
 	env := mineCmd.Flag("env", "the environment application run in").String()
-	common.Init(*env)
+	common.InitChainId(*env)
 
 	//自定义网关
 	gateAddr := mineCmd.Flag("gateaddr", "the gate addr").String()

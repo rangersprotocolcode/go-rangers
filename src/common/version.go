@@ -37,7 +37,7 @@ func GetChainId() *big.Int {
 	return chainId
 }
 
-func Init(env string) {
+func InitChainId(env string) {
 	if env == ENV_DEV {
 		ChainId = "9500"
 		NetworkId = "9500"
