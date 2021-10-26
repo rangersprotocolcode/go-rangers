@@ -115,7 +115,7 @@ func (gx *GX) Run() {
 
 	walletManager = newWallets()
 	fmt.Println("Welcome to be a RangersProtocol miner!")
-	fmt.Printf("Chain ID:%s,Network ID:%s\n", common.ChainId, common.NetworkId)
+	fmt.Printf("Env:%s,Chain ID:%s,Network ID:%s\n", *env, common.ChainId, common.NetworkId)
 	switch command {
 	case versionCmd.FullCommand():
 		fmt.Println("GX Version:", GXVersion)
