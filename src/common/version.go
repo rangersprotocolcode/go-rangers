@@ -39,8 +39,8 @@ func GetChainId() *big.Int {
 
 func InitChainId(env string) {
 	if env == ENV_DEV {
-		ChainId = "9500"
-		NetworkId = "9500"
+		ChainId = "10000"
+		NetworkId = "10000"
 	} else if env == ENV_TESTNET_ROBIN {
 		ChainId = "9527"
 		NetworkId = "9527"
