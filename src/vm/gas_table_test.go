@@ -84,7 +84,7 @@ func TestEIP2200(t *testing.T) {
 		database, _ := db.NewLDBDatabase("test", 0, 0)
 		statedb, _ := account.NewAccountDB(common.Hash{}, account.NewDatabase(database))
 		statedb.CreateAccount(address)
-		statedb.SetCode(address, common.MustDecode(tt.input))
+		//statedb.SetCode(address, common.MustDecode(tt.input))
 		statedb.SetState(address, common.Hash{}, common.BytesToHash([]byte{tt.original}))
 		statedb.Finalise(true) // Push the state into the "original" slot
 
