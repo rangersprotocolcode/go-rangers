@@ -73,7 +73,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	block.Header = &types.BlockHeader{
 		Height:       0,
 		ExtraData:    common.Sha256([]byte("Rocket Protocol")),
-		CurTime:      time.Date(2021, 9, 24, 2, 0, 0, 0, time.UTC),
+		CurTime:      time.Date(2021, 10, 20, 10, 0, 0, 0, time.UTC),
 		ProveValue:   pv,
 		TotalQN:      0,
 		Transactions: make([]common.Hashes, 0), //important!!
@@ -102,40 +102,13 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	stateDB.SetNonce(common.ProposerDBAddress, 1)
 	stateDB.SetNonce(common.ValidatorDBAddress, 1)
 
-	valueTenThousand, _ := utility.StrToBigInt("10000")
-	valueBillion, _ := utility.StrToBigInt("1000000000")
-
 	//创建创始合约
 	usdtContractAddress, wethContractAddress, mixContractAddress := createGenesisContract(block.Header, stateDB)
 	stateDB.AddERC20Binding("SYSTEM-ETH.USDT", usdtContractAddress, 2, 6)
 	stateDB.AddERC20Binding("ETH.ETH", wethContractAddress, 3, 18)
 	stateDB.AddERC20Binding("SYSTEM-ETH.MIX", mixContractAddress, 0, 18)
 
-	// 测试用
-	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("tuntun", "pig", "hz", "0", "hz", "10086", 0), stateDB)
-	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("tuntunhz", "tuntun", "t", "hz", "hz", types.NFTConditions{}, 0, "10000"), stateDB)
-	stateDB.SetFT(common.HexToAddress("0x0b7467fe7225e8adcb6b5779d68c20fceaa58d54"), "ETH.ETH", valueTenThousand)
-	/**
-		测试账户
-		id:0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443
-	   adderss:0x38780174572fb5b4735df1b7c69aee77ff6e9f49
-	   sk:0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea
-	*/
-	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "ETH.ETH", valueTenThousand)
-	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-ETH.USDT", valueTenThousand)
-	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-ETH.MIX", valueBillion)
-	stateDB.SetBalance(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), valueBillion)
-
-	/**
-	自动化测试框架专用账户
-	id:0x7dba6865f337148e5887d6bea97e6a98701a2fa774bd00474ea68bcc645142f2
-	address:0x2c616a97d3d10e008f901b392986b1a65e0abbb7
-	sk:0x083f3fb13ffa99a18283a7fd5e2f831a52f39afdd90f5310a3d8fd4ffbd00d49
-	*/
-	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "ETH.ETH", valueBillion)
-	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-ETH.USDT", valueBillion)
-	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-ETH.MIX", valueBillion)
-	stateDB.SetBalance(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), valueBillion)
+	addTestAsset(stateDB)
 
 	root, _ := stateDB.Commit(true)
 	triedb.Commit(root, false)
@@ -218,4 +191,51 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 	logger.Debugf("After execute mix contract create! Contract address:%s", mixContractAddress.GetHexString())
 
 	return usdtContractAddress, wethContractAddress, mixContractAddress
+}
+
+func addTestAsset(stateDB *account.AccountDB) {
+	valueTenThousand, _ := utility.StrToBigInt("10000")
+	valueBillion, _ := utility.StrToBigInt("1000000000")
+	/**
+	  id:0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443
+	  address:0x38780174572fb5b4735df1b7c69aee77ff6e9f49
+	  sk:0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea
+	*/
+	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "ETH.ETH", valueTenThousand)
+	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-ETH.USDT", valueTenThousand)
+	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-ETH.MIX", valueBillion)
+	stateDB.SetBalance(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), valueBillion)
+
+	/**
+	id:0x7dba6865f337148e5887d6bea97e6a98701a2fa774bd00474ea68bcc645142f2
+	address:0x2c616a97d3d10e008f901b392986b1a65e0abbb7
+	sk:0x083f3fb13ffa99a18283a7fd5e2f831a52f39afdd90f5310a3d8fd4ffbd00d49
+	*/
+	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "ETH.ETH", valueBillion)
+	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-ETH.USDT", valueBillion)
+	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-ETH.MIX", valueBillion)
+	stateDB.SetBalance(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), valueBillion)
+
+	/**
+	address:0xb726d8add2d0da0e3497b8686e0440c1703348c6
+	sk:0xe64b395c653ac649b6fd378bedfb2f93db298711b3a083229899d0c600e026d9
+	*/
+	stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "ETH.ETH", valueBillion)
+	stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "SYSTEM-ETH.USDT", valueBillion)
+	stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "SYSTEM-ETH.MIX", valueBillion)
+	stateDB.SetBalance(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), valueBillion)
+
+	assetCreatTime := "1634686092119"
+	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("testFT", "alpha", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", assetCreatTime, 0), stateDB)
+	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("testFT", "beta", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", assetCreatTime, 0), stateDB)
+	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("testFT", "gamma", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", assetCreatTime, 0), stateDB)
+	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("testFT", "delta", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", assetCreatTime, 0), stateDB)
+	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("testFT", "epsilon", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", assetCreatTime, 0), stateDB)
+
+	//NFT Asset
+	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("262beed0-703e-417f-9258-89ad1f736982", "testNFT", "alpha", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", types.NFTConditions{}, 0, assetCreatTime), stateDB)
+	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("59c641ee-7b1b-444b-9f87-47889539df1f", "testNFT", "beta", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", types.NFTConditions{}, 0, assetCreatTime), stateDB)
+	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("0d19bbce-6c3d-4153-8168-1c7a33448fa4", "testNFT", "gamma", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", types.NFTConditions{}, 0, assetCreatTime), stateDB)
+	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("a919a5a0-a5ed-40b3-be4d-403985063863", "testNFT", "delta", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", types.NFTConditions{}, 0, assetCreatTime), stateDB)
+	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("f5626c4d-3895-4376-a5df-fc1f04e0f375", "testNFT", "epsilon", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", types.NFTConditions{}, 0, assetCreatTime), stateDB)
 }
