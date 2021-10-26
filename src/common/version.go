@@ -16,7 +16,10 @@
 
 package common
 
-import "math/big"
+import (
+	"fmt"
+	"math/big"
+)
 
 const (
 	Version           = "0.9"
@@ -38,10 +41,13 @@ func GetChainId() *big.Int {
 }
 
 func InitChainId(env string) {
+	fmt.Printf("env:%v\n", env)
 	if env == ENV_DEV {
+		fmt.Println("in dev\n")
 		ChainId = "10000"
 		NetworkId = "10000"
 	} else if env == ENV_TESTNET_ROBIN {
+		fmt.Println("in test\n")
 		ChainId = "9527"
 		NetworkId = "9527"
 	}
