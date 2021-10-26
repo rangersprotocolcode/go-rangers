@@ -91,7 +91,6 @@ func (gx *GX) Run() {
 	instanceIndex := mineCmd.Flag("instance", "instance index").Short('i').Default("0").Int()
 
 	env := mineCmd.Flag("env", "the environment application run in").String()
-	common.InitChainId(*env)
 
 	//自定义网关
 	gateAddr := mineCmd.Flag("gateaddr", "the gate addr").String()
@@ -99,6 +98,7 @@ func (gx *GX) Run() {
 	if err != nil {
 		kingpin.Fatalf("%s, try --help", err)
 	}
+	common.InitChainId(*env)
 
 	fmt.Println("Use config file: " + *configFile)
 	common.InitConf(*configFile)
