@@ -18,27 +18,31 @@ package common
 
 import "math/big"
 
-const Version = "0.9"
+const (
+	Version           = "0.9"
+	ProtocolVersion   = 1
+	ConsensusVersion  = 1
+	ENV_DEV           = "dev"
+	ENV_TESTNET_ROBIN = "test"
+)
 
-const ConsensusVersion = 1
+//used　to distinguish different network env
+var NetworkId = "9500"
 
-//用于区分不同的网络环境
-//testnet
-//const NetworkId = "9527"
-
-//dev
-const NetworkId = "9500"
-
-//用于区分不同的分叉
-//testnet
-//const ChainId = "9527"
-
-//dev
-const ChainId = "9500"
-
-const ProtocolVersion = 1
+//used　to distinguish different fork
+var ChainId = "9500"
 
 func GetChainId() *big.Int {
 	chainId, _ := big.NewInt(0).SetString(ChainId, 10)
 	return chainId
+}
+
+func Init(env string) {
+	if env == ENV_DEV {
+		ChainId = "9500"
+		NetworkId = "9500"
+	} else if env == ENV_TESTNET_ROBIN {
+		ChainId = "9527"
+		NetworkId = "9527"
+	}
 }
