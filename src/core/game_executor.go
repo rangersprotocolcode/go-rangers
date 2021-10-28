@@ -91,7 +91,7 @@ func initGameExecutor(blockChainImpl *blockChain) {
 		panic("newLDBDatabase fail, file=" + file + ", err=" + err.Error())
 	}
 	gameExecutor.tempTx = tempTxLDB
-	gameExecutor.recover()
+	//gameExecutor.recover()
 
 	//notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.write)
