@@ -127,17 +127,8 @@ func (self *accountObject) GetNFT(db AccountDatabase) *types.NFT {
 
 	nft.Status = self.getNFTStatus(db)
 
-	contidion := self.GetData(db, conditionKey)
-	if nil != contidion && 1 == len(contidion) {
-		nft.Condition = contidion[0]
-	}
-
-	// getLockedBalance
-	key := utility.StrToBytes(fmt.Sprintf("%s%s", comboPrefix, "b"))
-	value := self.GetData(db, key)
-
-	self.cachedLock.RLock()
-	defer self.cachedLock.RUnlock()
+	self.cachedLock.Lock()
+	defer self.cachedLock.Unlock()
 	for key, value := range self.cachedStorage {
 		if strings.HasPrefix(key, dataPrefix) {
 			nft.Data[key[2:]] = utility.BytesToStr(value)
@@ -155,13 +146,6 @@ func (self *accountObject) GetNFT(db AccountDatabase) *types.NFT {
 		nft.Data[key[2:]] = utility.BytesToStr(iterator.Value)
 	}
 
-	nft.ComboResource = self.getCombo(db)
-	if nil == value || utility.IsEmptyByteSlice(value) {
-		nft.ComboResource.Balance = "0"
-	} else {
-		now := new(big.Int).SetBytes(value)
-		nft.ComboResource.Balance = utility.BigIntToStr(now)
-	}
 	return nft
 }
 func (self *accountObject) ApproveNFT(db AccountDatabase, owner common.Address, renter string) bool {

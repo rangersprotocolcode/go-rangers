@@ -228,3 +228,9 @@ func TestKey(t *testing.T) {
 	fmt.Printf("Address:%s\n", address.String())
 	fmt.Printf("Id:%s\n", ToHex(id[:]))
 }
+
+func TestEnv(test *testing.T) {
+	env := "test"
+	InitChainId(env)
+	fmt.Println(ChainId)
+}

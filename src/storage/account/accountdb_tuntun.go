@@ -212,18 +212,27 @@ func (self *AccountDB) ChangeNFTOwner(owner, newOwner common.Address, setId, id 
 
 	// 这里出错，意味着这个nft不属于owner
 	if !ownerObject.RemoveNFTLink(self.db, setId, id) {
+		accountLog.Errorf("error: not found nft(setId: %s, id: %s) for owner: %s", setId, id, owner.String())
 		return false
 	}
 
 	newOwnerObject := self.getOrNewAccountObject(newOwner)
 	if !newOwnerObject.AddNFTLink(self.db, appId, setId, id) {
+		accountLog.Errorf("error: already have nft(setId: %s, id: %s) for owner: %s", setId, id, newOwner.String())
 		return false
 	}
 
 	nft := self.getAccountObject(common.GenerateNFTAddress(setId, id), false)
-	if nil == nft || 0 != nft.getNFTStatus(self.db) {
+	if nil == nft {
+		accountLog.Errorf("error: nil nft(setId: %s, id: %s)", setId, id)
 		return false
 	}
+	nftStatus := nft.getNFTStatus(self.db)
+	if 0 != nftStatus {
+		accountLog.Errorf("error: wrong nft(setId: %s, id: %s), status: %d", setId, id, nftStatus)
+		return false
+	}
+
 	nft.SetOwner(self.db, newOwner.GetHexString())
 	return true
 }

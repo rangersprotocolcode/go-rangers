@@ -67,5 +67,5 @@ const (
 	ValidatorStake = uint64(250)
 	ProposerStake  = uint64(1250)
 
-	HeightAfterStake = RewardBlocks
+	HeightAfterStake = 300
 )

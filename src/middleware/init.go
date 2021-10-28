@@ -24,13 +24,13 @@ import (
 )
 
 var PerfLogger log.Logger
-var HeightLogger log.Logger
+var MonitorLogger log.Logger
 
 func InitMiddleware() error {
 
 	types.InitSerialzation()
 	PerfLogger = log.GetLoggerByIndex(log.PerformanceLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	HeightLogger = log.GetLoggerByIndex(log.HeightLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	MonitorLogger = log.GetLoggerByIndex(log.MonitorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	notify.BUS = notify.NewBus()
 
 	threshold := common.GlobalConf.GetInt("coiner", "threshold", 2)
