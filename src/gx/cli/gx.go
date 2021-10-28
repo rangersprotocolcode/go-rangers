@@ -204,7 +204,8 @@ func syncChainInfo(privateKey common.PrivateKey, id string) {
 	fmt.Println("Syncing block and group info from RangersProtocol net. Waiting...")
 	core.StartSync()
 	go func() {
-		timer := time.NewTimer(time.Second * 10)
+		timer := time.NewTicker(time.Second * 10)
+		output := true
 		for {
 			<-timer.C
 
@@ -213,17 +214,21 @@ func syncChainInfo(privateKey common.PrivateKey, id string) {
 				candidate := core.SyncProcessor.GetCandidateInfo()
 				candidateHeight = candidate.Height
 			}
-			localBlockHeight := core.GetBlockChain().Height()
+			topBlock := core.GetBlockChain().TopBlock()
 			jsonObject := types.NewJSONObject()
 			jsonObject.Put("candidateHeight", candidateHeight)
-			jsonObject.Put("localHeight", localBlockHeight)
-			if candidateHeight > 0 {
-				middleware.HeightLogger.Debugf(jsonObject.TOJSONString())
+			if topBlock != nil {
+				jsonObject.Put("localHeight", topBlock.Height)
+				jsonObject.Put("topBlockHash", topBlock.Hash.String())
+
+				if output && candidateHeight > 0 && topBlock.Height >= candidateHeight {
+					fmt.Println("Sync data finished!")
+					fmt.Println("Start Mining...")
+					output = false
+				}
 			}
-			timer.Reset(time.Second * 5)
+			middleware.MonitorLogger.Infof("|height|%s", jsonObject.TOJSONString())
 		}
-		fmt.Println("Sync data finished!")
-		fmt.Println("Start Mining...")
 	}()
 }
 
