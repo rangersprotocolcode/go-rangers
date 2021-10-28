@@ -20,6 +20,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/common/secp256k1"
 	"com.tuntun.rocket/node/src/common/sha3"
+	"com.tuntun.rocket/node/src/eth_crypto"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"encoding/json"
@@ -142,7 +143,8 @@ type stErc20 struct {
 
 func (self *Ecc) Verify(info []byte, signed []byte) bool {
 
-	msg := common.Sha256(info)
+	//msg := common.Sha256(info)
+	msg := eth_crypto.Keccak256(info)
 	//fmt.Println(common.Bytes2Hex(msg))
 
 	var sign *common.Sign = common.BytesToSign(signed)
