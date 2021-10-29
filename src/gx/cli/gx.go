@@ -216,6 +216,7 @@ func syncChainInfo(privateKey common.PrivateKey, id string) {
 			}
 			topBlock := core.GetBlockChain().TopBlock()
 			jsonObject := types.NewJSONObject()
+			jsonObject.Put("instanceNum", common.GlobalConf.GetInt(instanceSection, indexKey, 0))
 			jsonObject.Put("candidateHeight", candidateHeight)
 			if topBlock != nil {
 				jsonObject.Put("localHeight", topBlock.Height)
