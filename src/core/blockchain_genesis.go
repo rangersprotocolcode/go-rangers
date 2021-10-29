@@ -198,19 +198,19 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
 	}
-	logger.Debugf("After execute BSC usdt contract create!Contract address:%s", usdtContractAddress.GetHexString())
+	logger.Debugf("After execute BSC usdt contract create!Contract address:%s", bscUsdtContractAddress.GetHexString())
 
 	_, wBNBContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(wBNBContractData), vmCtx.GasLimit, big.NewInt(0))
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
 	}
-	logger.Debugf("After execute wBNB contract create! Contract address:%s", wethContractAddress.GetHexString())
+	logger.Debugf("After execute wBNB contract create! Contract address:%s", wBNBContractAddress.GetHexString())
 
 	_, bscMixContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(mixContractData), vmCtx.GasLimit, big.NewInt(0))
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
 	}
-	logger.Debugf("After execute  BSC mix contract create! Contract address:%s", mixContractAddress.GetHexString())
+	logger.Debugf("After execute  BSC mix contract create! Contract address:%s", bscMixContractAddress.GetHexString())
 	return usdtContractAddress, wethContractAddress, mixContractAddress, bscUsdtContractAddress, wBNBContractAddress, bscMixContractAddress
 }
 
