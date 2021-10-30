@@ -104,13 +104,13 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	stateDB.SetNonce(common.ValidatorDBAddress, 1)
 
 	//创建创始合约
-	usdtContractAddress, wethContractAddress, mixContractAddress, _, _, _ := createGenesisContract(block.Header, stateDB)
+	usdtContractAddress, wethContractAddress, mixContractAddress, bscUsdtContractAddress, wBNBContractAddress, bscMixContractAddress := createGenesisContract(block.Header, stateDB)
 	stateDB.AddERC20Binding("SYSTEM-ETH.USDT", usdtContractAddress, 2, 6)
 	stateDB.AddERC20Binding("ETH.ETH", wethContractAddress, 3, 18)
 	stateDB.AddERC20Binding("SYSTEM-ETH.MIX", mixContractAddress, 0, 18)
-	//stateDB.AddERC20Binding("SYSTEM-BSC.USDT", bscUsdtContractAddress, 2, 6)
-	//stateDB.AddERC20Binding("BSC.BNB", wBNBContractAddress, 3, 18)
-	//stateDB.AddERC20Binding("SYSTEM-BSC.MIX", bscMixContractAddress, 0, 18)
+	stateDB.AddERC20Binding("SYSTEM-BSC.USDT", bscUsdtContractAddress, 2, 6)
+	stateDB.AddERC20Binding("BSC.BNB", wBNBContractAddress, 3, 18)
+	stateDB.AddERC20Binding("SYSTEM-BSC.MIX", bscMixContractAddress, 0, 18)
 
 	addTestAsset(stateDB)
 
@@ -194,25 +194,24 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 	}
 	logger.Debugf("After execute mix contract create! Contract address:%s", mixContractAddress.GetHexString())
 
-	//_, bscUsdtContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(usdtContractData), vmCtx.GasLimit, big.NewInt(0))
-	//if err != nil {
-	//	panic("Genesis contract create error:" + err.Error())
-	//}
-	//logger.Debugf("After execute BSC usdt contract create!Contract address:%s", bscUsdtContractAddress.GetHexString())
-	//
-	//_, wBNBContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(wBNBContractData), vmCtx.GasLimit, big.NewInt(0))
-	//if err != nil {
-	//	panic("Genesis contract create error:" + err.Error())
-	//}
-	//logger.Debugf("After execute wBNB contract create! Contract address:%s", wBNBContractAddress.GetHexString())
-	//
-	//_, bscMixContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(mixContractData), vmCtx.GasLimit, big.NewInt(0))
-	//if err != nil {
-	//	panic("Genesis contract create error:" + err.Error())
-	//}
-	//logger.Debugf("After execute  BSC mix contract create! Contract address:%s", bscMixContractAddress.GetHexString())
-	//return usdtContractAddress, wethContractAddress, mixContractAddress, bscUsdtContractAddress, wBNBContractAddress, bscMixContractAddress
-	return usdtContractAddress, wethContractAddress, mixContractAddress, common.Address{}, common.Address{}, common.Address{}
+	_, bscUsdtContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(usdtContractData), vmCtx.GasLimit, big.NewInt(0))
+	if err != nil {
+		panic("Genesis contract create error:" + err.Error())
+	}
+	logger.Debugf("After execute BSC usdt contract create!Contract address:%s", bscUsdtContractAddress.GetHexString())
+
+	_, wBNBContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(wBNBContractData), vmCtx.GasLimit, big.NewInt(0))
+	if err != nil {
+		panic("Genesis contract create error:" + err.Error())
+	}
+	logger.Debugf("After execute wBNB contract create! Contract address:%s", wBNBContractAddress.GetHexString())
+
+	_, bscMixContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(mixContractData), vmCtx.GasLimit, big.NewInt(0))
+	if err != nil {
+		panic("Genesis contract create error:" + err.Error())
+	}
+	logger.Debugf("After execute  BSC mix contract create! Contract address:%s", bscMixContractAddress.GetHexString())
+	return usdtContractAddress, wethContractAddress, mixContractAddress, bscUsdtContractAddress, wBNBContractAddress, bscMixContractAddress
 }
 
 func addTestAsset(stateDB *account.AccountDB) {
@@ -226,9 +225,9 @@ func addTestAsset(stateDB *account.AccountDB) {
 	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "ETH.ETH", valueTenThousand)
 	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-ETH.USDT", valueTenThousand)
 	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-ETH.MIX", valueBillion)
-	//stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "BSC.BNB", valueBillion)
-	//stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-BSC.USDT", valueBillion)
-	//stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-BSC.MIX", valueBillion)
+	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "BSC.BNB", valueTenThousand)
+	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-BSC.USDT", valueTenThousand)
+	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-BSC.MIX", valueBillion)
 	stateDB.SetBalance(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), valueBillion)
 
 	/**
@@ -239,9 +238,9 @@ func addTestAsset(stateDB *account.AccountDB) {
 	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "ETH.ETH", valueBillion)
 	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-ETH.USDT", valueBillion)
 	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-ETH.MIX", valueBillion)
-	//stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "BSC.BNB", valueBillion)
-	//stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-BSC.USDT", valueBillion)
-	//stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-BSC.MIX", valueBillion)
+	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "BSC.BNB", valueTenThousand)
+	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-BSC.USDT", valueTenThousand)
+	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-BSC.MIX", valueBillion)
 	stateDB.SetBalance(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), valueBillion)
 
 	/**
@@ -251,9 +250,9 @@ func addTestAsset(stateDB *account.AccountDB) {
 	stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "ETH.ETH", valueBillion)
 	stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "SYSTEM-ETH.USDT", valueBillion)
 	stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "SYSTEM-ETH.MIX", valueBillion)
-	//stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "BSC.BNB", valueBillion)
-	//stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "SYSTEM-BSC.USDT", valueBillion)
-	//stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "SYSTEM-BSC.MIX", valueBillion)
+	stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "BSC.BNB", valueTenThousand)
+	stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "SYSTEM-BSC.USDT", valueTenThousand)
+	stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "SYSTEM-BSC.MIX", valueBillion)
 	stateDB.SetBalance(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), valueBillion)
 
 	assetCreatTime := "1634686092119"
