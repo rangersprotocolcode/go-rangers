@@ -17,16 +17,18 @@
 package vm
 
 import (
+	"crypto/sha256"
+	"encoding/binary"
+	"errors"
+	"fmt"
+	"math/big"
+
 	"com.tuntun.rocket/node/src/common"
 	crypto "com.tuntun.rocket/node/src/eth_crypto"
 	"com.tuntun.rocket/node/src/eth_crypto/blake2b"
 	"com.tuntun.rocket/node/src/eth_crypto/bls12381"
 	"com.tuntun.rocket/node/src/eth_crypto/bn256"
 	"com.tuntun.rocket/node/src/utility"
-	"crypto/sha256"
-	"encoding/binary"
-	"errors"
-	"math/big"
 
 	//lint:ignore SA1019 Needed for precompile
 	"golang.org/x/crypto/ripemd160"
@@ -41,24 +43,26 @@ type PrecompiledContract interface {
 }
 
 var PrecompiledContracts = map[common.Address]PrecompiledContract{
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}):  &ecrecover{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}):  &sha256hash{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3}):  &ripemd160hash{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4}):  &dataCopy{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5}):  &bigModExp{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6}):  &bn256AddIstanbul{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7}):  &bn256ScalarMulIstanbul{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8}):  &bn256PairingIstanbul{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9}):  &blake2F{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10}): &bls12381G1Add{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11}): &bls12381G1Mul{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12}): &bls12381G1MultiExp{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13}): &bls12381G2Add{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14}): &bls12381G2Mul{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15}): &bls12381G2MultiExp{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16}): &bls12381Pairing{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17}): &bls12381MapG1{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18}): &bls12381MapG2{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}):    &ecrecover{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}):    &sha256hash{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3}):    &ripemd160hash{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4}):    &dataCopy{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5}):    &bigModExp{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6}):    &bn256AddIstanbul{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7}):    &bn256ScalarMulIstanbul{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8}):    &bn256PairingIstanbul{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9}):    &blake2F{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10}):   &bls12381G1Add{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11}):   &bls12381G1Mul{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12}):   &bls12381G1MultiExp{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13}):   &bls12381G2Add{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14}):   &bls12381G2Mul{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15}):   &bls12381G2MultiExp{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16}):   &bls12381Pairing{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17}):   &bls12381MapG1{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18}):   &bls12381MapG2{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 1}): &secp256r1_verify{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 2}): &rsapkcs1_verify{},
 }
 
 var PrecompiledAddresses []common.Address
@@ -925,4 +929,72 @@ func (c *bls12381MapG2) Run(input []byte) ([]byte, error) {
 
 	// Encode the G2 point to 256 bytes
 	return g.EncodePoint(r), nil
+}
+
+func GetArgs(input []byte, index int) []byte {
+	offset := new(big.Int).SetBytes(input[:32*(index+1)]).Uint64()
+	if offset >= 32 {
+		len := new(big.Int).SetBytes(input[offset : offset+32])
+		offset += 32
+		v := getData(input, offset, len.Uint64())
+		return v
+	} else {
+		return nil
+	}
+}
+
+func ReturnBytes(v []byte) []byte {
+	size := len(v)
+	ret := make([]byte, 64+32+(size+31)/32*32)
+	binary.BigEndian.PutUint64(ret[32-8:32], uint64(64))
+	binary.BigEndian.PutUint64(ret[64-8:64], uint64(len(ret)))
+	binary.BigEndian.PutUint64(ret[96-8:96], uint64(size))
+	copy(ret[96:], v)
+	return ret
+}
+
+// secp256r1_verify
+type secp256r1_verify struct{}
+
+func (c *secp256r1_verify) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *secp256r1_verify) Run(input []byte) ([]byte, error) {
+	arg_sig := GetArgs(input, 0)
+	arg_msg := GetArgs(input, 1)
+	arg_key := GetArgs(input, 2)
+	ret_bool := false
+
+	// TODO
+
+	fmt.Printf("secp256r1_verify(%v, %v, %v) return %v\n", arg_sig, arg_msg, arg_key, ret_bool)
+	ret_bytes := make([]byte, 32)
+	if ret_bool {
+		ret_bytes[31] = 1
+	}
+	return ret_bytes, nil
+}
+
+// rsapkcs1_verify
+type rsapkcs1_verify struct{}
+
+func (c *rsapkcs1_verify) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *rsapkcs1_verify) Run(input []byte) ([]byte, error) {
+	arg_sig := GetArgs(input, 0)
+	arg_msg := GetArgs(input, 1)
+	arg_key := GetArgs(input, 2)
+	ret_bool := false
+
+	// TODO
+
+	fmt.Printf("rsapkcs1_verify(%v, %v, %v) return %v\n", arg_sig, arg_msg, arg_key, ret_bool)
+	ret_bytes := make([]byte, 32)
+	if ret_bool {
+		ret_bytes[31] = 1
+	}
+	return ret_bytes, nil
 }
