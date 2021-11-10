@@ -104,24 +104,18 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		}
 
 		transactions = append(transactions, transaction)
-		if types.TransactionTypeJackpot == transaction.Type {
-			receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height, msg, transaction.Source, msg)
-			receipt.TxHash = transaction.Hash
-			receipts = append(receipts, receipt)
-		} else {
-			receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height, msg, transaction.Source, "")
-			logs := this.context["logs"]
-			if logs != nil {
-				receipt.Logs = logs.([]*types.Log)
-			}
-			contractAddress := this.context["contractAddress"]
-			if contractAddress != nil {
-				receipt.ContractAddress = contractAddress.(common.Address)
-			}
-			receipt.TxHash = transaction.Hash
-			receipts = append(receipts, receipt)
-		}
 
+		receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height, msg, transaction.Source, "")
+		logs := this.context["logs"]
+		if logs != nil {
+			receipt.Logs = logs.([]*types.Log)
+		}
+		contractAddress := this.context["contractAddress"]
+		if contractAddress != nil {
+			receipt.ContractAddress = contractAddress.(common.Address)
+		}
+		receipt.TxHash = transaction.Hash
+		receipts = append(receipts, receipt)
 	}
 
 	this.after()

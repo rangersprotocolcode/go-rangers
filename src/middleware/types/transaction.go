@@ -31,63 +31,24 @@ const (
 	TransactionTypeMinerAdd    = 5
 
 	//以下交易类型会被外部使用 禁止更改
-	TransactionTypeOperatorBalance   = 99
-	TransactionTypeOperatorEvent     = 100 // 调用状态机/转账
-	TransactionTypeGetCoin           = 101 // 查询主链币
-	TransactionTypeGetAllCoin        = 102 // 查询所有主链币
-	TransactionTypeFT                = 103 // 查询特定FT
-	TransactionTypeAllFT             = 104 // 查询所有FT
-	TransactionTypeNFT               = 105 // 根据setId、id查询特定NFT
-	TransactionTypeNFTListByAddress  = 106 // 查询账户下所有NFT
-	TransactionTypeNFTSet            = 107 // 查询NFTSet信息
-	TransactionTypeStateMachineNonce = 108 // 调用状态机nonce(预留接口）
-	TransactionTypeFTSet             = 113 // 根据ftId, 查询ftSet信息
-	TransactionTypeNFTCount          = 114 // 查询用户Rocket上的指定NFT的拥有数量
-	TransactionTypeNFTList           = 115 // 查询用户Rocket上的指定NFT的拥有数量
-	TransactionTypeNFTGtZero         = 118 // 查询指定用户Rocket上的余额大于0的非同质化代币列表
+	TransactionTypeOperatorBalance = 99
+	TransactionTypeOperatorEvent   = 100 // 调用状态机/转账
+	TransactionTypeGetCoin         = 101 // 查询主链币
+	TransactionTypeGetAllCoin      = 102 // 查询所有主链币
 
 	TransactionTypeWithdraw = 109
 
-	TransactionTypePublishFT      = 110 // 用户发FTSet
-	TransactionTypePublishNFTSet  = 111 // 用户发NFTSet
-	TransactionTypeShuttleNFT     = 112 // 用户穿梭NFT
-	TransactionTypeMintFT         = 116 // mintFT
-	TransactionTypeMintNFT        = 117 // mintNFT
-	TransactionTypeTransferBNT    = 127 // 状态机给用户转主链币
-	TransactionTypeTransferFT     = 119 // 状态机给用户转FT
-	TransactionTypeLockNFT        = 120 // 锁定NFT
-	TransactionTypeUnLockNFT      = 121 // 解锁NFT
-	TransactionTypeApproveNFT     = 122 // 授权NFT
-	TransactionTypeRevokeNFT      = 123 // 回收NFT
-	TransactionTypeTransferNFT    = 124 // 状态机给用户转NFT
-	TransactionTypeUpdateNFT      = 125 // 更新NFT数据
-	TransactionTypeBatchUpdateNFT = 126 // 批量更新NFT数据 deprecated
-
-	TransactionTypeLockResource   = 129 // 锁定 nft/ft/bnt
-	TransactionTypeUnLockResource = 130 // 解锁 nft/ft/bnt
-	TransactionTypeComboNFT       = 131 // 组合nft
-
 	TransactionTypeETHTX = 188 //以太坊的交易改造而成的交易
-
-	// 状态机通知客户端
-	TransactionTypeNotify          = 301 // 通知某个用户
-	TransactionTypeNotifyGroup     = 302 // 通知某个组
-	TransactionTypeNotifyBroadcast = 303 // 通知所有人
 
 	// 从rocket_connector来的消息
 	TransactionTypeCoinDepositAck = 201 // 充值
 	TransactionTypeFTDepositAck   = 202 // 充值
-	TransactionTypeNFTDepositAck  = 203 // 充值
 	TransactionTypeERC20Binding   = 204 // 绑定ERC-20
 
 	// 系统管理
 	TransactionTypeSetExchangeRate = 801 // 新增汇率表
 
 	TransactionTypeWrongTxNonce = 404
-
-	// 奖池
-	TransactionTypeLotteryCreate = 501 // 创建奖池
-	TransactionTypeJackpot       = 502 // 抽奖
 
 	//合约交易
 	TransactionTypeContract = 200

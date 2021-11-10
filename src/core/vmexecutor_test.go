@@ -104,11 +104,6 @@ func getTestBlockHeader() *types.BlockHeader {
 func TestVMExecutorAll(t *testing.T) {
 	fs := []func(*testing.T){
 		testVMExecutorFeeFail, testVMExecutorCoinDeposit, testVMExecutorFtDepositExecutor,
-		testVMExecutorNFTDepositExecutor, testVMExecutorNFTDepositExecutorWithAppId, testVMExecutorPublishFTSet,
-		testVMExecutorPublishFTSetError, testVMExecutorPublishNFTSet, testVMExecutorPublishNFTSetError,
-		testVMExecutorMintFT, testVMExecutorMintFTError, testVMExecutorMintFTGoodAndEvil, testVMExecutorMintNFT,
-		testVMExecutorMintNFTWithoutLimit, testVMExecutorMintNFTWithoutLimitGoodAndEvil,
-		testVMExecutorJackPot,
 	}
 
 	for i, f := range fs {
@@ -158,9 +153,7 @@ func testFee(kind int32, t *testing.T) {
 // 手续费不够测试
 func testVMExecutorFeeFail(t *testing.T) {
 	kinds := []int32{types.TransactionTypeOperatorEvent, types.TransactionTypeWithdraw, types.TransactionTypeMinerApply,
-		types.TransactionTypeMinerAdd, types.TransactionTypeMinerRefund, types.TransactionTypePublishFT, types.TransactionTypePublishNFTSet,
-		types.TransactionTypeMintFT, types.TransactionTypeMintNFT, types.TransactionTypeShuttleNFT, types.TransactionTypeUpdateNFT,
-		types.TransactionTypeApproveNFT, types.TransactionTypeRevokeNFT,
+		types.TransactionTypeMinerAdd, types.TransactionTypeMinerRefund,
 	}
 
 	for _, kind := range kinds {

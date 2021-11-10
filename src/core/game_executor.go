@@ -256,7 +256,6 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 		return false, "Tx Is Existed"
 	}
 
-
 	processor := executors.GetTxExecutor(txRaw.Type)
 	if nil == processor {
 		return false, fmt.Sprintf("finish tx. wrong tx type: %d, hash: %s", txRaw.Type, txhash)
@@ -286,29 +285,6 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 		accountDB.RevertToSnapshot(snapshot)
 	} else if txRaw.Source != "" {
 		accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
-	}
-
-	// 特殊处理返回
-	switch txRaw.Type {
-	case types.TransactionTypePublishFT:
-		appId := txRaw.Source
-		if result {
-			var ftSet map[string]string
-			json.Unmarshal([]byte(txRaw.Data), &ftSet)
-			ftSet["setId"] = message
-			ftSet["creator"] = appId
-			ftSet["owner"] = appId
-
-			data, _ := json.Marshal(ftSet)
-			message = string(data)
-		}
-
-		break
-	case types.TransactionTypePublishNFTSet:
-		if result {
-			message = txRaw.Data
-		}
-		break
 	}
 
 	return result, message
@@ -354,7 +330,6 @@ func (executor *GameExecutor) isExisted(tx types.Transaction) bool {
 //	var result string
 //	sourceString := txRaw.Source
 //	source := common.HexToAddress(sourceString)
-//	gameId := txRaw.Target
 //	switch txRaw.Type {
 //
 //	// 查询账户余额
@@ -375,69 +350,6 @@ func (executor *GameExecutor) isExisted(tx types.Transaction) bool {
 //		result = service.GetAllCoinInfo(source)
 //		break
 //
-//		// 查询FT
-//	case types.TransactionTypeFT:
-//		result = service.GetFTInfo(source, txRaw.Data)
-//		break
-//
-//		// 查询用户所有FT
-//	case types.TransactionTypeAllFT:
-//		result = service.GetAllFT(source)
-//		break
-//
-//		//查询特定NFT
-//	case types.TransactionTypeNFT:
-//		var id types.NFTID
-//		err := json.Unmarshal([]byte(txRaw.Data), &id)
-//		if nil == err {
-//			result = service.GetNFTInfo(id.SetId, id.Id, gameId)
-//		}
-//		break
-//
-//		// 查询账户下某个游戏的所有NFT
-//	case types.TransactionTypeNFTListByAddress:
-//		result = service.GetAllNFT(source, gameId)
-//		break
-//
-//		// 查询NFTSet信息
-//	case types.TransactionTypeNFTSet:
-//		result = service.GetNFTSet(txRaw.Data)
-//		break
-//
-//	case types.TransactionTypeFTSet:
-//		result = service.GetFTSet(txRaw.Data)
-//		break
-//
-//	case types.TransactionTypeNFTCount:
-//		param := make(map[string]string, 0)
-//		json.Unmarshal([]byte(txRaw.Data), &param)
-//
-//		result = strconv.Itoa(service.GetNFTCount(param["address"], param["setId"], ""))
-//		break
-//
-//	case types.TransactionTypeNFTList:
-//		param := make(map[string]string, 0)
-//		json.Unmarshal([]byte(txRaw.Data), &param)
-//		result = service.GetAllNFTBySetId(param["address"], param["setId"])
-//		break
-//
-//	case types.TransactionTypeNFTGtZero:
-//		accountDB := service.AccountDBManagerInstance.GetAccountDB("", true)
-//		nftList := service.NFTManagerInstance.GetNFTListByAddress(source, "", accountDB)
-//		resultMap := make(map[string]int, 0)
-//		for _, nft := range nftList {
-//			value, ok := resultMap[nft.SetID]
-//			if ok {
-//				value++
-//			} else {
-//				value = 1
-//			}
-//			resultMap[nft.SetID] = value
-//		}
-//
-//		bytes, _ := json.Marshal(resultMap)
-//		result = string(bytes)
-//		break
 //		//查询CHAIN ID
 //	case types.TransactionTypeGetChainId:
 //		result = service.GetChainId()
