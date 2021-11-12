@@ -95,7 +95,6 @@ func initGameExecutor(blockChainImpl *blockChain) {
 
 	//notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.write)
-	notify.BUS.Subscribe(notify.CoinProxyNotify, gameExecutor.coinProxyHandler)
 	notify.BUS.Subscribe(notify.WrongTxNonce, gameExecutor.wrongTxNonceHandler)
 	notify.BUS.Subscribe(notify.BlockAddSucc, gameExecutor.onBlockAddSuccess)
 
@@ -171,21 +170,6 @@ func (executor *GameExecutor) onBlockAddSuccess(message notify.Message) {
 		executor.tempTx.Delete(utility.UInt64ToByte(tx.RequestId))
 	}
 	msg += fmt.Sprintf(", deleted %d txs", count)
-}
-
-func (executor *GameExecutor) coinProxyHandler(msg notify.Message) {
-	cpn, ok := msg.(*notify.CoinProxyNotifyMessage)
-	if !ok {
-		logger.Debugf("coinProxyHandler: Message assert not ok!")
-		return
-	}
-
-	message := notify.ClientTransactionMessage{
-		Tx:    cpn.Tx,
-		Nonce: cpn.Tx.RequestId,
-	}
-	executor.logger.Debugf("coinProxyHandler rcv message: %s", message.TOJSONString())
-	executor.writeChan <- message
 }
 
 func (executor *GameExecutor) loop() {

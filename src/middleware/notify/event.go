@@ -51,8 +51,6 @@ const (
 
 	ClientTransactionRead = "client_transaction_read"
 
-	CoinProxyNotify = "coin_proxy_notify"
-
 	AcceptGroup = "accept_group"
 
 	WrongTxNonce = "wrongTxNonce"

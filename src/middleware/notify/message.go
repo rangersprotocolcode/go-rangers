@@ -238,29 +238,6 @@ func (m *ClientTransactionMessage) TOJSONString() string {
 	return string(byte)
 }
 
-type CoinProxyNotifyMessage struct {
-	Tx types.Transaction
-}
-
-func (m *CoinProxyNotifyMessage) GetRaw() []byte {
-	// never use it
-	return nil
-}
-func (m *CoinProxyNotifyMessage) GetData() interface{} {
-	return m
-}
-
-type STMStorageReadyMessage struct {
-	FileName []byte
-}
-
-func (s *STMStorageReadyMessage) GetRaw() []byte {
-	return s.FileName
-}
-func (s *STMStorageReadyMessage) GetData() interface{} {
-	return s.FileName
-}
-
 type NonceNotifyMessage struct {
 	Nonce uint64
 	Msg   string

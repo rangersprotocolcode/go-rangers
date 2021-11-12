@@ -31,9 +31,6 @@ type server struct {
 	reader ClientConn
 	writer ClientConn
 
-	// coiner消息
-	coiner ConnectorConn
-
 	jsonrpc JSONRPCConn
 }
 
@@ -41,7 +38,6 @@ func (s *server) Init(logger log.Logger, gateAddr string, selfMinerId []byte, co
 	s.reader.Init(gateAddr, "/srv/worker_reader", notify.ClientTransactionRead, methodCodeClientReader, logger, true)
 	s.writer.Init(gateAddr, "/srv/worker_writer", notify.ClientTransaction, methodCodeClientWriter, logger, false)
 	s.worker.Init(gateAddr, selfMinerId, consensusHandler, logger)
-	s.coiner.Init(gateAddr, logger)
 	s.jsonrpc.Init(gateAddr, logger)
 }
 
@@ -67,10 +63,6 @@ func (s *server) SendToClientReader(id string, msg []byte, nonce uint64) {
 
 func (s *server) SendToClientWriter(id string, msg []byte, nonce uint64) {
 	s.writer.Send(id, msg, nonce)
-}
-
-func (s *server) SendToCoinConnector(msg []byte) {
-	s.coiner.Send(msg)
 }
 
 func (s *server) Notify(isUniCast bool, gameId string, userid string, msg string) {

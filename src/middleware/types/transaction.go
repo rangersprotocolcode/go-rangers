@@ -36,14 +36,7 @@ const (
 	TransactionTypeGetCoin         = 101 // 查询主链币
 	TransactionTypeGetAllCoin      = 102 // 查询所有主链币
 
-	TransactionTypeWithdraw = 109
-
 	TransactionTypeETHTX = 188 //以太坊的交易改造而成的交易
-
-	// 从rocket_connector来的消息
-	TransactionTypeCoinDepositAck = 201 // 充值
-	TransactionTypeFTDepositAck   = 202 // 充值
-	TransactionTypeERC20Binding   = 204 // 绑定ERC-20
 
 	// 系统管理
 	TransactionTypeSetExchangeRate = 801 // 新增汇率表

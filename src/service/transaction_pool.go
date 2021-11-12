@@ -342,9 +342,6 @@ func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
 }
 
 func (pool *TxPool) VerifyTransaction(tx *types.Transaction) error {
-	if tx.Type == types.TransactionTypeCoinDepositAck || tx.Type == types.TransactionTypeFTDepositAck || tx.Type == types.TransactionTypeERC20Binding {
-		return nil
-	}
 
 	if tx.Type == types.TransactionTypeETHTX {
 		return nil
@@ -364,10 +361,6 @@ func (pool *TxPool) VerifyTransaction(tx *types.Transaction) error {
 }
 
 func (pool *TxPool) ProcessFee(tx types.Transaction, accountDB *account.AccountDB) error {
-	if tx.Type == types.TransactionTypeCoinDepositAck || tx.Type == types.TransactionTypeFTDepositAck || tx.Type == types.TransactionTypeERC20Binding {
-		return nil
-	}
-
 	addr := common.HexStringToAddress(tx.Source)
 	balance := accountDB.GetBalance(addr)
 

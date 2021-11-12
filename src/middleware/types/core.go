@@ -255,31 +255,6 @@ type FTID struct {
 	Value string `json:"value,omitempty"`
 }
 
-//提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链
-type WithDrawReq struct {
-	Address string          `json:"address,omitempty"`
-	Balance string          `json:"balance,omitempty"`
-	BNT     BNTWithdrawInfo `json:"bnt,omitempty"`
-
-	ChainType string            `json:"chainType,omitempty"`
-	FT        map[string]string `json:"ft,omitempty"`
-	NFT       []NFTID           `json:"nft,omitempty"`
-}
-
-type WithDrawData struct {
-	Address string          `json:"address,omitempty"`
-	BNT     BNTWithdrawInfo `json:"bnt,omitempty"`
-
-	ChainType string            `json:"chainType,omitempty"`
-	FT        map[string]string `json:"ft,omitempty"`
-	NFT       []NFTID           `json:"nft,omitempty"`
-}
-
-type BNTWithdrawInfo struct {
-	TokenType string `json:"tokenType,omitempty"`
-	Value     string `json:"value,omitempty"`
-}
-
 type TxJson struct {
 	// 用户id
 	Source string `json:"source"`
@@ -305,13 +280,6 @@ func (txJson TxJson) ToTransaction() Transaction {
 	tx := Transaction{Source: txJson.Source, Target: txJson.Target, Type: txJson.Type, Time: txJson.Time,
 		Data: txJson.Data, ExtraData: txJson.ExtraData, Nonce: txJson.Nonce,
 		RequestId: txJson.RequestId, SocketRequestId: txJson.SocketRequestId}
-
-	//tx from coiner cal hash by layer2
-	//tx from coiner sign make sign nil
-	if tx.Type == TransactionTypeCoinDepositAck || tx.Type == TransactionTypeFTDepositAck || tx.Type == TransactionTypeERC20Binding {
-		tx.Hash = tx.GenHash()
-		return tx
-	}
 
 	if txJson.Hash != "" {
 		tx.Hash = common.HexToHash(txJson.Hash)

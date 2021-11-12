@@ -38,10 +38,6 @@ func InitExecutors() {
 	executors := make(map[int32]executor)
 
 	executors[types.TransactionTypeOperatorEvent] = &operatorExecutor{logger: logger}
-	executors[types.TransactionTypeWithdraw] = &withdrawExecutor{}
-	executors[types.TransactionTypeCoinDepositAck] = &coinDepositExecutor{}
-	executors[types.TransactionTypeFTDepositAck] = &ftDepositExecutor{}
-	executors[types.TransactionTypeERC20Binding] = &erc20BindingExecutor{}
 
 	executors[types.TransactionTypeMinerApply] = &minerApplyExecutor{logger: logger}
 	executors[types.TransactionTypeMinerAdd] = &minerAddExecutor{logger: logger}
