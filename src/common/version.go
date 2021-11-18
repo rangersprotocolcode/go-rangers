@@ -26,6 +26,10 @@ const (
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
 	ENV_TESTNET_ROBIN = "test"
+
+	CHAIN_ID_DEV      = "9500"
+	CHAIN_ID_ROBIN    = "9527"
+	CHIAN_ID_MAIN_NET = "8888"
 )
 
 //used　to distinguish different network env
@@ -41,10 +45,14 @@ func GetChainId() *big.Int {
 
 func InitChainId(env string) {
 	if env == ENV_DEV {
-		ChainId = "9500"
-		NetworkId = "9500"
+		ChainId = CHAIN_ID_DEV
+		NetworkId = CHAIN_ID_DEV
 	} else if env == ENV_TESTNET_ROBIN {
-		ChainId = "9527"
-		NetworkId = "9527"
+		ChainId = CHAIN_ID_ROBIN
+		NetworkId = CHAIN_ID_ROBIN
 	}
+}
+
+func IsRobin() bool {
+	return ChainId == CHAIN_ID_ROBIN
 }
