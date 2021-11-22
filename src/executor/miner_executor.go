@@ -17,6 +17,7 @@
 package executor
 
 import (
+	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -98,14 +99,21 @@ func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *
 
 	miner.Status = common.MinerStatusNormal
 
-	if utility.IsEmptyByteSlice(miner.Id) {
+	if utility.IsEmptyByteSlice(miner.Id) || utility.IsEmptyByteSlice(miner.Account) {
 		pubKey, err := transaction.Sign.RecoverPubkey(transaction.Hash.Bytes())
 		if nil != err {
-			msg := fmt.Sprintf("fail to refund %s, recoverPubkey failed", transaction.Data)
+			msg := fmt.Sprintf("fail to apply miner %s, recoverPubkey failed", transaction.Data)
 			this.logger.Errorf(msg)
 			return false, msg
 		}
-		miner.Id = pubKey.GetID()
+
+		if utility.IsEmptyByteSlice(miner.Id) {
+			miner.Id = pubKey.GetID()
+		}
+
+		if utility.IsEmptyByteSlice(miner.Account) {
+			miner.Account = pubKey.GetAddress().Bytes()
+		}
 	}
 
 	return service.MinerManagerImpl.AddMiner(common.HexToAddress(transaction.Source), &miner, accountdb)
@@ -137,4 +145,40 @@ func (this *minerAddExecutor) Execute(transaction *types.Transaction, header *ty
 	}
 
 	return service.MinerManagerImpl.AddStake(common.HexToAddress(transaction.Source), miner.Id, miner.Stake, accountdb)
+}
+
+type minerChangeAccountExecutor struct {
+	baseFeeExecutor
+	logger log.Logger
+}
+
+func (this *minerChangeAccountExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	data := transaction.Data
+	var miner types.Miner
+	err := json.Unmarshal([]byte(data), &miner)
+	if err != nil {
+		msg := fmt.Sprintf("json Unmarshal error, %s", err.Error())
+		this.logger.Errorf(msg)
+		return false, msg
+	}
+
+	current := service.MinerManagerImpl.GetMiner(miner.Id, accountdb)
+	if nil == current {
+		msg := fmt.Sprintf("fail to getMiner, %s", common.ToHex(miner.Id))
+		this.logger.Errorf(msg)
+		return false, msg
+	}
+
+	// check authority
+	if bytes.Compare(current.Account, common.Hex2Bytes(transaction.Source)) != 0 {
+		msg := fmt.Sprintf("fail to auth, %s vs %s", common.ToHex(current.Account), transaction.Source)
+		this.logger.Errorf(msg)
+		return false, msg
+	}
+
+	msg := fmt.Sprintf("successfully change account, from %s to %s", common.ToHex(current.Account), common.ToHex(miner.Account))
+	current.Account = miner.Account
+	service.MinerManagerImpl.UpdateMiner(current, accountdb, false)
+	this.logger.Warnf(msg)
+	return true, msg
 }

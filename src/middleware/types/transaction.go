@@ -24,11 +24,12 @@ import (
 )
 
 const (
-	TransactionTypeBonus       = 1
-	TransactionTypeMinerApply  = 2
-	TransactionTypeMinerAbort  = 3
-	TransactionTypeMinerRefund = 4
-	TransactionTypeMinerAdd    = 5
+	TransactionTypeBonus              = 1
+	TransactionTypeMinerApply         = 2
+	TransactionTypeMinerAbort         = 3
+	TransactionTypeMinerRefund        = 4
+	TransactionTypeMinerAdd           = 5
+	TransactionTypeMinerChangeAccount = 6
 
 	//以下交易类型会被外部使用 禁止更改
 	TransactionTypeOperatorBalance = 99
