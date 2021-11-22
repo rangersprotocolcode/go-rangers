@@ -111,7 +111,7 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 	statedb.AddERC20Binding("SYSTEM-USDT", usdtContractAddress, 2, 6)
 	logger.Debugf("After execute usdt contract create!Contract address:%s", usdtContractAddress.GetHexString())
 
-	_, wRpgContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(wethContractData), vmCtx.GasLimit, big.NewInt(0))
+	_, wRpgContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(wRPGContractData), vmCtx.GasLimit, big.NewInt(0))
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
 	}
