@@ -46,11 +46,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	stateDB.SetNonce(common.ValidatorDBAddress, 1)
 
 	//创建创始合约
-	usdtContractAddress, wethContractAddress, bscUsdtContractAddress, wBNBContractAddress := createGenesisContract(block.Header, stateDB)
-	stateDB.AddERC20Binding("SYSTEM-ETH.USDT", usdtContractAddress, 2, 6)
-	stateDB.AddERC20Binding("ETH.ETH", wethContractAddress, 3, 18)
-	stateDB.AddERC20Binding("SYSTEM-BSC.USDT", bscUsdtContractAddress, 2, 6)
-	stateDB.AddERC20Binding("BSC.BNB", wBNBContractAddress, 3, 18)
+	createGenesisContract(block.Header, stateDB)
 
 	root, _ := stateDB.Commit(true)
 	triedb.Commit(root, false)
@@ -91,7 +87,7 @@ func getGenesisProposer() []*types.Miner {
 	return miners
 }
 
-func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB) (common.Address, common.Address, common.Address, common.Address) {
+func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB) {
 	source := "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
 	vmCtx := vm.Context{}
 	vmCtx.CanTransfer = vm.CanTransfer
@@ -112,25 +108,20 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
 	}
+	statedb.AddERC20Binding("SYSTEM-USDT", usdtContractAddress, 2, 6)
 	logger.Debugf("After execute usdt contract create!Contract address:%s", usdtContractAddress.GetHexString())
 
-	_, wethContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(wethContractData), vmCtx.GasLimit, big.NewInt(0))
+	_, wRpgContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(wethContractData), vmCtx.GasLimit, big.NewInt(0))
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
 	}
-	logger.Debugf("After execute weth contract create! Contract address:%s", wethContractAddress.GetHexString())
+	statedb.AddERC20Binding(common.BLANCE_NAME, wRpgContractAddress, 3, 18)
+	logger.Debugf("After execute rpg contract create! Contract address:%s", wRpgContractAddress.GetHexString())
 
-	_, bscUsdtContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(usdtContractData), vmCtx.GasLimit, big.NewInt(0))
+	_, mixContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(mixContractData), vmCtx.GasLimit, big.NewInt(0))
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
 	}
-	logger.Debugf("After execute BSC usdt contract create!Contract address:%s", bscUsdtContractAddress.GetHexString())
-
-	_, wBNBContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(wBNBContractData), vmCtx.GasLimit, big.NewInt(0))
-	if err != nil {
-		panic("Genesis contract create error:" + err.Error())
-	}
-	logger.Debugf("After execute wBNB contract create! Contract address:%s", wBNBContractAddress.GetHexString())
-
-	return usdtContractAddress, wethContractAddress, bscUsdtContractAddress, wBNBContractAddress
+	statedb.AddERC20Binding("SYSTEM-MIX", mixContractAddress, 0, 18)
+	logger.Debugf("After execute mix contract create! Contract address:%s", mixContractAddress.GetHexString())
 }

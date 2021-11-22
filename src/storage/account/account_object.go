@@ -23,7 +23,6 @@ import (
 	"com.tuntun.rocket/node/src/storage/trie"
 	"fmt"
 	"golang.org/x/crypto/sha3"
-	"math/big"
 	"sync"
 )
 
@@ -90,7 +89,7 @@ type accountObject struct {
 
 // empty returns whether the account is considered empty.
 func (ao *accountObject) empty() bool {
-	return (ao.data.NFTSetDefinitionHash == nil || 0 == bytes.Compare(ao.data.NFTSetDefinitionHash, emptyCodeHash[:])) && ao.data.Nonce == 0 && ao.data.Balance.Sign() == 0 && len(ao.cachedStorage) == 0 && len(ao.dirtyStorage) == 0
+	return (ao.data.NFTSetDefinitionHash == nil || 0 == bytes.Compare(ao.data.NFTSetDefinitionHash, emptyCodeHash[:])) && ao.data.Nonce == 0 && len(ao.cachedStorage) == 0 && len(ao.dirtyStorage) == 0
 }
 
 // Account is the consensus representation of accounts.
@@ -100,14 +99,10 @@ type Account struct {
 	Root                 common.Hash
 	kind                 byte
 	NFTSetDefinitionHash []byte
-	Balance              *big.Int
 }
 
 // newObject creates a account object.
 func newAccountObject(db *AccountDB, address common.Address, data Account, onDirty func(addr common.Address)) *accountObject {
-	if data.Balance == nil {
-		data.Balance = new(big.Int)
-	}
 	if data.NFTSetDefinitionHash == nil {
 		data.NFTSetDefinitionHash = emptyCodeHash[:]
 	}
@@ -275,45 +270,6 @@ func (ao *accountObject) CommitTrie(db AccountDatabase) error {
 	return err
 }
 
-//AddBalance is used to add funds to the destination account of a transfer.
-func (ao *accountObject) AddBalance(amount *big.Int) {
-	// We must check emptiness for the objects such that the account
-	// clearing (0,0,0 objects) can take effect.
-	if amount.Sign() == 0 {
-		if ao.empty() {
-			ao.touch()
-		}
-		return
-	}
-	ao.SetBalance(new(big.Int).Add(ao.Balance(), amount))
-}
-
-// SubBalance is used to remove funds from the origin account of a transfer.
-func (ao *accountObject) SubBalance(amount *big.Int) *big.Int {
-	left := new(big.Int).Sub(ao.Balance(), amount)
-	if amount.Sign() == 0 {
-		return left
-	}
-	ao.SetBalance(left)
-	return left
-}
-
-func (ao *accountObject) SetBalance(amount *big.Int) {
-	ao.db.transitions = append(ao.db.transitions, balanceChange{
-		account: &ao.address,
-		prev:    new(big.Int).Set(ao.data.Balance),
-	})
-	ao.setBalance(amount)
-}
-
-func (ao *accountObject) setBalance(amount *big.Int) {
-	ao.data.Balance = amount
-	if ao.onDirty != nil {
-		ao.onDirty(ao.Address())
-		ao.onDirty = nil
-	}
-}
-
 func (ao *accountObject) deepCopy(db *AccountDB, onDirty func(addr common.Address)) *accountObject {
 	accountObject := newAccountObject(db, ao.address, ao.data, onDirty)
 	if ao.trie != nil {
@@ -370,10 +326,6 @@ func (ao *accountObject) setNonce(nonce uint64) {
 // CodeHash returns code's hash
 func (ao *accountObject) NFTSetDefinitionHash() []byte {
 	return ao.data.NFTSetDefinitionHash
-}
-
-func (ao *accountObject) Balance() *big.Int {
-	return ao.data.Balance
 }
 
 func (ao *accountObject) Nonce() uint64 {

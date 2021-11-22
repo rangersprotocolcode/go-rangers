@@ -69,3 +69,7 @@ const (
 
 	HeightAfterStake = 300
 )
+
+const (
+	BLANCE_NAME = "SYSTEM-RPG"
+)

@@ -138,7 +138,7 @@ func createRobinGenesisContract(header *types.BlockHeader, statedb *account.Acco
 	}
 	logger.Debugf("After execute BSC usdt contract create!Contract address:%s", bscUsdtContractAddress.GetHexString())
 
-	_, wBNBContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(wBNBContractData), vmCtx.GasLimit, big.NewInt(0))
+	_, wBNBContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(wRPGContractData), vmCtx.GasLimit, big.NewInt(0))
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
 	}

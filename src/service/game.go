@@ -26,7 +26,6 @@ import (
 	"fmt"
 	"math/big"
 	"strconv"
-	"strings"
 )
 
 func GetBalance(source common.Address, accountDB *account.AccountDB) string {
@@ -517,45 +516,4 @@ func RevokeNFT(accountDB *account.AccountDB, tx *types.Transaction) (bool, strin
 
 	params["target"] = tx.Source
 	return approveNFT(accountDB, params, tx.Source)
-}
-
-func ComboNFT(accountDB *account.AccountDB, transaction *types.Transaction) (bool, string) {
-	nftId := strings.Split(transaction.Target, ":")
-	if 2 != len(nftId) {
-		return false, "nftId error: " + transaction.Target
-	}
-
-	// nftSet owner check
-	setId := nftId[0]
-	if !accountDB.CheckNFTSetOwner(setId, transaction.Source) {
-		return false, "nftSetOwner error: " + transaction.Source
-	}
-
-	// nft check
-	id := nftId[1]
-	nft := accountDB.GetNFTById(setId, id)
-	if nil == nft {
-		return false, fmt.Sprintf("no such nft: %s %s", setId, id)
-	}
-
-	// 资源提供方
-	var sourceAddr common.Address
-	if 0 == len(transaction.ExtraData) {
-		sourceAddr = common.HexToAddress(nft.Owner)
-	} else {
-		sourceAddr = common.HexToAddress(transaction.ExtraData)
-	}
-
-	// 所需的资源
-	var resource types.LockResource
-	if err := json.Unmarshal(utility.StrToBytes(transaction.Data), resource); nil != err {
-		return false, "resource data error: " + transaction.Data
-	}
-
-	success, msg := accountDB.ComboResource(sourceAddr, common.GenerateNFTSetAddress(setId), setId, id, resource)
-	if success {
-		return success, "nft combo successful"
-	} else {
-		return success, msg
-	}
 }

@@ -28,7 +28,7 @@ var (
 	positionKey         = utility.StrToBytes("p")
 	decimalKey          = utility.StrToBytes("d")
 	usdtContractAddress *common.Address
-	wethContractAddress *common.Address
+	rpgContractAddress  *common.Address
 	mixContractAddress  *common.Address
 )
 
@@ -45,30 +45,30 @@ func (self *AccountDB) AddERC20Binding(name string, contract common.Address, pos
 }
 
 func (self *AccountDB) loadContractCache() {
-	address := common.GenerateERC20Binding("SYSTEM-ETH.USDT")
+	address := common.GenerateERC20Binding("SYSTEM-USDT")
 	value := common.BytesToAddress(self.GetData(address, contractKey))
 	usdtContractAddress = &value
 
-	address = common.GenerateERC20Binding("ETH.ETH")
+	address = common.GenerateERC20Binding(common.BLANCE_NAME)
 	value1 := common.BytesToAddress(self.GetData(address, contractKey))
-	wethContractAddress = &value1
+	rpgContractAddress = &value1
 
-	address = common.GenerateERC20Binding("SYSTEM-ETH.MIX")
+	address = common.GenerateERC20Binding("SYSTEM-MIX")
 	value2 := common.BytesToAddress(self.GetData(address, contractKey))
 	mixContractAddress = &value2
 }
 
 func (self *AccountDB) GetERC20Binding(name string) (found bool, contract common.Address, position uint64, decimal uint64) {
-	if usdtContractAddress == nil {
+	if rpgContractAddress == nil {
 		self.loadContractCache()
 	}
 
 	switch name {
-	case "SYSTEM-ETH.USDT":
+	case "SYSTEM-USDT":
 		return true, *usdtContractAddress, 2, 6
-	case "ETH.ETH":
-		return true, *wethContractAddress, 3, 18
-	case "SYSTEM-ETH.MIX":
+	case common.BLANCE_NAME:
+		return true, *rpgContractAddress, 3, 18
+	case "SYSTEM-MIX":
 		return true, *mixContractAddress, 0, 18
 	}
 

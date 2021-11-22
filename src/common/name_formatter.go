@@ -28,12 +28,8 @@ const (
 	NFTPrefix      = "n:"
 	NFTSetPrefix   = "ns:"
 	FTSetPrefix    = "fs:"
-	LotteryPrefix  = "lp:"
 	LockPrefix     = "l:"
-	LockBalanceKey = LockPrefix + "ba"
-	LockBNTKey     = LockPrefix + "bn"
-	LockFTKey      = LockPrefix + "f"
-	LockNFTKey     = LockPrefix + "n"
+
 )
 
 const (
@@ -74,11 +70,6 @@ func SplitNFTKey(key string) (string, string) {
 	return idList[1], idList[2]
 }
 
-func GenerateLotteryAddress(owner string, nonce uint64) Address {
-	addr := fmt.Sprintf("%s%s%d", LotteryPrefix, owner, nonce)
-	return BytesToAddress(Sha256(utility.StrToBytes(addr)))
-}
-
 func GenerateNFTSetAddress(setId string) Address {
 	addr := fmt.Sprintf("%s%s", NFTSetPrefix, setId)
 	return BytesToAddress(Sha256(utility.StrToBytes(addr)))
@@ -109,22 +100,6 @@ func FormatHexString(s string) string {
 	}
 
 	return ""
-}
-
-func GenerateLockBalanceKey(source string) string {
-	return fmt.Sprintf("%s:%s", LockBalanceKey, source)
-}
-
-func GenerateLockBNTKey(source, name string) string {
-	return fmt.Sprintf("%s:%s:%s", LockBNTKey, source, name)
-}
-
-func GenerateLockFTKey(source, name string) string {
-	return fmt.Sprintf("%s:%s:%s", LockFTKey, source, name)
-}
-
-func GenerateLockNFTKey(source, setId, id string) string {
-	return fmt.Sprintf("%s:%s:%s:%s", LockNFTKey, source, setId, id)
 }
 
 func GenerateERC20Binding(name string) Address {
