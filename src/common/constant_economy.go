@@ -26,12 +26,13 @@ const (
 
 	// 10个小时，单位ms
 	// 计算一次奖励的时间间隔
-	RewardTime = 1 * 60 * 60 * 1000
+	rewardTime = 1 * 1000
+	//10 * 60 * 60 * 1000
 
 	RefundTime = 50 * 1000
 
 	// 按照出块速度，计算奖励所需要的块数目
-	RewardBlocks = uint64(RewardTime / CastingInterval)
+	RewardBlocks = uint64(rewardTime / CastingInterval)
 
 	RefundBlocks = uint64(RefundTime / CastingInterval)
 
