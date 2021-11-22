@@ -332,25 +332,29 @@ func (api *GtasAPI) NodeInfo() (*Result, error) {
 	ni := &NodeInfo{}
 	p := consensus.Proc
 	ni.ID = p.GetMinerID().GetHexString()
-	balance := walletManager.getBalance(p.GetMinerID().GetHexString())
-	ni.Balance = balance
+
 	if !p.Ready() {
 		ni.Status = "节点未准备就绪"
 	} else {
 		ni.Status = "运行中"
 		morts := make([]MortGage, 0)
 		t := ""
+		balance := ""
 		heavyInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeProposer, service.AccountDBManagerInstance.GetLatestStateDB())
 		if heavyInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(heavyInfo))
 			t = "提案节点"
+			balance = walletManager.getBalance(heavyInfo.Account)
 		}
 
 		lightInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeValidator, service.AccountDBManagerInstance.GetLatestStateDB())
 		if lightInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(lightInfo))
 			t = " 验证节点"
+			balance = walletManager.getBalance(lightInfo.Account)
 		}
+
+		ni.Balance = balance
 		ni.NType = t
 		ni.MortGages = morts
 

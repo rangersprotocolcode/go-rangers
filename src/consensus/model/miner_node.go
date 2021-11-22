@@ -27,10 +27,15 @@ const minerStake = 1
 
 //矿工信息
 type MinerInfo struct {
+	// 矿工签名公钥，用于建组、出块等消息的签名及验证
 	PubKey groupsig.Pubkey
+
+	// 矿工ID
 	ID     groupsig.ID
 
+	// VRF公钥，用于验证VRFProve
 	VrfPK vrf.VRFPublicKey
+
 
 	Stake     uint64
 	MinerType byte

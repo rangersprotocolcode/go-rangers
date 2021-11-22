@@ -83,7 +83,7 @@ func (reward *RewardCalculator) notify(total map[common.Address]*big.Int, height
 }
 
 // 计算某一块的奖励
-func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, accountDB *account.AccountDB,situation string) map[common.Address]*big.Int {
+func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, accountDB *account.AccountDB, situation string) map[common.Address]*big.Int {
 	result := make(map[common.Address]*big.Int)
 
 	height := bh.Height
@@ -94,7 +94,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, a
 
 	// 提案者奖励
 	rewardProposer := utility.Float64ToBigInt(total * common.ProposerReward)
-	proposerAddr := getAddressFromID(bh.Castor)
+	proposerAddr := common.BytesToAddress(MinerManagerImpl.getMinerAccount(bh.Castor, common.MinerTypeProposer, accountDB))
 	addReward(result, proposerAddr, rewardProposer)
 	proposerResult := result[proposerAddr].String()
 	reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, reward: %d, result: %s", height, hashString, proposerAddr.String(), rewardProposer, proposerResult)

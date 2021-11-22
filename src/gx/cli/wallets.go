@@ -94,12 +94,9 @@ func (ws *wallets) newWalletByPrivateKey(privateKey string) (privKeyStr, walletA
 	return
 }
 
-func (ws *wallets) getBalance(account string) string {
-	if account == "" && len(walletManager) > 0 {
-		account = walletManager[0].Address
-	}
-	balance := core.GetBlockChain().GetBalance(common.HexToAddress(account))
-
+func (ws *wallets) getBalance(addr []byte) string {
+	account := common.BytesToAddress(addr)
+	balance := core.GetBlockChain().GetBalance(account)
 	return utility.BigIntToStr(balance)
 }
 

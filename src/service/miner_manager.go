@@ -75,7 +75,7 @@ func (mm *MinerManager) GetMinerById(id []byte, kind byte, accountdb *account.Ac
 		}
 
 		miner.Stake = mm.getMinerStake(id, kind, accountdb)
-
+		miner.Account = mm.getMinerAccount(id, kind, accountdb)
 		return &miner
 	}
 	return nil
@@ -87,17 +87,22 @@ func (mm *MinerManager) getMinerStake(id []byte, kind byte, accountdb *account.A
 	return utility.ByteToUInt64(stakeBytes)
 }
 
+func (mm *MinerManager) getMinerAccount(id []byte, kind byte, accountdb *account.AccountDB) []byte {
+	db := mm.getMinerDatabaseAddress(kind)
+	return accountdb.GetData(db, common.Sha256(common.Sha256(id)))
+}
+
 func (mm *MinerManager) GetValidatorsStake(members [][]byte, accountDB *account.AccountDB) (uint64, map[common.Address]uint64) {
 	total := uint64(0)
 	membersDetail := make(map[common.Address]uint64, len(members))
 	for _, member := range members {
-		id := getAddressFromID(member)
 		stake := mm.getMinerStake(member, common.MinerTypeValidator, accountDB)
+		account := mm.getMinerAccount(member, common.MinerTypeValidator, accountDB)
 		if 0 == stake {
-			mm.logger.Errorf("fail to get Member,id: %s", id)
+			mm.logger.Errorf("fail to get Member,id: %s", common.BytesToAddress(member))
 			continue
 		}
-		membersDetail[id] = stake
+		membersDetail[common.BytesToAddress(account)] = stake
 		total += stake
 	}
 
@@ -121,7 +126,7 @@ func (mm *MinerManager) GetProposerTotalStakeWithDetail(height uint64, accountDB
 
 		if height >= miner.ApplyHeight && miner.Status == common.MinerStatusNormal {
 			total += miner.Stake
-			membersDetail[getAddressFromID(miner.Id)] = miner.Stake
+			membersDetail[common.BytesToAddress(miner.Account)] = miner.Stake
 		}
 	}
 
@@ -261,6 +266,7 @@ func (mm *MinerManager) UpdateMiner(miner *types.Miner, accountdb *account.Accou
 	}
 
 	accountdb.SetData(db, common.Sha256(id), utility.UInt64ToByte(miner.Stake))
+	accountdb.SetData(db, common.Sha256(common.Sha256(id)), miner.Account)
 }
 
 // 创世矿工用
@@ -285,6 +291,7 @@ func (mm *MinerManager) RemoveMiner(id []byte, ttype byte, accountdb *account.Ac
 
 	accountdb.SetData(db, id, emptyValue[:])
 	accountdb.SetData(db, common.Sha256(id), emptyValue[:])
+	accountdb.SetData(db, common.Sha256(common.Sha256(id)), emptyValue[:])
 }
 
 func (mm *MinerManager) minerIterator(minerType byte, accountdb *account.AccountDB) *MinerIterator {
@@ -319,14 +326,11 @@ func (mi *MinerIterator) Current() (*types.Miner, error) {
 	}
 
 	miner.Stake = utility.ByteToUInt64(mi.accountdb.GetData(mi.db, common.Sha256(miner.Id)))
+	miner.Account = mi.accountdb.GetData(mi.db, common.Sha256(common.Sha256(miner.Id)))
 
 	return &miner, err
 }
 
 func (mi *MinerIterator) Next() bool {
 	return mi.iterator.Next()
-}
-
-func getAddressFromID(id []byte) common.Address {
-	return common.BytesToAddress(id)
 }
