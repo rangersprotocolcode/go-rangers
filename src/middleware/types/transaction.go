@@ -38,9 +38,6 @@ const (
 
 	TransactionTypeETHTX = 188 //以太坊的交易改造而成的交易
 
-	// 系统管理
-	TransactionTypeSetExchangeRate = 801 // 新增汇率表
-
 	TransactionTypeWrongTxNonce = 404
 
 	//合约交易
