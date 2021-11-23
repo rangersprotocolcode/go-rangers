@@ -19,7 +19,7 @@ var vmTracer Tracer
 var logger log.Logger
 
 func InitVM() {
-	chainID, _ = big.NewInt(0).SetString(common.ChainId, 10)
+	chainID = common.GetChainId()
 
 	index := common.GlobalConf.GetString("instance", "index", "")
 	logger = log.GetLoggerByIndex(log.VMLogConfig, index)

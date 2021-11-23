@@ -78,6 +78,7 @@ type Transaction struct {
 	Nonce           uint64 // 用户级别nonce
 	RequestId       uint64 // 消息编号 由网关添加
 	SocketRequestId string // websocket id，用于客户端标示请求id，方便回调处理
+	ChainId         string //用于区分不同的链
 }
 
 //source 在hash计算范围内
@@ -95,6 +96,8 @@ func (tx *Transaction) GenHash() common.Hash {
 	buffer.Write([]byte(strconv.Itoa(int(tx.Type))))
 	buffer.Write([]byte(tx.Time))
 	buffer.Write([]byte(tx.ExtraData))
+	buffer.Write([]byte(tx.ChainId))
+
 	return common.BytesToHash(common.Sha256(buffer.Bytes()))
 }
 

@@ -165,7 +165,7 @@ func GetFTSet(id string) string {
 }
 
 func GetChainId() string {
-	return common.ChainId
+	return common.ChainId()
 }
 
 func GetNonce(address common.Address, accountDB *account.AccountDB) string {

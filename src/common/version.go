@@ -16,9 +16,7 @@
 
 package common
 
-import (
-	"math/big"
-)
+import "math/big"
 
 const (
 	Version           = "0.9"
@@ -26,33 +24,44 @@ const (
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
 	ENV_TESTNET_ROBIN = "test"
-
-	CHAIN_ID_DEV      = "9500"
-	CHAIN_ID_ROBIN    = "9527"
-	CHIAN_ID_MAIN_NET = "8888"
+	ENV_MAINNET       = "mainnet"
 )
 
-//used　to distinguish different network env
-var NetworkId = "9500"
+var (
+	mainNetChainConfig = ChainConfig{ChainId: "8888", NetworkId: "8888"}
+	robinChainConfig   = ChainConfig{ChainId: "9527", NetworkId: "9527"}
+	devNetChainConfig  = ChainConfig{ChainId: "9500", NetworkId: "9500"}
 
-//used　to distinguish different fork
-var ChainId = "9500"
+	LocalChainConfig ChainConfig
+)
 
-func GetChainId() *big.Int {
-	chainId, _ := big.NewInt(0).SetString(ChainId, 10)
-	return chainId
+type ChainConfig struct {
+	ChainId   string
+	NetworkId string
 }
 
-func InitChainId(env string) {
+func InitChainConfig(env string) {
 	if env == ENV_DEV {
-		ChainId = CHAIN_ID_DEV
-		NetworkId = CHAIN_ID_DEV
-	} else if env == ENV_TESTNET_ROBIN {
-		ChainId = CHAIN_ID_ROBIN
-		NetworkId = CHAIN_ID_ROBIN
+		LocalChainConfig = devNetChainConfig
+	} else if env == ENV_MAINNET {
+		LocalChainConfig = mainNetChainConfig
+	} else {
+		LocalChainConfig = robinChainConfig
 	}
 }
 
+func GetChainId() *big.Int {
+	chainId, _ := big.NewInt(0).SetString(LocalChainConfig.ChainId, 10)
+	return chainId
+}
+
+func ChainId() string {
+	return LocalChainConfig.ChainId
+}
+
+func NetworkId() string {
+	return LocalChainConfig.NetworkId
+}
 func IsRobin() bool {
-	return ChainId == CHAIN_ID_ROBIN
+	return LocalChainConfig.ChainId == robinChainConfig.ChainId
 }

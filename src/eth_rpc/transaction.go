@@ -255,6 +255,7 @@ func convertTx(txRaw *Transaction, sender common.Address) *types.Transaction {
 	//can not ues time!
 	//result.Time = txRaw.time.String()
 	result.Nonce = txRaw.data.AccountNonce
+	result.ChainId = txRaw.ChainId().String()
 
 	data := service.ContractData{}
 	data.AbiData = common.ToHex(txRaw.Data())
