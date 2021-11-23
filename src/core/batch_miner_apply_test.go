@@ -19,6 +19,7 @@ package core
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/gorilla/websocket"
@@ -183,7 +184,7 @@ func parseFile() []piece {
 
 func genMinerApplyTx(target string, data string) string {
 	source := "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
-	tx := types.Transaction{Type: types.TransactionTypeMinerApply, Source: source, Target: target, Time: time.Now().String()}
+	tx := types.Transaction{Type: types.TransactionTypeMinerApply, Source: source, Target: target, Time: time.Now().String(), ChainId: "9500"}
 
 	tx.Data = string(data)
 	tx.Hash = tx.GenHash()
@@ -230,4 +231,13 @@ func sendTxToGate(txList []string) {
 		}
 		time.Sleep(time.Millisecond * 100)
 	}
+}
+
+func TestMinerRefundBase64(t *testing.T) {
+	s, err := base64.StdEncoding.DecodeString("JevvUFyYiszl6wg3fPRA1zUBo8TKiphhjJy7Hy0nfcU=")
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	fmt.Println(common.ToHex(s))
 }
