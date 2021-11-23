@@ -7,6 +7,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/trie"
+	"com.tuntun.rocket/node/src/utility"
 	"com.tuntun.rocket/node/src/vm"
 	"math/big"
 	"time"
@@ -48,6 +49,9 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 
 	//创建创始合约
 	createGenesisContract(block.Header, stateDB)
+
+	money, _ := utility.StrToBigInt("100000000")
+	stateDB.SetBalance(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), money)
 
 	root, _ := stateDB.Commit(true)
 	triedb.Commit(root, false)
