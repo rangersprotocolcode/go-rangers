@@ -274,12 +274,14 @@ type TxJson struct {
 	Nonce           uint64 `json:"nonce,omitempty"`
 	RequestId       uint64
 	SocketRequestId string `json:"socketRequestId,omitempty"`
+
+	ChainId string `json:"chainId,omitempty"`
 }
 
 func (txJson TxJson) ToTransaction() Transaction {
 	tx := Transaction{Source: txJson.Source, Target: txJson.Target, Type: txJson.Type, Time: txJson.Time,
 		Data: txJson.Data, ExtraData: txJson.ExtraData, Nonce: txJson.Nonce,
-		RequestId: txJson.RequestId, SocketRequestId: txJson.SocketRequestId}
+		RequestId: txJson.RequestId, SocketRequestId: txJson.SocketRequestId, ChainId: txJson.ChainId}
 
 	if txJson.Hash != "" {
 		tx.Hash = common.HexToHash(txJson.Hash)
