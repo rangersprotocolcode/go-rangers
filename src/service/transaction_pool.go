@@ -347,7 +347,12 @@ func (pool *TxPool) VerifyTransaction(tx *types.Transaction) error {
 		return nil
 	}
 
-	err := pool.verifyTransactionHash(tx)
+	err := pool.verifyTxChainId(tx)
+	if nil != err {
+		return err
+	}
+
+	err = pool.verifyTransactionHash(tx)
 	if nil != err {
 		return err
 	}
@@ -371,6 +376,16 @@ func (pool *TxPool) ProcessFee(tx types.Transaction, accountDB *account.AccountD
 	}
 	accountDB.SubBalance(addr, delta)
 
+	return nil
+}
+
+func (pool *TxPool) verifyTxChainId(tx *types.Transaction) error {
+
+	if tx.ChainId != common.ChainId() {
+		err := fmt.Errorf("illegal tx chainId! ChainId:%s,expect chainId:%s", tx.ChainId, common.ChainId())
+		txLogger.Errorf("Verify chain id error!Hash:%s,error:%s", tx.Hash.String(), err.Error())
+		return err
+	}
 	return nil
 }
 

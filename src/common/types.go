@@ -116,6 +116,13 @@ func HexStringToAddress(s string) (a Address) {
 	return
 }
 
+func IsHexAddress(s string) bool {
+	if has0xPrefix(s) {
+		s = s[2:]
+	}
+	return len(s) == 2*AddressLength && isHex(s)
+}
+
 //256位哈希
 type Hash [HashLength]byte
 
