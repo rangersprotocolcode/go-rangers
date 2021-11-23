@@ -195,7 +195,7 @@ func (ca *RemoteChainOpImpl) ApplyMiner(mtype int, stake uint64, gas, gasprice u
 	miner := &types.Miner{
 		Id:           source.Bytes(),
 		PublicKey:    bpk.Serialize(),
-		VrfPublicKey: vrf.Hex2VRFPublicKey(aci.Miner.VrfPk),
+		VrfPublicKey: vrf.Hex2VRFPublicKey(aci.Miner.VrfPk).GetBytes(),
 		Stake:        st,
 		Type:         byte(mtype),
 	}

@@ -16,11 +16,34 @@
 
 package types
 
+import (
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/utility"
+	"encoding/json"
+	"fmt"
+)
+
+type HexBytes []byte
+
+func (h *HexBytes) UnmarshalJSON(b []byte) error {
+	if 2 > len(b) {
+		return fmt.Errorf("length error, %d", len(b))
+	}
+	res := utility.BytesToStr(b[1 : len(b)-1])
+	*h = common.FromHex(res)
+	return nil
+}
+
+func (h HexBytes) MarshalJSON() ([]byte, error) {
+	res := fmt.Sprintf("\"%s\"", common.ToHex(h))
+	return utility.StrToBytes(res), nil
+}
+
 type Miner struct {
 	// 矿工机器编号
-	Id           []byte `json:"id,omitempty"`
-	PublicKey    []byte `json:"publicKey,omitempty"`
-	VrfPublicKey []byte `json:"vrfPublicKey,omitempty"`
+	Id           HexBytes `json:"id,omitempty"`
+	PublicKey    HexBytes `json:"publicKey,omitempty"`
+	VrfPublicKey HexBytes `json:"vrfPublicKey,omitempty"`
 
 	ApplyHeight uint64
 	// 当前状态
@@ -33,23 +56,18 @@ type Miner struct {
 	Stake uint64 `json:"stake,omitempty"`
 
 	// 收益账户
-	Account []byte `json:"account,omitempty"`
+	Account HexBytes `json:"account,omitempty"`
 }
 
-type MinerInfo struct {
-	Id           []byte `json:"id,omitempty"`
-	PublicKey    []byte `json:"publicKey,omitempty"`
-	VrfPublicKey []byte `json:"vrfPublicKey,omitempty"`
+func (miner *Miner) GetMinerInfo() []byte {
+	result := make(map[string]interface{})
+	result["id"] = miner.Id
+	result["publicKey"] = miner.PublicKey
+	result["vrfPublicKey"] = miner.VrfPublicKey
+	result["applyHeight"] = miner.ApplyHeight
+	result["status"] = miner.Status
+	result["type"] = miner.Type
 
-	ApplyHeight uint64
-	// 当前状态
-	Status byte
-	// 提案者 还是验证者
-	Type byte `json:"type,omitempty"`
-}
-
-func (miner *Miner) GetMinerInfo() MinerInfo {
-	info := MinerInfo{Id: miner.Id, PublicKey: miner.PublicKey, VrfPublicKey: miner.VrfPublicKey, ApplyHeight: miner.ApplyHeight, Status: miner.Status, Type: miner.Type}
-
-	return info
+	resultBytes, _ := json.Marshal(result)
+	return resultBytes
 }

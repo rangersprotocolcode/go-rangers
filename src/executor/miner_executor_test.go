@@ -654,10 +654,8 @@ func getTestBlockHeader() *types.BlockHeader {
 }
 
 func clean() {
-	os.RemoveAll("pkp0")
+	os.RemoveAll("storage0")
 	os.RemoveAll("logs")
-	os.RemoveAll("test")
-	os.RemoveAll("database")
 	os.RemoveAll("1.ini")
 	leveldb = nil
 }

@@ -99,7 +99,7 @@ func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *
 
 	miner.Status = common.MinerStatusNormal
 
-	if utility.IsEmptyByteSlice(miner.Id) || utility.IsEmptyByteSlice(miner.Account) {
+	if utility.IsEmptyByteSlice(miner.Id) {
 		pubKey, err := transaction.Sign.RecoverPubkey(transaction.Hash.Bytes())
 		if nil != err {
 			msg := fmt.Sprintf("fail to apply miner %s, recoverPubkey failed", transaction.Data)
@@ -110,10 +110,10 @@ func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *
 		if utility.IsEmptyByteSlice(miner.Id) {
 			miner.Id = pubKey.GetID()
 		}
+	}
 
-		if utility.IsEmptyByteSlice(miner.Account) {
-			miner.Account = pubKey.GetAddress().Bytes()
-		}
+	if utility.IsEmptyByteSlice(miner.Account) {
+		miner.Account = common.FromHex(transaction.Source)
 	}
 
 	return service.MinerManagerImpl.AddMiner(common.HexToAddress(transaction.Source), &miner, accountdb)
@@ -170,7 +170,8 @@ func (this *minerChangeAccountExecutor) Execute(transaction *types.Transaction, 
 	}
 
 	// check authority
-	if bytes.Compare(current.Account, common.Hex2Bytes(transaction.Source)) != 0 {
+	sourceBytes := common.FromHex(transaction.Source)
+	if bytes.Compare(current.Account, sourceBytes) != 0 {
 		msg := fmt.Sprintf("fail to auth, %s vs %s", common.ToHex(current.Account), transaction.Source)
 		this.logger.Errorf(msg)
 		return false, msg

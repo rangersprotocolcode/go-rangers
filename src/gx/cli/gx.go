@@ -247,7 +247,7 @@ func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerInfo) {
 		miner := types.Miner{}
 		miner.Id = minerDO.ID.Serialize()
 		miner.PublicKey = minerDO.PubKey.Serialize()
-		miner.VrfPublicKey = minerDO.VrfPK
+		miner.VrfPublicKey = minerDO.VrfPK.GetBytes()
 		minerBytes, _ := json.Marshal(miner)
 		common.DefaultLogger.Infof("Miner apply info:%s|%s", minerDO.ID.GetHexString(), string(minerBytes))
 	}

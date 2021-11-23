@@ -86,7 +86,7 @@ func getRobinGenesisProposer() []*types.Miner {
 		miner := types.Miner{
 			Id:           minerId.Serialize(),
 			PublicKey:    minerPubkey.Serialize(),
-			VrfPublicKey: vrfPubkey,
+			VrfPublicKey: vrfPubkey.GetBytes(),
 			ApplyHeight:  0,
 			Stake:        common.ProposerStake,
 			Type:         common.MinerTypeProposer,

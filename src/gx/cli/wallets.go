@@ -87,7 +87,7 @@ func (ws *wallets) newWalletByPrivateKey(privateKey string) (privKeyStr, walletA
 	vrfPK, _, _ := vrf.VRFGenerateKey(bytes.NewReader(secretSeed.Bytes()))
 
 	miner.PublicKey = minerPubKey.Serialize()
-	miner.VrfPublicKey = vrfPK
+	miner.VrfPublicKey = vrfPK.GetBytes()
 
 	minerJson, _ := json.Marshal(miner)
 	minerString = string(minerJson)
