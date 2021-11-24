@@ -39,6 +39,8 @@ message Transaction{
     optional bytes SubTransactions = 13;
 
     optional bytes SubHash  = 14 ;
+
+    optional string ChainId  = 15 ;
 }
 
 message TransactionRequestMessage{
