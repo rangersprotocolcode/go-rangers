@@ -219,7 +219,7 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	}
 
 	if err := service.GetTransactionPool().VerifyTransaction(&txRaw); err != nil {
-		executor.logger.Errorf("fail to verify tx, txhash: %s", txRaw.Hash.String(), err)
+		executor.logger.Errorf("fail to verify tx, txhash: %s, err: %v", txRaw.Hash.String(), err.Error())
 		txRaw.Type = types.TransactionTypeWrongTxNonce
 		executor.sendTransaction(&txRaw)
 		return

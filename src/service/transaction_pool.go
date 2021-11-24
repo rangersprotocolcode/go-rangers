@@ -342,8 +342,8 @@ func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
 }
 
 func (pool *TxPool) VerifyTransaction(tx *types.Transaction) error {
-
-	if tx.Type == types.TransactionTypeETHTX {
+	if tx.Type == types.TransactionTypeETHTX || tx.Type == types.TransactionTypeWrongTxNonce {
+		txLogger.Warnf("skip verifyTransaction, hash: %s, type: %d", tx.Hash.String(), tx.Type)
 		return nil
 	}
 
@@ -362,6 +362,7 @@ func (pool *TxPool) VerifyTransaction(tx *types.Transaction) error {
 		return err
 	}
 
+	txLogger.Debugf("verifyTransaction success, hash: %s, type: %d", tx.Hash.String(), tx.Type)
 	return nil
 }
 
