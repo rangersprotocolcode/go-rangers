@@ -56,7 +56,7 @@ func (this *minerRefundExecutor) Execute(transaction *types.Transaction, header 
 	this.logger.Debugf("before refund, addr: %s, money: %d, minerId: %v", transaction.Source, value, minerId)
 
 	situation := context["situation"].(string)
-	refundHeight, money, refundErr := service.RefundManagerImpl.GetRefundStake(header.Height, minerId, value, accountdb, situation)
+	refundHeight, money, addr, refundErr := service.RefundManagerImpl.GetRefundStake(header.Height, minerId, value, accountdb, situation)
 	if refundErr != nil {
 		msg := fmt.Sprintf("fail to refund %s, err: %s", transaction.Data, refundErr.Error())
 		this.logger.Errorf(msg)
@@ -68,10 +68,10 @@ func (this *minerRefundExecutor) Execute(transaction *types.Transaction, header 
 	refundInfos := types.GetRefundInfo(context)
 	refundInfo, ok := refundInfos[refundHeight]
 	if ok {
-		refundInfo.AddRefundInfo(minerId, money)
+		refundInfo.AddRefundInfo(addr, money)
 	} else {
 		refundInfo = types.RefundInfoList{}
-		refundInfo.AddRefundInfo(minerId, money)
+		refundInfo.AddRefundInfo(addr, money)
 		refundInfos[refundHeight] = refundInfo
 	}
 

@@ -100,18 +100,18 @@ func (refund *RefundManager) Add(data map[uint64]types.RefundInfoList, db *accou
 	}
 }
 
-func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint64, accountdb *account.AccountDB, situation string) (uint64, *big.Int, error) {
+func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint64, accountdb *account.AccountDB, situation string) (uint64, *big.Int, []byte, error) {
 	this.logger.Debugf("getRefund, minerId:%s, height: %d, money: %d", common.ToHex(minerId), now, money)
 	miner := MinerManagerImpl.GetMiner(minerId, accountdb)
 	if nil == miner {
 		this.logger.Debugf("getRefund error, minerId:%s, height: %d, money: %d, miner not existed", common.ToHex(minerId), now, money)
-		return 0, nil, errors.New("miner not existed")
+		return 0, nil, nil, errors.New("miner not existed")
 	}
 
 	// 超出了质押量，不能提
 	if miner.Stake < money {
 		this.logger.Debugf("getRefund error, minerId:%s, height: %d, money: %d, not enough stake. stake: %d", common.ToHex(minerId), now, money, miner.Stake)
-		return 0, nil, errors.New("not enough stake")
+		return 0, nil, nil, errors.New("not enough stake")
 	}
 
 	refund := money
@@ -158,7 +158,7 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint
 		height = math.MaxUint64
 	}
 	this.logger.Debugf("getRefund end, minerId:%s, height: %d, money: %d", common.ToHex(minerId), height, refund)
-	return height, utility.Uint64ToBigInt(refund), nil
+	return height, utility.Uint64ToBigInt(refund), miner.Account, nil
 }
 
 type DismissHeightList []uint64
