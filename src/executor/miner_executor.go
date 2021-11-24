@@ -93,6 +93,12 @@ func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *
 		return false, msg
 	}
 
+	if common.IsMainnet() && miner.Type == common.MinerTypeProposer {
+		msg := fmt.Sprintf("mainnet not support Proposer, %s", err.Error())
+		this.logger.Errorf(msg)
+		return false, msg
+	}
+
 	if nil != header {
 		miner.ApplyHeight = header.Height + common.HeightAfterStake
 	}

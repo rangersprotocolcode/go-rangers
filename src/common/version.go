@@ -65,3 +65,9 @@ func NetworkId() string {
 func IsRobin() bool {
 	return LocalChainConfig.ChainId == robinChainConfig.ChainId
 }
+func IsDEV() bool {
+	return LocalChainConfig.ChainId == devNetChainConfig.ChainId
+}
+func IsMainnet() bool {
+	return LocalChainConfig.ChainId == mainNetChainConfig.ChainId
+}
