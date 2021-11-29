@@ -94,7 +94,9 @@ func (ch ChainHandler) transactionGotHandler(msg notify.Message) {
 		logger.Errorf("Unmarshal got transactions error:%s", e.Error())
 		return
 	}
-	service.GetTransactionPool().AddMissTransactions(txs)
+	for _, tx := range txs {
+		service.GetTransactionPool().AddTransaction(tx)
+	}
 
 	m := notify.TransactionGotAddSuccMessage{Transactions: txs, Peer: tgm.Peer}
 	notify.BUS.Publish(notify.TransactionGotAddSucc, &m)

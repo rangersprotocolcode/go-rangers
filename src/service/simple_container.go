@@ -75,7 +75,6 @@ func (c *simpleContainer) push(tx *types.Transaction) {
 	if c.txs.Len() < c.limit {
 		c.txs = append(c.txs, tx)
 		c.txsMap[tx.Hash] = tx
-
 		return
 	}
 }

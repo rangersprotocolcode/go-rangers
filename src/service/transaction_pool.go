@@ -33,10 +33,8 @@ import (
 
 const (
 	txDataBasePrefix = "tx"
-	gameDataPrefix   = "g"
 	rcvTxPoolSize    = 50000
-	minerTxCacheSize = 1000
-	missTxCacheSize  = 60000
+	txCacheSize      = 1000
 
 	txCountPerBlock = 3000
 )
@@ -44,7 +42,11 @@ const (
 var (
 	ErrNil = errors.New("nil transaction")
 
-	ErrHash = errors.New("invalid transaction hash")
+	ErrChainId = errors.New("illegal chain id")
+
+	ErrHash = errors.New("illegal transaction hash")
+
+	ErrSign = errors.New("illegal transaction signature")
 
 	ErrExist = errors.New("transaction already exist in pool")
 
@@ -62,9 +64,6 @@ type TransactionPool interface {
 	//add new transaction to the transaction pool
 	AddTransaction(tx *types.Transaction) (bool, error)
 
-	//add  local miss transactions while verifying blocks to the transaction pool
-	AddMissTransactions(txs []*types.Transaction)
-
 	GetTransaction(hash common.Hash) (*types.Transaction, error)
 
 	GetTransactionStatus(hash common.Hash) (uint, error)
@@ -77,15 +76,11 @@ type TransactionPool interface {
 
 	MarkExecuted(receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash)
 
-	UnMarkExecuted(txs []*types.Transaction)
+	UnMarkExecuted(txs []*types.Transaction, evictedTxs []common.Hash)
 
 	Clear()
 
 	IsExisted(hash common.Hash) bool
-
-	IsGameData(hash common.Hash) bool
-
-	PutGameData(hash common.Hash)
 
 	VerifyTransaction(tx *types.Transaction) error
 
@@ -93,18 +88,13 @@ type TransactionPool interface {
 }
 
 type TxPool struct {
-	minerTxs   *lru.Cache // miner and bonus tx
-	missTxs    *lru.Cache
 	evictedTxs *lru.Cache
-
-	received *simpleContainer
+	received   *simpleContainer
 
 	executed db.Database
-	gameData db.Database
 	batch    db.Batch
 
-	txCount uint64
-	lock    middleware.Loglock
+	lock middleware.Loglock
 }
 
 var txpoolInstance TransactionPool
@@ -124,9 +114,7 @@ func newTransactionPool() TransactionPool {
 		lock: middleware.NewLoglock("txPool"),
 	}
 	pool.received = newSimpleContainer(rcvTxPoolSize)
-	pool.minerTxs, _ = lru.New(minerTxCacheSize)
-	pool.missTxs, _ = lru.New(missTxCacheSize)
-	pool.evictedTxs, _ = lru.New(minerTxCacheSize)
+	pool.evictedTxs, _ = lru.New(txCacheSize)
 
 	executed, err := db.NewLDBDatabase(txDataBasePrefix, 16, 128)
 	if err != nil {
@@ -136,54 +124,19 @@ func newTransactionPool() TransactionPool {
 	pool.executed = executed
 	pool.batch = pool.executed.NewBatch()
 
-	gameData, err := db.NewDatabase(gameDataPrefix)
-	if err != nil {
-		txPoolLogger.Errorf("Init transaction pool error! Error:%s", err.Error())
-		return nil
-	}
-	pool.gameData = gameData
-
 	return pool
 }
 
 func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
-	if err := pool.verifyTransaction(tx); err != nil {
-		txPoolLogger.Infof("Tx verify error:%s. Hash:%s, tx type:%d", err.Error(), tx.Hash.String(), tx.Type)
-		return false, err
+	if pool.evictedTxs.Contains(tx.Hash) {
+		txPoolLogger.Infof("Tx is marked evicted tx,do not add pool. Hash:%s", tx.Hash.String())
+		return false, ErrEvicted
 	}
 
 	pool.lock.Lock("AddTransaction")
 	defer pool.lock.Unlock("AddTransaction")
 	b, err := pool.add(tx)
 	return b, err
-}
-
-func (pool *TxPool) AddMissTransactions(txs []*types.Transaction) {
-	if nil == txs || 0 == len(txs) {
-		return
-	}
-	for _, tx := range txs {
-		pool.missTxs.Add(tx.Hash, tx)
-	}
-	return
-}
-
-func (pool *TxPool) AddExecuted(tx *types.Transaction) error {
-	if nil == tx {
-		return nil
-	}
-
-	executedTx := &ExecutedTransaction{}
-
-	txData, _ := types.MarshalTransaction(tx)
-	executedTx.Transaction = txData
-	executedTxBytes, err := json.Marshal(executedTx)
-	if nil != err {
-		return err
-	}
-
-	return pool.executed.Put(tx.Hash.Bytes(), executedTxBytes)
-
 }
 
 func (pool *TxPool) MarkExecuted(receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash) {
@@ -227,33 +180,30 @@ func (pool *TxPool) MarkExecuted(receipts types.Receipts, txs []*types.Transacti
 	}
 }
 
-func (pool *TxPool) UnMarkExecuted(txs []*types.Transaction) {
+func (pool *TxPool) UnMarkExecuted(txs []*types.Transaction, evictedTxs []common.Hash) {
 	if nil == txs || 0 == len(txs) {
 		return
 	}
 	pool.lock.RLock("UnMarkExecuted")
 	defer pool.lock.RUnlock("UnMarkExecuted")
 
+	if evictedTxs != nil {
+		for _, hash := range evictedTxs {
+			pool.evictedTxs.Remove(hash)
+		}
+	}
+
 	for _, tx := range txs {
 		pool.executed.Delete(tx.Hash.Bytes())
 		pool.add(tx)
 	}
 }
+
 func (pool *TxPool) IsExisted(hash common.Hash) bool {
 	return pool.isTransactionExisted(hash)
 }
 
 func (pool *TxPool) GetTransaction(hash common.Hash) (*types.Transaction, error) {
-	missTx, existInMissTxs := pool.missTxs.Get(hash)
-	if existInMissTxs {
-		return missTx.(*types.Transaction), nil
-	}
-
-	minerTx, existInMinerTxs := pool.minerTxs.Get(hash)
-	if existInMinerTxs {
-		return minerTx.(*types.Transaction), nil
-	}
-
 	receivedTx := pool.received.get(hash)
 	if nil != receivedTx {
 		return receivedTx, nil
@@ -284,19 +234,6 @@ func (pool *TxPool) Clear() {
 	pool.batch.Reset()
 
 	pool.received = newSimpleContainer(rcvTxPoolSize)
-	pool.minerTxs, _ = lru.New(minerTxCacheSize)
-	pool.missTxs, _ = lru.New(missTxCacheSize)
-}
-
-func (pool *TxPool) IsGameData(hash common.Hash) bool {
-	result, _ := pool.gameData.Has(hash.Bytes())
-
-	return result
-}
-
-func (pool *TxPool) PutGameData(hash common.Hash) {
-	value := []byte{0}
-	pool.gameData.Put(hash.Bytes(), value)
 }
 
 func (pool *TxPool) GetReceived() []*types.Transaction {
@@ -322,47 +259,35 @@ func (p *TxPool) TxNum() int {
 }
 
 func (pool *TxPool) PackForCast() []*types.Transaction {
-	minerTxs := pool.packMinerTx()
-	if len(minerTxs) >= txCountPerBlock {
-		sort.Sort(types.Transactions(minerTxs))
-		return minerTxs
+	packedTxs := make([]*types.Transaction, 0)
+	txs := pool.received.asSlice()
+	for _, tx := range txs {
+		packedTxs = append(packedTxs, tx)
+		txPoolLogger.Debugf("Pack tx:%s", tx.Hash.String())
+		if len(packedTxs) >= txCountPerBlock {
+			break
+		}
 	}
-	result := pool.packTx(minerTxs)
-	sort.Sort(types.Transactions(result))
-
+	sort.Sort(types.Transactions(packedTxs))
 	// transactions 已经根据RequestId排序
-	return result
-}
-
-func (pool *TxPool) verifyTransaction(tx *types.Transaction) error {
-	if pool.evictedTxs.Contains(tx.Hash) {
-		return ErrEvicted
-	}
-	return nil
+	return packedTxs
 }
 
 func (pool *TxPool) VerifyTransaction(tx *types.Transaction) error {
-	if tx.Type == types.TransactionTypeETHTX || tx.Type == types.TransactionTypeWrongTxNonce {
-		txLogger.Warnf("skip verifyTransaction, hash: %s, type: %d", tx.Hash.String(), tx.Type)
-		return nil
-	}
-
 	err := pool.verifyTxChainId(tx)
 	if nil != err {
 		return err
 	}
-
 	err = pool.verifyTransactionHash(tx)
 	if nil != err {
 		return err
 	}
-
 	err = pool.verifyTransactionSign(tx)
 	if nil != err {
 		return err
 	}
 
-	txLogger.Debugf("verifyTransaction success, hash: %s, type: %d", tx.Hash.String(), tx.Type)
+	txLogger.Debugf("Verify tx success. hash: %s", tx.Hash.String())
 	return nil
 }
 
@@ -376,52 +301,6 @@ func (pool *TxPool) ProcessFee(tx types.Transaction, accountDB *account.AccountD
 		return fmt.Errorf(msg)
 	}
 	accountDB.SubBalance(addr, delta)
-
-	return nil
-}
-
-func (pool *TxPool) verifyTxChainId(tx *types.Transaction) error {
-
-	if tx.ChainId != common.ChainId() {
-		err := fmt.Errorf("illegal tx chainId! ChainId:%s,expect chainId:%s", tx.ChainId, common.ChainId())
-		txLogger.Errorf("Verify chain id error!Hash:%s,error:%s", tx.Hash.String(), err.Error())
-		return err
-	}
-	return nil
-}
-
-func (pool *TxPool) verifyTransactionHash(tx *types.Transaction) error {
-	expectHash := tx.GenHash()
-	if tx.Hash != expectHash {
-		err := fmt.Errorf("illegal tx hash! Hash:%s,expect hash:%s", tx.Hash.String(), expectHash.String())
-		txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", tx.Hash.String(), err.Error())
-		return err
-	}
-
-	return nil
-}
-
-func (pool *TxPool) verifyTransactionSign(tx *types.Transaction) error {
-	if tx.Sign == nil {
-		return fmt.Errorf("nil sign")
-	}
-
-	hashByte := tx.Hash.Bytes()
-	pk, err := tx.Sign.RecoverPubkey(hashByte)
-	if err != nil {
-		txLogger.Errorf("Verify tx sign error!Hash:%s,error:%s", tx.Hash.String(), err.Error())
-		return err
-	}
-	if !pk.Verify(hashByte, tx.Sign) {
-		txLogger.Errorf("Verify tx sign error!Hash:%s, error: verify sign fail", tx.Hash.String())
-		return fmt.Errorf("verify sign fail")
-	}
-	expectAddr := pk.GetAddress().GetHexString()
-	if tx.Source != expectAddr {
-		err := fmt.Errorf("illegal signer! Source:%s,expect source:%s", tx.Source, expectAddr)
-		txLogger.Errorf("Verify tx sign error!Hash:%s,error:%s", tx.Hash.String(), err.Error())
-		return err
-	}
 	return nil
 }
 
@@ -434,35 +313,17 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 	if pool.isTransactionExisted(hash) {
 		return false, ErrExist
 	}
-
-	if tx.Type == types.TransactionTypeMinerApply || tx.Type == types.TransactionTypeMinerAbort ||
-		tx.Type == types.TransactionTypeBonus || tx.Type == types.TransactionTypeMinerRefund ||
-		tx.Type == types.TransactionTypeMinerAdd {
-
-		if tx.Type == types.TransactionTypeMinerApply {
-			txPoolLogger.Debugf("Add TransactionTypeMinerApply,hash:%s,", tx.Hash.String())
-		}
-		pool.minerTxs.Add(tx.Hash, tx)
-	} else {
-		pool.received.push(tx)
-	}
-	txPoolLogger.Debugf("Add tx:%s. After add,received size:%d, miner txs size: %d", tx.Hash.String(), pool.received.Len(), pool.minerTxs.Len())
+	pool.received.push(tx)
+	txPoolLogger.Debugf("[pool]Add tx:%s. After add,received size:%d", tx.Hash.String(), pool.received.Len())
 	return true, nil
 }
 
 func (pool *TxPool) remove(txHash common.Hash) {
-	pool.minerTxs.Remove(txHash)
-	pool.missTxs.Remove(txHash)
 	pool.received.remove(txHash)
-	txPoolLogger.Debugf("Remove tx:%s. After remove, received size:%d, miner txs size: %d", txHash.String(), pool.received.Len(), pool.minerTxs.Len())
+	txPoolLogger.Debugf("[pool]Remove tx:%s. After remove, received size:%d", txHash.String(), pool.received.Len())
 }
 
 func (pool *TxPool) isTransactionExisted(hash common.Hash) bool {
-	existInMinerTxs := pool.minerTxs.Contains(hash)
-	if existInMinerTxs {
-		return true
-	}
-
 	existInReceivedTxs := pool.received.contains(hash)
 	if existInReceivedTxs {
 		return true
@@ -488,31 +349,43 @@ func findTxInList(txs []*types.Transaction, txHash common.Hash, receiptIndex int
 	return nil
 }
 
-func (pool *TxPool) packMinerTx() []*types.Transaction {
-	minerTxs := make([]*types.Transaction, 0, txCountPerBlock)
-	minerTxHashes := pool.minerTxs.Keys()
-	for _, minerTxHash := range minerTxHashes {
-		if v, ok := pool.minerTxs.Get(minerTxHash); ok {
-			minerTxs = append(minerTxs, v.(*types.Transaction))
-			if v.(*types.Transaction).Type == types.TransactionTypeMinerApply {
-				txPoolLogger.Debugf("Pack miner apply tx hash:%s,", v.(*types.Transaction).Hash.String())
-			}
-		}
-		if len(minerTxs) >= txCountPerBlock {
-			return minerTxs
-		}
+func (pool *TxPool) verifyTxChainId(tx *types.Transaction) error {
+	if tx.ChainId != common.ChainId() {
+		txLogger.Errorf("Verify chain id error!Hash:%s,chainId:%s,expect chainId:%s", tx.Hash.String(), tx.ChainId, common.ChainId())
+		return ErrChainId
 	}
-	return minerTxs
+	return nil
 }
 
-func (pool *TxPool) packTx(packedTxs []*types.Transaction) []*types.Transaction {
-	txs := pool.received.asSlice()
-	for _, tx := range txs {
-		packedTxs = append(packedTxs, tx)
-		txPoolLogger.Debugf("Pack tx:%s", tx.Hash.String())
-		if len(packedTxs) >= txCountPerBlock {
-			return packedTxs
-		}
+func (pool *TxPool) verifyTransactionHash(tx *types.Transaction) error {
+	expectHash := tx.GenHash()
+	if tx.Hash != expectHash {
+		txLogger.Errorf("Verify tx hash error!Hash:%s,expect hash:%s", tx.Hash.String(), expectHash.String())
+		return ErrHash
 	}
-	return packedTxs
+	return nil
+}
+
+func (pool *TxPool) verifyTransactionSign(tx *types.Transaction) error {
+	if tx.Sign == nil {
+		txLogger.Errorf("Verify tx sign error!Hash:%s,error:nil sign!", tx.Hash.String())
+		return ErrSign
+	}
+
+	hashByte := tx.Hash.Bytes()
+	pk, err := tx.Sign.RecoverPubkey(hashByte)
+	if err != nil {
+		txLogger.Errorf("Verify tx sign error!Hash:%s,error:%s", tx.Hash.String(), err.Error())
+		return ErrSign
+	}
+	if !pk.Verify(hashByte, tx.Sign) {
+		txLogger.Errorf("Verify tx sign error!Hash:%s, error: verify sign fail", tx.Hash.String())
+		return ErrSign
+	}
+	expectAddr := pk.GetAddress().GetHexString()
+	if tx.Source != expectAddr {
+		txLogger.Errorf("Verify tx sign error!Hash:%s,error:illegal signer! source:%s,expect source:%s", tx.Hash.String(), tx.Source, expectAddr)
+		return ErrSign
+	}
+	return nil
 }
