@@ -18,10 +18,12 @@ package service
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/eth_tx"
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
+	"com.tuntun.rocket/node/src/storage/rlp"
 	"com.tuntun.rocket/node/src/utility"
 	"errors"
 	"github.com/hashicorp/golang-lru"
@@ -51,6 +53,8 @@ var (
 	ErrExist = errors.New("transaction already exist in pool")
 
 	ErrEvicted = errors.New("error transaction already exist in pool")
+
+	ErrIllegal = errors.New("illegal transaction")
 )
 
 type ExecutedTransaction struct {
@@ -274,15 +278,18 @@ func (pool *TxPool) PackForCast() []*types.Transaction {
 }
 
 func (pool *TxPool) VerifyTransaction(tx *types.Transaction) error {
-	err := pool.verifyTxChainId(tx)
+	if tx.Type == types.TransactionTypeETHTX {
+		return verifyETHTx(tx)
+	}
+	err := verifyTxChainId(tx)
 	if nil != err {
 		return err
 	}
-	err = pool.verifyTransactionHash(tx)
+	err = verifyTransactionHash(tx)
 	if nil != err {
 		return err
 	}
-	err = pool.verifyTransactionSign(tx)
+	err = verifyTransactionSign(tx)
 	if nil != err {
 		return err
 	}
@@ -349,7 +356,7 @@ func findTxInList(txs []*types.Transaction, txHash common.Hash, receiptIndex int
 	return nil
 }
 
-func (pool *TxPool) verifyTxChainId(tx *types.Transaction) error {
+func verifyTxChainId(tx *types.Transaction) error {
 	if tx.ChainId != common.ChainId() {
 		txLogger.Errorf("Verify chain id error!Hash:%s,chainId:%s,expect chainId:%s", tx.Hash.String(), tx.ChainId, common.ChainId())
 		return ErrChainId
@@ -357,7 +364,7 @@ func (pool *TxPool) verifyTxChainId(tx *types.Transaction) error {
 	return nil
 }
 
-func (pool *TxPool) verifyTransactionHash(tx *types.Transaction) error {
+func verifyTransactionHash(tx *types.Transaction) error {
 	expectHash := tx.GenHash()
 	if tx.Hash != expectHash {
 		txLogger.Errorf("Verify tx hash error!Hash:%s,expect hash:%s", tx.Hash.String(), expectHash.String())
@@ -366,7 +373,7 @@ func (pool *TxPool) verifyTransactionHash(tx *types.Transaction) error {
 	return nil
 }
 
-func (pool *TxPool) verifyTransactionSign(tx *types.Transaction) error {
+func verifyTransactionSign(tx *types.Transaction) error {
 	if tx.Sign == nil {
 		txLogger.Errorf("Verify tx sign error!Hash:%s,error:nil sign!", tx.Hash.String())
 		return ErrSign
@@ -388,4 +395,44 @@ func (pool *TxPool) verifyTransactionSign(tx *types.Transaction) error {
 		return ErrSign
 	}
 	return nil
+}
+
+func verifyETHTx(tx *types.Transaction) error {
+	if tx == nil {
+		return ErrNil
+	}
+	ethTx := new(eth_tx.Transaction)
+	encodedTx := []byte(tx.ExtraData)
+	if err := rlp.DecodeBytes(encodedTx, ethTx); err != nil {
+		txLogger.Errorf("Verify eth tx rlp error!error:%v", err)
+		return ErrIllegal
+	}
+
+	signer := eth_tx.NewEIP155Signer(common.GetChainId())
+	sender, err := eth_tx.Sender(signer, ethTx)
+	if err != nil {
+		txLogger.Errorf("Verify eth tx error!tx:%s,error:%v", ethTx.Hash().String(), err)
+		return ErrIllegal
+	}
+
+	expectedTx := eth_tx.ConvertTx(ethTx, sender, encodedTx)
+	if !compareTx(tx, expectedTx) {
+		txLogger.Errorf("Verify eth tx error:tx diff!tx:%s,expected tx:%s", tx.ToTxJson().ToString(), expectedTx.ToTxJson().ToString())
+		return ErrIllegal
+	}
+	txLogger.Debugf("Verify eth tx success. hash: %s", tx.Hash.String())
+	return nil
+}
+
+func compareTx(tx *types.Transaction, expectedTx *types.Transaction) bool {
+	if tx == nil || expectedTx == nil {
+		return false
+	}
+	if tx.Source != expectedTx.Source || tx.Target != expectedTx.Target || tx.Type != expectedTx.Type || tx.ExtraData != expectedTx.ExtraData {
+		return false
+	}
+	if tx.Nonce != expectedTx.Nonce || tx.ChainId != expectedTx.ChainId || tx.Data != expectedTx.Data || tx.Hash != expectedTx.Hash {
+		return false
+	}
+	return true
 }

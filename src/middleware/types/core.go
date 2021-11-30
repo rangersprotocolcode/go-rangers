@@ -382,3 +382,11 @@ func ReplaceBigInt(one, other interface{}) interface{} {
 	bigInt := other.(*big.Int)
 	return utility.BigIntToStr(bigInt)
 }
+
+type ContractData struct {
+	GasPrice string `json:"gasPrice,omitempty"`
+	GasLimit string `json:"gasLimit,omitempty"`
+
+	TransferValue string `json:"transferValue,omitempty"`
+	AbiData       string `json:"abiData,omitempty"`
+}
