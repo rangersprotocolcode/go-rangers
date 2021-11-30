@@ -265,7 +265,7 @@ func ConvertTx(txRaw *Transaction, sender common.Address, encodedTx utility.Byte
 	dataByes, _ := json.Marshal(data)
 	result.Data = string(dataByes)
 	result.Hash = txRaw.Hash()
-	result.ExtraData = string(encodedTx)
+	result.ExtraData = common.ToHex(encodedTx)
 	return result
 }
 

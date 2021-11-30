@@ -402,7 +402,8 @@ func verifyETHTx(tx *types.Transaction) error {
 		return ErrNil
 	}
 	ethTx := new(eth_tx.Transaction)
-	encodedTx := []byte(tx.ExtraData)
+	var encodedTx utility.Bytes
+	encodedTx = common.FromHex(tx.ExtraData)
 	if err := rlp.DecodeBytes(encodedTx, ethTx); err != nil {
 		txLogger.Errorf("Verify eth tx rlp error!error:%v", err)
 		return ErrIllegal
