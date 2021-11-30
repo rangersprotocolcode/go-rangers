@@ -294,7 +294,7 @@ func (pool *TxPool) VerifyTransaction(tx *types.Transaction) error {
 		return err
 	}
 
-	txLogger.Debugf("Verify tx success. hash: %s", tx.Hash.String())
+	txPoolLogger.Debugf("Verify tx success. hash: %s", tx.Hash.String())
 	return nil
 }
 
@@ -358,7 +358,7 @@ func findTxInList(txs []*types.Transaction, txHash common.Hash, receiptIndex int
 
 func verifyTxChainId(tx *types.Transaction) error {
 	if tx.ChainId != common.ChainId() {
-		txLogger.Errorf("Verify chain id error!Hash:%s,chainId:%s,expect chainId:%s", tx.Hash.String(), tx.ChainId, common.ChainId())
+		txPoolLogger.Errorf("Verify chain id error!Hash:%s,chainId:%s,expect chainId:%s", tx.Hash.String(), tx.ChainId, common.ChainId())
 		return ErrChainId
 	}
 	return nil
@@ -367,7 +367,7 @@ func verifyTxChainId(tx *types.Transaction) error {
 func verifyTransactionHash(tx *types.Transaction) error {
 	expectHash := tx.GenHash()
 	if tx.Hash != expectHash {
-		txLogger.Errorf("Verify tx hash error!Hash:%s,expect hash:%s", tx.Hash.String(), expectHash.String())
+		txPoolLogger.Errorf("Verify tx hash error!Hash:%s,expect hash:%s", tx.Hash.String(), expectHash.String())
 		return ErrHash
 	}
 	return nil
@@ -375,23 +375,23 @@ func verifyTransactionHash(tx *types.Transaction) error {
 
 func verifyTransactionSign(tx *types.Transaction) error {
 	if tx.Sign == nil {
-		txLogger.Errorf("Verify tx sign error!Hash:%s,error:nil sign!", tx.Hash.String())
+		txPoolLogger.Errorf("Verify tx sign error!Hash:%s,error:nil sign!", tx.Hash.String())
 		return ErrSign
 	}
 
 	hashByte := tx.Hash.Bytes()
 	pk, err := tx.Sign.RecoverPubkey(hashByte)
 	if err != nil {
-		txLogger.Errorf("Verify tx sign error!Hash:%s,error:%s", tx.Hash.String(), err.Error())
+		txPoolLogger.Errorf("Verify tx sign error!Hash:%s,error:%s", tx.Hash.String(), err.Error())
 		return ErrSign
 	}
 	if !pk.Verify(hashByte, tx.Sign) {
-		txLogger.Errorf("Verify tx sign error!Hash:%s, error: verify sign fail", tx.Hash.String())
+		txPoolLogger.Errorf("Verify tx sign error!Hash:%s, error: verify sign fail", tx.Hash.String())
 		return ErrSign
 	}
 	expectAddr := pk.GetAddress().GetHexString()
 	if tx.Source != expectAddr {
-		txLogger.Errorf("Verify tx sign error!Hash:%s,error:illegal signer! source:%s,expect source:%s", tx.Hash.String(), tx.Source, expectAddr)
+		txPoolLogger.Errorf("Verify tx sign error!Hash:%s,error:illegal signer! source:%s,expect source:%s", tx.Hash.String(), tx.Source, expectAddr)
 		return ErrSign
 	}
 	return nil
@@ -405,23 +405,23 @@ func verifyETHTx(tx *types.Transaction) error {
 	var encodedTx utility.Bytes
 	encodedTx = common.FromHex(tx.ExtraData)
 	if err := rlp.DecodeBytes(encodedTx, ethTx); err != nil {
-		txLogger.Errorf("Verify eth tx rlp error!error:%v", err)
+		txPoolLogger.Errorf("Verify eth tx rlp error!error:%v", err)
 		return ErrIllegal
 	}
 
 	signer := eth_tx.NewEIP155Signer(common.GetChainId())
 	sender, err := eth_tx.Sender(signer, ethTx)
 	if err != nil {
-		txLogger.Errorf("Verify eth tx error!tx:%s,error:%v", ethTx.Hash().String(), err)
+		txPoolLogger.Errorf("Verify eth tx error!tx:%s,error:%v", ethTx.Hash().String(), err)
 		return ErrIllegal
 	}
 
 	expectedTx := eth_tx.ConvertTx(ethTx, sender, encodedTx)
 	if !compareTx(tx, expectedTx) {
-		txLogger.Errorf("Verify eth tx error:tx diff!tx:%s,expected tx:%s", tx.ToTxJson().ToString(), expectedTx.ToTxJson().ToString())
+		txPoolLogger.Errorf("Verify eth tx error:tx diff!tx:%s,expected tx:%s", tx.ToTxJson().ToString(), expectedTx.ToTxJson().ToString())
 		return ErrIllegal
 	}
-	txLogger.Debugf("Verify eth tx success. hash: %s", tx.Hash.String())
+	txPoolLogger.Debugf("Verify eth tx success. hash: %s", tx.Hash.String())
 	return nil
 }
 
