@@ -14,25 +14,40 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package middleware
+package mysql
 
-import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/middleware/mysql"
-	"com.tuntun.rocket/node/src/middleware/notify"
-	"com.tuntun.rocket/node/src/middleware/types"
-)
+type TxRaw struct {
+	Nonce  uint64
+	UserId string
+	Data   string
+}
 
-var PerfLogger log.Logger
-var MonitorLogger log.Logger
+func GetTxRaws(start uint64) []TxRaw {
+	rows, err := MysqlDB.Query("SELECT id,userid,data FROM `tx_raw` where id>? limit 100", start)
+	defer func() {
+		if nil != rows {
+			rows.Close()
+		}
+	}()
 
-func InitMiddleware(dbDSN string) error {
+	if nil != err {
+		logger.Errorf(err.Error())
+		return nil
+	}
 
-	types.InitSerialzation()
-	PerfLogger = log.GetLoggerByIndex(log.PerformanceLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	MonitorLogger = log.GetLoggerByIndex(log.MonitorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	notify.BUS = notify.NewBus()
-	mysql.InitMySql(dbDSN)
-	return nil
+	result := make([]TxRaw, 0)
+	var txRaw TxRaw
+	for rows.Next() {
+		err := rows.Scan(&txRaw.Nonce, &txRaw.UserId, &txRaw.Data)
+		if nil != err {
+			logger.Errorf(err.Error())
+			return nil
+		}
+		result = append(result, txRaw)
+	}
+
+	if 0 != len(result) {
+		logger.Debugf("receive nonce from %d to %d", result[0].Nonce, result[len(result)-1].Nonce)
+	}
+	return result
 }

@@ -20,9 +20,16 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
+	"com.tuntun.rocket/node/src/middleware/mysql"
+	"com.tuntun.rocket/node/src/middleware/notify"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/trie"
+	"com.tuntun.rocket/node/src/utility"
+	"encoding/json"
+	"fmt"
 	"sync"
+	"time"
 )
 
 const stateDBPrefix = "state"
@@ -52,6 +59,7 @@ func initAccountDBManager() {
 	}
 	AccountDBManagerInstance.stateDB = account.NewDatabase(db)
 
+	AccountDBManagerInstance.getTxList()
 }
 
 //todo: 功能增强
@@ -153,4 +161,27 @@ func (manager *AccountDBManager) GetLatestNonce() uint64 {
 	defer manager.getCond().L.Unlock()
 
 	return manager.requestId
+}
+
+func (manager *AccountDBManager) getTxList() {
+	go func() {
+		for {
+			txs := mysql.GetTxRaws(manager.GetLatestNonce())
+			if nil != txs {
+				for _, tx := range txs {
+					var txJson types.TxJson
+					err := json.Unmarshal(utility.StrToBytes(tx.Data), &txJson)
+					if nil != err {
+						msg := fmt.Sprintf("handleClientMessage json unmarshal client message error:%s", err.Error())
+						manager.logger.Errorf(msg)
+					}
+					transaction := txJson.ToTransaction()
+
+					msg := notify.ClientTransactionMessage{Tx: transaction, UserId: tx.UserId, Nonce: tx.Nonce}
+					notify.BUS.Publish(notify.ClientTransaction, &msg)
+				}
+			}
+			time.Sleep(time.Millisecond * 5)
+		}
+	}()
 }

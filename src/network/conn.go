@@ -18,6 +18,7 @@ package network
 
 import (
 	"bytes"
+	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -330,12 +331,17 @@ func (clientConn *ClientConn) Send(targetId string, msg []byte, nonce uint64) {
 	clientConn.send(clientConn.method, target, msg, nonce)
 }
 
-func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, logger log.Logger, isNotify bool) {
+func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, logger log.Logger, isNotify, isRcv bool) {
 	clientConn.method = method
 	clientConn.nonceLock = sync.Mutex{}
 	clientConn.notifyNonce = 0
 
 	clientConn.doRcv = func(wsHeader wsHeader, body []byte) {
+		if !isRcv {
+			clientConn.logger.Debugf("coming abnormal data, header: %v, body: %s", wsHeader, common.ToHex(body))
+			return
+		}
+
 		if bytes.Equal(wsHeader.method, methodNotifyInit) {
 			clientConn.logger.Errorf("refresh notify nonce: %d", wsHeader.nonce)
 			clientConn.notifyNonce = wsHeader.nonce

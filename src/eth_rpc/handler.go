@@ -5,7 +5,6 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
-	"com.tuntun.rocket/node/src/middleware/types"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -185,12 +184,6 @@ func (handler ethMsgHandler) exec(handlerFunc *execFunc, arguments []reflect.Val
 			}
 			return &callbackError{e.Error()}, nil
 		}
-	}
-	if method == sendRawTransactionMethod {
-		tx := reply[1].Interface().(*types.Transaction)
-		logger.Debugf("after send raw tx.tx:%s", tx.ToTxJson().ToString())
-		msg := notify.ClientTransactionMessage{*tx, "", nonce}
-		go notify.BUS.Publish(notify.ClientTransaction, &msg)
 	}
 	return reply[0].Interface(), nil
 }

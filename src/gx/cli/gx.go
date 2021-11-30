@@ -94,6 +94,8 @@ func (gx *GX) Run() {
 
 	//自定义网关
 	gateAddr := mineCmd.Flag("gateaddr", "the gate addr").String()
+	outerGateAddr := mineCmd.Flag("outergateaddr", "the gate addr").String()
+	dbDSN := mineCmd.Flag("mysql", "the db addr").Default("").String()
 	command, err := app.Parse(os.Args[1:])
 	if err != nil {
 		kingpin.Fatalf("%s, try --help", err)
@@ -131,7 +133,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(instance, *env, *gateAddr)
+		gx.initMiner(instance, *env, *gateAddr, *outerGateAddr, *dbDSN)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc, gx.account.Sk)
 			if err != nil {
@@ -143,7 +145,7 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
+func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, dbDSN string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	databaseValue := "chain"
@@ -151,7 +153,7 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 	joinedGroupDatabaseValue := "jgs"
 	common.GlobalConf.SetString(db.ConfigSec, db.DefaultJoinedGroupDatabaseKey, joinedGroupDatabaseValue)
 
-	middleware.InitMiddleware()
+	middleware.InitMiddleware(dbDSN)
 
 	privateKey := common.GlobalConf.GetString(Section, "privateKey", "")
 	gx.getAccountInfo(privateKey)
@@ -161,7 +163,7 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 
-	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr)
+	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr)
 	service.InitService()
 	vm.InitVM()
 

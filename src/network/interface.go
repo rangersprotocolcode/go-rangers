@@ -95,7 +95,7 @@ type Network interface {
 
 	Notify(isunicast bool, gameId string, userid string, msg string)
 
-	Init(logger log.Logger, gateAddr string, selfMinerId []byte, consensusHandler MsgHandler)
+	Init(logger log.Logger, gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler)
 
 	JoinGroupNet(groupId string)
 

@@ -31,7 +31,7 @@ const (
 var p2pLogger log.Logger
 var bizLogger log.Logger
 
-func InitNetwork(consensusHandler MsgHandler, selfMinerId []byte, env, gate string) {
+func InitNetwork(consensusHandler MsgHandler, selfMinerId []byte, env, gate, outerGateAddr string) {
 	p2pLogger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	bizLogger = log.GetLoggerByIndex(log.P2PBizLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	gateAddr := gate
@@ -45,7 +45,7 @@ func InitNetwork(consensusHandler MsgHandler, selfMinerId []byte, env, gate stri
 	fmt.Println("Connecting to: " + gateAddr)
 
 	var s server
-	s.Init(bizLogger, gateAddr, selfMinerId, consensusHandler)
+	s.Init(bizLogger, gateAddr, outerGateAddr, selfMinerId, consensusHandler)
 
 	instance = s
 	bizLogger.Warnf("connected gate: %s, env: %s", gateAddr, env)

@@ -34,11 +34,12 @@ type server struct {
 	jsonrpc JSONRPCConn
 }
 
-func (s *server) Init(logger log.Logger, gateAddr string, selfMinerId []byte, consensusHandler MsgHandler) {
-	s.reader.Init(gateAddr, "/srv/worker_reader", notify.ClientTransactionRead, methodCodeClientReader, logger, true)
-	s.writer.Init(gateAddr, "/srv/worker_writer", notify.ClientTransaction, methodCodeClientWriter, logger, false)
+func (s *server) Init(logger log.Logger, gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler) {
 	s.worker.Init(gateAddr, selfMinerId, consensusHandler, logger)
-	s.jsonrpc.Init(gateAddr, logger)
+
+	s.reader.Init(outerGateAddr, "/srv/worker_reader", notify.ClientTransactionRead, methodCodeClientReader, logger, true, true)
+	s.writer.Init(outerGateAddr, "/srv/worker_writer", notify.ClientTransaction, methodCodeClientWriter, logger, false, false)
+	s.jsonrpc.Init(outerGateAddr, logger)
 }
 
 func (s *server) SendToJSONRPC(msg string, sessionId, requestId uint64) {
