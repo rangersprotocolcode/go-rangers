@@ -17,7 +17,6 @@
 package account
 
 import (
-	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/utility"
 	"golang.org/x/crypto/sha3"
@@ -60,7 +59,7 @@ func (self *AccountDB) loadContractCache() {
 }
 
 func (self *AccountDB) GetERC20Binding(name string) (found bool, contract common.Address, position uint64, decimal uint64) {
-	if rpgContractAddress == nil || 0 == bytes.Compare(rpgContractAddress.Bytes(), common.Address{}.Bytes()) {
+	if rpgContractAddress == nil {
 		self.loadContractCache()
 	}
 
