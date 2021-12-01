@@ -20,13 +20,10 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
-	"encoding/json"
 	"math"
 	"math/big"
-	"strconv"
 )
 
 type RewardCalculator struct {
@@ -53,7 +50,6 @@ func (reward *RewardCalculator) CalculateReward(height uint64, accountDB *accoun
 		reward.logger.Errorf("fail to reward, height: %d", height)
 		return nil
 	}
-	go reward.notify(total, height)
 
 	nextHeight := reward.NextRewardHeight(height)
 	refundInfoList := types.RefundInfoList{}
@@ -65,21 +61,6 @@ func (reward *RewardCalculator) CalculateReward(height uint64, accountDB *accoun
 	data := make(map[uint64]types.RefundInfoList, 1)
 	data[nextHeight] = refundInfoList
 	return data
-}
-
-// send reward detail
-func (reward *RewardCalculator) notify(total map[common.Address]*big.Int, height uint64) {
-	result := make(map[string]interface{})
-	result["from"] = strconv.FormatUint(height-common.RewardBlocks, 10)
-	result["to"] = strconv.FormatUint(height, 10)
-	data := make(map[string]string, len(total))
-	for addr, balance := range total {
-		data[addr.GetHexString()] = utility.BigIntToStr(balance)
-	}
-	result["data"] = data
-
-	resultByte, _ := json.Marshal(result)
-	network.GetNetInstance().Notify(false, "rocketprotocol", "reward", string(resultByte))
 }
 
 // 计算某一块的奖励

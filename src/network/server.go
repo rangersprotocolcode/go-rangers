@@ -37,8 +37,8 @@ type server struct {
 func (s *server) Init(logger log.Logger, gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler) {
 	s.worker.Init(gateAddr, selfMinerId, consensusHandler, logger)
 
-	s.reader.Init(outerGateAddr, "/srv/worker_reader", notify.ClientTransactionRead, methodCodeClientReader, logger, true, true)
-	s.writer.Init(outerGateAddr, "/srv/worker_writer", notify.ClientTransaction, methodCodeClientWriter, logger, false, false)
+	s.reader.Init(outerGateAddr, "/srv/worker_reader", notify.ClientTransactionRead, methodCodeClientReader, logger, true)
+	s.writer.Init(outerGateAddr, "/srv/worker_writer", notify.ClientTransaction, methodCodeClientWriter, logger, false)
 	s.jsonrpc.Init(outerGateAddr, logger)
 }
 
@@ -64,10 +64,6 @@ func (s *server) SendToClientReader(id string, msg []byte, nonce uint64) {
 
 func (s *server) SendToClientWriter(id string, msg []byte, nonce uint64) {
 	s.writer.Send(id, msg, nonce)
-}
-
-func (s *server) Notify(isUniCast bool, gameId string, userid string, msg string) {
-	s.reader.Notify(isUniCast, gameId, userid, msg)
 }
 
 func (s *server) JoinGroupNet(groupId string) {

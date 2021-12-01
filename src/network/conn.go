@@ -331,7 +331,7 @@ func (clientConn *ClientConn) Send(targetId string, msg []byte, nonce uint64) {
 	clientConn.send(clientConn.method, target, msg, nonce)
 }
 
-func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, logger log.Logger, isNotify, isRcv bool) {
+func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, logger log.Logger, isRcv bool) {
 	clientConn.method = method
 	clientConn.nonceLock = sync.Mutex{}
 	clientConn.notifyNonce = 0
@@ -375,14 +375,6 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 
 	clientConn.init(ipPort, path, logger)
 
-	if isNotify {
-		clientConn.initNotify()
-	}
-}
-
-func (clientConn *ClientConn) initNotify() {
-	clientConn.logger.Errorf("initNotify")
-	clientConn.send(methodNotifyInit, 0, []byte{}, 0)
 }
 
 func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, nonce uint64, event string) {

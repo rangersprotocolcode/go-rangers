@@ -93,8 +93,6 @@ type Network interface {
 
 	SendToClientWriter(id string, msg []byte, nonce uint64)
 
-	Notify(isunicast bool, gameId string, userid string, msg string)
-
 	Init(logger log.Logger, gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler)
 
 	JoinGroupNet(groupId string)
