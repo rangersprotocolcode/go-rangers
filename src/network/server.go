@@ -37,8 +37,8 @@ type server struct {
 func (s *server) Init(logger log.Logger, gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler) {
 	s.worker.Init(gateAddr, selfMinerId, consensusHandler, logger)
 
-	s.reader.Init(outerGateAddr, "/srv/worker_reader", notify.ClientTransactionRead, methodCodeClientReader, logger, true)
-	s.writer.Init(outerGateAddr, "/srv/worker_writer", notify.ClientTransaction, methodCodeClientWriter, logger, false)
+	s.reader.Init(outerGateAddr, "/srv/reader", notify.ClientTransactionRead, methodCodeClientReader, logger, true)
+	s.writer.Init(outerGateAddr, "/srv/writer", notify.ClientTransaction, methodCodeClientWriter, logger, false)
 	s.jsonrpc.Init(outerGateAddr, logger)
 }
 
