@@ -18,7 +18,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	pv := big.NewInt(0)
 	block.Header = &types.BlockHeader{
 		Height:       0,
-		ExtraData:    common.Sha256([]byte("Rocket Protocol")),
+		ExtraData:    common.Sha256([]byte("Rangers Protocol")),
 		CurTime:      time.Date(2021, 11, 29, 2, 0, 0, 0, time.UTC),
 		ProveValue:   pv,
 		TotalQN:      0,
@@ -29,7 +29,10 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 
 	block.Header.RequestIds = make(map[string]uint64)
 	block.Header.Signature = common.Sha256([]byte("tuntunhz"))
-	block.Header.Random = common.Sha256([]byte("RocketProtocolVRF"))
+	block.Header.Random = common.Sha256([]byte("RangersProtocolVRF"))
+
+	//创建创始合约
+	createGenesisContract(block.Header, stateDB)
 
 	genesisProposers := getGenesisProposer()
 	addMiners(genesisProposers, stateDB)
@@ -47,11 +50,9 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	stateDB.SetNonce(common.ProposerDBAddress, 1)
 	stateDB.SetNonce(common.ValidatorDBAddress, 1)
 
-	//创建创始合约
-	createGenesisContract(block.Header, stateDB)
-
 	money, _ := utility.StrToBigInt("100000000")
 	stateDB.SetBalance(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), money)
+	stateDB.SetBalance(common.HexToAddress("0x42c8c9b13fc0573d18028b3398a887c4297ff646"), money)
 
 	root, _ := stateDB.Commit(true)
 	triedb.Commit(root, false)
@@ -94,7 +95,7 @@ func getGenesisProposer() []*types.Miner {
 }
 
 func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB) {
-	source := "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
+	source := "0x42c8c9b13fc0573d18028b3398a887c4297ff646"
 	vmCtx := vm.Context{}
 	vmCtx.CanTransfer = vm.CanTransfer
 	vmCtx.Transfer = vm.Transfer
@@ -114,20 +115,13 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
 	}
-	statedb.AddERC20Binding("SYSTEM-USDT", usdtContractAddress, 2, 6)
+	// 0xdf764badfdf3c27753f9c4a269a850d028f01dbc
 	logger.Debugf("After execute usdt contract create!Contract address:%s", usdtContractAddress.GetHexString())
 
+	// 0xf800eddcdbd86fc46df366526f709bef33bd3d45
 	_, wRpgContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(wRPGContractData), vmCtx.GasLimit, big.NewInt(0))
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
 	}
-	statedb.AddERC20Binding(common.BLANCE_NAME, wRpgContractAddress, 3, 18)
 	logger.Debugf("After execute rpg contract create! Contract address:%s", wRpgContractAddress.GetHexString())
-
-	_, mixContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(mixContractData), vmCtx.GasLimit, big.NewInt(0))
-	if err != nil {
-		panic("Genesis contract create error:" + err.Error())
-	}
-	statedb.AddERC20Binding("SYSTEM-MIX", mixContractAddress, 0, 18)
-	logger.Debugf("After execute mix contract create! Contract address:%s", mixContractAddress.GetHexString())
 }

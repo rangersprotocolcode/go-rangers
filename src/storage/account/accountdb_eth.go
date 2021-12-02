@@ -17,20 +17,18 @@
 package account
 
 import (
-	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/utility"
 	"golang.org/x/crypto/sha3"
 	"hash"
+	"strings"
 )
 
 var (
-	contractKey         = utility.StrToBytes("c")
-	positionKey         = utility.StrToBytes("p")
-	decimalKey          = utility.StrToBytes("d")
-	usdtContractAddress *common.Address
-	rpgContractAddress  *common.Address
-	mixContractAddress  *common.Address
+	contractKey        = utility.StrToBytes("c")
+	positionKey        = utility.StrToBytes("p")
+	decimalKey         = utility.StrToBytes("d")
+	rpgContractAddress = common.HexToAddress("0xf800eddcdbd86fc46df366526f709bef33bd3d45")
 )
 
 func (self *AccountDB) AddERC20Binding(name string, contract common.Address, position, decimal uint64) bool {
@@ -45,32 +43,9 @@ func (self *AccountDB) AddERC20Binding(name string, contract common.Address, pos
 	return true
 }
 
-func (self *AccountDB) loadContractCache() {
-	address := common.GenerateERC20Binding("SYSTEM-USDT")
-	value := common.BytesToAddress(self.GetData(address, contractKey))
-	usdtContractAddress = &value
-
-	address = common.GenerateERC20Binding(common.BLANCE_NAME)
-	value1 := common.BytesToAddress(self.GetData(address, contractKey))
-	rpgContractAddress = &value1
-
-	address = common.GenerateERC20Binding("SYSTEM-MIX")
-	value2 := common.BytesToAddress(self.GetData(address, contractKey))
-	mixContractAddress = &value2
-}
-
 func (self *AccountDB) GetERC20Binding(name string) (found bool, contract common.Address, position uint64, decimal uint64) {
-	if rpgContractAddress == nil || 0 == bytes.Compare(rpgContractAddress.Bytes(), common.Address{}.Bytes()) {
-		self.loadContractCache()
-	}
-
-	switch name {
-	case "SYSTEM-USDT":
-		return true, *usdtContractAddress, 2, 6
-	case common.BLANCE_NAME:
-		return true, *rpgContractAddress, 3, 18
-	case "SYSTEM-MIX":
-		return true, *mixContractAddress, 0, 18
+	if 0 == strings.Compare(name, common.BLANCE_NAME) {
+		return true, rpgContractAddress, 3, 18
 	}
 
 	found = false
