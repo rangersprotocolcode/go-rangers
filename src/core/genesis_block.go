@@ -125,4 +125,12 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 		panic("Genesis contract create error:" + err.Error())
 	}
 	logger.Debugf("After execute rpg contract create! Contract address:%s", wRpgContractAddress.GetHexString())
+
+	_, proxyContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(proxyData), vmCtx.GasLimit, big.NewInt(0))
+	if err != nil {
+		panic("Genesis contract create error:" + err.Error())
+	}
+	// address:0x27b01a9e699f177634f480cc2150425009edc5fd
+	logger.Debugf("After execute proxy contract create!Contract address:%s", proxyContractAddress.GetHexString())
+
 }
