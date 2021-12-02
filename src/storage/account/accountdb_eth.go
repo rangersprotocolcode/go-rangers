@@ -17,6 +17,7 @@
 package account
 
 import (
+	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/utility"
 	"golang.org/x/crypto/sha3"
@@ -28,7 +29,7 @@ var (
 	contractKey        = utility.StrToBytes("c")
 	positionKey        = utility.StrToBytes("p")
 	decimalKey         = utility.StrToBytes("d")
-	rpgContractAddress = common.HexToAddress("0xf800eddcdbd86fc46df366526f709bef33bd3d45")
+	rpgContractAddress = common.Address{}
 )
 
 func (self *AccountDB) AddERC20Binding(name string, contract common.Address, position, decimal uint64) bool {
@@ -43,8 +44,17 @@ func (self *AccountDB) AddERC20Binding(name string, contract common.Address, pos
 	return true
 }
 
+func (self *AccountDB) loadContractCache() {
+	address := common.GenerateERC20Binding(common.BLANCE_NAME)
+	value1 := common.BytesToAddress(self.GetData(address, contractKey))
+	rpgContractAddress = value1
+}
+
 func (self *AccountDB) GetERC20Binding(name string) (found bool, contract common.Address, position uint64, decimal uint64) {
 	if 0 == strings.Compare(name, common.BLANCE_NAME) {
+		if 0 == bytes.Compare(rpgContractAddress.Bytes(), common.Address{}.Bytes()) {
+			self.loadContractCache()
+		}
 		return true, rpgContractAddress, 3, 18
 	}
 

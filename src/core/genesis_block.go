@@ -120,6 +120,7 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 
 	// 0xf800eddcdbd86fc46df366526f709bef33bd3d45
 	_, wRpgContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(wRPGContractData), vmCtx.GasLimit, big.NewInt(0))
+	statedb.AddERC20Binding(common.BLANCE_NAME, wRpgContractAddress, 3, 18)
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
 	}
