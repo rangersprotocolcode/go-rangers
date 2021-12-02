@@ -34,8 +34,6 @@ const (
 	//以下交易类型会被外部使用 禁止更改
 	TransactionTypeOperatorBalance = 99
 	TransactionTypeOperatorEvent   = 100 // 调用状态机/转账
-	TransactionTypeGetCoin         = 101 // 查询主链币
-	TransactionTypeGetAllCoin      = 102 // 查询所有主链币
 
 	TransactionTypeETHTX = 188 //以太坊的交易改造而成的交易
 

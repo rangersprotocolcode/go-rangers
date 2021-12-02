@@ -118,16 +118,6 @@ func (executor *GameExecutor) read(msg notify.Message) {
 		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
 		result = service.GetBalance(source, accountDB)
 		break
-
-		// 查询主链币
-	case types.TransactionTypeGetCoin:
-		result = service.GetCoinBalance(source, txRaw.Data)
-		break
-
-		// 查询所有主链币
-	case types.TransactionTypeGetAllCoin:
-		result = service.GetAllCoinInfo(source)
-		break
 		//查询network ID
 	case types.TransactionTypeGetNetworkId:
 		result = service.GetNetWorkId()
