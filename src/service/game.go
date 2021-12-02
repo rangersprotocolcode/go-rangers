@@ -72,58 +72,13 @@ func GetContractStorageAt(address string, key string, accountDB *account.Account
 	}
 	return common.ToHex(value)
 }
+
 func GetCode(address string, accountDB *account.AccountDB) string {
 	if accountDB == nil {
 		return ""
 	}
 	value := accountDB.GetCode(common.HexToAddress(address))
 	return base64.StdEncoding.EncodeToString(value)
-}
-
-// 状态机更新资产
-// 包括货币转账、NFT资产修改
-func UpdateAsset(user types.UserData, appId string, accountDB *account.AccountDB) bool {
-	userAddr := common.HexToAddress(user.Address)
-	appAddr := common.HexToAddress(appId)
-
-	// 转balance
-	transferBalanceOk, _ := transferBalance(user.Balance, appAddr, userAddr, accountDB)
-	if !transferBalanceOk {
-		logger.Debugf("Change balance failed!")
-		return false
-	}
-
-	// 转coin
-	_, ok := transferCoin(user.Coin, appId, user.Address, accountDB)
-	if !ok {
-		logger.Debugf("Change coin failed!")
-		return false
-	}
-
-	// 转FT
-	ftList := user.FT
-	if 0 != len(ftList) {
-		for ftName, valueString := range ftList {
-			_, _, flag := FTManagerInstance.TransferFT(appId, ftName, user.Address, valueString, accountDB)
-			if !flag {
-				logger.Debugf("Game Change ft failed!")
-				return false
-			}
-		}
-	}
-
-	// 修改NFT属性
-	// 若修改不存在的NFT，则会失败
-	nftList := user.NFT
-	if 0 != len(nftList) {
-		for _, nft := range nftList {
-			if !NFTManagerInstance.UpdateNFT(appId, nft.SetId, nft.Id, nft.Data, nft.Property, accountDB) {
-				return false
-			}
-		}
-	}
-
-	return true
 }
 
 // false 表示转账失败
@@ -167,25 +122,6 @@ func ChangeAssets(source string, targets map[string]types.TransferData, accountd
 	return response.TOJSONString(), true
 }
 
-func transferNFT(nftIDList []types.NFTID, source common.Address, target common.Address, db *account.AccountDB) ([]types.NFTID, bool) {
-	length := len(nftIDList)
-	if 0 == length {
-		return nil, true
-	}
-
-	response := make([]types.NFTID, 0)
-	for _, id := range nftIDList {
-		_, flag := NFTManagerInstance.Transfer(id.SetId, id.Id, source, target, db)
-		if !flag {
-			return nil, false
-		}
-
-		response = append(response, id)
-	}
-
-	return response, true
-}
-
 func transferBalance(value string, source common.Address, target common.Address, accountDB *account.AccountDB) (bool, *big.Int) {
 	balance, err := utility.StrToBigInt(value)
 	if err != nil {
@@ -211,42 +147,4 @@ func transferBalance(value string, source common.Address, target common.Address,
 	left := accountDB.SubBalance(source, balance)
 
 	return true, left
-}
-
-func transferFT(ft map[string]string, source string, target string, accountDB *account.AccountDB) (*types.JSONObject, bool) {
-	if 0 == len(ft) {
-		return nil, true
-	}
-	response := types.NewJSONObject()
-
-	for ftName, valueString := range ft {
-		message, left, ok := FTManagerInstance.TransferFT(source, ftName, target, valueString, accountDB)
-		if !ok {
-			logger.Debugf("Transfer FT Failed:%s", message)
-			return nil, false
-		}
-
-		response.Put(ftName, left)
-	}
-
-	return &response, true
-}
-
-func transferCoin(coin map[string]string, source string, target string, accountDB *account.AccountDB) (*types.JSONObject, bool) {
-	if 0 == len(coin) {
-		return nil, true
-	}
-	response := types.NewJSONObject()
-
-	for ftName, valueString := range coin {
-		message, left, ok := FTManagerInstance.TransferBNT(source, ftName, target, valueString, accountDB)
-		if !ok {
-			logger.Debugf("Transfer FT Failed:%s", message)
-			return nil, false
-		}
-
-		response.Put(ftName, left)
-	}
-
-	return &response, true
 }
