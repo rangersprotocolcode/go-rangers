@@ -49,7 +49,7 @@ const (
 // 奖励
 const (
 	// 矿工总奖励
-	TotalRPGSupply = 2100 * 10000 * 0.49
+	TotalRPGSupply = 2100 * 10000 * 0.35
 
 	ReleaseRate = 0.08
 
