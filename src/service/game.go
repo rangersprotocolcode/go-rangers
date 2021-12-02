@@ -149,37 +149,6 @@ func ChangeAssets(source string, targets map[string]types.TransferData, accountd
 			logger.Debugf("%s to %s, target: %s", source, address, utility.BigIntToStr(accountdb.GetBalance(targetAddr)))
 			responseBalance = utility.BigIntToStr(leftBalance)
 		}
-
-		// 转coin
-		left, ok := transferCoin(transferData.Coin, source, address, accountdb)
-		if !ok {
-			logger.Debugf("Transfer coin failed!")
-			return "Transfer BNT Failed", false
-		} else {
-			responseCoin.Merge(left, types.ReplaceBigInt)
-		}
-
-		// 转FT
-		ftList := transferData.FT
-		if 0 != len(ftList) {
-			left, ok := transferFT(ftList, source, address, accountdb)
-			if !ok {
-				logger.Debugf("Transfer ft failed!")
-				return "Transfer FT Filed", false
-			} else {
-				responseFT.Merge(left, types.ReplaceBigInt)
-			}
-		}
-
-		// 转NFT
-		nftList, ok := transferNFT(transferData.NFT, sourceAddr, targetAddr, accountdb)
-		if !ok {
-			logger.Debugf("Transfer nft failed!")
-			return "Transfer NFT Failed", false
-		} else if 0 != len(nftList) {
-			responseNFT = append(responseNFT, nftList...)
-		}
-
 	}
 
 	response := types.NewJSONObject()
