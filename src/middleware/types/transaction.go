@@ -45,16 +45,17 @@ const (
 	TransactionTypeContract = 200
 
 	//查询接口
-	TransactionTypeGetChainId     = 601 //查询CHAIN ID
-	TransactionTypeGetBlockNumber = 602 //查询块高
-	TransactionTypeGetBlock       = 603 //根据高度或者hash查询块
-	TransactionTypeGetNonce       = 604 //查询NONCE
-	TransactionTypeGetTx          = 605 //查询交易
-	TransactionTypeGetReceipt     = 606 //查询收据
-	TransactionTypeGetTxCount     = 607 //查询交易数量
-	TransactionTypeGetTxFromBlock = 608 //根据索引查询块中交易
-	TransactionTypeGetStorage     = 609 //查询存储信息
-	TransactionTypeGetCode        = 610 //查询CODE
+	TransactionTypeGetNetworkId       = 600 //查询Network ID
+	TransactionTypeGetChainId         = 601 //查询CHAIN ID
+	TransactionTypeGetBlockNumber     = 602 //查询块高
+	TransactionTypeGetBlock           = 603 //根据高度或者hash查询块
+	TransactionTypeGetNonce           = 604 //查询NONCE
+	TransactionTypeGetTx              = 605 //查询交易
+	TransactionTypeGetReceipt         = 606 //查询收据
+	TransactionTypeGetTxCount         = 607 //查询交易数量
+	TransactionTypeGetTxFromBlock     = 608 //根据索引查询块中交易
+	TransactionTypeGetContractStorage = 609 //查询合约存储信息
+	TransactionTypeGetCode            = 610 //查询CODE
 
 	TransactionTypeGetPastLogs = 611
 	TransactionTypeCallVM      = 612

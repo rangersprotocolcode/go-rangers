@@ -41,6 +41,10 @@ func InitRewardCalculator(blockChainImpl types.BlockChainHelper, groupChain type
 	RewardCalculatorImpl.logger = log.GetLoggerByIndex(log.RewardLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 }
 
+func GetTotalReward(height uint64) float64 {
+	return getTotalReward(height)
+}
+
 func (reward *RewardCalculator) CalculateReward(height uint64, accountDB *account.AccountDB, bh *types.BlockHeader, situation string) map[uint64]types.RefundInfoList {
 	reward.logger.Debugf("start to calculate, height: %d, situation: %s", height, situation)
 	defer reward.logger.Debugf("end to calculate, height: %d, situation: %s", height, situation)

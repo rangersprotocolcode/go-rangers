@@ -164,6 +164,10 @@ func GetFTSet(id string) string {
 	return ""
 }
 
+func GetNetWorkId() string {
+	return common.NetworkId()
+}
+
 func GetChainId() string {
 	return common.ChainId()
 }
@@ -185,14 +189,17 @@ func GetReceipt(txHash common.Hash) string {
 	return string(result)
 }
 
-func GetStorageAt(address string, key string, accountDB *account.AccountDB) string {
+//获取合约的存储数据
+func GetContractStorageAt(address string, key string, accountDB *account.AccountDB) string {
 	if accountDB == nil {
 		return ""
 	}
-	value := accountDB.GetData(common.HexToAddress(address), []byte(key))
-	return base64.StdEncoding.EncodeToString(value)
+	value := accountDB.GetData(common.HexToAddress(address), common.HexToHash(key).Bytes())
+	if value == nil {
+		value = common.Hash{}.Bytes()
+	}
+	return common.ToHex(value)
 }
-
 func GetCode(address string, accountDB *account.AccountDB) string {
 	if accountDB == nil {
 		return ""
