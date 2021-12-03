@@ -19,6 +19,7 @@ package core
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/db"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"strconv"
@@ -66,4 +67,11 @@ func TestGameExecutor_RunWrite(t *testing.T) {
 	tempTxLDB.Close()
 
 	os.RemoveAll("tempTx0")
+}
+
+func TestBase64(t *testing.T) {
+	s := "THJSTfGTY4QAvc2GFeKdttU1Yt7Gh2J4sllbBPscoRk="
+	b, _ := base64.StdEncoding.DecodeString(s)
+	fmt.Printf("%v\n", common.Bytes2Hex(b))
+	fmt.Printf("%v\n", b)
 }
