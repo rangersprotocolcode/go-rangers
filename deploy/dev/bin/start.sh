@@ -31,11 +31,11 @@ do
 	fi
 
 	if [ $instance_index -le 3 ];then
-		nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --gateaddr gate.tuntunhz.com:8899 --outergateaddr gate.tuntunhz.com:8888 --mysql='readonly:Tuntun123456!@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai' --env dev> $stdout_log 2>&1 & echo $! > $pid_file
+		nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --gateaddr 'ws://gate.tuntunhz.com:8899' --outergateaddr 'ws://gate.tuntunhz.com:8888' --mysql='readonly:Tuntun123456!@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai' --env dev> $stdout_log 2>&1 & echo $! > $pid_file
     elif [ $instance_index -eq 4 ];then
-		nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --gateaddr gate.tuntunhz.com:8899 --outergateaddr gate.tuntunhz.com:8888 --mysql='readonly:Tuntun123456!@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai' --env dev> $stdout_log 2>&1 & echo $! > $pid_file
+		nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --gateaddr 'ws://gate.tuntunhz.com:8899' --outergateaddr 'ws://gate.tuntunhz.com:8888' --mysql='readonly:Tuntun123456!@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai' --env dev> $stdout_log 2>&1 & echo $! > $pid_file
 	else
-		nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --gateaddr gate.tuntunhz.com:8899  --outergateaddr gate.tuntunhz.com:8888 --mysql='readonly:Tuntun123456!@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai' --env dev> $stdout_log 2>&1 & echo $! > $pid_file
+		nohup env GOTRACEBACK=crash ./rocket_node miner --config $config_file --rpc --rpcport $rpc_port  --instance $instance_index --pprof $pprof_port  --gateaddr 'ws://gate.tuntunhz.com:8899'  --outergateaddr 'ws://gate.tuntunhz.com:8888' --mysql='readonly:Tuntun123456!@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai' --env dev> $stdout_log 2>&1 & echo $! > $pid_file
 	fi
 	sleep 1
 done
