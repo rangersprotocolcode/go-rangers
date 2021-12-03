@@ -102,20 +102,22 @@ func (mm *MinerManager) GetValidatorsStake(members [][]byte, accountDB *account.
 			mm.logger.Errorf("fail to get Member,id: %s", common.BytesToAddress(member))
 			continue
 		}
-		membersDetail[common.BytesToAddress(account)] = stake
+		addr := common.BytesToAddress(account)
+		current := membersDetail[addr]
+		membersDetail[addr] = stake + current
 		total += stake
 	}
 
 	return total, membersDetail
 }
 
-func (mm *MinerManager) GetProposerTotalStakeWithDetail(height uint64, accountDB *account.AccountDB) (uint64, map[common.Address]uint64) {
+func (mm *MinerManager) GetProposerTotalStakeWithDetail(height uint64, accountDB *account.AccountDB) (uint64, map[string]uint64) {
 	if accountDB == nil {
 		return 0, nil
 	}
 
 	total := uint64(0)
-	membersDetail := make(map[common.Address]uint64)
+	membersDetail := make(map[string]uint64)
 
 	iter := mm.minerIterator(common.MinerTypeProposer, accountDB)
 	for iter.Next() {
@@ -126,7 +128,7 @@ func (mm *MinerManager) GetProposerTotalStakeWithDetail(height uint64, accountDB
 
 		if height >= miner.ApplyHeight && miner.Status == common.MinerStatusNormal {
 			total += miner.Stake
-			membersDetail[common.BytesToAddress(miner.Account)] = miner.Stake
+			membersDetail[common.ToHex(miner.Id)] = miner.Stake
 		}
 	}
 
