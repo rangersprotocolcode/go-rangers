@@ -43,7 +43,7 @@ type Miner struct {
 	// 矿工机器编号
 	Id           HexBytes `json:"id,omitempty"`
 	PublicKey    HexBytes `json:"publicKey,omitempty"`
-	VrfPublicKey HexBytes `json:"vrfPublicKey,omitempty"`
+	VrfPublicKey []byte   `json:"vrfPublicKey,omitempty"`
 
 	ApplyHeight uint64
 	// 当前状态
