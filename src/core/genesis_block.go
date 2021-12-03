@@ -42,7 +42,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	for _, genesis := range genesisInfo {
 		for i, member := range genesis.Group.Members {
 			miner := &types.Miner{Type: common.MinerTypeValidator, Id: member, PublicKey: genesis.Pks[i], VrfPublicKey: genesis.VrfPKs[i], Stake: common.ValidatorStake}
-			miner.Account = []byte{1, 0, 0, byte(i)}
+			miner.Account = common.FromHex("0x42c8c9b13fc0573d18028b3398a887c4297ff646")
 			verifyMiners = append(verifyMiners, miner)
 		}
 	}
@@ -91,7 +91,7 @@ func getGenesisProposer() []*types.Miner {
 			Stake:        common.ProposerStake,
 			Type:         common.MinerTypeProposer,
 			Status:       common.MinerStatusNormal,
-			Account:      []byte{1, 1, 1, 1},
+			Account:      common.FromHex("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"),
 		}
 		miners = append(miners, &miner)
 	}
