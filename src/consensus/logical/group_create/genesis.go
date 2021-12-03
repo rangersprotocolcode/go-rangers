@@ -23,6 +23,7 @@ import (
 	"com.tuntun.rocket/node/src/consensus/vrf"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"strings"
 )
@@ -75,10 +76,12 @@ func (p *groupCreateProcessor) BeginGenesisGroupMember() {
 			continue
 		}
 
+		fmt.Printf("genesis group id:%s\n", genesis.GroupInfo.GroupID.GetHexString())
 		joinedGroup := joinedGroups[genesis.GroupInfo.GroupID.GetHexString()]
 		if joinedGroup == nil {
 			continue
 		}
+		fmt.Printf("joined group id:%s\n", joinedGroup.GroupID.GetHexString())
 		sec := new(groupsig.Seckey)
 		sec.SetHexString(common.GlobalConf.GetString("gx", "signSecKey", ""))
 		joinedGroup.SignSecKey = *sec
@@ -104,6 +107,7 @@ func genGenesisJoinedGroup() map[string]*model.JoinedGroupInfo {
 		if err != nil {
 			panic(err)
 		}
+		fmt.Printf("parse got.joined group id:%s\n", joinedGroup.GroupID.GetHexString())
 		joinedGroups[joinedGroup.GroupID.GetHexString()] = joinedGroup
 	}
 	return joinedGroups
