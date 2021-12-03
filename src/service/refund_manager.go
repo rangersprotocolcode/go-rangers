@@ -17,11 +17,13 @@
 package service
 
 import (
+	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
+	"fmt"
 	"github.com/pkg/errors"
 	"math"
 	"math/big"
@@ -100,17 +102,23 @@ func (refund *RefundManager) Add(data map[uint64]types.RefundInfoList, db *accou
 	}
 }
 
-func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint64, accountdb *account.AccountDB, situation string) (uint64, *big.Int, []byte, error) {
+func (this *RefundManager) GetRefundStake(now uint64, minerId, account []byte, money uint64, accountdb *account.AccountDB, situation string) (uint64, *big.Int, []byte, error) {
 	this.logger.Debugf("getRefund, minerId:%s, height: %d, money: %d", common.ToHex(minerId), now, money)
 	miner := MinerManagerImpl.GetMiner(minerId, accountdb)
 	if nil == miner {
-		this.logger.Debugf("getRefund error, minerId:%s, height: %d, money: %d, miner not existed", common.ToHex(minerId), now, money)
+		this.logger.Errorf("getRefund error, minerId:%s, height: %d, money: %d, miner not existed", common.ToHex(minerId), now, money)
 		return 0, nil, nil, errors.New("miner not existed")
+	}
+
+	if 0 != bytes.Compare(account, miner.Account) {
+		msg := fmt.Sprintf("getRefund error, minerId:%s, height: %d, money: %d, auth error. account: %s vs except: %s", common.ToHex(minerId), now, money, common.ToHex(account), common.ToHex(miner.Account))
+		this.logger.Errorf(msg)
+		return 0, nil, nil, errors.New(msg)
 	}
 
 	// 超出了质押量，不能提
 	if miner.Stake < money {
-		this.logger.Debugf("getRefund error, minerId:%s, height: %d, money: %d, not enough stake. stake: %d", common.ToHex(minerId), now, money, miner.Stake)
+		this.logger.Errorf("getRefund error, minerId:%s, height: %d, money: %d, not enough stake. stake: %d", common.ToHex(minerId), now, money, miner.Stake)
 		return 0, nil, nil, errors.New("not enough stake")
 	}
 

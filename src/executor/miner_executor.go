@@ -46,17 +46,11 @@ func (this *minerRefundExecutor) Execute(transaction *types.Transaction, header 
 		return false, msg
 	}
 
-	pubKey, err := transaction.Sign.RecoverPubkey(transaction.Hash.Bytes())
-	if nil != err {
-		msg := fmt.Sprintf("fail to refund %s, recoverPubkey failed", transaction.Data)
-		this.logger.Errorf(msg)
-		return false, msg
-	}
-	minerId := pubKey.GetID()
-	this.logger.Debugf("before refund, addr: %s, money: %d, minerId: %v", transaction.Source, value, minerId)
+	minerId := common.FromHex(transaction.Data)
+	this.logger.Debugf("before refund, addr: %s, money: %d, minerId: %s", transaction.Source, value, transaction.Data)
 
 	situation := context["situation"].(string)
-	refundHeight, money, addr, refundErr := service.RefundManagerImpl.GetRefundStake(header.Height, minerId, value, accountdb, situation)
+	refundHeight, money, addr, refundErr := service.RefundManagerImpl.GetRefundStake(header.Height, minerId, common.FromHex(transaction.Source), value, accountdb, situation)
 	if refundErr != nil {
 		msg := fmt.Sprintf("fail to refund %s, err: %s", transaction.Data, refundErr.Error())
 		this.logger.Errorf(msg)
