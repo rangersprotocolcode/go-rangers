@@ -92,10 +92,10 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 	base.logger = logger
 	base.path = path
 
-	url := url.URL{Scheme: "ws", Host: ipPort, Path: path}
-	base.url = url.String()
-	base.connLock = sync.Mutex{}
+	ipPortString, _ := url.QueryUnescape(ipPort)
+	base.url = fmt.Sprintf("%s%s", ipPortString, path)
 	base.conn = base.getWSConn()
+	base.connLock = sync.Mutex{}
 
 	// 初始化读写缓存
 	if 0 == base.rcvSize {
