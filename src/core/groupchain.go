@@ -123,8 +123,7 @@ func (chain *groupChain) AddGroup(group *types.Group) error {
 	}
 	header := group.Header
 	header.WorkHeight = header.CreateHeight + uint64(common.GROUP_Work_GAP)
-	//header.DismissHeight = header.CreateHeight + uint64(common.GROUP_Work_DURATION)
-	header.DismissHeight = utility.MaxUint64
+	header.DismissHeight = header.CreateHeight + uint64(common.GROUP_Work_DURATION)
 	return chain.save(group)
 }
 
