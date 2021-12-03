@@ -229,8 +229,13 @@ func TestKey(t *testing.T) {
 	fmt.Printf("Id:%s\n", ToHex(id[:]))
 }
 
-func TestEnv(test *testing.T) {
-	env := "test"
-	InitChainId(env)
-	fmt.Println(ChainId)
+func TestKey1(t *testing.T) {
+	privateKey := HexStringToSecKey("0x04810d344412b2fbd0f600d0f4b03738eecaa3874261cb91dcf4c06f84c1a758177af7b2f036824318644c84a44c0793882f91698116b8a8d1d6f43e5770baa0557805052e681d27e8de7a8dc5ce78fb07c8bfe02c5235df231a9f6ba676579480")
+	publicKey := privateKey.GetPubKey()
+	id := publicKey.GetID()
+	address := publicKey.GetAddress()
+	fmt.Printf("Private key:%s\n", privateKey.GetHexString())
+	fmt.Printf("Public key:%s\n", publicKey.GetHexString())
+	fmt.Printf("Address:%s\n", address.String())
+	fmt.Printf("Id:%s\n", ToHex(id[:]))
 }
