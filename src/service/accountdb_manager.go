@@ -87,18 +87,20 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) (*acco
 	waited := false
 	req := manager.requestId
 
+
 	// 校验 nonce
 	if !manager.debug {
 		// requestId 按序执行
 		manager.getCond().L.Lock()
-		if nonce <= manager.requestId {
-			// 已经执行过的消息，忽略
-			manager.logger.Errorf("%s requestId :%d skipped, current requestId: %d", "", nonce, manager.requestId)
-			manager.getCond().L.Unlock()
-			return nil, 0
-		}
 
 		for nonce != (manager.requestId + 1) {
+			if nonce <= manager.requestId {
+				// 已经执行过的消息，忽略
+				manager.logger.Errorf("%s requestId :%d skipped, current requestId: %d", "", nonce, manager.requestId)
+				manager.getCond().L.Unlock()
+				return nil, 0
+			}
+
 			// waiting until the right requestId
 			manager.logger.Infof("requestId :%d is waiting, current requestId: %d", nonce, manager.requestId)
 			waited = true
