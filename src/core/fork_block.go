@@ -26,7 +26,6 @@ import (
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"errors"
-	"fmt"
 	"github.com/oleiade/lane"
 )
 
@@ -286,15 +285,9 @@ func (fork *blockChainFork) verifyStateAndReceipt(coming *types.Block) (bool, *a
 		fork.logger.Errorf("Fail to new statedb, error:%s", err)
 		return false, state
 	}
-	if coming.Header.Height == 7015 {
-		fmt.Printf("pre hash:%s,pre state:%s\n", preBlock.Header.Hash.String(), preBlock.Header.StateTree.String())
-	}
 	vmExecutor := newVMExecutor(state, coming, "fork")
 	stateRoot, _, _, receipts := vmExecutor.Execute()
 
-	if coming.Header.Height == 7015 {
-		fmt.Printf("gen state:%s,coming state:%s\n", stateRoot.Hex(), coming.Header.StateTree.Hex())
-	}
 	if stateRoot != coming.Header.StateTree {
 		fork.logger.Errorf("State root error!coming:%s gen:%s", coming.Header.StateTree.Hex(), stateRoot.Hex())
 		return false, state
