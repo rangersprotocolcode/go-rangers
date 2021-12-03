@@ -70,7 +70,7 @@ func TestGameExecutor_RunWrite(t *testing.T) {
 }
 
 func TestBase64(t *testing.T) {
-	s := "THJSTfGTY4QAvc2GFeKdttU1Yt7Gh2J4sllbBPscoRk="
+	s := "OPl+7u9grA4AsQ9EVBiZRVFJeBv1e2gjxq3jSOfEDwQ="
 	b, _ := base64.StdEncoding.DecodeString(s)
 	fmt.Printf("%v\n", common.Bytes2Hex(b))
 	fmt.Printf("%v\n", b)
