@@ -92,7 +92,7 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, a
 			delta := utility.Float64ToBigInt(float64(stake) / float64(totalProposerStake) * otherRewardProposer)
 			account := common.BytesToAddress(MinerManagerImpl.getMinerAccount(common.FromHex(addr), common.MinerTypeProposer, accountDB))
 			addReward(result, account, delta)
-			reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, account: %s, stake: %d, reward: %d, result: %s", height, hashString, common.ToHex([]byte(addr)), account.String(), stake, delta, result[account].String())
+			reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, account: %s, stake: %d, reward: %d, result: %s", height, hashString, addr, account.String(), stake, delta, result[account].String())
 		}
 	}
 
