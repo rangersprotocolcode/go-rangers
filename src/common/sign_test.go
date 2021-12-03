@@ -230,7 +230,7 @@ func TestKey(t *testing.T) {
 }
 
 func TestKey1(t *testing.T) {
-	privateKey := HexStringToSecKey("0x04810d344412b2fbd0f600d0f4b03738eecaa3874261cb91dcf4c06f84c1a758177af7b2f036824318644c84a44c0793882f91698116b8a8d1d6f43e5770baa0557805052e681d27e8de7a8dc5ce78fb07c8bfe02c5235df231a9f6ba676579480")
+	privateKey := HexStringToSecKey("0x04d0e50343ed268e90413a39e84c9a02a26aaaabe945f5e138dc45cadd810d0c68f26eb00419a6c8f3858b70bb80dd50034546a45b8da2428cebbc2bef8c507b1799d6974cd1ae9ba9bc77d94981667366841f4c87c54331c0c8bab41f7a547738")
 	publicKey := privateKey.GetPubKey()
 	id := publicKey.GetID()
 	address := publicKey.GetAddress()
