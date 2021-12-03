@@ -17,11 +17,8 @@
 package cli
 
 import (
-	"bytes"
 	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/base"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/consensus/vrf"
+	"com.tuntun.rocket/node/src/consensus/model"
 	"com.tuntun.rocket/node/src/core"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/utility"
@@ -78,16 +75,12 @@ func (ws *wallets) newWalletByPrivateKey(privateKey string) (privKeyStr, walletA
 	address := pub.GetAddress()
 	privKeyStr, walletAddress = pub.GetHexString(), address.GetHexString()
 
+	selfMinerInfo := model.NewSelfMinerInfo(*priv)
+
 	var miner types.Miner
-	miner.Id = address.Bytes()
-
-	secretSeed := base.RandFromBytes(address.Bytes())
-	minerSecKey := *groupsig.NewSeckeyFromRand(secretSeed)
-	minerPubKey := *groupsig.GeneratePubkey(minerSecKey)
-	vrfPK, _, _ := vrf.VRFGenerateKey(bytes.NewReader(secretSeed.Bytes()))
-
-	miner.PublicKey = minerPubKey.Serialize()
-	miner.VrfPublicKey = vrfPK.GetBytes()
+	miner.Id = selfMinerInfo.ID.Serialize()
+	miner.PublicKey = selfMinerInfo.PubKey.Serialize()
+	miner.VrfPublicKey = selfMinerInfo.VrfPK
 
 	minerJson, _ := json.Marshal(miner)
 	minerString = string(minerJson)
