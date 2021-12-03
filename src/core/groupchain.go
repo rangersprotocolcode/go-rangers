@@ -89,6 +89,10 @@ func initGroupChain() {
 }
 
 func (chain *groupChain) AddGroup(group *types.Group) error {
+	fmt.Printf("add group:%v\n", group)
+	b, _ := json.Marshal(group)
+	fmt.Printf("add group:%s\n", string(b))
+
 	if nil == group {
 		return fmt.Errorf("nil group")
 	}

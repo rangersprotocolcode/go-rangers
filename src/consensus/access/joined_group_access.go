@@ -18,6 +18,7 @@ package access
 
 import (
 	"com.tuntun.rocket/node/src/core"
+	"fmt"
 	"sync"
 
 	"com.tuntun.rocket/node/src/common"
@@ -118,6 +119,10 @@ func (storage *JoinedGroupStorage) BelongGroup(groupId groupsig.ID) bool {
 //			gid : group ID (not dummy id)
 //			sk: user's group member signature private key
 func (storage *JoinedGroupStorage) JoinGroup(joinedGroupInfo *model.JoinedGroupInfo, selfMinerId groupsig.ID) {
+	fmt.Printf("join group:%v\n", joinedGroupInfo)
+	b, _ := json.Marshal(joinedGroupInfo)
+	fmt.Printf("join group json:%v\n", string(b))
+
 	logger.Infof("(%v):join group,group id=%v,secKey:%v\n", selfMinerId.GetHexString(), joinedGroupInfo.GroupID.ShortS(), joinedGroupInfo.SignSecKey.GetHexString())
 	if !storage.BelongGroup(joinedGroupInfo.GroupID) {
 		storage.addJoinedGroupInfo(joinedGroupInfo)
