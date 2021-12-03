@@ -9,6 +9,7 @@ import (
 	"com.tuntun.rocket/node/src/storage/trie"
 	"com.tuntun.rocket/node/src/utility"
 	"com.tuntun.rocket/node/src/vm"
+	"encoding/base64"
 	"math/big"
 	"time"
 )
@@ -142,72 +143,72 @@ func addSecondGroupValidator(stateDB *account.AccountDB) {
 	verifyMiners := make([]*types.Miner, 0)
 	miner11 := &types.Miner{Type: common.MinerTypeValidator, Stake: common.ValidatorStake}
 	miner11.Account = []byte{1, 0, 0, byte(11)}
-	miner11.Id = common.FromHex("0x245f61a18215af0d2531b8e6921b13b52cd58fa43c2e19cd75c9031040ecc7fa")
-	miner11.PublicKey = common.FromHex("0x5a50b13fe58348098700e60d271cab6e1aa684490a058ab8b9a26ad163345a3866895c3cab2fcccbea1e001a13aa1811fd8a03f0ae57f40d69e161cf1b89dac680a8fbdd12d6b88527ef57cfb4637ad793368f3e55da4b359dbe7c8b0625ff6836df03ac8b3f7caa0af361c4231d32c80063079b67e0dbf2508503b633d6780f")
-	miner11.VrfPublicKey = common.FromHex("0xb1fe9e6464fab928195812d7f5937896549b1c87b1fd639fe4a01a98c0a04f31")
+	miner11.Id = common.FromHex("0xa09540c8add3c5adb84d18dffce615685774f4eaecd8b59fc1bf57d0b6a351bc")
+	miner11.PublicKey = common.FromHex("0x6d5701035858aca34f58931add6176dae40ca28cf2cc3599ee6b2bc13a70ccf13e5f988c4ad8ba9539146c97145b37fe8a85bf20ef9a30ac70f090a87d4d7b5139df4cb9667712b45d77d6f797edfcc1a0d4f3c1503fecf6f7b4d6aef8ca4b315aca02a4626fd154272097726cb15a73ea69f570a38452ea5866c6ecb2557369")
+	miner11.VrfPublicKey, _ = base64.StdEncoding.DecodeString("GiHfDVN5ULiON57jzuAq8h9qEMcEMSGb0oP1PrFNJ2c=")
 	verifyMiners = append(verifyMiners, miner11)
 
 	miner12 := &types.Miner{Type: common.MinerTypeValidator, Stake: common.ValidatorStake}
 	miner12.Account = []byte{1, 0, 0, byte(12)}
-	miner12.Id = common.FromHex("0x77f144dcc7a25692a70ac7324504e764a3f6db0b3f954de87e8dc1a25467fe1a")
-	miner12.PublicKey = common.FromHex("0x6da381570d6a8b3c4332da524c0d79e81f8e72389bc8d8fa26328f16d8140ad326c7f923992dd3a78131b68cdb16c2fbcd3ae0e2548224d47717d60d1a204557594d85d60ed5a026168a31fcc1c7ef32e6efa61378e4fa289265a383fcb98234211faf8da063b93e30c68aa8103fdda19f42288e5e80767cb2fd54ed5756fc9d")
-	miner12.VrfPublicKey = common.FromHex("0xe70552fa4e86337786786f46b5008bf6e5c8817ca4e84d5cd057bf349180c0db")
+	miner12.Id = common.FromHex("0x04c07144b4139850e121724169e71076bf598af754912fb582c7a45fc0b290c6")
+	miner12.PublicKey = common.FromHex("0x5834c3bc10d9219e5c9104bec0106a1f9e289d66db2c88fce9f735c2c279481b79ce5be0d1b248a8a3a3141bfcf7b5bc7df65a50327d3d8eef0cbe863ab573440c01286312add654a6ea2cb64d73a477ae31c42f1e34a71f46680836a196c0a75094efc99bf4b3f7eb9ac16f7802d2734d64ff144732b5fb62e256ae8680e5d5")
+	miner12.VrfPublicKey, _ = base64.StdEncoding.DecodeString("d4mfSXPTgXgbAtPgQzLUcQnIuW6bHWB5Hyr5qVXuLyE=")
 	verifyMiners = append(verifyMiners, miner12)
 
 	miner13 := &types.Miner{Type: common.MinerTypeValidator, Stake: common.ValidatorStake}
 	miner13.Account = []byte{1, 0, 0, byte(13)}
-	miner13.Id = common.FromHex("0xc8ad0be14a695432843e76485644eb41618c0307ceadd49fae57961f8ef716d1")
-	miner13.PublicKey = common.FromHex("0x2aa89a13a767d34d6382c2d4298ac6461b8973d77e683ef0c7907660c412879e0a44b4236d5a465946dd0c7d956f9f65e4868d7f8103f6664549af6907a2267d1e8f407eca4230641dbe287a0675e4de10a2791a057a74c72ab39cca80727c5b451f417fbc0537306ef5f9a3ed33bf0da8964079a7752dc84d19b3ae2120d969")
-	miner13.VrfPublicKey = common.FromHex("0x7a622af41d1f8485129c089261aecc542a94312de99bc0fdcaeead9846993166")
+	miner13.Id = common.FromHex("0xc053fbdeff3cbbed6a8041413ef24b848b80fa32efc5ca842bdda61dbbdad4ef")
+	miner13.PublicKey = common.FromHex("0x4ad5f2e89971623de8364bdca07cc967bcc398cd9b7f34d7bba1dc448a3ab4545b93687bee82ccd09bfb8f5dfefa579670d214bf5a91a5d5bd488d17d1fddcfb60af073415c11e8d410610d5af8a0db0c948b177528e3a844797a73d9816e75b23a67545881e475ecbd7ae9dc2509e445527641b2c7029d20d68eb09a434f86a")
+	miner13.VrfPublicKey, _ = base64.StdEncoding.DecodeString("XheZRfneY7YsUrPG8/GaAUoLYDXgIkmjNHzQ3VyOSuw=")
 	verifyMiners = append(verifyMiners, miner13)
 
 	miner14 := &types.Miner{Type: common.MinerTypeValidator, Stake: common.ValidatorStake}
 	miner14.Account = []byte{1, 0, 0, byte(14)}
-	miner14.Id = common.FromHex("0xab2d103f32136d9d635eeadfd82d6ac340788d3bf70862270ee04b82e94c79ee")
-	miner14.PublicKey = common.FromHex("0x2c481e9df39a57e3a8bdd9a3efa7a526ee19315193d4c27ff444419f2b06c57a1c91faed4cf38deed76bf29a31beda72f759518f18f23b41367aa74c668c95291ce55810bbd68d0fb0b9d935913e7ec08f58e39a8f8017844a33b642f87398b331bafbaf7e194522e4da90092c9011e306a6d00aa43c7b062e9dd15e1f836b59")
-	miner14.VrfPublicKey = common.FromHex("0x173670a2db53e42118b23b8132cdcbf8b72621ce433a3b2bfd1228de093b1bc6")
+	miner14.Id = common.FromHex("0xd7cdeaf89176429db91fd6094bf02ae465c2cecc1d751ebbb2ad66cb7c104859")
+	miner14.PublicKey = common.FromHex("0x48e806eaf31583bff484537ae9922db32fb16563367a4fc81ab78c9bf525a4ab6e0ac6fa05fb2237c62d882d2de7b77596fcbf8423347244cebf51eb941b8596028b47f26bd6deaafdd5ccdb3b960da4fc499141c8dc41c29e205cc60eadb947362952ab7a15b9e639b99b1257ac43fd99f96e2eb4df7477a1e2e073c2a35a10")
+	miner14.VrfPublicKey, _ = base64.StdEncoding.DecodeString("scdN5k3xVKF3R2kv23MTeUgzjwG1x8gFmqwqPEdNHbU=")
 	verifyMiners = append(verifyMiners, miner14)
 
 	miner15 := &types.Miner{Type: common.MinerTypeValidator, Stake: common.ValidatorStake}
 	miner15.Account = []byte{1, 0, 0, byte(15)}
-	miner15.Id = common.FromHex("0x138f0771a33357766ae663f4889e8b8be2654ac401214557c407868504051455")
-	miner15.PublicKey = common.FromHex("0x3eb26e8666d0d0d43918e7789dde9d7f5a1bd706f5e267bcd0a2fb93e6dcaada21c21219d8928a6b5ffead0ab76e2441769f0db53831178f0d0efc9b8e0f4d153b06a313091ac104ec03105de4ee5f3d7791986dcdb5fcae552863e21e8edd7081dff99b5eb8323699f450582160737397007cf38c84eef351541469544a0c5b")
-	miner15.VrfPublicKey = common.FromHex("0x1fba14757c3744d60e7b0681bad15855a9d7f3e66fed7c24fa69e090e8ef1a35")
+	miner15.Id = common.FromHex("0x8b95500aeff85eca80201e71fc03018db5383564c2e66f092aa860b10cc972ee")
+	miner15.PublicKey = common.FromHex("0x537a0410abea8922dea03715b99e830bf26a5a55a33e9419202d236311a3b5ce1de752e1708431668964f23616096e88a50955075954e98511b1796c61f03a6a3ebdc651ae986aea3b7108171a40e12280ceee9330e1891fb17b255839c41296331f907f489c5657a9abff5dfcb4c147c0260bf384ff3d42d181477a842c8f9c")
+	miner15.VrfPublicKey, _ = base64.StdEncoding.DecodeString("Asrqk00htciajm/I6f0J7y8M16rfO2JRAkeE5/83Ckg=")
 	verifyMiners = append(verifyMiners, miner15)
 
 	miner16 := &types.Miner{Type: common.MinerTypeValidator, Stake: common.ValidatorStake}
 	miner16.Account = []byte{1, 0, 0, byte(16)}
-	miner16.Id = common.FromHex("0x6ddc3604fbb86696627828f7e9f33c85df6d66e19ecd12f29d7b095da32f3ed4")
-	miner16.PublicKey = common.FromHex("0x8d5d7ea074b2126a9b0a0e7e7df203d330441cf2b2eb7bfdef81d240eefd5f3452cd858212645754e1cec7b849210365485bb694786dd724f8110e3208d406773f13624a8e328f7fb25318d7513860b3cdf4d4d8ba9702562c0abf0f446a8f6f5b15e2981018b902c26c142191f8075f4bbd739f40afee349c066cc69c6b084d")
-	miner16.VrfPublicKey = common.FromHex("0x38d5248e0e94929221dec49613876c51b19f026809073ae46abcb7197215e36b")
+	miner16.Id = common.FromHex("0xeb6e7487aa27f5b91bd9bef67779bc50047a9c6da9bebaa47ef7c0040a660e8e")
+	miner16.PublicKey = common.FromHex("0x80e0318f5a0de440c007b1b3fbd4185b8bf6b8bb3351b78234c6bc6d859879c21aa12bb276bdfce9e3317be03c3b39af9091591598b7ea98f61468bb7021ff97423e37d1970da69e519a2f302de78403f9e39f572fc3b026aa44c1456c2f9ee463092c3726f066c25af8dadb708c8067a26477ab88bdc96a8c77d8c278f45f38")
+	miner16.VrfPublicKey, _ = base64.StdEncoding.DecodeString("3b0btDxmzj6PIzusidyCMtWaLWASCGcZlq3+Qlh/1UM=")
 	verifyMiners = append(verifyMiners, miner16)
 
 	miner17 := &types.Miner{Type: common.MinerTypeValidator, Stake: common.ValidatorStake}
 	miner17.Account = []byte{1, 0, 0, byte(17)}
-	miner17.Id = common.FromHex("0x4d2300e3c25fd4214072e4adcf599abed366b5be1cea8de3829a80d48eca4205")
-	miner17.PublicKey = common.FromHex("0x27f56504b235eefab1e0fb9b107d2206d33e5f8839fb93811d05f9a531513bbd061272930f6bbebb25fb64c07b36b2e4def75904dfe8c015647e7b31cba7c6bb8be22ba72de9ba2157005215607f9183579de77683dd93b9976e757a301183667cb60e26ebc9a87af73ca5412efef0f56ac93a20de5ef8bb14efd82a3fbfd637")
-	miner17.VrfPublicKey = common.FromHex("0xd9b7c8403cb24cbf48f912cf82ea28b3124e83d04240359530d15ecafc7ea95b")
+	miner17.Id = common.FromHex("0x72cb53924aebe5ee960a71d40c36ac9330039b402d48e72863d479b0c7612528")
+	miner17.PublicKey = common.FromHex("0x52632ecfda8338b66fd7a52586259da4dec6ae70fcc3e71907cc526409a84f284548d29daeb4103a956c89cfa07d48741b1d618ce729507dab356fd54855a2c942ac82df2f3c648ca89905e8504fee470b695c651a25d2c0ea812c812a511ff43f66167c332892af284294fe3c8d97ba669ef0906593eeb547e2cee291951ff1")
+	miner17.VrfPublicKey, _ = base64.StdEncoding.DecodeString("KABoueNXGt8ZQAcKtc0IQgMl8Nfudf/oCGkYJHfObuM=")
 	verifyMiners = append(verifyMiners, miner17)
 
 	miner18 := &types.Miner{Type: common.MinerTypeValidator, Stake: common.ValidatorStake}
 	miner18.Account = []byte{1, 0, 0, byte(18)}
-	miner18.Id = common.FromHex("0x3748f337f5915aaa3bc150fa22c7aebd1e3e397e3f61fb501eeacac1a268165e")
-	miner18.PublicKey = common.FromHex("0x7674b7d4cd7ccab7d745cfae515fc1a7ff5e578b7d685c287eeaf0b88b0c6e3535842179e25b464b04fe502088f8d766b73b0e2b2c95e11d070b053da8bce07a00c70710fb442c07778e386a677973bf4934ec15d43f03428bd1bd9fdb7090f812f1f222ca7db9ca17a2ea4084e31795337cf8da2028dfb2465bd9afc9b8fbcc")
-	miner18.VrfPublicKey = common.FromHex("0x9ba61a65c70bcad5775908bad5cdc6aae60d1f2480c35444802b915ac81277d9")
+	miner18.Id = common.FromHex("0x24eb2635f561fe55fc9ebf81db91ea47f8cd2c9f59a8c17184ded1c81a155de1")
+	miner18.PublicKey = common.FromHex("0x49d850669d21a689e3bf1e84d23c15e848b11858ed816b4779dd8bc11ef0eb03259fc850c40b2130b6a52fbeb6903e5b25f2d90904bfe252780acfe88dab7bea7a9c40a1f37fdb9371c9e088e5b42a117429c8203828073235a3820b01d9dd845c03d6345d810f3e18212bbcf7f4360c3f78079d3e5c4ce835b8ccf251c65012")
+	miner18.VrfPublicKey, _ = base64.StdEncoding.DecodeString("2y+l3X+f8cagCaa2nnpw4N+Qfe9xFX57W11r1NhEvyU=")
 	verifyMiners = append(verifyMiners, miner18)
 
 	miner19 := &types.Miner{Type: common.MinerTypeValidator, Stake: common.ValidatorStake}
 	miner19.Account = []byte{1, 0, 0, byte(19)}
-	miner19.Id = common.FromHex("0xae003a027036ed72eac4d367fffd6979993b62f94e98a10c8d189ee462d19d84")
-	miner19.PublicKey = common.FromHex("0x88cd094ef69980ceaf64532d08c33866c411dc5dc8094cb2b2880f01e43152695bbe7cdc8030bebb9c3ec49cbd476e091e649f87199c560978458903b3dceab07fbdd5df292a84b0e1ee3066e637acb7aadf43f9e3dd3e8a3d66274078bc2290141c6fa9e04338574d65605b58f6cfd5368d89388bd090b9d79117157caa13a2")
-	miner19.VrfPublicKey = common.FromHex("0x7af4f2f7c143dd208892c4323e4586e703e1fa5d01991f107a5c4dfa21b4ccc8")
+	miner19.Id = common.FromHex("0xb3b269d5dceb5b70d6a6fce792a81b654b2ad57119b18d7de6d09ea41d92adbc")
+	miner19.PublicKey = common.FromHex("0x6663fe4bed8b302486b9647d413f1505236e069ad90f22dfedfaaf455124df0c7db59e5af6817144f1169500c469e6dbeb3ef451af044b25cbe3b18e0d7c88e07dffc0887cee7a8c12eefbad5ce7e2ff4b6c5be921e5c8358e7495cc15d8bd7a85790d768c08152647f9b7d9c6ac23336ca600291b3b3df06e5f72183d45eb5e")
+	miner19.VrfPublicKey, _ = base64.StdEncoding.DecodeString("BUL2zJSUPA9cOwPEUTQmbUukmD9dLwU+d/OP7rgEcMg=")
 	verifyMiners = append(verifyMiners, miner19)
 
 	miner20 := &types.Miner{Type: common.MinerTypeValidator, Stake: common.ValidatorStake}
 	miner20.Account = []byte{1, 0, 0, byte(20)}
-	miner20.Id = common.FromHex("0xbff465dd49992a79958dfa3c7e72a994558885c9d63f6ec5325701a74dde732f")
-	miner20.PublicKey = common.FromHex("0x713b8c73b2b2b989176769e27e69c95436cbb9b8c0d39e2a13aecaa18f87242f74a8526cd048565d1e437772236997bbf2fda38ccc84ad6ea3efde43d701602d5ae020e69451eda4356e1be3ee36e74d1c641c3fe11d07481eb5b9d1d9cc44672d9919f6cca6bd7bd3dda6498fe0cd14cd2eb986d9161548d1ff42a4ed5f5950")
-	miner20.VrfPublicKey = common.FromHex("0x43ff010d35afe2b74063aa67a8e023bc3b4f7cccf30416eeac82816056c88a7c")
+	miner20.Id = common.FromHex("0x63671fe9bdac7aedd53fd227cec98c1fd86ac2104a6d5f58c8b8d6896f9a380c")
+	miner20.PublicKey = common.FromHex("0x0e7e4c98d5b7e72ab053bcfe0f6e2dac407517ab9869c4ba24d9b879a477b3cf492e32fe3a753c220f3d0b67251f81cb81dac759ac3f972a84c8a36d3f887140011ac03757d30d8b87ad0130b26f4e428d72c0b352c87983860aed293635681a45678c4931f7d9394abd6806ad8a2f63cfc24255ca4f77d1cf71a333bae49b67")
+	miner20.VrfPublicKey, _ = base64.StdEncoding.DecodeString("toFM70wLttsxxVYSfDzC60GmFfZyAifUG1wUPzd8oX0=")
 	verifyMiners = append(verifyMiners, miner20)
 
 	addMiners(verifyMiners, stateDB)

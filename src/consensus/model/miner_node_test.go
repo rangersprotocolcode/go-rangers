@@ -7,9 +7,12 @@ import (
 )
 
 func TestNewSelfMinerInfo(t *testing.T) {
-	pkString := "0x04d0e50343ed268e90413a39e84c9a02a26aaaabe945f5e138dc45cadd810d0c68f26eb00419a6c8f3858b70bb80dd50034546a45b8da2428cebbc2bef8c507b1799d6974cd1ae9ba9bc77d94981667366841f4c87c54331c0c8bab41f7a547738"
+	pkString := "0x0499e4e44fdfd2848d274542c4255cea7380dc4d455081dcdc9e7fce2e3d60bc1f6f508b872203ac66b98e4c64bc831152a5503dc9d947e91d0de8e528a50a287ad1e3de87f825c95998ec6cbbe4e7542c91a609929197c29500dfbe74bf9021b4"
 	privateKey := common.HexStringToSecKey(pkString)
 	miner := NewSelfMinerInfo(*privateKey)
+	fmt.Println(miner.MinerInfo.ID.GetHexString())
 	fmt.Println(miner.MinerInfo.PubKey.GetHexString())
+	fmt.Println(miner.MinerInfo.VrfPK.GetHexString())
+	fmt.Println(miner.MinerInfo.VrfPK)
 
 }
