@@ -528,7 +528,6 @@ func (adb *AccountDB) Finalise(deleteEmptyObjects bool) {
 		if !exist {
 			continue
 		}
-		fmt.Printf("dirty account:%s,%v\n", addr.String(), exist)
 		accountObject := object.(*accountObject)
 		if accountObject.suicided || (deleteEmptyObjects && accountObject.empty()) {
 			adb.deleteAccountObject(accountObject)
