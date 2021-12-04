@@ -87,7 +87,7 @@ func InitParam(cc common.SectionConfManager) {
 		//EffectGapAfterApply: EPOCH,
 		PotentialProposal:      3,
 		PotentialProposalMax:   5,
-		PotentialProposalIndex: 15,
+		PotentialProposalIndex: 20,
 
 		CreateGroupInterval: uint64(Group_Create_Interval),
 		GroupCreateGap:      uint64(common.Group_Create_Gap),
