@@ -331,7 +331,8 @@ func (api *GtasAPI) MinerInfo(addr string) (*Result, error) {
 func (api *GtasAPI) NodeInfo() (*Result, error) {
 	ni := &NodeInfo{}
 	p := consensus.Proc
-	ni.ID = p.GetMinerID().GetHexString()
+	miner := service.MinerManagerImpl.GetMiner(p.GetMinerID().Serialize(), service.AccountDBManagerInstance.GetLatestStateDB())
+	ni.ID = common.ToHex(miner.Account)
 
 	if !p.Ready() {
 		ni.Status = "节点未准备就绪"
