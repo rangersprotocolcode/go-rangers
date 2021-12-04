@@ -37,8 +37,6 @@ const (
 
 	TransactionTypeETHTX = 188 //以太坊的交易改造而成的交易
 
-	TransactionTypeWrongTxNonce = 404
-
 	//合约交易
 	TransactionTypeContract = 200
 

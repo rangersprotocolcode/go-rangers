@@ -295,14 +295,6 @@ func (base *baseConn) generateTarget(targetId string) (uint64, error) {
 	return target, nil
 }
 
-func (base *baseConn) sendWrongNonce(nonce uint64, msg string) {
-	if 0 == nonce {
-		return
-	}
-
-	go notify.BUS.Publish(notify.WrongTxNonce, &notify.NonceNotifyMessage{Nonce: nonce, Msg: msg})
-}
-
 // 处理客户端的read/write请求
 var (
 	methodCodeClientReader, _ = hex.DecodeString("60000000")
@@ -351,7 +343,6 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 		if !bytes.Equal(wsHeader.method, clientConn.method) {
 			msg := fmt.Sprintf("%s received wrong method. wsHeader: %v", clientConn.path, wsHeader)
 			clientConn.logger.Error(msg)
-			clientConn.sendWrongNonce(wsHeader.nonce, msg)
 			return
 		}
 
@@ -383,20 +374,12 @@ func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, no
 	if nil != err {
 		msg := fmt.Sprintf("handleClientMessage json unmarshal client message error:%s", err.Error())
 		clientConn.logger.Errorf(msg)
-		clientConn.sendWrongNonce(nonce, msg)
 		return
 	}
 
 	tx := txJson.ToTransaction()
 	tx.RequestId = nonce
 	clientConn.logger.Debugf("Rcv event: %s from client.Tx info:%s", event, tx.ToTxJson().ToString())
-	//TransactionTypeETHTX is a inner tx type,forbid from client
-	if tx.Type == types.TransactionTypeETHTX {
-		msg := fmt.Sprintf("illegal tx type from client:%v", tx.Type)
-		clientConn.logger.Errorf(msg)
-		clientConn.sendWrongNonce(nonce, msg)
-		return
-	}
 	msg := notify.ClientTransactionMessage{Tx: tx, UserId: userId, Nonce: nonce}
 	notify.BUS.Publish(event, &msg)
 }

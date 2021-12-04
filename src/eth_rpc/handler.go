@@ -168,20 +168,12 @@ func (handler ethMsgHandler) parseRequest(ethRpcMessage *notify.ETHRPCPiece) (ha
 func (handler ethMsgHandler) exec(handlerFunc *execFunc, arguments []reflect.Value, method string, nonce uint64, params string) (interface{}, Error) {
 	reply := handlerFunc.method.Func.Call(arguments)
 	if len(reply) == 0 {
-		if method == sendRawTransactionMethod {
-			logger.Debugf("eth rpc wrong nonce:%v", arguments)
-			go notify.BUS.Publish(notify.WrongTxNonce, &notify.NonceNotifyMessage{Nonce: nonce, Msg: params})
-		}
 		return nil, nil
 	}
 	if handlerFunc.errPos >= 0 { // test if method returned an error
 		if !reply[handlerFunc.errPos].IsNil() {
 			e := reply[handlerFunc.errPos].Interface().(error)
 			logger.Debugf("after exec.error:%v", e)
-			if method == sendRawTransactionMethod {
-				logger.Debugf("eth rpc wrong nonce:%v", arguments)
-				go notify.BUS.Publish(notify.WrongTxNonce, &notify.NonceNotifyMessage{Nonce: nonce, Msg: params})
-			}
 			return &callbackError{e.Error()}, nil
 		}
 	}
