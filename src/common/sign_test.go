@@ -239,3 +239,13 @@ func TestKey1(t *testing.T) {
 	fmt.Printf("Address:%s\n", address.String())
 	fmt.Printf("Id:%s\n", ToHex(id[:]))
 }
+
+func TestKey2(t *testing.T) {
+	privateKey := HexStringToSecKey("0x04d0e50343ed268e90413a39e84c9a02a26aaaabe945f5e138dc45cadd810d0c68f26eb00419a6c8f3858b70bb80dd50034546a45b8da2428cebbc2bef8c507b1799d6974cd1ae9ba9bc77d94981667366841f4c87c54331c0c8bab41f7a547738")
+	publicKey := privateKey.GetPubKey()
+	address := publicKey.GetAddress()
+	fmt.Printf("Address:%s\n", address.String())
+
+	privateKeyHex := hex.EncodeToString(privateKey.PrivKey.D.Bytes())
+	fmt.Printf("Eth Private key:%s\n", privateKeyHex)
+}
