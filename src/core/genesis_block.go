@@ -37,6 +37,29 @@ var proposerInfo = [20]string{
 	`{"id":"0x8c08ca4477b26f8ba5b96f7c76dc5bbea702cccebdcd71f91c96c973dc5677d2","publicKey":"0x445323c2443adc2aaab0aa46e638491979815835d14e21d2e1233e9ed70a18e81d40a331fc4be1a0d4b09c43525fdc1aa6c7201dc80172c0caa85d50b6e14d980973c7911d7c458ebd1bdd91a4b9088811b8b88b9146b9ec9f97abfc1e960dde1e2a31aa4e0bad1a59708d250f83b9e4a6feefc7ca6fe7235a654517ca9af077","vrfPublicKey":"0x2bc74c2338e7c3b0611380529d30a0f338c551ec493b4a4f3bec004a398ba7f2","account":"0xa0ac52b1c237aa8f1e0ced7ef312f0ccda34c358"}`,
 }
 
+var validatorAccounts = [20]string{
+	`0x56b1fc865ad0c87f46f804145a861b38fcbafb99`,
+	`0x0ef90c9cc936c2e3117d76c1ffb28391f8cebbca`,
+	`0x22b00137e24a708609fdb88ee156dabe041b158b`,
+	`0xd6bd78898e7328da4e3bb2661c096d16adb6ebcd`,
+	`0xbbcf5b5e21ed0758e47e28938e60a089fd72a3c7`,
+	`0x50f700053365615cd51101cdf146da516d5a209f`,
+	`0xd84f815439fd832a52c907c445190c482cc40f4c`,
+	`0x6de8de158e129ea79104184c073a482a10259f0d`,
+	`0x145003c011f65d1513766de3732589eeaa37a50a`,
+	`0x143871c4ec014b695132c5c4e35a43c257432880`,
+	`0xf41702e4ac324fa3f4c11b3e13c3160966de1d22`,
+	`0x20b686e9290a8220b345ce0d2442440153ca5d96`,
+	`0x88d7cbea91d5d2e78d45b57e04304a8c7cc9b5a5`,
+	`0x1037d1f4e4fd9427515a1cad0c8d6f09b4e0efd8`,
+	`0xbaab402e3ba676c6e0c746be7a1a0b287a77aeb8`,
+	`0xd50ae4b47f5a8eb956864110bd1848cda1471015`,
+	`0x424e0fdbb24a24ad7854c4cfec2abc4def9e3eb2`,
+	`0xbd0cf1027efdf3cbd80afbe89dfaa1fd57ca5b1a`,
+	`0x913903d94852ceeca7aa6f3106e1279e81ade8a0`,
+	`0x450c0b9e16cbb81e4d2de5206a436897b4775d76`,
+}
+
 type ProposerData struct {
 	Id           string
 	PublicKey    string
@@ -72,7 +95,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	for _, genesis := range genesisInfo {
 		for i, member := range genesis.Group.Members {
 			miner := &types.Miner{Type: common.MinerTypeValidator, Id: member, PublicKey: genesis.Pks[i], VrfPublicKey: genesis.VrfPKs[i], Stake: common.ValidatorStake}
-			miner.Account = common.FromHex("0x42c8c9b13fc0573d18028b3398a887c4297ff646")
+			miner.Account = common.FromHex(validatorAccounts[i])
 			verifyMiners = append(verifyMiners, miner)
 		}
 	}
