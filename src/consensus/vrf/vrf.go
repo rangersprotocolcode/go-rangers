@@ -68,7 +68,6 @@ func (vp VRFPublicKey) GetBytes() []byte {
 func Hex2VRFPublicKey(hex string) VRFPublicKey {
 	return VRFPublicKey(common.FromHex(hex))
 }
-
 func (vp VRFPrivateKey) GetHexString() string {
 	return common.ToHex(vp)
 }

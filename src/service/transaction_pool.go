@@ -101,7 +101,10 @@ type TxPool struct {
 	lock middleware.Loglock
 }
 
-var txpoolInstance TransactionPool
+var (
+	txpoolInstance TransactionPool
+	delta, _       = utility.StrToBigInt("0.0001")
+)
 
 func initTransactionPool() {
 	if nil == txpoolInstance {
@@ -302,12 +305,12 @@ func (pool *TxPool) ProcessFee(tx types.Transaction, accountDB *account.AccountD
 	addr := common.HexStringToAddress(tx.Source)
 	balance := accountDB.GetBalance(addr)
 
-	delta, _ := utility.StrToBigInt("0.0001")
 	if balance.Cmp(delta) < 0 {
 		msg := fmt.Sprintf("not enough max, addr: %s, balance: %s", tx.Source, balance)
 		return fmt.Errorf(msg)
 	}
 	accountDB.SubBalance(addr, delta)
+	accountDB.AddBalance(common.FeeAccount, delta)
 	return nil
 }
 

@@ -74,3 +74,5 @@ const (
 const (
 	BLANCE_NAME = "SYSTEM-RPG"
 )
+
+var FeeAccount = HexToAddress("0x42c8c9b13fc0573d18028b3398a887c4297ff646")
