@@ -36,7 +36,7 @@ var encryptPrivateKey *common.PrivateKey
 var encryptPublicKey *common.PublicKey
 
 func init() {
-	encryptPrivateKey = common.HexStringToSecKey("0x04b851c3551779125a588b2274cfa6d71604fe6ae1f0df82175bcd6e6c2b23d92a69d507023628b59c15355f3cbc0d8f74633618facd28632a0fb3e9cc8851536c4b3f1ea7c7fd3666ce8334301236c2437d9bed14e5a0793b51a9a6e7a4c46e70")
+	encryptPrivateKey = common.HexStringToSecKey("0x4b3f1ea7c7fd3666ce8334301236c2437d9bed14e5a0793b51a9a6e7a4c46e70")
 	pk := encryptPrivateKey.GetPubKey()
 	encryptPublicKey = &pk
 }
