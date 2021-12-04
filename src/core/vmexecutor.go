@@ -74,11 +74,6 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		}
 		logger.Debugf("Execute %s, type:%d", transaction.Hash.String(), transaction.Type)
 
-		if types.TransactionTypeWrongTxNonce == transaction.Type {
-			evictedTxs = append(evictedTxs, transaction.Hash)
-			continue
-		}
-
 		txExecutor := executor.GetTxExecutor(transaction.Type)
 		success := false
 		msg := ""

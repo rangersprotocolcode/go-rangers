@@ -59,7 +59,7 @@ func (ch ChainHandler) transactionReqHandler(msg notify.Message) {
 	}
 
 	source := trm.Peer
-	logger.Debugf("receive transaction req from %s,block height:%d,block hash:%s,tx_len%d", source, m.BlockHeight, m.CurrentBlockHash.String(), len(m.TransactionHashes))
+	logger.Debugf("receive transaction req from %s,block height:%d,block hash:%s,tx_len:%d", source, m.BlockHeight, m.CurrentBlockHash.String(), len(m.TransactionHashes))
 	if nil == blockChainImpl {
 		return
 	}
@@ -94,12 +94,20 @@ func (ch ChainHandler) transactionGotHandler(msg notify.Message) {
 		logger.Errorf("Unmarshal got transactions error:%s", e.Error())
 		return
 	}
+	var gotTxValid = true
 	for _, tx := range txs {
-		service.GetTransactionPool().AddTransaction(tx)
+		if err := service.GetTransactionPool().VerifyTransaction(tx); err == nil {
+			service.GetTransactionPool().AddTransaction(tx)
+		} else {
+			logger.Infof("tx received from others verify error.Hash:%s,error:%s", tx.Hash.String(), e.Error())
+			gotTxValid = false
+		}
 	}
 
-	m := notify.TransactionGotAddSuccMessage{Transactions: txs, Peer: tgm.Peer}
-	notify.BUS.Publish(notify.TransactionGotAddSucc, &m)
+	if gotTxValid {
+		m := notify.TransactionGotAddSuccMessage{Transactions: txs, Peer: tgm.Peer}
+		notify.BUS.Publish(notify.TransactionGotAddSucc, &m)
+	}
 	return
 }
 

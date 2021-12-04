@@ -85,7 +85,6 @@ func initGameExecutor(blockChainImpl *blockChain) {
 
 	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.write)
-	notify.BUS.Subscribe(notify.WrongTxNonce, gameExecutor.wrongTxNonceHandler)
 
 	go gameExecutor.loop()
 }
@@ -208,20 +207,6 @@ func (executor *GameExecutor) write(msg notify.Message) {
 	executor.writeChan <- *message
 }
 
-func (executor *GameExecutor) wrongTxNonceHandler(msg notify.Message) {
-	cpn, ok := msg.(*notify.NonceNotifyMessage)
-	if !ok {
-		logger.Debugf("wrongTxNonceHandler: Message assert not ok!")
-		return
-	}
-
-	executor.logger.Warnf("process wrong nonce: %d, reason: %s", cpn.Nonce, cpn.Msg)
-	tx := types.Transaction{Type: types.TransactionTypeWrongTxNonce, RequestId: cpn.Nonce}
-	tx.Hash = common.BytesToHash(common.Sha256(utility.UInt64ToByte(tx.RequestId)))
-	writeMessage := notify.ClientTransactionMessage{Nonce: cpn.Nonce, Tx: tx}
-	executor.writeChan <- writeMessage
-}
-
 func (executor *GameExecutor) loop() {
 	for {
 		select {
@@ -244,15 +229,8 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	}
 	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
 
-	if types.TransactionTypeWrongTxNonce == txRaw.Type {
-		executor.sendTransaction(&txRaw)
-		return
-	}
-
 	if err := service.GetTransactionPool().VerifyTransaction(&txRaw); err != nil {
 		executor.logger.Errorf("fail to verify tx, txhash: %s, err: %v", txRaw.Hash.String(), err.Error())
-		txRaw.Type = types.TransactionTypeWrongTxNonce
-		executor.sendTransaction(&txRaw)
 		if 0 != len(message.UserId) {
 			response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
 			go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
@@ -323,14 +301,6 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {
 	if ok, err := service.GetTransactionPool().AddTransaction(tx); err != nil || !ok {
 		executor.logger.Errorf("Add tx error:%s", err.Error())
-		transaction := types.Transaction{Type: types.TransactionTypeWrongTxNonce, Data: tx.Hash.Hex(), RequestId: tx.RequestId}
-		transaction.Hash = common.BytesToHash(common.Sha256(tx.Hash.Bytes()))
-		ok, err = service.GetTransactionPool().AddTransaction(&transaction)
-		if err == nil {
-			executor.logger.Errorf("Add tx again no error,  %t %v", ok, transaction)
-		} else {
-			executor.logger.Errorf("Add tx error:%s", err.Error())
-		}
 		return
 	}
 
