@@ -104,7 +104,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	stateDB.SetNonce(common.ProposerDBAddress, 1)
 	stateDB.SetNonce(common.ValidatorDBAddress, 1)
 
-	one, _ := utility.StrToBigInt("1")
+	one, _ := utility.StrToBigInt("2")
 	stateDB.SetBalance(common.HexToAddress("0x7edd0ef9da9cec334a7887966cc8dd71d590eeb7"), one)
 
 	root, _ := stateDB.Commit(true)
