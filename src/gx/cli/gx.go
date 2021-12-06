@@ -42,7 +42,7 @@ import (
 )
 
 const (
-	GXVersion = "0.0.8"
+	GXVersion = "1.0.0"
 	// Section 默认section配置
 	Section = "gx"
 
@@ -102,7 +102,6 @@ func (gx *GX) Run() {
 	}
 	common.InitChainConfig(*env)
 
-	fmt.Println("Use config file: " + *configFile)
 	common.InitConf(*configFile)
 
 	instance := 0
@@ -116,11 +115,10 @@ func (gx *GX) Run() {
 	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString(instanceSection, indexKey, ""))
 
 	walletManager = newWallets()
-	fmt.Println("Welcome to be a RangersProtocol miner!")
-	fmt.Printf("Env:%s,Chain ID:%s,Network ID:%s\n", *env, common.ChainId(), common.NetworkId())
+
 	switch command {
 	case versionCmd.FullCommand():
-		fmt.Println("GX Version:", GXVersion)
+		fmt.Println("Version:", GXVersion)
 		os.Exit(0)
 	case consoleCmd.FullCommand():
 		err := ConsoleInit(*remoteHost, *remotePort, *showRequest, *rpcPort)
@@ -128,6 +126,9 @@ func (gx *GX) Run() {
 			fmt.Errorf(err.Error())
 		}
 	case mineCmd.FullCommand():
+		fmt.Println("Use config file: " + *configFile)
+		fmt.Println("Welcome to be a RangersProtocol miner!")
+		fmt.Printf("Env:%s,Chain ID:%s,Network ID:%s\n", *env, common.ChainId(), common.NetworkId())
 		go func() {
 			http.ListenAndServe(fmt.Sprintf(":%d", *pprofPort), nil)
 			runtime.SetBlockProfileRate(1)
