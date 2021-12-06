@@ -171,12 +171,12 @@ func BenchmarkRecover(b *testing.B) {
 }
 
 func TestAccount(test *testing.T) {
-	privateKey := GenerateKey("")
+	privateKey := BytesToSecKey(FromHex("0x04192c34ac600ef8ee9dbd1c1c49f418dc55a3567cc4d97d6a91aacebb26cdf4868056d1e208999bf01346251d62d12ead36188a84163e4194b3c097f57252fa9cb5a56471e90652360936f9b02b196888338877299c892f091c8d1380788a2ebc"))
 	pubkey := privateKey.GetPubKey()
-	id := pubkey.GetID()
+	id := pubkey.GetAddress()
 	fmt.Printf("sk:%s\n", privateKey.GetHexString())
 	fmt.Printf("pk:%s\n", pubkey.GetHexString())
-	fmt.Printf("id:%s\n", hex.EncodeToString(id[:]))
+	fmt.Printf("id:%s\n", id.String())
 }
 
 func TestGenerateKey(t *testing.T) {
