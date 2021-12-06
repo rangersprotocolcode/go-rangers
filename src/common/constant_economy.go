@@ -75,4 +75,4 @@ const (
 	BLANCE_NAME = "SYSTEM-RPG"
 )
 
-var FeeAccount = HexToAddress("0x42c8c9b13fc0573d18028b3398a887c4297ff646")
+var FeeAccount = HexToAddress("0x3966eafd38c5f10cc91eaacaeff1b6682b83ced4")
