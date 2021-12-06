@@ -114,10 +114,6 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	two, _ := utility.StrToBigInt("2")
 	stateDB.SetBalance(common.HexToAddress("0x7edd0ef9da9cec334a7887966cc8dd71d590eeb7"), two)
 
-	// 21000000*51%-(1250*20+250*20)-2
-	rpgPoolSize, _ := utility.StrToBigInt("10661998")
-	stateDB.SetBalance(common.HexToAddress("0x826f575031a074fd914a869b5dc1c4eae620fef5"), rpgPoolSize)
-
 	root, _ := stateDB.Commit(true)
 	triedb.Commit(root, false)
 	block.Header.StateTree = common.BytesToHash(root.Bytes())
