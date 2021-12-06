@@ -183,7 +183,7 @@ func (manager *AccountDBManager) getTxList() {
 					notify.BUS.Publish(notify.ClientTransaction, &msg)
 				}
 			}
-			time.Sleep(time.Millisecond * 5)
+			time.Sleep(time.Millisecond * 10)
 		}
 	}()
 }
