@@ -92,7 +92,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	block.Header.Random = common.Sha256([]byte("RangersProtocolVRF"))
 
 	//创建创始合约
-	createGenesisContract(block.Header, stateDB)
+	proxy := createGenesisContract(block.Header, stateDB)
 
 	genesisProposers := getGenesisProposer()
 	addMiners(genesisProposers, stateDB)
@@ -113,6 +113,10 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	// 跨链手续费地址
 	two, _ := utility.StrToBigInt("2")
 	stateDB.SetBalance(common.HexToAddress("0x7edd0ef9da9cec334a7887966cc8dd71d590eeb7"), two)
+
+	// 21000000*51%-(2000*20+400*20)-2
+	money, _ := utility.StrToBigInt("10661998")
+	stateDB.SetBalance(proxy, money)
 
 	root, _ := stateDB.Commit(true)
 	triedb.Commit(root, false)
@@ -150,7 +154,7 @@ func getGenesisProposer() []*types.Miner {
 	return miners
 }
 
-func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB){
+func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB) common.Address {
 	source := "0x826f575031a074fd914a869b5dc1c4eae620fef5"
 	vmCtx := vm.Context{}
 	vmCtx.CanTransfer = vm.CanTransfer
@@ -196,4 +200,6 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 		panic("Genesis contract create error:" + err.Error())
 	}
 	logger.Debugf("After execute proxyfee contract create!Contract address:%s", proxyFeeContractAddress.GetHexString())
+
+	return proxyContractAddress
 }
