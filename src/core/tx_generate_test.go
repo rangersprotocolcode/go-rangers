@@ -25,6 +25,8 @@ import (
 	"testing"
 )
 
+var privateKey string = ""
+
 func TestProposerApplyTx(t *testing.T) {
 	source := "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"
 	target := "0xe059d17139e2915d270ef8f3eee2f3e1438546ba2f06eb674dda0967846b6951"
@@ -84,19 +86,33 @@ func TestVerifierApplyTx(t *testing.T) {
 }
 
 func TestAddMinerStakeTx(t *testing.T) {
-	source := "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"
-	target := "0xe059d17139e2915d270ef8f3eee2f3e1438546ba2f06eb674dda0967846b6951"
-	tx := types.Transaction{Type: 5, Source: source, Target: target, Time: utility.GetTime().String()}
+	source := "0xf3413cff1a9cddbb02b92ac31f98a808d736c815"
+	target := "0x6ca0685b1f337ee1503ed83d2299b925adc9b804"
+	tx := types.Transaction{Type: 5, Source: source, Target: target, Time: utility.GetTime().String(), ChainId: "8888"}
 
-	data := `{"id":"4FnRcTnikV0nDvjz7uLz4UOFRrovButnTdoJZ4RraVE=","stake":60000000}`
+	data := `{"id":"0x0c5a7fd40963705372dd7187c79b4b7645d8df29c39ee2a85c6d5c638b608350","publicKey":"0x8273cf5e3b46dc73c6476f91d0d192f95129ad3fb162ec4ebe9e029f901a6a335f572a899ec2efd86898b02ac2168008f8aef22c8b7967f13897fe40a925f8fa8d531022ea817537455b7c7cc50cb0d21e09739e0093790f9fffb101e4a9ed31750bf06a693a702182ed63264e51e121900b68694a054af7fa0eff1e78d10d17","vrfPublicKey":"q7uwofVvDjAGEbrCZj6D4YUz2D+ooeQ2jmIwIq9+mz8=","Stake":1}`
 	//applyData, _ := json.Marshal(data)
 	//fmt.Printf("data:%v\n",string(applyData))
 
 	tx.Data = data
 	tx.Hash = tx.GenHash()
 
-	privateKeyStr := "0x040a0c4baa2e0b927a2b1f6f93b317c320d4aa3a5b54c0a83f5872c23155dcf1455fb015a7699d4ef8491cc4c7a770e580ab1362a0e3af9f784dd2485cfc9ba7c1e7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"
-	privateKey := common.HexStringToSecKey(privateKeyStr)
+	privateKey := common.HexStringToSecKey(privateKey)
+	sign := privateKey.Sign(tx.Hash.Bytes())
+	tx.Sign = &sign
+
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestMinerRefundTx(t *testing.T) {
+	source := "0xf3413cff1a9cddbb02b92ac31f98a808d736c815"
+	target := "0x6ca0685b1f337ee1503ed83d2299b925adc9b804"
+	tx := types.Transaction{Type: 4, Source: source, Target: target, Time: utility.GetTime().String(), ChainId: "8888"}
+
+	tx.Data = "5"
+	tx.Hash = tx.GenHash()
+
+	privateKey := common.HexStringToSecKey(privateKey)
 	sign := privateKey.Sign(tx.Hash.Bytes())
 	tx.Sign = &sign
 
@@ -104,6 +120,25 @@ func TestAddMinerStakeTx(t *testing.T) {
 }
 
 //------------------------------------------------------------------------------------------------
+
+func TestTransferTx(t *testing.T) {
+	source := "0xf3413cff1a9cddbb02b92ac31f98a808d736c815"
+	target := "0x51ba50a9b4730aea7ecee86df6536297900f5b78"
+	tx := types.Transaction{Type: 200, Source: source, Target: target, Time: utility.GetTime().String(), ChainId: "8888"}
+	tx.SocketRequestId = "111"
+
+	data := contractData{GasPrice: "1", GasLimit: "100000", TransferValue: "0.00005", AbiData: ""}
+	dataBytes, _ := json.Marshal(data)
+	tx.Data = string(dataBytes)
+
+	tx.Hash = tx.GenHash()
+
+	privateKey := common.HexStringToSecKey(privateKey)
+	sign := privateKey.Sign(tx.Hash.Bytes())
+	tx.Sign = &sign
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
 func TestGetBlockNumberTx(t *testing.T) {
 	source := "0x51ba50a9b4730aea7ecee86df6536297900f5b77"
 	tx := types.Transaction{Type: 602, Source: source, Time: utility.GetTime().String()}
@@ -201,25 +236,6 @@ func TestGetNonceTx(t *testing.T) {
 
 	data := `{"height":"","hash":""}`
 	tx.Data = string(data)
-	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
-}
-
-func TestTransferTx(t *testing.T) {
-	source := "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
-	target := "0x51ba50a9b4730aea7ecee86df6536297900f5b78"
-	tx := types.Transaction{Type: 200, Source: source, Target: target, Time: utility.GetTime().String()}
-	tx.SocketRequestId = "111"
-
-	data := contractData{GasPrice: "1", GasLimit: "100000", TransferValue: "3", AbiData: "11"}
-	dataBytes, _ := json.Marshal(data)
-	tx.Data = string(dataBytes)
-
-	tx.Hash = tx.GenHash()
-
-	privateKeyStr := "0x040a0c4baa2e0b927a2b1f6f93b317c320d4aa3a5b54c0a83f5872c23155dcf1455fb015a7699d4ef8491cc4c7a770e580ab1362a0e3af9f784dd2485cfc9ba7c1e7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea"
-	privateKey := common.HexStringToSecKey(privateKeyStr)
-	sign := privateKey.Sign(tx.Hash.Bytes())
-	tx.Sign = &sign
 	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
 }
 
