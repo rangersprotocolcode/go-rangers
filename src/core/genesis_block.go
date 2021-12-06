@@ -100,7 +100,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	verifyMiners := make([]*types.Miner, 0)
 	for _, genesis := range genesisInfo {
 		for i, member := range genesis.Group.Members {
-			miner := &types.Miner{Type: common.MinerTypeValidator, Id: member, PublicKey: genesis.Pks[i], VrfPublicKey: genesis.VrfPKs[i], Stake: common.ValidatorStake}
+			miner := &types.Miner{Type: common.MinerTypeValidator, Id: member, PublicKey: genesis.Pks[i], VrfPublicKey: genesis.VrfPKs[i], Stake: common.ValidatorStake * 2}
 			miner.Account = common.FromHex(validatorAccounts[i])
 			verifyMiners = append(verifyMiners, miner)
 		}
@@ -115,7 +115,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	stateDB.SetBalance(common.HexToAddress("0x7edd0ef9da9cec334a7887966cc8dd71d590eeb7"), two)
 
 	// 21000000*51%-(1250*20+250*20)-2
-	rpgPoolSize, _ := utility.StrToBigInt("10679998")
+	rpgPoolSize, _ := utility.StrToBigInt("10661998")
 	stateDB.SetBalance(proxyContractAddress, rpgPoolSize)
 
 	root, _ := stateDB.Commit(true)
