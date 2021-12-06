@@ -41,14 +41,6 @@ var proposerInfo = [20]string{
 }
 
 var validatorAccounts = [20]string{
-	// tuntunhz
-	`0x56b1fc865ad0c87f46f804145a861b38fcbafb99`,
-	`0x0ef90c9cc936c2e3117d76c1ffb28391f8cebbca`,
-	`0x22b00137e24a708609fdb88ee156dabe041b158b`,
-	// mixmarvel
-	`0x8cd20feb1b8c7e5378ab1b0f6d68846b29d4f0be`,
-	`0xb4ca0fbec728a32845d4c44fdfb3df05645f5229`,
-	`0x6ca0685b1f337ee1503ed83d2299b925adc9b804`,
 	//other
 	`0x0e05d86e7943d7f041fabde02f25d53a2aa4cc29`,
 	`0xe9b59d7af13bf6d3f838da7f73c2e369802ea211`,
@@ -64,6 +56,15 @@ var validatorAccounts = [20]string{
 	`0xfae00bc664af03a99ec3a4ae3194e4bdac093450`,
 	`0x7759e04cc420a6d5c12aca77e045e82ca6a55730`,
 	`0x8192d698b4fa840a33e4a44aeee32f3671c8956e`,
+	// tuntunhz
+	`0x56b1fc865ad0c87f46f804145a861b38fcbafb99`,
+	`0x0ef90c9cc936c2e3117d76c1ffb28391f8cebbca`,
+	`0x22b00137e24a708609fdb88ee156dabe041b158b`,
+	// mixmarvel
+	`0x8cd20feb1b8c7e5378ab1b0f6d68846b29d4f0be`,
+	`0xb4ca0fbec728a32845d4c44fdfb3df05645f5229`,
+	`0x6ca0685b1f337ee1503ed83d2299b925adc9b804`,
+
 }
 
 type ProposerData struct {
