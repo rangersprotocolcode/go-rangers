@@ -64,7 +64,6 @@ var validatorAccounts = [20]string{
 	`0x8cd20feb1b8c7e5378ab1b0f6d68846b29d4f0be`,
 	`0xb4ca0fbec728a32845d4c44fdfb3df05645f5229`,
 	`0x6ca0685b1f337ee1503ed83d2299b925adc9b804`,
-
 }
 
 type ProposerData struct {
@@ -93,7 +92,7 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	block.Header.Random = common.Sha256([]byte("RangersProtocolVRF"))
 
 	//创建创始合约
-	proxyContractAddress := createGenesisContract(block.Header, stateDB)
+	createGenesisContract(block.Header, stateDB)
 
 	genesisProposers := getGenesisProposer()
 	addMiners(genesisProposers, stateDB)
@@ -117,8 +116,6 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 
 	// 21000000*51%-(1250*20+250*20)-2
 	rpgPoolSize, _ := utility.StrToBigInt("10661998")
-	stateDB.SetBalance(proxyContractAddress, rpgPoolSize)
-
 	stateDB.SetBalance(common.HexToAddress("0x826f575031a074fd914a869b5dc1c4eae620fef5"), rpgPoolSize)
 
 	root, _ := stateDB.Commit(true)
@@ -157,7 +154,7 @@ func getGenesisProposer() []*types.Miner {
 	return miners
 }
 
-func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB) common.Address {
+func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB){
 	source := "0x826f575031a074fd914a869b5dc1c4eae620fef5"
 	vmCtx := vm.Context{}
 	vmCtx.CanTransfer = vm.CanTransfer
@@ -203,6 +200,4 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 		panic("Genesis contract create error:" + err.Error())
 	}
 	logger.Debugf("After execute proxyfee contract create!Contract address:%s", proxyFeeContractAddress.GetHexString())
-
-	return proxyContractAddress
 }
