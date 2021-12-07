@@ -272,6 +272,7 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 	context["gameExecutor"] = 1
 	context["chain"] = blockChainImpl
 	context["situation"] = "gameExecutor"
+	context["refund"] = make(map[uint64]types.RefundInfoList)
 
 	message := ""
 	result := true
