@@ -118,6 +118,9 @@ func genGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, gene
 	money, _ := utility.StrToBigInt("10661998")
 	stateDB.SetBalance(proxy, money)
 
+	testMoney, _ := utility.StrToBigInt("10000")
+	stateDB.SetBalance(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), testMoney)
+
 	root, _ := stateDB.Commit(true)
 	triedb.Commit(root, false)
 	block.Header.StateTree = common.BytesToHash(root.Bytes())
