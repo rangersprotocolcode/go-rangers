@@ -19,7 +19,7 @@ package common
 import "math/big"
 
 const (
-	Version           = "0.9"
+	Version           = "1.0.0"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
