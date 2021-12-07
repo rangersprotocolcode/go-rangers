@@ -33,20 +33,32 @@ type minerRefundExecutor struct {
 	baseFeeExecutor
 	logger log.Logger
 }
+type MinerRefundData struct {
+	Amount  string
+	MinerId string
+}
 
 func (this *minerRefundExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	if nil == header || nil == transaction || nil == transaction.Sign {
 		return true, ""
 	}
 
-	value, err := strconv.ParseUint(transaction.Data, 10, 64)
+	var minerRefundData MinerRefundData
+	jsonErr := json.Unmarshal(utility.StrToBytes(transaction.Data), &minerRefundData)
+	if nil != jsonErr {
+		msg := fmt.Sprintf("fail to refund %s,err: %s", transaction.Data, jsonErr.Error())
+		this.logger.Errorf(msg)
+		return false, msg
+	}
+
+	value, err := strconv.ParseUint(minerRefundData.Amount, 10, 64)
 	if err != nil {
 		msg := fmt.Sprintf("fail to refund %s", transaction.Data)
 		this.logger.Errorf(msg)
 		return false, msg
 	}
+	minerId := common.FromHex(minerRefundData.MinerId)
 
-	minerId := common.FromHex(transaction.Data)
 	this.logger.Debugf("before refund, addr: %s, money: %d, minerId: %s", transaction.Source, value, transaction.Data)
 
 	situation := context["situation"].(string)
