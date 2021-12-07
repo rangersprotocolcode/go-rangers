@@ -332,6 +332,9 @@ func (api *GtasAPI) NodeInfo() (*Result, error) {
 	ni := &NodeInfo{}
 	p := consensus.Proc
 	miner := service.MinerManagerImpl.GetMiner(p.GetMinerID().Serialize(), service.AccountDBManagerInstance.GetLatestStateDB())
+	if nil == miner {
+		return successResult(ni)
+	}
 	ni.ID = common.ToHex(miner.Account)
 
 	if !p.Ready() {
