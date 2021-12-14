@@ -28,9 +28,9 @@ const (
 )
 
 var (
-	mainNetChainConfig = ChainConfig{ChainId: "8888", NetworkId: "8888"}
+	mainNetChainConfig = ChainConfig{ChainId: "8888", NetworkId: "8888", Dsn: "readonly:Readonly>123456@tcp(ds.rangersprotocol.com:6666)/rpservice?charset=utf8&parseTime=true&loc=Asia%2FShanghai", PHub: "wss://mainnet.rangersprotocol.com/phub", PubHub: "wss://mainnet.rangersprotocol.com/pubhub"}
 	robinChainConfig   = ChainConfig{ChainId: "9527", NetworkId: "9527"}
-	devNetChainConfig  = ChainConfig{ChainId: "9500", NetworkId: "9500"}
+	devNetChainConfig  = ChainConfig{ChainId: "9500", NetworkId: "9500", Dsn: "readonly:Tuntun123456!@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai", PHub: "ws://gate.tuntunhz.com:8899", PubHub: "ws://gate.tuntunhz.com:8888"}
 
 	LocalChainConfig ChainConfig
 )
@@ -38,6 +38,9 @@ var (
 type ChainConfig struct {
 	ChainId   string
 	NetworkId string
+	PHub      string
+	PubHub    string
+	Dsn       string
 }
 
 func InitChainConfig(env string) {

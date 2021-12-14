@@ -70,6 +70,7 @@ func (gx *GX) Run() {
 	app.HelpFlag.Short('h')
 
 	configFile := app.Flag("config", "Config file").Default("rp.ini").String()
+
 	_ = app.Flag("metrics", "enable metrics").Bool()
 	_ = app.Flag("dashboard", "enable metrics dashboard").Bool()
 	pprofPort := app.Flag("pprof", "enable pprof").Default("23333").Uint()
@@ -91,18 +92,31 @@ func (gx *GX) Run() {
 	instanceIndex := mineCmd.Flag("instance", "instance index").Short('i').Default("0").Int()
 
 	env := mineCmd.Flag("env", "the environment application run in").String()
+	gateAddrPoint := mineCmd.Flag("gateaddr", "the gate addr").String()
+	outerGateAddrPoint := mineCmd.Flag("outergateaddr", "the gate addr").String()
+	dbDSNPoint := mineCmd.Flag("mysql", "the db addr").String()
 
-	//自定义网关
-	gateAddr := mineCmd.Flag("gateaddr", "the gate addr").String()
-	outerGateAddr := mineCmd.Flag("outergateaddr", "the gate addr").String()
-	dbDSN := mineCmd.Flag("mysql", "the db addr").Default("").String()
 	command, err := app.Parse(os.Args[1:])
 	if err != nil {
 		kingpin.Fatalf("%s, try --help", err)
 	}
-	common.InitChainConfig(*env)
 
+	common.InitChainConfig(*env)
 	common.InitConf(*configFile)
+
+	// using default
+	gateAddr := *gateAddrPoint
+	if 0 == len(gateAddr) {
+		gateAddr = common.LocalChainConfig.PHub
+	}
+	outerGateAddr := *outerGateAddrPoint
+	if 0 == len(outerGateAddr) {
+		outerGateAddr = common.LocalChainConfig.PubHub
+	}
+	dbDSN := *dbDSNPoint
+	if 0 == len(dbDSN) {
+		dbDSN = common.LocalChainConfig.Dsn
+	}
 
 	instance := 0
 	if 0 != *instanceIndex {
@@ -134,7 +148,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(instance, *env, *gateAddr, *outerGateAddr, *dbDSN)
+		gx.initMiner(instance, *env, gateAddr, outerGateAddr, dbDSN)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc, gx.account.Sk)
 			if err != nil {

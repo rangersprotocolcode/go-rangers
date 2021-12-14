@@ -117,7 +117,7 @@ func (base *baseConn) getWSConn() *websocket.Conn {
 	d := websocket.Dialer{ReadBufferSize: defaultBufferSize, WriteBufferSize: defaultBufferSize}
 	conn, _, err := d.Dial(base.url, nil)
 	if err != nil {
-		base.logger.Errorf("Dial to" + base.url + " err:" + err.Error())
+		base.logger.Errorf("Dial to " + base.url + " err:" + err.Error())
 		time.Sleep(100 * time.Millisecond)
 		return nil
 	}
