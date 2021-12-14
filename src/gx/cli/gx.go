@@ -142,7 +142,7 @@ func (gx *GX) Run() {
 	case mineCmd.FullCommand():
 		fmt.Println("Use config file: " + *configFile)
 		fmt.Println("Welcome to be a RangersProtocol miner!")
-		fmt.Printf("Env:%s,Chain ID:%s,Network ID:%s\n", *env, common.ChainId(), common.NetworkId())
+		fmt.Printf("Env:%s,Chain ID:%s,Network ID:%s\n", *env, common.ChainId(true), common.NetworkId())
 		go func() {
 			http.ListenAndServe(fmt.Sprintf(":%d", *pprofPort), nil)
 			runtime.SetBlockProfileRate(1)
@@ -233,7 +233,7 @@ func syncChainInfo(privateKey common.PrivateKey, id string) {
 			}
 			topBlock := core.GetBlockChain().TopBlock()
 			jsonObject := types.NewJSONObject()
-			jsonObject.Put("chainId", common.ChainId())
+			jsonObject.Put("chainId", common.ChainId(true))
 			jsonObject.Put("instanceNum", common.GlobalConf.GetInt(instanceSection, indexKey, 0))
 			jsonObject.Put("candidateHeight", candidateHeight)
 			if topBlock != nil {

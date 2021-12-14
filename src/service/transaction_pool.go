@@ -86,7 +86,7 @@ type TransactionPool interface {
 
 	IsExisted(hash common.Hash) bool
 
-	VerifyTransaction(tx *types.Transaction) error
+	VerifyTransaction(tx *types.Transaction, isProposal001 bool) error
 
 	ProcessFee(tx types.Transaction, accountDB *account.AccountDB) error
 }
@@ -280,11 +280,11 @@ func (pool *TxPool) PackForCast() []*types.Transaction {
 	return packedTxs
 }
 
-func (pool *TxPool) VerifyTransaction(tx *types.Transaction) error {
+func (pool *TxPool) VerifyTransaction(tx *types.Transaction, isProposal001 bool) error {
 	if tx.Type == types.TransactionTypeETHTX {
-		return verifyETHTx(tx)
+		return verifyETHTx(tx, isProposal001)
 	}
-	err := verifyTxChainId(tx)
+	err := verifyTxChainId(tx, isProposal001)
 	if nil != err {
 		return err
 	}
@@ -359,9 +359,10 @@ func findTxInList(txs []*types.Transaction, txHash common.Hash, receiptIndex int
 	return nil
 }
 
-func verifyTxChainId(tx *types.Transaction) error {
-	if tx.ChainId != common.ChainId() {
-		txPoolLogger.Errorf("Verify chain id error!Hash:%s,chainId:%s,expect chainId:%s", tx.Hash.String(), tx.ChainId, common.ChainId())
+func verifyTxChainId(tx *types.Transaction, isProposal001 bool) error {
+	expectedChainId := common.ChainId(isProposal001)
+	if tx.ChainId != expectedChainId {
+		txPoolLogger.Errorf("Verify chain id error!Hash:%s,chainId:%s,expect chainId:%s", tx.Hash.String(), tx.ChainId, expectedChainId)
 		return ErrChainId
 	}
 	return nil
@@ -400,7 +401,7 @@ func verifyTransactionSign(tx *types.Transaction) error {
 	return nil
 }
 
-func verifyETHTx(tx *types.Transaction) error {
+func verifyETHTx(tx *types.Transaction, isProposal001 bool) error {
 	if tx == nil {
 		return ErrNil
 	}
@@ -412,7 +413,7 @@ func verifyETHTx(tx *types.Transaction) error {
 		return ErrIllegal
 	}
 
-	signer := eth_tx.NewEIP155Signer(common.GetChainId())
+	signer := eth_tx.NewEIP155Signer(common.GetChainId(isProposal001))
 	sender, err := eth_tx.Sender(signer, ethTx)
 	if err != nil {
 		txPoolLogger.Errorf("Verify eth tx error!tx:%s,error:%v", ethTx.Hash().String(), err)

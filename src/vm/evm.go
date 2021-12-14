@@ -136,8 +136,10 @@ func NewEVM(ctx Context, statedb StateDB) *EVM {
 	evm := &EVM{
 		Context:      ctx,
 		StateDB:      statedb,
-		chainID:      chainID,
 		interpreters: make([]Interpreter, 0, 1),
+	}
+	if ctx.BlockNumber != nil {
+		evm.chainID = common.GetChainId(common.IsProposal001(ctx.BlockNumber.Uint64()))
 	}
 
 	config := LogConfig{false, false, false, false}
