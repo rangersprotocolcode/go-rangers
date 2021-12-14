@@ -20,7 +20,7 @@ func genRobinGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase,
 	block.Header = &types.BlockHeader{
 		Height:       0,
 		ExtraData:    common.Sha256([]byte("Rocket Protocol")),
-		CurTime:      time.Date(2021, 10, 30, 2, 0, 0, 0, time.UTC),
+		CurTime:      time.Date(2021, 12, 13, 2, 0, 0, 0, time.UTC),
 		ProveValue:   pv,
 		TotalQN:      0,
 		Transactions: make([]common.Hashes, 0), //important!!
