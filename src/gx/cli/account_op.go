@@ -80,8 +80,14 @@ type MinerRaw struct {
 }
 
 func getAccountByPrivateKey(pk string) Account {
+	var privateKey *common.PrivateKey
 	// secpk256
-	privateKey := common.HexStringToSecKey(pk)
+	if len(pk) > 150 {
+		privateKey = common.BytesToSecKey(common.FromHex(pk))
+	} else {
+		privateKey = common.HexStringToSecKey(pk)
+	}
+
 	publicKey := privateKey.GetPubKey()
 	address := publicKey.GetAddress()
 

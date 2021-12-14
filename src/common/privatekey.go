@@ -98,3 +98,19 @@ func (pk *PrivateKey) Decrypt(rand io.Reader, ct []byte) (m []byte, err error) {
 	prv := ecies.ImportECDSA(&pk.PrivKey)
 	return prv.Decrypt(rand, ct, nil, nil)
 }
+
+func BytesToSecKey(data []byte) (sk *PrivateKey) {
+	if len(data) < SecKeyLength {
+		return nil
+	}
+	sk = new(PrivateKey)
+
+	buf_pub := data[:PubKeyLength]
+	buf_d := data[PubKeyLength:]
+	sk.PrivKey.PublicKey = BytesToPublicKey(buf_pub).PubKey
+	sk.PrivKey.D = new(big.Int).SetBytes(buf_d)
+	if sk.PrivKey.X != nil && sk.PrivKey.Y != nil && sk.PrivKey.D != nil {
+		return sk
+	}
+	return nil
+}
