@@ -131,7 +131,9 @@ func (p *syncProcessor) blockChainPieceHandler(m notify.Message) {
 	p.blockReqTimer.Stop()
 
 	chainPiece := chainPieceInfo.ChainPiece
-	p.logger.Debugf("Rcv block chain piece from:%s,%d-%d", p.candidateInfo.Id, chainPiece[0].Height, chainPiece[len(chainPiece)-1].Height)
+	if 0 != len(chainPiece) {
+		p.logger.Debugf("Rcv block chain piece from:%s,%d-%d", p.candidateInfo.Id, chainPiece[0].Height, chainPiece[len(chainPiece)-1].Height)
+	}
 	if !verifyBlockChainPiece(chainPiece, chainPieceInfo.TopHeader) {
 		p.logger.Debugf("Illegal block chain piece!", from)
 		p.finishCurrentSyncWithLock(false)
