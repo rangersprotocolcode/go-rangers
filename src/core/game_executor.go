@@ -229,7 +229,7 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	}
 	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
 
-	if err := service.GetTransactionPool().VerifyTransaction(&txRaw, true); err != nil {
+	if err := service.GetTransactionPool().VerifyTransaction(&txRaw, height); err != nil {
 		executor.logger.Errorf("fail to verify tx, txhash: %s, err: %v", txRaw.Hash.String(), err.Error())
 		if 0 != len(message.UserId) {
 			response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)

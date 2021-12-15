@@ -30,6 +30,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rocket/node/src/utility"
 	"com.tuntun.rocket/node/src/vm"
 	"encoding/json"
 	"fmt"
@@ -142,7 +143,7 @@ func (gx *GX) Run() {
 	case mineCmd.FullCommand():
 		fmt.Println("Use config file: " + *configFile)
 		fmt.Println("Welcome to be a RangersProtocol miner!")
-		fmt.Printf("Env:%s,Chain ID:%s,Network ID:%s\n", *env, common.ChainId(true), common.NetworkId())
+		fmt.Printf("Env:%s,Chain ID:%s,Network ID:%s\n", *env, common.ChainId(utility.MaxUint64), common.NetworkId())
 		go func() {
 			http.ListenAndServe(fmt.Sprintf(":%d", *pprofPort), nil)
 			runtime.SetBlockProfileRate(1)
@@ -233,7 +234,7 @@ func syncChainInfo(privateKey common.PrivateKey, id string) {
 			}
 			topBlock := core.GetBlockChain().TopBlock()
 			jsonObject := types.NewJSONObject()
-			jsonObject.Put("chainId", common.ChainId(true))
+			jsonObject.Put("chainId", common.ChainId(utility.MaxUint64))
 			jsonObject.Put("instanceNum", common.GlobalConf.GetInt(instanceSection, indexKey, 0))
 			jsonObject.Put("candidateHeight", candidateHeight)
 			if topBlock != nil {

@@ -86,7 +86,7 @@ type TransactionPool interface {
 
 	IsExisted(hash common.Hash) bool
 
-	VerifyTransaction(tx *types.Transaction, isProposal001 bool) error
+	VerifyTransaction(tx *types.Transaction, height uint64) error
 
 	ProcessFee(tx types.Transaction, accountDB *account.AccountDB) error
 }
@@ -280,11 +280,11 @@ func (pool *TxPool) PackForCast() []*types.Transaction {
 	return packedTxs
 }
 
-func (pool *TxPool) VerifyTransaction(tx *types.Transaction, isProposal001 bool) error {
+func (pool *TxPool) VerifyTransaction(tx *types.Transaction, height uint64) error {
 	if tx.Type == types.TransactionTypeETHTX {
-		return verifyETHTx(tx, isProposal001)
+		return verifyETHTx(tx, height)
 	}
-	err := verifyTxChainId(tx, isProposal001)
+	err := verifyTxChainId(tx, height)
 	if nil != err {
 		return err
 	}
@@ -359,8 +359,8 @@ func findTxInList(txs []*types.Transaction, txHash common.Hash, receiptIndex int
 	return nil
 }
 
-func verifyTxChainId(tx *types.Transaction, isProposal001 bool) error {
-	expectedChainId := common.ChainId(isProposal001)
+func verifyTxChainId(tx *types.Transaction, height uint64) error {
+	expectedChainId := common.ChainId(height)
 	if tx.ChainId != expectedChainId {
 		txPoolLogger.Errorf("Verify chain id error!Hash:%s,chainId:%s,expect chainId:%s", tx.Hash.String(), tx.ChainId, expectedChainId)
 		return ErrChainId
@@ -401,7 +401,7 @@ func verifyTransactionSign(tx *types.Transaction) error {
 	return nil
 }
 
-func verifyETHTx(tx *types.Transaction, isProposal001 bool) error {
+func verifyETHTx(tx *types.Transaction, height uint64) error {
 	if tx == nil {
 		return ErrNil
 	}
@@ -413,7 +413,7 @@ func verifyETHTx(tx *types.Transaction, isProposal001 bool) error {
 		return ErrIllegal
 	}
 
-	signer := eth_tx.NewEIP155Signer(common.GetChainId(isProposal001))
+	signer := eth_tx.NewEIP155Signer(common.GetChainId(height))
 	sender, err := eth_tx.Sender(signer, ethTx)
 	if err != nil {
 		txPoolLogger.Errorf("Verify eth tx error!tx:%s,error:%v", ethTx.Hash().String(), err)

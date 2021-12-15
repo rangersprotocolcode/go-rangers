@@ -95,9 +95,8 @@ func (ch ChainHandler) transactionGotHandler(msg notify.Message) {
 		return
 	}
 	var gotTxValid = true
-	isProposal001 := common.IsProposal001(blockChainImpl.Height())
 	for _, tx := range txs {
-		if err := service.GetTransactionPool().VerifyTransaction(tx, isProposal001); err == nil {
+		if err := service.GetTransactionPool().VerifyTransaction(tx, blockChainImpl.Height()); err == nil {
 			service.GetTransactionPool().AddTransaction(tx)
 		} else {
 			logger.Infof("tx received from others verify error.Hash:%s,error:%s", tx.Hash.String(), e.Error())

@@ -41,7 +41,7 @@ func GetNetWorkId() string {
 }
 
 func GetChainId() string {
-	return common.ChainId(true)
+	return common.ChainId(utility.MaxUint64)
 }
 
 func GetNonce(address common.Address, accountDB *account.AccountDB) string {

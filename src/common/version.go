@@ -82,14 +82,14 @@ func InitChainConfig(env string) {
 	}
 }
 
-func GetChainId(forkedProposal001 bool) *big.Int {
-	chainIdStr := ChainId(forkedProposal001)
+func GetChainId(height uint64) *big.Int {
+	chainIdStr := ChainId(height)
 	chainId, _ := big.NewInt(0).SetString(chainIdStr, 10)
 	return chainId
 }
 
-func ChainId(forkedProposal001 bool) string {
-	if forkedProposal001 {
+func ChainId(height uint64) string {
+	if IsProposal001(height) {
 		return LocalChainConfig.ChainId
 	} else {
 		return LocalChainConfig.OriginalChainId
