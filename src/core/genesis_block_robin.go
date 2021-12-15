@@ -5,11 +5,9 @@ import (
 	"com.tuntun.rocket/node/src/consensus/groupsig"
 	"com.tuntun.rocket/node/src/consensus/vrf"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/trie"
 	"com.tuntun.rocket/node/src/utility"
-	"com.tuntun.rocket/node/src/vm"
 	"math/big"
 	"time"
 )
@@ -19,8 +17,8 @@ func genRobinGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase,
 	pv := big.NewInt(0)
 	block.Header = &types.BlockHeader{
 		Height:       0,
-		ExtraData:    common.Sha256([]byte("Rocket Protocol")),
-		CurTime:      time.Date(2021, 12, 13, 2, 0, 0, 0, time.UTC),
+		ExtraData:    common.Sha256([]byte("Rangers Protocol")),
+		CurTime:      time.Date(2021, 12, 15, 0, 0, 0, 0, time.UTC),
 		ProveValue:   pv,
 		TotalQN:      0,
 		Transactions: make([]common.Hashes, 0), //important!!
@@ -30,7 +28,10 @@ func genRobinGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase,
 
 	block.Header.RequestIds = make(map[string]uint64)
 	block.Header.Signature = common.Sha256([]byte("tuntunhz"))
-	block.Header.Random = common.Sha256([]byte("RocketProtocolVRF"))
+	block.Header.Random = common.Sha256([]byte("RangersProtocolVRF"))
+
+	//创建创始合约
+	proxy := createGenesisContract(block.Header, stateDB)
 
 	genesisProposers := getRobinGenesisProposer()
 	addMiners(genesisProposers, stateDB)
@@ -38,7 +39,8 @@ func genRobinGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase,
 	verifyMiners := make([]*types.Miner, 0)
 	for _, genesis := range genesisInfo {
 		for i, member := range genesis.Group.Members {
-			miner := &types.Miner{Type: common.MinerTypeValidator, Id: member, PublicKey: genesis.Pks[i], VrfPublicKey: genesis.VrfPKs[i], Stake: common.ValidatorStake * uint64(i+2)}
+			miner := &types.Miner{Type: common.MinerTypeValidator, Id: member, PublicKey: genesis.Pks[i], VrfPublicKey: genesis.VrfPKs[i], Stake: common.ValidatorStake}
+			miner.Account = common.FromHex(validatorAccounts[i])
 			verifyMiners = append(verifyMiners, miner)
 		}
 	}
@@ -47,14 +49,13 @@ func genRobinGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase,
 	stateDB.SetNonce(common.ProposerDBAddress, 1)
 	stateDB.SetNonce(common.ValidatorDBAddress, 1)
 
-	//创建创始合约
-	usdtContractAddress, wethContractAddress, mixContractAddress, bscUsdtContractAddress, wBNBContractAddress, bscMixContractAddress := createRobinGenesisContract(block.Header, stateDB)
-	stateDB.AddERC20Binding("SYSTEM-ETH.USDT", usdtContractAddress, 2, 6)
-	stateDB.AddERC20Binding("ETH.ETH", wethContractAddress, 3, 18)
-	stateDB.AddERC20Binding("SYSTEM-ETH.MIX", mixContractAddress, 0, 18)
-	stateDB.AddERC20Binding("SYSTEM-BSC.USDT", bscUsdtContractAddress, 2, 6)
-	stateDB.AddERC20Binding("BSC.BNB", wBNBContractAddress, 3, 18)
-	stateDB.AddERC20Binding("SYSTEM-BSC.MIX", bscMixContractAddress, 0, 18)
+	// 跨链手续费地址
+	two, _ := utility.StrToBigInt("2")
+	stateDB.SetBalance(common.HexToAddress("0x7edd0ef9da9cec334a7887966cc8dd71d590eeb7"), two)
+
+	// 21000000*51%-(2000*20+400*20)-2
+	money, _ := utility.StrToBigInt("10661998")
+	stateDB.SetBalance(proxy, money)
 
 	addRobinTestAsset(stateDB)
 
@@ -97,113 +98,10 @@ func getRobinGenesisProposer() []*types.Miner {
 	return miners
 }
 
-func createRobinGenesisContract(header *types.BlockHeader, statedb *account.AccountDB) (common.Address, common.Address, common.Address, common.Address, common.Address, common.Address) {
-	source := "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
-	vmCtx := vm.Context{}
-	vmCtx.CanTransfer = vm.CanTransfer
-	vmCtx.Transfer = vm.Transfer
-	vmCtx.GetHash = func(uint64) common.Hash { return emptyHash }
-
-	vmCtx.Origin = common.HexToAddress(source)
-	vmCtx.Coinbase = common.BytesToAddress(header.Castor)
-	vmCtx.BlockNumber = new(big.Int).SetUint64(header.Height)
-	vmCtx.Time = new(big.Int).SetUint64(uint64(header.CurTime.Unix()))
-
-	vmCtx.GasPrice = big.NewInt(1)
-	vmCtx.GasLimit = 30000000
-	vmInstance := vm.NewEVM(vmCtx, statedb)
-	caller := vm.AccountRef(vmCtx.Origin)
-
-	_, usdtContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(usdtContractData), vmCtx.GasLimit, big.NewInt(0))
-	if err != nil {
-		panic("Genesis contract create error:" + err.Error())
-	}
-	logger.Debugf("After execute usdt contract create!Contract address:%s", usdtContractAddress.GetHexString())
-
-	_, wethContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(wethContractData), vmCtx.GasLimit, big.NewInt(0))
-	if err != nil {
-		panic("Genesis contract create error:" + err.Error())
-	}
-	logger.Debugf("After execute weth contract create! Contract address:%s", wethContractAddress.GetHexString())
-
-	_, mixContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(mixContractData), vmCtx.GasLimit, big.NewInt(0))
-	if err != nil {
-		panic("Genesis contract create error:" + err.Error())
-	}
-	logger.Debugf("After execute mix contract create! Contract address:%s", mixContractAddress.GetHexString())
-
-	_, bscUsdtContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(usdtContractData), vmCtx.GasLimit, big.NewInt(0))
-	if err != nil {
-		panic("Genesis contract create error:" + err.Error())
-	}
-	logger.Debugf("After execute BSC usdt contract create!Contract address:%s", bscUsdtContractAddress.GetHexString())
-
-	_, wBNBContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(wRPGContractData), vmCtx.GasLimit, big.NewInt(0))
-	if err != nil {
-		panic("Genesis contract create error:" + err.Error())
-	}
-	logger.Debugf("After execute wBNB contract create! Contract address:%s", wBNBContractAddress.GetHexString())
-
-	_, bscMixContractAddress, _, _, err := vmInstance.Create(caller, common.FromHex(mixContractData), vmCtx.GasLimit, big.NewInt(0))
-	if err != nil {
-		panic("Genesis contract create error:" + err.Error())
-	}
-	logger.Debugf("After execute  BSC mix contract create! Contract address:%s", bscMixContractAddress.GetHexString())
-	return usdtContractAddress, wethContractAddress, mixContractAddress, bscUsdtContractAddress, wBNBContractAddress, bscMixContractAddress
-}
-
 func addRobinTestAsset(stateDB *account.AccountDB) {
-	valueTenThousand, _ := utility.StrToBigInt("10000")
 	valueBillion, _ := utility.StrToBigInt("1000000000")
-	/**
-	  id:0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443
-	  address:0x38780174572fb5b4735df1b7c69aee77ff6e9f49
-	  sk:0xe7260a418579c2e6ca36db4fe0bf70f84d687bdf7ec6c0c181b43ee096a84aea
-	*/
-	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "ETH.ETH", valueTenThousand)
-	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-ETH.USDT", valueTenThousand)
-	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-ETH.MIX", valueBillion)
-	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "BSC.BNB", valueTenThousand)
-	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-BSC.USDT", valueTenThousand)
-	stateDB.SetFT(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), "SYSTEM-BSC.MIX", valueBillion)
-	stateDB.SetBalance(common.HexToAddress("0x38780174572fb5b4735df1b7c69aee77ff6e9f49"), valueBillion)
-
-	/**
-	id:0x7dba6865f337148e5887d6bea97e6a98701a2fa774bd00474ea68bcc645142f2
-	address:0x2c616a97d3d10e008f901b392986b1a65e0abbb7
-	sk:0x083f3fb13ffa99a18283a7fd5e2f831a52f39afdd90f5310a3d8fd4ffbd00d49
-	*/
-	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "ETH.ETH", valueBillion)
-	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-ETH.USDT", valueBillion)
-	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-ETH.MIX", valueBillion)
-	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "BSC.BNB", valueTenThousand)
-	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-BSC.USDT", valueTenThousand)
-	stateDB.SetFT(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), "SYSTEM-BSC.MIX", valueBillion)
-	stateDB.SetBalance(common.HexToAddress("0x2c616a97d3d10e008f901b392986b1a65e0abbb7"), valueBillion)
-
-	/**
-	address:0xb726d8add2d0da0e3497b8686e0440c1703348c6
-	sk:0xe64b395c653ac649b6fd378bedfb2f93db298711b3a083229899d0c600e026d9
-	*/
-	stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "ETH.ETH", valueBillion)
-	stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "SYSTEM-ETH.USDT", valueBillion)
-	stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "SYSTEM-ETH.MIX", valueBillion)
-	stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "BSC.BNB", valueTenThousand)
-	stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "SYSTEM-BSC.USDT", valueTenThousand)
-	stateDB.SetFT(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), "SYSTEM-BSC.MIX", valueBillion)
-	stateDB.SetBalance(common.HexToAddress("0xb726d8add2d0da0e3497b8686e0440c1703348c6"), valueBillion)
-
-	assetCreatTime := "1634686092119"
-	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("testFT", "alpha", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", assetCreatTime, 0), stateDB)
-	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("testFT", "beta", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", assetCreatTime, 0), stateDB)
-	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("testFT", "gamma", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", assetCreatTime, 0), stateDB)
-	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("testFT", "delta", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", assetCreatTime, 0), stateDB)
-	service.FTManagerInstance.PublishFTSet(service.FTManagerInstance.GenerateFTSet("testFT", "epsilon", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", assetCreatTime, 0), stateDB)
-
-	//NFT Asset
-	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("262beed0-703e-417f-9258-89ad1f736982", "testNFT", "alpha", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", types.NFTConditions{}, 0, assetCreatTime), stateDB)
-	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("59c641ee-7b1b-444b-9f87-47889539df1f", "testNFT", "beta", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", types.NFTConditions{}, 0, assetCreatTime), stateDB)
-	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("0d19bbce-6c3d-4153-8168-1c7a33448fa4", "testNFT", "gamma", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", types.NFTConditions{}, 0, assetCreatTime), stateDB)
-	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("a919a5a0-a5ed-40b3-be4d-403985063863", "testNFT", "delta", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", types.NFTConditions{}, 0, assetCreatTime), stateDB)
-	service.NFTManagerInstance.PublishNFTSet(service.NFTManagerInstance.GenerateNFTSet("f5626c4d-3895-4376-a5df-fc1f04e0f375", "testNFT", "epsilon", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", "0x38780174572fb5b4735df1b7c69aee77ff6e9f49", types.NFTConditions{}, 0, assetCreatTime), stateDB)
+	stateDB.SetBalance(common.HexToAddress("0x2f4f09b722a6e5b77be17c9a99c785fa7035a09f"), valueBillion)
+	stateDB.SetBalance(common.HexToAddress("0x42c8c9b13fc0573d18028b3398a887c4297ff646"), valueBillion)
+	//used for faucet
+	stateDB.SetBalance(common.HexToAddress("0x8744c51069589296fcb7faa2f891b1f513a0310c"), valueBillion)
 }
