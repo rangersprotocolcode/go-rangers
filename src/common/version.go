@@ -37,7 +37,7 @@ var (
 		PHub:             "wss://mainnet.rangersprotocol.com/phub",
 		PubHub:           "wss://mainnet.rangersprotocol.com/pubhub",
 		OriginalChainId:  "8888",
-		Proposal001Block: 1000000,
+		Proposal001Block: 8936000,
 	}
 
 	robinChainConfig = ChainConfig{
