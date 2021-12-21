@@ -87,7 +87,6 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) (*acco
 	waited := false
 	req := manager.requestId
 
-
 	// 校验 nonce
 	if !manager.debug {
 		// requestId 按序执行
@@ -125,12 +124,12 @@ func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *accoun
 		manager.getCond().L.Lock()
 	}
 
+	manager.height = height
 	if nil == manager.latestStateDB || nonce >= manager.requestId {
 		if nil != latestStateDB {
 			manager.latestStateDB = latestStateDB
 		}
 
-		manager.height = height
 		manager.requestId = nonce
 		manager.logger.Warnf("accountDB set success. requestId: %d, current: %d, msg: %s", nonce, manager.requestId, msg)
 
