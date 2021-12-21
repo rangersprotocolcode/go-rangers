@@ -12,6 +12,16 @@ import (
 	"time"
 )
 
+var robinProposerAccounts = [1]string{
+	`0xa9e11ce87c646ca4b0c8eb66f28a86232734d74a`,
+}
+
+var robinValidatorAccounts = [3]string{
+	`0x56b1fc865ad0c87f46f804145a861b38fcbafb99`,
+	`0x0ef90c9cc936c2e3117d76c1ffb28391f8cebbca`,
+	`0x22b00137e24a708609fdb88ee156dabe041b158b`,
+}
+
 func genRobinGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, genesisInfo []*types.GenesisInfo) *types.Block {
 	block := new(types.Block)
 	pv := big.NewInt(0)
@@ -40,7 +50,7 @@ func genRobinGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase,
 	for _, genesis := range genesisInfo {
 		for i, member := range genesis.Group.Members {
 			miner := &types.Miner{Type: common.MinerTypeValidator, Id: member, PublicKey: genesis.Pks[i], VrfPublicKey: genesis.VrfPKs[i], Stake: common.ValidatorStake}
-			miner.Account = common.FromHex(validatorAccounts[i])
+			miner.Account = common.FromHex(robinValidatorAccounts[i])
 			verifyMiners = append(verifyMiners, miner)
 		}
 	}
@@ -92,6 +102,7 @@ func getRobinGenesisProposer() []*types.Miner {
 			Stake:        common.ProposerStake,
 			Type:         common.MinerTypeProposer,
 			Status:       common.MinerStatusNormal,
+			Account:      common.FromHex(robinProposerAccounts[0]),
 		}
 		miners = append(miners, &miner)
 	}
