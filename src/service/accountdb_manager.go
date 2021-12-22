@@ -87,7 +87,6 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) (*acco
 	waited := false
 	req := manager.requestId
 
-
 	// 校验 nonce
 	if !manager.debug {
 		// requestId 按序执行
