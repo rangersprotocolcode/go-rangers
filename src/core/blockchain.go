@@ -288,8 +288,6 @@ func (chain *blockChain) AddBlockOnChain(b *types.Block) types.AddBlockResult {
 }
 
 func (chain *blockChain) QueryBlockByHash(hash common.Hash) *types.Block {
-	chain.lock.RLock("QueryBlockByHash")
-	defer chain.lock.RUnlock("QueryBlockByHash")
 	return chain.queryBlockByHash(hash)
 }
 
@@ -298,17 +296,11 @@ func (chain *blockChain) QueryBlock(height uint64) *types.Block {
 	defer chain.lock.RUnlock("QueryBlock")
 
 	var b *types.Block
-	for i := height; i <= chain.Height(); i++ {
-		bh := chain.QueryBlockHeaderByHeight(i, true)
-		if nil == bh {
-			continue
-		}
-		b = chain.queryBlockByHash(bh.Hash)
-		if nil == b {
-			continue
-		}
-		break
+	bh := chain.QueryBlockHeaderByHeight(height, true)
+	if nil == bh {
+		return b
 	}
+	b = chain.queryBlockByHash(bh.Hash)
 	return b
 }
 
@@ -428,9 +420,9 @@ func (chain *blockChain) HasBlockByHash(hash common.Hash) bool {
 }
 
 func (chain *blockChain) GetBlockHash(height uint64) common.Hash {
-	block := chain.QueryBlock(height)
-	if block != nil {
-		return block.Header.Hash
+	blockHeader := chain.QueryBlockHeaderByHeight(height, true)
+	if blockHeader != nil {
+		return blockHeader.Hash
 	}
 	return common.Hash{}
 }

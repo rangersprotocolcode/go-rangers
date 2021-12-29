@@ -280,17 +280,17 @@ func (api *GtasAPI) CastStat(begin uint64, end uint64) (*Result, error) {
 	}
 
 	for h := begin; h < end; h++ {
-		b := chain.QueryBlock(h)
+		b := chain.QueryBlockHeaderByHeight(h, true)
 		if b == nil {
 			continue
 		}
-		p := string(b.Header.Castor)
+		p := string(b.Castor)
 		if v, ok := proposerStat[p]; ok {
 			proposerStat[p] = v + 1
 		} else {
 			proposerStat[p] = 1
 		}
-		g := string(b.Header.GroupId)
+		g := string(b.GroupId)
 		if v, ok := groupStat[g]; ok {
 			groupStat[g] = v + 1
 		} else {
@@ -392,12 +392,12 @@ func (api *GtasAPI) PageGetBlocks(page, limit int) (*Result, error) {
 	b := int64(total - num)
 
 	for i < limit && b >= 0 {
-		block := chain.QueryBlock(uint64(b))
+		blockHeader := chain.QueryBlockHeaderByHeight(uint64(b), true)
 		b--
-		if block == nil {
+		if blockHeader == nil {
 			continue
 		}
-		h := convertBlockHeader(block.Header)
+		h := convertBlockHeader(blockHeader)
 		pageObject.Data = append(pageObject.Data, h)
 		i++
 	}

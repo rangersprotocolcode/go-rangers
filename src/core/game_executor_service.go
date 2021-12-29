@@ -103,11 +103,11 @@ func getAccountDBByHeight(height uint64) (accountDB *account.AccountDB) {
 	if height == 0 {
 		accountDB = service.AccountDBManagerInstance.GetLatestStateDB()
 	} else {
-		b := GetBlockChain().QueryBlock(height)
-		if nil == b {
+		bh := GetBlockChain().QueryBlockHeaderByHeight(height, true)
+		if nil == bh {
 			return nil
 		}
-		accountDB, _ = service.AccountDBManagerInstance.GetAccountDBByHash(b.Header.StateTree)
+		accountDB, _ = service.AccountDBManagerInstance.GetAccountDBByHash(bh.StateTree)
 	}
 	return
 }
