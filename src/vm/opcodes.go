@@ -569,3 +569,8 @@ const (
 	NFT_ISEXISTEDNFT
 	NFT_GETNFTLIST
 )
+
+const (
+	STAKE   = 0xee
+	UNSTAKE = 0xef
+)

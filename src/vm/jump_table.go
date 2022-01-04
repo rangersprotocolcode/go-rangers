@@ -1171,5 +1171,18 @@ func newInstructionSet() JumpTable {
 		memorySize:  memoryNFT_GetNFTList,
 	}
 
+	instructionSet[STAKE] = &operation{
+		execute:     opStake,
+		constantGas: 0,
+		minStack:    minStack(2, 2),
+		maxStack:    maxStack(2, 2),
+	}
+
+	instructionSet[UNSTAKE] = &operation{
+		execute:     opUnStake,
+		constantGas: 0,
+		minStack:    minStack(2, 2),
+		maxStack:    maxStack(2, 2),
+	}
 	return instructionSet
 }

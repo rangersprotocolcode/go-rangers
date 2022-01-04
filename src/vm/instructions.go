@@ -18,9 +18,10 @@ package vm
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/utility"
 	"fmt"
 	"math"
+
+	"com.tuntun.rocket/node/src/utility"
 
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -1203,5 +1204,31 @@ func opGetNFTList(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx)
 	}
 
 	pushStringArray(callContext, ret_stringarray)
+	return nil, nil
+}
+
+func opStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	this_address := callContext.contract.Address()
+	arg_value := popUint256(callContext)
+	pointer_address := popAddress(callContext)
+	ret_bool := true
+
+	// TODO
+	fmt.Printf("(this->%v)%v.stake(%v) return %v\n", this_address, pointer_address, arg_value, ret_bool)
+
+	pushBool(callContext, ret_bool)
+	return nil, nil
+}
+
+func opUnStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	this_address := callContext.contract.Address()
+	arg_value := popUint256(callContext)
+	pointer_address := popAddress(callContext)
+	ret_bool := true
+
+	// TODO
+	fmt.Printf("(this->%v)%v.unstake(%v) return %v\n", this_address, pointer_address, arg_value, ret_bool)
+
+	pushBool(callContext, ret_bool)
 	return nil, nil
 }
