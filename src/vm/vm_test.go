@@ -1,6 +1,7 @@
 package vm
 
 import (
+	"com.tuntun.rocket/node/src/service"
 	"encoding/base64"
 	"fmt"
 	"math/big"
@@ -296,6 +297,49 @@ func TestSolidity(t *testing.T) {
 	fmt.Printf("New create contract createResult:%v,%d\n", createResult, len(createResult))
 	fmt.Printf("New create contract createResult:%s,%d\n", common.ToHex(createResult), len(createResult))
 	fmt.Printf("New create contract costGas:%v,createErr:%v\n", config.GasLimit-createLeftGas, createErr)
+}
+
+func TestProxyStake(t *testing.T) {
+	common.InitConf("1.ini")
+	service.InitMinerManager()
+	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, "")
+	stake := "608060405260008055348015601357600080fd5b5060d2806100226000396000f3fe60806040526004361060265760003560e01c80633ccfd60b14602b578063a50ec326146033575b600080fd5b6031603b565b005b60396059565b005b3073ffffffffffffffffffffffffffffffffffffffff16600054ef50565b60003411606557600080fd5b346000819055503073ffffffffffffffffffffffffffffffffffffffff16600054ee5056fea2646970667358221220206422aa1f766ea9357aeb0fe9b1d3baf9f148f66aa4c98a1894a035ac33d88f64736f6c6375302e372e352b636f6d6d69742e65623737656430380045"
+	proxy := "608060405234801561001057600080fd5b506040516101f83803806101f88339818101604052602081101561003357600080fd5b8101908080519060200190929190505050600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff1614156100ca576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260228152602001806101d66022913960400191505060405180910390fd5b806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505060bd806101196000396000f3fe608060405273ffffffffffffffffffffffffffffffffffffffff600054167fa619486e0000000000000000000000000000000000000000000000000000000060003514156050578060005260206000f35b3660008037600080366000845af43d6000803e60008114156070573d6000fd5b3d6000f3fea2646970667358221220ba60d75047cb5df003cac406e46e94ee88bf10ba6dbce28baeeb7956f522cdf564736f6c6375302e372e352b636f6d6d69742e65623737656430380045496e76616c69642073696e676c65746f6e20616464726573732070726f7669646564"
+
+	mockInit()
+	config := new(testConfig)
+	setDefaults(config)
+	defer log.Close()
+
+	config.Origin = common.HexToAddress("0x407988d14785a6ae45e3106b4f9799c0ab0af3d0c85447ce1ddb09f089872257")
+	config.GasLimit = 3000000
+	config.GasPrice = big.NewInt(1)
+
+	contractCodeBytes := common.Hex2Bytes(stake)
+	_, contractAddress, _, createErr := mockCreate(contractCodeBytes, config)
+	if nil != createErr {
+		t.Fatal(createErr)
+	}
+	padder := []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+	proxybytes := common.Hex2Bytes(proxy)
+	proxybytes = append(proxybytes, padder...)
+	proxybytes = append(proxybytes, contractAddress.Bytes()...)
+
+	_, contractAddress2, _, createErr2 := mockCreate(contractCodeBytes, config)
+	if nil != createErr2 {
+		t.Fatal(createErr2)
+	}
+	fmt.Println(contractAddress2.GetHexString())
+
+	config.State.SetBalance(config.Origin, big.NewInt(10000))
+	config.Value = big.NewInt(100)
+	callResult, _, callErr := mockCall(contractAddress2, common.FromHex("a50ec326"), config)
+	if callErr != nil {
+		t.Fatal(callErr)
+	}
+
+	fmt.Println(common.ToHex(callResult))
+
 }
 
 func TestStakeAndUnStake(t *testing.T) {

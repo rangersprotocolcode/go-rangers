@@ -202,7 +202,7 @@ func mockEVM(cfg *testConfig) *EVM {
 		GasLimit:    cfg.GasLimit,
 		GasPrice:    cfg.GasPrice,
 	}
-	return NewEVM(context, cfg.State)
+	return NewEVMWithNFT(context, cfg.State, cfg.State)
 }
 
 type mockContractRef struct {

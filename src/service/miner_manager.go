@@ -17,6 +17,7 @@
 package service
 
 import (
+	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
@@ -48,6 +49,33 @@ func InitMinerManager() {
 
 	MinerManagerImpl = &MinerManager{pkCache: pkp}
 	MinerManagerImpl.logger = log.GetLoggerByIndex(log.CoreLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+}
+
+func (mm *MinerManager) GetMinerIdByAccount(account []byte, accountdb *account.AccountDB) types.HexBytes {
+	iterator := mm.minerIterator(common.MinerTypeProposer, accountdb)
+	for iterator.Next() {
+		if curr, err := iterator.Current(); err != nil {
+			continue
+		} else {
+			if 0 == bytes.Compare(curr.Account, account) {
+				return curr.Id
+			}
+		}
+	}
+
+	iterator = mm.minerIterator(common.MinerTypeValidator, accountdb)
+	for iterator.Next() {
+		if curr, err := iterator.Current(); err != nil {
+			continue
+		} else {
+			if 0 == bytes.Compare(curr.Account, account) {
+				return curr.Id
+			}
+		}
+	}
+
+	return nil
+
 }
 
 func (mm *MinerManager) GetMiner(minerId []byte, accountdb *account.AccountDB) *types.Miner {
@@ -334,5 +362,9 @@ func (mi *MinerIterator) Current() (*types.Miner, error) {
 }
 
 func (mi *MinerIterator) Next() bool {
+	if nil == mi.iterator {
+		return false
+	}
+
 	return mi.iterator.Next()
 }

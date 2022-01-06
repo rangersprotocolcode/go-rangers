@@ -125,8 +125,6 @@ type EVM struct {
 	// applied in opCall*.
 	callGasTemp uint64
 
-	nftManagerInstance NFTImpelement
-
 	accountDB *account.AccountDB
 }
 
@@ -155,9 +153,8 @@ func NewEVM(ctx Context, statedb StateDB) *EVM {
 
 // NewEVM returns a new EVM. The returned EVM is not thread safe and should
 // only ever be used *once*.
-func NewEVMWithNFT(ctx Context, statedb StateDB, nftManagerInstance NFTImpelement, accountDB *account.AccountDB) *EVM {
+func NewEVMWithNFT(ctx Context, statedb StateDB, accountDB *account.AccountDB) *EVM {
 	evm := NewEVM(ctx, statedb)
-	evm.nftManagerInstance = nftManagerInstance
 	evm.accountDB = accountDB
 
 	return evm

@@ -549,27 +549,6 @@ var stringToOp = map[string]OpCode{
 	"SELFDESTRUCT":   SELFDESTRUCT,
 }
 
-// StringToOp finds the opcode whose name is stored in `str`.
-func StringToOp(str string) OpCode {
-	return stringToOp[str]
-}
-
-// rocket protocol defined opcode
-const (
-	NFT_PUBLISHNFTSET OpCode = 0xe0 + iota
-	NFT_MINTNFT
-	NFT_TRANSFERNFT
-	NFT_SHUTTLENFT
-	NFT_APPROVENFT
-	NFT_REVOKENFT
-	NFT_REMOVENFT
-	NFT_UPDATEDATA
-	NFT_GETDATA
-	NFT_ISEXISTEDNFTSET
-	NFT_ISEXISTEDNFT
-	NFT_GETNFTLIST
-)
-
 const (
 	STAKE   = 0xee
 	UNSTAKE = 0xef

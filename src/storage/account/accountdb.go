@@ -227,6 +227,7 @@ func (adb *AccountDB) HasSuicided(addr common.Address) bool {
 }
 
 // AddBalance adds amount to the account associated with addr.
+// amount decimal 18
 func (adb *AccountDB) AddBalance(addr common.Address, amount *big.Int) {
 	adb.AddFT(addr, common.BLANCE_NAME, amount)
 }
