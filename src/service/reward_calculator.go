@@ -97,6 +97,9 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, a
 	}
 
 	// 验证者奖励
+	if nil == bh.GroupId {
+		return nil
+	}
 	var group *types.Group
 	if situation != "fork" {
 		group = reward.groupChain.GetGroupById(bh.GroupId)

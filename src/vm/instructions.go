@@ -1088,7 +1088,8 @@ func opUnStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 			if money.Cmp(target) > 0 {
 				remain := big.NewInt(0)
 				remain.Sub(money, target)
-				refundInfo.AddRefundInfo(addr, money)
+				common.DefaultLogger.Debugf("unstake, addr: %s gets remain: %s to , at height: %d", common.ToHex(addr), remain.String(), refundHeight)
+				refundInfo.AddRefundInfo(addr, remain)
 			}
 
 			refundInfo.AddRefundInfo(source.Bytes(), target)

@@ -1,10 +1,13 @@
 package vm
 
 import (
+	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rocket/node/src/storage/account"
 	"encoding/base64"
 	"fmt"
 	"math/big"
+	"os"
 	"testing"
 	"time"
 
@@ -300,9 +303,14 @@ func TestSolidity(t *testing.T) {
 }
 
 func TestProxyStake(t *testing.T) {
+	os.RemoveAll("storage0")
+	os.RemoveAll("logs")
 	common.InitConf("1.ini")
 	service.InitMinerManager()
+	service.InitRefundManager(nil, nil)
+
 	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, "")
+
 	stake := "608060405260008055348015601357600080fd5b5060d2806100226000396000f3fe60806040526004361060265760003560e01c80633ccfd60b14602b578063a50ec326146033575b600080fd5b6031603b565b005b60396059565b005b3073ffffffffffffffffffffffffffffffffffffffff16600054ef50565b60003411606557600080fd5b346000819055503073ffffffffffffffffffffffffffffffffffffffff16600054ee5056fea2646970667358221220206422aa1f766ea9357aeb0fe9b1d3baf9f148f66aa4c98a1894a035ac33d88f64736f6c6375302e372e352b636f6d6d69742e65623737656430380045"
 	proxy := "608060405234801561001057600080fd5b506040516101f83803806101f88339818101604052602081101561003357600080fd5b8101908080519060200190929190505050600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff1614156100ca576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260228152602001806101d66022913960400191505060405180910390fd5b806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055505060bd806101196000396000f3fe608060405273ffffffffffffffffffffffffffffffffffffffff600054167fa619486e0000000000000000000000000000000000000000000000000000000060003514156050578060005260206000f35b3660008037600080366000845af43d6000803e60008114156070573d6000fd5b3d6000f3fea2646970667358221220ba60d75047cb5df003cac406e46e94ee88bf10ba6dbce28baeeb7956f522cdf564736f6c6375302e372e352b636f6d6d69742e65623737656430380045496e76616c69642073696e676c65746f6e20616464726573732070726f7669646564"
 
@@ -331,9 +339,35 @@ func TestProxyStake(t *testing.T) {
 	}
 	fmt.Println(contractAddress2.GetHexString())
 
-	config.State.SetBalance(config.Origin, big.NewInt(10000))
+	// mock miner
+	miner := types.Miner{}
+	miner.Stake = 190000
+	miner.Id = common.FromHex("0x450233af5bf35351a7f5f75ddc919481f3cbccc5c8acca94f5f655d6481a1637")
+	miner.Account = common.FromHex("0x1261365b2f50501ce0629c933a55f153599f953f")
+	miner.Type = common.MinerTypeProposer
+	service.MinerManagerImpl.InsertMiner(&miner, config.State)
+	root, err := config.State.Commit(true)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = config.AccountDatabase.TrieDB().Commit(root, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	config.State, err = account.NewAccountDB(root, config.AccountDatabase)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	config.State.SetBalance(config.Origin, utility.Uint64ToBigInt(10000))
 	config.Value = big.NewInt(100)
 	callResult, _, callErr := mockCall(contractAddress2, common.FromHex("a50ec326"), config)
+	if callErr != nil {
+		t.Fatal(callErr)
+	}
+
+	config.Value = nil
+	callResult, _, callErr = mockCall(contractAddress2, common.FromHex("3ccfd60b"), config)
 	if callErr != nil {
 		t.Fatal(callErr)
 	}
