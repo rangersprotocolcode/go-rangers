@@ -54,7 +54,7 @@ var (
 		PHub:             "ws://gate.tuntunhz.com:8899",
 		PubHub:           "ws://gate.tuntunhz.com:8888",
 		OriginalChainId:  "9800",
-		Proposal001Block: 300,
+		Proposal001Block: 0,
 	}
 
 	LocalChainConfig ChainConfig
