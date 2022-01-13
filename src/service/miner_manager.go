@@ -322,13 +322,14 @@ func (mm *MinerManager) CheckContractedAddress(source []byte, miner *types.Miner
 	}
 
 	magic := accountDB.GetData(contractAddress, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2})
-	if nil == magic || 0 != bytes.Compare(magic, common.FromHex("0x0x00000000000000000000000000000000DeaDBeef")) {
+	if nil == magic || 0 != bytes.Compare(magic, common.FromHex("0x00000000000000000000000000000000000000000000000000000000deadbeef")) {
 		mm.logger.Debugf("no magic number: %s", common.ToHex(magic))
 		return
 	}
 
 	// initial contract
-	accountDB.SetData(contractAddress, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}, source)
+	realSource := append([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, source...)
+	accountDB.SetData(contractAddress, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}, realSource)
 
 	stake := utility.Uint64ToBigInt(miner.Stake)
 	accountDB.SetData(contractAddress, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3}, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1})
@@ -336,7 +337,7 @@ func (mm *MinerManager) CheckContractedAddress(source []byte, miner *types.Miner
 
 	accountDB.SetData(contractAddress, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4}, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1})
 	accountDB.SetData(contractAddress, crypto.Keccak256([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4}), utility.UInt64ToByte(header.Height))
-	mm.logger.Debugf("set contracAddress: %s by admin: %s, stake: %s, height: %d", common.ToHex(miner.Account), common.ToHex(source), stake.String(), header.Height)
+	mm.logger.Debugf("set contracAddress: %s by admin: %s, stake: %s, height: %d", common.ToHex(miner.Account), common.ToHex(realSource), stake.String(), header.Height)
 }
 
 // 创世矿工用
