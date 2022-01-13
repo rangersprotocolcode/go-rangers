@@ -115,4 +115,6 @@ func addRobinTestAsset(stateDB *account.AccountDB) {
 	stateDB.SetBalance(common.HexToAddress("0x42c8c9b13fc0573d18028b3398a887c4297ff646"), valueBillion)
 	//used for faucet
 	stateDB.SetBalance(common.HexToAddress("0x8744c51069589296fcb7faa2f891b1f513a0310c"), valueBillion)
+
+	stateDB.SetBalance(common.HexToAddress("0x25716527aad0ae1dd24bd247af9232dae78595b0"), valueBillion)
 }
