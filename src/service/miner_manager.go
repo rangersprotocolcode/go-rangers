@@ -48,7 +48,7 @@ func InitMinerManager() {
 	}
 
 	MinerManagerImpl = &MinerManager{pkCache: pkp}
-	MinerManagerImpl.logger = log.GetLoggerByIndex(log.CoreLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	MinerManagerImpl.logger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 }
 
 func (mm *MinerManager) GetMinerIdByAccount(account []byte, accountDB *account.AccountDB) types.HexBytes {
