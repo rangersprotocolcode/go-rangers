@@ -128,7 +128,12 @@ func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *
 		miner.Account = common.FromHex(transaction.Source)
 	}
 
-	return service.MinerManagerImpl.AddMiner(common.HexToAddress(transaction.Source), &miner, accountdb)
+	sourceAddr := common.HexToAddress(transaction.Source)
+	res, reason := service.MinerManagerImpl.AddMiner(sourceAddr, &miner, accountdb)
+	if res {
+		service.MinerManagerImpl.CheckContractedAddress(sourceAddr.Bytes(), &miner, header, accountdb)
+	}
+	return res, reason
 }
 
 type minerAddExecutor struct {
@@ -157,11 +162,7 @@ func (this *minerAddExecutor) Execute(transaction *types.Transaction, header *ty
 	}
 
 	sourceAddr := common.HexToAddress(transaction.Source)
-	res, reason := service.MinerManagerImpl.AddStake(sourceAddr, miner.Id, miner.Stake, accountdb)
-	if res {
-		service.MinerManagerImpl.CheckContractedAddress(sourceAddr.Bytes(), &miner, header, accountdb)
-	}
-	return res, reason
+	return service.MinerManagerImpl.AddStake(sourceAddr, miner.Id, miner.Stake, accountdb)
 }
 
 type minerChangeAccountExecutor struct {
