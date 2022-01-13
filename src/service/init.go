@@ -32,6 +32,5 @@ func InitService() {
 	InitMinerManager()
 	initTransactionPool()
 	initFTManager()
-	initNFTManager()
 	initAccountDBManager()
 }

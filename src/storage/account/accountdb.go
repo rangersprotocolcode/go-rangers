@@ -275,49 +275,6 @@ func (adb *AccountDB) SetData(addr common.Address, key []byte, value []byte) {
 	}
 }
 
-func (adb *AccountDB) SetNFTSetDefinition(addr common.Address, code []byte, owner string) {
-	stateObject := adb.getOrNewAccountObject(addr)
-	if stateObject != nil {
-		stateObject.SetNFTSetDefinition(sha3.Sum256(code), code)
-		stateObject.SetNFTSetOwner(adb.db, owner)
-	}
-}
-
-func (adb *AccountDB) SetLotteryDefinition(addr common.Address, code []byte, owner string) {
-	stateObject := adb.getOrNewAccountObject(addr)
-	if stateObject != nil {
-		stateObject.SetLotteryDefinition(sha3.Sum256(code), code)
-		stateObject.SetLotteryOwner(adb.db, owner)
-	}
-}
-
-func (adb *AccountDB) GetLotteryDefinition(addr common.Address) []byte {
-	accountObject := adb.getAccountObject(addr, false)
-	if nil == accountObject {
-		return nil
-	}
-
-	return accountObject.GetLotteryDefinition(adb.db)
-}
-
-func (adb *AccountDB) GetLotteryOwner(addr common.Address) string {
-	accountObject := adb.getAccountObject(addr, false)
-	if nil == accountObject {
-		return ""
-	}
-
-	return accountObject.GetLotteryOwner(adb.db)
-}
-
-// GetCode returns the contract code associated with this object, if any.
-func (adb *AccountDB) getNFTSetDefinition(addr common.Address) []byte {
-	stateObject := adb.getAccountObject(addr, false)
-	if stateObject != nil {
-		return stateObject.nftSetDefinition(adb.db)
-	}
-	return nil
-}
-
 func (adb *AccountDB) Transfer(sender, recipient common.Address, amount *big.Int) {
 	// Escape if amount is zero
 	if amount.Sign() <= 0 {

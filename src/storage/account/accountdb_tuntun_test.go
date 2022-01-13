@@ -121,24 +121,3 @@ func TestAccountDB_AddNFT(t *testing.T) {
 	fmt.Println(len(nftList2))
 
 }
-
-func TestAccountDB_SetCode(t *testing.T) {
-	os.RemoveAll("storage0")
-	defer os.RemoveAll("storage0")
-	db, _ := db.NewLDBDatabase("test", 0, 0)
-	defer db.Close()
-	triedb := NewDatabase(db)
-	state, _ := NewAccountDB(common.Hash{}, triedb)
-	address := common.HexToAddress("0x443")
-
-	state.SetNFTSetDefinition(address, utility.StrToBytes("12345"), "")
-	fmt.Println(utility.BytesToStr(state.getNFTSetDefinition(address)))
-
-	root, err := state.Commit(true)
-	if err != nil {
-		t.Fatalf(err.Error())
-	}
-
-	state, _ = NewAccountDB(root, triedb)
-	fmt.Println(utility.BytesToStr(state.getNFTSetDefinition(address)))
-}
