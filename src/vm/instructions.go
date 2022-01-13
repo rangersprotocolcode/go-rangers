@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"math"
 	"math/big"
+	"strconv"
 
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -1034,21 +1035,29 @@ func opStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]b
 	pointerAddress := popAddress(callContext)
 	ret := true
 	source := callContext.contract.caller.Address()
-	common.DefaultLogger.Debugf("stake source: %s, stake to %s(this->%s), with %d", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString(), argValue.Uint64())
 
-	// check for warning
-	if 0 != bytes.Compare(thisAddress.Bytes(), pointerAddress.Bytes()) {
-		common.DefaultLogger.Warnf("stack warning. this: %s, pointer: %s", thisAddress.GetHexString(), pointerAddress.GetHexString())
-	}
+	common.DefaultLogger.Debugf("stake source: %s, stake to %s(this->%s), with %d", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString(), argValue.String())
 
-	miner := service.MinerManagerImpl.GetMinerIdByAccount(pointerAddress.Bytes(), interpreter.evm.accountDB)
-	if nil == miner {
-		common.DefaultLogger.Warnf("stack error. no miner for address : %s", pointerAddress.GetHexString())
-		ret = false
+	money := big.NewInt(0).SetBytes(argValue.Bytes())
+	target, err := strconv.ParseUint(utility.BigIntToStr(money), 10, 0)
+	if nil == err {
+		// check for warning
+		if 0 != bytes.Compare(thisAddress.Bytes(), pointerAddress.Bytes()) {
+			common.DefaultLogger.Warnf("stake warning. this: %s, pointer: %s", thisAddress.GetHexString(), pointerAddress.GetHexString())
+		}
+
+		miner := service.MinerManagerImpl.GetMinerIdByAccount(pointerAddress.Bytes(), interpreter.evm.accountDB)
+		if nil == miner {
+			common.DefaultLogger.Warnf("stake error. no miner for address : %s", pointerAddress.GetHexString())
+			ret = false
+		} else {
+			var msg string
+			ret, msg = service.MinerManagerImpl.AddStake(source, miner, target, interpreter.evm.accountDB)
+			common.DefaultLogger.Infof("stake result: %t, msg: %s", ret, msg)
+		}
 	} else {
-		var msg string
-		ret, msg = service.MinerManagerImpl.AddStake(source, miner, argValue.Uint64(), interpreter.evm.accountDB)
-		common.DefaultLogger.Infof("stack result: %t, msg: %s", ret, msg)
+		common.DefaultLogger.Errorf("fail to convert money, %s, err: %s", money.String(), err)
+		ret = false
 	}
 
 	pushBool(callContext, ret)
