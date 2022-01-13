@@ -94,12 +94,9 @@ func BigIntToStr(number *big.Int) string {
 
 // 11220000000000000000->"11"
 func BigIntToStrWithoutDot(number *big.Int) string {
-	if nil == number || 0 == number.Sign() {
-		return zeroString
-	}
-
-	// 默认保留小数点9位
-	return bigIntToStr(number, 0)
+	res := BigIntToStr(number)
+	index := strings.Index(res, ".")
+	return res[:index]
 }
 
 func bigIntToStr(n *big.Int, precision int) string {
