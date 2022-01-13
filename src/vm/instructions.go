@@ -1036,10 +1036,10 @@ func opStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]b
 	ret := true
 	source := callContext.contract.caller.Address()
 
-	common.DefaultLogger.Debugf("stake source: %s, stake to %s(this->%s), with %d", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString(), argValue.String())
+	common.DefaultLogger.Debugf("stake source: %s, stake to %s(this->%s), with %s", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString(), argValue.String())
 
 	money := big.NewInt(0).SetBytes(argValue.Bytes())
-	target, err := strconv.ParseUint(utility.BigIntToStr(money), 10, 0)
+	target, err := strconv.ParseUint(utility.BigIntToStrWithoutDot(money), 10, 0)
 	if nil == err {
 		// check for warning
 		if 0 != bytes.Compare(thisAddress.Bytes(), pointerAddress.Bytes()) {
@@ -1056,7 +1056,7 @@ func opStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]b
 			common.DefaultLogger.Infof("stake result: %t, msg: %s", ret, msg)
 		}
 	} else {
-		common.DefaultLogger.Errorf("fail to convert money, %s, err: %s", money.String(), err)
+		common.DefaultLogger.Errorf("stake fail to convert money, %s, err: %s", money.String(), err)
 		ret = false
 	}
 
@@ -1070,7 +1070,7 @@ func opUnStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 	pointerAddress := popAddress(callContext)
 	ret := true
 	source := callContext.contract.caller.Address()
-	common.DefaultLogger.Debugf("unstake source: %s, stake to %s(this->%s), with %d", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString(), argValue.Uint64())
+	common.DefaultLogger.Debugf("unstake source: %s, stake to %s(this->%s), with %s", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString(), argValue.String())
 
 	// check for warning
 	if 0 != bytes.Compare(thisAddress.Bytes(), pointerAddress.Bytes()) {
@@ -1082,9 +1082,11 @@ func opUnStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 		common.DefaultLogger.Warnf("unstack error. no miner for address : %s", pointerAddress.GetHexString())
 		ret = false
 	} else {
+		money := big.NewInt(0).SetBytes(argValue.Bytes())
+		target, _ := strconv.ParseUint(utility.BigIntToStrWithoutDot(money), 10, 0)
 		height := interpreter.evm.BlockNumber
 		accountdb := interpreter.evm.accountDB
-		refundHeight, money, addr, refundErr := service.RefundManagerImpl.GetRefundStake(height.Uint64(), miner, pointerAddress.Bytes(), argValue.Uint64(), accountdb, "evm")
+		refundHeight, money, addr, refundErr := service.RefundManagerImpl.GetRefundStake(height.Uint64(), miner, pointerAddress.Bytes(), target, accountdb, "evm")
 
 		if nil != refundErr {
 			ret = false
