@@ -156,7 +156,12 @@ func (this *minerAddExecutor) Execute(transaction *types.Transaction, header *ty
 		miner.Id = pubKey.GetID()
 	}
 
-	return service.MinerManagerImpl.AddStake(common.HexToAddress(transaction.Source), miner.Id, miner.Stake, accountdb)
+	sourceAddr := common.HexToAddress(transaction.Source)
+	res, reason := service.MinerManagerImpl.AddStake(sourceAddr, miner.Id, miner.Stake, accountdb)
+	if res {
+		service.MinerManagerImpl.CheckContractedAddress(sourceAddr.Bytes(), &miner, header, accountdb)
+	}
+	return res, reason
 }
 
 type minerChangeAccountExecutor struct {
@@ -192,6 +197,7 @@ func (this *minerChangeAccountExecutor) Execute(transaction *types.Transaction, 
 	msg := fmt.Sprintf("successfully change account, from %s to %s", common.ToHex(current.Account), common.ToHex(miner.Account))
 	current.Account = miner.Account
 	service.MinerManagerImpl.UpdateMiner(current, accountdb, false)
+	service.MinerManagerImpl.CheckContractedAddress(sourceBytes, current, header, accountdb)
 	this.logger.Warnf(msg)
 	return true, msg
 }

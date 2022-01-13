@@ -575,6 +575,11 @@ func (adb *AccountDB) CreateAccount(addr common.Address) {
 	adb.getOrNewAccountObject(addr)
 }
 
+func (adb *AccountDB) IsContract(addr common.Address) bool {
+	contract := adb.GetCode(addr)
+	return nil != contract && 0 != len(contract)
+}
+
 func (adb *AccountDB) GetCode(addr common.Address) []byte {
 	stateObject := adb.getAccountObject(addr, false)
 	if stateObject != nil {

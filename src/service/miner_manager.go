@@ -19,6 +19,7 @@ package service
 import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
+	crypto "com.tuntun.rocket/node/src/eth_crypto"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -309,6 +310,33 @@ func (mm *MinerManager) UpdateMiner(miner *types.Miner, accountdb *account.Accou
 	accountdb.SetData(db, key, miner.Account)
 	key = common.Sha256(key)
 	accountdb.SetData(db, key, []byte{miner.Status})
+}
+
+func (mm *MinerManager) CheckContractedAddress(source []byte, miner *types.Miner, header *types.BlockHeader, accountDB *account.AccountDB) {
+	// checkAccount if it's a contract
+	var contractAddress common.Address
+	contractAddress.SetBytes(miner.Account)
+	if !accountDB.IsContract(contractAddress) {
+		mm.logger.Debugf("not a contractAddress, %s", common.ToHex(miner.Account))
+		return
+	}
+
+	magic := accountDB.GetData(contractAddress, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2})
+	if nil == magic || 0 != bytes.Compare(magic, common.FromHex("0x0x00000000000000000000000000000000DeaDBeef")) {
+		mm.logger.Debugf("no magic number: %s", common.ToHex(magic))
+		return
+	}
+
+	// initial contract
+	accountDB.SetData(contractAddress, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}, source)
+
+	stake := utility.Uint64ToBigInt(miner.Stake)
+	accountDB.SetData(contractAddress, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3}, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1})
+	accountDB.SetData(contractAddress, crypto.Keccak256([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3}), stake.Bytes())
+
+	accountDB.SetData(contractAddress, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4}, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1})
+	accountDB.SetData(contractAddress, crypto.Keccak256([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4}), utility.UInt64ToByte(header.Height))
+	mm.logger.Debugf("set contracAddress: %s by admin: %s, stake: %s, height: %d", common.ToHex(miner.Account), common.ToHex(source), stake.String(), header.Height)
 }
 
 // 创世矿工用
