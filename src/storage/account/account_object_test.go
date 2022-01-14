@@ -20,16 +20,11 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/storage/rlp"
 	"fmt"
-	"math/big"
 	"testing"
 )
 
 func Test_RLP_account(t *testing.T) {
 	account := Account{}
-	if account.Balance == nil {
-		account.Balance = new(big.Int)
-	}
-
 
 	data, err := rlp.EncodeToBytes(account)
 	if err != nil {

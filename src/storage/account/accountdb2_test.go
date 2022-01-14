@@ -20,6 +20,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"fmt"
+	"math/big"
 	"testing"
 )
 
@@ -67,13 +68,13 @@ func TestAccountDB_SetData(t *testing.T) {
 	defer db.Close()
 	triedb := NewDatabase(db)
 	state, _ := NewAccountDB(common.Hash{}, triedb)
-	state.SetData(common.BytesToAddress([]byte("1")), []byte("aa"), []byte{1,2,3})
+	state.SetData(common.BytesToAddress([]byte("1")), []byte("aa"), []byte{1, 2, 3})
 
 	state.SetData(common.BytesToAddress([]byte("1")), []byte("bb"), []byte{1})
 	snapshot := state.Snapshot()
 	state.SetData(common.BytesToAddress([]byte("1")), []byte("bb"), []byte{2})
 	state.RevertToSnapshot(snapshot)
-	state.SetData(common.BytesToAddress([]byte("2")), []byte("cc"), []byte{1,2})
+	state.SetData(common.BytesToAddress([]byte("2")), []byte("cc"), []byte{1, 2})
 	fmt.Println(state.IntermediateRoot(false).Hex())
 	root, _ := state.Commit(false)
 	fmt.Println(root.Hex())
@@ -95,4 +96,33 @@ func TestAccountDB_GetData(t *testing.T) {
 	fmt.Println(sta)
 	hash := state.IntermediateRoot(true)
 	fmt.Println(hash.Hex())
+}
+
+func TestAccountDB_Revert(t *testing.T) {
+	db, _ := db.NewLDBDatabase("account/test", 0, 0)
+	defer db.Close()
+
+	triedb := NewDatabase(db)
+	state, _ := NewAccountDB(common.Hash{}, triedb)
+
+	balance := state.GetBalance(common.BytesToAddress([]byte("1")))
+	fmt.Printf("init balance:%v\n", balance)
+
+	snapshot := state.Snapshot()
+	fmt.Printf("snapshot:%v\n", snapshot)
+
+	state.SetBalance(common.BytesToAddress([]byte("1")), big.NewInt(1000000))
+	balance = state.GetBalance(common.BytesToAddress([]byte("1")))
+	fmt.Printf("after set balance:%v\n", balance)
+
+	state.RevertToSnapshot(snapshot)
+	balance = state.GetBalance(common.BytesToAddress([]byte("1")))
+	fmt.Printf("after revert balance:%v\n", balance)
+
+	root, _ := state.Commit(true)
+	fmt.Println(root.Hex())
+	triedb.TrieDB().Commit(root, true)
+
+	balance = state.GetBalance(common.BytesToAddress([]byte("1")))
+	fmt.Printf("after commit balance:%v\n", balance)
 }

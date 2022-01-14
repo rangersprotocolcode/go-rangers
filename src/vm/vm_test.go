@@ -682,3 +682,72 @@ func TestVM10(t *testing.T) {
 	fmt.Printf("balance1:%v\n", new(big.Int).SetBytes(balance1).String())
 
 }
+
+func TestVM11(t *testing.T) {
+	mockInit()
+	common.DefaultLogger = log.GetLoggerByIndex(log.VMLogConfig, "0")
+	config := new(testConfig)
+	setDefaults(config)
+	defer log.Close()
+
+	var (
+		data1 = "608060405234801561001057600080fd5b50610350806100206000396000f3fe6080604052600436106100555760003560e01c80630d56562c1461005a578063190200a61461009e5780638fb4aabf146100ed578063da5a22311461012e578063f14d87dd1461016f578063f8a8fd6d146101be575b600080fd5b61009c6004803603602081101561007057600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff1690602001909291905050506101c8565b005b3480156100aa57600080fd5b506100d7600480360360208110156100c157600080fd5b810190808035906020019092919050505061020c565b6040518082815260200191505060405180910390f35b3480156100f957600080fd5b50610102610230565b604051808273ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b34801561013a57600080fd5b5061014361025a565b604051808273ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b34801561017b57600080fd5b506101a86004803603602081101561019257600080fd5b8101908080359060200190929190505050610280565b6040518082815260200191505060405180910390f35b6101c66102a4565b005b80600260006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555050565b6003818154811061021c57600080fd5b906000526020600020016000915090505481565b6000600260009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16905090565b600260009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1681565b6004818154811061029057600080fd5b906000526020600020016000915090505481565b6000610318576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260048152602001807f746573740000000000000000000000000000000000000000000000000000000081525060200191505060405180910390fd5b56fea2646970667358221220cbbb93bb8f601cea15addd9d39f0aa1442cad364929b66f158b70a353885076d64736f6c63430007050033"
+		data2 = "608060405234801561001057600080fd5b506040516104653803806104658339818101604052602081101561003357600080fd5b8101908080519060200190929190505050806000806101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555033600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff16021790555050610390806100d56000396000f3fe6080604052600436106100385760003560e01c8063662e4ee4146100b25780638da5cb5b146101035780638f32d59b146101445761003f565b3661003f57005b73ffffffffffffffffffffffffffffffffffffffff600054167fa619486e00000000000000000000000000000000000000000000000000000000600035141561008c578060005260206000f35b3660008037600080366000845af43d6000803e60008114156100ad573d6000fd5b3d6000f35b3480156100be57600080fd5b50610101600480360360208110156100d557600080fd5b81019080803573ffffffffffffffffffffffffffffffffffffffff169060200190929190505050610171565b005b34801561010f57600080fd5b506101186102d8565b604051808273ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390f35b34801561015057600080fd5b50610159610302565b60405180821515815260200191505060405180910390f35b610179610302565b61018257600080fd5b600073ffffffffffffffffffffffffffffffffffffffff168173ffffffffffffffffffffffffffffffffffffffff161415610225576040517f08c379a00000000000000000000000000000000000000000000000000000000081526004018080602001828103825260178152602001807f6368616e67656f776e65722077726f6e6720706172616d00000000000000000081525060200191505060405180910390fd5b80600160006101000a81548173ffffffffffffffffffffffffffffffffffffffff021916908373ffffffffffffffffffffffffffffffffffffffff1602179055507f6972f954346c124a4639edfe943e82b1c2d812116e4a30822027087767f745a2600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16604051808273ffffffffffffffffffffffffffffffffffffffff16815260200191505060405180910390a150565b6000600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff16905090565b6000600160009054906101000a900473ffffffffffffffffffffffffffffffffffffffff1673ffffffffffffffffffffffffffffffffffffffff163373ffffffffffffffffffffffffffffffffffffffff161490509056fea26469706673582212201f82a6b315279288cba86f6edc7e9692c1e079c5230b9c384eb8b4e6628b378f64736f6c63430007050033"
+	)
+
+	source := "0x826f575031a074fd914a869b5dc1c4eae620fef5"
+	config.CanTransfer = CanTransfer
+	config.Transfer = Transfer
+	config.GetHashFn = func(uint64) common.Hash { return common.Hash{} }
+
+	config.Origin = common.StringToAddress(source)
+	config.Coinbase = common.HexToAddress(source)
+	config.BlockNumber = new(big.Int).SetUint64(0)
+	config.Time = new(big.Int).SetUint64(uint64(time.Now().Unix()))
+
+	config.GasPrice = big.NewInt(1)
+	config.GasLimit = 30000000
+
+	config.State.SetBalance(common.StringToAddress(source), big.NewInt(100))
+
+	snapshot := config.State.Snapshot()
+
+	config.State.AddBalance(config.Origin, big.NewInt(1))
+	balance := config.State.GetBalance(config.Origin)
+	fmt.Printf("before revert,source balance:%v\n", balance)
+
+	config.State.RevertToSnapshot(snapshot)
+	balance = config.State.GetBalance(config.Origin)
+	fmt.Printf("after revert source balance:%v\n", balance)
+
+	_, contractAddress1, _, err := mockCreate(common.FromHex(data1), config)
+	if err != nil {
+		panic(" contract create error:" + err.Error())
+	}
+	// 0xe502cec3fafcb7aeb371c0f07e70a9d7511746f3
+	fmt.Printf("After execute  contract1 create!Contract address:%s\n", contractAddress1.GetHexString())
+
+	_, contractAddress2, _, err := mockCreate(common.FromHex(data2+"000000000000000000000000e502cec3fafcb7aeb371c0f07e70a9d7511746f3"), config)
+	if err != nil {
+		panic(" contract create error:" + err.Error())
+	}
+	// 0x1ca05267f79ad1e496956922f257c2ff6c8e1892
+	fmt.Printf("After execute  contract2 create!Contract address:%s\n", contractAddress2.GetHexString())
+
+	balance = config.State.GetBalance(common.StringToAddress(source))
+	fmt.Printf("source balance:%v\n", balance)
+	balance = config.State.GetBalance(contractAddress2)
+	fmt.Printf("target balance:%v\n", balance)
+
+	//call proxy
+	input := common.FromHex("0xf8a8fd6d")
+	config.Value = big.NewInt(10)
+	ret, _, err1 := mockCall(contractAddress2, input, config)
+	fmt.Printf("ret:%v\n", ret)
+	fmt.Printf("err:%v\n", err1)
+
+	balance = config.State.GetBalance(common.StringToAddress(source))
+	fmt.Printf("source balance:%v\n", balance)
+	balance = config.State.GetBalance(contractAddress2)
+	fmt.Printf("target balance:%v\n", balance)
+}
