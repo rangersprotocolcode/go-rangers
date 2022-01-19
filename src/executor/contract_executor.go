@@ -19,7 +19,7 @@ type contractExecutor struct {
 
 var (
 	gasPrice        = big.NewInt(1)
-	gasLimit uint64 = 2000000
+	gasLimit uint64 = 5000000
 )
 
 type executeResultData struct {
