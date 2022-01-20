@@ -282,6 +282,13 @@ func (mm *MinerManager) AddMiner(addr common.Address, miner *types.Miner, accoun
 		return false, msg
 	}
 
+	existed := mm.GetMinerIdByAccount(miner.Account, accountdb)
+	if nil != existed {
+		msg := fmt.Sprintf("miner account is existed. minerId: %s, account: %s", common.ToHex(existed), common.ToHex(miner.Account))
+		mm.logger.Errorf(msg)
+		return false, msg
+	}
+
 	accountdb.SubBalance(addr, stake)
 	mm.UpdateMiner(miner, accountdb, true)
 	mm.logger.Debugf("add miner: %v", miner)

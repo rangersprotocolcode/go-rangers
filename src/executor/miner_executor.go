@@ -187,10 +187,24 @@ func (this *minerChangeAccountExecutor) Execute(transaction *types.Transaction, 
 		return false, msg
 	}
 
+	if 0 == bytes.Compare(current.Account, miner.Account) {
+		msg := fmt.Sprintf("no need to change, %s Vs %s", common.ToHex(current.Account), common.ToHex(miner.Account))
+		this.logger.Errorf(msg)
+		return false, msg
+	}
+
 	// check authority
 	sourceBytes := common.FromHex(transaction.Source)
 	if bytes.Compare(current.Account, sourceBytes) != 0 {
 		msg := fmt.Sprintf("fail to auth, %s vs %s", common.ToHex(current.Account), transaction.Source)
+		this.logger.Errorf(msg)
+		return false, msg
+	}
+
+	// check target account
+	existed := service.MinerManagerImpl.GetMinerIdByAccount(miner.Account, accountdb)
+	if nil != existed {
+		msg := fmt.Sprintf("cannot use account %s occupied by minerId: %s", common.ToHex(miner.Account), common.ToHex(existed))
 		this.logger.Errorf(msg)
 		return false, msg
 	}
