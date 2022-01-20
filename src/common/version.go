@@ -17,7 +17,9 @@
 package common
 
 import (
+	"com.tuntun.rocket/node/src/middleware/log"
 	"math/big"
+	"sync/atomic"
 )
 
 const (
@@ -38,6 +40,7 @@ var (
 		PubHub:           "wss://mainnet.rangersprotocol.com/pubhub",
 		OriginalChainId:  "8888",
 		Proposal001Block: 894116,
+		Proposal002Block: 3353000,
 	}
 
 	robinChainConfig = ChainConfig{
@@ -45,6 +48,7 @@ var (
 		NetworkId:        "9527",
 		OriginalChainId:  "9527",
 		Proposal001Block: 0,
+		Proposal002Block: 2802000,
 	}
 
 	devNetChainConfig = ChainConfig{
@@ -54,7 +58,8 @@ var (
 		PHub:             "ws://gate.tuntunhz.com:8899",
 		PubHub:           "ws://gate.tuntunhz.com:8888",
 		OriginalChainId:  "9800",
-		Proposal001Block: 0,
+		Proposal001Block: 300,
+		Proposal002Block: 338000,
 	}
 
 	LocalChainConfig ChainConfig
@@ -70,6 +75,7 @@ type ChainConfig struct {
 
 	OriginalChainId  string
 	Proposal001Block uint64
+	Proposal002Block uint64
 }
 
 func InitChainConfig(env string) {
@@ -80,6 +86,12 @@ func InitChainConfig(env string) {
 	} else {
 		LocalChainConfig = robinChainConfig
 	}
+
+	localChainInfo = chainInfo{
+		currentBlockHeight: atomic.Value{},
+	}
+	localChainInfo.currentBlockHeight.Store(uint64(0))
+	blockHeightLogger = log.GetLoggerByIndex(log.BlockHeightConfig, "")
 }
 
 func GetChainId(height uint64) *big.Int {
@@ -111,6 +123,10 @@ func IsMainnet() bool {
 
 func IsProposal001(height uint64) bool {
 	return isForked(LocalChainConfig.Proposal001Block, height)
+}
+
+func IsProposal002() bool {
+	return isForked(LocalChainConfig.Proposal002Block, GetBlockHeight())
 }
 
 func isForked(base uint64, height uint64) bool {

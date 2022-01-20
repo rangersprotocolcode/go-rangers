@@ -110,8 +110,11 @@ func (self *AccountDB) AddFT(addr common.Address, ftName string, balance *big.In
 		key := self.GetERC20Key(addr, position)
 		remain := new(big.Int).SetBytes(account.GetData(self.db, key))
 		remain.Add(remain, utility.FormatDecimalForERC20(balance, int64(decimal)))
-		account.SetData(self.db, key, remain.Bytes())
-
+		if common.IsProposal002() {
+			account.SetData(self.db, key, remain.Bytes())
+		} else {
+			account.setData(key, remain.Bytes())
+		}
 		return true
 	}
 
@@ -146,7 +149,11 @@ func (self *AccountDB) SubFT(addr common.Address, ftName string, balance *big.In
 		}
 
 		remain.Sub(remain, value)
-		account.SetData(self.db, key, remain.Bytes())
+		if common.IsProposal002() {
+			account.SetData(self.db, key, remain.Bytes())
+		} else {
+			account.setData(key, remain.Bytes())
+		}
 		return utility.FormatDecimalForRocket(remain, int64(decimal)), true
 	}
 
