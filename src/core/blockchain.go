@@ -407,6 +407,9 @@ func (chain *blockChain) remove(block *types.Block) bool {
 
 	chain.transactionPool.UnMarkExecuted(block.Transactions, block.Header.EvictedTxs)
 	chain.eraseRemoveBlockMark()
+	if chain.latestBlock != nil {
+		common.SetBlockHeight(chain.latestBlock.Height)
+	}
 	return true
 }
 

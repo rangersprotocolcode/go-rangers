@@ -23,6 +23,10 @@ type TxRaw struct {
 }
 
 func GetTxRaws(start uint64) []TxRaw {
+	if MysqlDB == nil {
+		return nil
+	}
+
 	rows, err := MysqlDB.Query("SELECT id,userid,data FROM `tx_raw` where id>? limit 100", start)
 	defer func() {
 		if nil != rows {
