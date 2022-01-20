@@ -137,6 +137,7 @@ func initBlockChain() error {
 			os.Exit(0)
 		}
 		chain.buildCache(topBlocksCacheSize)
+		common.SetBlockHeight(chain.latestBlock.Height)
 	}
 	chain.init = true
 	blockChainImpl = chain
