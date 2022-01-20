@@ -308,8 +308,12 @@ func (mm *MinerManager) UpdateMiner(miner *types.Miner, accountdb *account.Accou
 	accountdb.SetData(db, key, utility.UInt64ToByte(miner.Stake))
 	key = common.Sha256(key)
 	accountdb.SetData(db, key, miner.Account)
-	key = common.Sha256(key)
-	accountdb.SetData(db, key, []byte{miner.Status})
+
+	if common.IsProposal002() {
+		key = common.Sha256(key)
+		accountdb.SetData(db, key, []byte{miner.Status})
+	}
+
 }
 
 func (mm *MinerManager) CheckContractedAddress(source []byte, miner *types.Miner, header *types.BlockHeader, accountDB *account.AccountDB) {

@@ -65,6 +65,9 @@ func (miner *Miner) GetMinerInfo() []byte {
 	result["publicKey"] = miner.PublicKey
 	result["vrfPublicKey"] = miner.VrfPublicKey
 	result["applyHeight"] = miner.ApplyHeight
+	if !common.IsProposal002() {
+		result["status"] = miner.Status
+	}
 	result["type"] = miner.Type
 
 	resultBytes, _ := json.Marshal(result)
