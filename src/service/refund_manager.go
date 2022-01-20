@@ -127,18 +127,25 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId, account []byte, m
 	// 验证小于最小质押量，则退出矿工
 	if miner.Type == common.MinerTypeProposer && left < common.ProposerStake ||
 		miner.Type == common.MinerTypeValidator && left < common.ValidatorStake {
-		MinerManagerImpl.RemoveMiner(minerId, miner.Type, accountdb, left)
+		MinerManagerImpl.RemoveMiner(minerId, account, miner.Type, accountdb, left)
 	} else {
 		// update miner
 		miner.Stake = left
 		MinerManagerImpl.UpdateMiner(miner, accountdb, false)
 	}
 
-	// 计算解锁高度
-	height := RewardCalculatorImpl.NextRewardHeight(now) + common.RefundBlocks
+	height := this.getRefundHeight(now, left, miner.Type, minerId, situation)
+
+	this.logger.Debugf("getRefund end, minerId: %s, height: %d, money: %d", common.ToHex(minerId), height, refund)
+	return height, utility.Uint64ToBigInt(refund), miner.Account, nil
+}
+
+// 计算解锁高度
+func (this *RefundManager) getRefundHeight(now, left uint64, minerType byte, minerId []byte, situation string) uint64 {
+	height := uint64(0)
 
 	// 验证节点，计算最多能加入的组数，来确定解锁块高
-	if miner.Type == common.MinerTypeValidator {
+	if minerType == common.MinerTypeValidator {
 		// 检查当前加入了多少组
 		var groups []*types.Group
 		if situation != "fork" {
@@ -159,13 +166,14 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId, account []byte, m
 			sort.Sort(dismissHeightList)
 			height = dismissHeightList[delta-1] + common.RefundBlocks
 		}
+	} else {
+		height = RewardCalculatorImpl.NextRewardHeight(now) + common.RefundBlocks
 	}
 
 	if height < 0 {
 		height = math.MaxUint64
 	}
-	this.logger.Debugf("getRefund end, minerId:%s, height: %d, money: %d", common.ToHex(minerId), height, refund)
-	return height, utility.Uint64ToBigInt(refund), miner.Account, nil
+	return height
 }
 
 type DismissHeightList []uint64

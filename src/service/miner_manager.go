@@ -356,9 +356,22 @@ func (mm *MinerManager) InsertMiner(miner *types.Miner, accountdb *account.Accou
 	}
 }
 
-func (mm *MinerManager) RemoveMiner(id []byte, ttype byte, accountdb *account.AccountDB, left uint64) {
+func (mm *MinerManager) RemoveMiner(id, account []byte, ttype byte, accountdb *account.AccountDB, left uint64) {
 	mm.logger.Debugf("Miner manager remove miner %d", ttype)
+
 	db := mm.getMinerDatabaseAddress(ttype)
+
+	// 普通账户，删除掉
+	if left == 0 && !accountdb.IsContract(common.BytesToAddress(account)) {
+		accountdb.SetData(db, id, emptyValue[:])
+		key := common.Sha256(id)
+		accountdb.SetData(db, key, emptyValue[:])
+		key = common.Sha256(key)
+		accountdb.SetData(db, key, emptyValue[:])
+		key = common.Sha256(key)
+		accountdb.SetData(db, key, emptyValue[:])
+		return
+	}
 
 	// stake
 	key := common.Sha256(id)
@@ -367,7 +380,6 @@ func (mm *MinerManager) RemoveMiner(id []byte, ttype byte, accountdb *account.Ac
 	// status
 	key = common.Sha256(common.Sha256(key))
 	accountdb.SetData(db, key, []byte{common.MinerStatusAbort})
-
 }
 
 func (mm *MinerManager) minerIterator(minerType byte, accountdb *account.AccountDB) *MinerIterator {
