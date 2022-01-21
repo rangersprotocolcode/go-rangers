@@ -2,9 +2,11 @@ package cli
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/core"
 	"com.tuntun.rocket/node/src/utility"
 	"io/ioutil"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -32,9 +34,13 @@ func (server *SelfServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	common.DefaultLogger.Debugf("receiving: %s, %s, %s from %s", r.Method, r.URL.Path, utility.BytesToStr(body), r.RemoteAddr)
 
 	switch strings.ToLower(r.URL.Path) {
-	case "/api/self":
+	case "/api/miner":
 		server.processSelf(w, r, body)
 		break
+	case "/api/height":
+		server.processHeight(w, r, body)
+		break
+
 	default:
 		common.DefaultLogger.Errorf("wrong: %s, %s", r.Method, r.URL.Path)
 	}
@@ -43,4 +49,9 @@ func (server *SelfServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (server *SelfServer) processSelf(w http.ResponseWriter, r *http.Request, body []byte) {
 	_, _, self := walletManager.newWalletByPrivateKey(server.privateKey)
 	w.Write(utility.StrToBytes(self))
+}
+
+func (server *SelfServer) processHeight(w http.ResponseWriter, r *http.Request, body []byte) {
+	height := core.GetBlockChain().Height()
+	w.Write(utility.StrToBytes(strconv.FormatUint(height,10)))
 }
