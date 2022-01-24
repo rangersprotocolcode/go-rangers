@@ -3,7 +3,10 @@ package cli
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/core"
+	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/utility"
+	"encoding/json"
 	"io/ioutil"
 	"net/http"
 	"strconv"
@@ -12,11 +15,21 @@ import (
 
 func NewSelfServer(privateKey string) *SelfServer {
 	server := SelfServer{privateKey: privateKey}
+
+	_, _, self := walletManager.newWalletByPrivateKey(server.privateKey)
+	server.minerInfo = self
+
+	var miner types.Miner
+	json.Unmarshal(utility.StrToBytes(self), &miner)
+	server.id = miner.Id
+
 	return &server
 }
 
 type SelfServer struct {
 	privateKey string
+	minerInfo  string
+	id         types.HexBytes
 }
 
 func (server *SelfServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -40,18 +53,28 @@ func (server *SelfServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case "/api/height":
 		server.processHeight(w, r, body)
 		break
-
+	case "/api/account":
+		server.processAccount(w, r, body)
+		break
 	default:
 		common.DefaultLogger.Errorf("wrong: %s, %s", r.Method, r.URL.Path)
 	}
 }
 
 func (server *SelfServer) processSelf(w http.ResponseWriter, r *http.Request, body []byte) {
-	_, _, self := walletManager.newWalletByPrivateKey(server.privateKey)
-	w.Write(utility.StrToBytes(self))
+	w.Write(utility.StrToBytes(server.minerInfo))
 }
 
 func (server *SelfServer) processHeight(w http.ResponseWriter, r *http.Request, body []byte) {
 	height := core.GetBlockChain().Height()
-	w.Write(utility.StrToBytes(strconv.FormatUint(height,10)))
+	w.Write(utility.StrToBytes(strconv.FormatUint(height, 10)))
+}
+
+func (server *SelfServer) processAccount(w http.ResponseWriter, r *http.Request, body []byte) {
+	miner := service.MinerManagerImpl.GetMiner(server.id, nil)
+	if nil == miner {
+		return
+	}
+
+	w.Write(utility.StrToBytes(common.ToHex(miner.Account)))
 }
