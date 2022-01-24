@@ -130,7 +130,7 @@ func (this *minerApplyExecutor) Execute(transaction *types.Transaction, header *
 
 	sourceAddr := common.HexToAddress(transaction.Source)
 	res, reason := service.MinerManagerImpl.AddMiner(sourceAddr, &miner, accountdb)
-	if res {
+	if res && common.IsProposal003() {
 		service.MinerManagerImpl.CheckContractedAddress(sourceAddr.Bytes(), &miner, header, accountdb)
 	}
 	return res, reason
@@ -212,7 +212,9 @@ func (this *minerChangeAccountExecutor) Execute(transaction *types.Transaction, 
 	msg := fmt.Sprintf("successfully change account, from %s to %s", common.ToHex(current.Account), common.ToHex(miner.Account))
 	current.Account = miner.Account
 	service.MinerManagerImpl.UpdateMiner(current, accountdb, false)
-	service.MinerManagerImpl.CheckContractedAddress(sourceBytes, current, header, accountdb)
+	if common.IsProposal003() {
+		service.MinerManagerImpl.CheckContractedAddress(sourceBytes, current, header, accountdb)
+	}
 	this.logger.Warnf(msg)
 	return true, msg
 }

@@ -316,7 +316,7 @@ func (mm *MinerManager) UpdateMiner(miner *types.Miner, accountdb *account.Accou
 	key = common.Sha256(key)
 	accountdb.SetData(db, key, miner.Account)
 
-	if common.IsProposal002() {
+	if common.IsProposal003() {
 		key = common.Sha256(key)
 		accountdb.SetData(db, key, []byte{miner.Status})
 	}
