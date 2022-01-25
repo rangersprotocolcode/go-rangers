@@ -63,6 +63,7 @@ var PrecompiledContracts = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18}):   &bls12381MapG2{},
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 1}): &secp256r1_verify{},
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 2}): &rsapkcs1_verify{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 3}): &dkim_verify{},
 }
 
 var PrecompiledAddresses []common.Address
@@ -997,4 +998,21 @@ func (c *rsapkcs1_verify) Run(input []byte) ([]byte, error) {
 		ret_bytes[31] = 1
 	}
 	return ret_bytes, nil
+}
+
+// dkim_verify
+type dkim_verify struct{}
+
+func (c *dkim_verify) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *dkim_verify) Run(input []byte) ([]byte, error) {
+	arg_msg := GetArgs(input, 0)
+	ret_bytes := make([]byte, 64)
+
+	// TODO
+
+	fmt.Printf("dkim_verify(%v) return %v\n", arg_msg, ret_bytes)
+	return ReturnBytes(ret_bytes), nil
 }
