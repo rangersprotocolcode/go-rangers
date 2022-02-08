@@ -90,6 +90,7 @@ func setDefaults(cfg *testConfig) {
 
 func mockInit() {
 	common.InitConf("1.ini")
+	common.InitChainConfig("mainnet")
 	InitVM()
 }
 
