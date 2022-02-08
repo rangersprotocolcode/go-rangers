@@ -144,4 +144,8 @@ func (executor *VMExecutor) after() {
 	service.RefundManagerImpl.Add(data, executor.accountdb)
 
 	service.RefundManagerImpl.CheckAndMove(height, executor.accountdb)
+	if !common.IsProposal004() {
+		service.RefundManagerImpl.CheckAndMove(0, executor.accountdb)
+	}
+
 }

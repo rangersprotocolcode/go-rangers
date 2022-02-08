@@ -42,6 +42,7 @@ var (
 		Proposal001Block: 894116,
 		Proposal002Block: 3353000,
 		Proposal003Block: 3830000,
+		Proposal004Block: 5200000,
 	}
 
 	robinChainConfig = ChainConfig{
@@ -52,6 +53,7 @@ var (
 		Proposal002Block: 2802000,
 		//check while update robin
 		Proposal003Block: 3380000,
+		Proposal004Block: 5200000,
 	}
 
 	devNetChainConfig = ChainConfig{
@@ -65,6 +67,7 @@ var (
 		Proposal002Block: 338000,
 		//check while update dev
 		Proposal003Block: 920000,
+		Proposal004Block: 5200000,
 	}
 
 	LocalChainConfig ChainConfig
@@ -82,6 +85,7 @@ type ChainConfig struct {
 	Proposal001Block uint64
 	Proposal002Block uint64
 	Proposal003Block uint64
+	Proposal004Block uint64
 }
 
 func InitChainConfig(env string) {
@@ -137,6 +141,9 @@ func IsProposal002() bool {
 
 func IsProposal003() bool {
 	return isForked(LocalChainConfig.Proposal003Block, GetBlockHeight())
+}
+func IsProposal004() bool {
+	return isForked(LocalChainConfig.Proposal004Block, GetBlockHeight())
 }
 
 func isForked(base uint64, height uint64) bool {
