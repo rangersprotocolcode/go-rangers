@@ -25,6 +25,7 @@ import (
 	"com.tuntun.rocket/node/src/utility"
 	"fmt"
 	"github.com/pkg/errors"
+	"math"
 	"math/big"
 	"sort"
 	"strconv"
@@ -163,7 +164,12 @@ func (this *RefundManager) getRefundHeight(now, left uint64, minerType byte, min
 				dismissHeightList = append(dismissHeightList, group.Header.DismissHeight)
 			}
 			sort.Sort(dismissHeightList)
-			height = dismissHeightList[delta-1] + common.RefundBlocks
+
+			base := dismissHeightList[delta-1]
+			if base != math.MaxUint64 {
+				height = base + common.RefundBlocks
+			}
+
 		}
 	} else {
 		height = RewardCalculatorImpl.NextRewardHeight(now) + common.RefundBlocks
