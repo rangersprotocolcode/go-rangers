@@ -962,14 +962,14 @@ func (c *secp256r1_verify) RequiredGas(input []byte) uint64 {
 }
 
 func (c *secp256r1_verify) Run(input []byte) ([]byte, error) {
-	arg_sig := GetArgs(input, 0)
-	arg_msg := GetArgs(input, 1)
+	arg_msg := getData(input, 0, 32)
+	arg_sig := GetArgs(input, 1)
 	arg_key := GetArgs(input, 2)
 	ret_bool := false
 
 	// TODO
 
-	fmt.Printf("secp256r1_verify(%v, %v, %v) return %v\n", arg_sig, arg_msg, arg_key, ret_bool)
+	fmt.Printf("secp256r1_verify( %v, %v, %v) return %v\n", arg_msg, arg_sig, arg_key, ret_bool)
 	ret_bytes := make([]byte, 32)
 	if ret_bool {
 		ret_bytes[31] = 1
@@ -985,14 +985,14 @@ func (c *rsapkcs1_verify) RequiredGas(input []byte) uint64 {
 }
 
 func (c *rsapkcs1_verify) Run(input []byte) ([]byte, error) {
-	arg_sig := GetArgs(input, 0)
-	arg_msg := GetArgs(input, 1)
+	arg_msg := getData(input, 0, 32)
+	arg_sig := GetArgs(input, 1)
 	arg_key := GetArgs(input, 2)
 	ret_bool := false
 
 	// TODO
 
-	fmt.Printf("rsapkcs1_verify(%v, %v, %v) return %v\n", arg_sig, arg_msg, arg_key, ret_bool)
+	fmt.Printf("rsapkcs1_verify(%v, %v, %v) return %v\n", arg_msg, arg_sig, arg_key, ret_bool)
 	ret_bytes := make([]byte, 32)
 	if ret_bool {
 		ret_bytes[31] = 1
