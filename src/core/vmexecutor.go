@@ -144,7 +144,7 @@ func (executor *VMExecutor) after() {
 	service.RefundManagerImpl.Add(data, executor.accountdb)
 
 	service.RefundManagerImpl.CheckAndMove(height, executor.accountdb)
-	if !common.IsProposal004() {
+	if common.LocalChainConfig.Proposal004Block == height {
 		service.RefundManagerImpl.CheckAndMove(0, executor.accountdb)
 	}
 
