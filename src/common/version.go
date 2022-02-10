@@ -42,7 +42,7 @@ var (
 		Proposal001Block: 894116,
 		Proposal002Block: 3353000,
 		Proposal003Block: 3830000,
-		Proposal004Block: 5200000,
+		Proposal004Block: 5310000,
 	}
 
 	robinChainConfig = ChainConfig{
@@ -53,7 +53,7 @@ var (
 		Proposal002Block: 2802000,
 		//check while update robin
 		Proposal003Block: 3380000,
-		Proposal004Block: 5200000,
+		Proposal004Block: 5310000,
 	}
 
 	devNetChainConfig = ChainConfig{
@@ -67,7 +67,7 @@ var (
 		Proposal002Block: 338000,
 		//check while update dev
 		Proposal003Block: 920000,
-		Proposal004Block: 5200000,
+		Proposal004Block: 5310000,
 	}
 
 	LocalChainConfig ChainConfig
