@@ -2,7 +2,6 @@ package dkim
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/utility"
 	"crypto"
 	"crypto/rsa"
@@ -367,9 +366,6 @@ func Verify(data []byte) []byte {
 	ret := make([]byte, 0)
 	ret = append(ret, hash[0:]...)
 	ret = append(ret, from[0:]...)
-
-	fmt.Println(common.ToHex(hash[:]))
-	fmt.Println(common.ToHex(from[:]))
 
 	return ret
 }
