@@ -17,21 +17,26 @@
 package vm
 
 import (
-	"crypto/sha256"
-	"encoding/binary"
-	"errors"
-	"fmt"
-	"math/big"
-
 	"com.tuntun.rocket/node/src/common"
 	crypto "com.tuntun.rocket/node/src/eth_crypto"
 	"com.tuntun.rocket/node/src/eth_crypto/blake2b"
 	"com.tuntun.rocket/node/src/eth_crypto/bls12381"
 	"com.tuntun.rocket/node/src/eth_crypto/bn256"
 	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rocket/node/src/utility/dkim"
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rsa"
+	"crypto/sha256"
+	"encoding/binary"
+	"errors"
+	"fmt"
+	"math/big"
 
 	//lint:ignore SA1019 Needed for precompile
 	"golang.org/x/crypto/ripemd160"
+
+	cryptoOrigin "crypto"
 )
 
 // PrecompiledContract is the basic interface for native Go contracts. The implementation
@@ -964,12 +969,25 @@ func (c *secp256r1_verify) RequiredGas(input []byte) uint64 {
 func (c *secp256r1_verify) Run(input []byte) ([]byte, error) {
 	arg_msg := getData(input, 0, 32)
 	arg_sig := GetArgs(input, 1)
-	arg_key := GetArgs(input, 2)
-	ret_bool := false
+	arg_public_key := GetArgs(input, 2)
 
 	// TODO
+	if 65 == len(arg_public_key) {
+		arg_public_key = arg_public_key[1:]
+	}
+	if 64 != len(arg_public_key) {
+		arg_public_key = arg_public_key[:64]
+	}
+	pubkey := &ecdsa.PublicKey{}
+	pubkey.Curve = elliptic.P256()
+	pubkey.X = new(big.Int)
+	pubkey.Y = new(big.Int)
+	pubkey.X.SetBytes(arg_public_key[:32])
+	pubkey.Y.SetBytes(arg_public_key[32:])
 
-	fmt.Printf("secp256r1_verify( %v, %v, %v) return %v\n", arg_msg, arg_sig, arg_key, ret_bool)
+	ret_bool := ecdsa.VerifyASN1(pubkey, arg_msg, arg_sig)
+	fmt.Printf("secp256r1_verify(%v, %v, %v) return %v\n", arg_sig, arg_msg, arg_public_key, ret_bool)
+
 	ret_bytes := make([]byte, 32)
 	if ret_bool {
 		ret_bytes[31] = 1
@@ -988,11 +1006,17 @@ func (c *rsapkcs1_verify) Run(input []byte) ([]byte, error) {
 	arg_msg := getData(input, 0, 32)
 	arg_sig := GetArgs(input, 1)
 	arg_key := GetArgs(input, 2)
-	ret_bool := false
 
-	// TODO
+	bigN := new(big.Int)
+	bigN.SetBytes(arg_key)
+	pub := rsa.PublicKey{
+		N: bigN,
+		E: 65537,
+	}
 
-	fmt.Printf("rsapkcs1_verify(%v, %v, %v) return %v\n", arg_msg, arg_sig, arg_key, ret_bool)
+	verifyErr := rsa.VerifyPKCS1v15(&pub, cryptoOrigin.SHA256, arg_msg, arg_sig)
+	ret_bool := verifyErr == nil
+
 	ret_bytes := make([]byte, 32)
 	if ret_bool {
 		ret_bytes[31] = 1
@@ -1009,10 +1033,10 @@ func (c *dkim_verify) RequiredGas(input []byte) uint64 {
 
 func (c *dkim_verify) Run(input []byte) ([]byte, error) {
 	arg_msg := GetArgs(input, 0)
-	ret_bytes := make([]byte, 64)
+	ret := dkim.Verify(arg_msg)
 
-	// TODO
-
-	fmt.Printf("dkim_verify(%v) return %v\n", arg_msg, ret_bytes)
-	return ReturnBytes(ret_bytes), nil
+	if nil == ret {
+		return nil, ErrExecutionReverted
+	}
+	return ReturnBytes(ret), nil
 }
