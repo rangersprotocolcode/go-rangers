@@ -17,13 +17,6 @@
 package vm
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	crypto "com.tuntun.rocket/node/src/eth_crypto"
-	"com.tuntun.rocket/node/src/eth_crypto/blake2b"
-	"com.tuntun.rocket/node/src/eth_crypto/bls12381"
-	"com.tuntun.rocket/node/src/eth_crypto/bn256"
-	"com.tuntun.rocket/node/src/utility"
-	"com.tuntun.rocket/node/src/utility/dkim"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rsa"
@@ -32,6 +25,14 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+
+	"com.tuntun.rocket/node/src/common"
+	crypto "com.tuntun.rocket/node/src/eth_crypto"
+	"com.tuntun.rocket/node/src/eth_crypto/blake2b"
+	"com.tuntun.rocket/node/src/eth_crypto/bls12381"
+	"com.tuntun.rocket/node/src/eth_crypto/bn256"
+	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rocket/node/src/utility/dkim"
 
 	//lint:ignore SA1019 Needed for precompile
 	"golang.org/x/crypto/ripemd160"
@@ -69,6 +70,13 @@ var PrecompiledContracts = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 1}): &secp256r1_verify{},
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 2}): &rsapkcs1_verify{},
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 3}): &dkim_verify{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 1}): &print{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 2}): &append_bool{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 3}): &append_address{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 4}): &append_uint256{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 5}): &append_bytes32{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 6}): &append_bytes{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 7}): &append_string{},
 }
 
 var PrecompiledAddresses []common.Address
@@ -937,16 +945,19 @@ func (c *bls12381MapG2) Run(input []byte) ([]byte, error) {
 	return g.EncodePoint(r), nil
 }
 
-func GetArgs(input []byte, index int) []byte {
+func GetArgs(input []byte, index int, size int) []byte {
 	offset := new(big.Int).SetBytes(input[:32*(index+1)]).Uint64()
-	if offset >= 32 {
-		len := new(big.Int).SetBytes(input[offset : offset+32])
+	if offset >= 32 && offset <= uint64(len(input)-32) && offset%32 == 0 && size == 0 {
+		length := new(big.Int).SetBytes(input[offset : offset+32])
 		offset += 32
-		v := getData(input, offset, len.Uint64())
-		return v
-	} else {
-		return nil
+		if (offset + length.Uint64()) <= uint64(len(input)) {
+			v := getData(input, offset, length.Uint64())
+			return v
+		}
+	} else if size == 32 {
+		return getData(input, uint64(32*index), 32)
 	}
+	return nil
 }
 
 func ReturnBytes(v []byte) []byte {
@@ -967,9 +978,9 @@ func (c *secp256r1_verify) RequiredGas(input []byte) uint64 {
 }
 
 func (c *secp256r1_verify) Run(input []byte) ([]byte, error) {
-	arg_msg := getData(input, 0, 32)
-	arg_sig := GetArgs(input, 1)
-	arg_public_key := GetArgs(input, 2)
+	arg_msg := GetArgs(input, 0, 32)
+	arg_sig := GetArgs(input, 1, 0)
+	arg_public_key := GetArgs(input, 2, 0)
 
 	// TODO
 	if 65 == len(arg_public_key) {
@@ -1003,9 +1014,9 @@ func (c *rsapkcs1_verify) RequiredGas(input []byte) uint64 {
 }
 
 func (c *rsapkcs1_verify) Run(input []byte) ([]byte, error) {
-	arg_msg := getData(input, 0, 32)
-	arg_sig := GetArgs(input, 1)
-	arg_key := GetArgs(input, 2)
+	arg_msg := GetArgs(input, 0, 32)
+	arg_sig := GetArgs(input, 1, 0)
+	arg_key := GetArgs(input, 2, 0)
 
 	bigN := new(big.Int)
 	bigN.SetBytes(arg_key)
@@ -1032,11 +1043,119 @@ func (c *dkim_verify) RequiredGas(input []byte) uint64 {
 }
 
 func (c *dkim_verify) Run(input []byte) ([]byte, error) {
-	arg_msg := GetArgs(input, 0)
+	arg_msg := GetArgs(input, 0, 0)
 	ret := dkim.Verify(arg_msg)
 
 	if nil == ret {
 		return nil, ErrExecutionReverted
 	}
 	return ReturnBytes(ret), nil
+}
+
+// print
+type print struct{}
+
+func (c *print) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *print) Run(input []byte) ([]byte, error) {
+	arg_str := GetArgs(input, 0, 0)
+	line := fmt.Sprintf("%s", arg_str)
+
+	// TODO 写日志文件
+	fmt.Printf("%v\n", line)
+
+	return nil, nil
+}
+
+// append_bool
+type append_bool struct{}
+
+func (c *append_bool) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *append_bool) Run(input []byte) ([]byte, error) {
+	arg_str := GetArgs(input, 0, 0)
+	arg_v := GetArgs(input, 1, 32)
+	b := "false"
+	if arg_v[31] == 1 {
+		b = "true"
+	}
+	ret := fmt.Sprintf("%s%s", arg_str, b)
+	return ReturnBytes([]byte(ret)), nil
+}
+
+// append_address
+type append_address struct{}
+
+func (c *append_address) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *append_address) Run(input []byte) ([]byte, error) {
+	arg_str := GetArgs(input, 0, 0)
+	arg_v := GetArgs(input, 1, 32)
+	hex := fmt.Sprintf("0x%x", arg_v[12:])
+	ret := fmt.Sprintf("%s%v", arg_str, hex)
+	return ReturnBytes([]byte(ret)), nil
+}
+
+// append_uint256
+type append_uint256 struct{}
+
+func (c *append_uint256) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *append_uint256) Run(input []byte) ([]byte, error) {
+	arg_str := GetArgs(input, 0, 0)
+	arg_v := GetArgs(input, 1, 32)
+	bigN := new(big.Int)
+	bigN.SetBytes(arg_v)
+	ret := fmt.Sprintf("%s%v", arg_str, bigN)
+	return ReturnBytes([]byte(ret)), nil
+}
+
+// append_bytes32
+type append_bytes32 struct{}
+
+func (c *append_bytes32) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *append_bytes32) Run(input []byte) ([]byte, error) {
+	arg_str := GetArgs(input, 0, 0)
+	arg_v := GetArgs(input, 1, 32)
+	ret := fmt.Sprintf("%s%v", arg_str, arg_v)
+	return ReturnBytes([]byte(ret)), nil
+}
+
+// append_bytes
+type append_bytes struct{}
+
+func (c *append_bytes) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *append_bytes) Run(input []byte) ([]byte, error) {
+	arg_str := GetArgs(input, 0, 0)
+	arg_v := GetArgs(input, 1, 0)
+	ret := fmt.Sprintf("%s%v", arg_str, arg_v)
+	return ReturnBytes([]byte(ret)), nil
+}
+
+// append_string
+type append_string struct{}
+
+func (c *append_string) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *append_string) Run(input []byte) ([]byte, error) {
+	arg_str := GetArgs(input, 0, 0)
+	arg_v := GetArgs(input, 1, 0)
+	ret := fmt.Sprintf("%s%s", arg_str, arg_v)
+	return ReturnBytes([]byte(ret)), nil
 }
