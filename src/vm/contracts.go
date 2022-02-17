@@ -1060,12 +1060,6 @@ func (c *print) RequiredGas(input []byte) uint64 {
 }
 
 func (c *print) Run(input []byte) ([]byte, error) {
-	arg_str := GetArgs(input, 0, 0)
-	line := fmt.Sprintf("%s", arg_str)
-
-	// TODO 写日志文件
-	fmt.Printf("%v\n", line)
-
 	return nil, nil
 }
 
