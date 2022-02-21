@@ -83,7 +83,7 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor.writeChan = make(chan notify.ClientTransactionMessage, maxWriteSize)
 	gameExecutor.cleaner = time.NewTicker(time.Minute * 10)
 
-	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
+	//notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.write)
 
 	go gameExecutor.loop()
