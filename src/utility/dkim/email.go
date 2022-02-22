@@ -114,6 +114,10 @@ func FromString(value string) (*Email, error) {
 		}
 	}
 
+	if nil == header {
+		return nil, ErrDkimProtocol
+	}
+
 	return &Email{
 		allHeaders,
 		val[1],
