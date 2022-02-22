@@ -272,6 +272,10 @@ func (email *Email) GetSigHash() ([]byte, error) {
 }
 
 func (email *Email) GetSigPubKey() (*rsa.PublicKey, error) {
+	if email.DkimHeader == nil {
+		return nil, ErrDkimProtocol
+	}
+
 	index := email.DkimHeader.Selector + "@" + email.DkimHeader.Sdid
 	n, ok := sign_pubkey_map[index]
 	if !ok {
