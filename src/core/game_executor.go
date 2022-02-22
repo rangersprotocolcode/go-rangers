@@ -83,7 +83,7 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor.writeChan = make(chan notify.ClientTransactionMessage, maxWriteSize)
 	gameExecutor.cleaner = time.NewTicker(time.Minute * 10)
 
-	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
+	//notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.write)
 
 	go gameExecutor.loop()
@@ -150,9 +150,9 @@ func (executor *GameExecutor) read(msg notify.Message) {
 		break
 		//查询收据
 	case types.TransactionTypeGetReceipt:
-		param := make(map[string]string, 0)
-		json.Unmarshal([]byte(txRaw.Data), &param)
-		result = service.GetReceipt(common.HexToHash(param["txHash"]))
+		//param := make(map[string]string, 0)
+		//json.Unmarshal([]byte(txRaw.Data), &param)
+		//result = service.GetReceipt(common.HexToHash(param["txHash"]))
 		break
 		//查询交易数量
 	case types.TransactionTypeGetTxCount:
@@ -186,8 +186,9 @@ func (executor *GameExecutor) read(msg notify.Message) {
 	responseId := txRaw.SocketRequestId
 
 	//reply to the client
-	go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
-
+	if txRaw.Type != types.TransactionTypeGetReceipt {
+		go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
+	}
 	return
 }
 
