@@ -85,6 +85,12 @@ func InitSyncProcessor(privateKey common.PrivateKey, id string) {
 	notify.BUS.Subscribe(notify.GroupReq, SyncProcessor.syncGroupReqHandler)
 	notify.BUS.Subscribe(notify.GroupResponse, SyncProcessor.groupResponseMsgHandler)
 	go SyncProcessor.loop()
+	go func(p *syncProcessor) {
+		for {
+			p.mockBlockMsg()
+			time.Sleep(time.Millisecond * 100)
+		}
+	}(SyncProcessor)
 }
 
 func (p *syncProcessor) GetCandidateInfo() CandidateInfo {
