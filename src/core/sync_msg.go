@@ -7,7 +7,6 @@ import (
 	middleware_pb "com.tuntun.rocket/node/src/middleware/pb"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
-	"fmt"
 	"github.com/golang/protobuf/proto"
 	"strconv"
 )
@@ -632,28 +631,4 @@ func signDataToPb(s common.SignData) *middleware_pb.SignData {
 func pbToSignData(s middleware_pb.SignData) common.SignData {
 	sign := common.SignData{DataHash: common.BytesToHash(s.DataHash), DataSign: *common.BytesToSign(s.DataSign), Id: string(s.SignMember)}
 	return sign
-}
-
-func (p *syncProcessor) mockBlockMsg() {
-	id := "0xf368e156770a64f399e3cae2622e599863a0136e97aa71aa07f98f5ced9d4030"
-	height := p.blockChain.Height()
-	var block *types.Block
-	if height%3 != 0 {
-		block = p.blockChain.QueryBlock(p.blockChain.Height())
-	}
-	isLastBlock := false
-	response := blockMsgResponse{Block: block, IsLastBlock: isLastBlock}
-	response.SignInfo = common.NewSignData(p.privateKey, p.id, &response)
-	body, e := marshalBlockMsgResponse(response)
-	if e != nil {
-		fmt.Printf("Marshal block msg response error:%s\n", e.Error())
-		return
-	}
-	message := network.Message{Code: network.BlockResponseMsg, Body: body}
-	network.GetNetInstance().SendToStranger(common.FromHex(id), message)
-	if block != nil {
-		fmt.Printf("Send block %d to %s,last:%v\n", block.Header.Height, id, isLastBlock)
-	} else {
-		fmt.Printf("Send nil to %s,last:%v\n", isLastBlock)
-	}
 }
