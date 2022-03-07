@@ -28,7 +28,7 @@ func genRobinGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase,
 	block.Header = &types.BlockHeader{
 		Height:       0,
 		ExtraData:    common.Sha256([]byte("Rangers Protocol")),
-		CurTime:      time.Date(2022, 2, 18, 0, 0, 0, 0, time.UTC),
+		CurTime:      time.Date(2021, 12, 15, 0, 0, 0, 0, time.UTC),
 		ProveValue:   pv,
 		TotalQN:      0,
 		Transactions: make([]common.Hashes, 0), //important!!
@@ -116,5 +116,5 @@ func addRobinTestAsset(stateDB *account.AccountDB) {
 	//used for faucet
 	stateDB.SetBalance(common.HexToAddress("0x8744c51069589296fcb7faa2f891b1f513a0310c"), valueBillion)
 
-	stateDB.SetBalance(common.HexToAddress("0x25716527aad0ae1dd24bd247af9232dae78595b0"), valueBillion)
+	//stateDB.SetBalance(common.HexToAddress("0x25716527aad0ae1dd24bd247af9232dae78595b0"), valueBillion)
 }
