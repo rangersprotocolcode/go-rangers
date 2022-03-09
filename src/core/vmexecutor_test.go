@@ -22,16 +22,19 @@ import (
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
+	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"encoding/json"
 	"fmt"
 	"math/big"
+	"math/rand"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 func TestVMExecutor_Execute(t *testing.T) {
@@ -196,4 +199,144 @@ func setup(id string) {
 func teardown(id string) {
 	clean()
 	fmt.Printf("After %s test\n", id)
+}
+
+func TestNilPoint(t *testing.T) {
+	id := "0xe059d17139e2915d270ef8f3eee2f3e1438546ba2f06eb674dda0967846b6951"
+
+	common.InitConf("log")
+	notify.BUS = notify.NewBus()
+	privateKey := common.HexStringToSecKey("0x8c986d44fac408757d77a9ab065ac0ba50f8163c4e4c035dc3a3da79e07bc364")
+	syncLogger = log.GetLoggerByIndex(log.SyncLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	InitSyncProcessor(*privateKey, id)
+
+	go func() {
+		for {
+			mockBlockMsg()
+			time.Sleep(time.Millisecond * 100)
+		}
+	}()
+
+	//go func() {
+	//	for i:=0;i<100;i++{
+	//		go mockRcv()
+	//	}
+	//}()
+
+	//go mockSetNil()
+
+	go func() {
+		time.Sleep(time.Second * 3)
+		SyncProcessor = nil
+		notify.BUS.Subscribe(notify.BlockResponse, SyncProcessor.blockResponseMsgHandler)
+
+		//notify.BUS.Subscribe(notify.BlockResponse, nil)
+		fmt.Printf("after set\n")
+	}()
+
+	for {
+
+	}
+}
+
+func mockRcv() {
+	for {
+		mockBlockMsg()
+		time.Sleep(time.Millisecond * 100)
+	}
+}
+
+func mockSetNil() {
+	for {
+		time.Sleep(time.Second * 3)
+		SyncProcessor = nil
+		//notify.BUS.Subscribe(notify.BlockResponse, SyncProcessor.blockResponseMsgHandler)
+
+		fmt.Printf("after set\n")
+	}
+}
+
+func mockBlockMsg() {
+	privateKey := common.HexStringToSecKey("0x8c986d44fac408757d77a9ab065ac0ba50f8163c4e4c035dc3a3da79e07bc364")
+	id := "0xe059d17139e2915d270ef8f3eee2f3e1438546ba2f06eb674dda0967846b6951"
+
+	var block *types.Block
+	isLastBlock := false
+	response := blockMsgResponse{Block: block, IsLastBlock: isLastBlock}
+	response.SignInfo = common.NewSignData(*privateKey, id, &response)
+	body, e := marshalBlockMsgResponse(response)
+	if e != nil {
+		fmt.Printf("Marshal block msg response error:%s\n", e.Error())
+		return
+	}
+	msg := notify.BlockResponseMessage{BlockResponseByte: body, Peer: id}
+	notify.BUS.Publish(notify.BlockResponse, &msg)
+}
+
+var sampleId = "0x7f0746723b141b79b802eb48eb556178fd622201"
+
+func TestNil(t *testing.T) {
+	common.InitConf("1.ini")
+	syncLogger = log.GetLoggerByIndex(log.SyncLogConfig, common.GlobalConf.GetString("instance", "index", "1"))
+	sk := common.HexStringToSecKey("0x8c986d44fac408757d77a9ab065ac0ba50f8163c4e4c035dc3a3da79e07bc364")
+	notify.BUS = notify.NewBus()
+	initPeerManager(syncLogger)
+	InitSyncProcessor(*sk, sampleId)
+
+	go func() {
+		for i := 0; i < 100; i++ {
+			go set()
+		}
+	}()
+
+	go func() {
+		for i := 0; i < 100; i++ {
+			//go read()
+			go publishBus()
+			syncLogger.Debugf("[BlockResponseMessage]Unexpected candidate! Expect from:%s, actual:%s,!", SyncProcessor.candidateInfo.Id, "111")
+			syncLogger.Debugf("111")
+			time.Sleep(time.Second * 1)
+		}
+	}()
+	for {
+
+	}
+}
+
+func publishBus() {
+	for {
+		msg := notify.BlockResponseMessage{BlockResponseByte: nil, Peer: "1111"}
+		notify.BUS.Publish(notify.BlockResponse, &msg)
+	}
+}
+
+func set() {
+	for {
+		id := randStringRunes(32)
+		SyncProcessor.candidateInfo = CandidateInfo{Id: id}
+	}
+}
+
+func read() {
+	for {
+		if sampleId != SyncProcessor.candidateInfo.Id {
+			a := SyncProcessor.candidateInfo.Id
+			fmt.Printf("%s\n", a)
+			//fmt.Printf("%s\n", SyncProcessor.candidateInfo.Id)
+		}
+	}
+}
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
+
+var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+
+func randStringRunes(n int) string {
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
+	}
+	return string(b)
 }
