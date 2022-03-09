@@ -238,6 +238,9 @@ func (p *syncProcessor) syncBlock(id string, commonAncestor types.BlockHeader) {
 }
 
 func (p *syncProcessor) syncBlockReqHandler(msg notify.Message) {
+	if p == nil {
+		common.DefaultLogger.Warnf("p is nil![syncBlockReqHandler]")
+	}
 	m, ok := msg.(*notify.BlockReqMessage)
 	if !ok {
 		syncHandleLogger.Errorf("BlockReqMessage assert not ok!")
@@ -279,6 +282,9 @@ func (p *syncProcessor) syncBlockReqHandler(msg notify.Message) {
 }
 
 func (p *syncProcessor) blockResponseMsgHandler(msg notify.Message) {
+	if p == nil {
+		common.DefaultLogger.Warnf("p is nil![blockResponseMsgHandler]")
+	}
 	m, ok := msg.(*notify.BlockResponseMessage)
 	if !ok {
 		p.logger.Errorf("BlockResponseMessage assert not ok!")
@@ -340,6 +346,9 @@ func (p *syncProcessor) syncGroup(id string, commonAncestor *types.Group) {
 }
 
 func (p *syncProcessor) syncGroupReqHandler(msg notify.Message) {
+	if p == nil {
+		common.DefaultLogger.Warnf("p is nil![syncGroupReqHandler]")
+	}
 	m, ok := msg.(*notify.GroupReqMessage)
 	if !ok {
 		syncHandleLogger.Errorf("GroupReqMessage assert not ok!")
@@ -382,6 +391,9 @@ func (p *syncProcessor) syncGroupReqHandler(msg notify.Message) {
 }
 
 func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
+	if p == nil {
+		common.DefaultLogger.Warnf("p is nil![groupResponseMsgHandler]")
+	}
 	m, ok := msg.(*notify.GroupResponseMessage)
 	if !ok {
 		p.logger.Errorf("GroupResponseMessage assert not ok!")
