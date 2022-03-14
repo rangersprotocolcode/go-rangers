@@ -18,12 +18,13 @@ package vm
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/utility"
 	"fmt"
 	"math"
 	"math/big"
 	"strconv"
+
+	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rocket/node/src/utility"
 
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -1027,6 +1028,15 @@ func pushStringArray(callContext *callCtx, value []string) {
 		appendBytes(callContext, []byte(s))
 	}
 	callContext.stack.push(uint256.NewInt().SetUint64(offset))
+}
+
+func opPrint(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	thisAddress := callContext.contract.Address()
+	argValue := popString(callContext)
+
+	fmt.Printf("%s %s\n", thisAddress, argValue)
+
+	return nil, nil
 }
 
 func opStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {

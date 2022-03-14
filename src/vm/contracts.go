@@ -70,7 +70,6 @@ var PrecompiledContracts = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 1}): &secp256r1_verify{},
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 2}): &rsapkcs1_verify{},
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 3}): &dkim_verify{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 1}): &print{},
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 2}): &append_bool{},
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 3}): &append_address{},
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 4}): &append_uint256{},
@@ -1050,17 +1049,6 @@ func (c *dkim_verify) Run(input []byte) ([]byte, error) {
 		return nil, ErrExecutionReverted
 	}
 	return ReturnBytes(ret), nil
-}
-
-// print
-type print struct{}
-
-func (c *print) RequiredGas(input []byte) uint64 {
-	return 0
-}
-
-func (c *print) Run(input []byte) ([]byte, error) {
-	return nil, nil
 }
 
 // append_bool
