@@ -286,49 +286,51 @@ func (p *syncProcessor) blockResponseMsgHandler(msg notify.Message) {
 	if p == nil {
 		common.DefaultLogger.Warnf("p is nil![blockResponseMsgHandler]")
 	}
-	m, ok := msg.(*notify.BlockResponseMessage)
+	_, ok := msg.(*notify.BlockResponseMessage)
 	if !ok {
 		p.logger.Errorf("BlockResponseMessage assert not ok!")
 		return
 	}
-	blockResponse, err := unMarshalBlockMsgResponse(m.BlockResponseByte)
-	if err != nil {
-		p.logger.Errorf("Discard message! BlockResponseMessage unmarshal error:%s", err.Error())
+	//blockResponse, err := unMarshalBlockMsgResponse(m.BlockResponseByte)
+	//if err != nil {
+	//	p.logger.Errorf("Discard message! BlockResponseMessage unmarshal error:%s", err.Error())
+	//	return
+	//}
+	//err = blockResponse.SignInfo.ValidateSign(blockResponse)
+	//if err != nil {
+	//	p.logger.Errorf("Sign verify error! BlockResponseMessage:%s", err.Error())
+	//	return
+	//}
+	from := "fgsdgsfgs"
+	//from := blockResponse.SignInfo.Id
+	//candidateId := p.GetCandidateInfo().Id
+	if from != p.candidateInfo.Id {
+		p.logger.Debugf("[BlockResponseMessage]Unexpected candidate! Expect from:%s, actual:%s,!", p.candidateInfo.Id, from)
+		//fmt.Printf("[BlockResponseMessage]Unexpected candidate! Expect from:%s, actual:%s,!\n",  p.candidateInfo.Id, from)
 		return
 	}
-	err = blockResponse.SignInfo.ValidateSign(blockResponse)
-	if err != nil {
-		p.logger.Errorf("Sign verify error! BlockResponseMessage:%s", err.Error())
-		return
-	}
-	from := blockResponse.SignInfo.Id
-	candidateId := p.GetCandidateInfo().Id
-	if from != candidateId {
-		p.logger.Debugf("[BlockResponseMessage]Unexpected candidate! Expect from:%s, actual:%s,!", candidateId, from)
-		return
-	}
-	block := blockResponse.Block
-	if block != nil {
-		p.logger.Debugf("Rcv synced block.Hash:%s,%d-%d.Pre:%s,is last:%v", block.Header.Hash.String(), block.Header.Height, block.Header.TotalQN, block.Header.PreHash.String(), blockResponse.IsLastBlock)
-	} else {
-		p.logger.Debugf("Rcv nil block.is last:%v", blockResponse.IsLastBlock)
-		blockResponse.IsLastBlock = true
-	}
-	p.blockReqTimer.Stop()
-
-	p.lock.Lock("rcv block")
-	defer p.lock.Unlock("rcv block")
-	if p.blockFork == nil {
-		return
-	}
-	needMore := p.blockFork.rcv(block, blockResponse.IsLastBlock)
-	if needMore {
-		go p.syncBlock(from, *block.Header)
-		return
-	}
-	if p.readyOnFork() {
-		go p.triggerOnFork()
-	}
+	//block := blockResponse.Block
+	//if block != nil {
+	//	p.logger.Debugf("Rcv synced block.Hash:%s,%d-%d.Pre:%s,is last:%v", block.Header.Hash.String(), block.Header.Height, block.Header.TotalQN, block.Header.PreHash.String(), blockResponse.IsLastBlock)
+	//} else {
+	//	p.logger.Debugf("Rcv nil block.is last:%v", blockResponse.IsLastBlock)
+	//	blockResponse.IsLastBlock = true
+	//}
+	//p.blockReqTimer.Stop()
+	//
+	//p.lock.Lock("rcv block")
+	//defer p.lock.Unlock("rcv block")
+	//if p.blockFork == nil {
+	//	return
+	//}
+	//needMore := p.blockFork.rcv(block, blockResponse.IsLastBlock)
+	//if needMore {
+	//	go p.syncBlock(from, *block.Header)
+	//	return
+	//}
+	//if p.readyOnFork() {
+	//	go p.triggerOnFork()
+	//}
 }
 
 func (p *syncProcessor) syncGroup(id string, commonAncestor *types.Group) {

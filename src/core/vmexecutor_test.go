@@ -290,16 +290,14 @@ func TestNil(t *testing.T) {
 	}()
 
 	go func() {
-		for i := 0; i < 100; i++ {
-			//go read()
+		for i := 0; i < 10; i++ {
 			go publishBus()
-			syncLogger.Debugf("[BlockResponseMessage]Unexpected candidate! Expect from:%s, actual:%s,!", SyncProcessor.candidateInfo.Id, "111")
-			syncLogger.Debugf("111")
-			time.Sleep(time.Second * 1)
+			//syncLogger.Debugf("[BlockResponseMessage]Unexpected candidate! Expect from:%s, actual:%s,!", SyncProcessor.candidateInfo.Id, "111")
+			//syncLogger.Debugf("111")
+			//			time.Sleep(time.Second * 1)
 		}
 	}()
 	for {
-
 	}
 }
 
@@ -307,6 +305,8 @@ func publishBus() {
 	for {
 		msg := notify.BlockResponseMessage{BlockResponseByte: nil, Peer: "1111"}
 		notify.BUS.Publish(notify.BlockResponse, &msg)
+		randInterval := rand.Intn(1000)
+		time.Sleep(time.Millisecond * time.Duration(randInterval))
 	}
 }
 
@@ -314,18 +314,21 @@ func set() {
 	for {
 		id := randStringRunes(32)
 		SyncProcessor.candidateInfo = CandidateInfo{Id: id}
+
+		randInterval := rand.Intn(1000)
+		time.Sleep(time.Millisecond * time.Duration(randInterval))
 	}
 }
 
-func read() {
-	for {
-		if sampleId != SyncProcessor.candidateInfo.Id {
-			a := SyncProcessor.candidateInfo.Id
-			fmt.Printf("%s\n", a)
-			//fmt.Printf("%s\n", SyncProcessor.candidateInfo.Id)
-		}
-	}
-}
+//func read() {
+//	for {
+//		if sampleId != SyncProcessor.candidateInfo.Id {
+//			a := SyncProcessor.candidateInfo.Id
+//			fmt.Printf("%s\n", a)
+//			//fmt.Printf("%s\n", SyncProcessor.candidateInfo.Id)
+//		}
+//	}
+//}
 
 func init() {
 	rand.Seed(time.Now().UnixNano())

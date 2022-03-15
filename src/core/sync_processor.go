@@ -102,8 +102,8 @@ func StartSync() {
 func (p *syncProcessor) loop() {
 	for {
 		select {
-		case <-p.broadcastTimer.C:
-			go p.broadcastChainInfo(p.blockChain.TopBlock())
+		//case <-p.broadcastTimer.C:
+		//	go p.broadcastChainInfo(p.blockChain.TopBlock())
 		case <-p.syncTimer.C:
 			go p.trySync()
 		case <-p.blockReqTimer.C:
