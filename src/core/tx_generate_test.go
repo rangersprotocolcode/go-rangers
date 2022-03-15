@@ -291,3 +291,33 @@ type QueryLogData struct {
 	Address []string   `json:"address,omitempty"`
 	Topics  [][]string `json:"topics,omitempty"`
 }
+
+func TestCallVMTx(t *testing.T) {
+	tx := types.Transaction{Type: types.TransactionTypeCallVM, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := callVMData{Height: "", Hash: ""}
+	data.From = "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
+	data.To = "0xa0102679651acaf63a4372314bcF69B1c898D11B"
+	data.Data = "0x0a8e8e01"
+	data.Gas = 1000000
+
+	dataBytes, err := json.Marshal(&data)
+	if err != nil {
+		panic(err)
+	}
+	tx.Data = string(dataBytes)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+type callVMData struct {
+	Height string `json:"height,omitempty"`
+	Hash   string `json:"hash,omitempty"`
+
+	From     string `json:"from"`
+	To       string `json:"to"`
+	Gas      uint64 `json:"gas"`
+	GasPrice string `json:"gasPrice"`
+	Value    string `json:"value"`
+	Data     string `json:"data"`
+}
