@@ -193,14 +193,14 @@ func (p *syncProcessor) trySync() {
 		return
 	}
 	if p.syncing {
-		p.logger.Debugf("Syncing to %s,do not sync!", p.candidateInfo.Id)
+		candidateId := p.GetCandidateInfo().Id
+		p.logger.Debugf("Syncing to %s,do not sync!", candidateId)
 		return
 	}
 	p.lock.Lock("trySync")
 	defer p.lock.Unlock("trySync")
 	if p.syncing {
-		candidateId := p.GetCandidateInfo().Id
-		p.logger.Debugf("Syncing to %s,do not sync!", candidateId)
+		p.logger.Debugf("Syncing to %s,do not sync!", p.candidateInfo.Id)
 		return
 	}
 	p.logger.Debugf("Try sync!")
