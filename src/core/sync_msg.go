@@ -55,6 +55,7 @@ type groupMsgResponse struct {
 }
 
 func (p *syncProcessor) requestBlockChainPiece(targetNode string, reqHeight uint64) {
+
 	req := blockChainPieceReq{Height: reqHeight}
 	req.SignInfo = common.NewSignData(p.privateKey, p.id, &req)
 
