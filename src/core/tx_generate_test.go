@@ -298,9 +298,9 @@ func TestCallVMTx(t *testing.T) {
 
 	data := callVMData{Height: "", Hash: ""}
 	data.From = "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
-	data.To = "0xa0102679651acaf63a4372314bcF69B1c898D11B"
-	data.Data = "0x0a8e8e01"
-	data.Gas = 1000000
+	data.To = "0x65c058CD5C776A4B6ea1319690214284bD38FFb1"
+	data.Data = "0xa408b1f50000000000000000000000000c27788469bd9ebec3001d6febc7b91924112233"
+	data.Gas = 222000000
 
 	dataBytes, err := json.Marshal(&data)
 	if err != nil {
