@@ -25,7 +25,7 @@ var (
 type executeResultData struct {
 	ContractAddress string `json:"contractAddress,omitempty"`
 
-	Result string `json:"result,omitempty"`
+	ExecuteResult string `json:"result,omitempty"`
 
 	Logs []*types.Log `json:"logs,omitempty"`
 }
