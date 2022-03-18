@@ -18,6 +18,7 @@ package common
 
 import (
 	"bytes"
+	"com.tuntun.rocket/node/src/common/secp256k1"
 	"fmt"
 	"testing"
 
@@ -223,4 +224,16 @@ func TestKeyByHex(t *testing.T) {
 	fmt.Printf("Public key:%s\n", publicKey.GetHexString())
 	fmt.Printf("Address:%s\n", address.String())
 	fmt.Printf("Id:%s\n", ToHex(id[:]))
+}
+
+func TestRecoverPubkeyFromMsg(t *testing.T) {
+	sig := FromHex("0x68fb6c58fd7cfbce99457414d774eb572bd1f13dc725bb2372de42bcf356d687793f2784c5be7181b4741befa817d8657074c1811886d7d0ce1d1cf3314e7ef61b")
+	msg := FromHex("0x4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01b3f365018")
+	pubkeyBytes, err := secp256k1.RecoverPubkey(msg, sig)
+	if err != nil {
+		t.Errorf("recover error: %s", err)
+	}
+	pubkey := BytesToPublicKey(pubkeyBytes)
+	fmt.Println(pubkey.GetHexString())
+	fmt.Println(pubkey.GetAddress().String())
 }

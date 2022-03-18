@@ -7,7 +7,6 @@ import (
 	middleware_pb "com.tuntun.rocket/node/src/middleware/pb"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
-	"fmt"
 	"github.com/golang/protobuf/proto"
 	"strconv"
 )
@@ -56,6 +55,7 @@ type groupMsgResponse struct {
 }
 
 func (p *syncProcessor) requestBlockChainPiece(targetNode string, reqHeight uint64) {
+
 	req := blockChainPieceReq{Height: reqHeight}
 	req.SignInfo = common.NewSignData(p.privateKey, p.id, &req)
 
@@ -124,8 +124,9 @@ func (p *syncProcessor) blockChainPieceHandler(m notify.Message) {
 	}
 
 	from := chainPieceInfo.SignInfo.Id
-	if from != p.candidateInfo.Id {
-		p.logger.Debugf("[BlockChainPieceMessage]Unexpected candidate! Expect from:%s, actual:%s,!", p.candidateInfo.Id, from)
+	candidateId := p.GetCandidateInfo().Id
+	if from != candidateId {
+		p.logger.Debugf("[BlockChainPieceMessage]Unexpected candidate! Expect from:%s, actual:%s,!", candidateId, from)
 		PeerManager.markEvil(from)
 		return
 	}
@@ -133,7 +134,7 @@ func (p *syncProcessor) blockChainPieceHandler(m notify.Message) {
 
 	chainPiece := chainPieceInfo.ChainPiece
 	if 0 != len(chainPiece) {
-		p.logger.Debugf("Rcv block chain piece from:%s,%d-%d", p.candidateInfo.Id, chainPiece[0].Height, chainPiece[len(chainPiece)-1].Height)
+		p.logger.Debugf("Rcv block chain piece from:%s,%d-%d", candidateId, chainPiece[0].Height, chainPiece[len(chainPiece)-1].Height)
 	}
 	if !verifyBlockChainPiece(chainPiece, chainPieceInfo.TopHeader) {
 		p.logger.Debugf("Illegal block chain piece!", from)
@@ -239,6 +240,9 @@ func (p *syncProcessor) syncBlock(id string, commonAncestor types.BlockHeader) {
 }
 
 func (p *syncProcessor) syncBlockReqHandler(msg notify.Message) {
+	if p == nil {
+		common.DefaultLogger.Warnf("p is nil![syncBlockReqHandler]")
+	}
 	m, ok := msg.(*notify.BlockReqMessage)
 	if !ok {
 		syncHandleLogger.Errorf("BlockReqMessage assert not ok!")
@@ -280,6 +284,9 @@ func (p *syncProcessor) syncBlockReqHandler(msg notify.Message) {
 }
 
 func (p *syncProcessor) blockResponseMsgHandler(msg notify.Message) {
+	if p == nil {
+		common.DefaultLogger.Warnf("p is nil![blockResponseMsgHandler]")
+	}
 	m, ok := msg.(*notify.BlockResponseMessage)
 	if !ok {
 		p.logger.Errorf("BlockResponseMessage assert not ok!")
@@ -296,8 +303,9 @@ func (p *syncProcessor) blockResponseMsgHandler(msg notify.Message) {
 		return
 	}
 	from := blockResponse.SignInfo.Id
-	if from != p.candidateInfo.Id {
-		p.logger.Debugf("[BlockResponseMessage]Unexpected candidate! Expect from:%s, actual:%s,!", p.candidateInfo.Id, from)
+	candidateId := p.GetCandidateInfo().Id
+	if from != candidateId {
+		p.logger.Debugf("[BlockResponseMessage]Unexpected candidate! Expect from:%s, actual:%s,!", candidateId, from)
 		return
 	}
 	block := blockResponse.Block
@@ -341,6 +349,9 @@ func (p *syncProcessor) syncGroup(id string, commonAncestor *types.Group) {
 }
 
 func (p *syncProcessor) syncGroupReqHandler(msg notify.Message) {
+	if p == nil {
+		common.DefaultLogger.Warnf("p is nil![syncGroupReqHandler]")
+	}
 	m, ok := msg.(*notify.GroupReqMessage)
 	if !ok {
 		syncHandleLogger.Errorf("GroupReqMessage assert not ok!")
@@ -383,6 +394,9 @@ func (p *syncProcessor) syncGroupReqHandler(msg notify.Message) {
 }
 
 func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
+	if p == nil {
+		common.DefaultLogger.Warnf("p is nil![groupResponseMsgHandler]")
+	}
 	m, ok := msg.(*notify.GroupResponseMessage)
 	if !ok {
 		p.logger.Errorf("GroupResponseMessage assert not ok!")
@@ -399,8 +413,9 @@ func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
 		return
 	}
 	from := groupResponse.SignInfo.Id
-	if from != p.candidateInfo.Id {
-		p.logger.Debugf("[GroupResponseMessage]Unexpected candidate! Expect from:%s, actual:%s,!", p.candidateInfo.Id, from)
+	candidateId := p.GetCandidateInfo().Id
+	if from != candidateId {
+		p.logger.Debugf("[GroupResponseMessage]Unexpected candidate! Expect from:%s, actual:%s,!", candidateId, from)
 		return
 	}
 	group := groupResponse.Group
@@ -632,28 +647,4 @@ func signDataToPb(s common.SignData) *middleware_pb.SignData {
 func pbToSignData(s middleware_pb.SignData) common.SignData {
 	sign := common.SignData{DataHash: common.BytesToHash(s.DataHash), DataSign: *common.BytesToSign(s.DataSign), Id: string(s.SignMember)}
 	return sign
-}
-
-func (p *syncProcessor) mockBlockMsg() {
-	id := "0xf368e156770a64f399e3cae2622e599863a0136e97aa71aa07f98f5ced9d4030"
-	height := p.blockChain.Height()
-	var block *types.Block
-	if height%3 != 0 {
-		block = p.blockChain.QueryBlock(p.blockChain.Height())
-	}
-	isLastBlock := false
-	response := blockMsgResponse{Block: block, IsLastBlock: isLastBlock}
-	response.SignInfo = common.NewSignData(p.privateKey, p.id, &response)
-	body, e := marshalBlockMsgResponse(response)
-	if e != nil {
-		fmt.Printf("Marshal block msg response error:%s\n", e.Error())
-		return
-	}
-	message := network.Message{Code: network.BlockResponseMsg, Body: body}
-	network.GetNetInstance().SendToStranger(common.FromHex(id), message)
-	if block != nil {
-		fmt.Printf("Send block %d to %s,last:%v\n", block.Header.Height, id, isLastBlock)
-	} else {
-		fmt.Printf("Send nil to %s,last:%v\n", isLastBlock)
-	}
 }

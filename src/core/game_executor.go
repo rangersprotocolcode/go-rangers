@@ -296,7 +296,7 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 	} else if txRaw.Source != "" {
 		accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
 	}
-
+	message = adaptReturnMessage(txRaw, message)
 	return result, message
 }
 
@@ -311,4 +311,33 @@ func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {
 
 func (executor *GameExecutor) isExisted(tx types.Transaction) bool {
 	return service.GetTransactionPool().IsExisted(tx.Hash)
+}
+
+func adaptReturnMessage(tx types.Transaction, message string) string {
+	if tx.Type != types.TransactionTypeContract {
+		return message
+	}
+
+	type executeResultAdaptedData struct {
+		ContractAddress string `json:"contractAddress,omitempty"`
+
+		Result string `json:"result,omitempty"`
+
+		ExecuteResult string `json:"executeResult,omitempty"`
+
+		Logs []*types.Log `json:"logs,omitempty"`
+	}
+
+	var returnData = executeResultAdaptedData{}
+	err := json.Unmarshal([]byte(message), &returnData)
+	if err != nil {
+		return message
+	}
+	returnData.ExecuteResult = returnData.Result
+	returnData.Result = tx.Hash.String()
+	jsonBytes, err := json.Marshal(returnData)
+	if err != nil {
+		return message
+	}
+	return string(jsonBytes)
 }

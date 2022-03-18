@@ -28,18 +28,18 @@ import (
 var privateKey string = ""
 
 func TestProposerApplyTx(t *testing.T) {
-	source := "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"
-	target := "0xe059d17139e2915d270ef8f3eee2f3e1438546ba2f06eb674dda0967846b6951"
-	tx := types.Transaction{Type: 2, Source: source, Target: target, Time: utility.GetTime().String()}
+	source := ""
+	privateKeyStr := ""
+	tx := types.Transaction{Type: 2, Source: source, Time: utility.GetTime().String(), ChainId: "9500"}
 
-	data := `{"id":"4FnRcTnikV0nDvjz7uLz4UOFRrovButnTdoJZ4RraVE=","publicKey":"VUD8/iw8JOtgJvyeBR/WlusU/L7+9jsae4z1s4QYZHN6fGVaqfZOI4LlUhaY5+15M0JwhZL+dCjMx8zJa0q/6IriorePaeCsjGt1lTRXYmhSzCZvebL4NP/oR09zDOTSP384WcyZHsV2MMRI7M+K2L3FO6JLI+u9jIAa3pgHQ5E=","vrfPublicKey":"og9c2j7LEkkQwQpSpjVAQ9jkZa/eriBlNrORJdhMe/8="}`
+	data := `{"id":"0x6426f4123f7f5202055c68d6c6e73d7a74bad1487adac79690a53619c8f1e084","publicKey":"0x7a14822562e7878cbaa0ea91f4e7732d9d85502a2acf7723940c681af397c11009d450c463b8c5081e9cf7322fe1ccca062f86c2c81b7f19ce3b99771f13b2fb7c160c21c4dfbf44752b89502cd574972819d812d307e6bf64d67e0f84ce7af5072145272d28fb1df4cc86c14c88dac161e3827e47572623105c6a3f91def95c","vrfPublicKey":"dtZTu7NccUEq3jdhp1/O6ZX5X0M/D60rEFLor1bmbOQ=","ApplyHeight":0,"Status":0}`
 	var obj = types.Miner{}
 	err := json.Unmarshal([]byte(data), &obj)
 	if err != nil {
 		fmt.Printf("ummarshal error:%v", err)
 	}
 
-	obj.Stake = 60000000
+	obj.Stake = 2000
 	obj.Type = common.MinerTypeProposer
 
 	applyData, _ := json.Marshal(obj)
@@ -48,7 +48,6 @@ func TestProposerApplyTx(t *testing.T) {
 	tx.Data = string(applyData)
 	tx.Hash = tx.GenHash()
 
-	privateKeyStr := ""
 	privateKey := common.HexStringToSecKey(privateKeyStr)
 	sign := privateKey.Sign(tx.Hash.Bytes())
 	tx.Sign = &sign
@@ -57,18 +56,18 @@ func TestProposerApplyTx(t *testing.T) {
 }
 
 func TestVerifierApplyTx(t *testing.T) {
-	source := "0x6420e467c77514e09471a7d84e0552c13b5e97192f523c05d3970d7ee23bf443"
-	target := "0x4788022fee69b8bf287c0b69b90d40773fb1a3a4251faf3f5c0181cdc3fb78ab"
-	tx := types.Transaction{Type: 2, Source: source, Target: target, Time: utility.GetTime().String()}
+	source := ""
+	privateKeyStr := ""
+	tx := types.Transaction{Type: 2, Source: source, Time: utility.GetTime().String(), ChainId: "9500"}
 
-	data := `{"id":"R4gCL+5puL8ofAtpuQ1Adz+xo6QlH68/XAGBzcP7eKs=","publicKey":"BCOds4TtM4LySN+jiKVUU7T18Yu5KHXKdu+mloMB2H//NNgeREOtzdPI5XxGug+eo+WTAkdIjBhjD7cKOjEaTWo=","vrfPublicKey":"2jtqai9hfhcBNzHrxiYUOisiHdMTKM9Xr5yILDQ9uvs="}`
+	data := `{"id":"0x289ecde8a89bb2af023fa699f93147dd2f42dddd8418d0dd54d1d2c0969ae552","publicKey":"0x352efbbcf50c0ee8509a018fd0c81d1e79072364b8df92bf082ab54acf3f449585859e555566c08917622c5843d20a16fb753d6db1aa9321619ee5cd85762a19411fd9f910397cb5d816bcd0d18fb60ae774cd178c542c87036f909c5a4a395813c19aa7f2bd0797fb867b5ae1c07e570f63152f2749f6e3425cd9f9aa8b5f2c","vrfPublicKey":"mUmTQJr6dKbUTXQfOnicAaMX1yLrTWaPOdxQhPis8EA=","ApplyHeight":0,"Status":0}`
 	var obj = types.Miner{}
 	err := json.Unmarshal([]byte(data), &obj)
 	if err != nil {
 		fmt.Printf("ummarshal error:%v", err)
 	}
 
-	obj.Stake = 2000000
+	obj.Stake = 400
 	obj.Type = common.MinerTypeValidator
 
 	applyData, _ := json.Marshal(obj)
@@ -77,7 +76,6 @@ func TestVerifierApplyTx(t *testing.T) {
 	tx.Data = string(applyData)
 	tx.Hash = tx.GenHash()
 
-	privateKeyStr := ""
 	privateKey := common.HexStringToSecKey(privateKeyStr)
 	sign := privateKey.Sign(tx.Hash.Bytes())
 	tx.Sign = &sign
@@ -86,15 +84,30 @@ func TestVerifierApplyTx(t *testing.T) {
 }
 
 func TestAddMinerStakeTx(t *testing.T) {
-	source := "0xf3413cff1a9cddbb02b92ac31f98a808d736c815"
-	target := "0x6ca0685b1f337ee1503ed83d2299b925adc9b804"
-	tx := types.Transaction{Type: 5, Source: source, Target: target, Time: utility.GetTime().String(), ChainId: "8888"}
+	source := ""
+	privateKey := common.HexStringToSecKey(privateKey)
+	target := ""
+	tx := types.Transaction{Type: 5, Source: source, Target: target, Time: utility.GetTime().String(), ChainId: "9500"}
 
 	data := `{"id":"0x0c5a7fd40963705372dd7187c79b4b7645d8df29c39ee2a85c6d5c638b608350","publicKey":"0x8273cf5e3b46dc73c6476f91d0d192f95129ad3fb162ec4ebe9e029f901a6a335f572a899ec2efd86898b02ac2168008f8aef22c8b7967f13897fe40a925f8fa8d531022ea817537455b7c7cc50cb0d21e09739e0093790f9fffb101e4a9ed31750bf06a693a702182ed63264e51e121900b68694a054af7fa0eff1e78d10d17","vrfPublicKey":"q7uwofVvDjAGEbrCZj6D4YUz2D+ooeQ2jmIwIq9+mz8=","Stake":1}`
 	//applyData, _ := json.Marshal(data)
 	//fmt.Printf("data:%v\n",string(applyData))
 
 	tx.Data = data
+	tx.Hash = tx.GenHash()
+
+	sign := privateKey.Sign(tx.Hash.Bytes())
+	tx.Sign = &sign
+
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+func TestMinerRefundTx(t *testing.T) {
+	source := ""
+	target := ""
+	tx := types.Transaction{Type: 4, Source: source, Target: target, Time: utility.GetTime().String(), ChainId: "8888"}
+
+	tx.Data = "5"
 	tx.Hash = tx.GenHash()
 
 	privateKey := common.HexStringToSecKey(privateKey)
@@ -104,15 +117,24 @@ func TestAddMinerStakeTx(t *testing.T) {
 	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
 }
 
-func TestMinerRefundTx(t *testing.T) {
-	source := "0xf3413cff1a9cddbb02b92ac31f98a808d736c815"
-	target := "0x6ca0685b1f337ee1503ed83d2299b925adc9b804"
-	tx := types.Transaction{Type: 4, Source: source, Target: target, Time: utility.GetTime().String(), ChainId: "8888"}
+func TestChangeRewardAccountTx(t *testing.T) {
+	source := ""
+	privateKeyStr := ""
+	tx := types.Transaction{Type: types.TransactionTypeMinerChangeAccount, Source: source, Time: utility.GetTime().String(), ChainId: "9500"}
 
-	tx.Data = "5"
+	data := `{"id":"0x289ecde8a89bb2af023fa699f93147dd2f42dddd8418d0dd54d1d2c0969ae552","account":"0x1a9ec5d42c446da9308464034030175e687df0f2"}`
+	var obj = types.Miner{}
+	err := json.Unmarshal([]byte(data), &obj)
+	if err != nil {
+		fmt.Printf("ummarshal error:%v", err)
+	}
+	applyData, _ := json.Marshal(obj)
+	//fmt.Printf("data:%v\n",string(applyData))
+
+	tx.Data = string(applyData)
 	tx.Hash = tx.GenHash()
 
-	privateKey := common.HexStringToSecKey(privateKey)
+	privateKey := common.HexStringToSecKey(privateKeyStr)
 	sign := privateKey.Sign(tx.Hash.Bytes())
 	tx.Sign = &sign
 
@@ -268,4 +290,34 @@ type QueryLogData struct {
 
 	Address []string   `json:"address,omitempty"`
 	Topics  [][]string `json:"topics,omitempty"`
+}
+
+func TestCallVMTx(t *testing.T) {
+	tx := types.Transaction{Type: types.TransactionTypeCallVM, Time: utility.GetTime().String()}
+	tx.SocketRequestId = "111"
+
+	data := callVMData{Height: "", Hash: ""}
+	data.From = "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
+	data.To = "0x65c058CD5C776A4B6ea1319690214284bD38FFb1"
+	data.Data = "0xa408b1f50000000000000000000000000c27788469bd9ebec3001d6febc7b91924112233"
+	data.Gas = 222000000
+
+	dataBytes, err := json.Marshal(&data)
+	if err != nil {
+		panic(err)
+	}
+	tx.Data = string(dataBytes)
+	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
+}
+
+type callVMData struct {
+	Height string `json:"height,omitempty"`
+	Hash   string `json:"hash,omitempty"`
+
+	From     string `json:"from"`
+	To       string `json:"to"`
+	Gas      uint64 `json:"gas"`
+	GasPrice string `json:"gasPrice"`
+	Value    string `json:"value"`
+	Data     string `json:"data"`
 }
