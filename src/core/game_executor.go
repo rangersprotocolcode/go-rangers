@@ -234,7 +234,7 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 		executor.logger.Errorf("fail to verify tx, txhash: %s, err: %v", txRaw.Hash.String(), err.Error())
 		if 0 != len(message.UserId) {
 			response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
-			go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+			go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.GateNonce)
 		}
 		return
 	}
@@ -243,7 +243,7 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	if 0 == len(message.UserId) {
 		return
 	}
-	executor.logger.Debugf("txhash: %s, send to user: %s, msg: %s", txRaw.Hash.String(), message.UserId, execMessage)
+	executor.logger.Debugf("txhash: %s, send to user: %s, msg: %s, gatenonce: %d", txRaw.Hash.String(), message.UserId, execMessage, message.GateNonce)
 
 	// reply to the client
 	var response []byte
@@ -252,7 +252,7 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	} else {
 		response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
 	}
-	network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
+	network.GetNetInstance().SendToClientWriter(message.UserId, response, message.GateNonce)
 }
 
 func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, height uint64, txRaw types.Transaction) (bool, string) {

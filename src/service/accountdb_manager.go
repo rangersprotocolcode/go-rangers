@@ -178,7 +178,7 @@ func (manager *AccountDBManager) getTxList() {
 					}
 					transaction := txJson.ToTransaction()
 
-					msg := notify.ClientTransactionMessage{Tx: transaction, UserId: tx.UserId, Nonce: tx.Nonce}
+					msg := notify.ClientTransactionMessage{Tx: transaction, UserId: tx.UserId, Nonce: tx.Nonce, GateNonce: tx.GateNonce}
 					notify.BUS.Publish(notify.ClientTransaction, &msg)
 				}
 			}

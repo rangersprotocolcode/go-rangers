@@ -17,9 +17,10 @@
 package mysql
 
 type TxRaw struct {
-	Nonce  uint64
-	UserId string
-	Data   string
+	Nonce     uint64
+	UserId    string
+	Data      string
+	GateNonce uint64
 }
 
 func GetTxRaws(start uint64) []TxRaw {
@@ -27,7 +28,7 @@ func GetTxRaws(start uint64) []TxRaw {
 		return nil
 	}
 
-	rows, err := MysqlDB.Query("SELECT id,userid,data FROM `tx_raw` where id>? limit 100", start)
+	rows, err := MysqlDB.Query("SELECT id,userid,data,gatenonce FROM `tx_raw` where id>? limit 100", start)
 	defer func() {
 		if nil != rows {
 			rows.Close()
@@ -42,7 +43,7 @@ func GetTxRaws(start uint64) []TxRaw {
 	result := make([]TxRaw, 0)
 	var txRaw TxRaw
 	for rows.Next() {
-		err := rows.Scan(&txRaw.Nonce, &txRaw.UserId, &txRaw.Data)
+		err := rows.Scan(&txRaw.Nonce, &txRaw.UserId, &txRaw.Data, &txRaw.GateNonce)
 		if nil != err {
 			logger.Errorf(err.Error())
 			return nil
