@@ -25,9 +25,7 @@ var (
 type executeResultData struct {
 	ContractAddress string `json:"contractAddress,omitempty"`
 
-	TxHash string `json:"result,omitempty"`
-
-	ExecuteResult string `json:"executeResult,omitempty"`
+	Result string `json:"result,omitempty"`
 
 	Logs []*types.Log `json:"logs,omitempty"`
 }
@@ -97,7 +95,7 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 	if err != nil {
 		return false, err.Error()
 	}
-	returnData := executeResultData{contractAddress.GetHexString(), transaction.Hash.String(), toHex(result), logs}
+	returnData := executeResultData{contractAddress.GetHexString(), toHex(result), logs}
 	json, _ := json.Marshal(returnData)
 	return true, string(json)
 }
