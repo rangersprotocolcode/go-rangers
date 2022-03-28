@@ -59,8 +59,7 @@ func TestVerifierApplyTx(t *testing.T) {
 	source := ""
 	privateKeyStr := ""
 	tx := types.Transaction{Type: 2, Source: source, Time: utility.GetTime().String(), ChainId: "9500"}
-
-	data := `{"id":"0x289ecde8a89bb2af023fa699f93147dd2f42dddd8418d0dd54d1d2c0969ae552","publicKey":"0x352efbbcf50c0ee8509a018fd0c81d1e79072364b8df92bf082ab54acf3f449585859e555566c08917622c5843d20a16fb753d6db1aa9321619ee5cd85762a19411fd9f910397cb5d816bcd0d18fb60ae774cd178c542c87036f909c5a4a395813c19aa7f2bd0797fb867b5ae1c07e570f63152f2749f6e3425cd9f9aa8b5f2c","vrfPublicKey":"mUmTQJr6dKbUTXQfOnicAaMX1yLrTWaPOdxQhPis8EA=","ApplyHeight":0,"Status":0}`
+	data := `{"id":"0xfae2464767a076614cff1c854504587d8a186fd1332eb28ab4146a89edad0dca","publicKey":"0x322a3f29c4d83bf614098cbcee3dbf86cf32d620832215c83c54c75d7dae5e348a9903f0fc7d396f08f59ba71de836187d09b88642958b8291b370bfea59a2e35c88c31140b065971607de6928b85907724235d397e4aefa8180997b93fd704b4263a1a2a2d2057d1bf5a26a5f3a42e5c1fd770b7cbf32f35f27fe3c0da0c4b9","vrfPublicKey":"CWamaJd7TFrLadpeurg3BwZDXD8VFB9h9Mn+wsfr9Lk=","ApplyHeight":0,"Status":0}`
 	var obj = types.Miner{}
 	err := json.Unmarshal([]byte(data), &obj)
 	if err != nil {
@@ -85,17 +84,19 @@ func TestVerifierApplyTx(t *testing.T) {
 
 func TestAddMinerStakeTx(t *testing.T) {
 	source := ""
-	privateKey := common.HexStringToSecKey(privateKey)
-	target := ""
+	privateKeyStr := ""
+	target := "0xb6525ea10583835a0561617b1548522c6300807dea7bd7c4352621a0b4ba22d9"
 	tx := types.Transaction{Type: 5, Source: source, Target: target, Time: utility.GetTime().String(), ChainId: "9500"}
 
-	data := `{"id":"0x0c5a7fd40963705372dd7187c79b4b7645d8df29c39ee2a85c6d5c638b608350","publicKey":"0x8273cf5e3b46dc73c6476f91d0d192f95129ad3fb162ec4ebe9e029f901a6a335f572a899ec2efd86898b02ac2168008f8aef22c8b7967f13897fe40a925f8fa8d531022ea817537455b7c7cc50cb0d21e09739e0093790f9fffb101e4a9ed31750bf06a693a702182ed63264e51e121900b68694a054af7fa0eff1e78d10d17","vrfPublicKey":"q7uwofVvDjAGEbrCZj6D4YUz2D+ooeQ2jmIwIq9+mz8=","Stake":1}`
+	data := `{"id":"0xfae2464767a076614cff1c854504587d8a186fd1332eb28ab4146a89edad0dca","publicKey":"0x322a3f29c4d83bf614098cbcee3dbf86cf32d620832215c83c54c75d7dae5e348a9903f0fc7d396f08f59ba71de836187d09b88642958b8291b370bfea59a2e35c88c31140b065971607de6928b85907724235d397e4aefa8180997b93fd704b4263a1a2a2d2057d1bf5a26a5f3a42e5c1fd770b7cbf32f35f27fe3c0da0c4b9","vrfPublicKey":"CWamaJd7TFrLadpeurg3BwZDXD8VFB9h9Mn+wsfr9Lk=","Stake":30}`
+
 	//applyData, _ := json.Marshal(data)
 	//fmt.Printf("data:%v\n",string(applyData))
 
 	tx.Data = data
 	tx.Hash = tx.GenHash()
 
+	privateKey := common.HexStringToSecKey(privateKeyStr)
 	sign := privateKey.Sign(tx.Hash.Bytes())
 	tx.Sign = &sign
 
@@ -104,13 +105,22 @@ func TestAddMinerStakeTx(t *testing.T) {
 
 func TestMinerRefundTx(t *testing.T) {
 	source := ""
-	target := ""
-	tx := types.Transaction{Type: 4, Source: source, Target: target, Time: utility.GetTime().String(), ChainId: "8888"}
+	privateKeyStr := ""
+	tx := types.Transaction{Type: 4, Source: source, Time: utility.GetTime().String(), ChainId: "9500"}
 
-	tx.Data = "5"
+	type MinerRefundData struct {
+		Amount  string
+		MinerId string
+	}
+	data := MinerRefundData{
+		MinerId: "0xfae2464767a076614cff1c854504587d8a186fd1332eb28ab4146a89edad0dca",
+		Amount:  "5",
+	}
+	refundBytes, _ := json.Marshal(data)
+	tx.Data = string(refundBytes)
 	tx.Hash = tx.GenHash()
 
-	privateKey := common.HexStringToSecKey(privateKey)
+	privateKey := common.HexStringToSecKey(privateKeyStr)
 	sign := privateKey.Sign(tx.Hash.Bytes())
 	tx.Sign = &sign
 
@@ -122,7 +132,7 @@ func TestChangeRewardAccountTx(t *testing.T) {
 	privateKeyStr := ""
 	tx := types.Transaction{Type: types.TransactionTypeMinerChangeAccount, Source: source, Time: utility.GetTime().String(), ChainId: "9500"}
 
-	data := `{"id":"0x289ecde8a89bb2af023fa699f93147dd2f42dddd8418d0dd54d1d2c0969ae552","account":"0x1a9ec5d42c446da9308464034030175e687df0f2"}`
+	data := `{"id":"0xfae2464767a076614cff1c854504587d8a186fd1332eb28ab4146a89edad0dca","account":"0x1a9ec5d42c446da9308464034030175e687df0f2"}`
 	var obj = types.Miner{}
 	err := json.Unmarshal([]byte(data), &obj)
 	if err != nil {
