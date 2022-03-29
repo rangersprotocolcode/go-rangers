@@ -237,7 +237,7 @@ func refreshGroupForkDB(commonAncestor types.Group) db.Database {
 		bytes, _ := db.Get(generateHeightKey(i))
 		if len(bytes) > 0 {
 			group, err := types.UnMarshalGroup(bytes)
-			if err != nil && group != nil {
+			if err == nil && group != nil {
 				db.Delete(group.Id)
 			}
 		}
