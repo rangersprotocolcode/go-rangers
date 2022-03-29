@@ -179,7 +179,6 @@ func (fork *blockChainFork) addBlockOnFork(coming *types.Block, groupFork *group
 	if result, err := fork.verifyMemberLegal(coming); !result {
 		fork.logger.Debugf("Block cast or verify member illegal.error:%s", err.Error())
 		if err != common.ErrSelectGroupInequal {
-			panic(err)
 			return verifyBlockErr
 		}
 		return err
