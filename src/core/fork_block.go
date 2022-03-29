@@ -216,6 +216,7 @@ func (fork *blockChainFork) insertBlock(block *types.Block) error {
 		fork.logger.Errorf("Fail to insert db, error:%s", err.Error())
 		return err
 	}
+	fork.logger.Debugf("set latestBlockHeightKey:%d", block.Header.Height)
 	return nil
 }
 
@@ -356,11 +357,12 @@ func refreshBlockForkDB(commonAncestor types.Block) db.Database {
 	start := utility.ByteToUInt64(startBytes)
 	endBytes, _ := db.Get([]byte(latestBlockHeightKey))
 	end := utility.ByteToUInt64(endBytes)
+	syncLogger.Debugf("refreshBlockForkDB start:%d,end:%d", start, end)
 	for i := start; i <= end+1; i++ {
 		bytes, _ := db.Get(generateHeightKey(i))
 		if len(bytes) > 0 {
 			block, err := types.UnMarshalBlock(bytes)
-			if err != nil && block != nil {
+			if err == nil && block != nil {
 				syncLogger.Debugf("delete hash:%s", common.ToHex(block.Header.Hash.Bytes()))
 				db.Delete(block.Header.Hash.Bytes())
 			}
