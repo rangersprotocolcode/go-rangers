@@ -139,6 +139,7 @@ func (blockFork *blockChainFork) triggerOnChain(chain *blockChain) bool {
 
 func (fork *blockChainFork) destroy() {
 	for i := fork.header; i <= fork.latestBlock.Height; i++ {
+		fork.logger.Debugf("fork delete block %d", i)
 		fork.deleteBlock(i)
 	}
 	fork.db.Delete([]byte(blockCommonAncestorHeightKey))
@@ -178,6 +179,7 @@ func (fork *blockChainFork) addBlockOnFork(coming *types.Block, groupFork *group
 	if result, err := fork.verifyMemberLegal(coming); !result {
 		fork.logger.Debugf("Block cast or verify member illegal.error:%s", err.Error())
 		if err != common.ErrSelectGroupInequal {
+			panic(err)
 			return verifyBlockErr
 		}
 		return err
@@ -206,6 +208,11 @@ func (fork *blockChainFork) insertBlock(block *types.Block) error {
 	}
 
 	err = fork.db.Put(block.Header.Hash.Bytes(), blockByte)
+	if err != nil {
+		fork.logger.Errorf("Fail to insert db, error:%s", err.Error())
+		return err
+	}
+	err = fork.db.Put([]byte(latestBlockHeightKey), utility.UInt64ToByte(block.Header.Height))
 	if err != nil {
 		fork.logger.Errorf("Fail to insert db, error:%s", err.Error())
 		return err
@@ -350,7 +357,14 @@ func refreshBlockForkDB(commonAncestor types.Block) db.Database {
 	start := utility.ByteToUInt64(startBytes)
 	endBytes, _ := db.Get([]byte(latestBlockHeightKey))
 	end := utility.ByteToUInt64(endBytes)
-	for i := start; i <= end; i++ {
+	for i := start; i <= end+100; i++ {
+		bytes, _ := db.Get(generateHeightKey(i))
+		if len(bytes) > 0 {
+			block, err := types.UnMarshalBlock(bytes)
+			if err != nil && block != nil {
+				db.Delete(block.Header.Hash.Bytes())
+			}
+		}
 		db.Delete(generateHeightKey(i))
 	}
 
