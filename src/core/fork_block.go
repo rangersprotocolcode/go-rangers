@@ -26,7 +26,6 @@ import (
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"errors"
-	"fmt"
 	"github.com/oleiade/lane"
 )
 
@@ -374,8 +373,7 @@ func refreshBlockForkDB(commonAncestor types.Block) db.Database {
 	iterator := db.NewIterator()
 	if iterator.Next() {
 		key := iterator.Key()
-		fmt.Printf("key string:%s\n", string(key))
-		fmt.Printf("key byte:%v\n", key)
+		db.Delete(key)
 	}
 	return db
 }
