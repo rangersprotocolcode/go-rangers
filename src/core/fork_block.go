@@ -372,11 +372,11 @@ func refreshBlockForkDB(commonAncestor types.Block) db.Database {
 		key := iterator.Key()
 		realKey := key[9:]
 		if len(realKey) == 8 {
-			syncLogger.Debugf("delete height:%d", utility.ByteToUInt64(realKey))
+			syncLogger.Debugf("key height:%d", utility.ByteToUInt64(realKey))
 		} else {
-			syncLogger.Debugf("delete hash:%s", common.ToHex(realKey))
+			syncLogger.Debugf("key hash:%s", common.ToHex(realKey))
 		}
-		db.Delete(key)
+		//db.Delete(key)
 	}
 	db.Put([]byte(blockCommonAncestorHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
 	db.Put([]byte(latestBlockHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
