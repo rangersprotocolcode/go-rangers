@@ -367,14 +367,13 @@ func refreshBlockForkDB(commonAncestor types.Block) db.Database {
 		db.Delete(generateHeightKey(i))
 	}
 
-	db.Put([]byte(blockCommonAncestorHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
-	db.Put([]byte(latestBlockHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
-
 	iterator := db.NewIterator()
-	if iterator.Next() {
+	for iterator.Next() {
 		key := iterator.Key()
 		db.Delete(key)
 	}
+	db.Put([]byte(blockCommonAncestorHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
+	db.Put([]byte(latestBlockHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
 	return db
 }
 
