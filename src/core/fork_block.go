@@ -356,7 +356,7 @@ func refreshBlockForkDB(commonAncestor types.Block) db.Database {
 	start := utility.ByteToUInt64(startBytes)
 	endBytes, _ := db.Get([]byte(latestBlockHeightKey))
 	end := utility.ByteToUInt64(endBytes)
-	for i := start; i <= end+100; i++ {
+	for i := start; i <= end+1; i++ {
 		bytes, _ := db.Get(generateHeightKey(i))
 		if len(bytes) > 0 {
 			block, err := types.UnMarshalBlock(bytes)
@@ -376,7 +376,7 @@ func refreshBlockForkDB(commonAncestor types.Block) db.Database {
 		} else {
 			syncLogger.Debugf("key hash:%s", common.ToHex(realKey))
 		}
-		//db.Delete(key)
+		db.Delete(realKey)
 	}
 	db.Put([]byte(blockCommonAncestorHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
 	db.Put([]byte(latestBlockHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
