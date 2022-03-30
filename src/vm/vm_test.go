@@ -817,12 +817,13 @@ func TestVM11(t *testing.T) {
 }
 
 func TestReceiveAndFallback(t *testing.T) {
+	//IsProposal002 need to be true
 	mockInit()
 	config := new(testConfig)
 	setDefaults(config)
 	defer log.Close()
 
-	config.Origin = common.HexToAddress("0x0f656deb14f9666d3fdf9dff7c1c430c0570223f10900c89c94a79324ad24085")
+	config.Origin = common.HexToAddress("0x0c27788469bd9ebec3001d6febc7b919242c4df9")
 	stateDB := config.State
 	stateDB.SetBalance(config.Origin, big.NewInt(5))
 
@@ -831,6 +832,7 @@ func TestReceiveAndFallback(t *testing.T) {
 
 	//receive
 	contractCodeBytes := common.Hex2Bytes("608060405234801561001057600080fd5b50610192806100206000396000f3fe6080604052600436106100435760003560e01c8063190200a61461004f5780638fb4aabf1461008b578063da5a2231146100bc578063f14d87dd146100d15761004a565b3661004a57005b600080fd5b34801561005b57600080fd5b506100796004803603602081101561007257600080fd5b50356100fb565b60408051918252519081900360200190f35b34801561009757600080fd5b506100a061011c565b604080516001600160a01b039092168252519081900360200190f35b3480156100c857600080fd5b506100a061012b565b3480156100dd57600080fd5b50610079600480360360208110156100f457600080fd5b503561013a565b6003818154811061010b57600080fd5b600091825260209091200154905081565b6002546001600160a01b031690565b6002546001600160a01b031681565b6004818154811061010b57600080fdfea264697066735822122031c140fee027389931b4089b5796b4fa09c7c165a52d54db1f08efe62081d97f64736f6c6375302e372e352b636f6d6d69742e65623737656430380045")
+
 	//fallback
 	//contractCodeBytes := common.Hex2Bytes("608060405234801561001057600080fd5b50610184806100206000396000f3fe60806040526004361061003f5760003560e01c8063190200a6146100415780638fb4aabf1461007d578063da5a2231146100ae578063f14d87dd146100c3575b005b34801561004d57600080fd5b5061006b6004803603602081101561006457600080fd5b50356100ed565b60408051918252519081900360200190f35b34801561008957600080fd5b5061009261010e565b604080516001600160a01b039092168252519081900360200190f35b3480156100ba57600080fd5b5061009261011d565b3480156100cf57600080fd5b5061006b600480360360208110156100e657600080fd5b503561012c565b600381815481106100fd57600080fd5b600091825260209091200154905081565b6002546001600160a01b031690565b6002546001600160a01b031681565b600481815481106100fd57600080fdfea26469706673582212202c1efd1789b7371e34689353414c5de5ac383ecc5441d48eb66da802b30f46a064736f6c6375302e372e352b636f6d6d69742e65623737656430380045")
 
@@ -841,18 +843,30 @@ func TestReceiveAndFallback(t *testing.T) {
 	fmt.Printf("New create contract costGas:%v,createErr:%v\n", config.GasLimit-createLeftGas, createErr)
 
 	//var input []byte
-	//input := []byte{}
-	input := common.FromHex("0x0")
-	fmt.Printf("input:%s,%d,%v\n", input, len(input), input == nil)
+	input := []byte{}
+	//input := common.FromHex("0x0")
+	fmt.Printf("input:%v,%d,%v\n", input, len(input), input == nil)
 	config.Value = big.NewInt(1)
 	callResult, callLeftGas, callErr := mockCall(contractAddress, input, config)
 	fmt.Printf("callResult:%v,costGas:%d,callErr:%v\n", callResult, config.GasLimit-callLeftGas, callErr)
+
 	balance := stateDB.GetBalance(contractAddress)
-	fmt.Printf("balance:%v\n", balance.String())
+	fmt.Printf("contract balance:%v\n", balance.String())
+
+	originBalance := stateDB.GetBalance(config.Origin)
+	fmt.Printf("origin balance:%v\n", originBalance.String())
 }
 
 func TestHex(t *testing.T) {
 	str := "00"
 	input, _ := hex.DecodeString(str)
-	fmt.Printf("input:%s,%d,%v\n", input, len(input), input == nil)
+	fmt.Printf("input:%v,%d,%v\n", input, len(input), input == nil)
+
+	var b []byte
+	s := common.ToHex(b)
+	fmt.Printf("hex:%s\n", s)
+
+	str = ""
+	input1 := common.FromHex(str)
+	fmt.Printf("input:%v,%d,%v\n", input1, len(input1), input1 == nil)
 }

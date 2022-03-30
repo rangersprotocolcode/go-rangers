@@ -18,6 +18,7 @@ package common
 
 import (
 	"com.tuntun.rocket/node/src/middleware/log"
+	"math"
 	"math/big"
 	"sync/atomic"
 )
@@ -43,6 +44,8 @@ var (
 		Proposal002Block: 3353000,
 		Proposal003Block: 3830000,
 		Proposal004Block: 5310000,
+		//TODO: check while update mainnet
+		Proposal005Block: math.MaxUint64,
 	}
 
 	robinChainConfig = ChainConfig{
@@ -51,9 +54,10 @@ var (
 		OriginalChainId:  "9527",
 		Proposal001Block: 0,
 		Proposal002Block: 2802000,
-		//check while update robin
 		Proposal003Block: 3380000,
 		Proposal004Block: 5310000,
+		//TODO: check while update robin
+		Proposal005Block: math.MaxUint64,
 	}
 
 	devNetChainConfig = ChainConfig{
@@ -65,9 +69,9 @@ var (
 		OriginalChainId:  "9800",
 		Proposal001Block: 300,
 		Proposal002Block: 338000,
-		//check while update dev
 		Proposal003Block: 920000,
 		Proposal004Block: 5310000,
+		Proposal005Block: 610000,
 	}
 
 	LocalChainConfig ChainConfig
@@ -86,6 +90,7 @@ type ChainConfig struct {
 	Proposal002Block uint64
 	Proposal003Block uint64
 	Proposal004Block uint64
+	Proposal005Block uint64
 }
 
 func InitChainConfig(env string) {
@@ -142,8 +147,13 @@ func IsProposal002() bool {
 func IsProposal003() bool {
 	return isForked(LocalChainConfig.Proposal003Block, GetBlockHeight())
 }
+
 func IsProposal004() bool {
 	return isForked(LocalChainConfig.Proposal004Block, GetBlockHeight())
+}
+
+func IsProposal005() bool {
+	return isForked(LocalChainConfig.Proposal005Block, GetBlockHeight())
 }
 
 func isForked(base uint64, height uint64) bool {

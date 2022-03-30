@@ -75,6 +75,13 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 	}
 	this.logger.Tracef("Execute contract! data: %v,target address:%s", data, transaction.Target)
 
+	var input []byte
+	if common.IsProposal005() && (data.AbiData == "" || data.AbiData == "0x0") {
+		input = []byte{}
+	} else {
+		input = common.FromHex(data.AbiData)
+	}
+
 	vmInstance := vm.NewEVMWithNFT(vmCtx, accountdb, accountdb)
 	caller := vm.AccountRef(vmCtx.Origin)
 	var (
@@ -84,11 +91,11 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 		contractAddress common.Address = common.HexToAddress(transaction.Target)
 	)
 	if transaction.Target == "" {
-		result, contractAddress, leftOverGas, logs, err = vmInstance.Create(caller, common.FromHex(data.AbiData), vmCtx.GasLimit, transferValue)
+		result, contractAddress, leftOverGas, logs, err = vmInstance.Create(caller, input, vmCtx.GasLimit, transferValue)
 		context["contractAddress"] = contractAddress
 		this.logger.Tracef("After execute contract create!Contract address:%s, leftOverGas: %d,error:%v", contractAddress.GetHexString(), leftOverGas, err)
 	} else {
-		result, leftOverGas, logs, err = vmInstance.Call(caller, contractAddress, common.FromHex(data.AbiData), vmCtx.GasLimit, transferValue)
+		result, leftOverGas, logs, err = vmInstance.Call(caller, contractAddress, input, vmCtx.GasLimit, transferValue)
 		this.logger.Tracef("After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
 	}
 	context["logs"] = logs
