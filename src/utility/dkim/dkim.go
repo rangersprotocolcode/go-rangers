@@ -331,8 +331,13 @@ func parseHeader(name string, value string) (*Header, error) {
 	return &header, nil
 }
 
-func Verify(data []byte) []byte {
+func Verify(data []byte) (bs []byte) {
 	emailString := utility.BytesToStr(data)
+	defer func() { // 必须要先声明defer，否则不能捕获到panic异常
+		if err := recover(); err != nil {
+			bs = nil
+		}
+	}()
 	email, err := FromString(emailString)
 	if nil != err {
 		return nil
