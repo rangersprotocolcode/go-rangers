@@ -155,6 +155,12 @@ func (fork *groupChainFork) insertGroup(group *types.Group) error {
 		fork.logger.Errorf("Fail to insert db, error:%s", err.Error())
 		return err
 	}
+
+	err = fork.db.Put([]byte(latestGroupHeightKey), utility.UInt64ToByte(group.GroupHeight))
+	if err != nil {
+		fork.logger.Errorf("Fail to insert db, error:%s", err.Error())
+		return err
+	}
 	return nil
 }
 
@@ -227,11 +233,18 @@ func refreshGroupForkDB(commonAncestor types.Group) db.Database {
 	start := utility.ByteToUInt64(startBytes)
 	endBytes, _ := db.Get([]byte(latestGroupHeightKey))
 	end := utility.ByteToUInt64(endBytes)
-	for i := start; i <= end; i++ {
+	for i := start; i <= end+1; i++ {
+		bytes, _ := db.Get(generateHeightKey(i))
+		if len(bytes) > 0 {
+			group, err := types.UnMarshalGroup(bytes)
+			if err == nil && group != nil {
+				db.Delete(group.Id)
+			}
+		}
 		db.Delete(generateHeightKey(i))
 	}
 
-	db.Put([]byte(blockCommonAncestorHeightKey), utility.UInt64ToByte(commonAncestor.GroupHeight))
-	db.Put([]byte(latestBlockHeightKey), utility.UInt64ToByte(commonAncestor.GroupHeight))
+	db.Put([]byte(groupCommonAncestorHeightKey), utility.UInt64ToByte(commonAncestor.GroupHeight))
+	db.Put([]byte(latestGroupHeightKey), utility.UInt64ToByte(commonAncestor.GroupHeight))
 	return db
 }

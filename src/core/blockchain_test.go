@@ -17,6 +17,7 @@
 package core
 
 import (
+	"com.tuntun.rocket/node/src/middleware/db"
 	"fmt"
 	"testing"
 )
@@ -24,5 +25,35 @@ import (
 func TestBlockChain_GenerateHeightKey(t *testing.T) {
 	result := generateHeightKey(10)
 	fmt.Println(len(result))
-	fmt.Printf("%v",result)
+	fmt.Printf("%v", result)
+}
+
+func TestDB(t *testing.T) {
+	db1, _ := db.NewDatabase(blockForkDBPrefix)
+	db1.Put([]byte("1"), []byte("1"))
+	db1.Put([]byte("2"), []byte("2"))
+
+	db1.Delete([]byte("1"))
+
+	iterator1 := db1.NewIterator()
+	for iterator1.Next() {
+		key := iterator1.Key()
+		realKey := key[9:]
+		fmt.Printf("key:%v,realkey:%v\n", key, realKey)
+		db1.Delete(realKey)
+		//db1.Delete(key)
+	}
+	//for iterator1.Next() {
+	//	key := iterator1.Key()
+	//	fmt.Printf("key2:%v\n", key)
+	//	//append(keyList, key)
+	//}
+	//
+	//db2, _ := db.NewDatabase(blockForkDBPrefix)
+	//iterator2 := db2.NewIterator()
+	//for iterator2.Next() {
+	//	key := iterator2.Key()
+	//	realKey := key[9:]
+	//	fmt.Printf("second key:%v\n", realKey)
+	//}
 }

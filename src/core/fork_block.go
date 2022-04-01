@@ -139,6 +139,7 @@ func (blockFork *blockChainFork) triggerOnChain(chain *blockChain) bool {
 
 func (fork *blockChainFork) destroy() {
 	for i := fork.header; i <= fork.latestBlock.Height; i++ {
+		fork.logger.Debugf("fork delete block %d,%s", i)
 		fork.deleteBlock(i)
 	}
 	fork.db.Delete([]byte(blockCommonAncestorHeightKey))
@@ -210,6 +211,12 @@ func (fork *blockChainFork) insertBlock(block *types.Block) error {
 		fork.logger.Errorf("Fail to insert db, error:%s", err.Error())
 		return err
 	}
+	err = fork.db.Put([]byte(latestBlockHeightKey), utility.UInt64ToByte(block.Header.Height))
+	if err != nil {
+		fork.logger.Errorf("Fail to insert db, error:%s", err.Error())
+		return err
+	}
+	fork.logger.Debugf("set latestBlockHeightKey:%d", block.Header.Height)
 	return nil
 }
 
@@ -350,10 +357,32 @@ func refreshBlockForkDB(commonAncestor types.Block) db.Database {
 	start := utility.ByteToUInt64(startBytes)
 	endBytes, _ := db.Get([]byte(latestBlockHeightKey))
 	end := utility.ByteToUInt64(endBytes)
-	for i := start; i <= end; i++ {
+	syncLogger.Debugf("refreshBlockForkDB start:%d,end:%d", start, end)
+	for i := start; i <= end+1; i++ {
+		bytes, _ := db.Get(generateHeightKey(i))
+		if len(bytes) > 0 {
+			block, err := types.UnMarshalBlock(bytes)
+			if err == nil && block != nil {
+				syncLogger.Debugf("delete hash:%s", common.ToHex(block.Header.Hash.Bytes()))
+				db.Delete(block.Header.Hash.Bytes())
+			}
+		}
+		syncLogger.Debugf("delete height:%d", i)
 		db.Delete(generateHeightKey(i))
 	}
 
+	//use for clean dirty data
+	//iterator := db.NewIterator()
+	//for iterator.Next() {
+	//	key := iterator.Key()
+	//	realKey := key[9:]
+	//	if len(realKey) == 8 {
+	//		syncLogger.Debugf("key height:%d", utility.ByteToUInt64(realKey))
+	//	} else {
+	//		syncLogger.Debugf("key hash:%s", common.ToHex(realKey))
+	//	}
+	//	db.Delete(realKey)
+	//}
 	db.Put([]byte(blockCommonAncestorHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
 	db.Put([]byte(latestBlockHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
 	return db
