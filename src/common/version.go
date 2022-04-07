@@ -71,7 +71,7 @@ var (
 		Proposal002Block: 338000,
 		Proposal003Block: 920000,
 		Proposal004Block: 5310000,
-		Proposal005Block: 610000,
+		Proposal005Block: 1000,
 	}
 
 	LocalChainConfig ChainConfig
