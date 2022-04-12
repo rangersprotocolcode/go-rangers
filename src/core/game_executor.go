@@ -252,7 +252,11 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	} else {
 		response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
 	}
-	network.GetNetInstance().SendToClientWriter(message.UserId, response, message.GateNonce)
+
+	if 0 != message.GateNonce {
+		network.GetNetInstance().SendToClientWriter(message.UserId, response, message.GateNonce)
+	}
+
 }
 
 func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, height uint64, txRaw types.Transaction) (bool, string) {
