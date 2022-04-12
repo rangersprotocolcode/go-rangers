@@ -280,17 +280,17 @@ func (api *GtasAPI) CastStat(begin uint64, end uint64) (*Result, error) {
 	}
 
 	for h := begin; h < end; h++ {
-		b := chain.QueryBlock(h)
+		b := chain.QueryBlockHeaderByHeight(h, true)
 		if b == nil {
 			continue
 		}
-		p := string(b.Header.Castor)
+		p := string(b.Castor)
 		if v, ok := proposerStat[p]; ok {
 			proposerStat[p] = v + 1
 		} else {
 			proposerStat[p] = 1
 		}
-		g := string(b.Header.GroupId)
+		g := string(b.GroupId)
 		if v, ok := groupStat[g]; ok {
 			groupStat[g] = v + 1
 		} else {
@@ -331,26 +331,34 @@ func (api *GtasAPI) MinerInfo(addr string) (*Result, error) {
 func (api *GtasAPI) NodeInfo() (*Result, error) {
 	ni := &NodeInfo{}
 	p := consensus.Proc
-	ni.ID = p.GetMinerID().GetHexString()
-	balance := walletManager.getBalance(p.GetMinerID().GetHexString())
-	ni.Balance = balance
+	miner := service.MinerManagerImpl.GetMiner(p.GetMinerID().Serialize(), service.AccountDBManagerInstance.GetLatestStateDB())
+	if nil == miner {
+		return successResult(ni)
+	}
+	ni.ID = common.ToHex(miner.Account)
+
 	if !p.Ready() {
 		ni.Status = "节点未准备就绪"
 	} else {
 		ni.Status = "运行中"
 		morts := make([]MortGage, 0)
 		t := ""
+		balance := ""
 		heavyInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeProposer, service.AccountDBManagerInstance.GetLatestStateDB())
 		if heavyInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(heavyInfo))
 			t = "提案节点"
+			balance = walletManager.getBalance(heavyInfo.Account)
 		}
 
 		lightInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeValidator, service.AccountDBManagerInstance.GetLatestStateDB())
 		if lightInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(lightInfo))
 			t = " 验证节点"
+			balance = walletManager.getBalance(lightInfo.Account)
 		}
+
+		ni.Balance = balance
 		ni.NType = t
 		ni.MortGages = morts
 
@@ -384,12 +392,12 @@ func (api *GtasAPI) PageGetBlocks(page, limit int) (*Result, error) {
 	b := int64(total - num)
 
 	for i < limit && b >= 0 {
-		block := chain.QueryBlock(uint64(b))
+		blockHeader := chain.QueryBlockHeaderByHeight(uint64(b), true)
 		b--
-		if block == nil {
+		if blockHeader == nil {
 			continue
 		}
-		h := convertBlockHeader(block.Header)
+		h := convertBlockHeader(blockHeader)
 		pageObject.Data = append(pageObject.Data, h)
 		i++
 	}

@@ -18,9 +18,13 @@ package vm
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/utility"
 	"fmt"
 	"math"
+	"math/big"
+	"strconv"
+
+	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rocket/node/src/utility"
 
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -1026,182 +1030,100 @@ func pushStringArray(callContext *callCtx, value []string) {
 	callContext.stack.push(uint256.NewInt().SetUint64(offset))
 }
 
-// bool nft.publishNFTSet(string setId, string owner, string nftName, string nftSymbol, uint256 maxSupply);
-func opPublishNFTSet(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	arg_maxSupply := popUint256(callContext)
-	arg_nftSymbol := popString(callContext)
-	arg_nftName := popString(callContext)
-	arg_owner := popString(callContext)
-	arg_setId := popString(callContext)
+func opPrint(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	thisAddress := callContext.contract.Address()
+	argValue := popString(callContext)
 
-	// 业务实现
-	nftSet := &types.NFTSet{}
-	nftSet.SetID = arg_setId
-	nftSet.Name = arg_nftName
-	nftSet.MaxSupply = arg_maxSupply.Uint64()
-	nftSet.Symbol = arg_nftSymbol
-	nftSet.Owner = arg_owner
+	fmt.Printf("%s %s\n", thisAddress, argValue)
 
-	evm := interpreter.evm
-	_, ret_bool := evm.nftManagerInstance.PublishNFTSet(nftSet, evm.accountDB)
-
-	pushBool(callContext, ret_bool)
 	return nil, nil
 }
 
-// bool nft.mintNFT(string owner, string appId,string setId, string nftId, address targetAddress, string data);
-func opMintNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	arg_data := popString(callContext)
-	arg_targetAddress := popAddress(callContext)
-	arg_nftId := popString(callContext)
-	arg_setId := popString(callContext)
-	arg_appId := popString(callContext)
-	arg_owner := popString(callContext)
+func opStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	thisAddress := callContext.contract.Address()
+	argValue := popUint256(callContext)
+	pointerAddress := popAddress(callContext)
+	ret := true
+	source := callContext.contract.caller.Address()
 
-	evm := interpreter.evm
-	nftSetOwner := common.ToHex(common.FromHex(arg_owner))
-	_, ret_bool := evm.nftManagerInstance.MintNFT(nftSetOwner, arg_appId, arg_setId, arg_nftId, arg_data, evm.Time.String(), arg_targetAddress, evm.accountDB)
+	common.DefaultLogger.Debugf("stake source: %s, stake to %s(this->%s), with %s", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString(), argValue.String())
 
-	pushBool(callContext, ret_bool)
-	return nil, nil
-}
+	money := big.NewInt(0).SetBytes(argValue.Bytes())
+	target, err := strconv.ParseUint(utility.BigIntToStrWithoutDot(money), 10, 0)
+	if nil == err {
+		// check for warning
+		if 0 != bytes.Compare(thisAddress.Bytes(), pointerAddress.Bytes()) {
+			common.DefaultLogger.Warnf("stake warning. this: %s, pointer: %s", thisAddress.GetHexString(), pointerAddress.GetHexString())
+		}
 
-// bool nft.transferNFT(string setId, string nftId, address targetAddress);
-func opTransferNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	arg_targetAddress := popAddress(callContext)
-	arg_nftId := popString(callContext)
-	arg_setId := popString(callContext)
-
-	evm := interpreter.evm
-	_, ret_bool := evm.nftManagerInstance.Transfer(arg_setId, arg_nftId, callContext.contract.CallerAddress, arg_targetAddress, evm.accountDB)
-
-	pushBool(callContext, ret_bool)
-	return nil, nil
-}
-
-// bool nft.shuttleNFT(string setId, string nftId, string appId, string targetAppId);
-func opShuttleNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	arg_targetAppId := popString(callContext)
-	popString(callContext)
-	arg_nftId := popString(callContext)
-	arg_setId := popString(callContext)
-
-	evm := interpreter.evm
-	_, ret_bool := evm.nftManagerInstance.Shuttle(callContext.contract.CallerAddress.GetHexString(), arg_setId, arg_nftId, arg_targetAppId, evm.accountDB)
-
-	pushBool(callContext, ret_bool)
-	return nil, nil
-}
-
-// bool nft.approveNFT(string setId, string nftId, address targetAddress);
-func opApproveNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	arg_targetAddress := popAddress(callContext)
-	arg_nftId := popString(callContext)
-	arg_setId := popString(callContext)
-
-	accountDB := interpreter.evm.accountDB
-	ret_bool := accountDB.ApproveNFT(callContext.contract.CallerAddress, "", arg_setId, arg_nftId, arg_targetAddress.GetHexString())
-
-	pushBool(callContext, ret_bool)
-	return nil, nil
-}
-
-// bool nft.revokeNFT(string setId, string nftId);
-func opRevokeNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	arg_nftId := popString(callContext)
-	arg_setId := popString(callContext)
-
-	accountDB := interpreter.evm.accountDB
-	ret_bool := accountDB.ApproveNFT(callContext.contract.CallerAddress, "", arg_setId, arg_nftId, callContext.contract.CallerAddress.GetHexString())
-
-	pushBool(callContext, ret_bool)
-	return nil, nil
-}
-
-// bool nft.removeNFT(string setId, string nftId);
-func opRemoveNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	arg_nftId := popString(callContext)
-	arg_setId := popString(callContext)
-
-	accountDB := interpreter.evm.accountDB
-	ret_bool := accountDB.RemoveNFTByGameId(callContext.contract.CallerAddress, arg_setId, arg_nftId)
-
-	pushBool(callContext, ret_bool)
-	return nil, nil
-}
-
-// bool nft.updateData(string appId, string setId, string nftId, string key, string value);
-func opUpdateData(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	arg_value := popString(callContext)
-	arg_key := popString(callContext)
-	arg_nftId := popString(callContext)
-	arg_setId := popString(callContext)
-	arg_appId := popString(callContext)
-
-	evm := interpreter.evm
-	ret_bool := evm.nftManagerInstance.UpdateNFT(arg_appId, arg_setId, arg_nftId, arg_value, arg_key, evm.accountDB)
-
-	pushBool(callContext, ret_bool)
-	return nil, nil
-}
-
-// string nft.getData(string appId, string setId, string id, string key);
-func opGetData(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	//ret_string := "data_325412312345647645"
-	arg_key := popString(callContext)
-	arg_id := popString(callContext)
-	arg_setId := popString(callContext)
-	arg_appId := popString(callContext)
-
-	evm := interpreter.evm
-	nft := evm.nftManagerInstance.GetNFT(arg_setId, arg_id, evm.accountDB)
-	if nil == nft {
-		fmt.Printf("nft.getData(%v, %v, %v, %v) return %v\n", arg_appId, arg_setId, arg_id, arg_key, "")
-		pushString(callContext, "")
-		return nil, nil
+		miner := service.MinerManagerImpl.GetMinerIdByAccount(pointerAddress.Bytes(), interpreter.evm.accountDB)
+		if nil == miner {
+			common.DefaultLogger.Warnf("stake error. no miner for address : %s", pointerAddress.GetHexString())
+			ret = false
+		} else {
+			var msg string
+			ret, msg = service.MinerManagerImpl.AddStake(source, miner, target, interpreter.evm.accountDB)
+			common.DefaultLogger.Infof("stake result: %t, msg: %s", ret, msg)
+		}
+	} else {
+		common.DefaultLogger.Errorf("stake fail to convert money, %s, err: %s", money.String(), err)
+		ret = false
 	}
 
-	ret_string := nft.GetProperty(arg_appId, arg_key)
-	pushString(callContext, ret_string)
+	pushBool(callContext, ret)
 	return nil, nil
 }
 
-// bool nft.isExistedNFTSet(string setId);
-func opIsExistedNFTSet(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	arg_setId := popString(callContext)
+func opUnStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	thisAddress := callContext.contract.Address()
+	argValue := popUint256(callContext)
+	pointerAddress := popAddress(callContext)
+	ret := true
+	source := callContext.contract.caller.Address()
+	common.DefaultLogger.Debugf("unstake source: %s, stake to %s(this->%s), with %s", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString(), argValue.String())
 
-	evm := interpreter.evm
-	ret_bool := evm.nftManagerInstance.Contains(arg_setId, evm.accountDB)
-
-	pushBool(callContext, ret_bool)
-	return nil, nil
-}
-
-// bool nft.isExistedNFT(string setId, string nftId);
-func opIsExistedNFT(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	arg_nftId := popString(callContext)
-	arg_setId := popString(callContext)
-
-	evm := interpreter.evm
-	nft := evm.nftManagerInstance.GetNFT(arg_setId, arg_nftId, evm.accountDB)
-	ret_bool := nft != nil
-
-	pushBool(callContext, ret_bool)
-	return nil, nil
-}
-
-// []string nft.getNFTList(address ownerAddress);
-func opGetNFTList(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	ret_stringarray := make([]string, 0)
-	arg_ownerAddress := popAddress(callContext)
-
-	evm := interpreter.evm
-	nftList := evm.nftManagerInstance.GetNFTListByAddress(arg_ownerAddress, "", evm.accountDB)
-	for _, nft := range nftList {
-		ret_stringarray = append(ret_stringarray, nft.SetID)
-		ret_stringarray = append(ret_stringarray, nft.ID)
+	// check for warning
+	if 0 != bytes.Compare(thisAddress.Bytes(), pointerAddress.Bytes()) {
+		common.DefaultLogger.Warnf("unstack warning. this: %s, pointer: %s", thisAddress.GetHexString(), pointerAddress.GetHexString())
 	}
 
-	pushStringArray(callContext, ret_stringarray)
+	miner := service.MinerManagerImpl.GetMinerIdByAccount(pointerAddress.Bytes(), interpreter.evm.accountDB)
+	if nil == miner {
+		common.DefaultLogger.Warnf("unstack error. no miner for address : %s", pointerAddress.GetHexString())
+		ret = false
+	} else {
+		money := big.NewInt(0).SetBytes(argValue.Bytes())
+		target, _ := strconv.ParseUint(utility.BigIntToStrWithoutDot(money), 10, 0)
+		height := interpreter.evm.BlockNumber
+		accountdb := interpreter.evm.accountDB
+		refundHeight, money, addr, refundErr := service.RefundManagerImpl.GetRefundStake(height.Uint64(), miner, pointerAddress.Bytes(), target, accountdb, "evm")
+
+		if nil != refundErr {
+			ret = false
+			common.DefaultLogger.Errorf(refundErr.Error())
+		} else {
+			refundInfo := types.RefundInfoList{}
+			target := utility.Uint64ToBigInt(argValue.Uint64())
+
+			//
+			if money.Cmp(target) > 0 {
+				remain := big.NewInt(0)
+				remain.Sub(money, target)
+				common.DefaultLogger.Debugf("unstake, addr: %s gets remain: %s to , at height: %d", common.ToHex(addr), remain.String(), refundHeight)
+				refundInfo.AddRefundInfo(addr, remain)
+			}
+
+			refundInfo.AddRefundInfo(source.Bytes(), target)
+
+			data := make(map[uint64]types.RefundInfoList)
+			data[refundHeight] = refundInfo
+
+			service.RefundManagerImpl.Add(data, accountdb)
+
+			common.DefaultLogger.Debugf("unstake. source: %s wants money: %s, but real: %s, at height: %d", source, target.String(), money.String(), refundHeight)
+		}
+	}
+
+	pushBool(callContext, ret)
 	return nil, nil
 }

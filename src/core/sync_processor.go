@@ -88,6 +88,8 @@ func InitSyncProcessor(privateKey common.PrivateKey, id string) {
 }
 
 func (p *syncProcessor) GetCandidateInfo() CandidateInfo {
+	p.lock.RLock("GetCandidateInfo")
+	defer p.lock.RUnlock("GetCandidateInfo")
 	return p.candidateInfo
 }
 
@@ -105,10 +107,12 @@ func (p *syncProcessor) loop() {
 		case <-p.syncTimer.C:
 			go p.trySync()
 		case <-p.blockReqTimer.C:
-			p.logger.Debugf("Sync to %s time out!", p.candidateInfo.Id)
+			candidateId := p.GetCandidateInfo().Id
+			p.logger.Debugf("Sync to %s time out!", candidateId)
 			p.finishCurrentSyncWithLock(false)
 		case <-p.groupReqTimer.C:
-			p.logger.Debugf("Sync to %s time out!", p.candidateInfo.Id)
+			candidateId := p.GetCandidateInfo().Id
+			p.logger.Debugf("Sync to %s time out!", candidateId)
 			p.finishCurrentSyncWithLock(false)
 		}
 	}
@@ -189,7 +193,8 @@ func (p *syncProcessor) trySync() {
 		return
 	}
 	if p.syncing {
-		p.logger.Debugf("Syncing to %s,do not sync!", p.candidateInfo.Id)
+		candidateId := p.GetCandidateInfo().Id
+		p.logger.Debugf("Syncing to %s,do not sync!", candidateId)
 		return
 	}
 	p.lock.Lock("trySync")

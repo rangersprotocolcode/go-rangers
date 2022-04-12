@@ -17,11 +17,13 @@
 package service
 
 import (
+	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
+	"fmt"
 	"github.com/pkg/errors"
 	"math"
 	"math/big"
@@ -100,18 +102,24 @@ func (refund *RefundManager) Add(data map[uint64]types.RefundInfoList, db *accou
 	}
 }
 
-func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint64, accountdb *account.AccountDB, situation string) (uint64, *big.Int, error) {
+func (this *RefundManager) GetRefundStake(now uint64, minerId, account []byte, money uint64, accountdb *account.AccountDB, situation string) (uint64, *big.Int, []byte, error) {
 	this.logger.Debugf("getRefund, minerId:%s, height: %d, money: %d", common.ToHex(minerId), now, money)
 	miner := MinerManagerImpl.GetMiner(minerId, accountdb)
 	if nil == miner {
-		this.logger.Debugf("getRefund error, minerId:%s, height: %d, money: %d, miner not existed", common.ToHex(minerId), now, money)
-		return 0, nil, errors.New("miner not existed")
+		this.logger.Errorf("getRefund error, minerId:%s, height: %d, money: %d, miner not existed", common.ToHex(minerId), now, money)
+		return 0, nil, nil, errors.New("miner not existed")
+	}
+
+	if 0 != bytes.Compare(account, miner.Account) {
+		msg := fmt.Sprintf("getRefund error, minerId:%s, height: %d, money: %d, auth error. account: %s vs except: %s", common.ToHex(minerId), now, money, common.ToHex(account), common.ToHex(miner.Account))
+		this.logger.Errorf(msg)
+		return 0, nil, nil, errors.New(msg)
 	}
 
 	// 超出了质押量，不能提
 	if miner.Stake < money {
-		this.logger.Debugf("getRefund error, minerId:%s, height: %d, money: %d, not enough stake. stake: %d", common.ToHex(minerId), now, money, miner.Stake)
-		return 0, nil, errors.New("not enough stake")
+		this.logger.Errorf("getRefund error, minerId:%s, height: %d, money: %d, not enough stake. stake: %d", common.ToHex(minerId), now, money, miner.Stake)
+		return 0, nil, nil, errors.New("not enough stake")
 	}
 
 	refund := money
@@ -119,19 +127,25 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint
 	// 验证小于最小质押量，则退出矿工
 	if miner.Type == common.MinerTypeProposer && left < common.ProposerStake ||
 		miner.Type == common.MinerTypeValidator && left < common.ValidatorStake {
-		MinerManagerImpl.RemoveMiner(minerId, miner.Type, accountdb)
-		refund = miner.Stake
+		MinerManagerImpl.RemoveMiner(minerId, account, miner.Type, accountdb, left)
 	} else {
 		// update miner
 		miner.Stake = left
 		MinerManagerImpl.UpdateMiner(miner, accountdb, false)
 	}
 
-	// 计算解锁高度
-	height := RewardCalculatorImpl.NextRewardHeight(now) + common.RefundBlocks
+	height := this.getRefundHeight(now, left, miner.Type, minerId, situation)
+
+	this.logger.Debugf("getRefund end, minerId: %s, height: %d, money: %d", common.ToHex(minerId), height, refund)
+	return height, utility.Uint64ToBigInt(refund), miner.Account, nil
+}
+
+// 计算解锁高度
+func (this *RefundManager) getRefundHeight(now, left uint64, minerType byte, minerId []byte, situation string) uint64 {
+	height := uint64(0)
 
 	// 验证节点，计算最多能加入的组数，来确定解锁块高
-	if miner.Type == common.MinerTypeValidator {
+	if minerType == common.MinerTypeValidator {
 		// 检查当前加入了多少组
 		var groups []*types.Group
 		if situation != "fork" {
@@ -150,15 +164,21 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId []byte, money uint
 				dismissHeightList = append(dismissHeightList, group.Header.DismissHeight)
 			}
 			sort.Sort(dismissHeightList)
-			height = dismissHeightList[delta-1] + common.RefundBlocks
+
+			base := dismissHeightList[delta-1]
+			if base != math.MaxUint64 {
+				height = base + common.RefundBlocks
+			}
+
 		}
+	} else {
+		height = RewardCalculatorImpl.NextRewardHeight(now) + common.RefundBlocks
 	}
 
-	if height < 0 {
-		height = math.MaxUint64
+	if common.IsProposal004() && height <= 0 {
+		height = now + common.RefundBlocks*100
 	}
-	this.logger.Debugf("getRefund end, minerId:%s, height: %d, money: %d", common.ToHex(minerId), height, refund)
-	return height, utility.Uint64ToBigInt(refund), nil
+	return height
 }
 
 type DismissHeightList []uint64

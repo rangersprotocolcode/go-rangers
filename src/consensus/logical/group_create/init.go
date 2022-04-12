@@ -112,7 +112,7 @@ func (p *groupCreateProcessor) OnGroupAddSuccess(g *model.GroupInfo) {
 	//p.globalGroups.removeInitedGroup(sgi.GInfo.GroupHash())
 
 	//p.groupInitContextCache.Clean(g.GroupInitInfo.GroupHash())
-	p.groupSignCollectorMap.Delete(g.GroupInitInfo.GroupHash())
+	p.groupSignCollectorMap.Delete(g.GroupInitInfo.GroupHash().Hex())
 	if p.joinedGroupStorage.BelongGroup(g.GroupID) {
 		p.groupInitContextCache.RemoveContext(g.GroupInitInfo.GroupHash())
 		//退出DUMMY 网络
@@ -184,7 +184,7 @@ func (p *groupCreateProcessor) ReleaseGroups(topHeight uint64) (needDimissGroups
 			groupCreateLogger.Debugf("remove groupPubkeyCollector, gHash %v", hash.ShortS())
 			//quit group net.group hash
 			p.NetServer.ReleaseGroupNet(hash.Hex())
-			p.groupSignCollectorMap.Delete(hash)
+			p.groupSignCollectorMap.Delete(hash.Hex())
 		}
 		return true
 	})

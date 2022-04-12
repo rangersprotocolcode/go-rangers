@@ -76,7 +76,7 @@ func (pk *PrivateKey) GetPubKey() PublicKey {
 
 //导出函数
 func (pk *PrivateKey) GetHexString() string {
-	buf := pk.ToBytes()
+	buf := pk.PrivKey.D.Bytes()
 	str := PREFIX + hex.EncodeToString(buf)
 	return str
 }
@@ -86,21 +86,17 @@ func HexStringToSecKey(s string) (sk *PrivateKey) {
 	if len(s) < len(PREFIX) || s[:len(PREFIX)] != PREFIX {
 		return
 	}
-	buf, _ := hex.DecodeString(s[len(PREFIX):])
-	sk = BytesToSecKey(buf)
+	sk = new(PrivateKey)
+	sk.PrivKey.D = new(big.Int).SetBytes(FromHex(s))
+	sk.PrivKey.PublicKey.Curve = getDefaultCurve()
+	sk.PrivKey.PublicKey.X, sk.PrivKey.PublicKey.Y = getDefaultCurve().ScalarBaseMult(sk.PrivKey.D.Bytes())
 	return
 }
 
-func (pk *PrivateKey) ToBytes() []byte {
-	buf := make([]byte, SecKeyLength)
-	copy(buf[:PubKeyLength], pk.GetPubKey().ToBytes())
-	d := pk.PrivKey.D.Bytes() //D序列化
-	if len(d) > 32 {
-		panic("privateKey data length error: D length is more than 32!")
-	}
-	copy(buf[SecKeyLength-len(d):SecKeyLength], d)
-
-	return buf
+//私钥解密消息
+func (pk *PrivateKey) Decrypt(rand io.Reader, ct []byte) (m []byte, err error) {
+	prv := ecies.ImportECDSA(&pk.PrivKey)
+	return prv.Decrypt(rand, ct, nil, nil)
 }
 
 func BytesToSecKey(data []byte) (sk *PrivateKey) {
@@ -108,6 +104,7 @@ func BytesToSecKey(data []byte) (sk *PrivateKey) {
 		return nil
 	}
 	sk = new(PrivateKey)
+
 	buf_pub := data[:PubKeyLength]
 	buf_d := data[PubKeyLength:]
 	sk.PrivKey.PublicKey = BytesToPublicKey(buf_pub).PubKey
@@ -116,10 +113,4 @@ func BytesToSecKey(data []byte) (sk *PrivateKey) {
 		return sk
 	}
 	return nil
-}
-
-//私钥解密消息
-func (pk *PrivateKey) Decrypt(rand io.Reader, ct []byte) (m []byte, err error) {
-	prv := ecies.ImportECDSA(&pk.PrivKey)
-	return prv.Decrypt(rand, ct, nil, nil)
 }

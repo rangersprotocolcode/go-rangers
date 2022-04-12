@@ -40,10 +40,6 @@ type (
 		prevbalance *big.Int
 	}
 
-	balanceChange struct {
-		account *common.Address
-		prev    *big.Int
-	}
 	nonceChange struct {
 		account *common.Address
 		prev    uint64
@@ -104,7 +100,7 @@ func (ch suicideChange) undo(s *AccountDB) {
 	obj := s.getAccountObject(*ch.account, false)
 	if obj != nil {
 		obj.suicided = ch.prev
-		obj.setBalance(ch.prevbalance)
+		s.setBalance(*ch.account, ch.prevbalance)
 	}
 }
 
@@ -117,10 +113,6 @@ func (ch touchChange) undo(s *AccountDB) {
 			delete(s.accountObjectsDirty, *ch.account)
 		}
 	}
-}
-
-func (ch balanceChange) undo(s *AccountDB) {
-	s.getAccountObject(*ch.account, false).setBalance(ch.prev)
 }
 
 func (ch nonceChange) undo(s *AccountDB) {

@@ -151,7 +151,7 @@ func (p *groupCreateProcessor) selectParentGroup(baseBH *types.BlockHeader, preG
 //生成 CreateGroupContext
 func (p *groupCreateProcessor) genCreateGroupBaseInfo(baseHeight uint64) (*createGroupBaseInfo, error) {
 	lastGroup := p.groupChain.LastGroup()
-	baseBH := p.blockChain.QueryBlock(baseHeight).Header
+	baseBH := p.blockChain.QueryBlockHeaderByHeight(baseHeight, true)
 	if !validateHeight(baseHeight) {
 		return nil, fmt.Errorf("cannot create group at the height")
 	}

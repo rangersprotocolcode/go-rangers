@@ -23,10 +23,8 @@ import (
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/base64"
 	"encoding/json"
-	"fmt"
 	"math/big"
 	"strconv"
-	"strings"
 )
 
 func GetBalance(source common.Address, accountDB *account.AccountDB) string {
@@ -38,135 +36,12 @@ func GetBalance(source common.Address, accountDB *account.AccountDB) string {
 	return utility.BigIntToStr(balance)
 }
 
-func GetCoinBalance(source common.Address, bnt string) string {
-	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	balance := accountDB.GetBNT(source, bnt)
-
-	return utility.BigIntToStr(balance)
-}
-
-func GetAllCoinInfo(source common.Address) string {
-	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	ftMap := accountDB.GetAllBNT(source)
-	data := make(map[string]string, 0)
-	for key, value := range ftMap {
-		data[key] = utility.BigIntToStr(value)
-	}
-	bytes, _ := json.Marshal(data)
-	return string(bytes)
-}
-
-func GetFTInfo(source common.Address, ft string) string {
-	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	balance := accountDB.GetFT(source, ft)
-
-	return utility.BigIntToStr(balance)
-}
-
-func GetAllFT(source common.Address) string {
-	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	ftMap := accountDB.GetAllFT(source)
-	data := make(map[string]string, 0)
-	for key, value := range ftMap {
-		data[key] = utility.BigIntToStr(value)
-	}
-	bytes, _ := json.Marshal(data)
-	return string(bytes)
-}
-
-func GetNFTCount(addr, setId, appId string) int {
-	accountDB := AccountDBManagerInstance.GetAccountDB(appId, true)
-	nftSet := NFTManagerInstance.GetNFTSet(setId, accountDB)
-	if nil == nftSet {
-		return 0
-	}
-
-	count := 0
-	for _, owner := range nftSet.OccupiedID {
-		if owner.String() == addr {
-			count++
-		}
-	}
-
-	return count
-}
-func GetNFTInfo(setId, id, appId string) string {
-	txLogger.Tracef("Get nft nfo.setId:%s,id:%s,appid:%s,", setId, id, appId)
-	accountDB := AccountDBManagerInstance.GetAccountDB(appId, true)
-	nft := NFTManagerInstance.GetNFT(setId, id, accountDB)
-	if nil != nft {
-		txLogger.Tracef("Got nft info:%s,", nft.ToJSONString())
-		return nft.ToJSONString()
-	}
-	txLogger.Tracef("Got nil nft ")
-	return ""
-}
-
-func GetAllNFT(source common.Address, appId string) string {
-	accountDB := AccountDBManagerInstance.GetAccountDB(appId, true)
-	nftList := NFTManagerInstance.GetNFTListByAddress(source, appId, accountDB)
-	bytes, _ := json.Marshal(nftList)
-	return string(bytes)
-}
-
-func GetAllNFTBySetId(source string, setId string) string {
-	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	nftList := NFTManagerInstance.GetNFTListByAddress(common.HexToAddress(source), "", accountDB)
-
-	result := make([]string, 0)
-
-	if 0 != len(nftList) {
-		for _, nft := range nftList {
-			if nft.SetID == setId {
-				result = append(result, nft.ToJSONString())
-			}
-		}
-	}
-
-	bytes, _ := json.Marshal(result)
-	return string(bytes)
-}
-
-func GetNFTSet(setId string) string {
-	txLogger.Tracef("Get nft set id:%s,", setId)
-	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	nftSet := NFTManagerInstance.GetNFTSet(setId, accountDB)
-	if nil != nftSet {
-		txLogger.Tracef("Got nft set info:%s,", nftSet.ToJSONString())
-		return nftSet.ToJSONString()
-	}
-	txLogger.Tracef("Got nil nft set:%v", nftSet)
-	return ""
-}
-
-func GetFTSet(id string) string {
-	accountDB := AccountDBManagerInstance.GetAccountDB("", true)
-	ftSet := FTManagerInstance.GetFTSet(id, accountDB)
-
-	response := make(map[string]string)
-	if nil != ftSet {
-		response["createTime"] = ftSet.CreateTime
-		response["owner"] = ftSet.Owner
-		response["maxSupply"] = utility.BigIntToStr(ftSet.MaxSupply)
-		response["symbol"] = ftSet.Symbol
-		response["name"] = ftSet.Name
-		response["setId"] = ftSet.ID
-		response["creator"] = ftSet.AppId
-		if ftSet.TotalSupply != nil {
-			response["totalSupply"] = utility.BigIntToStr(ftSet.TotalSupply)
-		} else {
-			response["totalSupply"] = "0"
-		}
-
-		bytes, _ := json.Marshal(response)
-		return string(bytes)
-	}
-
-	return ""
+func GetNetWorkId() string {
+	return common.NetworkId()
 }
 
 func GetChainId() string {
-	return common.ChainId
+	return common.ChainId(utility.MaxUint64)
 }
 
 func GetNonce(address common.Address, accountDB *account.AccountDB) string {
@@ -186,12 +61,16 @@ func GetReceipt(txHash common.Hash) string {
 	return string(result)
 }
 
-func GetStorageAt(address string, key string, accountDB *account.AccountDB) string {
+//获取合约的存储数据
+func GetContractStorageAt(address string, key string, accountDB *account.AccountDB) string {
 	if accountDB == nil {
 		return ""
 	}
-	value := accountDB.GetData(common.HexToAddress(address), []byte(key))
-	return base64.StdEncoding.EncodeToString(value)
+	value := accountDB.GetData(common.HexToAddress(address), common.HexToHash(key).Bytes())
+	if value == nil {
+		value = common.Hash{}.Bytes()
+	}
+	return common.ToHex(value)
 }
 
 func GetCode(address string, accountDB *account.AccountDB) string {
@@ -200,52 +79,6 @@ func GetCode(address string, accountDB *account.AccountDB) string {
 	}
 	value := accountDB.GetCode(common.HexToAddress(address))
 	return base64.StdEncoding.EncodeToString(value)
-}
-
-// 状态机更新资产
-// 包括货币转账、NFT资产修改
-func UpdateAsset(user types.UserData, appId string, accountDB *account.AccountDB) bool {
-	userAddr := common.HexToAddress(user.Address)
-	appAddr := common.HexToAddress(appId)
-
-	// 转balance
-	transferBalanceOk, _ := transferBalance(user.Balance, appAddr, userAddr, accountDB)
-	if !transferBalanceOk {
-		logger.Debugf("Change balance failed!")
-		return false
-	}
-
-	// 转coin
-	_, ok := transferCoin(user.Coin, appId, user.Address, accountDB)
-	if !ok {
-		logger.Debugf("Change coin failed!")
-		return false
-	}
-
-	// 转FT
-	ftList := user.FT
-	if 0 != len(ftList) {
-		for ftName, valueString := range ftList {
-			_, _, flag := FTManagerInstance.TransferFT(appId, ftName, user.Address, valueString, accountDB)
-			if !flag {
-				logger.Debugf("Game Change ft failed!")
-				return false
-			}
-		}
-	}
-
-	// 修改NFT属性
-	// 若修改不存在的NFT，则会失败
-	nftList := user.NFT
-	if 0 != len(nftList) {
-		for _, nft := range nftList {
-			if !NFTManagerInstance.UpdateNFT(appId, nft.SetId, nft.Id, nft.Data, nft.Property, accountDB) {
-				return false
-			}
-		}
-	}
-
-	return true
 }
 
 // false 表示转账失败
@@ -271,37 +104,6 @@ func ChangeAssets(source string, targets map[string]types.TransferData, accountd
 			logger.Debugf("%s to %s, target: %s", source, address, utility.BigIntToStr(accountdb.GetBalance(targetAddr)))
 			responseBalance = utility.BigIntToStr(leftBalance)
 		}
-
-		// 转coin
-		left, ok := transferCoin(transferData.Coin, source, address, accountdb)
-		if !ok {
-			logger.Debugf("Transfer coin failed!")
-			return "Transfer BNT Failed", false
-		} else {
-			responseCoin.Merge(left, types.ReplaceBigInt)
-		}
-
-		// 转FT
-		ftList := transferData.FT
-		if 0 != len(ftList) {
-			left, ok := transferFT(ftList, source, address, accountdb)
-			if !ok {
-				logger.Debugf("Transfer ft failed!")
-				return "Transfer FT Filed", false
-			} else {
-				responseFT.Merge(left, types.ReplaceBigInt)
-			}
-		}
-
-		// 转NFT
-		nftList, ok := transferNFT(transferData.NFT, sourceAddr, targetAddr, accountdb)
-		if !ok {
-			logger.Debugf("Transfer nft failed!")
-			return "Transfer NFT Failed", false
-		} else if 0 != len(nftList) {
-			responseNFT = append(responseNFT, nftList...)
-		}
-
 	}
 
 	response := types.NewJSONObject()
@@ -318,25 +120,6 @@ func ChangeAssets(source string, targets map[string]types.TransferData, accountd
 		response.Put("nft", responseNFT)
 	}
 	return response.TOJSONString(), true
-}
-
-func transferNFT(nftIDList []types.NFTID, source common.Address, target common.Address, db *account.AccountDB) ([]types.NFTID, bool) {
-	length := len(nftIDList)
-	if 0 == length {
-		return nil, true
-	}
-
-	response := make([]types.NFTID, 0)
-	for _, id := range nftIDList {
-		_, flag := NFTManagerInstance.Transfer(id.SetId, id.Id, source, target, db)
-		if !flag {
-			return nil, false
-		}
-
-		response = append(response, id)
-	}
-
-	return response, true
 }
 
 func transferBalance(value string, source common.Address, target common.Address, accountDB *account.AccountDB) (bool, *big.Int) {
@@ -364,198 +147,4 @@ func transferBalance(value string, source common.Address, target common.Address,
 	left := accountDB.SubBalance(source, balance)
 
 	return true, left
-}
-
-func transferFT(ft map[string]string, source string, target string, accountDB *account.AccountDB) (*types.JSONObject, bool) {
-	if 0 == len(ft) {
-		return nil, true
-	}
-	response := types.NewJSONObject()
-
-	for ftName, valueString := range ft {
-		message, left, ok := FTManagerInstance.TransferFT(source, ftName, target, valueString, accountDB)
-		if !ok {
-			logger.Debugf("Transfer FT Failed:%s", message)
-			return nil, false
-		}
-
-		response.Put(ftName, left)
-	}
-
-	return &response, true
-}
-
-func transferCoin(coin map[string]string, source string, target string, accountDB *account.AccountDB) (*types.JSONObject, bool) {
-	if 0 == len(coin) {
-		return nil, true
-	}
-	response := types.NewJSONObject()
-
-	for ftName, valueString := range coin {
-		message, left, ok := FTManagerInstance.TransferBNT(source, ftName, target, valueString, accountDB)
-		if !ok {
-			logger.Debugf("Transfer FT Failed:%s", message)
-			return nil, false
-		}
-
-		response.Put(ftName, left)
-	}
-
-	return &response, true
-}
-
-// tx.source : 发币方
-// tx.type = 110
-// tx.data 发行参数，map jsonString
-// {"symbol":"","name":"","totalSupply":"12345678"}
-func PublishFT(accountdb *account.AccountDB, tx *types.Transaction) (string, bool) {
-	txLogger.Debugf("Execute publish ft tx:%s", tx.ToTxJson().ToString())
-	var ftSet map[string]string
-	if err := json.Unmarshal([]byte(tx.Data), &ftSet); nil != err {
-		txLogger.Errorf("Unmarshal data error:%s", err.Error())
-		return "Publish FT Bad Format", false
-	}
-
-	appId := tx.Source
-	createTime := ftSet["createTime"]
-	id, ok := FTManagerInstance.PublishFTSet(FTManagerInstance.GenerateFTSet(ftSet["name"], ftSet["symbol"], appId, ftSet["maxSupply"], appId, createTime, 1), accountdb)
-	txLogger.Debugf("Publish ft name:%s,symbol:%s,totalSupply:%s,appId:%s,id:%s,publish result:%t", ftSet["name"], ftSet["symbol"], ftSet["totalSupply"], appId, id, ok)
-
-	return id, ok
-}
-
-func PublishNFTSet(accountdb *account.AccountDB, tx *types.Transaction) (bool, string) {
-	txLogger.Tracef("Execute publish nft tx:%s", tx.ToTxJson().ToString())
-
-	var nftSet types.NFTSet
-	if err := json.Unmarshal([]byte(tx.Data), &nftSet); nil != err {
-		txLogger.Errorf("Unmarshal data error:%s", err.Error())
-		return false, "Publish NFT Set Bad Format"
-	}
-
-	appId := tx.Source
-	message, flag := NFTManagerInstance.PublishNFTSet(NFTManagerInstance.GenerateNFTSet(nftSet.SetID, nftSet.Name, nftSet.Symbol, appId, appId, nftSet.Conditions, nftSet.MaxSupply, nftSet.CreateTime), accountdb)
-	return flag, message
-}
-
-func MintFT(accountdb *account.AccountDB, tx *types.Transaction) (bool, string) {
-	data := make(map[string]string)
-	json.Unmarshal([]byte(tx.Data), &data)
-
-	message, result := FTManagerInstance.MintFT(tx.Source, data["ftId"], tx.Target, data["supply"], accountdb)
-	return result, message
-}
-
-func ShuttleNFT(db *account.AccountDB, tx *types.Transaction) (bool, string) {
-	data := make(map[string]string)
-	json.Unmarshal([]byte(tx.Data), &data)
-
-	message, ok := NFTManagerInstance.Shuttle(tx.Source, data["setId"], data["id"], data["newAppId"], db)
-
-	return ok, message
-}
-
-func MintNFT(accountdb *account.AccountDB, tx *types.Transaction) (bool, string) {
-	data := make(map[string]string)
-	json.Unmarshal([]byte(tx.Data), &data)
-
-	message, ok := NFTManagerInstance.MintNFT(tx.Source, data["appId"], data["setId"], data["id"], data["data"], data["createTime"], common.HexToAddress(data["target"]), accountdb)
-	return ok, message
-}
-
-func UpdateNFT(accountDB *account.AccountDB, tx *types.Transaction) (bool, string) {
-	params := make(map[string]string, 0)
-	json.Unmarshal([]byte(tx.Data), &params)
-
-	appId := tx.Source
-	setId := params["setId"]
-	id := params["id"]
-	data := params["data"]
-	propertyString := params["property"]
-
-	if 0 == len(appId) || 0 == len(setId) || 0 == len(id) {
-		return false, "param error"
-	}
-
-	if NFTManagerInstance.UpdateNFT(appId, setId, id, data, propertyString, accountDB) {
-		return true, "success update nft"
-	} else {
-		msg := fmt.Sprintf("fail to update setId %s or id %s", setId, id)
-		txLogger.Debugf(msg)
-		return false, msg
-	}
-}
-
-func approveNFT(accountDB *account.AccountDB, params map[string]string, owner string) (bool, string) {
-	setId := params["setId"]
-	id := params["id"]
-	target := params["target"]
-
-	if 0 == len(owner) || 0 == len(target) || 0 == len(setId) || 0 == len(id) {
-		return false, fmt.Sprintf("param error. owner: %s, setId: %s, id: %s, target: %s", owner, setId, id, target)
-	}
-
-	if accountDB.ApproveNFT(common.HexToAddress(owner), owner, setId, id, target) {
-		return true, "success"
-	} else {
-		msg := fmt.Sprintf("fail to approve/revoke NFT, setId %s or id %s from %s to %s", setId, id, owner, target)
-		txLogger.Debugf(msg)
-		return false, msg
-	}
-}
-
-func ApproveNFT(accountDB *account.AccountDB, tx *types.Transaction) (bool, string) {
-	params := make(map[string]string, 0)
-	json.Unmarshal([]byte(tx.Data), &params)
-
-	return approveNFT(accountDB, params, tx.Source)
-}
-
-func RevokeNFT(accountDB *account.AccountDB, tx *types.Transaction) (bool, string) {
-	params := make(map[string]string, 0)
-	json.Unmarshal([]byte(tx.Data), &params)
-
-	params["target"] = tx.Source
-	return approveNFT(accountDB, params, tx.Source)
-}
-
-func ComboNFT(accountDB *account.AccountDB, transaction *types.Transaction) (bool, string) {
-	nftId := strings.Split(transaction.Target, ":")
-	if 2 != len(nftId) {
-		return false, "nftId error: " + transaction.Target
-	}
-
-	// nftSet owner check
-	setId := nftId[0]
-	if !accountDB.CheckNFTSetOwner(setId, transaction.Source) {
-		return false, "nftSetOwner error: " + transaction.Source
-	}
-
-	// nft check
-	id := nftId[1]
-	nft := accountDB.GetNFTById(setId, id)
-	if nil == nft {
-		return false, fmt.Sprintf("no such nft: %s %s", setId, id)
-	}
-
-	// 资源提供方
-	var sourceAddr common.Address
-	if 0 == len(transaction.ExtraData) {
-		sourceAddr = common.HexToAddress(nft.Owner)
-	} else {
-		sourceAddr = common.HexToAddress(transaction.ExtraData)
-	}
-
-	// 所需的资源
-	var resource types.LockResource
-	if err := json.Unmarshal(utility.StrToBytes(transaction.Data), resource); nil != err {
-		return false, "resource data error: " + transaction.Data
-	}
-
-	success, msg := accountDB.ComboResource(sourceAddr, common.GenerateNFTSetAddress(setId), setId, id, resource)
-	if success {
-		return success, "nft combo successful"
-	} else {
-		return success, msg
-	}
 }

@@ -141,5 +141,5 @@ func mockEVM(cfg *testConfig) *vm.EVM {
 		GasLimit:    cfg.GasLimit,
 		GasPrice:    cfg.GasPrice,
 	}
-	return vm.NewEVMWithNFT(context, cfg.State, NFTManagerInstance, cfg.State)
+	return vm.NewEVMWithNFT(context, cfg.State, cfg.State)
 }

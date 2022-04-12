@@ -14,22 +14,45 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package executor
+package mysql
 
-import (
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/storage/account"
-)
-
-type exchangeRateExecutor struct {
+type TxRaw struct {
+	Nonce     uint64
+	UserId    string
+	Data      string
+	GateNonce uint64
 }
 
-// 不扣手续费
-func (this *exchangeRateExecutor) BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
-	return true, ""
-}
+func GetTxRaws(start uint64) []TxRaw {
+	if nil == MysqlDB {
+		return nil
+	}
 
-func (this *exchangeRateExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
-	return service.SetExchangeRate(accountdb, transaction)
+	rows, err := MysqlDB.Query("SELECT id,userid,data,gatenonce FROM `tx_raw` where id>? limit 100", start)
+	defer func() {
+		if nil != rows {
+			rows.Close()
+		}
+	}()
+
+	if nil != err {
+		logger.Errorf(err.Error())
+		return nil
+	}
+
+	result := make([]TxRaw, 0)
+	var txRaw TxRaw
+	for rows.Next() {
+		err := rows.Scan(&txRaw.Nonce, &txRaw.UserId, &txRaw.Data, &txRaw.GateNonce)
+		if nil != err {
+			logger.Errorf(err.Error())
+			return nil
+		}
+		result = append(result, txRaw)
+	}
+
+	if 0 != len(result) {
+		logger.Debugf("receive nonce from %d to %d", result[0].Nonce, result[len(result)-1].Nonce)
+	}
+	return result
 }

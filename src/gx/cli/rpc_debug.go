@@ -191,7 +191,7 @@ func (api *GtasAPI) DebugVerifySummary(from, to uint64) (*Result, error) {
 		allGroup:    allGroup,
 	}
 	nextGroupId, _ := selectNextVerifyGroup(allGroup, top, 1)
-	preBH := chain.QueryBlock(from - 1).Header
+	preBH := chain.QueryBlockHeaderByHeight(from-1, true)
 
 	t := float64(0)
 	b := 0

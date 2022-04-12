@@ -29,8 +29,8 @@ const (
 	GROUP_INIT_MAX_SECONDS     = 60 * 60 * 24 //10分钟内完成初始化，否则该组失败。不再有初始化机会。(测试改成一天)
 
 	SSSS_THRESHOLD       int = 51 //1-100
-	GROUP_MAX_MEMBERS    int = 20 //一个组最大的成员数量
-	GROUP_MIN_MEMBERS    int = 3  //一个组最大的成员数量
+	GROUP_MAX_MEMBERS    int = 10 //一个组最大的成员数量
+	GROUP_MIN_MEMBERS    int = 5  //一个组最大的成员数量
 	CANDIDATES_MIN_RATIO     = 1  //最小的候选人相对于组成员数量的倍数
 
 	Group_Wait_Pong_Gap   = common.Group_Create_Gap + common.EPOCH*2
@@ -86,8 +86,8 @@ func InitParam(cc common.SectionConfManager) {
 		GroupReadyGap:       uint64(cc.GetInt("group_ready_gap", GROUP_Ready_GAP)),
 		//EffectGapAfterApply: EPOCH,
 		PotentialProposal:      3,
-		PotentialProposalMax:   8,
-		PotentialProposalIndex: 30,
+		PotentialProposalMax:   5,
+		PotentialProposalIndex: 20,
 
 		CreateGroupInterval: uint64(Group_Create_Interval),
 		GroupCreateGap:      uint64(common.Group_Create_Gap),

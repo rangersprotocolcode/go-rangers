@@ -19,6 +19,7 @@ package notify
 import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"encoding/json"
+	"strconv"
 )
 
 type NewBlockMessage struct {
@@ -216,9 +217,10 @@ func (m *TransactionGotAddSuccMessage) GetData() interface{} {
 }
 
 type ClientTransactionMessage struct {
-	Tx     types.Transaction
-	UserId string
-	Nonce  uint64
+	Tx        types.Transaction
+	UserId    string
+	Nonce     uint64
+	GateNonce uint64
 }
 
 func (m *ClientTransactionMessage) GetRaw() []byte {
@@ -233,32 +235,9 @@ func (m *ClientTransactionMessage) TOJSONString() string {
 	result := make(map[string]string, 0)
 	result["tx"] = m.Tx.ToTxJson().ToString()
 	result["userId"] = m.UserId
-
+	result["gateNonce"] = strconv.FormatUint(m.GateNonce, 10)
 	byte, _ := json.Marshal(result)
 	return string(byte)
-}
-
-type CoinProxyNotifyMessage struct {
-	Tx types.Transaction
-}
-
-func (m *CoinProxyNotifyMessage) GetRaw() []byte {
-	// never use it
-	return nil
-}
-func (m *CoinProxyNotifyMessage) GetData() interface{} {
-	return m
-}
-
-type STMStorageReadyMessage struct {
-	FileName []byte
-}
-
-func (s *STMStorageReadyMessage) GetRaw() []byte {
-	return s.FileName
-}
-func (s *STMStorageReadyMessage) GetData() interface{} {
-	return s.FileName
 }
 
 type NonceNotifyMessage struct {

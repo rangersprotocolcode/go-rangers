@@ -18,6 +18,7 @@ package network
 
 import (
 	"bytes"
+	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -91,10 +92,10 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 	base.logger = logger
 	base.path = path
 
-	url := url.URL{Scheme: "ws", Host: ipPort, Path: path}
-	base.url = url.String()
-	base.connLock = sync.Mutex{}
+	ipPortString, _ := url.QueryUnescape(ipPort)
+	base.url = fmt.Sprintf("%s%s", ipPortString, path)
 	base.conn = base.getWSConn()
+	base.connLock = sync.Mutex{}
 
 	// 初始化读写缓存
 	if 0 == base.rcvSize {
@@ -116,7 +117,7 @@ func (base *baseConn) getWSConn() *websocket.Conn {
 	d := websocket.Dialer{ReadBufferSize: defaultBufferSize, WriteBufferSize: defaultBufferSize}
 	conn, _, err := d.Dial(base.url, nil)
 	if err != nil {
-		base.logger.Errorf("Dial to" + base.url + " err:" + err.Error())
+		base.logger.Errorf("Dial to " + base.url + " err:" + err.Error())
 		time.Sleep(100 * time.Millisecond)
 		return nil
 	}
@@ -294,14 +295,6 @@ func (base *baseConn) generateTarget(targetId string) (uint64, error) {
 	return target, nil
 }
 
-func (base *baseConn) sendWrongNonce(nonce uint64, msg string) {
-	if 0 == nonce {
-		return
-	}
-
-	go notify.BUS.Publish(notify.WrongTxNonce, &notify.NonceNotifyMessage{Nonce: nonce, Msg: msg})
-}
-
 // 处理客户端的read/write请求
 var (
 	methodCodeClientReader, _ = hex.DecodeString("60000000")
@@ -330,12 +323,17 @@ func (clientConn *ClientConn) Send(targetId string, msg []byte, nonce uint64) {
 	clientConn.send(clientConn.method, target, msg, nonce)
 }
 
-func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, logger log.Logger, isNotify bool) {
+func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, logger log.Logger, isRcv bool) {
 	clientConn.method = method
 	clientConn.nonceLock = sync.Mutex{}
 	clientConn.notifyNonce = 0
 
 	clientConn.doRcv = func(wsHeader wsHeader, body []byte) {
+		if !isRcv {
+			clientConn.logger.Debugf("coming abnormal data, header: %v, body: %s", wsHeader, common.ToHex(body))
+			return
+		}
+
 		if bytes.Equal(wsHeader.method, methodNotifyInit) {
 			clientConn.logger.Errorf("refresh notify nonce: %d", wsHeader.nonce)
 			clientConn.notifyNonce = wsHeader.nonce
@@ -345,7 +343,6 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 		if !bytes.Equal(wsHeader.method, clientConn.method) {
 			msg := fmt.Sprintf("%s received wrong method. wsHeader: %v", clientConn.path, wsHeader)
 			clientConn.logger.Error(msg)
-			clientConn.sendWrongNonce(wsHeader.nonce, msg)
 			return
 		}
 
@@ -369,14 +366,6 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 
 	clientConn.init(ipPort, path, logger)
 
-	if isNotify {
-		clientConn.initNotify()
-	}
-}
-
-func (clientConn *ClientConn) initNotify() {
-	clientConn.logger.Errorf("initNotify")
-	clientConn.send(methodNotifyInit, 0, []byte{}, 0)
 }
 
 func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, nonce uint64, event string) {
@@ -385,14 +374,12 @@ func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, no
 	if nil != err {
 		msg := fmt.Sprintf("handleClientMessage json unmarshal client message error:%s", err.Error())
 		clientConn.logger.Errorf(msg)
-		clientConn.sendWrongNonce(nonce, msg)
 		return
 	}
 
 	tx := txJson.ToTransaction()
 	tx.RequestId = nonce
 	clientConn.logger.Debugf("Rcv event: %s from client.Tx info:%s", event, tx.ToTxJson().ToString())
-
 	msg := notify.ClientTransactionMessage{Tx: tx, UserId: userId, Nonce: nonce}
 	notify.BUS.Publish(event, &msg)
 }
@@ -429,63 +416,4 @@ func (clientConn *ClientConn) generateNotifyId(gameId string, userId string) uin
 	md5Result := md5.Sum(data)
 	idBytes := md5Result[4:12]
 	return binary.BigEndian.Uint64(idBytes)
-}
-
-// 处理coiner的请求
-var (
-	methodSendToCoinConnector, _  = hex.DecodeString("30000003")
-	methodRcvFromCoinConnector, _ = hex.DecodeString("30000002")
-)
-
-type ConnectorConn struct {
-	baseConn
-}
-
-func (connectorConn *ConnectorConn) Send(msg []byte) {
-	connectorConn.send(methodSendToCoinConnector, 0, msg, 0)
-}
-
-func (connectorConn *ConnectorConn) Init(ipPort string, logger log.Logger) {
-	connectorConn.doRcv = func(wsHeader wsHeader, body []byte) {
-		if !bytes.Equal(wsHeader.method, methodRcvFromCoinConnector) {
-			msg := fmt.Sprintf("%s received wrong method. wsHeader: %v", connectorConn.path, wsHeader)
-			connectorConn.logger.Error(msg)
-			connectorConn.sendWrongNonce(wsHeader.nonce, msg)
-			return
-		}
-		connectorConn.handleConnectorMessage(body, wsHeader.nonce)
-	}
-
-	connectorConn.init(ipPort, "/srv/worker_coiner", logger)
-}
-
-func (connectorConn *ConnectorConn) handleConnectorMessage(data []byte, nonce uint64) {
-	var txJson types.TxJson
-	err := json.Unmarshal(data, &txJson)
-	if err != nil {
-		msg := fmt.Sprintf("handleConnectorMessage json unmarshal coiner msg err: %s", err.Error())
-		connectorConn.logger.Errorf(msg)
-		connectorConn.sendWrongNonce(nonce, msg)
-		return
-	}
-
-	tx := txJson.ToTransaction()
-	tx.RequestId = nonce
-	connectorConn.logger.Debugf("Rcv message from coiner.Tx info:%s", tx.ToTxJson().ToString())
-	if !types.CoinerSignVerifier.VerifyDeposit(txJson) {
-		msg := fmt.Sprintf("tx from coiner verify sign error! Tx Info: %s", tx.ToTxJson().ToString())
-		connectorConn.logger.Infof(msg)
-		connectorConn.sendWrongNonce(nonce, msg)
-		return
-	}
-
-	if tx.Type == types.TransactionTypeCoinDepositAck || tx.Type == types.TransactionTypeFTDepositAck || tx.Type == types.TransactionTypeNFTDepositAck || tx.Type == types.TransactionTypeERC20Binding {
-		msg := notify.CoinProxyNotifyMessage{Tx: tx}
-		notify.BUS.Publish(notify.CoinProxyNotify, &msg)
-	} else {
-		msg := fmt.Sprintf("unknown type from coiner:%d", txJson.Type)
-		connectorConn.sendWrongNonce(nonce, msg)
-		connectorConn.logger.Infof(msg)
-	}
-
 }

@@ -14,13 +14,12 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-package eth_rpc
+package eth_tx
 
 import (
 	"com.tuntun.rocket/node/src/common"
 	crypto "com.tuntun.rocket/node/src/eth_crypto"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/rlp"
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
@@ -245,7 +244,7 @@ func TxDifference(a, b Transactions) Transactions {
 	return keep
 }
 
-func convertTx(txRaw *Transaction, sender common.Address) *types.Transaction {
+func ConvertTx(txRaw *Transaction, sender common.Address, encodedTx utility.Bytes) *types.Transaction {
 	result := &types.Transaction{}
 	result.Source = sender.String()
 	if txRaw.To() != nil {
@@ -255,8 +254,9 @@ func convertTx(txRaw *Transaction, sender common.Address) *types.Transaction {
 	//can not ues time!
 	//result.Time = txRaw.time.String()
 	result.Nonce = txRaw.data.AccountNonce
+	result.ChainId = txRaw.ChainId().String()
 
-	data := service.ContractData{}
+	data := types.ContractData{}
 	data.AbiData = common.ToHex(txRaw.Data())
 	transferValue := txRaw.Value()
 	if transferValue != nil {
@@ -265,6 +265,7 @@ func convertTx(txRaw *Transaction, sender common.Address) *types.Transaction {
 	dataByes, _ := json.Marshal(data)
 	result.Data = string(dataByes)
 	result.Hash = txRaw.Hash()
+	result.ExtraData = common.ToHex(encodedTx)
 	return result
 }
 

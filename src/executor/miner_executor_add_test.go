@@ -20,7 +20,9 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"strconv"
 	"testing"
@@ -58,7 +60,8 @@ func testMinerExecutorAdd(t *testing.T) {
 // 正常流程
 func testMinerExecutorAdd1(t *testing.T) {
 	accountDB := getTestAccountDB()
-	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(100000000000000000))
+	balance, _ := utility.StrToBigInt("10000")
+	accountDB.SetBalance(common.HexToAddress("0x0003"), balance)
 
 	miner := &types.Miner{
 		Id:    common.FromHex("0x0003"),
@@ -85,7 +88,8 @@ func testMinerExecutorAdd1(t *testing.T) {
 	}
 
 	left := accountDB.GetBalance(common.HexToAddress("0x0003"))
-	if nil == left || 0 != left.Cmp(big.NewInt(85000000000000000)) {
+	expect, _ := utility.StrToBigInt(fmt.Sprintf("%d", 10000-common.ProposerStake*3))
+	if nil == left || 0 != left.Cmp(expect) {
 		t.Fatalf("error add value, %d", left)
 	}
 }
@@ -204,7 +208,7 @@ func TestMinerExecutorAddAll(t *testing.T) {
 		testMinerExecutorAdd1,
 		testMinerExecutorAdd2,
 		testMinerExecutorAdd3,
-		testMinerExecutorAdd4,}
+		testMinerExecutorAdd4}
 
 	for i, f := range fs {
 		name := strconv.Itoa(i)

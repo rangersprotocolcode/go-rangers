@@ -24,85 +24,34 @@ import (
 )
 
 const (
-	TransactionTypeBonus       = 1
-	TransactionTypeMinerApply  = 2
-	TransactionTypeMinerAbort  = 3
-	TransactionTypeMinerRefund = 4
-	TransactionTypeMinerAdd    = 5
+	TransactionTypeBonus              = 1
+	TransactionTypeMinerApply         = 2
+	TransactionTypeMinerAbort         = 3
+	TransactionTypeMinerRefund        = 4
+	TransactionTypeMinerAdd           = 5
+	TransactionTypeMinerChangeAccount = 6
 
 	//以下交易类型会被外部使用 禁止更改
-	TransactionTypeOperatorBalance   = 99
-	TransactionTypeOperatorEvent     = 100 // 调用状态机/转账
-	TransactionTypeGetCoin           = 101 // 查询主链币
-	TransactionTypeGetAllCoin        = 102 // 查询所有主链币
-	TransactionTypeFT                = 103 // 查询特定FT
-	TransactionTypeAllFT             = 104 // 查询所有FT
-	TransactionTypeNFT               = 105 // 根据setId、id查询特定NFT
-	TransactionTypeNFTListByAddress  = 106 // 查询账户下所有NFT
-	TransactionTypeNFTSet            = 107 // 查询NFTSet信息
-	TransactionTypeStateMachineNonce = 108 // 调用状态机nonce(预留接口）
-	TransactionTypeFTSet             = 113 // 根据ftId, 查询ftSet信息
-	TransactionTypeNFTCount          = 114 // 查询用户Rocket上的指定NFT的拥有数量
-	TransactionTypeNFTList           = 115 // 查询用户Rocket上的指定NFT的拥有数量
-	TransactionTypeNFTGtZero         = 118 // 查询指定用户Rocket上的余额大于0的非同质化代币列表
-
-	TransactionTypeWithdraw = 109
-
-	TransactionTypePublishFT      = 110 // 用户发FTSet
-	TransactionTypePublishNFTSet  = 111 // 用户发NFTSet
-	TransactionTypeShuttleNFT     = 112 // 用户穿梭NFT
-	TransactionTypeMintFT         = 116 // mintFT
-	TransactionTypeMintNFT        = 117 // mintNFT
-	TransactionTypeTransferBNT    = 127 // 状态机给用户转主链币
-	TransactionTypeTransferFT     = 119 // 状态机给用户转FT
-	TransactionTypeLockNFT        = 120 // 锁定NFT
-	TransactionTypeUnLockNFT      = 121 // 解锁NFT
-	TransactionTypeApproveNFT     = 122 // 授权NFT
-	TransactionTypeRevokeNFT      = 123 // 回收NFT
-	TransactionTypeTransferNFT    = 124 // 状态机给用户转NFT
-	TransactionTypeUpdateNFT      = 125 // 更新NFT数据
-	TransactionTypeBatchUpdateNFT = 126 // 批量更新NFT数据 deprecated
-
-	TransactionTypeLockResource   = 129 // 锁定 nft/ft/bnt
-	TransactionTypeUnLockResource = 130 // 解锁 nft/ft/bnt
-	TransactionTypeComboNFT       = 131 // 组合nft
+	TransactionTypeOperatorBalance = 99
+	TransactionTypeOperatorEvent   = 100 // 调用状态机/转账
 
 	TransactionTypeETHTX = 188 //以太坊的交易改造而成的交易
-
-	// 状态机通知客户端
-	TransactionTypeNotify          = 301 // 通知某个用户
-	TransactionTypeNotifyGroup     = 302 // 通知某个组
-	TransactionTypeNotifyBroadcast = 303 // 通知所有人
-
-	// 从rocket_connector来的消息
-	TransactionTypeCoinDepositAck = 201 // 充值
-	TransactionTypeFTDepositAck   = 202 // 充值
-	TransactionTypeNFTDepositAck  = 203 // 充值
-	TransactionTypeERC20Binding   = 204 // 绑定ERC-20
-
-	// 系统管理
-	TransactionTypeSetExchangeRate = 801 // 新增汇率表
-
-	TransactionTypeWrongTxNonce = 404
-
-	// 奖池
-	TransactionTypeLotteryCreate = 501 // 创建奖池
-	TransactionTypeJackpot       = 502 // 抽奖
 
 	//合约交易
 	TransactionTypeContract = 200
 
 	//查询接口
-	TransactionTypeGetChainId     = 601 //查询CHAIN ID
-	TransactionTypeGetBlockNumber = 602 //查询块高
-	TransactionTypeGetBlock       = 603 //根据高度或者hash查询块
-	TransactionTypeGetNonce       = 604 //查询NONCE
-	TransactionTypeGetTx          = 605 //查询交易
-	TransactionTypeGetReceipt     = 606 //查询收据
-	TransactionTypeGetTxCount     = 607 //查询交易数量
-	TransactionTypeGetTxFromBlock = 608 //根据索引查询块中交易
-	TransactionTypeGetStorage     = 609 //查询存储信息
-	TransactionTypeGetCode        = 610 //查询CODE
+	TransactionTypeGetNetworkId       = 600 //查询Network ID
+	TransactionTypeGetChainId         = 601 //查询CHAIN ID
+	TransactionTypeGetBlockNumber     = 602 //查询块高
+	TransactionTypeGetBlock           = 603 //根据高度或者hash查询块
+	TransactionTypeGetNonce           = 604 //查询NONCE
+	TransactionTypeGetTx              = 605 //查询交易
+	TransactionTypeGetReceipt         = 606 //查询收据
+	TransactionTypeGetTxCount         = 607 //查询交易数量
+	TransactionTypeGetTxFromBlock     = 608 //根据索引查询块中交易
+	TransactionTypeGetContractStorage = 609 //查询合约存储信息
+	TransactionTypeGetCode            = 610 //查询CODE
 
 	TransactionTypeGetPastLogs = 611
 	TransactionTypeCallVM      = 612
@@ -126,6 +75,7 @@ type Transaction struct {
 	Nonce           uint64 // 用户级别nonce
 	RequestId       uint64 // 消息编号 由网关添加
 	SocketRequestId string // websocket id，用于客户端标示请求id，方便回调处理
+	ChainId         string //用于区分不同的链
 }
 
 //source 在hash计算范围内
@@ -143,6 +93,8 @@ func (tx *Transaction) GenHash() common.Hash {
 	buffer.Write([]byte(strconv.Itoa(int(tx.Type))))
 	buffer.Write([]byte(tx.Time))
 	buffer.Write([]byte(tx.ExtraData))
+	buffer.Write([]byte(tx.ChainId))
+
 	return common.BytesToHash(common.Sha256(buffer.Bytes()))
 }
 

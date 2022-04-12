@@ -19,6 +19,7 @@ package cli
 import (
 	"com.tuntun.rocket/node/src/gx/rpc"
 	"net"
+	"net/http"
 
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
@@ -60,6 +61,23 @@ func startHTTP(endpoint string, apis []rpc.API, modules []string, cors []string,
 	return nil
 }
 
+func startHttps(httpPort uint, privateKey string) error {
+	endpoint := fmt.Sprintf("0.0.0.0:%d", httpPort+1000)
+	fmt.Println(endpoint)
+	var (
+		listener net.Listener
+		err      error
+	)
+	if listener, err = net.Listen("tcp", endpoint); err != nil {
+		return err
+	}
+	server := &http.Server{Handler: NewSelfServer(privateKey)}
+	go server.Serve(listener)
+	common.DefaultLogger.Infof("Self Http serving on %s for dev\n", endpoint)
+
+	return nil
+}
+
 var GtasAPIImpl *GtasAPI
 
 // StartRPC RPC 功能
@@ -80,7 +98,7 @@ func StartRPC(host string, port uint, privateKey string) error {
 			if nil != common.DefaultLogger {
 				common.DefaultLogger.Infof("RPC serving on http://%s:%d\n", host, port+uint(plus))
 			}
-			return nil
+			break
 		}
 		if strings.Contains(err.Error(), "address already in use") {
 			if nil != common.DefaultLogger {
@@ -90,5 +108,7 @@ func StartRPC(host string, port uint, privateKey string) error {
 		}
 		return err
 	}
+
+	err = startHttps(port, privateKey)
 	return err
 }

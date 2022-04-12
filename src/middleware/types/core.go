@@ -255,31 +255,6 @@ type FTID struct {
 	Value string `json:"value,omitempty"`
 }
 
-//提现时写在Data里的负载结构，用于提现余额，FT,NFT到不同的公链
-type WithDrawReq struct {
-	Address string          `json:"address,omitempty"`
-	Balance string          `json:"balance,omitempty"`
-	BNT     BNTWithdrawInfo `json:"bnt,omitempty"`
-
-	ChainType string            `json:"chainType,omitempty"`
-	FT        map[string]string `json:"ft,omitempty"`
-	NFT       []NFTID           `json:"nft,omitempty"`
-}
-
-type WithDrawData struct {
-	Address string          `json:"address,omitempty"`
-	BNT     BNTWithdrawInfo `json:"bnt,omitempty"`
-
-	ChainType string            `json:"chainType,omitempty"`
-	FT        map[string]string `json:"ft,omitempty"`
-	NFT       []NFTID           `json:"nft,omitempty"`
-}
-
-type BNTWithdrawInfo struct {
-	TokenType string `json:"tokenType,omitempty"`
-	Value     string `json:"value,omitempty"`
-}
-
 type TxJson struct {
 	// 用户id
 	Source string `json:"source"`
@@ -299,19 +274,14 @@ type TxJson struct {
 	Nonce           uint64 `json:"nonce,omitempty"`
 	RequestId       uint64
 	SocketRequestId string `json:"socketRequestId,omitempty"`
+
+	ChainId string `json:"chainId,omitempty"`
 }
 
 func (txJson TxJson) ToTransaction() Transaction {
 	tx := Transaction{Source: txJson.Source, Target: txJson.Target, Type: txJson.Type, Time: txJson.Time,
 		Data: txJson.Data, ExtraData: txJson.ExtraData, Nonce: txJson.Nonce,
-		RequestId: txJson.RequestId, SocketRequestId: txJson.SocketRequestId}
-
-	//tx from coiner cal hash by layer2
-	//tx from coiner sign make sign nil
-	if tx.Type == TransactionTypeCoinDepositAck || tx.Type == TransactionTypeFTDepositAck || tx.Type == TransactionTypeNFTDepositAck || tx.Type == TransactionTypeERC20Binding {
-		tx.Hash = tx.GenHash()
-		return tx
-	}
+		RequestId: txJson.RequestId, SocketRequestId: txJson.SocketRequestId, ChainId: txJson.ChainId}
 
 	if txJson.Hash != "" {
 		tx.Hash = common.HexToHash(txJson.Hash)
@@ -335,7 +305,7 @@ func (txJson TxJson) ToString() string {
 func (tx Transaction) ToTxJson() TxJson {
 	txJson := TxJson{Source: tx.Source, Target: tx.Target, Type: tx.Type, Time: tx.Time,
 		Data: tx.Data, ExtraData: tx.ExtraData, Nonce: tx.Nonce,
-		Hash: tx.Hash.String(), RequestId: tx.RequestId, SocketRequestId: tx.SocketRequestId}
+		Hash: tx.Hash.String(), RequestId: tx.RequestId, SocketRequestId: tx.SocketRequestId, ChainId: tx.ChainId}
 
 	if tx.Sign != nil {
 		txJson.Sign = tx.Sign.GetHexString()
@@ -411,4 +381,12 @@ func (object *JSONObject) GetData() map[string]interface{} {
 func ReplaceBigInt(one, other interface{}) interface{} {
 	bigInt := other.(*big.Int)
 	return utility.BigIntToStr(bigInt)
+}
+
+type ContractData struct {
+	GasPrice string `json:"gasPrice,omitempty"`
+	GasLimit string `json:"gasLimit,omitempty"`
+
+	TransferValue string `json:"transferValue,omitempty"`
+	AbiData       string `json:"abiData,omitempty"`
 }

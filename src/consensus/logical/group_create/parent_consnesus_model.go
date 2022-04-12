@@ -219,7 +219,6 @@ func (ctx *createGroupBaseInfo) recoverMemberSet(mask []byte) (ids []groupsig.ID
 }
 func (ctx *createGroupBaseInfo) createGroupHeader(memIds []groupsig.ID) *types.GroupHeader {
 	theBH := ctx.baseBlockHeader
-	extends := fmt.Sprintf("baseBlock:%v|%v|%v", theBH.Hash.Hex(), theBH.CurTime, theBH.Height)
 
 	gh := &types.GroupHeader{
 		Parent:          ctx.parentGroupInfo.GroupID.Serialize(),
@@ -228,7 +227,6 @@ func (ctx *createGroupBaseInfo) createGroupHeader(memIds []groupsig.ID) *types.G
 		BeginTime:       theBH.CurTime,
 		CreateHeight:    theBH.Height,
 		MemberRoot:      model.GenGroupMemberRoot(memIds),
-		Extends:         extends,
 	}
 
 	gh.Hash = gh.GenHash()

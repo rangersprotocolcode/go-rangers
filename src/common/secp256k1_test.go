@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/assert"
 	"io/ioutil"
-	"math/big"
 	"math/rand"
 	"strings"
 	"testing"
@@ -49,7 +48,7 @@ func TestSignAndVerifyOnce(test *testing.T) {
 }
 
 func TestSignAndVerifyOnceByFixKey(test *testing.T) {
-	sk := HexStringToSecKey("0x04008627e8037ef68a2722091ca8507e91e65ce93ab621a59ca647d1361eb8337129713294ffdbef401d609cac491c25094b34ff82190fd54e721628479095d74d4333024273384e11372c1d2ab3af8bd5ae7221ead96bfc3ee36b73c6e8e594d1")
+	sk := HexStringToSecKey("0xd7f5d173593eff81a50f7d8ea345bbc543ad8e356e75975e87114438c8f4eaf4")
 
 	msg := Hex2Bytes("7fd31ab615e73fc5d091238f00ad3390c651731a0dfdb8867f98b930d21af56c")
 	fmt.Printf("privatekey:%v,pubkey:%v\n", sk.GetHexString(), sk.GetPubKey().GetHexString())
@@ -104,14 +103,6 @@ func TestSignAndVerifyByFixedKey(test *testing.T) {
 
 func genRandomKey() PrivateKey {
 	key := GenerateKey("")
-
-	if len(key.ToBytes()) != 32 {
-		privateKey := make([]byte, 32)
-		sk := key.PrivKey.D.Bytes()
-		copy(privateKey[32-len(sk):32], sk)
-
-		key.PrivKey.D.SetBytes(privateKey)
-	}
 	return key
 }
 
@@ -129,7 +120,7 @@ func genRandomMessage(length uint64) []byte {
 func runSigAndVerifyOnce(test *testing.T) {
 	key := genRandomKey()
 	msg := genRandomMessage(32)
-	fmt.Printf("privatekey:%v,length:%d\n", key.ToBytes(), len(key.ToBytes()))
+	fmt.Printf("privatekey:%v\n", key.GetHexString())
 
 	sign := key.Sign(msg)
 	assert.Equal(test, 65, len(sign.Bytes()))
@@ -248,7 +239,8 @@ func TestGenComparisonData(test *testing.T) {
 }
 
 func TestValidateComparisonData(test *testing.T) {
-	fileName := "secp256_comparisonData_java.txt"
+	//fileName := "secp256_comparisonData_java.txt"
+	fileName := "secp256_comparisonData_go.txt"
 
 	bytes, err := ioutil.ReadFile(fileName)
 	if err != nil {
@@ -280,14 +272,7 @@ func TestValidateComparisonData(test *testing.T) {
 }
 
 func validateFunction(privateKeyStr, publicKeyStr, message, signStr, idStr string, test *testing.T) {
-
-	privateKeyBuf, _ := hex.DecodeString(privateKeyStr[len(PREFIX):])
-	fmt.Printf("privateKeyBuf len:%d\n", len(privateKeyBuf))
-	var privateKey PrivateKey
-	privateKey.PrivKey.D = new(big.Int).SetBytes(privateKeyBuf)
-
-	publicKeyBuf, _ := hex.DecodeString(publicKeyStr[len(PREFIX):])
-	privateKey.PrivKey.PublicKey = BytesToPublicKey(publicKeyBuf).PubKey
+	var privateKey = HexStringToSecKey(privateKeyStr)
 
 	//get public key by private key
 	publicKey := privateKey.GetPubKey()

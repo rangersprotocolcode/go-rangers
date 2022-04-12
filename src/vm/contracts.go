@@ -17,19 +17,27 @@
 package vm
 
 import (
+	"crypto/ecdsa"
+	"crypto/elliptic"
+	"crypto/rsa"
+	"crypto/sha256"
+	"encoding/binary"
+	"errors"
+	"fmt"
+	"math/big"
+
 	"com.tuntun.rocket/node/src/common"
 	crypto "com.tuntun.rocket/node/src/eth_crypto"
 	"com.tuntun.rocket/node/src/eth_crypto/blake2b"
 	"com.tuntun.rocket/node/src/eth_crypto/bls12381"
 	"com.tuntun.rocket/node/src/eth_crypto/bn256"
 	"com.tuntun.rocket/node/src/utility"
-	"crypto/sha256"
-	"encoding/binary"
-	"errors"
-	"math/big"
+	"com.tuntun.rocket/node/src/utility/dkim"
 
 	//lint:ignore SA1019 Needed for precompile
 	"golang.org/x/crypto/ripemd160"
+
+	cryptoOrigin "crypto"
 )
 
 // PrecompiledContract is the basic interface for native Go contracts. The implementation
@@ -41,24 +49,33 @@ type PrecompiledContract interface {
 }
 
 var PrecompiledContracts = map[common.Address]PrecompiledContract{
-	common.BytesToAddress([]byte{1}):  &ecrecover{},
-	common.BytesToAddress([]byte{2}):  &sha256hash{},
-	common.BytesToAddress([]byte{3}):  &ripemd160hash{},
-	common.BytesToAddress([]byte{4}):  &dataCopy{},
-	common.BytesToAddress([]byte{5}):  &bigModExp{},
-	common.BytesToAddress([]byte{6}):  &bn256AddIstanbul{},
-	common.BytesToAddress([]byte{7}):  &bn256ScalarMulIstanbul{},
-	common.BytesToAddress([]byte{8}):  &bn256PairingIstanbul{},
-	common.BytesToAddress([]byte{9}):  &blake2F{},
-	common.BytesToAddress([]byte{10}): &bls12381G1Add{},
-	common.BytesToAddress([]byte{11}): &bls12381G1Mul{},
-	common.BytesToAddress([]byte{12}): &bls12381G1MultiExp{},
-	common.BytesToAddress([]byte{13}): &bls12381G2Add{},
-	common.BytesToAddress([]byte{14}): &bls12381G2Mul{},
-	common.BytesToAddress([]byte{15}): &bls12381G2MultiExp{},
-	common.BytesToAddress([]byte{16}): &bls12381Pairing{},
-	common.BytesToAddress([]byte{17}): &bls12381MapG1{},
-	common.BytesToAddress([]byte{18}): &bls12381MapG2{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1}):    &ecrecover{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2}):    &sha256hash{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3}):    &ripemd160hash{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4}):    &dataCopy{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 5}):    &bigModExp{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 6}):    &bn256AddIstanbul{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 7}):    &bn256ScalarMulIstanbul{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8}):    &bn256PairingIstanbul{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 9}):    &blake2F{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 10}):   &bls12381G1Add{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 11}):   &bls12381G1Mul{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 12}):   &bls12381G1MultiExp{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 13}):   &bls12381G2Add{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 14}):   &bls12381G2Mul{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15}):   &bls12381G2MultiExp{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 16}):   &bls12381Pairing{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 17}):   &bls12381MapG1{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18}):   &bls12381MapG2{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 1}): &secp256r1_verify{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 2}): &rsapkcs1_verify{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 3}): &dkim_verify{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 2}): &append_bool{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 3}): &append_address{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 4}): &append_uint256{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 5}): &append_bytes32{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 6}): &append_bytes{},
+	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 7}): &append_string{},
 }
 
 var PrecompiledAddresses []common.Address
@@ -925,4 +942,202 @@ func (c *bls12381MapG2) Run(input []byte) ([]byte, error) {
 
 	// Encode the G2 point to 256 bytes
 	return g.EncodePoint(r), nil
+}
+
+func GetArgs(input []byte, index int, size int) []byte {
+	offset := new(big.Int).SetBytes(input[:32*(index+1)]).Uint64()
+	if offset >= 32 && offset <= uint64(len(input)-32) && offset%32 == 0 && size == 0 {
+		length := new(big.Int).SetBytes(input[offset : offset+32])
+		offset += 32
+		if (offset + length.Uint64()) <= uint64(len(input)) {
+			v := getData(input, offset, length.Uint64())
+			return v
+		}
+	} else if size == 32 {
+		return getData(input, uint64(32*index), 32)
+	}
+	return nil
+}
+
+func ReturnBytes(v []byte) []byte {
+	size := len(v)
+	ret := make([]byte, 64+32+(size+31)/32*32)
+	binary.BigEndian.PutUint64(ret[32-8:32], uint64(64))
+	binary.BigEndian.PutUint64(ret[64-8:64], uint64(len(ret)))
+	binary.BigEndian.PutUint64(ret[96-8:96], uint64(size))
+	copy(ret[96:], v)
+	return ret
+}
+
+// secp256r1_verify
+type secp256r1_verify struct{}
+
+func (c *secp256r1_verify) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *secp256r1_verify) Run(input []byte) ([]byte, error) {
+	arg_msg := GetArgs(input, 0, 32)
+	arg_sig := GetArgs(input, 1, 0)
+	arg_public_key := GetArgs(input, 2, 0)
+
+	// TODO
+	if 65 == len(arg_public_key) {
+		arg_public_key = arg_public_key[1:]
+	}
+	if 64 != len(arg_public_key) {
+		arg_public_key = arg_public_key[:64]
+	}
+	pubkey := &ecdsa.PublicKey{}
+	pubkey.Curve = elliptic.P256()
+	pubkey.X = new(big.Int)
+	pubkey.Y = new(big.Int)
+	pubkey.X.SetBytes(arg_public_key[:32])
+	pubkey.Y.SetBytes(arg_public_key[32:])
+
+	ret_bool := ecdsa.VerifyASN1(pubkey, arg_msg, arg_sig)
+	fmt.Printf("secp256r1_verify(%v, %v, %v) return %v\n", arg_sig, arg_msg, arg_public_key, ret_bool)
+
+	ret_bytes := make([]byte, 32)
+	if ret_bool {
+		ret_bytes[31] = 1
+	}
+	return ret_bytes, nil
+}
+
+// rsapkcs1_verify
+type rsapkcs1_verify struct{}
+
+func (c *rsapkcs1_verify) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *rsapkcs1_verify) Run(input []byte) ([]byte, error) {
+	arg_msg := GetArgs(input, 0, 32)
+	arg_sig := GetArgs(input, 1, 0)
+	arg_key := GetArgs(input, 2, 0)
+
+	bigN := new(big.Int)
+	bigN.SetBytes(arg_key)
+	pub := rsa.PublicKey{
+		N: bigN,
+		E: 65537,
+	}
+
+	verifyErr := rsa.VerifyPKCS1v15(&pub, cryptoOrigin.SHA256, arg_msg, arg_sig)
+	ret_bool := verifyErr == nil
+
+	ret_bytes := make([]byte, 32)
+	if ret_bool {
+		ret_bytes[31] = 1
+	}
+	return ret_bytes, nil
+}
+
+// dkim_verify
+type dkim_verify struct{}
+
+func (c *dkim_verify) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *dkim_verify) Run(input []byte) ([]byte, error) {
+	arg_msg := GetArgs(input, 0, 0)
+	ret := dkim.Verify(arg_msg)
+
+	if nil == ret {
+		return nil, ErrExecutionReverted
+	}
+	return ReturnBytes(ret), nil
+}
+
+// append_bool
+type append_bool struct{}
+
+func (c *append_bool) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *append_bool) Run(input []byte) ([]byte, error) {
+	arg_str := GetArgs(input, 0, 0)
+	arg_v := GetArgs(input, 1, 32)
+	b := "false"
+	if arg_v[31] == 1 {
+		b = "true"
+	}
+	ret := fmt.Sprintf("%s%s", arg_str, b)
+	return ReturnBytes([]byte(ret)), nil
+}
+
+// append_address
+type append_address struct{}
+
+func (c *append_address) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *append_address) Run(input []byte) ([]byte, error) {
+	arg_str := GetArgs(input, 0, 0)
+	arg_v := GetArgs(input, 1, 32)
+	hex := fmt.Sprintf("0x%x", arg_v[12:])
+	ret := fmt.Sprintf("%s%v", arg_str, hex)
+	return ReturnBytes([]byte(ret)), nil
+}
+
+// append_uint256
+type append_uint256 struct{}
+
+func (c *append_uint256) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *append_uint256) Run(input []byte) ([]byte, error) {
+	arg_str := GetArgs(input, 0, 0)
+	arg_v := GetArgs(input, 1, 32)
+	bigN := new(big.Int)
+	bigN.SetBytes(arg_v)
+	ret := fmt.Sprintf("%s%v", arg_str, bigN)
+	return ReturnBytes([]byte(ret)), nil
+}
+
+// append_bytes32
+type append_bytes32 struct{}
+
+func (c *append_bytes32) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *append_bytes32) Run(input []byte) ([]byte, error) {
+	arg_str := GetArgs(input, 0, 0)
+	arg_v := GetArgs(input, 1, 32)
+	ret := fmt.Sprintf("%s%v", arg_str, arg_v)
+	return ReturnBytes([]byte(ret)), nil
+}
+
+// append_bytes
+type append_bytes struct{}
+
+func (c *append_bytes) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *append_bytes) Run(input []byte) ([]byte, error) {
+	arg_str := GetArgs(input, 0, 0)
+	arg_v := GetArgs(input, 1, 0)
+	ret := fmt.Sprintf("%s%v", arg_str, arg_v)
+	return ReturnBytes([]byte(ret)), nil
+}
+
+// append_string
+type append_string struct{}
+
+func (c *append_string) RequiredGas(input []byte) uint64 {
+	return 0
+}
+
+func (c *append_string) Run(input []byte) ([]byte, error) {
+	arg_str := GetArgs(input, 0, 0)
+	arg_v := GetArgs(input, 1, 0)
+	ret := fmt.Sprintf("%s%s", arg_str, arg_v)
+	return ReturnBytes([]byte(ret)), nil
 }

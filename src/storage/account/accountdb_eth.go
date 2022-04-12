@@ -17,19 +17,19 @@
 package account
 
 import (
+	"bytes"
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/utility"
 	"golang.org/x/crypto/sha3"
 	"hash"
+	"strings"
 )
 
 var (
-	contractKey         = utility.StrToBytes("c")
-	positionKey         = utility.StrToBytes("p")
-	decimalKey          = utility.StrToBytes("d")
-	usdtContractAddress *common.Address
-	wethContractAddress *common.Address
-	mixContractAddress  *common.Address
+	contractKey        = utility.StrToBytes("c")
+	positionKey        = utility.StrToBytes("p")
+	decimalKey         = utility.StrToBytes("d")
+	rpgContractAddress = common.Address{}
 )
 
 func (self *AccountDB) AddERC20Binding(name string, contract common.Address, position, decimal uint64) bool {
@@ -45,31 +45,17 @@ func (self *AccountDB) AddERC20Binding(name string, contract common.Address, pos
 }
 
 func (self *AccountDB) loadContractCache() {
-	address := common.GenerateERC20Binding("SYSTEM-ETH.USDT")
-	value := common.BytesToAddress(self.GetData(address, contractKey))
-	usdtContractAddress = &value
-
-	address = common.GenerateERC20Binding("ETH.ETH")
+	address := common.GenerateERC20Binding(common.BLANCE_NAME)
 	value1 := common.BytesToAddress(self.GetData(address, contractKey))
-	wethContractAddress = &value1
-
-	address = common.GenerateERC20Binding("SYSTEM-ETH.MIX")
-	value2 := common.BytesToAddress(self.GetData(address, contractKey))
-	mixContractAddress = &value2
+	rpgContractAddress = value1
 }
 
 func (self *AccountDB) GetERC20Binding(name string) (found bool, contract common.Address, position uint64, decimal uint64) {
-	if usdtContractAddress == nil {
-		self.loadContractCache()
-	}
-
-	switch name {
-	case "SYSTEM-ETH.USDT":
-		return true, *usdtContractAddress, 2, 6
-	case "ETH.ETH":
-		return true, *wethContractAddress, 3, 18
-	case "SYSTEM-ETH.MIX":
-		return true, *mixContractAddress, 0, 18
+	if 0 == strings.Compare(name, common.BLANCE_NAME) {
+		if 0 == bytes.Compare(rpgContractAddress.Bytes(), common.Address{}.Bytes()) {
+			self.loadContractCache()
+		}
+		return true, rpgContractAddress, 3, 18
 	}
 
 	found = false

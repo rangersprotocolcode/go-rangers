@@ -20,7 +20,9 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
+	"fmt"
 	"math/big"
 	"strconv"
 	"testing"
@@ -32,9 +34,10 @@ func testMinerExecutorApply(t *testing.T) {
 	accountDB := getTestAccountDB()
 
 	miner := &types.Miner{
-		Id:    common.FromHex("0x0003"),
-		Type:  common.MinerTypeValidator,
-		Stake: common.ValidatorStake * 3,
+		Id:      common.FromHex("0x0003"),
+		Type:    common.MinerTypeValidator,
+		Stake:   common.ValidatorStake * 3,
+		Account: common.FromHex("0x000005"),
 	}
 	data, _ := json.Marshal(miner)
 
@@ -57,7 +60,8 @@ func testMinerExecutorApply(t *testing.T) {
 // 正常流程
 func testMinerExecutorApply1(t *testing.T) {
 	accountDB := getTestAccountDB()
-	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(1000000000000000))
+	balance, _ := utility.StrToBigInt("10000")
+	accountDB.SetBalance(common.HexToAddress("0x0003"), balance)
 	miner := &types.Miner{
 		Id:           common.FromHex("0x0003"),
 		Type:         common.MinerTypeValidator,
@@ -65,8 +69,12 @@ func testMinerExecutorApply1(t *testing.T) {
 		PublicKey:    []byte{0, 1, 2, 3},
 		VrfPublicKey: []byte{4, 5, 6, 7},
 		ApplyHeight:  10000000,
+		Account:      common.FromHex("0x000005"),
 	}
-	data, _ := json.Marshal(miner)
+	data, err := json.Marshal(miner)
+	if nil != err {
+		t.Fatal(err)
+	}
 
 	transaction := &types.Transaction{
 		Source: "0x0003",
@@ -85,8 +93,9 @@ func testMinerExecutorApply1(t *testing.T) {
 	}
 
 	left := accountDB.GetBalance(common.HexToAddress("0x0003"))
-	if left == nil || 0 != left.Cmp(big.NewInt(700000000000000)) {
-		t.Fatalf("error money")
+	expect, _ := utility.StrToBigInt(fmt.Sprintf("%d", 10000-common.ValidatorStake*3))
+	if left == nil || 0 != left.Cmp(expect) {
+		t.Fatalf("error money, %s", left.String())
 	}
 }
 

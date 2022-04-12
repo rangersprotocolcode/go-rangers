@@ -30,6 +30,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rocket/node/src/utility"
 	"com.tuntun.rocket/node/src/vm"
 	"encoding/json"
 	"fmt"
@@ -42,7 +43,7 @@ import (
 )
 
 const (
-	GXVersion = "0.0.8"
+	GXVersion = "1.0.6.1"
 	// Section 默认section配置
 	Section = "gx"
 
@@ -70,6 +71,7 @@ func (gx *GX) Run() {
 	app.HelpFlag.Short('h')
 
 	configFile := app.Flag("config", "Config file").Default("rp.ini").String()
+
 	_ = app.Flag("metrics", "enable metrics").Bool()
 	_ = app.Flag("dashboard", "enable metrics dashboard").Bool()
 	pprofPort := app.Flag("pprof", "enable pprof").Default("23333").Uint()
@@ -91,16 +93,31 @@ func (gx *GX) Run() {
 	instanceIndex := mineCmd.Flag("instance", "instance index").Short('i').Default("0").Int()
 
 	env := mineCmd.Flag("env", "the environment application run in").String()
+	gateAddrPoint := mineCmd.Flag("gateaddr", "the gate addr").String()
+	outerGateAddrPoint := mineCmd.Flag("outergateaddr", "the gate addr").String()
+	dbDSNPoint := mineCmd.Flag("mysql", "the db addr").String()
 
-	//自定义网关
-	gateAddr := mineCmd.Flag("gateaddr", "the gate addr").String()
 	command, err := app.Parse(os.Args[1:])
 	if err != nil {
 		kingpin.Fatalf("%s, try --help", err)
 	}
 
-	fmt.Println("Use config file: " + *configFile)
+	common.InitChainConfig(*env)
 	common.InitConf(*configFile)
+
+	// using default
+	gateAddr := *gateAddrPoint
+	if 0 == len(gateAddr) {
+		gateAddr = common.LocalChainConfig.PHub
+	}
+	outerGateAddr := *outerGateAddrPoint
+	if 0 == len(outerGateAddr) {
+		outerGateAddr = common.LocalChainConfig.PubHub
+	}
+	dbDSN := *dbDSNPoint
+	if 0 == len(dbDSN) {
+		dbDSN = common.LocalChainConfig.Dsn
+	}
 
 	instance := 0
 	if 0 != *instanceIndex {
@@ -113,10 +130,10 @@ func (gx *GX) Run() {
 	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString(instanceSection, indexKey, ""))
 
 	walletManager = newWallets()
-	fmt.Println("Welcome to be a RangersProtocol miner!")
+
 	switch command {
 	case versionCmd.FullCommand():
-		fmt.Println("GX Version:", GXVersion)
+		fmt.Println("Version:", GXVersion)
 		os.Exit(0)
 	case consoleCmd.FullCommand():
 		err := ConsoleInit(*remoteHost, *remotePort, *showRequest, *rpcPort)
@@ -124,12 +141,15 @@ func (gx *GX) Run() {
 			fmt.Errorf(err.Error())
 		}
 	case mineCmd.FullCommand():
+		fmt.Println("Use config file: " + *configFile)
+		fmt.Println("Welcome to be a RangersProtocol miner!")
+		fmt.Printf("Env:%s,Chain ID:%s,Network ID:%s\n", *env, common.ChainId(utility.MaxUint64), common.NetworkId())
 		go func() {
 			http.ListenAndServe(fmt.Sprintf(":%d", *pprofPort), nil)
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(instance, *env, *gateAddr)
+		gx.initMiner(instance, *env, gateAddr, outerGateAddr, dbDSN)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc, gx.account.Sk)
 			if err != nil {
@@ -141,7 +161,7 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
+func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, dbDSN string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	databaseValue := "chain"
@@ -149,7 +169,7 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 	joinedGroupDatabaseValue := "jgs"
 	common.GlobalConf.SetString(db.ConfigSec, db.DefaultJoinedGroupDatabaseKey, joinedGroupDatabaseValue)
 
-	middleware.InitMiddleware()
+	middleware.InitMiddleware(dbDSN)
 
 	privateKey := common.GlobalConf.GetString(Section, "privateKey", "")
 	gx.getAccountInfo(privateKey)
@@ -159,7 +179,7 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr string) {
 	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 
-	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr)
+	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr)
 	service.InitService()
 	vm.InitVM()
 
@@ -202,7 +222,8 @@ func syncChainInfo(privateKey common.PrivateKey, id string) {
 	fmt.Println("Syncing block and group info from RangersProtocol net. Waiting...")
 	core.StartSync()
 	go func() {
-		timer := time.NewTimer(time.Second * 10)
+		timer := time.NewTicker(time.Second * 10)
+		output := true
 		for {
 			<-timer.C
 
@@ -211,17 +232,23 @@ func syncChainInfo(privateKey common.PrivateKey, id string) {
 				candidate := core.SyncProcessor.GetCandidateInfo()
 				candidateHeight = candidate.Height
 			}
-			localBlockHeight := core.GetBlockChain().Height()
+			topBlock := core.GetBlockChain().TopBlock()
 			jsonObject := types.NewJSONObject()
+			jsonObject.Put("chainId", common.ChainId(utility.MaxUint64))
+			jsonObject.Put("instanceNum", common.GlobalConf.GetInt(instanceSection, indexKey, 0))
 			jsonObject.Put("candidateHeight", candidateHeight)
-			jsonObject.Put("localHeight", localBlockHeight)
-			if candidateHeight > 0 {
-				middleware.HeightLogger.Debugf(jsonObject.TOJSONString())
+			if topBlock != nil {
+				jsonObject.Put("localHeight", topBlock.Height)
+				jsonObject.Put("topBlockHash", topBlock.Hash.String())
+
+				if output && candidateHeight > 0 && topBlock.Height >= candidateHeight {
+					fmt.Println("Sync data finished!")
+					fmt.Println("Start Mining...")
+					output = false
+				}
 			}
-			timer.Reset(time.Second * 5)
+			middleware.MonitorLogger.Infof("|height|%s", jsonObject.TOJSONString())
 		}
-		fmt.Println("Sync data finished!")
-		fmt.Println("Start Mining...")
 	}()
 }
 
@@ -238,7 +265,7 @@ func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerInfo) {
 		miner := types.Miner{}
 		miner.Id = minerDO.ID.Serialize()
 		miner.PublicKey = minerDO.PubKey.Serialize()
-		miner.VrfPublicKey = minerDO.VrfPK
+		miner.VrfPublicKey = minerDO.VrfPK.GetBytes()
 		minerBytes, _ := json.Marshal(miner)
 		common.DefaultLogger.Infof("Miner apply info:%s|%s", minerDO.ID.GetHexString(), string(minerBytes))
 	}

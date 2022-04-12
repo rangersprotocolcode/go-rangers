@@ -5,7 +5,6 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
-	"com.tuntun.rocket/node/src/middleware/types"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -68,7 +67,7 @@ func (handler ethMsgHandler) processSingleRequest(ethRpcMessage notify.ETHRPCPie
 	if err != nil {
 		return
 	} else {
-		handler.exec(handlerFunc, arguments, ethRpcMessage.Method, ethRpcMessage.Nonce)
+		handler.exec(handlerFunc, arguments, ethRpcMessage.Method, ethRpcMessage.Nonce, string(ethRpcMessage.Params))
 	}
 }
 
@@ -166,7 +165,7 @@ func (handler ethMsgHandler) parseRequest(ethRpcMessage *notify.ETHRPCPiece) (ha
 }
 
 // execute RPC method and return result
-func (handler ethMsgHandler) exec(handlerFunc *execFunc, arguments []reflect.Value, method string, nonce uint64) (interface{}, Error) {
+func (handler ethMsgHandler) exec(handlerFunc *execFunc, arguments []reflect.Value, method string, nonce uint64, params string) (interface{}, Error) {
 	reply := handlerFunc.method.Func.Call(arguments)
 	if len(reply) == 0 {
 		return nil, nil
@@ -177,12 +176,6 @@ func (handler ethMsgHandler) exec(handlerFunc *execFunc, arguments []reflect.Val
 			logger.Debugf("after exec.error:%v", e)
 			return &callbackError{e.Error()}, nil
 		}
-	}
-	if method == sendRawTransactionMethod {
-		tx := reply[1].Interface().(*types.Transaction)
-		logger.Debugf("after send raw tx.tx:%s", tx.ToTxJson().ToString())
-		msg := notify.ClientTransactionMessage{*tx, "", nonce}
-		go notify.BUS.Publish(notify.ClientTransaction, &msg)
 	}
 	return reply[0].Interface(), nil
 }

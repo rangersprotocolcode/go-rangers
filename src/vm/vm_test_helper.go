@@ -39,7 +39,9 @@ type testConfig struct {
 	GasPrice    *big.Int
 	Value       *big.Int
 
-	State       *account.AccountDB
+	State           *account.AccountDB
+	AccountDatabase account.AccountDatabase
+
 	GetHashFn   func(n uint64) common.Hash
 	CanTransfer CanTransferFunc
 	Transfer    TransferFunc
@@ -67,7 +69,8 @@ func setDefaults(cfg *testConfig) {
 	}
 	if cfg.State == nil {
 		database, _ := db.NewLDBDatabase("test", 0, 0)
-		cfg.State, _ = account.NewAccountDB(common.Hash{}, account.NewDatabase(database))
+		cfg.AccountDatabase = account.NewDatabase(database)
+		cfg.State, _ = account.NewAccountDB(common.Hash{}, cfg.AccountDatabase)
 	}
 
 	if cfg.GetHashFn == nil {
@@ -87,6 +90,7 @@ func setDefaults(cfg *testConfig) {
 
 func mockInit() {
 	common.InitConf("1.ini")
+	common.InitChainConfig("mainnet")
 	InitVM()
 }
 
@@ -202,7 +206,7 @@ func mockEVM(cfg *testConfig) *EVM {
 		GasLimit:    cfg.GasLimit,
 		GasPrice:    cfg.GasPrice,
 	}
-	return NewEVM(context, cfg.State)
+	return NewEVMWithNFT(context, cfg.State, cfg.State)
 }
 
 type mockContractRef struct {

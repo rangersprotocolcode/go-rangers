@@ -192,6 +192,9 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 	dumpTxs(remoteBlock.Transactions, remoteBlock.Header.Height)
 	chain.eraseAddBlockMark()
 	chain.successOnChainCallBack(remoteBlock)
+	if chain.latestBlock != nil {
+		common.SetBlockHeight(chain.latestBlock.Height)
+	}
 	return types.AddBlockSucc, headerByte
 }
 

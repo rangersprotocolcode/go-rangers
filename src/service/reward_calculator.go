@@ -20,13 +20,10 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
-	"encoding/json"
 	"math"
 	"math/big"
-	"strconv"
 )
 
 type RewardCalculator struct {
@@ -44,6 +41,10 @@ func InitRewardCalculator(blockChainImpl types.BlockChainHelper, groupChain type
 	RewardCalculatorImpl.logger = log.GetLoggerByIndex(log.RewardLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 }
 
+func GetTotalReward(height uint64) float64 {
+	return getTotalReward(height)
+}
+
 func (reward *RewardCalculator) CalculateReward(height uint64, accountDB *account.AccountDB, bh *types.BlockHeader, situation string) map[uint64]types.RefundInfoList {
 	reward.logger.Debugf("start to calculate, height: %d, situation: %s", height, situation)
 	defer reward.logger.Debugf("end to calculate, height: %d, situation: %s", height, situation)
@@ -53,7 +54,6 @@ func (reward *RewardCalculator) CalculateReward(height uint64, accountDB *accoun
 		reward.logger.Errorf("fail to reward, height: %d", height)
 		return nil
 	}
-	go reward.notify(total, height)
 
 	nextHeight := reward.NextRewardHeight(height)
 	refundInfoList := types.RefundInfoList{}
@@ -67,23 +67,8 @@ func (reward *RewardCalculator) CalculateReward(height uint64, accountDB *accoun
 	return data
 }
 
-// send reward detail
-func (reward *RewardCalculator) notify(total map[common.Address]*big.Int, height uint64) {
-	result := make(map[string]interface{})
-	result["from"] = strconv.FormatUint(height-common.RewardBlocks, 10)
-	result["to"] = strconv.FormatUint(height, 10)
-	data := make(map[string]string, len(total))
-	for addr, balance := range total {
-		data[addr.GetHexString()] = utility.BigIntToStr(balance)
-	}
-	result["data"] = data
-
-	resultByte, _ := json.Marshal(result)
-	network.GetNetInstance().Notify(false, "rocketprotocol", "reward", string(resultByte))
-}
-
 // 计算某一块的奖励
-func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, accountDB *account.AccountDB,situation string) map[common.Address]*big.Int {
+func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, accountDB *account.AccountDB, situation string) map[common.Address]*big.Int {
 	result := make(map[common.Address]*big.Int)
 
 	height := bh.Height
@@ -94,10 +79,10 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, a
 
 	// 提案者奖励
 	rewardProposer := utility.Float64ToBigInt(total * common.ProposerReward)
-	proposerAddr := getAddressFromID(bh.Castor)
+	proposerAddr := common.BytesToAddress(MinerManagerImpl.getMinerAccount(bh.Castor, common.MinerTypeProposer, accountDB))
 	addReward(result, proposerAddr, rewardProposer)
 	proposerResult := result[proposerAddr].String()
-	reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, reward: %d, result: %s", height, hashString, proposerAddr.String(), rewardProposer, proposerResult)
+	reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, account: %s, reward: %d, result: %s", height, hashString, common.ToHex(bh.Castor), proposerAddr.String(), rewardProposer, proposerResult)
 
 	// 其他提案者奖励
 	otherRewardProposer := total * common.AllProposerReward
@@ -105,13 +90,16 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, a
 	if totalProposerStake != 0 {
 		for addr, stake := range proposersStake {
 			delta := utility.Float64ToBigInt(float64(stake) / float64(totalProposerStake) * otherRewardProposer)
-			addReward(result, addr, delta)
-			proposerResult := result[addr].String()
-			reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, stake: %d, reward: %d, result: %s", height, hashString, addr.String(), stake, delta, proposerResult)
+			account := common.BytesToAddress(MinerManagerImpl.getMinerAccount(common.FromHex(addr), common.MinerTypeProposer, accountDB))
+			addReward(result, account, delta)
+			reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, account: %s, stake: %d, reward: %d, result: %s", height, hashString, addr, account.String(), stake, delta, result[account].String())
 		}
 	}
 
 	// 验证者奖励
+	if nil == bh.GroupId {
+		return nil
+	}
 	var group *types.Group
 	if situation != "fork" {
 		group = reward.groupChain.GetGroupById(bh.GroupId)

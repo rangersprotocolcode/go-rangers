@@ -36,7 +36,7 @@ func TestRPC(t *testing.T) {
 	gx := NewGX()
 	common.InitConf("rp.ini")
 	walletManager = newWallets()
-	gx.initMiner(0, "dev", "")
+	gx.initMiner(0, "dev", "", "", "")
 
 	host := "0.0.0.0"
 	var port uint = 8989
@@ -158,7 +158,7 @@ func TestGtasAPI_NewWallet(t *testing.T) {
 
 	secretSeed := base.RandFromBytes(address.Bytes())
 	vrfPK, vrfSK, _ := vrf.VRFGenerateKey(bytes.NewReader(secretSeed.Bytes()))
-	miner.VrfPublicKey = vrfPK
+	miner.VrfPublicKey = vrfPK.GetBytes()
 
 	fmt.Println(vrfPK.GetHexString())
 	fmt.Println(vrfSK.GetHexString())

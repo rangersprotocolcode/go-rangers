@@ -14,7 +14,7 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-package eth_rpc
+package eth_tx
 
 import (
 	"com.tuntun.rocket/node/src/common"

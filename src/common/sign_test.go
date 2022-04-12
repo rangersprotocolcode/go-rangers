@@ -18,16 +18,16 @@ package common
 
 import (
 	"bytes"
+	"com.tuntun.rocket/node/src/common/secp256k1"
 	"fmt"
 	"testing"
 
 	"crypto/sha256"
-	"encoding/hex"
 	"strconv"
 )
 
 func TestPrivateKey(test *testing.T) {
-	fmt.Printf("\nbegin TestPrivateKey...\n")
+	fmt.Printf("begin TestPrivateKey...\n")
 	sk := GenerateKey("")
 	str := sk.GetHexString()
 	fmt.Printf("sec key export, len=%v, data=%v.\n", len(str), str)
@@ -37,12 +37,10 @@ func TestPrivateKey(test *testing.T) {
 	fmt.Printf("end TestPrivateKey.\n")
 }
 
-func TestPublickKey(test *testing.T) {
-	fmt.Printf("\nbegin TestPublicKey...\n")
+func TestPublicKey(test *testing.T) {
+	fmt.Printf("begin TestPublicKey...\n")
 	sk := GenerateKey("")
 	pk := sk.GetPubKey()
-	//buf := pub_k.toBytes()
-	//fmt.Printf("byte buf len of public key = %v.\n", len(buf))
 	str := pk.GetHexString()
 	fmt.Printf("pub key export, len=%v, data=%v.\n", len(str), str)
 	new_pk := HexStringToPubKey(str)
@@ -61,10 +59,11 @@ func TestPublickKey(test *testing.T) {
 }
 
 func TestSign(test *testing.T) {
-	fmt.Printf("\nbegin TestSign...\n")
+	fmt.Printf("begin TestSign...\n")
 	plain_txt := "My name is thiefox."
 	buf := []byte(plain_txt)
 	sha3_hash := sha256.Sum256(buf)
+
 	pri_k := GenerateKey("")
 	pub_k := pri_k.GetPubKey()
 
@@ -85,12 +84,11 @@ func TestSign(test *testing.T) {
 func TestSignBytes(test *testing.T) {
 	plain_txt := "dafaefaewfef"
 	buf := []byte(plain_txt)
-
-	pri_k := GenerateKey("")
-
 	sha3_hash := Sha256(buf)
 	s := BytesToHash(sha3_hash).Hex()
 	fmt.Printf("hash:%s\n", s)
+
+	pri_k := GenerateKey("")
 	sign := pri_k.Sign(sha3_hash[:]) //私钥签名
 
 	address := pri_k.GetPubKey().GetAddress()
@@ -99,9 +97,9 @@ func TestSignBytes(test *testing.T) {
 	h := sign.GetHexString() //签名十六进制表示
 	fmt.Println(h)
 
-	//si := HexStringToSign(h) //从十六进制恢复出签名
-	//fmt.Println(si.Bytes())  //签名打印
-	//fmt.Println(sign.Bytes())
+	si := HexStringToSign(h) //从十六进制恢复出签名
+	fmt.Println(si.Bytes())  //签名打印
+	fmt.Println(sign.Bytes())
 
 	sign_bytes := sign.Bytes()
 	sign_r := BytesToSign(sign_bytes)
@@ -113,7 +111,7 @@ func TestSignBytes(test *testing.T) {
 }
 
 func TestRecoverPubkey(test *testing.T) {
-	fmt.Printf("\nbegin TestRecoverPubkey...\n")
+	fmt.Printf("begin TestRecoverPubkey...\n")
 	plain_txt := "Sign Recover Pubkey tesing."
 	buf := []byte(plain_txt)
 	sha3_hash := sha256.Sum256(buf)
@@ -128,13 +126,9 @@ func TestRecoverPubkey(test *testing.T) {
 			fmt.Printf("recover pk = %v\n", pk)
 		}
 	}
+	fmt.Printf("revovered pubkey:%s\n", pk.GetHexString())
+	fmt.Printf("expected pubkey:%s\n", sk.GetPubKey().GetHexString())
 	fmt.Printf("end TestRecoverPubkey.\n")
-}
-
-func TestHash(test *testing.T) {
-	h1 := Hash{1, 2, 3, 4}
-	h2 := Hash{1, 2, 3, 4}
-	fmt.Printf("%v\n", h1 == h2)
 }
 
 func BenchmarkSign(b *testing.B) {
@@ -168,15 +162,6 @@ func BenchmarkRecover(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		_, _ = sign.RecoverPubkey(sha3_hash[:])
 	}
-}
-
-func TestAccount(test *testing.T) {
-	privateKey := GenerateKey("")
-	pubkey := privateKey.GetPubKey()
-	id := pubkey.GetID()
-	fmt.Printf("sk:%s\n", privateKey.GetHexString())
-	fmt.Printf("pk:%s\n", pubkey.GetHexString())
-	fmt.Printf("id:%s\n", hex.EncodeToString(id[:]))
 }
 
 func TestGenerateKey(t *testing.T) {
@@ -225,6 +210,30 @@ func TestKey(t *testing.T) {
 	id := publicKey.GetID()
 	address := publicKey.GetAddress()
 	fmt.Printf("Private key:%s\n", privateKey.GetHexString())
+	fmt.Printf("Public key:%s\n", privateKey.GetPubKey().GetHexString())
 	fmt.Printf("Address:%s\n", address.String())
 	fmt.Printf("Id:%s\n", ToHex(id[:]))
+}
+
+func TestKeyByHex(t *testing.T) {
+	privateKey := HexStringToSecKey("0xd7f5d173593eff81a50f7d8ea345bbc543ad8e356e75975e87114438c8f4eaf4")
+	publicKey := privateKey.GetPubKey()
+	id := publicKey.GetID()
+	address := publicKey.GetAddress()
+	fmt.Printf("Private key:%s\n", privateKey.GetHexString())
+	fmt.Printf("Public key:%s\n", publicKey.GetHexString())
+	fmt.Printf("Address:%s\n", address.String())
+	fmt.Printf("Id:%s\n", ToHex(id[:]))
+}
+
+func TestRecoverPubkeyFromMsg(t *testing.T) {
+	sig := FromHex("0x68fb6c58fd7cfbce99457414d774eb572bd1f13dc725bb2372de42bcf356d687793f2784c5be7181b4741befa817d8657074c1811886d7d0ce1d1cf3314e7ef61b")
+	msg := FromHex("0x4c0883a69102937d6231471b5dbb6204fe5129617082792ae468d01b3f365018")
+	pubkeyBytes, err := secp256k1.RecoverPubkey(msg, sig)
+	if err != nil {
+		t.Errorf("recover error: %s", err)
+	}
+	pubkey := BytesToPublicKey(pubkeyBytes)
+	fmt.Println(pubkey.GetHexString())
+	fmt.Println(pubkey.GetAddress().String())
 }

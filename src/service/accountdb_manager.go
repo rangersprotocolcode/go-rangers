@@ -20,9 +20,16 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
+	"com.tuntun.rocket/node/src/middleware/mysql"
+	"com.tuntun.rocket/node/src/middleware/notify"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/trie"
+	"com.tuntun.rocket/node/src/utility"
+	"encoding/json"
+	"fmt"
 	"sync"
+	"time"
 )
 
 const stateDBPrefix = "state"
@@ -52,6 +59,7 @@ func initAccountDBManager() {
 	}
 	AccountDBManagerInstance.stateDB = account.NewDatabase(db)
 
+	AccountDBManagerInstance.getTxList()
 }
 
 //todo: 功能增强
@@ -83,14 +91,15 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) (*acco
 	if !manager.debug {
 		// requestId 按序执行
 		manager.getCond().L.Lock()
-		if nonce <= manager.requestId {
-			// 已经执行过的消息，忽略
-			manager.logger.Errorf("%s requestId :%d skipped, current requestId: %d", "", nonce, manager.requestId)
-			manager.getCond().L.Unlock()
-			return nil, 0
-		}
 
 		for nonce != (manager.requestId + 1) {
+			if nonce <= manager.requestId {
+				// 已经执行过的消息，忽略
+				manager.logger.Errorf("%s requestId :%d skipped, current requestId: %d", "", nonce, manager.requestId)
+				manager.getCond().L.Unlock()
+				return nil, 0
+			}
+
 			// waiting until the right requestId
 			manager.logger.Infof("requestId :%d is waiting, current requestId: %d", nonce, manager.requestId)
 			waited = true
@@ -115,12 +124,12 @@ func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *accoun
 		manager.getCond().L.Lock()
 	}
 
+	manager.height = height
 	if nil == manager.latestStateDB || nonce >= manager.requestId {
 		if nil != latestStateDB {
 			manager.latestStateDB = latestStateDB
 		}
 
-		manager.height = height
 		manager.requestId = nonce
 		manager.logger.Warnf("accountDB set success. requestId: %d, current: %d, msg: %s", nonce, manager.requestId, msg)
 
@@ -153,4 +162,27 @@ func (manager *AccountDBManager) GetLatestNonce() uint64 {
 	defer manager.getCond().L.Unlock()
 
 	return manager.requestId
+}
+
+func (manager *AccountDBManager) getTxList() {
+	go func() {
+		for {
+			txs := mysql.GetTxRaws(manager.GetLatestNonce())
+			if nil != txs {
+				for _, tx := range txs {
+					var txJson types.TxJson
+					err := json.Unmarshal(utility.StrToBytes(tx.Data), &txJson)
+					if nil != err {
+						msg := fmt.Sprintf("handleClientMessage json unmarshal client message error:%s", err.Error())
+						manager.logger.Errorf(msg)
+					}
+					transaction := txJson.ToTransaction()
+
+					msg := notify.ClientTransactionMessage{Tx: transaction, UserId: tx.UserId, Nonce: tx.Nonce, GateNonce: tx.GateNonce}
+					notify.BUS.Publish(notify.ClientTransaction, &msg)
+				}
+			}
+			time.Sleep(time.Millisecond * 10)
+		}
+	}()
 }

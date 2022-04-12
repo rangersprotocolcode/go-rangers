@@ -26,7 +26,7 @@ import (
 
 const (
 	zeroString     = "0"
-	prec           = 129
+	prec           = 512
 	baseNumber     = 1000000000000000000
 	defaultDecimal = 18
 )
@@ -90,6 +90,13 @@ func BigIntToStr(number *big.Int) string {
 
 	// 默认保留小数点9位
 	return bigIntToStr(number, defaultDecimal)
+}
+
+// 11220000000000000000->"11"
+func BigIntToStrWithoutDot(number *big.Int) string {
+	res := BigIntToStr(number)
+	index := strings.Index(res, ".")
+	return res[:index]
 }
 
 func bigIntToStr(n *big.Int, precision int) string {

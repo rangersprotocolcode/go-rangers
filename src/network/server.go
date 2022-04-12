@@ -31,18 +31,15 @@ type server struct {
 	reader ClientConn
 	writer ClientConn
 
-	// coiner消息
-	coiner ConnectorConn
-
 	jsonrpc JSONRPCConn
 }
 
-func (s *server) Init(logger log.Logger, gateAddr string, selfMinerId []byte, consensusHandler MsgHandler) {
-	s.reader.Init(gateAddr, "/srv/worker_reader", notify.ClientTransactionRead, methodCodeClientReader, logger, true)
-	s.writer.Init(gateAddr, "/srv/worker_writer", notify.ClientTransaction, methodCodeClientWriter, logger, false)
+func (s *server) Init(logger log.Logger, gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler) {
 	s.worker.Init(gateAddr, selfMinerId, consensusHandler, logger)
-	s.coiner.Init(gateAddr, logger)
-	s.jsonrpc.Init(gateAddr, logger)
+
+	s.reader.Init(outerGateAddr, "/srv/reader", notify.ClientTransactionRead, methodCodeClientReader, logger, true)
+	s.writer.Init(outerGateAddr, "/srv/writer", notify.ClientTransaction, methodCodeClientWriter, logger, false)
+	s.jsonrpc.Init(outerGateAddr, logger)
 }
 
 func (s *server) SendToJSONRPC(msg string, sessionId, requestId uint64) {
@@ -67,14 +64,6 @@ func (s *server) SendToClientReader(id string, msg []byte, nonce uint64) {
 
 func (s *server) SendToClientWriter(id string, msg []byte, nonce uint64) {
 	s.writer.Send(id, msg, nonce)
-}
-
-func (s *server) SendToCoinConnector(msg []byte) {
-	s.coiner.Send(msg)
-}
-
-func (s *server) Notify(isUniCast bool, gameId string, userid string, msg string) {
-	s.reader.Notify(isUniCast, gameId, userid, msg)
 }
 
 func (s *server) JoinGroupNet(groupId string) {

@@ -61,10 +61,13 @@ func (vp VRFPublicKey) GetHexString() string {
 	return common.ToHex(vp)
 }
 
+func (vp VRFPublicKey) GetBytes() []byte {
+	return vp
+}
+
 func Hex2VRFPublicKey(hex string) VRFPublicKey {
 	return VRFPublicKey(common.FromHex(hex))
 }
-
 func (vp VRFPrivateKey) GetHexString() string {
 	return common.ToHex(vp)
 }

@@ -20,11 +20,8 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/utility"
-	"fmt"
 	"math/big"
 )
-
-var flagForERC20Binding = big.NewInt(2)
 
 func (self *AccountDB) GetBNT(addr common.Address, bntName string) *big.Int {
 	accountObject := self.getOrNewAccountObject(addr)
@@ -64,20 +61,7 @@ func (self *AccountDB) GetAllBNT(addr common.Address) map[string]*big.Int {
 }
 
 func (self *AccountDB) GetAllFT(addr common.Address) map[string]*big.Int {
-	accountObject := self.getOrNewAccountObject(addr)
-	result := accountObject.getAllFT(self.db, false)
-	if 0 == len(result) {
-		return result
-	}
-
-	for ftName, value := range result {
-		if 0 == flagForERC20Binding.Cmp(value) {
-			valueERC20 := self.GetFT(addr, ftName)
-			if nil != valueERC20 && 0 != valueERC20.Cmp(big.NewInt(0)) {
-				result[ftName] = valueERC20
-			}
-		}
-	}
+	result := make(map[string]*big.Int)
 	return result
 }
 
@@ -98,9 +82,6 @@ func (self *AccountDB) SetFT(addr common.Address, ftName string, balance *big.In
 	if found {
 		account := self.getOrNewAccountObject(contract)
 		account.SetData(self.db, self.GetERC20Key(addr, position), utility.FormatDecimalForERC20(balance, int64(decimal)).Bytes())
-
-		account = self.getOrNewAccountObject(addr)
-		account.SetFT(self.db, flagForERC20Binding, ftName)
 		return
 	}
 
@@ -129,10 +110,11 @@ func (self *AccountDB) AddFT(addr common.Address, ftName string, balance *big.In
 		key := self.GetERC20Key(addr, position)
 		remain := new(big.Int).SetBytes(account.GetData(self.db, key))
 		remain.Add(remain, utility.FormatDecimalForERC20(balance, int64(decimal)))
-		account.setData(key, remain.Bytes())
-
-		account = self.getOrNewAccountObject(addr)
-		account.SetFT(self.db, flagForERC20Binding, ftName)
+		if common.IsProposal002() {
+			account.SetData(self.db, key, remain.Bytes())
+		} else {
+			account.setData(key, remain.Bytes())
+		}
 		return true
 	}
 
@@ -167,7 +149,11 @@ func (self *AccountDB) SubFT(addr common.Address, ftName string, balance *big.In
 		}
 
 		remain.Sub(remain, value)
-		account.setData(key, remain.Bytes())
+		if common.IsProposal002() {
+			account.SetData(self.db, key, remain.Bytes())
+		} else {
+			account.setData(key, remain.Bytes())
+		}
 		return utility.FormatDecimalForRocket(remain, int64(decimal)), true
 	}
 
@@ -212,18 +198,27 @@ func (self *AccountDB) ChangeNFTOwner(owner, newOwner common.Address, setId, id 
 
 	// 这里出错，意味着这个nft不属于owner
 	if !ownerObject.RemoveNFTLink(self.db, setId, id) {
+		accountLog.Errorf("error: not found nft(setId: %s, id: %s) for owner: %s", setId, id, owner.String())
 		return false
 	}
 
 	newOwnerObject := self.getOrNewAccountObject(newOwner)
 	if !newOwnerObject.AddNFTLink(self.db, appId, setId, id) {
+		accountLog.Errorf("error: already have nft(setId: %s, id: %s) for owner: %s", setId, id, newOwner.String())
 		return false
 	}
 
 	nft := self.getAccountObject(common.GenerateNFTAddress(setId, id), false)
-	if nil == nft || 0 != nft.getNFTStatus(self.db) {
+	if nil == nft {
+		accountLog.Errorf("error: nil nft(setId: %s, id: %s)", setId, id)
 		return false
 	}
+	nftStatus := nft.getNFTStatus(self.db)
+	if 0 != nftStatus {
+		accountLog.Errorf("error: wrong nft(setId: %s, id: %s), status: %d", setId, id, nftStatus)
+		return false
+	}
+
 	nft.SetOwner(self.db, newOwner.GetHexString())
 	return true
 }
@@ -340,265 +335,4 @@ func (adb *AccountDB) GetNFTSetDefinition(setId string) *types.NFTSet {
 	}
 
 	return accountObject.GetNFTSetDefinition(adb.db)
-}
-
-// source 用户 锁定 resource 到target
-func (adb *AccountDB) LockResource(sourceAddr, targetAddr common.Address, resource types.LockResource) bool {
-	db := adb.db
-	source := adb.getOrNewAccountObject(sourceAddr)
-	target := adb.getOrNewAccountObject(targetAddr)
-	if target.IsNFT() {
-		return false
-	}
-
-	// balance
-	balanceString := resource.Balance
-	if 0 != len(balanceString) {
-		balance, err := utility.StrToBigInt(balanceString)
-		if nil != err || source.Balance().Cmp(balance) < 0 {
-			return false
-		}
-
-		source.SubBalance(balance)
-		target.lockBalance(db, sourceAddr, balance)
-	}
-
-	// bnt
-	bntMap := resource.Coin
-	if 0 != len(bntMap) {
-		for bnt, value := range bntMap {
-			amount, err := utility.StrToBigInt(value)
-			if err != nil {
-				return false
-			}
-			if 0 == amount.Sign() {
-				continue
-			}
-
-			_, ok := source.SubBNT(db, amount, bnt)
-			if !ok {
-				return false
-			}
-			target.lockBNT(db, sourceAddr, bnt, amount)
-		}
-	}
-
-	// ft
-	ftMap := resource.FT
-	if 0 != len(ftMap) {
-		for ft, value := range ftMap {
-			amount, err := utility.StrToBigInt(value)
-			if err != nil {
-				return false
-			}
-			if 0 == amount.Sign() {
-				continue
-			}
-			_, ok := source.SubFT(db, amount, ft)
-			if !ok {
-				return false
-			}
-			target.lockFT(db, sourceAddr, ft, amount)
-		}
-	}
-
-	// nft
-	nftList := resource.NFT
-	if 0 != len(nftList) {
-		for _, nft := range nftList {
-			setId := nft.SetId
-			id := nft.Id
-
-			nft := adb.getAccountObject(common.GenerateNFTAddress(setId, id), false)
-			if nil == nft || !nft.lockNFTSelf(db, sourceAddr, targetAddr) {
-				return false
-			}
-
-			target.lockNFT(db, sourceAddr, setId, id)
-		}
-	}
-	return true
-}
-
-// source 用户 解锁 存放在target(通常是nftSet)中 resource
-func (adb *AccountDB) UnLockResource(sourceAddr, targetAddr common.Address, demand types.LockResource) (bool, string) {
-	flag, msg := adb.processResource(sourceAddr, targetAddr, "", "", demand, 1)
-	if !flag {
-		accountLog.Errorf(msg)
-	} else {
-		accountLog.Debugf(msg)
-	}
-	return flag, msg
-}
-
-// target(nftSet) mintNFT时，销毁
-// source 用户 锁定在target中 resource
-func (adb *AccountDB) DestroyResource(sourceAddr, targetAddr common.Address, demand types.LockResource) (bool, string) {
-	flag, msg := adb.processResource(sourceAddr, targetAddr, "", "", demand, 2)
-	if !flag {
-		accountLog.Errorf(msg)
-	} else {
-		accountLog.Debugf(msg)
-	}
-	return flag, msg
-}
-
-// target(nftSet账户) comboNFT时，转移
-// source(资源提供方) 用户 锁定在target中的 resource到ComboResource
-func (adb *AccountDB) ComboResource(sourceAddr, targetAddr common.Address, setId, id string, demand types.LockResource) (bool, string) {
-	flag, msg := adb.processResource(sourceAddr, targetAddr, setId, id, demand, 3)
-	if !flag {
-		accountLog.Errorf(msg)
-	} else {
-		accountLog.Debugf(msg)
-	}
-	return flag, msg
-}
-
-// 处理target中锁定的资源
-// 处理类型有：
-// 1 解锁（返回给sourceAddr）
-// 2 mintNFT时，销毁对应的资源
-// 3 组合NFT时转移至nft的ComboResource中
-func (adb *AccountDB) processResource(sourceAddr, targetAddr common.Address, setId, id string, demand types.LockResource, kind byte) (bool, string) {
-	var targetNFT *accountObject
-	if 3 == kind {
-		targetNFT = adb.getAccountObject(common.GenerateNFTAddress(setId, id), false)
-		if nil == targetNFT {
-			return false, fmt.Sprintf("setId: %s id: %s not existed", setId, id)
-		}
-		if !targetNFT.checkOwner(adb.db, sourceAddr) {
-			return false, fmt.Sprintf("setId: %s id: %s owner wrong: %s", setId, id, sourceAddr.GetHexString())
-		}
-		status := targetNFT.getNFTStatus(adb.db)
-		if 0 != status {
-			return false, fmt.Sprintf("setId: %s id: %s status error: %d", setId, id, status)
-		}
-	}
-
-	source := adb.getOrNewAccountObject(sourceAddr)
-	target := adb.getOrNewAccountObject(targetAddr)
-	db := adb.db
-
-	// balance
-	balanceString := demand.Balance
-	if 0 != len(balanceString) {
-		balance, err := utility.StrToBigInt(balanceString)
-		if nil != err || !target.unlockBalance(db, sourceAddr, balance) {
-			return false, fmt.Sprintf("setId: %s id: %s balance error: %s", setId, id, balanceString)
-		}
-
-		switch kind {
-		case 1:
-			source.AddBalance(balance)
-			break
-		case 2:
-			// do nothing
-			break
-		case 3:
-			targetNFT.setComboBalance(db, balance)
-			break
-		}
-
-	}
-
-	// bnt
-	bntMap := demand.Coin
-	if 0 != len(bntMap) {
-		for bnt, value := range bntMap {
-			amount, err := utility.StrToBigInt(value)
-			if err != nil || !target.unlockBNT(db, sourceAddr, bnt, amount) {
-				return false, fmt.Sprintf("setId: %s id: %s bnt error: %s, %s", setId, id, bnt, value)
-			}
-
-			switch kind {
-			case 1:
-				source.AddBNT(db, amount, bnt)
-				break
-			case 2:
-				// do nothing
-				break
-			case 3:
-				targetNFT.setComboBNT(db, amount, bnt)
-				break
-			}
-
-		}
-	}
-
-	// ft
-	ftMap := demand.FT
-	if 0 != len(ftMap) {
-		for ft, value := range ftMap {
-			amount, err := utility.StrToBigInt(value)
-			if err != nil || !target.unlockFT(db, sourceAddr, ft, amount) {
-				return false, fmt.Sprintf("setId: %s id: %s ft error: %s, %s", setId, id, ft, value)
-			}
-
-			switch kind {
-			case 1:
-				source.AddFT(db, amount, ft)
-				break
-			case 2:
-				// do nothing
-				break
-			case 3:
-				targetNFT.setComboFT(db, amount, ft)
-				break
-			}
-
-		}
-	}
-
-	// nft
-	nftList := demand.NFT
-	if 0 != len(nftList) {
-		for _, nft := range nftList {
-			setId := nft.SetId
-			id := nft.Id
-
-			nft := adb.getAccountObject(common.GenerateNFTAddress(setId, id), false)
-			if nil == nft {
-				return false, fmt.Sprintf("setId: %s id: %s not existed", setId, id)
-			}
-
-			nft.unlockNFTSelf(db)
-			target.unlockNFT(db, sourceAddr, setId, id)
-
-			switch kind {
-			case 1:
-				// do nothing
-				break
-			case 2:
-				// destory nft
-				adb.RemoveNFTByGameId(sourceAddr, setId, id)
-				break
-			case 3:
-				targetNFT.setComboNFT(db, setId, id)
-				break
-			}
-		}
-	}
-
-	return true, ""
-}
-
-// 查询target中所有的锁定的资源情况
-func (adb *AccountDB) GetLockedResource(targetAddr common.Address) map[string]*types.LockResource {
-	target := adb.getAccountObject(targetAddr, false)
-	if nil == target {
-		return nil
-	}
-
-	return target.getAllLockedResource(adb.db)
-}
-
-// 查询target中 filter 地址 锁定的资源情况
-func (adb *AccountDB) GetLockedResourceByAddress(targetAddr, filter common.Address) *types.LockResource {
-	target := adb.getAccountObject(targetAddr, false)
-	if nil == target {
-		return nil
-	}
-
-	return target.getLockedResource(adb.db, filter)
 }

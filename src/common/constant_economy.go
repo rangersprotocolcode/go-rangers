@@ -26,12 +26,13 @@ const (
 
 	// 10个小时，单位ms
 	// 计算一次奖励的时间间隔
-	RewardTime = 1 * 60 * 60 * 1000
+	rewardTime = 10 * 60 * 60 * 1000
+	//10 * 60 * 60 * 1000
 
 	RefundTime = 50 * 1000
 
 	// 按照出块速度，计算奖励所需要的块数目
-	RewardBlocks = uint64(RewardTime / CastingInterval)
+	RewardBlocks = uint64(rewardTime / CastingInterval)
 
 	RefundBlocks = uint64(RefundTime / CastingInterval)
 
@@ -48,7 +49,7 @@ const (
 // 奖励
 const (
 	// 矿工总奖励
-	TotalRPGSupply = 2100 * 10000 * 0.49
+	TotalRPGSupply = 2100 * 10000 * 0.35
 
 	ReleaseRate = 0.08
 
@@ -64,8 +65,14 @@ const (
 
 // 最小质押量
 const (
-	ValidatorStake = uint64(250)
-	ProposerStake  = uint64(1250)
+	ValidatorStake = uint64(400)
+	ProposerStake  = uint64(2000)
 
-	HeightAfterStake = RewardBlocks
+	HeightAfterStake = 300
 )
+
+const (
+	BLANCE_NAME = "SYSTEM-RPG"
+)
+
+var FeeAccount = HexToAddress("0x3966eafd38c5f10cc91eaacaeff1b6682b83ced4")

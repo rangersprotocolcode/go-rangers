@@ -16,29 +16,143 @@
 
 package common
 
-import "math/big"
+import (
+	"com.tuntun.rocket/node/src/middleware/log"
+	"math/big"
+	"sync/atomic"
+)
 
-const Version = "0.9"
+const (
+	Version           = "1.0.6.1"
+	ProtocolVersion   = 1
+	ConsensusVersion  = 1
+	ENV_DEV           = "dev"
+	ENV_TESTNET_ROBIN = "test"
+	ENV_MAINNET       = "mainnet"
+)
 
-const ConsensusVersion = 1
+var (
+	mainNetChainConfig = ChainConfig{
+		ChainId:          "2025",
+		NetworkId:        "2025",
+		Dsn:              "readonly:Readonly>123456@tcp(ds.rangersprotocol.com:6666)/rpservice?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
+		PHub:             "wss://mainnet.rangersprotocol.com/phub",
+		PubHub:           "wss://mainnet.rangersprotocol.com/pubhub",
+		OriginalChainId:  "8888",
+		Proposal001Block: 894116,
+		Proposal002Block: 3353000,
+		Proposal003Block: 3830000,
+		Proposal004Block: 5310000,
+		Proposal005Block: 10293600,
+	}
 
-//用于区分不同的网络环境
-//testnet
-//const NetworkId = "9527"
+	robinChainConfig = ChainConfig{
+		ChainId:          "9527",
+		NetworkId:        "9527",
+		OriginalChainId:  "9527",
+		Proposal001Block: 0,
+		Proposal002Block: 2802000,
+		Proposal003Block: 3380000,
+		Proposal004Block: 5310000,
+		Proposal005Block: 10003000,
+	}
 
-//dev
-const NetworkId = "9500"
+	devNetChainConfig = ChainConfig{
+		ChainId:          "9500",
+		NetworkId:        "9500",
+		Dsn:              "readonly:Tuntun123456!@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
+		PHub:             "ws://gate.tuntunhz.com:8899",
+		PubHub:           "ws://gate.tuntunhz.com:8888",
+		OriginalChainId:  "9800",
+		Proposal001Block: 300,
+		Proposal002Block: 338000,
+		Proposal003Block: 920000,
+		Proposal004Block: 5310000,
+		Proposal005Block: 1000,
+	}
 
-//用于区分不同的分叉
-//testnet
-//const ChainId = "9527"
+	LocalChainConfig ChainConfig
+)
 
-//dev
-const ChainId = "9500"
+type ChainConfig struct {
+	ChainId   string
+	NetworkId string
 
-const ProtocolVersion = 1
+	PHub   string
+	PubHub string
+	Dsn    string
 
-func GetChainId() *big.Int {
-	chainId, _ := big.NewInt(0).SetString(ChainId, 10)
+	OriginalChainId  string
+	Proposal001Block uint64
+	Proposal002Block uint64
+	Proposal003Block uint64
+	Proposal004Block uint64
+	Proposal005Block uint64
+}
+
+func InitChainConfig(env string) {
+	if env == ENV_DEV {
+		LocalChainConfig = devNetChainConfig
+	} else if env == ENV_MAINNET {
+		LocalChainConfig = mainNetChainConfig
+	} else {
+		LocalChainConfig = robinChainConfig
+	}
+
+	localChainInfo = chainInfo{
+		currentBlockHeight: atomic.Value{},
+	}
+	localChainInfo.currentBlockHeight.Store(uint64(0))
+	blockHeightLogger = log.GetLoggerByIndex(log.BlockHeightConfig, "")
+}
+
+func GetChainId(height uint64) *big.Int {
+	chainIdStr := ChainId(height)
+	chainId, _ := big.NewInt(0).SetString(chainIdStr, 10)
 	return chainId
+}
+
+func ChainId(height uint64) string {
+	if IsProposal001(height) {
+		return LocalChainConfig.ChainId
+	} else {
+		return LocalChainConfig.OriginalChainId
+	}
+}
+
+func NetworkId() string {
+	return LocalChainConfig.NetworkId
+}
+func IsRobin() bool {
+	return LocalChainConfig.ChainId == robinChainConfig.ChainId
+}
+func IsDEV() bool {
+	return LocalChainConfig.ChainId == devNetChainConfig.ChainId
+}
+func IsMainnet() bool {
+	return LocalChainConfig.ChainId == mainNetChainConfig.ChainId
+}
+
+func IsProposal001(height uint64) bool {
+	return isForked(LocalChainConfig.Proposal001Block, height)
+}
+
+func IsProposal002() bool {
+	return isForked(LocalChainConfig.Proposal002Block, GetBlockHeight())
+}
+
+func IsProposal003() bool {
+	return isForked(LocalChainConfig.Proposal003Block, GetBlockHeight())
+}
+
+func IsProposal004() bool {
+	return isForked(LocalChainConfig.Proposal004Block, GetBlockHeight())
+}
+
+func IsProposal005() bool {
+	return isForked(LocalChainConfig.Proposal005Block, GetBlockHeight())
+}
+
+func isForked(base uint64, height uint64) bool {
+	return height >= base
 }

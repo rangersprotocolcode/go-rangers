@@ -78,13 +78,6 @@ const (
 	ResponseSharePiece uint32 = 40
 )
 
-//与coin connector 通信的消息CODE
-const (
-	CoinProxyNotify uint32 = 1000
-	WithDraw        uint32 = 1001
-	AssetOnChain           = 1002
-)
-
 type MsgDigest []byte
 
 type Network interface {
@@ -100,11 +93,7 @@ type Network interface {
 
 	SendToClientWriter(id string, msg []byte, nonce uint64)
 
-	SendToCoinConnector(msg []byte)
-
-	Notify(isunicast bool, gameId string, userid string, msg string)
-
-	Init(logger log.Logger, gateAddr string, selfMinerId []byte, consensusHandler MsgHandler)
+	Init(logger log.Logger, gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler)
 
 	JoinGroupNet(groupId string)
 

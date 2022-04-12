@@ -20,6 +20,7 @@ import (
 	crypto "com.tuntun.rocket/node/src/eth_crypto"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/utility"
 	"fmt"
 	"math/big"
 	"sort"
@@ -178,11 +179,7 @@ func (adb *AccountDB) Empty(addr common.Address) bool {
 
 // GetBalance Retrieve the balance from the given address or 0 if object not found
 func (adb *AccountDB) GetBalance(addr common.Address) *big.Int {
-	accountObject := adb.getAccountObject(addr, false)
-	if accountObject != nil {
-		return accountObject.Balance()
-	}
-	return common.Big0
+	return adb.GetFT(addr, common.BLANCE_NAME)
 }
 
 // GetBalance Retrieve the nonce from the given address or 0 if object not found
@@ -230,26 +227,27 @@ func (adb *AccountDB) HasSuicided(addr common.Address) bool {
 }
 
 // AddBalance adds amount to the account associated with addr.
+// amount decimal 18
 func (adb *AccountDB) AddBalance(addr common.Address, amount *big.Int) {
-	stateObject := adb.getOrNewAccountObject(addr)
-	if stateObject != nil {
-		stateObject.AddBalance(amount)
-	}
+	adb.AddFT(addr, common.BLANCE_NAME, amount)
 }
 
 // SubBalance subtracts amount from the account associated with addr.
 func (adb *AccountDB) SubBalance(addr common.Address, amount *big.Int) (left *big.Int) {
-	stateObject := adb.getOrNewAccountObject(addr)
-	if stateObject != nil {
-		left = stateObject.SubBalance(amount)
-	}
+	left, _ = adb.SubFT(addr, common.BLANCE_NAME, amount)
 	return
 }
 
 func (adb *AccountDB) SetBalance(addr common.Address, amount *big.Int) {
-	stateObject := adb.getOrNewAccountObject(addr)
-	if stateObject != nil {
-		stateObject.SetBalance(amount)
+	adb.SetFT(addr, common.BLANCE_NAME, amount)
+}
+
+func (self *AccountDB) setBalance(addr common.Address, balance *big.Int) {
+	found, contract, position, decimal := self.GetERC20Binding(common.BLANCE_NAME)
+	if found {
+		account := self.getOrNewAccountObject(contract)
+		account.setData(self.GetERC20Key(addr, position), utility.FormatDecimalForERC20(balance, int64(decimal)).Bytes())
+		return
 	}
 }
 
@@ -275,49 +273,6 @@ func (adb *AccountDB) SetData(addr common.Address, key []byte, value []byte) {
 	if stateObject != nil {
 		stateObject.SetData(adb.db, key, value)
 	}
-}
-
-func (adb *AccountDB) SetNFTSetDefinition(addr common.Address, code []byte, owner string) {
-	stateObject := adb.getOrNewAccountObject(addr)
-	if stateObject != nil {
-		stateObject.SetNFTSetDefinition(sha3.Sum256(code), code)
-		stateObject.SetNFTSetOwner(adb.db, owner)
-	}
-}
-
-func (adb *AccountDB) SetLotteryDefinition(addr common.Address, code []byte, owner string) {
-	stateObject := adb.getOrNewAccountObject(addr)
-	if stateObject != nil {
-		stateObject.SetLotteryDefinition(sha3.Sum256(code), code)
-		stateObject.SetLotteryOwner(adb.db, owner)
-	}
-}
-
-func (adb *AccountDB) GetLotteryDefinition(addr common.Address) []byte {
-	accountObject := adb.getAccountObject(addr, false)
-	if nil == accountObject {
-		return nil
-	}
-
-	return accountObject.GetLotteryDefinition(adb.db)
-}
-
-func (adb *AccountDB) GetLotteryOwner(addr common.Address) string {
-	accountObject := adb.getAccountObject(addr, false)
-	if nil == accountObject {
-		return ""
-	}
-
-	return accountObject.GetLotteryOwner(adb.db)
-}
-
-// GetCode returns the contract code associated with this object, if any.
-func (adb *AccountDB) getNFTSetDefinition(addr common.Address) []byte {
-	stateObject := adb.getAccountObject(addr, false)
-	if stateObject != nil {
-		return stateObject.nftSetDefinition(adb.db)
-	}
-	return nil
 }
 
 func (adb *AccountDB) Transfer(sender, recipient common.Address, amount *big.Int) {
@@ -349,11 +304,10 @@ func (adb *AccountDB) Suicide(addr common.Address) bool {
 	adb.transitions = append(adb.transitions, suicideChange{
 		account:     &addr,
 		prev:        stateObject.suicided,
-		prevbalance: new(big.Int).Set(stateObject.Balance()),
+		prevbalance: new(big.Int).Set(adb.GetBalance(addr)),
 	})
 	stateObject.markSuicided()
-	stateObject.data.Balance = new(big.Int)
-
+	adb.setBalance(addr, common.Big0)
 	return true
 }
 
@@ -621,6 +575,11 @@ func (adb *AccountDB) CreateAccount(addr common.Address) {
 	adb.getOrNewAccountObject(addr)
 }
 
+func (adb *AccountDB) IsContract(addr common.Address) bool {
+	contract := adb.GetCode(addr)
+	return nil != contract && 0 != len(contract)
+}
+
 func (adb *AccountDB) GetCode(addr common.Address) []byte {
 	stateObject := adb.getAccountObject(addr, false)
 	if stateObject != nil {
@@ -681,7 +640,8 @@ func (adb *AccountDB) GetState(addr common.Address, hash common.Hash) common.Has
 	stateObject := adb.getAccountObject(addr, false)
 	if stateObject != nil {
 		data := stateObject.GetData(adb.db, hash.Bytes())
-		return common.BytesToHash(data)
+		result := common.BytesToHash(data)
+		return result
 	}
 
 	return common.Hash{}

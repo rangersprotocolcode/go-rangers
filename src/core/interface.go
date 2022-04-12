@@ -61,6 +61,8 @@ type BlockChain interface {
 
 	QueryBlock(height uint64) *types.Block
 
+	QueryBlockHeaderByHeight(height interface{}, cache bool) *types.BlockHeader
+
 	GetBalance(address common.Address) *big.Int
 
 	GetTransaction(txHash common.Hash) (*types.Transaction, error)

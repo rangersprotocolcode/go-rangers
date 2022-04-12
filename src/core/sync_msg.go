@@ -123,15 +123,18 @@ func (p *syncProcessor) blockChainPieceHandler(m notify.Message) {
 	}
 
 	from := chainPieceInfo.SignInfo.Id
-	if from != p.candidateInfo.Id {
-		p.logger.Debugf("[BlockChainPieceMessage]Unexpected candidate! Expect from:%s, actual:%s,!", p.candidateInfo.Id, from)
+	candidateId := p.GetCandidateInfo().Id
+	if from != candidateId {
+		p.logger.Debugf("[BlockChainPieceMessage]Unexpected candidate! Expect from:%s, actual:%s,!", candidateId, from)
 		PeerManager.markEvil(from)
 		return
 	}
 	p.blockReqTimer.Stop()
 
 	chainPiece := chainPieceInfo.ChainPiece
-	p.logger.Debugf("Rcv block chain piece from:%s,%d-%d", p.candidateInfo.Id, chainPiece[0].Height, chainPiece[len(chainPiece)-1].Height)
+	if 0 != len(chainPiece) {
+		p.logger.Debugf("Rcv block chain piece from:%s,%d-%d", candidateId, chainPiece[0].Height, chainPiece[len(chainPiece)-1].Height)
+	}
 	if !verifyBlockChainPiece(chainPiece, chainPieceInfo.TopHeader) {
 		p.logger.Debugf("Illegal block chain piece!", from)
 		p.finishCurrentSyncWithLock(false)
@@ -293,8 +296,9 @@ func (p *syncProcessor) blockResponseMsgHandler(msg notify.Message) {
 		return
 	}
 	from := blockResponse.SignInfo.Id
-	if from != p.candidateInfo.Id {
-		p.logger.Debugf("[BlockResponseMessage]Unexpected candidate! Expect from:%s, actual:%s,!", p.candidateInfo.Id, from)
+	candidateId := p.GetCandidateInfo().Id
+	if from != candidateId {
+		p.logger.Debugf("[BlockResponseMessage]Unexpected candidate! Expect from:%s, actual:%s,!", candidateId, from)
 		return
 	}
 	block := blockResponse.Block
@@ -396,8 +400,9 @@ func (p *syncProcessor) groupResponseMsgHandler(msg notify.Message) {
 		return
 	}
 	from := groupResponse.SignInfo.Id
-	if from != p.candidateInfo.Id {
-		p.logger.Debugf("[GroupResponseMessage]Unexpected candidate! Expect from:%s, actual:%s,!", p.candidateInfo.Id, from)
+	candidateId := p.GetCandidateInfo().Id
+	if from != candidateId {
+		p.logger.Debugf("[GroupResponseMessage]Unexpected candidate! Expect from:%s, actual:%s,!", candidateId, from)
 		return
 	}
 	group := groupResponse.Group
