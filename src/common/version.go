@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	Version           = "1.0.0"
+	Version           = "1.0.6"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -56,8 +56,7 @@ var (
 		Proposal002Block: 2802000,
 		Proposal003Block: 3380000,
 		Proposal004Block: 5310000,
-		//TODO: check while update robin
-		Proposal005Block: math.MaxUint64,
+		Proposal005Block: 10003000,
 	}
 
 	devNetChainConfig = ChainConfig{
