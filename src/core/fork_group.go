@@ -109,6 +109,7 @@ func (fork *groupChainFork) triggerOnChain(groupChain *groupChain) bool {
 
 func (fork *groupChainFork) destroy() {
 	for i := fork.header; i <= fork.latestGroup.GroupHeight; i++ {
+		fork.logger.Debugf("[destroy]fork delete group %d", i)
 		fork.deleteGroup(i)
 	}
 	fork.db.Delete([]byte(groupCommonAncestorHeightKey))
@@ -161,6 +162,7 @@ func (fork *groupChainFork) insertGroup(group *types.Group) error {
 		fork.logger.Errorf("Fail to insert db, error:%s", err.Error())
 		return err
 	}
+	fork.logger.Debugf("set latestGroupHeightKey:%d", group.GroupHeight)
 	return nil
 }
 
@@ -233,6 +235,7 @@ func refreshGroupForkDB(commonAncestor types.Group) db.Database {
 	start := utility.ByteToUInt64(startBytes)
 	endBytes, _ := db.Get([]byte(latestGroupHeightKey))
 	end := utility.ByteToUInt64(endBytes)
+	syncLogger.Debugf("refreshGroupForkDB start:%d,end:%d", start, end)
 	for i := start; i <= end+1; i++ {
 		bytes, _ := db.Get(generateHeightKey(i))
 		if len(bytes) > 0 {

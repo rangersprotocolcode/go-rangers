@@ -139,7 +139,7 @@ func (blockFork *blockChainFork) triggerOnChain(chain *blockChain) bool {
 
 func (fork *blockChainFork) destroy() {
 	for i := fork.header; i <= fork.latestBlock.Height; i++ {
-		fork.logger.Debugf("fork delete block %d,%s", i)
+		fork.logger.Debugf("[destroy]fork delete block %d", i)
 		fork.deleteBlock(i)
 	}
 	fork.db.Delete([]byte(blockCommonAncestorHeightKey))
@@ -363,11 +363,9 @@ func refreshBlockForkDB(commonAncestor types.Block) db.Database {
 		if len(bytes) > 0 {
 			block, err := types.UnMarshalBlock(bytes)
 			if err == nil && block != nil {
-				syncLogger.Debugf("delete hash:%s", common.ToHex(block.Header.Hash.Bytes()))
 				db.Delete(block.Header.Hash.Bytes())
 			}
 		}
-		syncLogger.Debugf("delete height:%d", i)
 		db.Delete(generateHeightKey(i))
 	}
 
