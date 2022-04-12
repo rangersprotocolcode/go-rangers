@@ -18,7 +18,6 @@ package common
 
 import (
 	"com.tuntun.rocket/node/src/middleware/log"
-	"math"
 	"math/big"
 	"sync/atomic"
 )
@@ -44,8 +43,7 @@ var (
 		Proposal002Block: 3353000,
 		Proposal003Block: 3830000,
 		Proposal004Block: 5310000,
-		//TODO: check while update mainnet
-		Proposal005Block: math.MaxUint64,
+		Proposal005Block: 10293600,
 	}
 
 	robinChainConfig = ChainConfig{
