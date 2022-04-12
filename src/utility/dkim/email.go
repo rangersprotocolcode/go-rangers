@@ -92,12 +92,24 @@ func FromString(value string) (*Email, error) {
 		val = strings.SplitN(value, "\n\n", 2)
 	}
 	headers := val[0]
+	if headers == "" || len(headers) == 0 {
+		return nil, ErrEmptyString
+	}
 	for {
 		header, rest := getOneHeader(headers)
 		if "" != header {
 			keyVal := strings.SplitN(header, ":", 2)
-			valueVal := strings.TrimLeft(keyVal[1], " ")
-			valueVal = strings.TrimRight(valueVal, "\r")
+			if len(keyVal) == 0 {
+				return nil, ErrDkimProtocol
+			}
+
+			var valueVal = ""
+			if len(keyVal) == 1 {
+				valueVal = ""
+			} else {
+				valueVal = strings.TrimLeft(keyVal[1], " ")
+				valueVal = strings.TrimRight(valueVal, "\r")
+			}
 			allHeaders = append(allHeaders, HeaderTuple{keyVal[0], ":", valueVal})
 			headers = rest
 		} else {
@@ -115,16 +127,11 @@ func FromString(value string) (*Email, error) {
 		}
 	}
 
-	if nil == header {
-		return nil, ErrDkimProtocol
-	}
-
 	return &Email{
 		allHeaders,
 		val[1],
 		header,
 	}, nil
-
 }
 
 func (email *Email) getDkimMessage() (string, error) {
