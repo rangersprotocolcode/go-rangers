@@ -222,7 +222,7 @@ func parseHeader(name string, value string) (*Header, error) {
 				} else {
 					headers := make([]string, 0)
 					for _, header := range strings.Split(val, ":") {
-						headers = append(headers, header)
+						headers = append(headers, strings.TrimSpace(header))
 					}
 					signed_headers = headers
 				}
