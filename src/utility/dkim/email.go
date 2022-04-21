@@ -166,7 +166,6 @@ func (email *Email) getHeaderItem(key string) (string, error) {
 	}
 	return "", nil
 }
-
 func (email *Email) GetFrom() (string, error) {
 	value, err := email.getHeaderItem("from")
 	if nil != err {
@@ -202,6 +201,13 @@ func (email *Email) GetFrom() (string, error) {
 			return "", ErrDkimProtocol
 		}
 		return n[1], nil
+	} else if strings.HasPrefix(value, "<") && strings.HasSuffix(value, ">") {
+		if strings.Count(value, "<") != 1 || strings.Count(value, ">") != 1 {
+			return "", ErrDkimProtocol
+		}
+		value = strings.TrimLeft(value, "<")
+		value = strings.TrimRight(value, ">")
+		return value, nil
 	}
 
 	return "", ErrDkimProtocol
