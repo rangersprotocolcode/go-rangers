@@ -166,6 +166,7 @@ func (email *Email) getHeaderItem(key string) (string, error) {
 	}
 	return "", nil
 }
+
 func (email *Email) GetFrom() (string, error) {
 	value, err := email.getHeaderItem("from")
 	if nil != err {
@@ -183,7 +184,34 @@ func (email *Email) GetFrom() (string, error) {
 		return from, nil
 	}
 
-	if strings.HasPrefix(value, "=?") {
+	if strings.HasPrefix(value, "=?") || strings.HasPrefix(value, "\"") {
+		if strings.HasPrefix(value, "\"") {
+			idx := strings.LastIndex(value, "\"")
+			value = fmt.Sprintf("%s %s", value[:idx+1], value[idx+1:])
+		}
+
+		values := strings.FieldsFunc(
+			value,
+			func(r rune) bool {
+				return r == ' ' || r == '\t' || r == '\r' || r == '\n'
+			},
+		)
+
+		if len(values) > 1 {
+			value = strings.Join(values, " ")
+			n := strings.Split(value, " ")
+			if len(n) >= 2 {
+				from := n[len(n)-1]
+				if strings.Count(from, "<") != 1 || strings.Count(from, ">") != 1 || !strings.HasPrefix(from, "<") || !strings.HasSuffix(from, ">") {
+					return "", ErrDkimProtocol
+				}
+				from = strings.TrimLeft(from, "<")
+				from = strings.TrimRight(from, ">")
+				return from, nil
+			}
+			return "", ErrDkimProtocol
+		}
+
 		dec := new(mime.WordDecoder)
 		dec.CharsetReader = charsetReader
 		header, err := dec.DecodeHeader(value)
@@ -207,6 +235,10 @@ func (email *Email) GetFrom() (string, error) {
 		}
 		value = strings.TrimLeft(value, "<")
 		value = strings.TrimRight(value, ">")
+		return value, nil
+	}
+
+	if strings.Count(value, "<") != 1 || strings.Count(value, ">") != 1 {
 		return value, nil
 	}
 
@@ -271,6 +303,8 @@ func (email *Email) GetSigHash() ([]byte, error) {
 	if nil != err {
 		return nil, ErrDkimProtocol
 	}
+
+	item = strings.TrimSpace(item)
 
 	if len(item) < 8 || !strings.HasPrefix(item, "=?") {
 		hexString := strings.Split(item, "0x")[1]
