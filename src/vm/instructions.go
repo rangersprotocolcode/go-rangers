@@ -25,6 +25,7 @@ import (
 
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rocket/node/src/utility/dkim"
 
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -989,6 +990,12 @@ func popString(callContext *callCtx) string {
 	return str
 }
 
+func popBytes(callContext *callCtx) []byte {
+	offset := callContext.stack.pop()
+	size := int64(uint256.NewInt().SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()), 32)).Uint64())
+	return callContext.memory.GetPtr(int64(offset.Uint64()+32), size)
+}
+
 func pushBool(callContext *callCtx, value bool) {
 	if value {
 		callContext.stack.push(&uint256.Int{1})
@@ -1010,6 +1017,13 @@ func appendBytes(callContext *callCtx, bytes []byte) {
 	callContext.memory.Set(offset, uint64(len(bytes)), bytes)
 }
 
+func pushBytes(callContext *callCtx, bytes []byte) {
+	offset := uint64(callContext.memory.Len())
+	appendUint256(callContext, len(bytes))
+	appendBytes(callContext, []byte(bytes))
+	callContext.stack.push(uint256.NewInt().SetUint64(offset))
+}
+
 func pushString(callContext *callCtx, value string) {
 	offset := uint64(callContext.memory.Len())
 	appendUint256(callContext, len(value))
@@ -1028,6 +1042,13 @@ func pushStringArray(callContext *callCtx, value []string) {
 		appendBytes(callContext, []byte(s))
 	}
 	callContext.stack.push(uint256.NewInt().SetUint64(offset))
+}
+
+func opDkim(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	argValue := popBytes(callContext)
+	ret := dkim.Verify(argValue)
+	pushBytes(callContext, ret)
+	return nil, nil
 }
 
 func opPrint(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {

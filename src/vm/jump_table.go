@@ -1085,6 +1085,13 @@ func newInstructionSet() JumpTable {
 
 	//rangers protocol defined InstructionSet----------------------------------------------------------------------------------------------
 
+	instructionSet[DKIM] = &operation{
+		execute:     opDkim,
+		constantGas: 0,
+		minStack:    minStack(1, 1),
+		maxStack:    maxStack(1, 1),
+	}
+
 	instructionSet[PRINT] = &operation{
 		execute:     opPrint,
 		constantGas: 0,

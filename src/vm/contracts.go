@@ -32,7 +32,6 @@ import (
 	"com.tuntun.rocket/node/src/eth_crypto/bls12381"
 	"com.tuntun.rocket/node/src/eth_crypto/bn256"
 	"com.tuntun.rocket/node/src/utility"
-	"com.tuntun.rocket/node/src/utility/dkim"
 
 	//lint:ignore SA1019 Needed for precompile
 	"golang.org/x/crypto/ripemd160"
@@ -69,7 +68,6 @@ var PrecompiledContracts = map[common.Address]PrecompiledContract{
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 18}):   &bls12381MapG2{},
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 1}): &secp256r1_verify{},
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 2}): &rsapkcs1_verify{},
-	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 3}): &dkim_verify{},
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 2}): &append_bool{},
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 3}): &append_address{},
 	common.BytesToAddress([]byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xee, 4}): &append_uint256{},
@@ -1032,23 +1030,6 @@ func (c *rsapkcs1_verify) Run(input []byte) ([]byte, error) {
 		ret_bytes[31] = 1
 	}
 	return ret_bytes, nil
-}
-
-// dkim_verify
-type dkim_verify struct{}
-
-func (c *dkim_verify) RequiredGas(input []byte) uint64 {
-	return 0
-}
-
-func (c *dkim_verify) Run(input []byte) ([]byte, error) {
-	arg_msg := GetArgs(input, 0, 0)
-	ret := dkim.Verify(arg_msg)
-
-	if nil == ret {
-		return nil, ErrExecutionReverted
-	}
-	return ReturnBytes(ret), nil
 }
 
 // append_bool
