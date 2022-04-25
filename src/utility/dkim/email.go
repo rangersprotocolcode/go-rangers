@@ -315,6 +315,10 @@ func (email *Email) GetSigHash() ([]byte, error) {
 func (email *Email) GetSigPubKey(address common.Address, db *account.AccountDB) (*rsa.PublicKey, error) {
 	index := email.DkimHeader.Selector + "@" + email.DkimHeader.Sdid
 	n := GetEmailPubKey(address, index, db)
+	if 0 == len(n) {
+		common.DefaultLogger.Errorf("no pubkey for  %s", index)
+		return nil, ErrDkimProtocol
+	}
 
 	bigN := new(big.Int)
 	_, ok := bigN.SetString(n, 16)
