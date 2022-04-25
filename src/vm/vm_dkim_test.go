@@ -298,7 +298,7 @@ func TestVerify(t *testing.T) {
 		t.Errorf("State commit error:%s", err.Error())
 	}
 
-	asString, err := dkim.ReadFileAsString("special_ch.eml", "")
+	asString, err := dkim.ReadFileAsString("../utility/dkim/special_ch.eml", "")
 	if nil != err {
 		fmt.Println(err)
 		return
