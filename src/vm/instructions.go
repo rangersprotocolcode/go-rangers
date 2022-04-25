@@ -1052,11 +1052,6 @@ func opDkim(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 }
 
 func opPrint(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	thisAddress := callContext.contract.Address()
-	argValue := popString(callContext)
-
-	fmt.Printf("%s %s\n", thisAddress, argValue)
-
 	return nil, nil
 }
 
