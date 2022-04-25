@@ -21,7 +21,6 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/utility"
 	"golang.org/x/crypto/sha3"
-	"hash"
 	"strings"
 )
 
@@ -77,14 +76,9 @@ func (self *AccountDB) GetERC20Key(address common.Address, position uint64) []by
 	positionBytes := utility.UInt64ToByte(position)
 	copy(data[64-len(positionBytes):], positionBytes)
 
-	hasher := sha3.NewLegacyKeccak256().(keccakState)
+	hasher := sha3.NewLegacyKeccak256().(common.KeccakState)
 	hasher.Write(data[:])
 	result := [32]byte{}
 	hasher.Read(result[:])
 	return result[:]
-}
-
-type keccakState interface {
-	hash.Hash
-	Read([]byte) (int, error)
 }

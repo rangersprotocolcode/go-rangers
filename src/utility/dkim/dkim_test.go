@@ -1,8 +1,6 @@
 package dkim
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/utility"
 	"crypto"
 	"crypto/rand"
 	"crypto/rsa"
@@ -75,18 +73,6 @@ func TestReadMail(t *testing.T) {
 
 }
 
-func TestVerify(t *testing.T) {
-	asString, err := ReadFileAsString("special_ch.eml", "")
-	if nil != err {
-		fmt.Println(err)
-		return
-	}
-
-	res := Verify(utility.StrToBytes(asString))
-	fmt.Println(common.ToHex(res))
-	fmt.Println(len(res))
-}
-
 func TestRSA(t *testing.T) {
 
 	h := uint64(0)
@@ -113,3 +99,4 @@ func TestRSA(t *testing.T) {
 //	}
 //	return source
 //}
+

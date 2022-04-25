@@ -2,6 +2,8 @@ package dkim
 
 import (
 	"bytes"
+	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"crypto"
 	"crypto/rsa"
@@ -332,7 +334,7 @@ func parseHeader(name string, value string) (*Header, error) {
 	return &header, nil
 }
 
-func Verify(data []byte) (bs []byte) {
+func Verify(data []byte, address common.Address, db *account.AccountDB) (bs []byte) {
 	emailString := utility.BytesToStr(data)
 	defer func() { // 必须要先声明defer，否则不能捕获到panic异常
 		if err := recover(); err != nil {
@@ -349,7 +351,7 @@ func Verify(data []byte) (bs []byte) {
 		return nil
 	}
 
-	pub, err := email.GetSigPubKey()
+	pub, err := email.GetSigPubKey(address, db)
 	if err != nil {
 		return nil
 	}

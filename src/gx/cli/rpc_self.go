@@ -61,15 +61,18 @@ func (server *SelfServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// 本地矿工信息
 func (server *SelfServer) processSelf(w http.ResponseWriter, r *http.Request, body []byte) {
 	w.Write(utility.StrToBytes(server.minerInfo))
 }
 
+// 本地块高
 func (server *SelfServer) processHeight(w http.ResponseWriter, r *http.Request, body []byte) {
 	height := core.GetBlockChain().Height()
 	w.Write(utility.StrToBytes(strconv.FormatUint(height, 10)))
 }
 
+// 收益账户
 func (server *SelfServer) processAccount(w http.ResponseWriter, r *http.Request, body []byte) {
 	miner := service.MinerManagerImpl.GetMiner(server.id, nil)
 	if nil == miner {

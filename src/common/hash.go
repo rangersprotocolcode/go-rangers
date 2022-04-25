@@ -38,3 +38,8 @@ func Sha256(blockByte []byte) []byte {
 	return hasher.Sum(nil)
 
 }
+
+type KeccakState interface {
+	hash.Hash
+	Read([]byte) (int, error)
+}
