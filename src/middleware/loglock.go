@@ -34,7 +34,10 @@ type Loglock struct {
 	begin time.Time
 }
 
-var lockLogger log.Logger
+var (
+	lockLogger log.Logger
+	lock Loglock
+)
 
 const costLimit = 10 * time.Microsecond
 const durationLimit = time.Millisecond
@@ -94,4 +97,20 @@ func (lock *Loglock) RUnlock(msg string) {
 	cost := time.Since(begin)
 
 	lockLogger.Debugf("UnRLocked: %s, with msg: %s wait: %v", lock.addr, msg, cost)
+}
+
+func LockBlockchain(msg string){
+	lock.Lock(msg)
+}
+
+func UnLockBlockchain(msg string){
+	lock.Lock(msg)
+}
+
+func RLockBlockchain(msg string){
+	lock.Lock(msg)
+}
+
+func RUnLockBlockchain(msg string){
+	lock.Lock(msg)
 }

@@ -255,15 +255,3 @@ func (api *GtasAPI) DebugJoinGroupInfo(gid string) (*Result, error) {
 	jg := consensus.Proc.GetJoinGroupInfo(gid)
 	return successResult(jg)
 }
-
-func (api *GtasAPI) DebugRemoveBlock(h uint64) (*Result, error) {
-	block := core.GetBlockChain().QueryBlock(h)
-	if block != nil {
-		b := core.GetBlockChain().QueryBlockByHash(block.Header.Hash)
-		if b != nil {
-			ret := consensus.Proc.MainChain.Remove(b)
-			return successResult(ret)
-		}
-	}
-	return successResult("not exist")
-}

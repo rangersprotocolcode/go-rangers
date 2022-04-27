@@ -19,6 +19,7 @@ package core
 import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -85,8 +86,8 @@ func (fork *blockChainFork) triggerOnFork(groupFork *groupChainFork) (err error,
 }
 
 func (blockFork *blockChainFork) triggerOnChain(chain *blockChain) bool {
-	chain.lock.Lock("block chain fork triggerOnChain")
-	defer chain.lock.Unlock("block chain fork triggerOnFork")
+	middleware.LockBlockchain("block chain fork triggerOnChain")
+	defer middleware.UnLockBlockchain("block chain fork triggerOnFork")
 
 	localTopHeader := chain.latestBlock
 	syncLogger.Debugf("Trigger block on chain...Local chain:%d-%d,fork:%d-%d", localTopHeader.Height, localTopHeader.TotalQN, blockFork.latestBlock.Height, blockFork.latestBlock.TotalQN)
