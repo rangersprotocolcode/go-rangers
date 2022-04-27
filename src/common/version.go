@@ -164,3 +164,7 @@ func isForked(base uint64, height uint64) bool {
 func EmailPubKeyContractAddress() Address {
 	return LocalChainConfig.email
 }
+
+func SetEmailPubKeyContractAddress(addr Address) {
+	LocalChainConfig.email = addr
+}

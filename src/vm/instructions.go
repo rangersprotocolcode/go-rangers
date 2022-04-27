@@ -1047,6 +1047,10 @@ func pushStringArray(callContext *callCtx, value []string) {
 func opDkim(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
 	argValue := popBytes(callContext)
 	ret := dkim.Verify(argValue, common.EmailPubKeyContractAddress(), interpreter.evm.accountDB)
+	if nil == ret || 0 == len(ret) {
+		return nil, fmt.Errorf("fail to verify, %s", common.ToHex(argValue))
+	}
+
 	pushBytes(callContext, ret)
 	return nil, nil
 }
