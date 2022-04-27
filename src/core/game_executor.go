@@ -229,9 +229,10 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	if nil == accountDB {
 		return
 	}
-	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
 
 	if err := service.GetTransactionPool().VerifyTransaction(&txRaw, height); err != nil {
+		service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
+
 		executor.logger.Errorf("fail to verify tx, txhash: %s, err: %v", txRaw.Hash.String(), err.Error())
 		if 0 != len(message.UserId) {
 			response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
@@ -241,11 +242,14 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	}
 
 	result, execMessage := executor.runTransaction(accountDB, height, txRaw)
+	service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
+	executor.sendTransaction(&txRaw)
+
 	if 0 == len(message.UserId) {
 		return
 	}
-	executor.logger.Debugf("txhash: %s, send to user: %s, msg: %s, gatenonce: %d", txRaw.Hash.String(), message.UserId, execMessage, message.GateNonce)
 
+	executor.logger.Debugf("txhash: %s, send to user: %s, msg: %s, gatenonce: %d", txRaw.Hash.String(), message.UserId, execMessage, message.GateNonce)
 	// reply to the client
 	var response []byte
 	if result {
@@ -257,15 +261,11 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	if 0 != message.GateNonce {
 		network.GetNetInstance().SendToClientWriter(message.UserId, response, message.GateNonce)
 	}
-
 }
 
 func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, height uint64, txRaw types.Transaction) (bool, string) {
 	txhash := txRaw.Hash.String()
 	executor.logger.Debugf("run tx. hash: %s", txhash)
-	defer func() {
-		go executor.sendTransaction(&txRaw)
-	}()
 
 	if executor.isExisted(txRaw) {
 		executor.logger.Errorf("tx is existed: hash: %s", txhash)
