@@ -94,7 +94,11 @@ func (ch ChainHandler) transactionGotHandler(msg notify.Message) {
 		logger.Errorf("Unmarshal got transactions error:%s", e.Error())
 		return
 	}
-	var gotTxValid = true
+
+	gotTxValid := true
+	middleware.LockBlockchain("AddTransaction")
+	defer middleware.UnLockBlockchain("AddTransaction")
+
 	for _, tx := range txs {
 		if err := service.GetTransactionPool().VerifyTransaction(tx, blockChainImpl.Height()); err == nil {
 			service.GetTransactionPool().AddTransaction(tx)

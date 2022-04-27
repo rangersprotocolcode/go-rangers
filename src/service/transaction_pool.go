@@ -97,8 +97,6 @@ type TxPool struct {
 
 	executed db.Database
 	batch    db.Batch
-
-	lock middleware.Loglock
 }
 
 var (
@@ -117,9 +115,7 @@ func GetTransactionPool() TransactionPool {
 }
 
 func newTransactionPool() TransactionPool {
-	pool := &TxPool{
-		lock: middleware.NewLoglock("txPool"),
-	}
+	pool := &TxPool{}
 	pool.received = newSimpleContainer(rcvTxPoolSize)
 	pool.evictedTxs, _ = lru.New(txCacheSize)
 
@@ -140,8 +136,6 @@ func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 		return false, ErrEvicted
 	}
 
-	pool.lock.Lock("AddTransaction")
-	defer pool.lock.Unlock("AddTransaction")
 	b, err := pool.add(tx)
 	return b, err
 }
@@ -150,8 +144,6 @@ func (pool *TxPool) MarkExecuted(receipts types.Receipts, txs []*types.Transacti
 	if nil == receipts || 0 == len(receipts) {
 		return
 	}
-	pool.lock.RLock("MarkExecuted")
-	defer pool.lock.RUnlock("MarkExecuted")
 
 	for i, receipt := range receipts {
 		hash := receipt.TxHash
@@ -191,8 +183,6 @@ func (pool *TxPool) UnMarkExecuted(txs []*types.Transaction, evictedTxs []common
 	if nil == txs || 0 == len(txs) {
 		return
 	}
-	pool.lock.RLock("UnMarkExecuted")
-	defer pool.lock.RUnlock("UnMarkExecuted")
 
 	if evictedTxs != nil {
 		for _, hash := range evictedTxs {
@@ -233,8 +223,8 @@ func (pool *TxPool) GetTransactionStatus(hash common.Hash) (uint, error) {
 }
 
 func (pool *TxPool) Clear() {
-	pool.lock.Lock("Clear")
-	defer pool.lock.Unlock("Clear")
+	middleware.LockBlockchain("Clear")
+	defer middleware.UnLockBlockchain("Clear")
 
 	executed, _ := db.NewDatabase(txDataBasePrefix)
 	pool.executed = executed

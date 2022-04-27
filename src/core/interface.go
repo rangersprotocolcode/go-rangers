@@ -67,8 +67,6 @@ type BlockChain interface {
 
 	GetTransaction(txHash common.Hash) (*types.Transaction, error)
 
-	Remove(block *types.Block) bool
-
 	Close()
 
 	GetVerifyHash(height uint64) (common.Hash, error)

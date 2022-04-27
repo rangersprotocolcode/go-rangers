@@ -28,11 +28,12 @@ var PerfLogger log.Logger
 var MonitorLogger log.Logger
 
 func InitMiddleware(dbDSN string) error {
-
 	types.InitSerialzation()
 	PerfLogger = log.GetLoggerByIndex(log.PerformanceLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	MonitorLogger = log.GetLoggerByIndex(log.MonitorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	notify.BUS = notify.NewBus()
 	mysql.InitMySql(dbDSN)
+
+	lock = NewLoglock("blockchain")
 	return nil
 }
