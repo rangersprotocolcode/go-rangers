@@ -104,13 +104,13 @@ func LockBlockchain(msg string){
 }
 
 func UnLockBlockchain(msg string){
-	lock.Lock(msg)
+	lock.Unlock(msg)
 }
 
 func RLockBlockchain(msg string){
-	lock.Lock(msg)
+	lock.RLock(msg)
 }
 
 func RUnLockBlockchain(msg string){
-	lock.Lock(msg)
+	lock.RUnlock(msg)
 }
