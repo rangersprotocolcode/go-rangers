@@ -1090,6 +1090,7 @@ func newInstructionSet() JumpTable {
 		constantGas: 0,
 		minStack:    minStack(1, 1),
 		maxStack:    maxStack(1, 1),
+		memorySize:  memoryDKIM,
 	}
 
 	instructionSet[PRINT] = &operation{

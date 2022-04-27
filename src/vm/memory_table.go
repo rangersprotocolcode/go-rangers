@@ -112,10 +112,6 @@ func memoryLog(stack *Stack) (uint64, bool) {
 	return calcMemSize64(stack.Back(0), stack.Back(1))
 }
 
-func memoryNFT_GetData(stack *Stack) (uint64, bool) {
-	return calcMemSize64WithUint(stack.Back(0), 1024*64)
-}
-
-func memoryNFT_GetNFTList(stack *Stack) (uint64, bool) {
-	return calcMemSize64WithUint(stack.Back(1), 1024*64)
+func memoryDKIM(stack *Stack) (uint64, bool) {
+	return calcMemSize64WithUint(stack.Back(0), 64+32)
 }
