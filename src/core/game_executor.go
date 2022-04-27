@@ -263,7 +263,9 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, height uint64, txRaw types.Transaction) (bool, string) {
 	txhash := txRaw.Hash.String()
 	executor.logger.Debugf("run tx. hash: %s", txhash)
-	defer executor.sendTransaction(&txRaw)
+	defer func() {
+		go executor.sendTransaction(&txRaw)
+	}()
 
 	if executor.isExisted(txRaw) {
 		executor.logger.Errorf("tx is existed: hash: %s", txhash)

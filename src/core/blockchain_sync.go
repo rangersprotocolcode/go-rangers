@@ -17,13 +17,14 @@
 package core
 
 import (
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"math/big"
 )
 
 func (chain *blockChain) getChainPiece(sourceChainHeight uint64) []*types.BlockHeader {
-	//middleware.RLockBlockchain("getChainPiece")
-	//defer middleware.RUnLockBlockchain("getChainPiece")
+	middleware.RLockBlockchain("getChainPiece")
+	defer middleware.RUnLockBlockchain("getChainPiece")
 
 	localHeight := chain.latestBlock.Height
 	var endHeight uint64 = 0
