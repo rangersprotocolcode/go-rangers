@@ -145,20 +145,24 @@ func initBlockChain() error {
 
 func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValue *big.Int, proveRoot common.Hash, qn uint64, castor []byte, groupid []byte) *types.Block {
 	middleware.RLockBlockchain("castblock")
-	defer middleware.RUnLockBlockchain("castblock")
 
 	latestBlock := chain.latestBlock
 	if latestBlock == nil {
 		logger.Errorf("Block chain lastest block is nil!")
+		middleware.RUnLockBlockchain("castblock")
 		return nil
 	}
 	if height <= latestBlock.Height {
 		logger.Errorf("Fail to cast block: height problem. height:%d, local height:%d", height, latestBlock.Height)
+		middleware.RUnLockBlockchain("castblock")
 		return nil
 	}
+	txs:=chain.transactionPool.PackForCast()
+	middleware.RUnLockBlockchain("castblock")
 
 	block := new(types.Block)
-	block.Transactions = chain.transactionPool.PackForCast()
+	block.Transactions = txs
+
 	block.Header = &types.BlockHeader{
 		CurTime:    timestamp,
 		Height:     height,
