@@ -74,6 +74,10 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		}
 		logger.Debugf("Execute %s, type:%d", transaction.Hash.String(), transaction.Type)
 
+		if common.IsProposal006() {
+			this.accountdb.IncreaseNonce(common.HexToAddress(transaction.Source))
+		}
+
 		txExecutor := executor.GetTxExecutor(transaction.Type)
 		success := false
 		msg := ""
@@ -90,7 +94,9 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 					this.accountdb.RevertToSnapshot(snapshot)
 				} else {
 					if transaction.Source != "" {
-						this.accountdb.IncreaseNonce(common.HexToAddress(transaction.Source))
+						if !common.IsProposal006() {
+							this.accountdb.IncreaseNonce(common.HexToAddress(transaction.Source))
+						}
 					}
 
 					logger.Debugf("Execute success, txhash: %s, type: %d", transaction.Hash.String(), transaction.Type)

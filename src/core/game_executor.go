@@ -272,6 +272,10 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 		return false, "Tx Is Existed"
 	}
 
+	if common.IsProposal006() {
+		accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
+	}
+
 	processor := executors.GetTxExecutor(txRaw.Type)
 	if nil == processor {
 		return false, fmt.Sprintf("finish tx. wrong tx type: %d, hash: %s", txRaw.Type, txhash)
@@ -301,7 +305,9 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 	if !result {
 		accountDB.RevertToSnapshot(snapshot)
 	} else if txRaw.Source != "" {
-		accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
+		if !common.IsProposal006() {
+			accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
+		}
 	}
 	message = adaptReturnMessage(txRaw, message)
 	return result, message
