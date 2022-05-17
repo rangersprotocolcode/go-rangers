@@ -95,13 +95,17 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 				} else {
 					if transaction.Source != "" {
 						if !common.IsProposal006() {
-							this.accountdb.IncreaseNonce(common.HexToAddress(transaction.Source))
+							//this.accountdb.IncreaseNonce(common.HexToAddress(transaction.Source))
 						}
 					}
 
 					logger.Debugf("Execute success, txhash: %s, type: %d", transaction.Hash.String(), transaction.Type)
 				}
 			}
+		}
+		//TODO temp fix
+		if transaction.Target != "" {
+			this.accountdb.IncreaseNonce(common.HexToAddress(transaction.Source))
 		}
 
 		transactions = append(transactions, transaction)

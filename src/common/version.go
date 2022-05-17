@@ -73,7 +73,7 @@ var (
 		Proposal003Block: 920000,
 		Proposal004Block: 5310000,
 		Proposal005Block: 1000,
-		Proposal006Block: 10000,
+		Proposal006Block: math.MaxUint64,
 		email:            HexToAddress("0x15387F73711ad5765AA3cB1738DC0b840971Cf0e"),
 	}
 
