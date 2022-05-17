@@ -67,7 +67,7 @@ var (
 		Dsn:              "readonly:Tuntun123456!@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
 		PHub:             "ws://gate.tuntunhz.com:8899",
 		PubHub:           "ws://gate.tuntunhz.com:8888",
-		OriginalChainId:  "9800",
+		OriginalChainId:  "9500",
 		Proposal001Block: 300,
 		Proposal002Block: 338000,
 		Proposal003Block: 920000,
