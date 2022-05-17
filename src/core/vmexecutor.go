@@ -104,7 +104,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 			}
 		}
 		//TODO temp fix
-		if transaction.Target != "" {
+		if !(success && transaction.Target == "") {
 			this.accountdb.IncreaseNonce(common.HexToAddress(transaction.Source))
 		}
 

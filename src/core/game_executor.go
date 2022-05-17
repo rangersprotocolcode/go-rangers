@@ -310,7 +310,7 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 		}
 	}
 	//TODO temp fix
-	if txRaw.Target != "" {
+	if !(result && txRaw.Target == "") {
 		accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
 	}
 	message = adaptReturnMessage(txRaw, message)
