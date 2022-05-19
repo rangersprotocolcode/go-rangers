@@ -306,12 +306,8 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 		accountDB.RevertToSnapshot(snapshot)
 	} else if txRaw.Source != "" {
 		if !common.IsProposal006() {
-			//accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
+			accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
 		}
-	}
-	//TODO temp fix
-	if !(result && txRaw.Target == "") {
-		accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
 	}
 	message = adaptReturnMessage(txRaw, message)
 	return result, message
