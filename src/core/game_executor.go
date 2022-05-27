@@ -272,7 +272,7 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 		return false, "Tx Is Existed"
 	}
 
-	if common.IsProposal006() {
+	if common.IsProposal006() && !common.IsProposal007() {
 		accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
 	}
 
@@ -307,6 +307,13 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 	} else if txRaw.Source != "" {
 		if !common.IsProposal006() {
 			accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
+		}
+	}
+
+	if common.IsProposal007() {
+		if !(types.IsContractTx(txRaw.Type) && result) {
+			nonce := accountDB.GetNonce(common.HexToAddress(txRaw.Source))
+			accountDB.SetNonce(common.HexToAddress(txRaw.Source), nonce+1)
 		}
 	}
 	message = adaptReturnMessage(txRaw, message)

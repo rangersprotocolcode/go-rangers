@@ -95,6 +95,10 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 		context["contractAddress"] = contractAddress
 		this.logger.Tracef("After execute contract create!Contract address:%s, leftOverGas: %d,error:%v", contractAddress.GetHexString(), leftOverGas, err)
 	} else {
+		if common.IsProposal007() {
+			nonce := accountdb.GetNonce(caller.Address())
+			accountdb.SetNonce(caller.Address(), nonce+1)
+		}
 		result, leftOverGas, logs, err = vmInstance.Call(caller, contractAddress, input, vmCtx.GasLimit, transferValue)
 		this.logger.Tracef("After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
 	}

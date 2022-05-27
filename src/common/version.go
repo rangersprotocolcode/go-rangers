@@ -46,6 +46,7 @@ var (
 		Proposal004Block: 5310000,
 		Proposal005Block: 10293600,
 		Proposal006Block: math.MaxUint64,
+		Proposal007Block: math.MaxUint64,
 	}
 
 	robinChainConfig = ChainConfig{
@@ -58,6 +59,7 @@ var (
 		Proposal004Block: 5310000,
 		Proposal005Block: 10003000,
 		Proposal006Block: 12582000,
+		Proposal007Block: 0,
 		email:            HexToAddress("0x7003667aBf74f3c5f2E68d7B266f8A48b72a8980"),
 	}
 
@@ -73,7 +75,8 @@ var (
 		Proposal003Block: 920000,
 		Proposal004Block: 5310000,
 		Proposal005Block: 1000,
-		Proposal006Block: math.MaxUint64,
+		Proposal006Block: 0,
+		Proposal007Block: 0,
 		email:            HexToAddress("0x15387F73711ad5765AA3cB1738DC0b840971Cf0e"),
 	}
 
@@ -95,6 +98,7 @@ type ChainConfig struct {
 	Proposal004Block uint64
 	Proposal005Block uint64
 	Proposal006Block uint64
+	Proposal007Block uint64
 
 	email Address
 }
@@ -165,6 +169,10 @@ func IsProposal005() bool {
 // user nonce
 func IsProposal006() bool {
 	return isForked(LocalChainConfig.Proposal006Block, GetBlockHeight())
+}
+
+func IsProposal007() bool {
+	return isForked(LocalChainConfig.Proposal007Block, GetBlockHeight())
 }
 
 func isForked(base uint64, height uint64) bool {

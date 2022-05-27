@@ -135,3 +135,7 @@ func (c Transactions) Less(i, j int) bool {
 
 	return c[i].RequestId < c[j].RequestId
 }
+
+func IsContractTx(txType int32) bool {
+	return txType == TransactionTypeETHTX || txType == TransactionTypeContract
+}
