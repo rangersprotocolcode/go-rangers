@@ -59,7 +59,7 @@ var (
 		Proposal004Block: 5310000,
 		Proposal005Block: 10003000,
 		Proposal006Block: 12582000,
-		Proposal007Block: 0,
+		Proposal007Block: 14261000,
 		email:            HexToAddress("0x7003667aBf74f3c5f2E68d7B266f8A48b72a8980"),
 	}
 
