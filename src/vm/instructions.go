@@ -1012,7 +1012,7 @@ func opDkim(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	return nil, nil
 }
 
-func opPrint(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+func opPrintF(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
 	return nil, nil
 }
 
