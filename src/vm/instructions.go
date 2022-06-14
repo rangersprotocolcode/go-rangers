@@ -24,7 +24,6 @@ import (
 
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/utility"
-	"com.tuntun.rocket/node/src/utility/dkim"
 
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -1000,16 +999,6 @@ func pushBytes(callContext *callCtx, offset uint64, bytes []byte) {
 	callContext.memory.Set32(offset, uint256.NewInt().SetUint64(uint64(len(bytes))))
 	callContext.memory.Set(offset+32, uint64(len(bytes)), bytes)
 	callContext.stack.push(uint256.NewInt().SetUint64(offset))
-}
-
-func opDkim(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	argValue, offset := popBytes(callContext)
-	ret := dkim.Verify(argValue, common.EmailPubKeyContractAddress(), interpreter.evm.accountDB)
-	if nil == ret || len(ret) != 64 {
-		return nil, fmt.Errorf("fail to verify, %s", common.ToHex(argValue))
-	}
-	pushBytes(callContext, offset, ret)
-	return nil, nil
 }
 
 func opPrintF(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {

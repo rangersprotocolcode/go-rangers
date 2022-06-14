@@ -550,7 +550,6 @@ var stringToOp = map[string]OpCode{
 }
 
 const (
-	DKIM    = 0xec
 	PRINTF  = 0xed
 	STAKE   = 0xee
 	UNSTAKE = 0xef
