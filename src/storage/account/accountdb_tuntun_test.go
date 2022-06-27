@@ -22,6 +22,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/utility"
 	"fmt"
+	"golang.org/x/crypto/sha3"
 	"math/big"
 	"os"
 	"testing"
@@ -120,4 +121,24 @@ func TestAccountDB_AddNFT(t *testing.T) {
 	nftList2 := accountDB.GetAllNFTByGameId(address, "test")
 	fmt.Println(len(nftList2))
 
+}
+
+func TestEvent(t *testing.T) {
+	data := "Transfer(address,address,uint256)"
+
+	hasher := sha3.NewLegacyKeccak256().(common.KeccakState)
+	hasher.Write(utility.StrToBytes(data))
+	result := [32]byte{}
+	hasher.Read(result[:])
+	fmt.Println(common.ToHex(result[:])) //0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef
+}
+
+func TestEvent2(t *testing.T) {
+	data := "Approval(address,address,uint256)"
+
+	hasher := sha3.NewLegacyKeccak256().(common.KeccakState)
+	hasher.Write(utility.StrToBytes(data))
+	result := [32]byte{}
+	hasher.Read(result[:])
+	fmt.Println(common.ToHex(result[:])) //0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925
 }

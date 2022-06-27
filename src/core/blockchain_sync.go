@@ -17,13 +17,14 @@
 package core
 
 import (
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"math/big"
 )
 
 func (chain *blockChain) getChainPiece(sourceChainHeight uint64) []*types.BlockHeader {
-	chain.lock.Lock("getChainPiece")
-	defer chain.lock.Unlock("getChainPiece")
+	middleware.RLockBlockchain("getChainPiece")
+	defer middleware.RUnLockBlockchain("getChainPiece")
 
 	localHeight := chain.latestBlock.Height
 	var endHeight uint64 = 0
@@ -43,33 +44,6 @@ func (chain *blockChain) getChainPiece(sourceChainHeight uint64) []*types.BlockH
 		chainPiece = append(chainPiece, header)
 	}
 	return chainPiece
-}
-
-func (chain *blockChain) getSyncedBlock(reqHeight uint64) []*types.Block {
-	chain.lock.Lock("getSyncedBlock")
-	defer chain.lock.Unlock("getSyncedBlock")
-
-	result := make([]*types.Block, 0)
-	count := 0
-	for i := reqHeight; i <= chain.latestBlock.Height; i++ {
-		if count >= syncedBlockCount {
-			break
-		}
-
-		header := chain.QueryBlockHeaderByHeight(i, true)
-		if header == nil {
-			syncLogger.Errorf("Block chain get nil block!Height:%d", i)
-			break
-		}
-		block := chain.queryBlockByHash(header.Hash)
-		if block == nil {
-			syncLogger.Errorf("Block chain get nil block!Height:%d", i)
-			break
-		}
-		result = append(result, block)
-		count++
-	}
-	return result
 }
 
 func (chain *blockChain) nextPvGreatThanFork(commonAncestor *types.BlockHeader, fork blockChainFork) bool {

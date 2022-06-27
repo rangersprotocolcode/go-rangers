@@ -65,8 +65,6 @@ type blockChain struct {
 	verifyHashDB db.Database
 
 	transactionPool service.TransactionPool
-
-	lock middleware.Loglock
 }
 
 type castingBlock struct {
@@ -75,7 +73,7 @@ type castingBlock struct {
 }
 
 func initBlockChain() error {
-	chain := &blockChain{lock: middleware.NewLoglock("chain")}
+	chain := &blockChain{}
 	chain.transactionPool = service.GetTransactionPool()
 
 	var err error
@@ -146,18 +144,25 @@ func initBlockChain() error {
 }
 
 func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValue *big.Int, proveRoot common.Hash, qn uint64, castor []byte, groupid []byte) *types.Block {
+	middleware.RLockBlockchain("castblock")
+
 	latestBlock := chain.latestBlock
 	if latestBlock == nil {
 		logger.Errorf("Block chain lastest block is nil!")
+		middleware.RUnLockBlockchain("castblock")
 		return nil
 	}
 	if height <= latestBlock.Height {
 		logger.Errorf("Fail to cast block: height problem. height:%d, local height:%d", height, latestBlock.Height)
+		middleware.RUnLockBlockchain("castblock")
 		return nil
 	}
+	txs:=chain.transactionPool.PackForCast()
+	middleware.RUnLockBlockchain("castblock")
 
 	block := new(types.Block)
-	block.Transactions = chain.transactionPool.PackForCast()
+	block.Transactions = txs
+
 	block.Header = &types.BlockHeader{
 		CurTime:    timestamp,
 		Height:     height,
@@ -253,8 +258,8 @@ func (chain *blockChain) GenerateBlock(bh types.BlockHeader) *types.Block {
 // 1 无法验证（缺少交易，已异步向网络模块请求）
 // 2 无法验证（前一块在链上不存存在）
 func (chain *blockChain) VerifyBlock(bh types.BlockHeader) ([]common.Hashes, int8) {
-	chain.lock.Lock("VerifyCastingBlock")
-	defer chain.lock.Unlock("VerifyCastingBlock")
+	middleware.LockBlockchain("VerifyCastingBlock")
+	defer middleware.UnLockBlockchain("VerifyCastingBlock")
 
 	return chain.verifyBlock(bh, nil)
 }
@@ -283,8 +288,8 @@ func (chain *blockChain) AddBlockOnChain(b *types.Block) types.AddBlockResult {
 	if validateCode, result := chain.consensusVerify(b); !result {
 		return validateCode
 	}
-	chain.lock.Lock("AddBlockOnChain")
-	defer chain.lock.Unlock("AddBlockOnChain")
+	middleware.LockBlockchain("AddBlockOnChain")
+	defer middleware.UnLockBlockchain("AddBlockOnChain")
 	return chain.addBlockOnChain(b)
 }
 
@@ -293,8 +298,8 @@ func (chain *blockChain) QueryBlockByHash(hash common.Hash) *types.Block {
 }
 
 func (chain *blockChain) QueryBlock(height uint64) *types.Block {
-	chain.lock.RLock("QueryBlock")
-	defer chain.lock.RUnlock("QueryBlock")
+	middleware.RLockBlockchain("QueryBlock")
+	defer middleware.RUnLockBlockchain("QueryBlock")
 
 	var b *types.Block
 	bh := chain.QueryBlockHeaderByHeight(height, true)
@@ -303,16 +308,6 @@ func (chain *blockChain) QueryBlock(height uint64) *types.Block {
 	}
 	b = chain.queryBlockByHash(bh.Hash)
 	return b
-}
-
-func (chain *blockChain) Remove(block *types.Block) bool {
-	chain.lock.Lock("Remove Top")
-	defer chain.lock.Unlock("Remove Top")
-
-	//if block.Header.Hash != chain.latestBlock.Hash {
-	//	return false
-	//}
-	return chain.remove(block)
 }
 
 func (chain *blockChain) GetVerifyHash(height uint64) (common.Hash, error) {

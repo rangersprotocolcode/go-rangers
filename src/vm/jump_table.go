@@ -1085,11 +1085,11 @@ func newInstructionSet() JumpTable {
 
 	//rangers protocol defined InstructionSet----------------------------------------------------------------------------------------------
 
-	instructionSet[PRINT] = &operation{
-		execute:     opPrint,
+	instructionSet[PRINTF] = &operation{
+		execute:     opPrintF,
 		constantGas: 0,
-		minStack:    minStack(1, 1),
-		maxStack:    maxStack(1, 1),
+		minStack:    minStack(0, 0),
+		maxStack:    maxStack(0, 0),
 	}
 
 	instructionSet[STAKE] = &operation{

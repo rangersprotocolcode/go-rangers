@@ -19,7 +19,6 @@ package vm
 import (
 	"bytes"
 	"fmt"
-	"math"
 	"math/big"
 	"strconv"
 
@@ -982,11 +981,10 @@ func popAddress(callContext *callCtx) common.Address {
 	return common.BytesToAddress(u256.Bytes())
 }
 
-func popString(callContext *callCtx) string {
+func popBytes(callContext *callCtx) ([]byte, uint64) {
 	offset := callContext.stack.pop()
 	size := int64(uint256.NewInt().SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()), 32)).Uint64())
-	str := string(callContext.memory.GetPtr(int64(offset.Uint64()+32), size))
-	return str
+	return callContext.memory.GetPtr(int64(offset.Uint64()+32), size), offset.Uint64()
 }
 
 func pushBool(callContext *callCtx, value bool) {
@@ -997,45 +995,13 @@ func pushBool(callContext *callCtx, value bool) {
 	}
 }
 
-func appendUint256(callContext *callCtx, value int) {
-	offset := uint64(callContext.memory.Len())
-	callContext.memory.Resize(uint64(callContext.memory.Len()) + 32)
-	callContext.memory.Set32(offset, uint256.NewInt().SetUint64(uint64(value)))
-}
-
-func appendBytes(callContext *callCtx, bytes []byte) {
-	offset := uint64(callContext.memory.Len())
-	size := uint64(math.Ceil(float64(len(bytes))/32)) * 32
-	callContext.memory.Resize(uint64(callContext.memory.Len()) + size)
-	callContext.memory.Set(offset, uint64(len(bytes)), bytes)
-}
-
-func pushString(callContext *callCtx, value string) {
-	offset := uint64(callContext.memory.Len())
-	appendUint256(callContext, len(value))
-	appendBytes(callContext, []byte(value))
-	callContext.stack.push(uint256.NewInt().SetUint64(offset))
-	//return callContext.memory.GetPtr(int64(offset), int64(uint64(callContext.memory.Len())-offset))
-}
-
-func pushStringArray(callContext *callCtx, value []string) {
-	offset := uint64(callContext.memory.Len())
-	appendUint256(callContext, len(value))
-	appendBytes(callContext, make([]byte, len(value)*32))
-	for i, s := range value {
-		callContext.memory.Set32(offset+32+32*uint64(i), uint256.NewInt().SetUint64(uint64(callContext.memory.Len())))
-		appendUint256(callContext, len(s))
-		appendBytes(callContext, []byte(s))
-	}
+func pushBytes(callContext *callCtx, offset uint64, bytes []byte) {
+	callContext.memory.Set32(offset, uint256.NewInt().SetUint64(uint64(len(bytes))))
+	callContext.memory.Set(offset+32, uint64(len(bytes)), bytes)
 	callContext.stack.push(uint256.NewInt().SetUint64(offset))
 }
 
-func opPrint(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	thisAddress := callContext.contract.Address()
-	argValue := popString(callContext)
-
-	fmt.Printf("%s %s\n", thisAddress, argValue)
-
+func opPrintF(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
 	return nil, nil
 }
 

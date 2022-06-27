@@ -19,6 +19,7 @@ package core
 import (
 	"com.tuntun.rocket/node/src/common"
 	executors "com.tuntun.rocket/node/src/executor"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -228,9 +229,10 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	if nil == accountDB {
 		return
 	}
-	defer service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
 
 	if err := service.GetTransactionPool().VerifyTransaction(&txRaw, height); err != nil {
+		service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
+
 		executor.logger.Errorf("fail to verify tx, txhash: %s, err: %v", txRaw.Hash.String(), err.Error())
 		if 0 != len(message.UserId) {
 			response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
@@ -240,11 +242,14 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	}
 
 	result, execMessage := executor.runTransaction(accountDB, height, txRaw)
+	service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
+	executor.sendTransaction(&txRaw)
+
 	if 0 == len(message.UserId) {
 		return
 	}
-	executor.logger.Debugf("txhash: %s, send to user: %s, msg: %s, gatenonce: %d", txRaw.Hash.String(), message.UserId, execMessage, message.GateNonce)
 
+	executor.logger.Debugf("txhash: %s, send to user: %s, msg: %s, gatenonce: %d", txRaw.Hash.String(), message.UserId, execMessage, message.GateNonce)
 	// reply to the client
 	var response []byte
 	if result {
@@ -256,17 +261,19 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	if 0 != message.GateNonce {
 		network.GetNetInstance().SendToClientWriter(message.UserId, response, message.GateNonce)
 	}
-
 }
 
 func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, height uint64, txRaw types.Transaction) (bool, string) {
 	txhash := txRaw.Hash.String()
 	executor.logger.Debugf("run tx. hash: %s", txhash)
-	defer executor.sendTransaction(&txRaw)
 
 	if executor.isExisted(txRaw) {
 		executor.logger.Errorf("tx is existed: hash: %s", txhash)
 		return false, "Tx Is Existed"
+	}
+
+	if common.IsProposal006() && !common.IsProposal007() {
+		accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
 	}
 
 	processor := executors.GetTxExecutor(txRaw.Type)
@@ -298,13 +305,25 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 	if !result {
 		accountDB.RevertToSnapshot(snapshot)
 	} else if txRaw.Source != "" {
-		accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
+		if !common.IsProposal006() {
+			accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
+		}
+	}
+
+	if common.IsProposal007() {
+		if !(types.IsContractTx(txRaw.Type) && result) {
+			nonce := accountDB.GetNonce(common.HexToAddress(txRaw.Source))
+			accountDB.SetNonce(common.HexToAddress(txRaw.Source), nonce+1)
+		}
 	}
 	message = adaptReturnMessage(txRaw, message)
 	return result, message
 }
 
 func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {
+	middleware.LockBlockchain("AddTransaction_game")
+	defer middleware.UnLockBlockchain("AddTransaction_game")
+
 	if ok, err := service.GetTransactionPool().AddTransaction(tx); err != nil || !ok {
 		executor.logger.Errorf("Add tx error:%s", err.Error())
 		return

@@ -38,6 +38,14 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 		return nil, 2
 	}
 
+	if common.IsProposal008() {
+		for _, tx := range txs {
+			if chain.transactionPool.GetExecuted(tx.Hash) != nil {
+				logger.Debugf("tx has already on chain:%s", tx.Hash.String())
+				return nil, -1
+			}
+		}
+	}
 	// use cache before verify
 	if chain.verifiedBlocks.Contains(bh.Hash) {
 		return nil, 0
@@ -90,7 +98,7 @@ func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Tran
 			logger.Debugf("miss tx:%s", tx.ShortS())
 		}
 		//向CASTOR索取交易
-		m := &transactionRequestMessage{TransactionHashes: missing, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue,}
+		m := &transactionRequestMessage{TransactionHashes: missing, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue}
 		go requestTransaction(*m, castorId.GetHexString())
 		return true, missing, transactions
 	}

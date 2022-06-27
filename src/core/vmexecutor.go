@@ -29,6 +29,14 @@ import (
 	"time"
 )
 
+/**
+nonce:
+version1:创建合约在计算地址之后+1，所有交易结束后如果成功nonce+1
+version2:Proposal006 所有交易刚开始nonce+1
+version3:
+Proposal007 创建合约在计算地址之后+1，call合约 call之前+1
+其他交易 完成后+1
+*/
 const MaxCastBlockTime = time.Second * 3
 
 type VMExecutor struct {
@@ -74,6 +82,10 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		}
 		logger.Debugf("Execute %s, type:%d", transaction.Hash.String(), transaction.Type)
 
+		if common.IsProposal006() && !common.IsProposal007() {
+			this.accountdb.IncreaseNonce(common.HexToAddress(transaction.Source))
+		}
+
 		txExecutor := executor.GetTxExecutor(transaction.Type)
 		success := false
 		msg := ""
@@ -90,10 +102,18 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 					this.accountdb.RevertToSnapshot(snapshot)
 				} else {
 					if transaction.Source != "" {
-						this.accountdb.IncreaseNonce(common.HexToAddress(transaction.Source))
+						if !common.IsProposal006() {
+							this.accountdb.IncreaseNonce(common.HexToAddress(transaction.Source))
+						}
 					}
 
 					logger.Debugf("Execute success, txhash: %s, type: %d", transaction.Hash.String(), transaction.Type)
+				}
+			}
+			if common.IsProposal007() {
+				if !(types.IsContractTx(transaction.Type) && success) {
+					nonce := this.accountdb.GetNonce(common.HexToAddress(transaction.Source))
+					this.accountdb.SetNonce(common.HexToAddress(transaction.Source), nonce+1)
 				}
 			}
 		}

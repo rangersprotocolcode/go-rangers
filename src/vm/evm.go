@@ -412,7 +412,9 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 		return nil, common.Address{}, gas, nil, ErrInsufficientBalance
 	}
 	nonce := evm.StateDB.GetNonce(caller.Address())
-	evm.StateDB.SetNonce(caller.Address(), nonce+1)
+	if !common.IsProposal006() || common.IsProposal007() {
+		evm.StateDB.SetNonce(caller.Address(), nonce+1)
+	}
 	// We add this to the access list _before_ taking a snapshot. Even if the creation fails,
 	// the access-list change should not be rolled back
 	/*todo
