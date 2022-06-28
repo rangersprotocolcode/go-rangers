@@ -297,16 +297,16 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 	result, message = processor.BeforeExecute(&txRaw, nil, accountDB, context)
 	if !result {
 		executor.logger.Errorf("finish tx. hash: %s, failed. not enough max", txhash)
-		return result, message
-	}
-	accountDB.Prepare(txRaw.Hash, common.Hash{}, 0)
-	snapshot := accountDB.Snapshot()
-	result, message = processor.Execute(&txRaw, &types.BlockHeader{Height: height, CurTime: utility.GetTime()}, accountDB, context)
-	if !result {
-		accountDB.RevertToSnapshot(snapshot)
-	} else if txRaw.Source != "" {
-		if !common.IsProposal006() {
-			accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
+	} else {
+		accountDB.Prepare(txRaw.Hash, common.Hash{}, 0)
+		snapshot := accountDB.Snapshot()
+		result, message = processor.Execute(&txRaw, &types.BlockHeader{Height: height, CurTime: utility.GetTime()}, accountDB, context)
+		if !result {
+			accountDB.RevertToSnapshot(snapshot)
+		} else if txRaw.Source != "" {
+			if !common.IsProposal006() {
+				accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
+			}
 		}
 	}
 
