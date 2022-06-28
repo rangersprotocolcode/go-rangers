@@ -65,9 +65,9 @@ const (
 
 // 最小质押量
 const (
-	ValidatorStake = uint64(400)
-	ProposerStake  = uint64(2000)
-
+	ValidatorStake   = uint64(400)
+	ProposerStake    = uint64(2000)
+	MAXGROUP         = 50
 	HeightAfterStake = 300
 )
 
