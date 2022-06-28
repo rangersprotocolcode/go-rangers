@@ -38,10 +38,12 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 		return nil, 2
 	}
 
-	for _, tx := range txs {
-		if chain.transactionPool.GetExecuted(tx.Hash) != nil {
-			logger.Debugf("tx has already on chain:%s", tx.Hash.String())
-			return nil, -1
+	if common.IsProposal008() {
+		for _, tx := range txs {
+			if chain.transactionPool.GetExecuted(tx.Hash) != nil {
+				logger.Debugf("tx has already on chain:%s", tx.Hash.String())
+				return nil, -1
+			}
 		}
 	}
 	// use cache before verify
