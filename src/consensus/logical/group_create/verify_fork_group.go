@@ -137,8 +137,15 @@ func (p *groupCreateProcessor) selectCandidatesForForkGroup(theBH *types.BlockHe
 				}
 			}
 		}
-		if joinedNum < int(cand.Stake/common.ValidatorStake) {
-			candidates = append(candidates, cand)
+
+		if common.IsProposal009() {
+			if joinedNum < int(cand.Stake/common.ValidatorStake) && joinedNum < common.MAXGROUP {
+				candidates = append(candidates, cand)
+			}
+		} else {
+			if joinedNum < int(cand.Stake/common.ValidatorStake) {
+				candidates = append(candidates, cand)
+			}
 		}
 	}
 	num := len(candidates)
