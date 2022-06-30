@@ -18,13 +18,12 @@ package common
 
 import (
 	"com.tuntun.rocket/node/src/middleware/log"
-	"math"
 	"math/big"
 	"sync/atomic"
 )
 
 const (
-	Version           = "1.0.7"
+	Version           = "1.0.8"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -45,9 +44,10 @@ var (
 		Proposal003Block: 3830000,
 		Proposal004Block: 5310000,
 		Proposal005Block: 10293600,
-		Proposal006Block: math.MaxUint64, //mainnet never use Proposal006
+		Proposal006Block: 16733000,
 		Proposal007Block: 16082000,
 		Proposal008Block: 16082000,
+		Proposal009Block: 16733000,
 	}
 
 	robinChainConfig = ChainConfig{
@@ -62,7 +62,7 @@ var (
 		Proposal006Block: 12582000,
 		Proposal007Block: 14261000,
 		Proposal008Block: 16058000,
-		email:            HexToAddress("0x7003667aBf74f3c5f2E68d7B266f8A48b72a8980"),
+		Proposal009Block: 16740000,
 	}
 
 	devNetChainConfig = ChainConfig{
@@ -80,7 +80,7 @@ var (
 		Proposal006Block: 0,
 		Proposal007Block: 0,
 		Proposal008Block: 0,
-		email:            HexToAddress("0x15387F73711ad5765AA3cB1738DC0b840971Cf0e"),
+		Proposal009Block: 0,
 	}
 
 	LocalChainConfig ChainConfig
@@ -103,6 +103,7 @@ type ChainConfig struct {
 	Proposal006Block uint64
 	Proposal007Block uint64
 	Proposal008Block uint64
+	Proposal009Block uint64
 
 	email Address
 }
@@ -183,14 +184,10 @@ func IsProposal008() bool {
 	return isForked(LocalChainConfig.Proposal008Block, GetBlockHeight())
 }
 
+func IsProposal009() bool {
+	return isForked(LocalChainConfig.Proposal009Block, GetBlockHeight())
+}
+
 func isForked(base uint64, height uint64) bool {
 	return height >= base
-}
-
-func EmailPubKeyContractAddress() Address {
-	return LocalChainConfig.email
-}
-
-func SetEmailPubKeyContractAddress(addr Address) {
-	LocalChainConfig.email = addr
 }
