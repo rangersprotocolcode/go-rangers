@@ -661,6 +661,9 @@ func clean() {
 }
 
 func setup(id string) {
+	common.InitChainConfig("dev")
+	common.SetBlockHeight(1)
+
 	fmt.Printf("Before %s tests\n", id)
 	clean()
 	common.InitConf("1.ini")

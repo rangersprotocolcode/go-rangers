@@ -20,6 +20,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	crypto "com.tuntun.rocket/node/src/eth_crypto"
 	"com.tuntun.rocket/node/src/middleware/db"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
 	"math"
 	"math/big"
@@ -191,6 +192,32 @@ func mockCall(address common.Address, input []byte, cfg *testConfig) ([]byte, ui
 		cfg.Value,
 	)
 	return ret, leftOverGas, err
+}
+
+// Call executes the code given by the contract's address. It will return the
+// EVM's return value or an error if it failed.
+//
+// Call, unlike Execute, requires a config and also requires the State field to
+// be set.
+func mockCallWithLogs(address common.Address, input []byte, cfg *testConfig) ([]byte, uint64, []*types.Log, error) {
+	setDefaults(cfg)
+	vmenv := mockEVM(cfg)
+
+	sender := mockContractRef{cfg.Origin}
+	//cfg.State.AddAddressToAccessList(cfg.Origin)
+	//cfg.State.AddAddressToAccessList(address)
+	//for _, addr := range vmenv.ActivePrecompiles() {
+	//	cfg.State.AddAddressToAccessList(addr)
+	//}
+
+	// Call the code with the given configuration.
+	return vmenv.Call(
+		sender,
+		address,
+		input,
+		cfg.GasLimit,
+		cfg.Value,
+	)
 }
 
 func mockEVM(cfg *testConfig) *EVM {

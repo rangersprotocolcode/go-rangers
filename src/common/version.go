@@ -105,7 +105,7 @@ type ChainConfig struct {
 	Proposal008Block uint64
 	Proposal009Block uint64
 
-	email Address
+	mainNodeContract Address
 }
 
 func InitChainConfig(env string) {
@@ -190,4 +190,8 @@ func IsProposal009() bool {
 
 func isForked(base uint64, height uint64) bool {
 	return height >= base
+}
+
+func MainNodeContract() Address{
+	return LocalChainConfig.mainNodeContract
 }
