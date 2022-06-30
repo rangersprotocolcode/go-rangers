@@ -18,13 +18,12 @@ package common
 
 import (
 	"com.tuntun.rocket/node/src/middleware/log"
-	"math"
 	"math/big"
 	"sync/atomic"
 )
 
 const (
-	Version           = "1.0.7"
+	Version           = "1.0.8"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -45,10 +44,10 @@ var (
 		Proposal003Block: 3830000,
 		Proposal004Block: 5310000,
 		Proposal005Block: 10293600,
-		Proposal006Block: math.MaxUint64, //mainnet never use Proposal006
+		Proposal006Block: 16733000,
 		Proposal007Block: 16082000,
 		Proposal008Block: 16082000,
-		Proposal009Block: math.MaxUint64,
+		Proposal009Block: 16733000,
 	}
 
 	robinChainConfig = ChainConfig{
@@ -63,7 +62,7 @@ var (
 		Proposal006Block: 12582000,
 		Proposal007Block: 14261000,
 		Proposal008Block: 16058000,
-		Proposal009Block: math.MaxUint64,
+		Proposal009Block: 16740000,
 	}
 
 	devNetChainConfig = ChainConfig{
