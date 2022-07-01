@@ -80,7 +80,6 @@ func (this *minerNodeExecutor) Execute(transaction *types.Transaction, header *t
 	contractAddress := this.generateContractAddress(vmCtx, nonce, owner, current.Stake, accountdb)
 	if nil == contractAddress {
 		msg := fmt.Sprintf("fail to call create2, nonce %s", nonce)
-		this.logger.Warnf(msg)
 		return false, msg
 	}
 
@@ -106,6 +105,7 @@ func (this *minerNodeExecutor) generateContractAddress(vmCtx vm.Context, nonce s
 
 	_, _, logs, err := vmInstance.Call(vm.AccountRef(vmCtx.Origin), common.MainNodeContract(), common.FromHex(inputString), vmCtx.GasLimit, big.NewInt(0))
 	if err != nil || 3 != len(logs) {
+		this.logger.Errorf("fail to call create2, err: %s, length: %d, inputString: %s", err, len(logs), inputString)
 		return nil
 	}
 
