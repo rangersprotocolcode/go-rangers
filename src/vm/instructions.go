@@ -1099,12 +1099,22 @@ func opUnStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 }
 
 func opGetStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	thisAddress := callContext.contract.Address()
 	pointerAddress := popAddress(callContext)
 	ret := uint256.NewInt().SetUint64(10)
-	source := callContext.contract.caller.Address()
 
-	common.DefaultLogger.Debugf("getstake source: %s, stake to %s(this->%s)", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString())
+	minerId := service.MinerManagerImpl.GetMinerIdByAccount(pointerAddress.Bytes(), interpreter.evm.accountDB)
+	if nil != minerId {
+		miner := service.MinerManagerImpl.GetMiner(minerId, interpreter.evm.accountDB)
+		if miner != nil {
+			stake := miner.Stake
+			stakeBigInt, err := utility.StrToBigInt(strconv.FormatUint(stake, 10))
+			if err == nil {
+				ret.SetBytes(stakeBigInt.Bytes())
+			}
+
+		}
+	}
+	common.DefaultLogger.Debugf("getstake: %s, stake to %s", pointerAddress.GetHexString(), ret.String())
 
 	pushUint256(callContext, ret)
 	return nil, nil
