@@ -995,6 +995,10 @@ func pushBool(callContext *callCtx, value bool) {
 	}
 }
 
+func pushUint256(callContext *callCtx, value *uint256.Int) {
+	callContext.stack.push(value)
+}
+
 func pushBytes(callContext *callCtx, offset uint64, bytes []byte) {
 	callContext.memory.Set32(offset, uint256.NewInt().SetUint64(uint64(len(bytes))))
 	callContext.memory.Set(offset+32, uint64(len(bytes)), bytes)
@@ -1091,5 +1095,17 @@ func opUnStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 	}
 
 	pushBool(callContext, ret)
+	return nil, nil
+}
+
+func opGetStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	thisAddress := callContext.contract.Address()
+	pointerAddress := popAddress(callContext)
+	ret := uint256.NewInt().SetUint64(10)
+	source := callContext.contract.caller.Address()
+
+	common.DefaultLogger.Debugf("getstake source: %s, stake to %s(this->%s)", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString())
+
+	pushUint256(callContext, ret)
 	return nil, nil
 }

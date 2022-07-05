@@ -550,7 +550,8 @@ var stringToOp = map[string]OpCode{
 }
 
 const (
-	PRINTF  = 0xed
-	STAKE   = 0xee
-	UNSTAKE = 0xef
+	PRINTF   = 0xed
+	STAKE    = 0xee
+	UNSTAKE  = 0xef
+	GETSTAKE = 0xec
 )
