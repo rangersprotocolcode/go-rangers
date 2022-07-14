@@ -72,6 +72,8 @@ var (
 		PHub:             "ws://gate.tuntunhz.com:8899",
 		PubHub:           "ws://gate.tuntunhz.com:8888",
 		OriginalChainId:  "9500",
+		mainNodeContract: HexToAddress("0x27B01A9E699F177634f480Cc2150425009Edc5fD"),
+
 		Proposal001Block: 300,
 		Proposal002Block: 338000,
 		Proposal003Block: 920000,
@@ -192,6 +194,6 @@ func isForked(base uint64, height uint64) bool {
 	return height >= base
 }
 
-func MainNodeContract() Address{
+func MainNodeContract() Address {
 	return LocalChainConfig.mainNodeContract
 }

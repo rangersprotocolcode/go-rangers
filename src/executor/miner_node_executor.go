@@ -94,18 +94,9 @@ func (this *minerNodeExecutor) Execute(transaction *types.Transaction, header *t
 //
 func (this *minerNodeExecutor) generateContractAddress(vmCtx vm.Context, nonce string, owner common.Address, stake uint64, accountdb *account.AccountDB) types.HexBytes {
 	vmInstance := vm.NewEVMWithNFT(vmCtx, accountdb, accountdb)
-
-	// build abi
-	pad := ""
-	for i := 0; i < (64 - len(nonce)); i++ {
-		pad = "0" + pad
-	}
-	addressString := owner.String()
-	inputString := fmt.Sprintf("0x8e900fd2%s%s000000000000000000000000%s", pad, nonce, addressString[2:])
-
-	_, _, logs, err := vmInstance.Call(vm.AccountRef(vmCtx.Origin), common.MainNodeContract(), common.FromHex(inputString), vmCtx.GasLimit, big.NewInt(0))
-	if err != nil || 3 != len(logs) {
-		this.logger.Errorf("fail to call create2, err: %s, length: %d, inputString: %s", err, len(logs), inputString)
+	_, _, logs, err := vmInstance.Call(vm.AccountRef(vmCtx.Origin), common.MainNodeContract(), common.FromHex("0x412a5a6d"), vmCtx.GasLimit, big.NewInt(0))
+	if err != nil{
+		this.logger.Errorf("fail to call create2, err: %s, length: %d", err, len(logs) )
 		return nil
 	}
 

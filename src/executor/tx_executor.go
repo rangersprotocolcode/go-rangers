@@ -43,7 +43,7 @@ func InitExecutors() {
 	executors[types.TransactionTypeMinerAdd] = &minerAddExecutor{logger: logger}
 	executors[types.TransactionTypeMinerRefund] = &minerRefundExecutor{logger: logger}
 	executors[types.TransactionTypeMinerChangeAccount] = &minerChangeAccountExecutor{logger: logger}
-	//executors[types.TransactionTypeOperatorNode] = &minerNodeExecutor{logger: logger}
+	executors[types.TransactionTypeOperatorNode] = &minerNodeExecutor{logger: logger}
 
 	executors[types.TransactionTypeContract] = &contractExecutor{logger: logger}
 	executors[types.TransactionTypeETHTX] = &contractExecutor{logger: logger}
