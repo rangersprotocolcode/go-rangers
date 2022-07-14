@@ -123,10 +123,12 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height, msg, transaction.Source, "")
 		logs := this.context["logs"]
 		if logs != nil {
+			delete(this.context, "logs")
 			receipt.Logs = logs.([]*types.Log)
 		}
 		contractAddress := this.context["contractAddress"]
 		if contractAddress != nil {
+			delete(this.context, "contractAddress")
 			receipt.ContractAddress = contractAddress.(common.Address)
 		}
 		receipt.TxHash = transaction.Hash

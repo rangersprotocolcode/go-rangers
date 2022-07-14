@@ -76,13 +76,12 @@ func (this *minerNodeExecutor) Execute(transaction *types.Transaction, header *t
 	vmCtx.GasPrice = gasPrice
 	vmCtx.GasLimit = gasLimit
 
-	nonce := new(big.Int).SetBytes(transaction.Hash.Bytes()[:20]).String()
-	contractAddress := this.generateContractAddress(vmCtx, nonce, owner, current.Stake, accountdb)
+	contractAddress, logs := this.generateContractAddress(vmCtx, accountdb)
 	if nil == contractAddress {
-		msg := fmt.Sprintf("fail to call create2, nonce %s", nonce)
+		msg := fmt.Sprintf("fail to call create2")
 		return false, msg
 	}
-
+	context["logs"] = logs
 	current.Account = contractAddress
 	service.MinerManagerImpl.UpdateMiner(current, accountdb, false)
 
@@ -92,15 +91,19 @@ func (this *minerNodeExecutor) Execute(transaction *types.Transaction, header *t
 }
 
 //
-func (this *minerNodeExecutor) generateContractAddress(vmCtx vm.Context, nonce string, owner common.Address, stake uint64, accountdb *account.AccountDB) types.HexBytes {
+func (this *minerNodeExecutor) generateContractAddress(vmCtx vm.Context, accountdb *account.AccountDB) (types.HexBytes, []*types.Log) {
 	vmInstance := vm.NewEVMWithNFT(vmCtx, accountdb, accountdb)
 	_, _, logs, err := vmInstance.Call(vm.AccountRef(vmCtx.Origin), common.MainNodeContract(), common.FromHex("0x412a5a6d"), vmCtx.GasLimit, big.NewInt(0))
-	if err != nil{
-		this.logger.Errorf("fail to call create2, err: %s, length: %d", err, len(logs) )
-		return nil
+	if err != nil {
+		this.logger.Errorf("fail to call create2, err: %s, length: %d", err, len(logs))
+		return nil, nil
+	}
+	if 4 != len(logs) {
+		this.logger.Errorf("fail to call create2, length: %d", len(logs))
+		return nil, nil
 	}
 
-	log := logs[2]
+	log := logs[3]
 	realAddress := log.Data[:32]
-	return realAddress
+	return realAddress, logs
 }
