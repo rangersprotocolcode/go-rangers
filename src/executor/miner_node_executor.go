@@ -104,6 +104,11 @@ func (this *minerNodeExecutor) generateContractAddress(vmCtx vm.Context, account
 	}
 
 	log := logs[3]
-	realAddress := log.Data[:32]
+	if len(log.Data) < 32 {
+		this.logger.Errorf("fail to call create2, log.data error: %s", toHex(log.Data))
+		return nil, nil
+	}
+	realAddress := log.Data[12:32]
+
 	return realAddress, logs
 }
