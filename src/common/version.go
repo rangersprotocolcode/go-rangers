@@ -63,6 +63,8 @@ var (
 		Proposal007Block: 14261000,
 		Proposal008Block: 16058000,
 		Proposal009Block: 16740000,
+
+		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 	}
 
 	devNetChainConfig = ChainConfig{
