@@ -10,13 +10,13 @@ import (
 )
 
 var (
-	MysqlDB  *sql.DB
-	mysqlErr error
-	logger   log.Logger
+	MysqlDB, mysqlDBLog *sql.DB
+	mysqlErr            error
+	logger              log.Logger
 )
 
 // 初始化链接
-func InitMySql(dbDSN string) {
+func InitMySql(dbDSN, dbDSNLog string) {
 	logger = log.GetLoggerByIndex(log.MysqlLogConfig, strconv.Itoa(common.InstanceIndex))
 	if 0 == len(dbDSN) {
 		return
@@ -41,6 +41,31 @@ func InitMySql(dbDSN string) {
 
 	if mysqlErr = MysqlDB.Ping(); nil != mysqlErr {
 		MysqlDB.Close()
+		panic(mysqlErr.Error())
+	}
+
+	if 0 == len(dbDSNLog) {
+		return
+	}
+
+	mysqlDBLog, mysqlErr = sql.Open("mysql", dbDSNLog)
+
+	// 打开连接失败
+	if mysqlErr != nil {
+		logger.Errorf("fail to connect dbDSN: " + dbDSNLog)
+		panic("dbDSN: " + dbDSNLog + mysqlErr.Error())
+	}
+
+	logger.Infof("connected dbDSN: " + dbDSNLog)
+	// 最大连接数
+	mysqlDBLog.SetMaxOpenConns(5)
+	// 闲置连接数
+	mysqlDBLog.SetMaxIdleConns(5)
+	// 最大连接周期
+	mysqlDBLog.SetConnMaxLifetime(100 * time.Second)
+
+	if mysqlErr = mysqlDBLog.Ping(); nil != mysqlErr {
+		mysqlDBLog.Close()
 		panic(mysqlErr.Error())
 	}
 }

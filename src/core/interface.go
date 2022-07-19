@@ -72,6 +72,8 @@ type BlockChain interface {
 	GetVerifyHash(height uint64) (common.Hash, error)
 
 	HasBlockByHash(hash common.Hash) bool
+
+	GetBlockHash(height uint64) common.Hash
 }
 
 type GroupChain interface {

@@ -17,10 +17,15 @@
 package types
 
 import (
+	crypto "com.tuntun.rocket/node/src/eth_crypto"
+	"com.tuntun.rocket/node/src/utility"
 	"crypto/sha256"
+	"encoding/binary"
 	"fmt"
+	"golang.org/x/crypto/sha3"
 	"math/big"
 	"reflect"
+	"sync"
 )
 
 type bytesBacked interface {
@@ -34,6 +39,13 @@ const (
 )
 
 type Bloom [BloomByteLength]byte
+
+// hasherPool holds LegacyKeccak hashers.
+var hasherPool = sync.Pool{
+	New: func() interface{} {
+		return sha3.NewLegacyKeccak256()
+	},
+}
 
 // BytesToBloom converts a byte slice to a bloom filter.
 // It panics if b is not of suitable size.
@@ -57,6 +69,25 @@ func (b *Bloom) Add(d *big.Int) {
 	b.SetBytes(bin.Bytes())
 }
 
+// bloomValues returns the bytes (index-value pairs) to set for the given data
+func bloomValues(data []byte, hashbuf []byte) (uint, byte, uint, byte, uint, byte) {
+	sha := hasherPool.Get().(crypto.KeccakState)
+	sha.Reset()
+	sha.Write(data)
+	sha.Read(hashbuf)
+	hasherPool.Put(sha)
+	// The actual bits to flip
+	v1 := byte(1 << (hashbuf[1] & 0x7))
+	v2 := byte(1 << (hashbuf[3] & 0x7))
+	v3 := byte(1 << (hashbuf[5] & 0x7))
+	// The indices for the bytes to OR in
+	i1 := BloomByteLength - uint((binary.BigEndian.Uint16(hashbuf)&0x7ff)>>3) - 1
+	i2 := BloomByteLength - uint((binary.BigEndian.Uint16(hashbuf[2:])&0x7ff)>>3) - 1
+	i3 := BloomByteLength - uint((binary.BigEndian.Uint16(hashbuf[4:])&0x7ff)>>3) - 1
+
+	return i1, v1, i2, v2, i3, v3
+}
+
 // Big converts b to a big integer.
 func (b Bloom) Big() *big.Int {
 	return new(big.Int).SetBytes(b[:])
@@ -75,15 +106,39 @@ func (b Bloom) TestBytes(test []byte) bool {
 
 }
 
-//func CreateBloom(receipts Receipts) Bloom {
-//	bin := new(big.Int)
-//	for _, receipt := range receipts {
-//		bin.Or(bin, LogsBloom(receipt.Logs))
-//	}
-//
-//	return BytesToBloom(bin.Bytes())
-//}
-//
+// MarshalText encodes b as a hex string with 0x prefix.
+func (b Bloom) MarshalText() ([]byte, error) {
+	return utility.Bytes(b[:]).MarshalText()
+}
+
+// UnmarshalText b as a hex string with 0x prefix.
+func (b *Bloom) UnmarshalText(input []byte) error {
+	return utility.UnmarshalFixedText("Bloom", input, b[:])
+}
+
+// CreateBloom creates a bloom filter out of the give Receipts (+Logs)
+func CreateBloom(receipts Receipts) Bloom {
+	buf := make([]byte, 6)
+	var bin Bloom
+	for _, receipt := range receipts {
+		for _, log := range receipt.Logs {
+			bin.add(log.Address.Bytes(), buf)
+			for _, b := range log.Topics {
+				bin.add(b[:], buf)
+			}
+		}
+	}
+	return bin
+}
+
+// add is internal version of Add, which takes a scratch buffer for reuse (needs to be at least 6 bytes)
+func (b *Bloom) add(d []byte, buf []byte) {
+	i1, v1, i2, v2, i3, v3 := bloomValues(d, buf)
+	b[i1] |= v1
+	b[i2] |= v2
+	b[i3] |= v3
+}
+
 //func LogsBloom(logs []*Log) *big.Int {
 //	bin := new(big.Int)
 //	for _, log := range logs {

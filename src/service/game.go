@@ -27,13 +27,16 @@ import (
 	"strconv"
 )
 
-func GetBalance(source common.Address, accountDB *account.AccountDB) string {
+func GetRawBalance(source common.Address, accountDB *account.AccountDB) string {
 	if accountDB == nil {
 		return ""
 	}
 	balance := accountDB.GetBalance(source)
-
-	return utility.BigIntToStr(balance)
+	if balance == nil {
+		return "0"
+	} else {
+		return balance.String()
+	}
 }
 
 func GetNetWorkId() string {

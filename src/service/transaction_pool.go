@@ -57,8 +57,13 @@ var (
 	ErrIllegal = errors.New("illegal transaction")
 )
 
+type ExecutedReceipt struct {
+	types.Receipt
+	BlockHash common.Hash `json:"blockHash"`
+}
+
 type ExecutedTransaction struct {
-	Receipt     *types.Receipt
+	Receipt     ExecutedReceipt
 	Transaction []byte
 }
 
@@ -78,7 +83,7 @@ type TransactionPool interface {
 
 	TxNum() int
 
-	MarkExecuted(receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash)
+	MarkExecuted(header *types.BlockHeader, receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash)
 
 	UnMarkExecuted(txs []*types.Transaction, evictedTxs []common.Hash)
 
@@ -140,16 +145,27 @@ func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 	return b, err
 }
 
-func (pool *TxPool) MarkExecuted(receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash) {
+func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash) {
 	if nil == receipts || 0 == len(receipts) {
 		return
 	}
 
 	for i, receipt := range receipts {
 		hash := receipt.TxHash
-		executedTx := &ExecutedTransaction{
-			Receipt: receipt,
+		var er ExecutedReceipt
+		er.BlockHash = header.Hash
+		er.Height = receipt.Height
+		er.TxHash = receipt.TxHash
+		er.Status = receipt.Status
+		er.Logs = receipt.Logs
+		er.ContractAddress = receipt.ContractAddress
+		if 0 != len(receipt.Result) {
+			er.Result = receipt.Result
 		}
+		executedTx := &ExecutedTransaction{
+			Receipt: er,
+		}
+
 		tx := findTxInList(txs, hash, i)
 		txData, _ := types.MarshalTransaction(tx)
 		executedTx.Transaction = txData

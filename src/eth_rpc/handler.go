@@ -5,6 +5,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
+	"com.tuntun.rocket/node/src/network"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -32,43 +33,59 @@ func InitEthMsgHandler() {
 	logger = log.GetLoggerByIndex(log.ETHRPCLogConfig, index)
 
 	handler.registerAPI(&ethAPIService{})
-	notify.BUS.Subscribe(notify.ETHRPC, handler.process)
+	//notify.BUS.Subscribe(notify.ETHRPC, handler.process)
 }
 
 func (handler ethMsgHandler) process(message notify.Message) {
 	singleMessage, single := message.GetData().(*notify.ETHRPCMessage)
 	if single {
 		logger.Debugf("Rcv single eth prc message.requestId:%d,session id:%d", singleMessage.RequestId, singleMessage.SessionId)
-		handler.processSingleRequest(singleMessage.Message)
+		response := handler.processSingleRequest(singleMessage.Message)
+		responseJson, err := json.Marshal(response)
+		if err != nil {
+			logger.Debugf("marshal err:%v", err)
+		}
+		logger.Debugf("Response:%s,socketRequestId:%v,sessionId:%v", string(responseJson), singleMessage.RequestId, singleMessage.SessionId)
+		network.GetNetInstance().SendToJSONRPC(string(responseJson), singleMessage.SessionId, singleMessage.RequestId)
 		return
 	}
 
 	batchMessage, batch := message.GetData().(*notify.ETHRPCBatchMessage)
 	if batch {
 		logger.Debugf("Rcv batch eth prc message.requestId:%d,session id:%d", batchMessage.RequestId, batchMessage.SessionId)
-		handler.processBatchRequest(batchMessage.Message)
+		response := handler.processBatchRequest(batchMessage.Message)
+		responseJson, _ := json.Marshal(response)
+		logger.Debugf("Response:%s,socketRequestId:%v,sessionId:%v", string(responseJson), batchMessage.RequestId, batchMessage.SessionId)
+		network.GetNetInstance().SendToJSONRPC(string(responseJson), batchMessage.SessionId, batchMessage.RequestId)
 		return
 	}
+
 }
 
-func (handler ethMsgHandler) processBatchRequest(ethRpcMessage []notify.ETHRPCPiece) {
+func (handler ethMsgHandler) processBatchRequest(ethRpcMessage []notify.ETHRPCPiece) []jsonResponse {
+	result := make([]jsonResponse, 0)
 	if ethRpcMessage == nil {
-		return
+		return result
 	}
 
 	for _, msg := range ethRpcMessage {
-		handler.processSingleRequest(msg)
+		response := handler.processSingleRequest(msg)
+		result = append(result, response)
 	}
+	return result
 }
 
-func (handler ethMsgHandler) processSingleRequest(ethRpcMessage notify.ETHRPCPiece) {
+func (handler ethMsgHandler) processSingleRequest(ethRpcMessage notify.ETHRPCPiece) jsonResponse{
 	logger.Debugf("Method:%s,params:%s,nonce:%d,id:%v", ethRpcMessage.Method, ethRpcMessage.Params, ethRpcMessage.Nonce, ethRpcMessage.Id)
-	handlerFunc, arguments, err := handler.parseRequest(&ethRpcMessage)
+	handlerFunc, arguments, err := handler.parseRequest(ethRpcMessage)
+	var response jsonResponse
 	if err != nil {
-		return
+		response = makeResponse(nil, err, ethRpcMessage.Id)
 	} else {
-		handler.exec(handlerFunc, arguments, ethRpcMessage.Method, ethRpcMessage.Nonce, string(ethRpcMessage.Params))
+		returnValue, err := handler.exec(handlerFunc, arguments, ethRpcMessage.Method, ethRpcMessage.Nonce, string(ethRpcMessage.Params))
+		response = makeResponse(returnValue, err, ethRpcMessage.Id)
 	}
+	return response
 }
 
 func (handler *ethMsgHandler) registerAPI(service interface{}) {
@@ -139,7 +156,7 @@ METHODS:
 	}
 }
 
-func (handler ethMsgHandler) parseRequest(ethRpcMessage *notify.ETHRPCPiece) (handlerFunc *execFunc, arguments []reflect.Value, error Error) {
+func (handler ethMsgHandler) parseRequest(ethRpcMessage notify.ETHRPCPiece) (handlerFunc *execFunc, arguments []reflect.Value, error Error) {
 	handlerFunc = handler.service[ethRpcMessage.Method]
 	if handlerFunc == nil {
 		return nil, nil, &methodNotFoundError{ethRpcMessage.Method}
