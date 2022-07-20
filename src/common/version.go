@@ -18,6 +18,7 @@ package common
 
 import (
 	"com.tuntun.rocket/node/src/middleware/log"
+	"math"
 	"math/big"
 	"sync/atomic"
 )
@@ -48,6 +49,7 @@ var (
 		Proposal007Block: 16082000,
 		Proposal008Block: 16082000,
 		Proposal009Block: 16733000,
+		Proposal010Block: 11750354,
 	}
 
 	robinChainConfig = ChainConfig{
@@ -63,6 +65,7 @@ var (
 		Proposal007Block: 14261000,
 		Proposal008Block: 16058000,
 		Proposal009Block: 16740000,
+		Proposal010Block: math.MaxUint64, //robin never use Proposal010
 	}
 
 	devNetChainConfig = ChainConfig{
@@ -81,6 +84,7 @@ var (
 		Proposal007Block: 0,
 		Proposal008Block: 0,
 		Proposal009Block: 0,
+		Proposal010Block: math.MaxUint64, //dev never use Proposal010
 	}
 
 	LocalChainConfig ChainConfig
@@ -104,6 +108,7 @@ type ChainConfig struct {
 	Proposal007Block uint64
 	Proposal008Block uint64
 	Proposal009Block uint64
+	Proposal010Block uint64
 
 	email Address
 }

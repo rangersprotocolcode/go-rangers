@@ -178,6 +178,9 @@ func (this *RefundManager) getRefundHeight(now, left uint64, minerType byte, min
 	if common.IsProposal004() && height <= 0 {
 		height = now + common.RefundBlocks*100
 	}
+	if common.LocalChainConfig.Proposal010Block == now {
+		height = height - 50
+	}
 	return height
 }
 
