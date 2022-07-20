@@ -385,24 +385,26 @@ func (clientConn *ClientConn) handleJSONClientMessage(body []byte, userId string
 	}
 
 	message := notify.ETHRPCMessage{}
-	err := json.Unmarshal(body, &message)
+	err := json.Unmarshal(body, &message.Message)
 	if err == nil {
 		clientConn.logger.Debugf("get body from jsonrpcConn, bodyHex: %s, publishing", string(body))
 		message.SessionId = userId
 		message.RequestId = nonce
 		notify.BUS.Publish(notify.ClientETHRPC, &message)
-	} else {
-		message := notify.ETHRPCBatchMessage{}
-		err := json.Unmarshal(body, &message)
-		if err == nil {
-			message.SessionId = userId
-			message.RequestId = nonce
-			clientConn.logger.Debugf("get body from jsonrpcConn, bodyHex: %s, publishing", string(body))
-			notify.BUS.Publish(notify.ClientETHRPC, &message)
-		} else {
-			clientConn.logger.Errorf("fail to get body from jsonrpcConn, bodyHex: %s,err:%s", string(body), err.Error())
-		}
+		return
 	}
+
+	messageBatch := notify.ETHRPCBatchMessage{}
+	err = json.Unmarshal(body, &messageBatch.Message)
+	if err == nil {
+		messageBatch.SessionId = userId
+		messageBatch.RequestId = nonce
+		clientConn.logger.Debugf("get body from jsonrpcConn, bodyHex: %s, publishing", string(body))
+		notify.BUS.Publish(notify.ClientETHRPC, &messageBatch)
+		return
+	}
+
+	clientConn.logger.Errorf("fail to get body from jsonrpcConn, bodyHex: %s,err:%s", string(body), err.Error())
 }
 
 func (clientConn *ClientConn) Notify(isUniCast bool, gameId string, userId string, msg string) {

@@ -29,6 +29,7 @@ func InitNetwork(consensusHandler MsgHandler, selfMinerId []byte, env, gate, out
 	p2pLogger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	bizLogger = log.GetLoggerByIndex(log.P2PBizLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	fmt.Println("Connecting to: " + gate)
+	fmt.Println(isSending)
 
 	var s server
 	s.Init(bizLogger, gate, outerGateAddr, selfMinerId, consensusHandler, isSending)
