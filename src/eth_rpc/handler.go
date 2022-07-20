@@ -39,7 +39,7 @@ func InitEthMsgHandler() {
 func (handler ethMsgHandler) process(message notify.Message) {
 	singleMessage, single := message.GetData().(*notify.ETHRPCMessage)
 	if single {
-		logger.Debugf("Rcv single eth prc message.requestId:%d,session id:%d", singleMessage.RequestId, singleMessage.SessionId)
+		logger.Debugf("Rcv single eth prc message.requestId: %d, session id: %s", singleMessage.RequestId, singleMessage.SessionId)
 		response := handler.processSingleRequest(singleMessage.Message)
 		responseJson, err := json.Marshal(response)
 		if err != nil {
@@ -52,7 +52,7 @@ func (handler ethMsgHandler) process(message notify.Message) {
 
 	batchMessage, batch := message.GetData().(*notify.ETHRPCBatchMessage)
 	if batch {
-		logger.Debugf("Rcv batch eth prc message.requestId:%d,session id:%d", batchMessage.RequestId, batchMessage.SessionId)
+		logger.Debugf("Rcv batch eth prc message.requestId: %d, session id: %s", batchMessage.RequestId, batchMessage.SessionId)
 		response := handler.processBatchRequest(batchMessage.Message)
 		responseJson, _ := json.Marshal(response)
 		logger.Debugf("Response:%s,socketRequestId:%v,sessionId:%v", string(responseJson), batchMessage.RequestId, batchMessage.SessionId)
