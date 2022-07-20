@@ -97,7 +97,6 @@ func (gx *GX) Run() {
 	outerGateAddrPoint := mineCmd.Flag("outergateaddr", "the gate addr").String()
 	dbDSNPoint := mineCmd.Flag("mysql", "the db addr").String()
 	dbDSNLogPoint := mineCmd.Flag("mysqlLog", "the logdb addr").String()
-	isSendingString := mineCmd.Flag("isSending", "").Default("0").Int()
 
 	command, err := app.Parse(os.Args[1:])
 	if err != nil {
@@ -121,8 +120,6 @@ func (gx *GX) Run() {
 		dbDSN = common.LocalChainConfig.Dsn
 	}
 	dbDSNLog := *dbDSNLogPoint
-
-	isSending := *isSendingString
 
 	instance := 0
 	if 0 != *instanceIndex {
@@ -154,7 +151,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(instance, *env, gateAddr, outerGateAddr, dbDSN, dbDSNLog, isSending == 1)
+		gx.initMiner(instance, *env, gateAddr, outerGateAddr, dbDSN, dbDSNLog)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc, gx.account.Sk)
 			if err != nil {
@@ -166,7 +163,7 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, dbDSN, dbDSNLog string, isSending bool) {
+func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, dbDSN, dbDSNLog string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	databaseValue := "chain"
@@ -184,7 +181,7 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, dbDSN, 
 	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 
-	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, isSending)
+	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, 0 != len(dbDSNLog))
 	service.InitService()
 	vm.InitVM()
 
