@@ -18,6 +18,7 @@ package network
 
 import (
 	"bytes"
+	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -296,10 +297,10 @@ func (base *baseConn) generateTarget(targetId string) (uint64, error) {
 
 // 处理客户端的read/write请求
 var (
-	methodNotify, _           = hex.DecodeString("20000000")
-	methodNotifyBroadcast, _  = hex.DecodeString("20000001")
-	methodNotifyGroup, _      = hex.DecodeString("20000002")
-	methodNotifyInit, _       = hex.DecodeString("20000003")
+	methodNotify, _          = hex.DecodeString("20000000")
+	methodNotifyBroadcast, _ = hex.DecodeString("20000001")
+	methodNotifyGroup, _     = hex.DecodeString("20000002")
+	methodNotifyInit, _      = hex.DecodeString("20000003")
 
 	methodClientReader, _  = hex.DecodeString("00000001")
 	methodClientJSONRpc, _ = hex.DecodeString("00000000")
@@ -327,6 +328,8 @@ func (clientConn *ClientConn) Init(ipPort, path string, logger log.Logger) {
 	clientConn.notifyNonce = 0
 
 	clientConn.doRcv = func(wsHeader wsHeader, body []byte) {
+		clientConn.logger.Debugf("received. header: %s, from: %d, nonce: %d, bodyLength: %d", common.ToHex(wsHeader.method), wsHeader.sourceId, wsHeader.nonce, len(body))
+
 		if bytes.Equal(wsHeader.method, methodClientReader) {
 			clientConn.handleClientMessage(body, strconv.FormatUint(wsHeader.sourceId, 10), wsHeader.nonce)
 			return

@@ -53,9 +53,7 @@ func (s *server) SendToClientReader(id string, msg []byte, nonce uint64) {
 }
 
 func (s *server) SendToClientWriter(id string, msg []byte, nonce uint64) {
-	if s.isSending {
-		s.reader.Send(id, methodClientReader, msg, nonce)
-	}
+	s.SendToClientReader(id, msg, nonce)
 }
 
 func (s *server) Send(id string, msg Message) {
