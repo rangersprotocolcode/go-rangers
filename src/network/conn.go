@@ -18,7 +18,6 @@ package network
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -223,14 +222,14 @@ func (base *baseConn) closeConn() {
 
 // 发送消息
 func (base *baseConn) send(method []byte, target uint64, msg []byte, nonce uint64) {
-	header := wsHeader{method: method, nonce: nonce, targetId: target}
+	header := wsHeader{method: method, nonce: nonce, sourceId: target}
 
 	if base.isSend != nil && !base.isSend(method, target, msg, nonce) {
 		base.logger.Errorf("%s did not accept send. wsHeader: %v, length: %d", base.path, header, len(msg))
 	}
 
 	base.sendChan <- base.loadMsg(header, msg)
-	p2pLogger.Debugf("send message. wsHeader: %v, body length: %d", header, len(msg))
+	base.logger.Debugf("send message. wsHeader: %v, body length: %d", header, len(msg))
 }
 
 //新的单播接口使用
@@ -271,7 +270,7 @@ func (base *baseConn) unloadMsg(m []byte) (header wsHeader, body []byte) {
 func (base *baseConn) headerToBytes(h wsHeader) []byte {
 	byteArray := make([]byte, protocolHeaderSize)
 	copy(byteArray[0:4], h.method)
-	copy(byteArray[12:20], utility.UInt64ToByte(h.targetId))
+	copy(byteArray[4:12], utility.UInt64ToByte(h.sourceId))
 	copy(byteArray[20:28], utility.UInt64ToByte(h.nonce))
 	return byteArray
 }
@@ -297,56 +296,49 @@ func (base *baseConn) generateTarget(targetId string) (uint64, error) {
 
 // 处理客户端的read/write请求
 var (
-	methodCodeClientReader, _ = hex.DecodeString("60000000")
-	methodCodeClientWriter, _ = hex.DecodeString("60000001")
 	methodNotify, _           = hex.DecodeString("20000000")
 	methodNotifyBroadcast, _  = hex.DecodeString("20000001")
 	methodNotifyGroup, _      = hex.DecodeString("20000002")
 	methodNotifyInit, _       = hex.DecodeString("20000003")
+
+	methodClientReader, _  = hex.DecodeString("00000001")
+	methodClientJSONRpc, _ = hex.DecodeString("00000000")
 )
 
 type ClientConn struct {
 	baseConn
-	method []byte
-	event  string
+	event string
 
 	notifyNonce uint64
 	nonceLock   sync.Mutex
 }
 
-func (clientConn *ClientConn) Send(targetId string, msg []byte, nonce uint64) {
+func (clientConn *ClientConn) Send(targetId string, method, msg []byte, nonce uint64) {
 	target, err := clientConn.generateTarget(targetId)
 	if err != nil {
 		return
 	}
 
-	clientConn.send(clientConn.method, target, msg, nonce)
+	clientConn.send(method, target, msg, nonce)
 }
 
-func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, logger log.Logger, isRcv bool) {
-	clientConn.method = method
+func (clientConn *ClientConn) Init(ipPort, path string, logger log.Logger) {
 	clientConn.nonceLock = sync.Mutex{}
 	clientConn.notifyNonce = 0
 
 	clientConn.doRcv = func(wsHeader wsHeader, body []byte) {
-		if !isRcv {
-			clientConn.logger.Debugf("coming abnormal data, header: %v, body: %s", wsHeader, common.ToHex(body))
+		if bytes.Equal(wsHeader.method, methodClientReader) {
+			clientConn.handleClientMessage(body, strconv.FormatUint(wsHeader.sourceId, 10), wsHeader.nonce)
 			return
 		}
 
-		if bytes.Equal(wsHeader.method, methodNotifyInit) {
-			clientConn.logger.Errorf("refresh notify nonce: %d", wsHeader.nonce)
-			clientConn.notifyNonce = wsHeader.nonce
+		if bytes.Equal(wsHeader.method, methodClientJSONRpc) {
+			clientConn.handleJSONClientMessage(body, strconv.FormatUint(wsHeader.sourceId, 10), wsHeader.nonce)
 			return
 		}
 
-		if !bytes.Equal(wsHeader.method, clientConn.method) {
-			msg := fmt.Sprintf("%s received wrong method. wsHeader: %v", clientConn.path, wsHeader)
-			clientConn.logger.Error(msg)
-			return
-		}
-
-		clientConn.handleClientMessage(body, strconv.FormatUint(wsHeader.sourceId, 10), wsHeader.nonce, event)
+		msg := fmt.Sprintf("%s received wrong method. wsHeader: %v", clientConn.path, wsHeader)
+		clientConn.logger.Error(msg)
 	}
 
 	//流控方法
@@ -368,7 +360,7 @@ func (clientConn *ClientConn) Init(ipPort, path, event string, method []byte, lo
 
 }
 
-func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, nonce uint64, event string) {
+func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, nonce uint64) {
 	var txJson types.TxJson
 	err := json.Unmarshal(body, &txJson)
 	if nil != err {
@@ -379,9 +371,36 @@ func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, no
 
 	tx := txJson.ToTransaction()
 	tx.RequestId = nonce
-	clientConn.logger.Debugf("Rcv event: %s from client.Tx info:%s", event, tx.ToTxJson().ToString())
+	clientConn.logger.Debugf("Rcv event: %s from client.Tx info:%s", notify.ClientTransactionRead, tx.ToTxJson().ToString())
 	msg := notify.ClientTransactionMessage{Tx: tx, UserId: userId, Nonce: nonce}
-	notify.BUS.Publish(event, &msg)
+	notify.BUS.Publish(notify.ClientTransactionRead, &msg)
+}
+
+func (clientConn *ClientConn) handleJSONClientMessage(body []byte, userId string, nonce uint64) {
+	if nil == body || 0 == len(body) {
+		clientConn.logger.Errorf("fail to get body from jsonrpcConn, empty body")
+		return
+	}
+
+	message := notify.ETHRPCMessage{}
+	err := json.Unmarshal(body, &message)
+	if err == nil {
+		clientConn.logger.Debugf("get body from jsonrpcConn, bodyHex: %s, publishing", string(body))
+		message.SessionId = userId
+		message.RequestId = nonce
+		notify.BUS.Publish(notify.ClientETHRPC, &message)
+	} else {
+		message := notify.ETHRPCBatchMessage{}
+		err := json.Unmarshal(body, &message)
+		if err == nil {
+			message.SessionId = userId
+			message.RequestId = nonce
+			clientConn.logger.Debugf("get body from jsonrpcConn, bodyHex: %s, publishing", string(body))
+			notify.BUS.Publish(notify.ClientETHRPC, &message)
+		} else {
+			clientConn.logger.Errorf("fail to get body from jsonrpcConn, bodyHex: %s,err:%s", string(body), err.Error())
+		}
+	}
 }
 
 func (clientConn *ClientConn) Notify(isUniCast bool, gameId string, userId string, msg string) {

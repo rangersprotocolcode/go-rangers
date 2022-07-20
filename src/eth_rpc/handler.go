@@ -33,7 +33,7 @@ func InitEthMsgHandler() {
 	logger = log.GetLoggerByIndex(log.ETHRPCLogConfig, index)
 
 	handler.registerAPI(&ethAPIService{})
-	//notify.BUS.Subscribe(notify.ETHRPC, handler.process)
+	notify.BUS.Subscribe(notify.ClientETHRPC, handler.process)
 }
 
 func (handler ethMsgHandler) process(message notify.Message) {
@@ -46,7 +46,7 @@ func (handler ethMsgHandler) process(message notify.Message) {
 			logger.Debugf("marshal err:%v", err)
 		}
 		logger.Debugf("Response:%s,socketRequestId:%v,sessionId:%v", string(responseJson), singleMessage.RequestId, singleMessage.SessionId)
-		network.GetNetInstance().SendToJSONRPC(string(responseJson), singleMessage.SessionId, singleMessage.RequestId)
+		network.GetNetInstance().SendToJSONRPC(responseJson, singleMessage.SessionId, singleMessage.RequestId)
 		return
 	}
 
@@ -56,7 +56,7 @@ func (handler ethMsgHandler) process(message notify.Message) {
 		response := handler.processBatchRequest(batchMessage.Message)
 		responseJson, _ := json.Marshal(response)
 		logger.Debugf("Response:%s,socketRequestId:%v,sessionId:%v", string(responseJson), batchMessage.RequestId, batchMessage.SessionId)
-		network.GetNetInstance().SendToJSONRPC(string(responseJson), batchMessage.SessionId, batchMessage.RequestId)
+		network.GetNetInstance().SendToJSONRPC(responseJson, batchMessage.SessionId, batchMessage.RequestId)
 		return
 	}
 
@@ -75,7 +75,7 @@ func (handler ethMsgHandler) processBatchRequest(ethRpcMessage []notify.ETHRPCPi
 	return result
 }
 
-func (handler ethMsgHandler) processSingleRequest(ethRpcMessage notify.ETHRPCPiece) jsonResponse{
+func (handler ethMsgHandler) processSingleRequest(ethRpcMessage notify.ETHRPCPiece) jsonResponse {
 	logger.Debugf("Method:%s,params:%s,nonce:%d,id:%v", ethRpcMessage.Method, ethRpcMessage.Params, ethRpcMessage.Nonce, ethRpcMessage.Id)
 	handlerFunc, arguments, err := handler.parseRequest(ethRpcMessage)
 	var response jsonResponse

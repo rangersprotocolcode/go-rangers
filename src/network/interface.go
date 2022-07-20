@@ -87,13 +87,13 @@ type Network interface {
 
 	Broadcast(msg Message)
 
-	SendToJSONRPC(msg string, sessionId, requestId uint64)
+	SendToJSONRPC(msg []byte, sessionId string, requestId uint64)
 
 	SendToClientReader(id string, msg []byte, nonce uint64)
 
 	SendToClientWriter(id string, msg []byte, nonce uint64)
 
-	Init(logger log.Logger, gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler)
+	Init(logger log.Logger, gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler, isSending bool)
 
 	JoinGroupNet(groupId string)
 

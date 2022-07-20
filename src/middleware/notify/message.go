@@ -257,7 +257,7 @@ type ETHRPCMessage struct {
 	Message ETHRPCPiece `json:"jsonrpc"`
 
 	RequestId uint64 `json:"request_id"`
-	SessionId uint64 `json:"session_id"`
+	SessionId string `json:"session_id"`
 }
 
 func (m *ETHRPCMessage) GetRaw() []byte {
@@ -271,7 +271,7 @@ type ETHRPCBatchMessage struct {
 	Message []ETHRPCPiece `json:"jsonrpc"`
 
 	RequestId uint64 `json:"request_id"`
-	SessionId uint64 `json:"session_id"`
+	SessionId string `json:"session_id"`
 }
 
 func (m *ETHRPCBatchMessage) GetRaw() []byte {
