@@ -308,7 +308,6 @@ var (
 
 type ClientConn struct {
 	baseConn
-	event string
 
 	notifyNonce uint64
 	nonceLock   sync.Mutex

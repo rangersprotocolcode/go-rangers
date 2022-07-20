@@ -96,7 +96,7 @@ func (gx *GX) Run() {
 	gateAddrPoint := mineCmd.Flag("gateaddr", "the gate addr").String()
 	outerGateAddrPoint := mineCmd.Flag("outergateaddr", "the gate addr").String()
 	dbDSNPoint := mineCmd.Flag("mysql", "the db addr").String()
-	dbDSNLogPoint := mineCmd.Flag("mysqlLog", "the logdb addr").String()
+	dbDSNLogPoint := mineCmd.Flag("mysqllog", "the logdb addr").String()
 
 	command, err := app.Parse(os.Args[1:])
 	if err != nil {
