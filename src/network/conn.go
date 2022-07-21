@@ -379,11 +379,6 @@ func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, no
 }
 
 func (clientConn *ClientConn) handleJSONClientMessage(body []byte, userId string, nonce uint64) {
-	if nil == body || 0 == len(body) {
-		clientConn.logger.Errorf("fail to get body from jsonrpcConn, empty body")
-		return
-	}
-
 	message := notify.ETHRPCMessage{}
 	err := json.Unmarshal(body, &message.Message)
 	if err == nil {
@@ -403,6 +398,12 @@ func (clientConn *ClientConn) handleJSONClientMessage(body []byte, userId string
 		notify.BUS.Publish(notify.ClientETHRPC, &messageBatch)
 		return
 	}
+
+	// for error response
+	wrong := notify.ETHRPCWrongMessage{}
+	wrong.Sid = userId
+	wrong.Rid = nonce
+	notify.BUS.Publish(notify.ClientETHRPC, &wrong)
 
 	clientConn.logger.Errorf("fail to get body from jsonrpcConn, bodyHex: %s,err:%s", string(body), err.Error())
 }

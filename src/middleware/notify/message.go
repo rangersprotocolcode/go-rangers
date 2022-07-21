@@ -253,6 +253,19 @@ func (m *NonceNotifyMessage) GetData() interface{} {
 	return m
 }
 
+type ETHRPCWrongMessage struct {
+	Rid uint64
+	Sid string
+}
+
+func (m *ETHRPCWrongMessage) GetRaw() []byte {
+	return nil
+}
+func (m *ETHRPCWrongMessage) GetData() interface{} {
+	return m
+}
+
+
 type ETHRPCMessage struct {
 	Message ETHRPCPiece `json:"jsonrpc"`
 

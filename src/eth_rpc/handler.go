@@ -24,6 +24,7 @@ type execFunc struct {
 var handler ethMsgHandler
 var logger log.Logger
 var nilJson, _ = json.Marshal(nil)
+var wrongData = &invalidParamsError{"wrong json data"}
 
 type ethMsgHandler struct {
 	service map[string]*execFunc
@@ -43,6 +44,15 @@ func GetEthMsgHandler() ethMsgHandler {
 }
 
 func (handler ethMsgHandler) process(message notify.Message) {
+	wrong, isWrong := message.GetData().(*notify.ETHRPCWrongMessage)
+	if isWrong {
+		logger.Debugf("Rcv wrong eth prc message.requestId: %d,session id: %s", wrong.Rid, wrong.Sid)
+		response := makeResponse(nil, wrongData, 0)
+		responseJson, _ := json.Marshal(response)
+		network.GetNetInstance().SendToJSONRPC(responseJson, wrong.Sid, wrong.Rid)
+		return
+	}
+
 	singleMessage, single := message.GetData().(*notify.ETHRPCMessage)
 	if single {
 		logger.Debugf("Rcv single eth prc message.requestId: %d,session id: %s", singleMessage.RequestId, singleMessage.SessionId)
