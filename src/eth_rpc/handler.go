@@ -12,6 +12,7 @@ import (
 )
 
 const sendRawTransactionMethod = "eth_sendRawTransaction"
+const sendTransactionMethod = "eth_sendTransaction"
 
 type execFunc struct {
 	receiver reflect.Value  // receiver of method
@@ -22,6 +23,7 @@ type execFunc struct {
 
 var handler ethMsgHandler
 var logger log.Logger
+var nilJson, _ = json.Marshal(nil)
 
 type ethMsgHandler struct {
 	service map[string]*execFunc
@@ -36,11 +38,15 @@ func InitEthMsgHandler() {
 	notify.BUS.Subscribe(notify.ClientETHRPC, handler.process)
 }
 
+func GetEthMsgHandler() ethMsgHandler {
+	return handler
+}
+
 func (handler ethMsgHandler) process(message notify.Message) {
 	singleMessage, single := message.GetData().(*notify.ETHRPCMessage)
 	if single {
-		logger.Debugf("Rcv single eth prc message.requestId: %d, session id: %s", singleMessage.RequestId, singleMessage.SessionId)
-		response := handler.processSingleRequest(singleMessage.Message)
+		logger.Debugf("Rcv single eth prc message.requestId: %d,session id: %s", singleMessage.RequestId, singleMessage.SessionId)
+		response := handler.ProcessSingleRequest(singleMessage.Message)
 		responseJson, err := json.Marshal(response)
 		if err != nil {
 			logger.Debugf("marshal err:%v", err)
@@ -52,30 +58,29 @@ func (handler ethMsgHandler) process(message notify.Message) {
 
 	batchMessage, batch := message.GetData().(*notify.ETHRPCBatchMessage)
 	if batch {
-		logger.Debugf("Rcv batch eth prc message.requestId: %d, session id: %s", batchMessage.RequestId, batchMessage.SessionId)
-		response := handler.processBatchRequest(batchMessage.Message)
+		logger.Debugf("Rcv batch eth prc message.requestId:%d,session id:%d", batchMessage.RequestId, batchMessage.SessionId)
+		response := handler.ProcessBatchRequest(batchMessage.Message)
 		responseJson, _ := json.Marshal(response)
 		logger.Debugf("Response:%s,socketRequestId:%v,sessionId:%v", string(responseJson), batchMessage.RequestId, batchMessage.SessionId)
 		network.GetNetInstance().SendToJSONRPC(responseJson, batchMessage.SessionId, batchMessage.RequestId)
 		return
 	}
-
 }
 
-func (handler ethMsgHandler) processBatchRequest(ethRpcMessage []notify.ETHRPCPiece) []jsonResponse {
+func (handler ethMsgHandler) ProcessBatchRequest(ethRpcMessage []notify.ETHRPCPiece) []jsonResponse {
 	result := make([]jsonResponse, 0)
 	if ethRpcMessage == nil {
 		return result
 	}
 
 	for _, msg := range ethRpcMessage {
-		response := handler.processSingleRequest(msg)
+		response := handler.ProcessSingleRequest(msg)
 		result = append(result, response)
 	}
 	return result
 }
 
-func (handler ethMsgHandler) processSingleRequest(ethRpcMessage notify.ETHRPCPiece) jsonResponse {
+func (handler ethMsgHandler) ProcessSingleRequest(ethRpcMessage notify.ETHRPCPiece) jsonResponse {
 	logger.Debugf("Method:%s,params:%s,nonce:%d,id:%v", ethRpcMessage.Method, ethRpcMessage.Params, ethRpcMessage.Nonce, ethRpcMessage.Id)
 	handlerFunc, arguments, err := handler.parseRequest(ethRpcMessage)
 	var response jsonResponse
@@ -162,6 +167,9 @@ func (handler ethMsgHandler) parseRequest(ethRpcMessage notify.ETHRPCPiece) (han
 		return nil, nil, &methodNotFoundError{ethRpcMessage.Method}
 	}
 
+	if ethRpcMessage.Params == nil || bytes.Equal(ethRpcMessage.Params, nilJson) {
+		ethRpcMessage.Params, _ = json.Marshal(make([]interface{}, 0))
+	}
 	args, err := parseRequestArguments(handlerFunc.argTypes, ethRpcMessage.Params)
 	if err != nil {
 		return handlerFunc, nil, &invalidParamsError{err.Error()}
@@ -190,10 +198,10 @@ func (handler ethMsgHandler) exec(handlerFunc *execFunc, arguments []reflect.Val
 	if handlerFunc.errPos >= 0 { // test if method returned an error
 		if !reply[handlerFunc.errPos].IsNil() {
 			e := reply[handlerFunc.errPos].Interface().(error)
-			logger.Debugf("after exec.error:%v", e)
-			return &callbackError{e.Error()}, nil
+			return nil, &callbackError{e.Error()}
 		}
 	}
+
 	return reply[0].Interface(), nil
 }
 
