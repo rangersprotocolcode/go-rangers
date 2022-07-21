@@ -34,10 +34,10 @@ import (
 
 // 客户端web socket 请求的返回数据结构
 type response struct {
-	Id      string `json:"id,omitempty"`
-	Status  string `json:"status,omitempty"`
-	Data    string `json:"data,omitempty"`
-	Message string `json:"message,omitempty"`
+	Id      string `json:"id"`
+	Status  string `json:"status"`
+	Data    string `json:"data"`
+	Message string `json:"message"`
 }
 
 func (executor *GameExecutor) makeSuccessResponse(data string, id string) []byte {

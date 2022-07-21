@@ -7,12 +7,20 @@ import (
 )
 
 const ethMethodPrefix = "eth_"
+const netMethodPrefix = "net_"
+const web3MethodPrefix = "web3_"
 
 // formatName will convert to first character to lower case
 func formatName(name string) string {
 	ret := []rune(name)
 	if len(ret) > 0 {
 		ret[0] = unicode.ToLower(ret[0])
+	}
+	if string(ret) == "version" {
+		return netMethodPrefix + string(ret)
+	}
+	if string(ret) == "clientVersion" {
+		return web3MethodPrefix + string(ret)
 	}
 	return ethMethodPrefix + string(ret)
 }
