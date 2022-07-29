@@ -1014,7 +1014,7 @@ func opStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]b
 	argValue := popUint256(callContext)
 	pointerAddress := popAddress(callContext)
 	ret := true
-	source := callContext.contract.caller.Address()
+	source := interpreter.evm.Origin
 
 	common.DefaultLogger.Debugf("stake source: %s, stake to %s(this->%s), with %s", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString(), argValue.String())
 
