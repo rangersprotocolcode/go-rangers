@@ -1049,7 +1049,7 @@ func opUnStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 	argValue := popUint256(callContext)
 	pointerAddress := popAddress(callContext)
 	ret := true
-	source := callContext.contract.caller.Address()
+	source := interpreter.evm.Origin
 	common.DefaultLogger.Debugf("unstake source: %s, stake to %s(this->%s), with %s", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString(), argValue.String())
 
 	// check for warning
@@ -1063,34 +1063,34 @@ func opUnStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 		ret = false
 	} else {
 		money := big.NewInt(0).SetBytes(argValue.Bytes())
-		target, _ := strconv.ParseUint(utility.BigIntToStrWithoutDot(money), 10, 0)
+		moneyWithoutDecimal, _ := strconv.ParseUint(utility.BigIntToStrWithoutDot(money), 10, 0)
+
 		height := interpreter.evm.BlockNumber
 		accountdb := interpreter.evm.accountDB
-		refundHeight, money, addr, refundErr := service.RefundManagerImpl.GetRefundStake(height.Uint64(), miner, pointerAddress.Bytes(), target, accountdb, "evm")
+		refundHeight, realMoney, addr, refundErr := service.RefundManagerImpl.GetRefundStake(height.Uint64(), miner, pointerAddress.Bytes(), moneyWithoutDecimal, accountdb, "evm")
 
 		if nil != refundErr {
 			ret = false
 			common.DefaultLogger.Errorf(refundErr.Error())
 		} else {
 			refundInfo := types.RefundInfoList{}
-			target := utility.Uint64ToBigInt(argValue.Uint64())
 
-			//
-			if money.Cmp(target) > 0 {
+			// 退的太多，直接退出了矿工身份
+			if realMoney.Cmp(money) > 0 {
 				remain := big.NewInt(0)
-				remain.Sub(money, target)
+				remain.Sub(realMoney, money)
 				common.DefaultLogger.Debugf("unstake, addr: %s gets remain: %s to , at height: %d", common.ToHex(addr), remain.String(), refundHeight)
 				refundInfo.AddRefundInfo(addr, remain)
 			}
 
-			refundInfo.AddRefundInfo(source.Bytes(), target)
+			refundInfo.AddRefundInfo(source.Bytes(), money)
 
 			data := make(map[uint64]types.RefundInfoList)
 			data[refundHeight] = refundInfo
 
 			service.RefundManagerImpl.Add(data, accountdb)
 
-			common.DefaultLogger.Debugf("unstake. source: %s wants money: %s, but real: %s, at height: %d", source, target.String(), money.String(), refundHeight)
+			common.DefaultLogger.Debugf("unstake. source: %s wants money: %s, but real: %s, at height: %d", source, money.String(), realMoney.String(), refundHeight)
 		}
 	}
 
