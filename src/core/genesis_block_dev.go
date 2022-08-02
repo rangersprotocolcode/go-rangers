@@ -71,7 +71,7 @@ func genDevGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, g
 	block.Header = &types.BlockHeader{
 		Height:       0,
 		ExtraData:    common.Sha256([]byte("Rangers Protocol")),
-		CurTime:      time.Date(2022, 07, 14, 0, 0, 0, 0, time.UTC),
+		CurTime:      time.Date(2022, 8, 02, 0, 0, 0, 0, time.UTC),
 		ProveValue:   pv,
 		TotalQN:      0,
 		Transactions: make([]common.Hashes, 0), //important!!
