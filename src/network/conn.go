@@ -223,7 +223,7 @@ func (base *baseConn) closeConn() {
 
 // 发送消息
 func (base *baseConn) send(method []byte, target uint64, msg []byte, nonce uint64) {
-	header := wsHeader{method: method, nonce: nonce, sourceId: target}
+	header := wsHeader{method: method, nonce: nonce, targetId: target}
 
 	if base.isSend != nil && !base.isSend(method, target, msg, nonce) {
 		base.logger.Errorf("%s did not accept send. wsHeader: %v, length: %d", base.path, header, len(msg))
@@ -271,8 +271,8 @@ func (base *baseConn) unloadMsg(m []byte) (header wsHeader, body []byte) {
 func (base *baseConn) headerToBytes(h wsHeader) []byte {
 	byteArray := make([]byte, protocolHeaderSize)
 	copy(byteArray[0:4], h.method)
-	//copy(byteArray[4:12], utility.UInt64ToByte(h.sourceId))
-	copy(byteArray[12:20], utility.UInt64ToByte(h.sourceId))
+	//copy(byteArray[4:12], utility.UInt64ToByte(h.targetId))
+	copy(byteArray[12:20], utility.UInt64ToByte(h.targetId))
 	copy(byteArray[20:28], utility.UInt64ToByte(h.nonce))
 	return byteArray
 }
