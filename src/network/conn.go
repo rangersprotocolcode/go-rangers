@@ -272,6 +272,7 @@ func (base *baseConn) headerToBytes(h wsHeader) []byte {
 	byteArray := make([]byte, protocolHeaderSize)
 	copy(byteArray[0:4], h.method)
 	copy(byteArray[4:12], utility.UInt64ToByte(h.sourceId))
+	copy(byteArray[12:20], utility.UInt64ToByte(h.sourceId))
 	copy(byteArray[20:28], utility.UInt64ToByte(h.nonce))
 	return byteArray
 }
