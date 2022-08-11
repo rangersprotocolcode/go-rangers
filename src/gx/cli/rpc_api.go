@@ -157,19 +157,16 @@ func (api *GtasAPI) GetExecutedTransaction(hash string) (*Result, error) {
 //	return blockDetail
 //}
 
-func (api *GtasAPI) GetBlockByHeight(height uint64) (*Result, error) {
+func (api *GtasAPI) GetBlockByHeight(height uint64, isDetail bool) (*Result, error) {
 	b := core.GetBlockChain().QueryBlock(height)
 	if b == nil {
 		return failResult("height not exists")
 	}
-	preBlock := core.GetBlockChain().QueryBlockByHash(b.Header.PreHash)
-	block := convertBlockHeader(b.Header)
-	if preBlock != nil {
-		block.Qn = b.Header.TotalQN - preBlock.Header.TotalQN
-	} else {
-		block.Qn = b.Header.TotalQN
+
+	if isDetail {
+		return successResult(core.ConvertBlockWithTxDetail(b))
 	}
-	return successResult(block)
+	return successResult(core.ConvertBlockByHeader(b.Header))
 }
 
 func (api *GtasAPI) GetBlockByHash(hash string) (*Result, error) {
@@ -347,14 +344,14 @@ func (api *GtasAPI) NodeInfo() (*Result, error) {
 		heavyInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeProposer, service.AccountDBManagerInstance.GetLatestStateDB())
 		if heavyInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(heavyInfo))
-			t = "提案节点"
+			t = "Proposer"
 			balance = walletManager.getBalance(heavyInfo.Account)
 		}
 
 		lightInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeValidator, service.AccountDBManagerInstance.GetLatestStateDB())
 		if lightInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(lightInfo))
-			t = " 验证节点"
+			t = "Validator"
 			balance = walletManager.getBalance(lightInfo.Account)
 		}
 
@@ -447,14 +444,14 @@ func (api *GtasAPI) Dashboard() (*Result, error) {
 	groupHeight := core.GetGroupChain().Count()
 	workNum := len(consensus.Proc.GetCastQualifiedGroups(blockHeight))
 	nodeResult, _ := api.NodeInfo()
-	_, addr, self := walletManager.newWalletByPrivateKey(api.privateKey)
+	addr, selfMinerInfo := getMinerInfo(api.privateKey)
 
 	dash := &Dashboard{
 		BlockHeight: blockHeight,
 		GroupHeight: groupHeight,
 		WorkGNum:    workNum,
 		NodeInfo:    nodeResult.Data.(*NodeInfo),
-		Miner:       self,
+		Miner:       string(selfMinerInfo.GetMinerApplyInfo()),
 		Addr:        addr,
 	}
 	return successResult(dash)

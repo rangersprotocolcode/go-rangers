@@ -76,8 +76,9 @@ func (ws *wallets) newWalletByPrivateKey(privateKey string) (privKeyStr, walletA
 	privKeyStr, walletAddress = pub.GetHexString(), address.GetHexString()
 
 	selfMinerInfo := model.NewSelfMinerInfo(*priv)
-
 	var miner types.Miner
+	_, miner = getMinerInfo(privateKey)
+
 	miner.Id = selfMinerInfo.ID.Serialize()
 	miner.PublicKey = selfMinerInfo.PubKey.Serialize()
 	miner.VrfPublicKey = selfMinerInfo.VrfPK
@@ -105,4 +106,18 @@ func newWallets() wallets {
 		log.Println(err)
 	}
 	return ws
+}
+
+func getMinerInfo(privateKey string) (walletAddress string, miner types.Miner) {
+	priv := common.HexStringToSecKey(privateKey)
+	pub := priv.GetPubKey()
+	address := pub.GetAddress()
+	walletAddress = address.GetHexString()
+
+	selfMinerInfo := model.NewSelfMinerInfo(*priv)
+
+	miner.Id = selfMinerInfo.ID.Serialize()
+	miner.PublicKey = selfMinerInfo.PubKey.Serialize()
+	miner.VrfPublicKey = selfMinerInfo.VrfPK
+	return
 }

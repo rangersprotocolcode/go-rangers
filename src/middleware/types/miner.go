@@ -73,3 +73,13 @@ func (miner *Miner) GetMinerInfo() []byte {
 	resultBytes, _ := json.Marshal(result)
 	return resultBytes
 }
+
+func (miner *Miner) GetMinerApplyInfo() []byte {
+	result := make(map[string]interface{})
+	result["id"] = miner.Id
+	result["publicKey"] = miner.PublicKey
+	result["vrfPublicKey"] = miner.VrfPublicKey
+
+	resultBytes, _ := json.Marshal(result)
+	return resultBytes
+}

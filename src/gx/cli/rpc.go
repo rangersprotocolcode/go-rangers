@@ -18,15 +18,37 @@ package cli
 
 import (
 	"com.tuntun.rocket/node/src/gx/rpc"
+	"io/fs"
 	"net"
 	"net/http"
 
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
+	"embed"
 	"fmt"
 	"strings"
 	"sync"
 )
+
+//go:embed dist
+var frontResourceFS embed.FS
+
+//startResourceLoader load front static resources
+func startResourceLoader(port uint) error {
+	endpoint := fmt.Sprintf("0.0.0.0:%d", port)
+
+	mux := http.NewServeMux()
+	fsys, _ := fs.Sub(frontResourceFS, "dist")
+	fileServer := http.FileServer(http.FS(fsys))
+	mux.Handle("/", fileServer)
+	mux.Handle("/index", http.StripPrefix("/index", fileServer))
+	mux.Handle("/minerInfo", http.StripPrefix("/minerInfo", fileServer))
+	mux.Handle("/blockDetail", http.StripPrefix("/blockDetail", fileServer))
+	go http.ListenAndServe(endpoint, mux)
+
+	common.DefaultLogger.Infof("Self resource loader serving on http://%s", endpoint)
+	return nil
+}
 
 // startHTTP initializes and starts the HTTP RPC endpoint.
 func startHTTP(endpoint string, apis []rpc.API, modules []string, cors []string, vhosts []string) error {
@@ -73,7 +95,7 @@ func startHttps(httpPort uint, privateKey string) error {
 	}
 	server := &http.Server{Handler: NewSelfServer(privateKey)}
 	go server.Serve(listener)
-	common.DefaultLogger.Infof("Self Http serving on %s for dev\n", endpoint)
+	common.DefaultLogger.Infof("Self Https serving on http://%s", endpoint)
 
 	return nil
 }
@@ -83,6 +105,11 @@ var GtasAPIImpl *GtasAPI
 // StartRPC RPC 功能
 func StartRPC(host string, port uint, privateKey string) error {
 	var err error
+	err = startResourceLoader(port)
+	if err != nil {
+		return err
+	}
+
 	GtasAPIImpl = &GtasAPI{}
 	GtasAPIImpl.privateKey = privateKey
 	GtasAPIImpl.logger = log.GetLoggerByIndex(log.RPCLogConfig, common.GlobalConf.GetString("instance", "index", ""))
@@ -92,18 +119,16 @@ func StartRPC(host string, port uint, privateKey string) error {
 		{Namespace: "Rocket", Version: "1", Service: GtasAPIImpl, Public: true},
 		{Namespace: "Rangers", Version: "1", Service: GtasAPIImpl, Public: true},
 	}
-	for plus := 0; plus < 40; plus++ {
-		err = startHTTP(fmt.Sprintf("%s:%d", host, port+uint(plus)), apis, []string{}, []string{}, []string{})
+
+	for plus := 2; plus < 40; plus++ {
+		endpoint := fmt.Sprintf("%s:%d", host, port+uint(plus))
+		err = startHTTP(endpoint, apis, []string{}, []string{}, []string{})
 		if err == nil {
-			if nil != common.DefaultLogger {
-				common.DefaultLogger.Infof("RPC serving on http://%s:%d\n", host, port+uint(plus))
-			}
+			common.DefaultLogger.Infof("RPC serving on http://%s", endpoint)
 			break
 		}
 		if strings.Contains(err.Error(), "address already in use") {
-			if nil != common.DefaultLogger {
-				common.DefaultLogger.Infof("address: %s:%d already in use\n", host, port+uint(plus))
-			}
+			common.DefaultLogger.Infof("address: %s already in use", endpoint)
 			continue
 		}
 		return err
