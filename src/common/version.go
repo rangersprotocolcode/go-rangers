@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	Version           = "1.0.8"
+	Version           = "1.0.9"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
