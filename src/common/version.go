@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	Version           = "1.0.8"
+	Version           = "1.0.9"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -50,6 +50,7 @@ var (
 		Proposal008Block: 16082000,
 		Proposal009Block: 16733000,
 		Proposal010Block: math.MaxUint64, //mainnet never use proporal010
+		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 	}
 
 	robinChainConfig = ChainConfig{
