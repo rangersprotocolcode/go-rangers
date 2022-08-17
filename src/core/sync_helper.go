@@ -61,7 +61,6 @@ func (p *syncProcessor) GetAvailableGroupsByMinerId(height uint64, minerId []byt
 	}
 
 	return group
-	return nil
 }
 
 func (chain *groupChain) availableGroupsAtFromFork(h uint64) []*types.Group {

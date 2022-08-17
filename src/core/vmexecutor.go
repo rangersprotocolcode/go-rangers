@@ -123,16 +123,22 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height, msg, transaction.Source, "")
 		logs := this.context["logs"]
 		if logs != nil {
+			delete(this.context, "logs")
 			receipt.Logs = logs.([]*types.Log)
 		}
 		contractAddress := this.context["contractAddress"]
 		if contractAddress != nil {
+			delete(this.context, "contractAddress")
 			receipt.ContractAddress = contractAddress.(common.Address)
 		}
 		receipt.TxHash = transaction.Hash
 		receipts = append(receipts, receipt)
 	}
 
+	//only for robin
+	if this.block.Header.Height == common.LocalChainConfig.Proposal010Block {
+		removeUnusedValidator(this.accountdb)
+	}
 	this.after()
 
 	state := this.accountdb.IntermediateRoot(true)
@@ -168,4 +174,27 @@ func (executor *VMExecutor) after() {
 		service.RefundManagerImpl.CheckAndMove(0, executor.accountdb)
 	}
 
+}
+
+func removeUnusedValidator(accountdb *account.AccountDB) {
+	var unusedValidatorList = []string{
+		"0x01820ed1304f0484e252ddac1ab5a1e6e16e5ebf89f022c092e8decd69e088e6",
+		"0x18b97514b118dda8d8a30f16fc6de49ebeac849359e6ffd17b5299a82112eedd",
+		"0x008825f3184b9f6f0935830c7738d1da3f9dc2a055f99c8c06176f36f5951686",
+		"0xb0951738af6ad10c10a2406eb46c4c3bd1df795eac566fb6cf9cecc15dfb388a",
+		"0xaebb5bc7af7f6522f164b74f21d901faef12a15f8accd5f7bb3417107bdaa295",
+		"0xddb0792bdf0bbd75ba85ab4343a38392b539c7e74c1b17de43e8768328cc31f4",
+		"0xfae2464767a076614cff1c854504587d8a186fd1332eb28ab4146a89edad0dca",
+		"0xe14a2ee33f83aa8af7f2cafe31bca30ab3b61ef00bda6931f03310e11f5e6acd",
+		"0x1d5a3badc41060d4928e5117518d8d9d5fdbbc535e4660ad4b37b3593e717634",
+	}
+
+	for _, minerIdStr := range unusedValidatorList {
+		minerId := common.FromHex(minerIdStr)
+		miner := service.MinerManagerImpl.GetMinerById(minerId, common.MinerTypeValidator, accountdb)
+		if miner == nil {
+			continue
+		}
+		service.MinerManagerImpl.RemoveMiner(minerId, miner.Account[:], miner.Type, accountdb, 0)
+	}
 }

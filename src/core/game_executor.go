@@ -34,10 +34,10 @@ import (
 
 // 客户端web socket 请求的返回数据结构
 type response struct {
-	Id      string `json:"id,omitempty"`
-	Status  string `json:"status,omitempty"`
-	Data    string `json:"data,omitempty"`
-	Message string `json:"message,omitempty"`
+	Id      string `json:"id"`
+	Status  string `json:"status"`
+	Data    string `json:"data"`
+	Message string `json:"message"`
 }
 
 func (executor *GameExecutor) makeSuccessResponse(data string, id string) []byte {
@@ -84,7 +84,7 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor.writeChan = make(chan notify.ClientTransactionMessage, maxWriteSize)
 	gameExecutor.cleaner = time.NewTicker(time.Minute * 10)
 
-	//notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
+	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
 	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.write)
 
 	go gameExecutor.loop()
@@ -98,12 +98,6 @@ func (executor *GameExecutor) read(msg notify.Message) {
 	}
 	executor.logger.Debugf("rcv message: %v", message)
 	txRaw := message.Tx
-	//if err := service.GetTransactionPool().VerifyTransactionHash(&txRaw); err != nil {
-	//	txLogger.Errorf("Verify tx hash error!Hash:%s,error:%s", txRaw.Hash.String(), err.Error())
-	//	response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
-	//	go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.Nonce)
-	//	return
-	//}
 
 	var result string
 	sourceString := txRaw.Source
@@ -111,12 +105,11 @@ func (executor *GameExecutor) read(msg notify.Message) {
 	//gameId := txRaw.Target
 	switch txRaw.Type {
 
-	// 查询账户余额
 	case types.TransactionTypeOperatorBalance:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
-		result = service.GetBalance(source, accountDB)
+		result = service.GetRawBalance(source, accountDB)
 		break
 		//查询network ID
 	case types.TransactionTypeGetNetworkId:
@@ -151,9 +144,9 @@ func (executor *GameExecutor) read(msg notify.Message) {
 		break
 		//查询收据
 	case types.TransactionTypeGetReceipt:
-		//param := make(map[string]string, 0)
-		//json.Unmarshal([]byte(txRaw.Data), &param)
-		//result = service.GetReceipt(common.HexToHash(param["txHash"]))
+		param := make(map[string]string, 0)
+		json.Unmarshal([]byte(txRaw.Data), &param)
+		result = service.GetReceipt(common.HexToHash(param["txHash"]))
 		break
 		//查询交易数量
 	case types.TransactionTypeGetTxCount:
@@ -182,15 +175,33 @@ func (executor *GameExecutor) read(msg notify.Message) {
 		result = service.GetCode(param["address"], accountDB)
 		break
 
+	case types.TransactionTypeGetPastLogs:
+		query := types.FilterCriteria{}
+		err := json.Unmarshal([]byte(txRaw.Data), &query)
+		if err != nil {
+			executor.logger.Debugf("FilterCriteria unmarshal error", err)
+			break
+		}
+		executor.logger.Debugf("rcv TransactionTypeGetPastLogs:%d,%d,%v,%v", query.FromBlock, query.ToBlock, query.Addresses, query.Topics)
+		result = getPastLogs(query)
+		break
+		//call vm
+	case types.TransactionTypeCallVM:
+		data := callVMData{}
+		err := json.Unmarshal([]byte(txRaw.Data), &data)
+		if err != nil {
+			executor.logger.Debugf("callVMData unmarshal error", err)
+			break
+		}
+		executor.logger.Debugf("rcv TransactionTypeCallVM:%s,%s,%s,%s,%v,%s,%v,%v", data.Height, data.Hash, data.From, data.To, data.Value, data.Data, data.Gas, data.GasPrice)
+		result = executor.callVM(data)
+		break
 	}
 
 	responseId := txRaw.SocketRequestId
 
 	//reply to the client
-	if txRaw.Type != types.TransactionTypeGetReceipt {
-		go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
-	}
-	return
+	go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
 }
 
 func (executor *GameExecutor) write(msg notify.Message) {

@@ -47,11 +47,14 @@ const (
 
 	TransactionGotAddSucc = "transaction_got_add_succ"
 
-	ClientTransaction = "client_transaction"
-
-	ClientTransactionRead = "client_transaction_read"
-
 	AcceptGroup = "accept_group"
 
-	ETHRPC = "eth_rpc"
+	// 客户端的jsonrpc http请求，从网关过来
+	ClientETHRPC = "eth_rpc"
+
+	// 客户端的writer ws请求，从tx的数据库过来
+	ClientTransaction = "client_transaction"
+
+	// 客户端的reader ws请求，从网关过来
+	ClientTransactionRead = "client_transaction_read"
 )

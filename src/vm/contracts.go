@@ -927,28 +927,3 @@ func (c *bls12381MapG2) Run(input []byte) ([]byte, error) {
 	// Encode the G2 point to 256 bytes
 	return g.EncodePoint(r), nil
 }
-
-func GetArgs(input []byte, index int, size int) []byte {
-	offset := new(big.Int).SetBytes(input[:32*(index+1)]).Uint64()
-	if offset >= 32 && offset <= uint64(len(input)-32) && offset%32 == 0 && size == 0 {
-		length := new(big.Int).SetBytes(input[offset : offset+32])
-		offset += 32
-		if (offset + length.Uint64()) <= uint64(len(input)) {
-			v := getData(input, offset, length.Uint64())
-			return v
-		}
-	} else if size == 32 {
-		return getData(input, uint64(32*index), 32)
-	}
-	return nil
-}
-
-func ReturnBytes(v []byte) []byte {
-	size := len(v)
-	ret := make([]byte, 64+32+(size+31)/32*32)
-	binary.BigEndian.PutUint64(ret[32-8:32], uint64(64))
-	binary.BigEndian.PutUint64(ret[64-8:64], uint64(len(ret)))
-	binary.BigEndian.PutUint64(ret[96-8:96], uint64(size))
-	copy(ret[96:], v)
-	return ret
-}

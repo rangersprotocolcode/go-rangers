@@ -18,7 +18,6 @@ package network
 
 import (
 	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/middleware/notify"
 )
 
 var instance server
@@ -29,21 +28,32 @@ type server struct {
 
 	// 客户端消息
 	reader ClientConn
-	writer ClientConn
 
-	jsonrpc JSONRPCConn
+	isSending bool
 }
 
-func (s *server) Init(logger log.Logger, gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler) {
+func (s *server) Init(logger log.Logger, gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler, isSending bool) {
 	s.worker.Init(gateAddr, selfMinerId, consensusHandler, logger)
-
-	s.reader.Init(outerGateAddr, "/srv/reader", notify.ClientTransactionRead, methodCodeClientReader, logger, true)
-	s.writer.Init(outerGateAddr, "/srv/writer", notify.ClientTransaction, methodCodeClientWriter, logger, false)
-	s.jsonrpc.Init(outerGateAddr, logger)
+	s.isSending = isSending
+	if s.isSending {
+		s.reader.Init(outerGateAddr, "/srv/node", logger)
+	}
 }
 
-func (s *server) SendToJSONRPC(msg string, sessionId, requestId uint64) {
-	s.jsonrpc.Send(msg, sessionId, requestId)
+func (s *server) SendToJSONRPC(msg []byte, sessionId string, requestId uint64) {
+	if s.isSending {
+		s.reader.Send(sessionId, methodClientJSONRpc, msg, requestId)
+	}
+}
+
+func (s *server) SendToClientReader(id string, msg []byte, nonce uint64) {
+	if s.isSending {
+		s.reader.Send(id, methodClientReader, msg, nonce)
+	}
+}
+
+func (s *server) SendToClientWriter(id string, msg []byte, nonce uint64) {
+	s.SendToClientReader(id, msg, nonce)
 }
 
 func (s *server) Send(id string, msg Message) {
@@ -56,14 +66,6 @@ func (s *server) SpreadToGroup(groupId string, msg Message) {
 
 func (s *server) Broadcast(msg Message) {
 	s.worker.SendToEveryone(msg)
-}
-
-func (s *server) SendToClientReader(id string, msg []byte, nonce uint64) {
-	s.reader.Send(id, msg, nonce)
-}
-
-func (s *server) SendToClientWriter(id string, msg []byte, nonce uint64) {
-	s.writer.Send(id, msg, nonce)
 }
 
 func (s *server) JoinGroupNet(groupId string) {

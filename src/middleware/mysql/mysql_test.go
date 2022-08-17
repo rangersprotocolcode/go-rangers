@@ -11,7 +11,7 @@ import (
 
 func TestGetTxRaws(t *testing.T) {
 	notify.BUS = notify.NewBus()
-	InitMySql("rpservice_dev:!890rpServiceDev@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai")
+	InitMySql("rpservice_dev:!890rpServiceDev@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai", "")
 	if nil == MysqlDB {
 		t.Errorf("fail to open mysql")
 	}

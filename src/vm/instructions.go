@@ -995,6 +995,10 @@ func pushBool(callContext *callCtx, value bool) {
 	}
 }
 
+func pushUint256(callContext *callCtx, value *uint256.Int) {
+	callContext.stack.push(value)
+}
+
 func pushBytes(callContext *callCtx, offset uint64, bytes []byte) {
 	callContext.memory.Set32(offset, uint256.NewInt().SetUint64(uint64(len(bytes))))
 	callContext.memory.Set(offset+32, uint64(len(bytes)), bytes)
@@ -1010,8 +1014,7 @@ func opStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]b
 	argValue := popUint256(callContext)
 	pointerAddress := popAddress(callContext)
 	ret := true
-	source := callContext.contract.caller.Address()
-
+	source := interpreter.evm.Origin
 	common.DefaultLogger.Debugf("stake source: %s, stake to %s(this->%s), with %s", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString(), argValue.String())
 
 	money := big.NewInt(0).SetBytes(argValue.Bytes())
@@ -1022,14 +1025,14 @@ func opStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]b
 			common.DefaultLogger.Warnf("stake warning. this: %s, pointer: %s", thisAddress.GetHexString(), pointerAddress.GetHexString())
 		}
 
-		miner := service.MinerManagerImpl.GetMinerIdByAccount(pointerAddress.Bytes(), interpreter.evm.accountDB)
+		miner := service.MinerManagerImpl.GetMinerIdByAccount(thisAddress.Bytes(), interpreter.evm.accountDB)
 		if nil == miner {
-			common.DefaultLogger.Warnf("stake error. no miner for address : %s", pointerAddress.GetHexString())
+			common.DefaultLogger.Warnf("stake error. no miner for address : %s", thisAddress.GetHexString())
 			ret = false
 		} else {
 			var msg string
-			ret, msg = service.MinerManagerImpl.AddStake(source, miner, target, interpreter.evm.accountDB)
-			common.DefaultLogger.Infof("stake result: %t, msg: %s", ret, msg)
+			ret, msg = service.MinerManagerImpl.AddStake(thisAddress, miner, target, interpreter.evm.accountDB)
+			common.DefaultLogger.Infof("add stake, stake result: %t, msg: %s, from %s", ret, msg, thisAddress.String())
 		}
 	} else {
 		common.DefaultLogger.Errorf("stake fail to convert money, %s, err: %s", money.String(), err)
@@ -1045,7 +1048,7 @@ func opUnStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 	argValue := popUint256(callContext)
 	pointerAddress := popAddress(callContext)
 	ret := true
-	source := callContext.contract.caller.Address()
+	source := interpreter.evm.Origin
 	common.DefaultLogger.Debugf("unstake source: %s, stake to %s(this->%s), with %s", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString(), argValue.String())
 
 	// check for warning
@@ -1053,43 +1056,65 @@ func opUnStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 		common.DefaultLogger.Warnf("unstack warning. this: %s, pointer: %s", thisAddress.GetHexString(), pointerAddress.GetHexString())
 	}
 
-	miner := service.MinerManagerImpl.GetMinerIdByAccount(pointerAddress.Bytes(), interpreter.evm.accountDB)
+	miner := service.MinerManagerImpl.GetMinerIdByAccount(thisAddress.Bytes(), interpreter.evm.accountDB)
 	if nil == miner {
-		common.DefaultLogger.Warnf("unstack error. no miner for address : %s", pointerAddress.GetHexString())
+		common.DefaultLogger.Warnf("unstack error. no miner for address : %s", thisAddress.GetHexString())
 		ret = false
 	} else {
 		money := big.NewInt(0).SetBytes(argValue.Bytes())
-		target, _ := strconv.ParseUint(utility.BigIntToStrWithoutDot(money), 10, 0)
+		moneyWithoutDecimal, _ := strconv.ParseUint(utility.BigIntToStrWithoutDot(money), 10, 0)
+
 		height := interpreter.evm.BlockNumber
 		accountdb := interpreter.evm.accountDB
-		refundHeight, money, addr, refundErr := service.RefundManagerImpl.GetRefundStake(height.Uint64(), miner, pointerAddress.Bytes(), target, accountdb, "evm")
+		refundHeight, realMoney, addr, refundErr := service.RefundManagerImpl.GetRefundStake(height.Uint64(), miner, thisAddress.Bytes(), moneyWithoutDecimal, accountdb, "evm")
 
 		if nil != refundErr {
 			ret = false
 			common.DefaultLogger.Errorf(refundErr.Error())
 		} else {
 			refundInfo := types.RefundInfoList{}
-			target := utility.Uint64ToBigInt(argValue.Uint64())
 
-			//
-			if money.Cmp(target) > 0 {
+			// 退的太多，直接退出了矿工身份
+			if realMoney.Cmp(money) > 0 {
 				remain := big.NewInt(0)
-				remain.Sub(money, target)
+				remain.Sub(realMoney, money)
 				common.DefaultLogger.Debugf("unstake, addr: %s gets remain: %s to , at height: %d", common.ToHex(addr), remain.String(), refundHeight)
 				refundInfo.AddRefundInfo(addr, remain)
 			}
 
-			refundInfo.AddRefundInfo(source.Bytes(), target)
+			refundInfo.AddRefundInfo(source.Bytes(), money)
 
 			data := make(map[uint64]types.RefundInfoList)
 			data[refundHeight] = refundInfo
 
 			service.RefundManagerImpl.Add(data, accountdb)
 
-			common.DefaultLogger.Debugf("unstake. source: %s wants money: %s, but real: %s, at height: %d", source, target.String(), money.String(), refundHeight)
+			common.DefaultLogger.Debugf("unstake. source: %s wants money: %s, but real: %s, at height: %d", source, money.String(), realMoney.String(), refundHeight)
 		}
 	}
 
 	pushBool(callContext, ret)
+	return nil, nil
+}
+
+func opGetStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	pointerAddress := popAddress(callContext)
+	ret := uint256.NewInt().SetUint64(10)
+
+	minerId := service.MinerManagerImpl.GetMinerIdByAccount(pointerAddress.Bytes(), interpreter.evm.accountDB)
+	if nil != minerId {
+		miner := service.MinerManagerImpl.GetMiner(minerId, interpreter.evm.accountDB)
+		if miner != nil {
+			stake := miner.Stake
+			stakeBigInt, err := utility.StrToBigInt(strconv.FormatUint(stake, 10))
+			if err == nil {
+				ret.SetBytes(stakeBigInt.Bytes())
+			}
+
+		}
+	}
+	common.DefaultLogger.Debugf("getstake: %s, stake to %s", pointerAddress.GetHexString(), ret.String())
+
+	pushUint256(callContext, ret)
 	return nil, nil
 }

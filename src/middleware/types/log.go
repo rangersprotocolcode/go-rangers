@@ -132,3 +132,29 @@ func (l *Log) UnmarshalJSON(input []byte) error {
 	}
 	return nil
 }
+
+// filterLogs creates a slice of logs matching the given criteria.
+func FilterLogsByTopics(logs []*Log, topics [][]common.Hash) []*Log {
+	var ret []*Log
+Logs:
+	for _, log := range logs {
+		// If the to filtered topics is greater than the amount of topics in logs, skip.
+		if len(topics) > len(log.Topics) {
+			continue Logs
+		}
+		for i, sub := range topics {
+			match := len(sub) == 0 // empty rule set == wildcard
+			for _, topic := range sub {
+				if log.Topics[i] == topic {
+					match = true
+					break
+				}
+			}
+			if !match {
+				continue Logs
+			}
+		}
+		ret = append(ret, log)
+	}
+	return ret
+}

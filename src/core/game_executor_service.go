@@ -2,10 +2,15 @@ package core
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware/mysql"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
+	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rocket/node/src/vm"
 	"encoding/json"
+	"fmt"
+	"math/big"
 	"strconv"
 )
 
@@ -22,6 +27,18 @@ type queryBlockData struct {
 	Hash   string `json:"hash,omitempty"`
 
 	ReturnTransactionObjects bool `json:"returnTransactionObjects,omitempty"`
+}
+
+type callVMData struct {
+	Height string `json:"height,omitempty"`
+	Hash   string `json:"hash,omitempty"`
+
+	From     string `json:"from"`
+	To       string `json:"to"`
+	Gas      uint64 `json:"gas"`
+	GasPrice string `json:"gasPrice"`
+	Value    string `json:"value"`
+	Data     string `json:"data"`
 }
 
 func getBlock(height string, hash string, returnTxObjs bool) string {
@@ -82,6 +99,100 @@ func getTransaction(hash common.Hash) string {
 	txDetail := ConvertTransaction(tx)
 	result, _ := json.Marshal(txDetail)
 	return string(result)
+}
+
+func getPastLogs(crit types.FilterCriteria) string {
+	logs := GetLogs(crit)
+	result, _ := json.Marshal(logs)
+	return string(result)
+}
+
+func GetLogs(crit types.FilterCriteria) []*types.Log {
+	var logs []*types.Log
+	if crit.BlockHash != nil {
+		logs = mysql.SelectLogsByHash(*crit.BlockHash, crit.Addresses)
+	} else {
+		var begin, end uint64
+		if crit.FromBlock == nil || crit.FromBlock.Cmp(common.Big0) < 0 || !crit.FromBlock.IsUint64() {
+			begin = GetBlockChain().Height()
+		} else {
+			begin = crit.FromBlock.Uint64()
+		}
+
+		if crit.ToBlock == nil || crit.ToBlock.Cmp(common.Big0) < 0 || !crit.ToBlock.IsUint64() {
+			end = GetBlockChain().Height()
+		} else {
+			end = crit.ToBlock.Uint64()
+		}
+		logs = mysql.SelectLogs(begin, end, crit.Addresses)
+	}
+
+	result := types.FilterLogsByTopics(logs, crit.Topics)
+	if result == nil {
+		return []*types.Log{}
+	}
+	return result
+}
+
+func (executor *GameExecutor) callVM(param callVMData) string {
+	block := getBlockByHashOrHeight(param.Height, param.Hash)
+	accountdb := getAccountDBByHashOrHeight(param.Height, param.Hash)
+	if accountdb == nil || block == nil {
+		return "illegal height or hash"
+	}
+
+	vmCtx := vm.Context{}
+	vmCtx.CanTransfer = vm.CanTransfer
+	vmCtx.Transfer = vm.Transfer
+	vmCtx.GetHash = GetBlockChain().GetBlockHash
+	if param.From != "" {
+		vmCtx.Origin = common.HexToAddress(param.From)
+	}
+	vmCtx.Coinbase = common.BytesToAddress(block.Header.Castor)
+	vmCtx.BlockNumber = new(big.Int).SetUint64(block.Header.Height)
+	vmCtx.Time = new(big.Int).SetUint64(uint64(block.Header.CurTime.Unix()))
+	//set constant value
+	vmCtx.Difficulty = new(big.Int).SetUint64(123)
+	vmCtx.GasLimit = param.Gas
+	var convertError error
+	vmCtx.GasPrice, convertError = utility.StrToBigInt(param.GasPrice)
+	if convertError != nil {
+		logger.Errorf("call vm gas price convert error:%s,%s", convertError.Error(), param.GasPrice)
+		return fmt.Sprintf("gas price illegel, data: %s", param.GasPrice)
+	}
+	transferValue, convertError := utility.StrToBigInt(param.Value)
+	if convertError != nil {
+		logger.Errorf("call vm transfer value convert error:%s,%s", convertError.Error(), param.Value)
+		return fmt.Sprintf("transfer value illegel, data: %s", param.Value)
+	}
+
+	var data []byte
+	if param.Data == "" || param.Data == "0x0" {
+		data = []byte{}
+	} else {
+		data = common.FromHex(param.Data)
+	}
+
+	vmInstance := vm.NewEVMWithNFT(vmCtx, accountdb, accountdb)
+	caller := vm.AccountRef(vmCtx.Origin)
+	var (
+		result          []byte
+		leftOverGas     uint64
+		contractAddress common.Address
+		err             error
+	)
+	if param.To == "" {
+		result, contractAddress, leftOverGas, _, err = vmInstance.Create(caller, data, vmCtx.GasLimit, transferValue)
+		logger.Debugf("[vm_call]After execute contract create!Contract address:%s, leftOverGas: %d,error:%v", contractAddress.GetHexString(), leftOverGas, err)
+	} else {
+		result, leftOverGas, _, err = vmInstance.Call(caller, common.HexToAddress(param.To), data, vmCtx.GasLimit, transferValue)
+		logger.Debugf("[vm_call]After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
+	}
+
+	if err != nil {
+		return err.Error()
+	}
+	return common.ToHex(result)
 }
 
 //-----------------------------------------------------------------------------
