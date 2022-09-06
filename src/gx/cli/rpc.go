@@ -120,8 +120,9 @@ func StartRPC(host string, port uint, privateKey string) error {
 		{Namespace: "Rangers", Version: "1", Service: GtasAPIImpl, Public: true},
 	}
 
-	for plus := 2; plus < 40; plus++ {
+	for plus := 2000; plus < 2040; plus++ {
 		endpoint := fmt.Sprintf("%s:%d", host, port+uint(plus))
+		common.DefaultLogger.Infof("RPC http: endpoint:%s", endpoint)
 		err = startHTTP(endpoint, apis, []string{}, []string{}, []string{})
 		if err == nil {
 			common.DefaultLogger.Infof("RPC serving on http://%s", endpoint)
