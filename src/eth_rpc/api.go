@@ -4,6 +4,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/core"
 	"com.tuntun.rocket/node/src/eth_tx"
+	"com.tuntun.rocket/node/src/executor"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
@@ -86,6 +87,7 @@ type RPCBlock struct {
 var (
 	gasPrice               = big.NewInt(1)
 	gasLimit        uint64 = 2000000
+	suggestGasLimit uint64 = 7000000
 	callLock               = sync.Mutex{}
 	nonce                  = []byte{1, 2, 3, 4, 5, 6, 7, 8}
 	difficulty             = utility.Big(*big.NewInt(32))
@@ -119,13 +121,23 @@ func (api *ethAPIService) SendRawTransaction(encodedTx utility.Bytes) (common.Ha
 //Note, this function doesn't make and changes in the state/blockchain and is
 //useful to execute and retrieve values.
 func (s *ethAPIService) Call(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error) {
+	result, err, _ := doCall(args, blockNrOrHash)
+	return result, err
+}
 
+func (s *ethAPIService) EstimateGas(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Uint64, error) {
+	_, err, gasUsed := doCall(args, blockNrOrHash)
+	return gasUsed, err
+}
+
+func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error, utility.Uint64) {
 	number, _ := blockNrOrHash.Number()
 	logger.Debugf("call:%v,%v", args, number)
 	accountdb := getAccountDBByHashOrHeight(blockNrOrHash)
 	block := getBlockByHashOrHeight(blockNrOrHash)
+
 	if accountdb == nil || block == nil {
-		return nil, errors.New("param invalid")
+		return nil, errors.New("param invalid"), 0
 	}
 
 	vmCtx := vm.Context{}
@@ -141,7 +153,11 @@ func (s *ethAPIService) Call(args CallArgs, blockNrOrHash BlockNumberOrHash) (ut
 	//set constant value
 	vmCtx.Difficulty = new(big.Int).SetUint64(123)
 	vmCtx.GasPrice = gasPrice
-	vmCtx.GasLimit = gasLimit
+	if args.Gas != nil {
+		vmCtx.GasLimit = uint64(*args.Gas)
+	} else {
+		vmCtx.GasLimit = suggestGasLimit
+	}
 
 	var transferValue *big.Int
 	if args.Value != nil {
@@ -155,27 +171,38 @@ func (s *ethAPIService) Call(args CallArgs, blockNrOrHash BlockNumberOrHash) (ut
 	if args.Data != nil {
 		data = *args.Data
 	}
+	var err error
+	dataGas, err := executor.CalDataGas(data)
+	if err != nil {
+		return nil, err, 0
+	}
+	if dataGas > vmCtx.GasLimit {
+		return nil, executor.ErrInsufficientGas, 0
+	}
+	vmCtx.GasLimit = vmCtx.GasLimit - dataGas
+
 	vmInstance := vm.NewEVMWithNFT(vmCtx, accountdb, accountdb)
 	caller := vm.AccountRef(vmCtx.Origin)
 	var (
 		result          []byte
 		leftOverGas     uint64
 		contractAddress common.Address
-		err             error
+		gasUsed         utility.Uint64
 	)
-	logger.Debugf("before vm instance")
 	if args.To == nil {
 		result, contractAddress, leftOverGas, _, err = vmInstance.Create(caller, data, vmCtx.GasLimit, transferValue)
-		logger.Debugf("[eth_call]After execute contract create!Contract address:%s, leftOverGas: %d,error:%v", contractAddress.GetHexString(), leftOverGas, err)
+		gasUsed = utility.Uint64(vmCtx.GasLimit - leftOverGas + dataGas)
+		logger.Debugf("[eth_call]After execute contract create!Contract address:%s, leftOverGas: %d,error:%v,gasUsed:%d", contractAddress.GetHexString(), leftOverGas, err, gasUsed)
 	} else {
 		result, leftOverGas, _, err = vmInstance.Call(caller, *args.To, data, vmCtx.GasLimit, transferValue)
-		logger.Debugf("[eth_call]After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
+		gasUsed = utility.Uint64(vmCtx.GasLimit - leftOverGas + dataGas)
+		logger.Debugf("[eth_call]After execute contract call! result:%v,leftOverGas: %d,error:%v,gasUsed:%d", result, leftOverGas, err, gasUsed)
 	}
 
 	if err != nil {
-		return nil, revertError{err, common.ToHex(result)}
+		return nil, revertError{err, common.ToHex(result)}, gasUsed
 	}
-	return result, nil
+	return result, nil, gasUsed
 }
 
 // ChainId returns the chainID value for transaction replay protection.
@@ -208,10 +235,6 @@ func (api *ethAPIService) BlockNumber() utility.Uint64 {
 func (s *ethAPIService) GasPrice() (*utility.Big, error) {
 	gasPrice := utility.Big(*big.NewInt(1))
 	return &gasPrice, nil
-}
-
-func (s *ethAPIService) EstimateGas(args CallArgs, blockNrOrHash *BlockNumberOrHash) (utility.Uint64, error) {
-	return utility.Uint64(21000), nil
 }
 
 // GetBalance returns the amount of wei for the given address in the state of the

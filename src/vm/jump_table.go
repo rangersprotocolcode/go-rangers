@@ -151,10 +151,9 @@ func newInstructionSet() JumpTable {
 			maxStack:    maxStack(3, 1),
 		},
 		EXP: {
-			execute:    opExp,
-			dynamicGas: gasExpFrontier,
-			minStack:   minStack(2, 1),
-			maxStack:   maxStack(2, 1),
+			execute:  opExp,
+			minStack: minStack(2, 1),
+			maxStack: maxStack(2, 1),
 		},
 		SIGNEXTEND: {
 			execute:     opSignExtend,
@@ -898,12 +897,11 @@ func newInstructionSet() JumpTable {
 			halts:      true,
 		},
 		SELFDESTRUCT: {
-			execute:    opSuicide,
-			dynamicGas: gasSelfdestruct,
-			minStack:   minStack(1, 0),
-			maxStack:   maxStack(1, 0),
-			halts:      true,
-			writes:     true,
+			execute:  opSuicide,
+			minStack: minStack(1, 0),
+			maxStack: maxStack(1, 0),
+			halts:    true,
+			writes:   true,
 		},
 	}
 	//HomesteadInstructionSet-------------------------------------------------------------------------------------------
@@ -927,7 +925,7 @@ func newInstructionSet() JumpTable {
 	instructionSet[DELEGATECALL].constantGas = CallGasEIP150
 
 	//SpuriousDragonInstructionSet--------------------------------------------------------------------------------------
-	instructionSet[EXP].dynamicGas = gasExpEIP158
+	//instructionSet[EXP].dynamicGas = gasExpEIP158
 
 	//ByzantiumInstructionSet-------------------------------------------------------------------------------------------
 	instructionSet[STATICCALL] = &operation{

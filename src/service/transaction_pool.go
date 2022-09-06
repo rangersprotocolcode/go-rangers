@@ -27,6 +27,7 @@ import (
 	"com.tuntun.rocket/node/src/utility"
 	"errors"
 	"github.com/hashicorp/golang-lru"
+	"math/big"
 	"sort"
 
 	"encoding/json"
@@ -105,8 +106,9 @@ type TxPool struct {
 }
 
 var (
-	txpoolInstance TransactionPool
-	delta, _       = utility.StrToBigInt("0.0001")
+	txpoolInstance       TransactionPool
+	generalTxFee, _      = utility.StrToBigInt("0.0001")
+	contractCreateFee, _ = utility.StrToBigInt("20")
 )
 
 func initTransactionPool() {
@@ -311,12 +313,23 @@ func (pool *TxPool) ProcessFee(tx types.Transaction, accountDB *account.AccountD
 	addr := common.HexStringToAddress(tx.Source)
 	balance := accountDB.GetBalance(addr)
 
-	if balance.Cmp(delta) < 0 {
-		msg := fmt.Sprintf("not enough max, addr: %s, balance: %s", tx.Source, balance)
+	var txFee *big.Int
+	if common.IsProposal011() {
+		if types.IsContractCreateTx(tx) {
+			txFee = contractCreateFee
+		} else {
+			txFee = generalTxFee
+		}
+	} else {
+		txFee = generalTxFee
+	}
+
+	if balance.Cmp(txFee) < 0 {
+		msg := fmt.Sprintf("not enough max, addr: %s, balance: %s,need: %s", tx.Source, balance, txFee.String())
 		return fmt.Errorf(msg)
 	}
-	accountDB.SubBalance(addr, delta)
-	accountDB.AddBalance(common.FeeAccount, delta)
+	accountDB.SubBalance(addr, txFee)
+	accountDB.AddBalance(common.FeeAccount, txFee)
 	return nil
 }
 

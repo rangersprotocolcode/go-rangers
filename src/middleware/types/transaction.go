@@ -139,3 +139,7 @@ func (c Transactions) Less(i, j int) bool {
 func IsContractTx(txType int32) bool {
 	return txType == TransactionTypeETHTX || txType == TransactionTypeContract
 }
+
+func IsContractCreateTx(tx Transaction) bool {
+	return (tx.Type == TransactionTypeETHTX || tx.Type == TransactionTypeContract) && tx.Target == ""
+}

@@ -197,25 +197,3 @@ var (
 	gasStaticCallEIP2929   = makeCallVariantGasCallEIP2929(gasStaticCall)
 	gasCallCodeEIP2929     = makeCallVariantGasCallEIP2929(gasCallCode)
 )
-
-func gasSelfdestructEIP2929(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	var (
-		gas     uint64
-		address = common.Address(stack.peek().Bytes20())
-	)
-
-	if !evm.StateDB.AddressInAccessList(address) {
-		// If the caller cannot afford the cost, this change will be rolled back
-		evm.StateDB.AddAddressToAccessList(address)
-		gas = ColdAccountAccessCostEIP2929
-	}
-	// if empty and transfers value
-	if evm.StateDB.Empty(address) && evm.StateDB.GetBalance(contract.Address()).Sign() != 0 {
-		gas += CreateBySelfdestructGas
-	}
-	if !evm.StateDB.HasSuicided(contract.Address()) {
-		evm.StateDB.AddRefund(SelfdestructRefundGas)
-	}
-	return gas, nil
-
-}

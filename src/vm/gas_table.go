@@ -19,6 +19,7 @@ package vm
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/utility"
+	"errors"
 )
 
 // memoryGasCost calculates the quadratic gas for memory expansion. It does so
@@ -91,7 +92,7 @@ var (
 )
 
 func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	return 0, nil
+	return SstoreSetGas, nil
 }
 
 // 0. If *gasleft* is less than or equal to 2300, fail the current call.
@@ -108,7 +109,11 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 //       2.2.2.1. If original value is 0, add SSTORE_SET_GAS - SLOAD_GAS to refund counter.
 //       2.2.2.2. Otherwise, add SSTORE_RESET_GAS - SLOAD_GAS gas to refund counter.
 func gasSStoreEIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	return 0, nil
+	// If we fail the minimum gas availability invariant, fail (0)
+	if contract.Gas <= SstoreSentryGasEIP2200 {
+		return 0, errors.New("not enough gas for reentrancy sentry")
+	}
+	return SstoreSetGasEIP2200, nil // dirty update (2.2)
 }
 
 func makeGasLog(n uint64) gasFunc {
@@ -193,48 +198,12 @@ func gasCreate2(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memoryS
 	return gas, nil
 }
 
-func gasExpFrontier(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	expByteLen := uint64((stack.data[stack.len()-2].BitLen() + 7) / 8)
-
-	var (
-		gas      = expByteLen * ExpByteFrontier // no overflow check required. Max is 256 * ExpByte gas
-		overflow bool
-	)
-	if gas, overflow = utility.SafeAdd(gas, ExpGas); overflow {
-		return 0, ErrGasUintOverflow
-	}
-	return gas, nil
-}
-
-func gasExpEIP158(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	expByteLen := uint64((stack.data[stack.len()-2].BitLen() + 7) / 8)
-
-	var (
-		gas      = expByteLen * ExpByteEIP158 // no overflow check required. Max is 256 * ExpByte gas
-		overflow bool
-	)
-	if gas, overflow = utility.SafeAdd(gas, ExpGas); overflow {
-		return 0, ErrGasUintOverflow
-	}
-	return gas, nil
-}
-
 func gasCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	var (
 		gas            uint64
 		transfersValue = !stack.Back(2).IsZero()
 		address        = common.Address(stack.Back(1).Bytes20())
 	)
-	/*todo
-	origin:
-	if evm.chainRules.IsEIP158 {
-		if transfersValue && evm.StateDB.Empty(address) {
-			gas += CallNewAccountGas
-		}
-	} else if !evm.StateDB.Exist(address) {
-		gas += CallNewAccountGas
-	}
-	*/
 	if transfersValue && evm.StateDB.Empty(address) {
 		gas += CallNewAccountGas
 	}
@@ -314,39 +283,6 @@ func gasStaticCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memo
 	var overflow bool
 	if gas, overflow = utility.SafeAdd(gas, evm.callGasTemp); overflow {
 		return 0, ErrGasUintOverflow
-	}
-	return gas, nil
-}
-
-func gasSelfdestruct(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	var gas uint64
-	/*todo
-	origin:	if evm.chainRules.IsEIP150
-	*/
-	// EIP150 homestead gas reprice fork:
-	if true {
-		gas = SelfdestructGasEIP150
-		var address = common.Address(stack.Back(0).Bytes20())
-
-		/*todo
-		origin:
-		if evm.chainRules.IsEIP158 {
-			// if empty and transfers value
-			if evm.StateDB.Empty(address) && evm.StateDB.GetBalance(contract.Address()).Sign() != 0 {
-				gas += CreateBySelfdestructGas
-			}
-		} else if !evm.StateDB.Exist(address) {
-			gas += CreateBySelfdestructGas
-		}
-		*/
-		// if empty and transfers value
-		if evm.StateDB.Empty(address) && evm.StateDB.GetBalance(contract.Address()).Sign() != 0 {
-			gas += CreateBySelfdestructGas
-		}
-	}
-
-	if !evm.StateDB.HasSuicided(contract.Address()) {
-		evm.StateDB.AddRefund(SelfdestructRefundGas)
 	}
 	return gas, nil
 }

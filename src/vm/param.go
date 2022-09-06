@@ -33,8 +33,8 @@ const (
 	LogDataGas            uint64 = 8     // Per byte in a LOG* operation's data.
 	CallStipend           uint64 = 2300  // Free gas given at beginning of call.
 
-	Sha3Gas     uint64 = 30 // Once per SHA3 operation.
-	Sha3WordGas uint64 = 6  // Once per word of the SHA3 operation's data.
+	Sha3Gas     uint64 = 0 // Once per SHA3 operation.
+	Sha3WordGas uint64 = 0 // Once per word of the SHA3 operation's data.
 
 	SstoreSetGas    uint64 = 20000 // Once per SLOAD operation.
 	SstoreResetGas  uint64 = 5000  // Once per SSTORE operation if the zeroness changes from zero.
@@ -55,12 +55,12 @@ const (
 	SstoreResetGasEIP2200             uint64 = 5000  // Once per SSTORE operation from clean non-zero to something else
 	SstoreClearsScheduleRefundEIP2200 uint64 = 15000 // Once per SSTORE operation for clearing an originally existing storage slot
 
-	JumpdestGas   uint64 = 1     // Once per JUMPDEST operation.
+	JumpdestGas   uint64 = 0     // Once per JUMPDEST operation.
 	EpochDuration uint64 = 30000 // Duration between proof-of-work epochs.
 
 	CreateDataGas            uint64 = 200   //
 	CallCreateDepth          uint64 = 1024  // Maximum depth of call/create stack.
-	ExpGas                   uint64 = 10    // Once per EXP instruction
+	ExpGas                   uint64 = 0     // Once per EXP instruction
 	LogGas                   uint64 = 375   // Per LOG* operation.
 	CopyGas                  uint64 = 3     //
 	StackLimit               uint64 = 1024  // Maximum size of VM stack allowed.
@@ -68,71 +68,71 @@ const (
 	LogTopicGas              uint64 = 375   // Multiplied by the * of the LOG*, per LOG transaction. e.g. LOG0 incurs 0 * c_txLogTopicGas, LOG4 incurs 4 * c_txLogTopicGas.
 	CreateGas                uint64 = 32000 // Once per CREATE operation & contract-creation transaction.
 	Create2Gas               uint64 = 32000 // Once per CREATE2 operation
-	SelfdestructRefundGas    uint64 = 24000 // Refunded following a selfdestruct operation.
+	SelfdestructRefundGas    uint64 = 0     // Refunded following a selfdestruct operation.
 	MemoryGas                uint64 = 3     // Times the address of the (highest referenced byte in memory + 1). NOTE: referencing happens on read, write and in instructions such as RETURN and CALL.
 	TxDataNonZeroGasFrontier uint64 = 68    // Per byte of data attached to a transaction that is not equal to zero. NOTE: Not payable on data of calls between transactions.
 	TxDataNonZeroGasEIP2028  uint64 = 16    // Per byte of non zero data attached to a transaction after EIP 2028 (part in Istanbul)
 
 	// These have been changed during the course of the chain
-	CallGasFrontier              uint64 = 40  // Once per CALL operation & message call transaction.
-	CallGasEIP150                uint64 = 700 // Static portion of gas for CALL-derivates after EIP 150 (Tangerine)
-	BalanceGasFrontier           uint64 = 20  // The cost of a BALANCE operation
-	BalanceGasEIP150             uint64 = 400 // The cost of a BALANCE operation after Tangerine
-	BalanceGasEIP1884            uint64 = 700 // The cost of a BALANCE operation after EIP 1884 (part of Istanbul)
-	ExtcodeSizeGasFrontier       uint64 = 20  // Cost of EXTCODESIZE before EIP 150 (Tangerine)
-	ExtcodeSizeGasEIP150         uint64 = 700 // Cost of EXTCODESIZE after EIP 150 (Tangerine)
-	SloadGasFrontier             uint64 = 50
-	SloadGasEIP150               uint64 = 200
-	SloadGasEIP1884              uint64 = 800  // Cost of SLOAD after EIP 1884 (part of Istanbul)
-	SloadGasEIP2200              uint64 = 800  // Cost of SLOAD after EIP 2200 (part of Istanbul)
-	ExtcodeHashGasConstantinople uint64 = 400  // Cost of EXTCODEHASH (introduced in Constantinople)
-	ExtcodeHashGasEIP1884        uint64 = 700  // Cost of EXTCODEHASH after EIP 1884 (part in Istanbul)
-	SelfdestructGasEIP150        uint64 = 5000 // Cost of SELFDESTRUCT post EIP 150 (Tangerine)
+	CallGasFrontier              uint64 = 0 // Once per CALL operation & message call transaction.
+	CallGasEIP150                uint64 = 0 // Static portion of gas for CALL-derivates after EIP 150 (Tangerine)
+	BalanceGasFrontier           uint64 = 0 // The cost of a BALANCE operation
+	BalanceGasEIP150             uint64 = 0 // The cost of a BALANCE operation after Tangerine
+	BalanceGasEIP1884            uint64 = 0 // The cost of a BALANCE operation after EIP 1884 (part of Istanbul)
+	ExtcodeSizeGasFrontier       uint64 = 0 // Cost of EXTCODESIZE before EIP 150 (Tangerine)
+	ExtcodeSizeGasEIP150         uint64 = 0 // Cost of EXTCODESIZE after EIP 150 (Tangerine)
+	SloadGasFrontier             uint64 = 0
+	SloadGasEIP150               uint64 = 0
+	SloadGasEIP1884              uint64 = 0 // Cost of SLOAD after EIP 1884 (part of Istanbul)
+	SloadGasEIP2200              uint64 = 0 // Cost of SLOAD after EIP 2200 (part of Istanbul)
+	ExtcodeHashGasConstantinople uint64 = 0 // Cost of EXTCODEHASH (introduced in Constantinople)
+	ExtcodeHashGasEIP1884        uint64 = 0 // Cost of EXTCODEHASH after EIP 1884 (part in Istanbul)
+	SelfdestructGasEIP150        uint64 = 0 // Cost of SELFDESTRUCT post EIP 150 (Tangerine)
 
 	// EXP has a dynamic portion depending on the size of the exponent
-	ExpByteFrontier uint64 = 10 // was set to 10 in Frontier
-	ExpByteEIP158   uint64 = 50 // was raised to 50 during Eip158 (Spurious Dragon)
+	ExpByteFrontier uint64 = 0 // was set to 10 in Frontier
+	ExpByteEIP158   uint64 = 0 // was raised to 50 during Eip158 (Spurious Dragon)
 
 	// Extcodecopy has a dynamic AND a static cost. This represents only the
 	// static portion of the gas. It was changed during EIP 150 (Tangerine)
-	ExtcodeCopyBaseFrontier uint64 = 20
-	ExtcodeCopyBaseEIP150   uint64 = 700
+	ExtcodeCopyBaseFrontier uint64 = 0
+	ExtcodeCopyBaseEIP150   uint64 = 0
 
 	// CreateBySelfdestructGas is used when the refunded account is one that does
 	// not exist. This logic is similar to call.
 	// Introduced in Tangerine Whistle (Eip 150)
-	CreateBySelfdestructGas uint64 = 25000
+	CreateBySelfdestructGas uint64 = 0
 
 	MaxCodeSize = 245760 // Maximum bytecode to permit for a contract
 
 	// Precompiled contract gas prices
 
-	EcrecoverGas        uint64 = 3000 // Elliptic curve sender recovery gas price
-	Sha256BaseGas       uint64 = 60   // Base price for a SHA256 operation
-	Sha256PerWordGas    uint64 = 12   // Per-word price for a SHA256 operation
-	Ripemd160BaseGas    uint64 = 600  // Base price for a RIPEMD160 operation
-	Ripemd160PerWordGas uint64 = 120  // Per-word price for a RIPEMD160 operation
-	IdentityBaseGas     uint64 = 15   // Base price for a data copy operation
-	IdentityPerWordGas  uint64 = 3    // Per-work price for a data copy operation
-	ModExpQuadCoeffDiv  uint64 = 20   // Divisor for the quadratic particle of the big int modular exponentiation
+	EcrecoverGas        uint64 = 0 // Elliptic curve sender recovery gas price
+	Sha256BaseGas       uint64 = 0 // Base price for a SHA256 operation
+	Sha256PerWordGas    uint64 = 0 // Per-word price for a SHA256 operation
+	Ripemd160BaseGas    uint64 = 0 // Base price for a RIPEMD160 operation
+	Ripemd160PerWordGas uint64 = 0 // Per-word price for a RIPEMD160 operation
+	IdentityBaseGas     uint64 = 0 // Base price for a data copy operation
+	IdentityPerWordGas  uint64 = 0 // Per-work price for a data copy operation
+	ModExpQuadCoeffDiv  uint64 = 0 // Divisor for the quadratic particle of the big int modular exponentiation
 
-	Bn256AddGasByzantium             uint64 = 500    // Byzantium gas needed for an elliptic curve addition
-	Bn256AddGasIstanbul              uint64 = 150    // Gas needed for an elliptic curve addition
-	Bn256ScalarMulGasByzantium       uint64 = 40000  // Byzantium gas needed for an elliptic curve scalar multiplication
-	Bn256ScalarMulGasIstanbul        uint64 = 6000   // Gas needed for an elliptic curve scalar multiplication
-	Bn256PairingBaseGasByzantium     uint64 = 100000 // Byzantium base price for an elliptic curve pairing check
-	Bn256PairingBaseGasIstanbul      uint64 = 45000  // Base price for an elliptic curve pairing check
-	Bn256PairingPerPointGasByzantium uint64 = 80000  // Byzantium per-point price for an elliptic curve pairing check
-	Bn256PairingPerPointGasIstanbul  uint64 = 34000  // Per-point price for an elliptic curve pairing check
+	Bn256AddGasByzantium             uint64 = 0 // Byzantium gas needed for an elliptic curve addition
+	Bn256AddGasIstanbul              uint64 = 0 // Gas needed for an elliptic curve addition
+	Bn256ScalarMulGasByzantium       uint64 = 0 // Byzantium gas needed for an elliptic curve scalar multiplication
+	Bn256ScalarMulGasIstanbul        uint64 = 0 // Gas needed for an elliptic curve scalar multiplication
+	Bn256PairingBaseGasByzantium     uint64 = 0 // Byzantium base price for an elliptic curve pairing check
+	Bn256PairingBaseGasIstanbul      uint64 = 0 // Base price for an elliptic curve pairing check
+	Bn256PairingPerPointGasByzantium uint64 = 0 // Byzantium per-point price for an elliptic curve pairing check
+	Bn256PairingPerPointGasIstanbul  uint64 = 0 // Per-point price for an elliptic curve pairing check
 
-	Bls12381G1AddGas          uint64 = 600    // Price for BLS12-381 elliptic curve G1 point addition
-	Bls12381G1MulGas          uint64 = 12000  // Price for BLS12-381 elliptic curve G1 point scalar multiplication
-	Bls12381G2AddGas          uint64 = 4500   // Price for BLS12-381 elliptic curve G2 point addition
-	Bls12381G2MulGas          uint64 = 55000  // Price for BLS12-381 elliptic curve G2 point scalar multiplication
-	Bls12381PairingBaseGas    uint64 = 115000 // Base gas price for BLS12-381 elliptic curve pairing check
-	Bls12381PairingPerPairGas uint64 = 23000  // Per-point pair gas price for BLS12-381 elliptic curve pairing check
-	Bls12381MapG1Gas          uint64 = 5500   // Gas price for BLS12-381 mapping field element to G1 operation
-	Bls12381MapG2Gas          uint64 = 110000 // Gas price for BLS12-381 mapping field element to G2 operation
+	Bls12381G1AddGas          uint64 = 0 // Price for BLS12-381 elliptic curve G1 point addition
+	Bls12381G1MulGas          uint64 = 0 // Price for BLS12-381 elliptic curve G1 point scalar multiplication
+	Bls12381G2AddGas          uint64 = 0 // Price for BLS12-381 elliptic curve G2 point addition
+	Bls12381G2MulGas          uint64 = 0 // Price for BLS12-381 elliptic curve G2 point scalar multiplication
+	Bls12381PairingBaseGas    uint64 = 0 // Base gas price for BLS12-381 elliptic curve pairing check
+	Bls12381PairingPerPairGas uint64 = 0 // Per-point pair gas price for BLS12-381 elliptic curve pairing check
+	Bls12381MapG1Gas          uint64 = 0 // Gas price for BLS12-381 mapping field element to G1 operation
+	Bls12381MapG2Gas          uint64 = 0 // Gas price for BLS12-381 mapping field element to G2 operation
 )
 
 // Gas discount table for BLS12-381 G1 and G2 multi exponentiation operations
