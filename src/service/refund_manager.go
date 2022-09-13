@@ -31,7 +31,7 @@ import (
 	"strconv"
 )
 
-const refundHeight = 2000
+const refundHeight = 36000
 
 type RefundManager struct {
 	logger           log.Logger
