@@ -96,6 +96,9 @@ func BigIntToStr(number *big.Int) string {
 func BigIntToStrWithoutDot(number *big.Int) string {
 	res := BigIntToStr(number)
 	index := strings.Index(res, ".")
+	if -1 == index {
+		return res
+	}
 	return res[:index]
 }
 
