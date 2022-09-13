@@ -70,7 +70,7 @@ var (
 		Proposal009Block: 16740000,
 		Proposal010Block: 19632000,
 		Proposal011Block: math.MaxUint64, //robin never use Proposal011
-		Proposal012Block: math.MaxUint64, //todo use suitable height while deploy
+		Proposal012Block: 23120000,
 
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 	}
