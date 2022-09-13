@@ -24,7 +24,7 @@ import (
 )
 
 const (
-	Version           = "1.0.9"
+	Version           = "1.0.10"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -51,7 +51,7 @@ var (
 		Proposal009Block: 16733000,
 		Proposal010Block: math.MaxUint64, //mainnet never use proporal010
 		Proposal011Block: 11750354,
-		Proposal012Block: math.MaxUint64, //todo use suitable height while deploy
+		Proposal012Block: 22815000,
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 	}
 
