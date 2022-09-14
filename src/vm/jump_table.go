@@ -1113,5 +1113,12 @@ func newInstructionSet() JumpTable {
 		maxStack:    maxStack(1, 1),
 	}
 
+	instructionSet[UNSTAKEALL] = &operation{
+		execute:     opUnStakeAll,
+		constantGas: 0,
+		minStack:    minStack(1, 1),
+		maxStack:    maxStack(1, 1),
+	}
+
 	return instructionSet
 }

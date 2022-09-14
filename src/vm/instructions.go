@@ -1118,3 +1118,14 @@ func opGetStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 	pushUint256(callContext, ret)
 	return nil, nil
 }
+
+func opUnStakeAll(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	pointerAddress := popAddress(callContext)
+	ret := uint256.NewInt().SetUint64(10)
+
+	// TODO
+	common.DefaultLogger.Debugf("unstakeall: %s,  %s", pointerAddress.GetHexString(), ret.String())
+
+	pushUint256(callContext, ret)
+	return nil, nil
+}

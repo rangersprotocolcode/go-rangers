@@ -384,11 +384,12 @@ func TestStakeAndUnStake(t *testing.T) {
 	setDefaults(config)
 	defer log.Close()
 
+	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, "")
 	config.Origin = common.HexToAddress("0x407988d14785a6ae45e3106b4f9799c0ab0af3d0c85447ce1ddb09f089872257")
 	config.GasLimit = 3000000
 	config.GasPrice = big.NewInt(1)
 
-	contractCodeBytes := common.Hex2Bytes("6080604052348015600f57600080fd5b50737c8b97af5d3f745564a7ae035a5228bc3d1034e573ffffffffffffffffffffffffffffffffffffffff166001ee503073ffffffffffffffffffffffffffffffffffffffff166002ee503073ffffffffffffffffffffffffffffffffffffffff166003ef5060518060826000396000f3fe6080604052600080fdfea2646970667358221220b003b2410216562b10d095614163c773279016198aa9663f061170166510863f64736f6c6375302e372e352b636f6d6d69742e65623737656430380045")
+	contractCodeBytes := common.Hex2Bytes("6080604052348015600f57600080fd5b503073ffffffffffffffffffffffffffffffffffffffff16eb5060518060366000396000f3fe6080604052600080fdfea26469706673582212204596029f71628cc37563073091ce72e5b74330e2a5904263fc76f9860cf2026664736f6c6375302e372e352b636f6d6d69742e65623737656430380045")
 	createResult, contractAddress, createLeftGas, createErr := mockCreate(contractCodeBytes, config)
 	fmt.Printf("New create contract address:%s\n", contractAddress.GetHexString())
 	fmt.Printf("New create contract createResult:%v,%d\n", createResult, len(createResult))
