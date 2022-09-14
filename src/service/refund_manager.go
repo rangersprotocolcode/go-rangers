@@ -31,6 +31,8 @@ import (
 	"strconv"
 )
 
+const refundHeight = 36000
+
 type RefundManager struct {
 	logger           log.Logger
 	groupChainHelper types.GroupChainHelper
@@ -143,7 +145,9 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId, account []byte, m
 // 计算解锁高度
 func (this *RefundManager) getRefundHeight(now, left uint64, minerType byte, minerId []byte, situation string) uint64 {
 	height := uint64(0)
-
+	if common.IsProposal012() {
+		return now + refundHeight
+	}
 	// 验证节点，计算最多能加入的组数，来确定解锁块高
 	if minerType == common.MinerTypeValidator {
 		// 检查当前加入了多少组
@@ -177,6 +181,10 @@ func (this *RefundManager) getRefundHeight(now, left uint64, minerType byte, min
 
 	if common.IsProposal004() && height <= 0 {
 		height = now + common.RefundBlocks*100
+	}
+
+	if common.LocalChainConfig.Proposal011Block == now {
+		height = height - 50
 	}
 	return height
 }
