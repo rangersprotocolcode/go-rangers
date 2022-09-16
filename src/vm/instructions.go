@@ -1120,6 +1120,7 @@ func opGetStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 }
 
 func opUnStakeAll(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret := uint256.NewInt().SetUint64(0)
 	thisAddress := callContext.contract.Address()
 	pointerAddress := popAddress(callContext)
 	source := interpreter.evm.Origin
@@ -1149,8 +1150,8 @@ func opUnStakeAll(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx)
 	data := make(map[uint64]types.RefundInfoList)
 	data[refundHeight] = refundInfo
 	service.RefundManagerImpl.Add(data, accountdb)
-
+	ret.SetBytes(realMoney.Bytes())
 	common.DefaultLogger.Debugf("unstakeall. source: %s wants money: %s, at height: %d to account: %s", source, realMoney.String(), refundHeight, common.ToHex(addr))
-
+	pushUint256(callContext, ret)
 	return nil, nil
 }
