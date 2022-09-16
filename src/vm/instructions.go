@@ -1120,12 +1120,37 @@ func opGetStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 }
 
 func opUnStakeAll(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	thisAddress := callContext.contract.Address()
 	pointerAddress := popAddress(callContext)
-	ret := uint256.NewInt().SetUint64(10)
+	source := interpreter.evm.Origin
+	common.DefaultLogger.Debugf("unstakeAll source: %s, stake to %s(this->%s)", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString())
+	if 0 != bytes.Compare(thisAddress.Bytes(), pointerAddress.Bytes()) {
+		common.DefaultLogger.Debugf("unstack warning. this: %s, pointer: %s", thisAddress.GetHexString(), pointerAddress.GetHexString())
+	}
 
-	// TODO
-	common.DefaultLogger.Debugf("unstakeall: %s,  %s", pointerAddress.GetHexString(), ret.String())
+	miner := service.MinerManagerImpl.GetMinerIdByAccount(thisAddress.Bytes(), interpreter.evm.accountDB)
+	if nil == miner {
+		common.DefaultLogger.Debugf("unstackall error. no miner for address : %s", thisAddress.GetHexString())
+		return nil, fmt.Errorf("no such miner: %s", thisAddress.String())
+	}
 
-	pushUint256(callContext, ret)
+	minerObject := service.MinerManagerImpl.GetMiner(miner, interpreter.evm.accountDB)
+	height := interpreter.evm.BlockNumber
+	accountdb := interpreter.evm.accountDB
+
+	refundHeight, realMoney, addr, refundErr := service.RefundManagerImpl.GetRefundStake(height.Uint64(), miner, thisAddress.Bytes(), minerObject.Stake, accountdb, "evm")
+	if nil != refundErr {
+		common.DefaultLogger.Debugf(refundErr.Error())
+		return nil, refundErr
+	}
+
+	refundInfo := types.RefundInfoList{}
+	refundInfo.AddRefundInfo(addr, realMoney)
+	data := make(map[uint64]types.RefundInfoList)
+	data[refundHeight] = refundInfo
+	service.RefundManagerImpl.Add(data, accountdb)
+
+	common.DefaultLogger.Debugf("unstakeall. source: %s wants money: %s, at height: %d to account: %s", source, realMoney.String(), refundHeight, common.ToHex(addr))
+
 	return nil, nil
 }
