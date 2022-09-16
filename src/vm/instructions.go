@@ -19,6 +19,7 @@ package vm
 import (
 	"bytes"
 	"fmt"
+	"math"
 	"math/big"
 	"strconv"
 
@@ -1134,12 +1135,10 @@ func opUnStakeAll(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx)
 		common.DefaultLogger.Debugf("unstackall error. no miner for address : %s", thisAddress.GetHexString())
 		return nil, fmt.Errorf("no such miner: %s", thisAddress.String())
 	}
-
-	minerObject := service.MinerManagerImpl.GetMiner(miner, interpreter.evm.accountDB)
 	height := interpreter.evm.BlockNumber
 	accountdb := interpreter.evm.accountDB
 
-	refundHeight, realMoney, addr, refundErr := service.RefundManagerImpl.GetRefundStake(height.Uint64(), miner, thisAddress.Bytes(), minerObject.Stake, accountdb, "evm")
+	refundHeight, realMoney, addr, refundErr := service.RefundManagerImpl.GetRefundStake(height.Uint64(), miner, thisAddress.Bytes(), math.MaxUint64, accountdb, "evm")
 	if nil != refundErr {
 		common.DefaultLogger.Debugf(refundErr.Error())
 		return nil, refundErr

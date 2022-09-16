@@ -118,6 +118,10 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId, account []byte, m
 		return 0, nil, nil, errors.New(msg)
 	}
 
+	if money == math.MaxUint64 {
+		money = miner.Stake
+	}
+
 	// 超出了质押量，不能提
 	if miner.Stake < money {
 		this.logger.Errorf("getRefund error, minerId:%s, height: %d, money: %d, not enough stake. stake: %d", common.ToHex(minerId), now, money, miner.Stake)
