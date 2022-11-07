@@ -466,15 +466,16 @@ func getAccountDBByHashOrHeight(blockNrOrHash BlockNumberOrHash) *account.Accoun
 	return accountDB
 }
 func getAccountDBByHeight(height uint64) (accountDB *account.AccountDB) {
+	var b *types.BlockHeader
 	if height == 0 {
-		accountDB = service.AccountDBManagerInstance.GetLatestStateDB()
+		b = core.GetBlockChain().TopBlock()
 	} else {
-		b := core.GetBlockChain().QueryBlockHeaderByHeight(height, true)
-		if nil == b {
-			return nil
-		}
-		accountDB, _ = service.AccountDBManagerInstance.GetAccountDBByHash(b.StateTree)
+		b = core.GetBlockChain().QueryBlockHeaderByHeight(height, true)
 	}
+	if nil == b {
+		return nil
+	}
+	accountDB, _ = service.AccountDBManagerInstance.GetAccountDBByHash(b.StateTree)
 	return
 }
 

@@ -199,7 +199,7 @@ func (executor *GameExecutor) callVM(param callVMData) string {
 func getAccountDBByHashOrHeight(height string, hash string) *account.AccountDB {
 	var accountDB *account.AccountDB
 	if height == "" && hash == "" {
-		accountDB = service.AccountDBManagerInstance.GetAccountDB("", true)
+		accountDB = getAccountDBByHeight(0)
 	} else if hash != "" {
 		accountDB = getAccountDBByHash(common.HexToHash(hash))
 	} else {
@@ -211,15 +211,16 @@ func getAccountDBByHashOrHeight(height string, hash string) *account.AccountDB {
 	return accountDB
 }
 func getAccountDBByHeight(height uint64) (accountDB *account.AccountDB) {
+	var bh *types.BlockHeader
 	if height == 0 {
-		accountDB = service.AccountDBManagerInstance.GetLatestStateDB()
+		bh = GetBlockChain().TopBlock()
 	} else {
-		bh := GetBlockChain().QueryBlockHeaderByHeight(height, true)
-		if nil == bh {
-			return nil
-		}
-		accountDB, _ = service.AccountDBManagerInstance.GetAccountDBByHash(bh.StateTree)
+		bh = GetBlockChain().QueryBlockHeaderByHeight(height, true)
 	}
+	if nil == bh {
+		return nil
+	}
+	accountDB, _ = service.AccountDBManagerInstance.GetAccountDBByHash(bh.StateTree)
 	return
 }
 
