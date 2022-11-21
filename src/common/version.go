@@ -72,7 +72,7 @@ var (
 		Proposal010Block: 19632000,
 		Proposal011Block: math.MaxUint64, //robin never use Proposal011
 		Proposal012Block: 23120000,
-		Proposal013Block: math.MaxUint64, //todo change while deploy to robin
+		Proposal013Block: 28982000,
 
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 	}
