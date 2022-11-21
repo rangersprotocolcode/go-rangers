@@ -17,6 +17,8 @@
 package types
 
 import (
+	"com.tuntun.rocket/node/src/common"
+	"encoding/json"
 	"fmt"
 	"math/big"
 	"testing"
@@ -48,20 +50,41 @@ func TestJSONObject_Put2(t *testing.T) {
 	obj.Put("1", big.NewInt(10))
 
 	mobj := NewJSONObject()
-	mobj.Put("ft",obj.TOJSONString())
+	mobj.Put("ft", obj.TOJSONString())
 
 	fmt.Println(mobj.TOJSONString())
 	fmt.Println(mobj.Remove("ft"))
 }
-
 
 func TestJSONObject_Put3(t *testing.T) {
 	obj := NewJSONObject()
 	obj.Put("1", big.NewInt(10))
 
 	mobj := NewJSONObject()
-	mobj.Put("ft",obj)
+	mobj.Put("ft", obj)
 
 	fmt.Println(mobj.TOJSONString())
 	fmt.Println(mobj.Remove("ft"))
+}
+
+func TestJsonReceipt(t *testing.T) {
+	a := Receipt{}
+	aBytes, _ := json.Marshal(a)
+	fmt.Printf("a json marchal:%s\n", aBytes)
+
+	b := Receipt{}
+	b.Logs = nil
+	bBytes, _ := json.Marshal(b)
+	fmt.Printf("b json marchal:%s\n", bBytes)
+
+	c := Receipt{}
+	c.Logs = make([]*Log, 0)
+	cBytes, _ := json.Marshal(c)
+	fmt.Printf("c json marchal:%s\n", cBytes)
+
+	logMap := make(map[common.Hash][]*Log)
+	d := Receipt{}
+	d.Logs = logMap[common.Hash{}]
+	dBytes, _ := json.Marshal(d)
+	fmt.Printf("d json marchal:%s\n", dBytes)
 }

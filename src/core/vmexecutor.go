@@ -74,7 +74,10 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		sort.Sort(txs)
 	}
 
-	for _, transaction := range txs {
+	for i, transaction := range txs {
+		if common.IsProposal013() {
+			this.accountdb.Prepare(transaction.Hash, this.block.Header.Hash, i)
+		}
 		executeTime := utility.GetTime()
 		if this.situation == "casting" && executeTime.Sub(beginTime) > MaxCastBlockTime {
 			logger.Infof("Cast block execute tx time out! Tx hash:%s ", transaction.Hash.String())
@@ -121,10 +124,14 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		transactions = append(transactions, transaction)
 
 		receipt := types.NewReceipt(nil, !success, 0, this.block.Header.Height, msg, transaction.Source, "")
-		logs := this.context["logs"]
-		if logs != nil {
-			delete(this.context, "logs")
-			receipt.Logs = logs.([]*types.Log)
+		if common.IsProposal013() {
+			receipt.Logs = this.accountdb.GetLogs(transaction.Hash)
+		} else {
+			logs := this.context["logs"]
+			if logs != nil {
+				delete(this.context, "logs")
+				receipt.Logs = logs.([]*types.Log)
+			}
 		}
 		contractAddress := this.context["contractAddress"]
 		if contractAddress != nil {

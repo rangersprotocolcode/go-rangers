@@ -52,6 +52,7 @@ var (
 		Proposal010Block: math.MaxUint64, //mainnet never use proporal010
 		Proposal011Block: 11750354,
 		Proposal012Block: 22815000,
+		Proposal013Block: math.MaxUint64, //todo change while deploy to mainnet
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 	}
 
@@ -71,6 +72,7 @@ var (
 		Proposal010Block: 19632000,
 		Proposal011Block: math.MaxUint64, //robin never use Proposal011
 		Proposal012Block: 23120000,
+		Proposal013Block: math.MaxUint64, //todo change while deploy to robin
 
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 	}
@@ -96,6 +98,7 @@ var (
 		Proposal010Block: 0,
 		Proposal011Block: 0,
 		Proposal012Block: 0,
+		Proposal013Block: 0,
 	}
 
 	LocalChainConfig ChainConfig
@@ -122,6 +125,7 @@ type ChainConfig struct {
 	Proposal010Block uint64
 	Proposal011Block uint64
 	Proposal012Block uint64
+	Proposal013Block uint64
 
 	mainNodeContract Address
 }
@@ -208,6 +212,10 @@ func IsProposal009() bool {
 
 func IsProposal012() bool {
 	return isForked(LocalChainConfig.Proposal012Block, GetBlockHeight())
+}
+
+func IsProposal013() bool {
+	return isForked(LocalChainConfig.Proposal013Block, GetBlockHeight())
 }
 
 func isForked(base uint64, height uint64) bool {

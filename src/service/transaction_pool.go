@@ -264,6 +264,13 @@ func (pool *TxPool) GetExecuted(hash common.Hash) *ExecutedTransaction {
 	if err != nil || executedTx == nil {
 		return nil
 	}
+	//complete log's txHash and blockHash filed
+	if len(executedTx.Receipt.Logs) > 0 {
+		for _, log := range executedTx.Receipt.Logs {
+			log.BlockHash = executedTx.Receipt.BlockHash
+			log.TxHash = executedTx.Receipt.TxHash
+		}
+	}
 	return executedTx
 }
 
