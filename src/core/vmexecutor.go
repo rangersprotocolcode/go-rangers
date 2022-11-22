@@ -76,7 +76,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 
 	for i, transaction := range txs {
 		if common.IsProposal013() {
-			this.accountdb.Prepare(transaction.Hash, this.block.Header.Hash, i)
+			this.accountdb.Prepare(transaction.Hash, common.Hash{}, i)
 		}
 		executeTime := utility.GetTime()
 		if this.situation == "casting" && executeTime.Sub(beginTime) > MaxCastBlockTime {
@@ -129,9 +129,11 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		} else {
 			logs := this.context["logs"]
 			if logs != nil {
-				delete(this.context, "logs")
 				receipt.Logs = logs.([]*types.Log)
 			}
+		}
+		if this.context["logs"] != nil {
+			delete(this.context, "logs")
 		}
 		contractAddress := this.context["contractAddress"]
 		if contractAddress != nil {
