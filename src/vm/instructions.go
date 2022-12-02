@@ -982,6 +982,11 @@ func popAddress(callContext *callCtx) common.Address {
 	return common.BytesToAddress(u256.Bytes())
 }
 
+func popBytes32(callContext *callCtx) [32]byte {
+	v := callContext.stack.pop()
+	return v.Bytes32()
+}
+
 func popBytes(callContext *callCtx) ([]byte, uint64) {
 	offset := callContext.stack.pop()
 	size := int64(uint256.NewInt().SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()), 32)).Uint64())
@@ -1152,5 +1157,34 @@ func opUnStakeAll(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx)
 	ret.SetBytes(realMoney.Bytes())
 	common.DefaultLogger.Debugf("unstakeall. source: %s wants money: %s, at height: %d to account: %s", source, realMoney.String(), refundHeight, common.ToHex(addr))
 	pushUint256(callContext, ret)
+	return nil, nil
+}
+
+func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret := true
+	commit := popBytes32(callContext)
+	v := popUint256(callContext)
+	s := popUint256(callContext)
+	r := popUint256(callContext)
+	addr := popAddress(callContext)
+
+	// TODO
+	fmt.Printf("auth(%v, %v, %v, %v, %v)\n", addr, r, s, v, commit)
+
+	pushBool(callContext, ret)
+	return nil, nil
+}
+
+func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret := true
+	data, _ := popBytes(callContext)
+	value := popUint256(callContext)
+	addr := popAddress(callContext)
+	gas := popUint256(callContext)
+
+	//TODO
+	fmt.Printf("authcall(%v, %v, %v, %v)\n", gas, addr, value, data)
+
+	pushBool(callContext, ret)
 	return nil, nil
 }

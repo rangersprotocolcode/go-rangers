@@ -397,6 +397,25 @@ func TestStakeAndUnStake(t *testing.T) {
 	fmt.Printf("New create contract costGas:%v,createErr:%v\n", config.GasLimit-createLeftGas, createErr)
 }
 
+func TestEIP3074(t *testing.T) {
+	mockInit()
+	config := new(testConfig)
+	setDefaults(config)
+	defer log.Close()
+
+	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, "")
+	config.Origin = common.HexToAddress("0x407988d14785a6ae45e3106b4f9799c0ab0af3d0c85447ce1ddb09f089872257")
+	config.GasLimit = 3000000
+	config.GasPrice = big.NewInt(1)
+
+	contractCodeBytes := common.Hex2Bytes("608060405234801561001057600080fd5b506000737c8b97af5d3f745564a7ae035a5228bc3d1034e5905060006001905060006002905060006003905060007f112233445566778899001122334455667788990011223344556677889900112260001b90508484848484f6506000600190506000600290506060600267ffffffffffffffff8111801561009157600080fd5b506040519080825280601f01601f1916602001820160405280156100c45781602001600182028036833780820191505090505b509050600160f81b816000815181106100d957fe5b60200101907effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916908160001a905350600260f81b8160018151811061011a57fe5b60200101907effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916908160001a90535082888383f75050505050505050506051806101656000396000f3fe6080604052600080fdfea2646970667358221220f3f1a2822e51d689d1166debac598c0535d608639f3d61d2f7ab1626e1e91fb464736f6c6375302e372e352b636f6d6d69742e65623737656430380045")
+	createResult, contractAddress, createLeftGas, createErr := mockCreate(contractCodeBytes, config)
+	fmt.Printf("New create contract address:%s\n", contractAddress.GetHexString())
+	fmt.Printf("New create contract createResult:%v,%d\n", createResult, len(createResult))
+	fmt.Printf("New create contract createResult:%s,%d\n", common.ToHex(createResult), len(createResult))
+	fmt.Printf("New create contract costGas:%v,createErr:%v\n", config.GasLimit-createLeftGas, createErr)
+}
+
 func TestPrintF(t *testing.T) {
 	mockInit()
 	config := new(testConfig)
