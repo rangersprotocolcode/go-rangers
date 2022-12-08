@@ -1160,6 +1160,20 @@ func opUnStakeAll(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx)
 	return nil, nil
 }
 
+func opStakeNum(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	ret := uint256.NewInt().SetUint64(0)
+	thisAddress := callContext.contract.Address()
+	pointerAddress := popAddress(callContext)
+	source := interpreter.evm.Origin
+
+	// TODO
+	ret.SetUint64(7)
+	fmt.Printf("stakenum source: %s, stakenum to %s(this->%s) value:%v\n", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString(), ret)
+
+	pushUint256(callContext, ret)
+	return nil, nil
+}
+
 func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
 	ret := true
 	commit := popBytes32(callContext)

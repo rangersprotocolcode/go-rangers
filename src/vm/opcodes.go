@@ -555,6 +555,7 @@ const (
 	UNSTAKE    = 0xef
 	GETSTAKE   = 0xec
 	UNSTAKEALL = 0xeb
+	STAKENUM   = 0xea
 	AUTH       = 0xf6
 	AUTHCALL   = 0xf7
 )
