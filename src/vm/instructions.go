@@ -1009,6 +1009,7 @@ func pushBytes(callContext *callCtx, offset uint64, bytes []byte) {
 	callContext.memory.Set32(offset, uint256.NewInt().SetUint64(uint64(len(bytes))))
 	callContext.memory.Set(offset+32, uint64(len(bytes)), bytes)
 	callContext.stack.push(uint256.NewInt().SetUint64(offset))
+	callContext.stack.push(uint256.NewInt().SetUint64(uint64(len(bytes))))
 }
 
 func opPrintF(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
@@ -1191,14 +1192,17 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 
 func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
 	ret := true
+	retSize := popUint256(callContext)
+	retOffset := popUint256(callContext)
 	data, _ := popBytes(callContext)
 	value := popUint256(callContext)
 	addr := popAddress(callContext)
 	gas := popUint256(callContext)
 
 	//TODO
-	fmt.Printf("authcall(%v, %v, %v, %v)\n", gas, addr, value, data)
+	fmt.Printf("authcall(%v, %v, %v, %v)  %v %v\n", gas, addr, value, data, retOffset, retSize)
 
 	pushBool(callContext, ret)
+	pushBytes(callContext, retOffset.Uint64(), []byte("abc"))
 	return nil, nil
 }
