@@ -92,13 +92,19 @@ func (p *groupCreateProcessor) BeginGenesisGroupMember() {
 
 func genGenesisJoinedGroup() map[string]*model.JoinedGroupInfo {
 	var joinedGroupInfo string
-	if common.IsMainnet() {
-		joinedGroupInfo = mainNetGenesisJoinedGroup
-	} else if common.IsDEV() {
-		joinedGroupInfo = devNetGenesisJoinedGroup
+	if nil != common.Genesis {
+		joinedGroupInfo = common.Genesis.JoinedGroup
 	} else {
-		joinedGroupInfo = robinGenesisJoinedGroup
+		if common.IsMainnet() {
+			joinedGroupInfo = mainNetGenesisJoinedGroup
+		} else if common.IsDEV() {
+			joinedGroupInfo = devNetGenesisJoinedGroup
+		} else {
+			joinedGroupInfo = robinGenesisJoinedGroup
+		}
+
 	}
+
 	splited := strings.Split(joinedGroupInfo, "&&")
 
 	var joinedGroups = make(map[string]*model.JoinedGroupInfo, 0)
@@ -123,13 +129,18 @@ func getGenesisGroupInfo() []*genesisGroup {
 //genGenesisStaticGroupInfo
 func genGenesisGroupInfo() []*genesisGroup {
 	var genesisGroupInfo string
-	if common.IsMainnet() {
-		genesisGroupInfo = mainNetGenesisGroup
-	} else if common.IsDEV() {
-		genesisGroupInfo = devNetGenesisGroup
+	if nil != common.Genesis {
+		genesisGroupInfo = common.Genesis.Group
 	} else {
-		genesisGroupInfo = robinGenesisGroup
+		if common.IsMainnet() {
+			genesisGroupInfo = mainNetGenesisGroup
+		} else if common.IsDEV() {
+			genesisGroupInfo = devNetGenesisGroup
+		} else {
+			genesisGroupInfo = robinGenesisGroup
+		}
 	}
+
 	splited := strings.Split(genesisGroupInfo, "&&")
 	var groups = make([]*genesisGroup, 0)
 	for _, split := range splited {

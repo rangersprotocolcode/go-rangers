@@ -185,11 +185,13 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, dbDSN, 
 	service.InitService()
 	vm.InitVM()
 
+	// 启动链，包括创始块构建
 	err := core.InitCore(consensus.NewConsensusHelper(minerInfo.ID), *sk, minerInfo.ID.GetHexString())
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
 	}
 
+	// 共识部分启动
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
 	if !ok {
 		panic("Init miner consensus init error!")
@@ -204,6 +206,7 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, dbDSN, 
 	if !ok {
 		panic("Init miner start miner error!")
 	}
+
 	syncChainInfo(*sk, minerInfo.ID.GetHexString())
 
 	eth_rpc.InitEthMsgHandler()
