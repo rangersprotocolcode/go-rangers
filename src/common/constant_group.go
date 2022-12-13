@@ -22,4 +22,12 @@ const (
 	GROUP_Work_GAP       = Group_Create_Gap + EPOCH*8 //组准备就绪后, 等待可以铸块的间隔为4个epoch
 )
 
-var GROUP_Work_DURATION = 2 * 60 * 60 * 1000 / GetCastingInterval() //组铸块的周期为100个epoch
+var groupWorkDuration = 2 * 60 * 60 * 1000 / GetCastingInterval() //组铸块的周期为100个epoch
+
+func GetGroupWorkDuration() uint64 {
+	if IsSub() {
+		return Genesis.GroupLife / GetCastingInterval()
+	}
+
+	return groupWorkDuration
+}

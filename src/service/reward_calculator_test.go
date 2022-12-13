@@ -62,23 +62,23 @@ func TestGetEpoch(t *testing.T) {
 
 func TestGetTotalReward(t *testing.T) {
 	reward := getTotalReward(1)
-	if 0.052932098765432097 != reward {
+	if 0.03780864197530864 != reward {
 		t.Fatalf("reward error for 1")
 	}
 	reward = getTotalReward(1000000)
-	if 0.052932098765432097 != reward {
+	if 0.03780864197530864 != reward {
 		t.Fatalf("reward error for 1000000")
 	}
 	reward = getTotalReward(common.BlocksPerEpoch)
-	if 0.04869753086419753 != reward {
+	if  0.03478395061728395 != reward {
 		t.Fatalf("reward error for BlocksPerYear, %v", reward)
 	}
 	reward = getTotalReward(common.BlocksPerEpoch + 1)
-	if 0.04869753086419753 != reward {
+	if  0.03478395061728395 != reward {
 		t.Fatalf("reward error for BlocksPerYear+1")
 	}
 	reward = getTotalReward(common.BlocksPerEpoch * 2)
-	if 0.044801728395061725 != reward {
+	if 0.032001234567901236 != reward {
 		t.Fatalf("reward error for BlocksPerYear*2, %v", reward)
 	}
 
