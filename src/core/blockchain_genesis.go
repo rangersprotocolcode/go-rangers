@@ -50,7 +50,7 @@ func (chain *blockChain) insertGenesisBlock() {
 		} else if common.IsDEV() {
 			genesisBlock = genDevGenesisBlock(state, service.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
 		} else if common.IsSub() {
-			genesisBlock = genRobinGenesisBlock(state, service.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
+			genesisBlock = genSubGenesisBlock(state, service.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
 		} else {
 			genesisBlock = genRobinGenesisBlock(state, service.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
 		}
