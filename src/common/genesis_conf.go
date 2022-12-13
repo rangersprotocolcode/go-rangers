@@ -11,4 +11,6 @@ type GenesisConf struct {
 
 	Group       string `json:"group"`
 	JoinedGroup string `json:"joined"`
+
+	ProposerInfo []string `json:"proposers"`
 }

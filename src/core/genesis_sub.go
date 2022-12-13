@@ -2,10 +2,13 @@ package core
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rocket/node/src/consensus/vrf"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/trie"
 	"com.tuntun.rocket/node/src/utility"
+	"encoding/json"
 	"math/big"
 	"time"
 )
@@ -31,7 +34,7 @@ func genSubGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, g
 	//创建创始合约
 	proxy := createGenesisContract(block.Header, stateDB)
 
-	genesisProposers := getGenesisProposer()
+	genesisProposers := getSubGenesisProposer()
 	addMiners(genesisProposers, stateDB)
 
 	verifyMiners := make([]*types.Miner, 0)
@@ -61,4 +64,32 @@ func genSubGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, g
 	block.Header.Hash = block.Header.GenHash()
 
 	return block
+}
+
+func getSubGenesisProposer() []*types.Miner {
+	miners := make([]*types.Miner, 0)
+	for _, data := range common.Genesis.ProposerInfo {
+		var gp ProposerData
+		json.Unmarshal(utility.StrToBytes(data), &gp)
+
+		var minerId groupsig.ID
+		minerId.SetHexString(gp.Id)
+
+		var minerPubkey groupsig.Pubkey
+		minerPubkey.SetHexString(gp.PublicKey)
+
+		vrfPubkey := vrf.Hex2VRFPublicKey(gp.VrfPublicKey)
+		miner := types.Miner{
+			Id:           minerId.Serialize(),
+			PublicKey:    minerPubkey.Serialize(),
+			VrfPublicKey: vrfPubkey.GetBytes(),
+			ApplyHeight:  0,
+			Stake:        common.ProposerStake,
+			Type:         common.MinerTypeProposer,
+			Status:       common.MinerStatusNormal,
+			Account:      common.FromHex(gp.Account),
+		}
+		miners = append(miners, &miner)
+	}
+	return miners
 }
