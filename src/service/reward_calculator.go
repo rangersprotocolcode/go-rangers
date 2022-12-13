@@ -133,7 +133,7 @@ func getEpoch(height uint64) uint64 {
 }
 
 func getTotalReward(height uint64) float64 {
-	return common.TotalRPGSupply * math.Pow(1-common.ReleaseRate, float64(getEpoch(height))) * common.ReleaseRate / common.BlocksPerEpoch
+	return common.TotalRPGSupply * math.Pow(1-common.ReleaseRate, float64(getEpoch(height))) * common.ReleaseRate / float64(common.BlocksPerEpoch)
 }
 
 func addReward(all map[common.Address]*big.Int, addr common.Address, delta *big.Int) {

@@ -4,8 +4,8 @@ type GenesisConf struct {
 	ChainId string `json:"chainId"`
 	Name    string `json:"name"`
 
-	Cast      int `json:"cast"`
-	GroupLife int `json:"groupLife"`
+	Cast      uint64 `json:"cast"`
+	GroupLife uint64 `json:"groupLife"`
 
 	GenesisTime int64 `json:"genesisTime"`
 
