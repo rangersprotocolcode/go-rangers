@@ -199,7 +199,7 @@ func getGenesisConf(name string) *GenesisConf {
 
 	content, err := ioutil.ReadAll(file)
 	if err != nil {
-		fmt.Println("file: " + name + "reading error" + err.Error())
+		fmt.Println("file: " + name + "reading error: " + err.Error())
 		return nil
 	}
 
@@ -208,7 +208,7 @@ func getGenesisConf(name string) *GenesisConf {
 	var genesisConf GenesisConf
 	err = json.Unmarshal(content, &genesisConf)
 	if err != nil {
-		fmt.Println("file: " + name + "reading error" + err.Error())
+		fmt.Println("file: " + name + " reading error: " + err.Error())
 		return nil
 	}
 

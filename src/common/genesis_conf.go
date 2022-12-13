@@ -7,7 +7,7 @@ type GenesisConf struct {
 	Cast      int `json:"cast"`
 	GroupLife int `json:"groupLife"`
 
-	GenesisTime string `json:"genesisTime"`
+	GenesisTime int64 `json:"genesisTime"`
 
 	Group       string `json:"group"`
 	JoinedGroup string `json:"joined"`

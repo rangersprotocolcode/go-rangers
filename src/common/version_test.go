@@ -25,3 +25,9 @@ func TestChainId(t *testing.T) {
 	chainId3 := ChainId(1000000 - 1)
 	fmt.Printf("chain id 3:%s\n", chainId3)
 }
+
+func TestGetGenesis(t *testing.T) {
+	if nil == getGenesisConf("1.json") {
+		t.Fatal()
+	}
+}
