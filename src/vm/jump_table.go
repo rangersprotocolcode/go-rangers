@@ -1137,8 +1137,9 @@ func newInstructionSet() JumpTable {
 	instructionSet[AUTHCALL] = &operation{
 		execute:     opAuthCall,
 		constantGas: 0,
-		minStack:    minStack(5, 5),
-		maxStack:    maxStack(5, 5),
+		minStack:    minStack(6, 6),
+		maxStack:    maxStack(6, 6),
+		memorySize:  memoryAuthCall,
 	}
 
 	return instructionSet
