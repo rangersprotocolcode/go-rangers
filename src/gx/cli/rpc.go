@@ -20,11 +20,11 @@ import (
 	"com.tuntun.rocket/node/src/gx/rpc"
 	"net"
 	"net/http"
+	"strings"
 
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"fmt"
-	"strings"
 	"sync"
 )
 
@@ -92,6 +92,10 @@ func StartRPC(host string, port uint, privateKey string) error {
 		{Namespace: "Rocket", Version: "1", Service: GtasAPIImpl, Public: true},
 		{Namespace: "Rangers", Version: "1", Service: GtasAPIImpl, Public: true},
 	}
+	if common.IsSub() {
+		apis = append(apis, rpc.API{Namespace: common.Genesis.Name, Version: "1", Service: GtasAPIImpl, Public: true})
+	}
+
 	for plus := 0; plus < 40; plus++ {
 		err = startHTTP(fmt.Sprintf("%s:%d", host, port+uint(plus)), apis, []string{}, []string{}, []string{})
 		if err == nil {
