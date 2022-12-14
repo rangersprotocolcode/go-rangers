@@ -28,8 +28,8 @@ func genSubGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, g
 	}
 
 	block.Header.RequestIds = make(map[string]uint64)
-	block.Header.Signature = common.Sha256([]byte("tuntunhz"))
-	block.Header.Random = common.Sha256([]byte("RangersProtocolVRF"))
+	block.Header.Signature = common.Sha256([]byte(common.Genesis.Name))
+	block.Header.Random = common.Sha256([]byte(common.Genesis.Name))
 
 	//创建创始合约
 	proxy := createGenesisContract(block.Header, stateDB)

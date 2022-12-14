@@ -25,7 +25,7 @@ const (
 var groupWorkDuration = 2 * 60 * 60 * 1000 / GetCastingInterval() //组铸块的周期为100个epoch
 
 func GetGroupWorkDuration() uint64 {
-	if IsSub() {
+	if IsSub() && 0 != Genesis.GroupLife {
 		return Genesis.GroupLife / GetCastingInterval()
 	}
 

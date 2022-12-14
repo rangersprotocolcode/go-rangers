@@ -144,7 +144,6 @@ func (gx *GX) Run() {
 		}
 	case mineCmd.FullCommand():
 		fmt.Println("Use config file: " + *configFile)
-		fmt.Println("Welcome to be a RangersProtocol miner!")
 		fmt.Printf("Env:%s,Chain ID:%s,Network ID:%s\n", *env, common.ChainId(utility.MaxUint64), common.NetworkId())
 		go func() {
 			http.ListenAndServe(fmt.Sprintf(":%d", *pprofPort), nil)
@@ -224,7 +223,7 @@ func (gx *GX) getAccountInfo(sk string) {
 }
 
 func syncChainInfo(privateKey common.PrivateKey, id string) {
-	fmt.Println("Syncing block and group info from RangersProtocol net. Waiting...")
+	fmt.Println("Syncing block and group info. Waiting...")
 	core.StartSync()
 	go func() {
 		timer := time.NewTicker(time.Second * 10)

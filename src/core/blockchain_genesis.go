@@ -45,15 +45,16 @@ func (chain *blockChain) insertGenesisBlock() {
 	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	if nil == err {
 		var genesisBlock *types.Block
-		if common.IsMainnet() {
+		if common.IsSub() {
+			genesisBlock = genSubGenesisBlock(state, service.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
+		} else if common.IsMainnet() {
 			genesisBlock = genGenesisBlock(state, service.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
 		} else if common.IsDEV() {
 			genesisBlock = genDevGenesisBlock(state, service.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
-		} else if common.IsSub() {
-			genesisBlock = genSubGenesisBlock(state, service.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
 		} else {
 			genesisBlock = genRobinGenesisBlock(state, service.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
 		}
+
 		logger.Debugf("GenesisBlock Hash:%s,StateTree:%s", genesisBlock.Header.Hash.String(), genesisBlock.Header.StateTree.Hex())
 		blockByte, _ := types.MarshalBlock(genesisBlock)
 		chain.saveBlockByHash(genesisBlock.Header.Hash, blockByte)

@@ -182,7 +182,7 @@ func InitChainConfig(env string) {
 	Genesis = getGenesisConf(filename)
 	if nil == Genesis {
 		fmt.Println("no genesisConf, using default")
-	} else {
+	} else if 0 != len(Genesis.ChainId) {
 		LocalChainConfig.NetworkId = Genesis.ChainId
 	}
 }
@@ -203,7 +203,7 @@ func getGenesisConf(name string) *GenesisConf {
 		return nil
 	}
 
-	fmt.Println("get genesis.json: " + string(content))
+	fmt.Println("get genesis.json")
 
 	var genesisConf GenesisConf
 	err = json.Unmarshal(content, &genesisConf)
@@ -217,7 +217,7 @@ func getGenesisConf(name string) *GenesisConf {
 
 func GetChainId(height uint64) *big.Int {
 	var chainIdStr string
-	if nil != Genesis {
+	if nil != Genesis && 0 != len(Genesis.ChainId) {
 		chainIdStr = Genesis.ChainId
 	} else {
 		chainIdStr = ChainId(height)

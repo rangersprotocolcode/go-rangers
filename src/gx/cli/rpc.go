@@ -63,7 +63,7 @@ func startHTTP(endpoint string, apis []rpc.API, modules []string, cors []string,
 
 func startHttps(httpPort uint, privateKey string) error {
 	endpoint := fmt.Sprintf("0.0.0.0:%d", httpPort+1000)
-	fmt.Println(endpoint)
+	fmt.Println("self http: " + endpoint)
 	var (
 		listener net.Listener
 		err      error
