@@ -520,3 +520,82 @@ func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *
 	contractAddr = crypto.CreateAddress2(caller.Address(), common.Hash(salt.Bytes32()), codeAndHash.Hash().Bytes())
 	return evm.create(caller, codeAndHash, gas, endowment, contractAddr)
 }
+
+// AuthCall executes the contract associated with the addr with the given input
+// as parameters.
+//transfer and gas will be paid by sponsor
+//It reverses the state in case of an execution error.
+func (evm *EVM) AuthCall(sponsor common.Address, caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, logs []*types.Log, err error) {
+	//if evm.vmConfig.NoRecursion && evm.depth > 0 {
+	//	return nil, gas, nil
+	//}
+
+	// Fail if we're trying to execute above the call depth limit
+	if evm.depth > int(CallCreateDepth) {
+		return nil, gas, nil, ErrDepth
+	}
+	// Fail if we're trying to transfer more than the available balance
+	if value.Sign() != 0 && !evm.Context.CanTransfer(evm.StateDB, sponsor, value) {
+		return nil, gas, nil, ErrInsufficientBalance
+	}
+	snapshot := evm.StateDB.Snapshot()
+	p, isPrecompile := evm.precompile(addr)
+
+	if !evm.StateDB.Exist(addr) {
+		/**todo
+		origin:if !isPrecompile && evm.chainRules.IsEIP158 && value.Sign() == 0
+		*/
+		if !isPrecompile && value.Sign() == 0 {
+			// Calling a non existing account, don't do anything, but ping the tracer
+			//if evm.vmConfig.Debug && evm.depth == 0
+			//if evm.depth == 0 {
+			//	evm.tracer.CaptureStart(caller.Address(), addr, false, input, gas, value)
+			//	evm.tracer.CaptureEnd(ret, 0, 0, nil)
+			//}
+			return nil, gas, nil, nil
+		}
+		evm.StateDB.CreateAccount(addr)
+	}
+	evm.Transfer(evm.StateDB, sponsor, addr, value)
+
+	// Capture the tracer start/end events in debug mode
+	//if evm.vmConfig.Debug && evm.depth == 0
+	//if evm.depth == 0 {
+	//	evm.tracer.CaptureStart(caller.Address(), addr, false, input, gas, value)
+	//	defer func(startGas uint64, startTime time.Time) { // Lazy evaluation of the parameters
+	//		evm.tracer.CaptureEnd(ret, startGas-gas, time.Since(startTime), err)
+	//	}(gas, time.Now())
+	//}
+
+	if isPrecompile {
+		ret, gas, err = RunPrecompiledContract(p, input, gas)
+	} else {
+		// Initialise a new contract and set the code that is to be used by the EVM.
+		// The contract is a scoped environment for this execution context only.
+		code := evm.StateDB.GetCode(addr)
+		if len(code) == 0 {
+			ret, err = nil, nil // gas is unchanged
+		} else {
+			addrCopy := addr
+			// If the account has no code, we can abort here
+			// The depth-check is already done, and precompiles handled above
+			contract := NewContract(caller, AccountRef(addrCopy), value, gas)
+			contract.SetCallCode(&addrCopy, evm.StateDB.GetCodeHash(addrCopy), code)
+			ret, logs, err = run(evm, contract, input, false)
+			gas = contract.Gas
+		}
+	}
+	// When an error was returned by the EVM or when setting the creation code
+	// above we revert to the snapshot and consume any gas remaining. Additionally
+	// when we're in homestead this also counts for code storage gas errors.
+	if err != nil {
+		evm.StateDB.RevertToSnapshot(snapshot)
+		if err != ErrExecutionReverted {
+			gas = 0
+		}
+		// TODO: consider clearing up unused snapshots:
+		//} else {
+		//	evm.StateDB.DiscardSnapshot(snapshot)
+	}
+	return ret, gas, logs, err
+}

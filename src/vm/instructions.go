@@ -18,6 +18,7 @@ package vm
 
 import (
 	"bytes"
+	crypto "com.tuntun.rocket/node/src/eth_crypto"
 	"fmt"
 	"math"
 	"math/big"
@@ -31,6 +32,8 @@ import (
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 )
+
+const AUTHMAGIC = 0x03
 
 func opAdd(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
 	x, y := callContext.stack.pop(), callContext.stack.peek()
@@ -1176,33 +1179,104 @@ func opStakeNum(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 }
 
 func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	ret := true
+	ret := false
 	commit := popBytes32(callContext)
 	v := popUint256(callContext)
 	s := popUint256(callContext)
 	r := popUint256(callContext)
-	addr := popAddress(callContext)
+	authorityAddr := popAddress(callContext)
+	logger.Debugf("[opAuth]authority:%s,commit:%s,r:%s,s:%s,v:%s", authorityAddr.String(), common.BytesToHash(commit[:]), r.String(), s.String(), v.String())
 
-	// TODO
-	fmt.Printf("auth(%v, %v, %v, %v, %v)\n", addr, r, s, v, commit)
+	hash := calAuthHash(interpreter.evm.chainID.Uint64(), callContext.contract.Address(), commit)
+	//stricter s range for preventing ECDSA malleability
+	if !crypto.ValidateSignatureValues(byte(v.Uint64()), r.ToBig(), s.ToBig(), true) {
+		logger.Debugf("[opAuth]validate sig failed")
+		pushBool(callContext, ret)
+		return nil, nil
+	}
 
+	sig := make([]byte, 65)
+	r.WriteToSlice(sig[0:32])
+	s.WriteToSlice(sig[32:64])
+	sig[64] = byte(v.Uint64())
+	//if sig[64] > 26 {
+	//	sig[64] -= 27
+	//}
+	pub, err := crypto.Ecrecover(hash[:], sig)
+	if err != nil {
+		logger.Debugf("[opAuth]ecrecover error:%s", err.Error())
+		pushBool(callContext, ret)
+		return nil, nil
+	}
+
+	var recoveredAddr common.Address
+	copy(recoveredAddr[:], crypto.Keccak256(pub[1:])[12:])
+	if recoveredAddr == authorityAddr {
+		callContext.authorized = &authorityAddr
+		ret = true
+		logger.Debugf("[opAuth]set authorized address:%s", callContext.authorized.String())
+	} else {
+		logger.Debugf("[opAuth]address diff.authority:%s,recovered:%s", authorityAddr.String(), recoveredAddr.String())
+	}
 	pushBool(callContext, ret)
 	return nil, nil
 }
 
 func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	ret := true
 	retSize := popUint256(callContext)
 	retOffset := popUint256(callContext)
 	data, _ := popBytes(callContext)
 	value := popUint256(callContext)
 	addr := popAddress(callContext)
-	gas := popUint256(callContext)
+	//gas but not used
+	popUint256(callContext)
+	gas := interpreter.evm.callGasTemp
 
+	if callContext.authorized == nil {
+		logger.Debugf("authcall failed:authorized address is nil")
+		pushBool(callContext, false)
+		return nil, nil
+	}
+
+	var bigVal = big0
+	//TODO: use uint256.Int instead of converting with toBig()
+	// By using big0 here, we save an alloc for the most common case (non-ether-transferring contract calls),
+	// but it would make more sense to extend the usage of uint256.Int
+	if !value.IsZero() {
+		bigVal = value.ToBig()
+	}
+
+	sponsor := interpreter.evm.Origin
+	caller := AccountRef(*callContext.authorized)
+	ret, returnGas, logs, err := interpreter.evm.AuthCall(sponsor, caller, addr, data, gas, bigVal)
+	for _, log := range logs {
+		callContext.logs = append(callContext.logs, log)
+	}
+	if err != nil {
+		pushBool(callContext, false)
+	} else {
+		pushBool(callContext, true)
+	}
+	if err == nil || err == ErrExecutionReverted {
+		pushBytes(callContext, retOffset.Uint64(), ret)
+	}
+	callContext.contract.Gas += returnGas
 	//TODO
 	fmt.Printf("authcall(%v, %v, %v, %v)  %v %v\n", gas, addr, value, data, retOffset, retSize)
-
-	pushBool(callContext, ret)
-	pushBytes(callContext, retOffset.Uint64(), []byte("abc"))
 	return nil, nil
+}
+
+//EIP-3074 cal hash
+//keccak256(MAGIC || chainId || paddedInvokerAddress || commit)
+func calAuthHash(chainId uint64, contractAddress common.Address, commit [32]byte) []byte {
+	chainIdBytes := utility.UInt64ToByte(chainId)
+	paddedContractAddress := utility.LeftPadBytes(contractAddress.Bytes(), 32)
+
+	msg := make([]byte, 97)
+	msg[0] = AUTHMAGIC
+	copy(msg[1:33], chainIdBytes)
+	copy(msg[33:65], paddedContractAddress)
+	copy(msg[65:], commit[:])
+	hash := crypto.Keccak256(msg)
+	return hash
 }
