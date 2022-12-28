@@ -1167,12 +1167,21 @@ func opUnStakeAll(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx)
 func opStakeNum(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
 	ret := uint256.NewInt().SetUint64(0)
 	thisAddress := callContext.contract.Address()
-	pointerAddress := popAddress(callContext)
-	source := interpreter.evm.Origin
+	//pointerAddress := popAddress(callContext)
+	//source := interpreter.evm.Origin
 
-	// TODO
-	ret.SetUint64(7)
-	fmt.Printf("stakenum source: %s, stakenum to %s(this->%s) value:%v\n", source.GetHexString(), pointerAddress.GetHexString(), thisAddress.GetHexString(), ret)
+	minerId := service.MinerManagerImpl.GetMinerIdByAccount(thisAddress.Bytes(), interpreter.evm.accountDB)
+	if nil == minerId {
+		common.DefaultLogger.Debugf("stakenum error. no miner for address : %s", thisAddress.GetHexString())
+		return nil, fmt.Errorf("no such miner: %s", thisAddress.String())
+	}
+
+	miner := service.MinerManagerImpl.GetMiner(minerId, interpreter.evm.accountDB)
+	if nil == miner {
+		common.DefaultLogger.Debugf("stakenum error. no miner for address : %s", thisAddress.GetHexString())
+		return nil, fmt.Errorf("no such miner: %s", thisAddress.String())
+	}
+	ret.SetUint64(miner.Stake)
 
 	pushUint256(callContext, ret)
 	return nil, nil
