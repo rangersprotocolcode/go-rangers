@@ -1197,8 +1197,12 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	logger.Debugf("[opAuth]authority:%s,commit:%s,r:%s,s:%s,v:%s", authorityAddr.String(), common.ToHex(commit[:]), r.String(), s.String(), v.String())
 
 	hash := calAuthHash(interpreter.evm.chainID.Uint64(), callContext.contract.Address(), commit)
+	vAdapt := byte(v.Uint64())
+	if vAdapt > 26 {
+		vAdapt -= 27
+	}
 	//stricter s range for preventing ECDSA malleability
-	if !crypto.ValidateSignatureValues(byte(v.Uint64()), r.ToBig(), s.ToBig(), true) {
+	if !crypto.ValidateSignatureValues(vAdapt, r.ToBig(), s.ToBig(), true) {
 		logger.Debugf("[opAuth]validate sig failed")
 		pushBool(callContext, ret)
 		return nil, nil
@@ -1207,10 +1211,8 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	sig := make([]byte, 65)
 	r.WriteToSlice(sig[0:32])
 	s.WriteToSlice(sig[32:64])
-	sig[64] = byte(v.Uint64())
-	if sig[64] > 26 {
-		sig[64] -= 27
-	}
+	sig[64] = vAdapt
+
 	pub, err := crypto.Ecrecover(hash[:], sig)
 	if err != nil {
 		logger.Debugf("[opAuth]ecrecover error:%s", err.Error())
