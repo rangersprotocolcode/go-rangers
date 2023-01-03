@@ -1194,11 +1194,15 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	s := popUint256(callContext)
 	r := popUint256(callContext)
 	authorityAddr := popAddress(callContext)
-	logger.Debugf("[opAuth]authority:%s,commit:%s,r:%s,s:%s,v:%s", authorityAddr.String(), common.BytesToHash(commit[:]), r.String(), s.String(), v.String())
+	logger.Debugf("[opAuth]authority:%s,commit:%s,r:%s,s:%s,v:%s", authorityAddr.String(), common.ToHex(commit[:]), r.String(), s.String(), v.String())
 
 	hash := calAuthHash(interpreter.evm.chainID.Uint64(), callContext.contract.Address(), commit)
+	vAdapt := byte(v.Uint64())
+	if vAdapt > 26 {
+		vAdapt -= 27
+	}
 	//stricter s range for preventing ECDSA malleability
-	if !crypto.ValidateSignatureValues(byte(v.Uint64()), r.ToBig(), s.ToBig(), true) {
+	if !crypto.ValidateSignatureValues(vAdapt, r.ToBig(), s.ToBig(), true) {
 		logger.Debugf("[opAuth]validate sig failed")
 		pushBool(callContext, ret)
 		return nil, nil
@@ -1207,10 +1211,8 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	sig := make([]byte, 65)
 	r.WriteToSlice(sig[0:32])
 	s.WriteToSlice(sig[32:64])
-	sig[64] = byte(v.Uint64())
-	//if sig[64] > 26 {
-	//	sig[64] -= 27
-	//}
+	sig[64] = vAdapt
+
 	pub, err := crypto.Ecrecover(hash[:], sig)
 	if err != nil {
 		logger.Debugf("[opAuth]ecrecover error:%s", err.Error())
@@ -1232,7 +1234,8 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 }
 
 func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	retSize := popUint256(callContext)
+	//retSize :=
+	popUint256(callContext)
 	retOffset := popUint256(callContext)
 	data, _ := popBytes(callContext)
 	value := popUint256(callContext)
@@ -1257,6 +1260,7 @@ func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 
 	sponsor := interpreter.evm.Origin
 	caller := AccountRef(*callContext.authorized)
+	logger.Debugf("[authcall] sponsor:%s,from:%s,to:%s,value:%v,gas:%v,data:%s", sponsor.String(), caller.Address().String(), addr.String(), bigVal.String(), gas, common.ToHex(data))
 	ret, returnGas, logs, err := interpreter.evm.AuthCall(sponsor, caller, addr, data, gas, bigVal)
 	for _, log := range logs {
 		callContext.logs = append(callContext.logs, log)
@@ -1270,8 +1274,6 @@ func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 		pushBytes(callContext, retOffset.Uint64(), ret)
 	}
 	callContext.contract.Gas += returnGas
-	//TODO
-	fmt.Printf("authcall(%v, %v, %v, %v)  %v %v\n", gas, addr, value, data, retOffset, retSize)
 	return nil, nil
 }
 
