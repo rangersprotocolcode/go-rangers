@@ -1196,7 +1196,7 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	authorityAddr := popAddress(callContext)
 	logger.Debugf("[opAuth]authority:%s,commit:%s,r:%s,s:%s,v:%s", authorityAddr.String(), common.ToHex(commit[:]), r.String(), s.String(), v.String())
 
-	hash := calAuthHash(interpreter.evm.chainID.Uint64(), callContext.contract.Address(), commit)
+	hash := calAuthHash(interpreter.evm.chainID, callContext.contract.Address(), commit)
 	vAdapt := byte(v.Uint64())
 	if vAdapt > 26 {
 		vAdapt -= 27
@@ -1279,8 +1279,8 @@ func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 
 //EIP-3074 cal hash
 //keccak256(MAGIC || chainId || paddedInvokerAddress || commit)
-func calAuthHash(chainId uint64, contractAddress common.Address, commit [32]byte) []byte {
-	chainIdBytes := utility.UInt64ToByte(chainId)
+func calAuthHash(chainId *big.Int, contractAddress common.Address, commit [32]byte) []byte {
+	chainIdBytes := utility.LeftPadBytes(chainId.Bytes(), 32)
 	paddedContractAddress := utility.LeftPadBytes(contractAddress.Bytes(), 32)
 
 	msg := make([]byte, 97)
