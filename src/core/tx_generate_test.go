@@ -338,15 +338,3 @@ func TestCallVMTx(t *testing.T) {
 	tx.Data = string(dataBytes)
 	fmt.Printf("%s\n\n", tx.ToTxJson().ToString())
 }
-
-type callVMData struct {
-	Height string `json:"height,omitempty"`
-	Hash   string `json:"hash,omitempty"`
-
-	From     string `json:"from"`
-	To       string `json:"to"`
-	Gas      uint64 `json:"gas"`
-	GasPrice string `json:"gasPrice"`
-	Value    string `json:"value"`
-	Data     string `json:"data"`
-}
