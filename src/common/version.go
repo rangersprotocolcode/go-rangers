@@ -32,7 +32,7 @@ const (
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
-	ENV_TESTNET_ROBIN = "test"
+	ENV_TESTNET_ROBIN = "robin"
 	ENV_MAINNET       = "mainnet"
 )
 

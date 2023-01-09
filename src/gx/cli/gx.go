@@ -102,7 +102,7 @@ func (gx *GX) Run() {
 	if err != nil {
 		kingpin.Fatalf("%s, try --help", err)
 	}
-
+	fmt.Println("for test")
 	common.InitChainConfig(*env)
 	common.InitConf(*configFile)
 
