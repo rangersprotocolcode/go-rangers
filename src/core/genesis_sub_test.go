@@ -44,6 +44,6 @@ func TestCreateSubCrossContract(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createSubGenesisContract(block.Header, stateDB)
+	createEconomyContract(block.Header, stateDB, "mycoin", "mc", 100000000)
 	createSubCrossContract(block.Header, stateDB, "testChain001")
 }

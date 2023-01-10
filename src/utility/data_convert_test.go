@@ -270,3 +270,11 @@ func TestStrToBigInt15(t *testing.T) {
 	fmt.Println(bigInt2)
 	fmt.Println(FormatDecimalForRocket(bigInt2, 18))
 }
+
+func TestBigIntBase10toN(t *testing.T) {
+	bigInt, _ := new(big.Int).SetString("100000000000000000000000000", 10)
+	result := BigIntBase10toN(bigInt, 16)
+	if "52b7d2dcc80cd2e4000000" != result {
+		t.Fatalf("expect: 52b7d2dcc80cd2e4000000, but: %s", result)
+	}
+}

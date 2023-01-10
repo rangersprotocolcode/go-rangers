@@ -21,6 +21,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/big"
+	"strconv"
 	"strings"
 )
 
@@ -31,7 +32,10 @@ const (
 	defaultDecimal = 18
 )
 
-var ten = big.NewInt(10)
+var (
+	ten      = big.NewInt(10)
+	tenToAny = []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"}
+)
 
 func UInt64ToByte(i uint64) []byte {
 	buf := bytes.NewBuffer([]byte{})
@@ -180,4 +184,38 @@ func FormatDecimalForRocket(number *big.Int, decimal int64) *big.Int {
 	numberString := bigIntToStr(number, int(decimal))
 	result, _ := StrToBigInt(numberString)
 	return result
+}
+
+func BigIntBase10toN(bigInt *big.Int, base int) string {
+	// 进制转换所需要的除数
+	bigInt64, ok := new(big.Int).SetString(strconv.Itoa(base), 10)
+	if !ok {
+		return ""
+	}
+
+	// 商
+	var remainStr, finalRes string
+	// 最终结果
+
+	for remainStr != "0" {
+
+		// 取余
+		remain, mod := new(big.Int).DivMod(bigInt, bigInt64, new(big.Int))
+
+		remainStr = remain.Text(10)
+
+		modValue := mod.Int64()
+		if modValue > 16 {
+			return ""
+		}
+		str := tenToAny[modValue]
+		finalRes = str + finalRes
+
+		bigInt, ok = new(big.Int).SetString(remainStr, 10)
+		if !ok {
+			return ""
+		}
+	}
+
+	return finalRes
 }
