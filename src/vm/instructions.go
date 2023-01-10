@@ -1194,7 +1194,8 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	s := popUint256(callContext)
 	r := popUint256(callContext)
 	authorityAddr := popAddress(callContext)
-	logger.Debugf("[opAuth]authority:%s,commit:%s,r:%s,s:%s,v:%s", authorityAddr.String(), common.ToHex(commit[:]), r.String(), s.String(), v.String())
+	callContext.authorized = nil
+	logger.Debugf("[opAuth]authority:%s,commit:%s,r:%s,s:%s,v:%s", authorityAddr.String(), common.ToHex(commit[:]), r.ToBig().String(), s.ToBig().String(), v.ToBig().String())
 
 	hash := calAuthHash(interpreter.evm.chainID, callContext.contract.Address(), commit)
 	vAdapt := byte(v.Uint64())
@@ -1213,6 +1214,7 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	s.WriteToSlice(sig[32:64])
 	sig[64] = vAdapt
 
+	logger.Debugf("hash:%s,sig:%v", common.ToHex(hash[:]), sig)
 	pub, err := crypto.Ecrecover(hash[:], sig)
 	if err != nil {
 		logger.Debugf("[opAuth]ecrecover error:%s", err.Error())
