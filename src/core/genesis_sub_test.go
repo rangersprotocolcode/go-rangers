@@ -44,6 +44,16 @@ func TestCreateSubCrossContract(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	createEconomyContract(block.Header, stateDB, "mycoin", "mc", 100000000)
-	createSubCrossContract(block.Header, stateDB, "testChain001")
+	conf := &common.GenesisConf{
+		Name:           "testChain001",
+		TokenName:      "myCoin",
+		Symbol:         "mc",
+		TotalSupply:    100000,
+		Cast:           2000,
+		TimeCycle:      10,
+		ProposalToken:  30,
+		ValidatorToken: 40,
+	}
+	createEconomyContract(block.Header, stateDB, conf)
+	createSubCrossContract(block.Header, stateDB, conf.Name)
 }
