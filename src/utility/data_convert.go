@@ -21,7 +21,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/big"
-	"strconv"
 	"strings"
 )
 
@@ -188,33 +187,14 @@ func FormatDecimalForRocket(number *big.Int, decimal int64) *big.Int {
 
 func BigIntBase10toN(bigInt *big.Int, base int) string {
 	// 进制转换所需要的除数
-	bigInt64, ok := new(big.Int).SetString(strconv.Itoa(base), 10)
-	if !ok {
-		return ""
-	}
+	bigInt64 := big.NewInt(int64(base))
+	mod := big.NewInt(0)
+	finalRes := ""
 
-	// 商
-	var remainStr, finalRes string
-	// 最终结果
-
-	for remainStr != "0" {
-
+	for bigInt.Sign() != 0 {
 		// 取余
-		remain, mod := new(big.Int).DivMod(bigInt, bigInt64, new(big.Int))
-
-		remainStr = remain.Text(10)
-
-		modValue := mod.Int64()
-		if modValue > 16 {
-			return ""
-		}
-		str := tenToAny[modValue]
-		finalRes = str + finalRes
-
-		bigInt, ok = new(big.Int).SetString(remainStr, 10)
-		if !ok {
-			return ""
-		}
+		bigInt.DivMod(bigInt, bigInt64, mod)
+		finalRes = tenToAny[mod.Int64()] + finalRes
 	}
 
 	return finalRes
