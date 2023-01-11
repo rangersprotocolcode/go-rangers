@@ -7,6 +7,15 @@ import (
 	"strconv"
 )
 
+func GenerateCallDataAddress(addr Address) string {
+	addrString := addr.String()[2:]
+	padding := 64 - len(addrString)
+	for i := 0; i < padding; i++ {
+		addrString = "0" + addrString
+	}
+	return addrString
+}
+
 func GenerateCallDataString(chainName string) string {
 	length := GenerateCallDataUint(uint64(len(chainName)))
 

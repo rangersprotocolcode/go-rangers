@@ -50,6 +50,33 @@ func InitMinerManager() {
 	MinerManagerImpl.logger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 }
 
+func (mm *MinerManager) GetAllMinerIdAndAccount(height uint64, accountDB *account.AccountDB) (map[string]common.Address, map[string]common.Address) {
+	if accountDB == nil {
+		return nil, nil
+	}
+
+	proposals, validators := make(map[string]common.Address, 0), make(map[string]common.Address, 0)
+
+	iter := mm.minerIterator(common.MinerTypeProposer, accountDB)
+	for iter.Next() {
+		miner, _ := iter.Current()
+		if nil == miner || common.MinerStatusNormal != miner.Status || height < miner.ApplyHeight {
+			continue
+		}
+		proposals[common.ToHex(miner.Id)] = common.BytesToAddress(miner.Account)
+	}
+
+	iter = mm.minerIterator(common.MinerTypeValidator, accountDB)
+	for iter.Next() {
+		miner, _ := iter.Current()
+		if nil == miner || common.MinerStatusNormal != miner.Status || height < miner.ApplyHeight {
+			continue
+		}
+		validators[common.ToHex(miner.Id)] = common.BytesToAddress(miner.Account)
+	}
+	return proposals, validators
+}
+
 func (mm *MinerManager) GetMinerIdByAccount(account []byte, accountDB *account.AccountDB) types.HexBytes {
 	iterator := mm.minerIterator(common.MinerTypeValidator, accountDB)
 	for iterator.Next() {

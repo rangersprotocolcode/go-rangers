@@ -175,8 +175,12 @@ func (executor *VMExecutor) after() {
 	service.RefundManagerImpl.Add(types.GetRefundInfo(executor.context), executor.accountdb)
 
 	// 计算出块奖励
-	data := service.RewardCalculatorImpl.CalculateReward(height, executor.accountdb, executor.block.Header, executor.situation)
-	service.RefundManagerImpl.Add(data, executor.accountdb)
+	if common.IsSub(){
+		executor.calcSubReward()
+	}else{
+		data := service.RewardCalculatorImpl.CalculateReward(height, executor.accountdb, executor.block.Header, executor.situation)
+		service.RefundManagerImpl.Add(data, executor.accountdb)
+	}
 
 	service.RefundManagerImpl.CheckAndMove(height, executor.accountdb)
 	if common.LocalChainConfig.Proposal004Block == height {
