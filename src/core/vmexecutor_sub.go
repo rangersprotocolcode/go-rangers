@@ -31,7 +31,7 @@ func (executor *VMExecutor) calcSubReward() {
 	vmCtx.GasPrice = big.NewInt(1)
 	vmCtx.GasLimit = 30000000
 
-	vmInstance := vm.NewEVM(vmCtx, executor.accountdb)
+	vmInstance := vm.NewEVMWithNFT(vmCtx, executor.accountdb, executor.accountdb)
 	caller := vm.AccountRef(vmCtx.Origin)
 
 	code, done := executor.generateCode(header)
@@ -84,7 +84,6 @@ func transfer(db vm.StateDB, sender, recipient common.Address, amount *big.Int) 
 		return
 	}
 
-	rewardLog.Debugf("sender: %s, recipient: %s, amount: %s", sender.String(), recipient.String(), amount.String())
 	db.SubBalance(sender, amount)
 	db.AddBalance(recipient, amount)
 }
