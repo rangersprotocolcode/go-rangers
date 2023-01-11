@@ -88,4 +88,4 @@ func GetCastingInterval() uint64 {
 	return castingInterval
 }
 
-const EconomyContract = "0x71d9cfd1b7adb1e8eb4c193ce6ffbe19b4aee0db"
+var EconomyContract = HexToAddress("0x71d9cfd1b7adb1e8eb4c193ce6ffbe19b4aee0db")

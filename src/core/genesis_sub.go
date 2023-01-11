@@ -163,8 +163,8 @@ func createEconomyContract(header *types.BlockHeader, statedb *account.AccountDB
 	if err != nil {
 		panic("fail to convert totalSupply. " + totalString)
 	}
-	totalContractString := generateCallDataBigInt(bigInt)
-	code := subCoinBaseContract + totalContractString + subCoinPadding + generateCallDataString(tokenName) + generateCallDataString(symbol)
+	totalContractString := common.GenerateCallDataBigInt(bigInt)
+	code := subCoinBaseContract + totalContractString + subCoinPadding + common.GenerateCallDataString(tokenName) + common.GenerateCallDataString(symbol)
 	_, subCoin, _, _, err := vmInstance.Create(caller, common.FromHex(code), vmCtx.GasLimit, big.NewInt(0))
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
@@ -172,7 +172,7 @@ func createEconomyContract(header *types.BlockHeader, statedb *account.AccountDB
 	statedb.AddERC20Binding(common.BLANCE_NAME, subCoin, 4, 18)
 	fmt.Println("After execute " + symbol + " contract create! Contract address: " + subCoin.GetHexString())
 
-	code = economyContract + totalContractString + generateCallDataUint(epoch) + generateCallDataUint(releaseRate) + generateCallDataUint(proposalRate) + generateCallDataUint(otherProposalRate)
+	code = economyContract + totalContractString + common.GenerateCallDataUint(epoch) + common.GenerateCallDataUint(releaseRate) + common.GenerateCallDataUint(proposalRate) + common.GenerateCallDataUint(otherProposalRate)
 	_, economy, _, _, err := vmInstance.Create(caller, common.FromHex(code), vmCtx.GasLimit, big.NewInt(0))
 	if err != nil {
 		panic("Genesis contract create error:" + err.Error())
@@ -242,7 +242,7 @@ func createSubCrossContract(header *types.BlockHeader, statedb *account.AccountD
 	vmCtx.GasLimit = 30000000
 	vmInstance = vm.NewEVM(vmCtx, statedb)
 	caller = vm.AccountRef(vmCtx.Origin)
-	contractCodeBytes = common.FromHex(callProxyBase + generateCallDataString(chainName))
+	contractCodeBytes = common.FromHex(callProxyBase + common.GenerateCallDataString(chainName))
 	_, _, _, err = vmInstance.Call(caller, proxy, contractCodeBytes, vmCtx.GasLimit, big.NewInt(0))
 	if err != nil {
 		panic("Genesis cross contract create error:" + err.Error())
@@ -251,34 +251,3 @@ func createSubCrossContract(header *types.BlockHeader, statedb *account.AccountD
 	return proxy
 }
 
-func generateCallDataString(chainName string) string {
-	length := generateCallDataUint(uint64(len(chainName)))
-
-	data := common.Bytes2Hex([]byte(chainName))
-	padding := 64 - len(data)
-	for i := 0; i < padding; i++ {
-		data += "0"
-	}
-
-	return fmt.Sprintf("%s%s", length, data)
-}
-
-func generateCallDataUint(data uint64) string {
-	result := strconv.FormatUint(data, 16)
-	padding := 64 - len(result)
-	for i := 0; i < padding; i++ {
-		result = "0" + result
-	}
-
-	return result
-}
-
-func generateCallDataBigInt(data *big.Int) string {
-	result := utility.BigIntBase10toN(data, 16)
-	padding := 64 - len(result)
-	for i := 0; i < padding; i++ {
-		result = "0" + result
-	}
-
-	return result
-}
