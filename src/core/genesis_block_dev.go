@@ -96,7 +96,7 @@ func genDevGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, g
 	//创建创始合约
 	proxy := createGenesisContract(block.Header, stateDB)
 
-	genesisProposers := getDevGenesisProposer()
+	genesisProposers := getDevGenesisOneProposer()
 	addMiners(genesisProposers, stateDB)
 
 	verifyMiners := make([]*types.Miner, 0)
@@ -131,8 +131,8 @@ func genDevGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, g
 }
 
 func getDevGenesisProposer() []*types.Miner {
-	miners := make([]*types.Miner, 0)
-	for _, data := range devProposerInfo {
+	miners := make([]*types.Miner, 20)
+	for i, data := range devProposerInfo {
 		var gp ProposerData
 		json.Unmarshal(utility.StrToBytes(data), &gp)
 
@@ -153,7 +153,7 @@ func getDevGenesisProposer() []*types.Miner {
 			Status:       common.MinerStatusNormal,
 			Account:      common.FromHex(gp.Account),
 		}
-		miners = append(miners, &miner)
+		miners[i] = &miner
 	}
 	return miners
 }
@@ -166,4 +166,36 @@ func addDevTestAsset(stateDB *account.AccountDB) {
 	stateDB.SetBalance(common.HexToAddress("0x8744c51069589296fcb7faa2f891b1f513a0310c"), valueBillion)
 
 	stateDB.SetBalance(common.HexToAddress("0x25716527aad0ae1dd24bd247af9232dae78595b0"), valueBillion)
+}
+
+func getDevGenesisOneProposer() []*types.Miner {
+	genesisProposers := make([]GenesisProposer, 1)
+	genesisProposer := GenesisProposer{}
+	genesisProposer.MinerId = "0x7f88b4f2d36a83640ce5d782a0a20cc2b233de3df2d8a358bf0e7b29e9586a12"
+	genesisProposer.MinerPubKey = "0x16d0b0a106e2de32b42ea4096c9e80c883c6ffa9e3f19f09cb45dfff2b02d09a3bcf95f2d0c33b7caf5db42d55d3459395c1b8d6a5d315a113edc39c4ce3a3d5269ab4a9514a998fdcc693d90a42505185270a184a07ddfb553b181be13e968480ef0df4c06cf657957b07118776a38fea3bcf758ea4491a4213719e2f6537b5"
+	genesisProposer.VRFPubkey = "0x009f3b76f3e49dcdd6d2ee8421f077fd4c68c176b18e1e602a3c1f09f9272250"
+	genesisProposers[0] = genesisProposer
+
+	miners := make([]*types.Miner, 0)
+	for _, gp := range genesisProposers {
+		var minerId groupsig.ID
+		minerId.SetHexString(gp.MinerId)
+
+		var minerPubkey groupsig.Pubkey
+		minerPubkey.SetHexString(gp.MinerPubKey)
+
+		vrfPubkey := vrf.Hex2VRFPublicKey(gp.VRFPubkey)
+		miner := types.Miner{
+			Id:           minerId.Serialize(),
+			PublicKey:    minerPubkey.Serialize(),
+			VrfPublicKey: vrfPubkey.GetBytes(),
+			ApplyHeight:  0,
+			Stake:        common.ProposerStake,
+			Type:         common.MinerTypeProposer,
+			Status:       common.MinerStatusNormal,
+			Account:      common.FromHex(robinProposerAccounts[0]),
+		}
+		miners = append(miners, &miner)
+	}
+	return miners
 }
