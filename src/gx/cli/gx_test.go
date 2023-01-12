@@ -76,6 +76,7 @@ func TestMinerEcomony(t *testing.T) {
 	fmt.Print("0x1aab2207e31dff81240fc4976c301ab0a0e0da26: ")
 	fmt.Println(accountdb.GetBalance(common.HexToAddress("0x1aab2207e31dff81240fc4976c301ab0a0e0da26")))
 
+	start := time.Now().UnixMilli()
 	vmInstance := vm.NewEVMWithNFT(vmCtx, accountdb, accountdb)
 	caller := vm.AccountRef(vmCtx.Origin)
 	code := generateCode(header, accountdb)
@@ -84,6 +85,7 @@ func TestMinerEcomony(t *testing.T) {
 	if nil != err {
 		t.Fatal(err)
 	}
+	fmt.Printf("time using: %d\n", time.Now().UnixMilli()-start)
 
 	fmt.Print("0x908c6d839c5a00eb4a035f1357a798ed6fc07ef6: ")
 	fmt.Println(accountdb.GetBalance(common.HexToAddress("0x908c6d839c5a00eb4a035f1357a798ed6fc07ef6")))
@@ -95,6 +97,14 @@ func TestMinerEcomony(t *testing.T) {
 	fmt.Println(accountdb.GetBalance(common.HexToAddress("0xe9b59d7af13bf6d3f838da7f73c2e369802ea211")))
 	fmt.Print("0x1aab2207e31dff81240fc4976c301ab0a0e0da26: ")
 	fmt.Println(accountdb.GetBalance(common.HexToAddress("0x1aab2207e31dff81240fc4976c301ab0a0e0da26")))
+
+	codeBytes = common.FromHex("0x70a082310000000000000000000000001aab2207e31dff81240fc4976c301ab0a0e0da26")
+	ret, _, _, err := vmInstance.Call(caller, common.HexToAddress("0x1ca05267f79ad1e496956922f257c2ff6c8e1892"), codeBytes, vmCtx.GasLimit, big.NewInt(0))
+	if nil != err {
+		t.Fatal(err)
+	}
+	bigInt := big.NewInt(0).SetBytes(ret)
+	fmt.Println(bigInt.String())
 
 }
 
