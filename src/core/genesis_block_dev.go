@@ -131,8 +131,8 @@ func genDevGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, g
 }
 
 func getDevGenesisProposer() []*types.Miner {
-	miners := make([]*types.Miner, 20)
-	for i, data := range devProposerInfo {
+	miners := make([]*types.Miner, 0)
+	for _, data := range devProposerInfo {
 		var gp ProposerData
 		json.Unmarshal(utility.StrToBytes(data), &gp)
 
@@ -153,7 +153,7 @@ func getDevGenesisProposer() []*types.Miner {
 			Status:       common.MinerStatusNormal,
 			Account:      common.FromHex(gp.Account),
 		}
-		miners[i] = &miner
+		miners = append(miners, &miner)
 	}
 	return miners
 }
