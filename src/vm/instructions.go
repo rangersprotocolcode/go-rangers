@@ -982,7 +982,12 @@ func popUint256(callContext *callCtx) uint256.Int {
 
 func popAddress(callContext *callCtx) common.Address {
 	u256 := callContext.stack.pop()
-	return common.BytesToAddress(u256.Bytes())
+	data := u256.Bytes()
+	length := len(data)
+	for i := 0; i < 20-length; i++ {
+		data = append([]byte{0},data...)
+	}
+	return common.BytesToAddress(data)
 }
 
 func popBytes32(callContext *callCtx) [32]byte {
