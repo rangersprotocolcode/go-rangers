@@ -31,6 +31,7 @@ type GenesisConf struct {
 	TokenName      string `json:"tokenName"`
 	TotalSupply    uint64 `json:"totalsupply"`
 	Symbol         string `json:"symbol"`
+	ReleaseRate    int    `json:"d"`
 	ProposalToken  int    `json:"ptoken"`
 	ValidatorToken int    `json:"vtoken"`
 

@@ -133,7 +133,7 @@ func createEconomyContract(header *types.BlockHeader, statedb *account.AccountDB
 	symbol := conf.Symbol
 	totalSupply := conf.TotalSupply
 	epoch := uint64(conf.TimeCycle*24*3600*1000) / conf.Cast
-	releaseRate := uint64(8)
+	releaseRate := uint64(conf.ReleaseRate)
 	proposalRate := uint64(conf.ProposalToken)
 	otherProposalRate := uint64(100 - conf.ProposalToken - conf.ValidatorToken)
 
