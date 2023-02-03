@@ -17,6 +17,8 @@ package common
 
 
 type GenesisConf struct {
+	Creator string `json:"creator"`
+
 	ChainId string `json:"chainId"`
 	Name    string `json:"name"`
 
