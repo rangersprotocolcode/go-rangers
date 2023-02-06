@@ -1,4 +1,4 @@
-# Rocket Node
+# Rangers Node
 
 go implementation for RocketProtocol
 
