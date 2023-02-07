@@ -20,7 +20,7 @@ func GenerateCallDataString(chainName string) string {
 	length := GenerateCallDataUint(uint64(len(chainName)))
 
 	data := Bytes2Hex([]byte(chainName))
-	padding := 64 - len(data)
+	padding := 64 - len(data)%64
 	for i := 0; i < padding; i++ {
 		data += "0"
 	}
