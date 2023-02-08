@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"encoding/hex"
+	"fmt"
 	"hash/fnv"
 	"strconv"
 	"sync"
@@ -34,6 +35,7 @@ var (
 	methodCodeQuitGroup, _   = hex.DecodeString("80000005")
 	methodSetNetId, _        = hex.DecodeString("10000000")
 	methodSendToManager, _   = hex.DecodeString("80000006")
+	methodCodeTxBroadcast, _ = hex.DecodeString("80000007")
 )
 
 type WorkerConn struct {
@@ -53,14 +55,20 @@ func (workerConn *WorkerConn) Init(ipPort string, selfId []byte, consensusHandle
 
 	workerConn.doRcv = func(wsHeader wsHeader, body []byte) {
 		method := wsHeader.method
-		if !bytes.Equal(method, methodCodeSend) && !bytes.Equal(method, methodCodeBroadcast) && !bytes.Equal(method, methodCodeSendToGroup) && !bytes.Equal(method, methodSendToManager) {
+		if !bytes.Equal(method, methodCodeTxBroadcast) && !bytes.Equal(method, methodCodeSend) && !bytes.Equal(method, methodCodeBroadcast) && !bytes.Equal(method, methodCodeSendToGroup) && !bytes.Equal(method, methodSendToManager) {
 			workerConn.logger.Error("received wrong method, wsHeader: %v,body:%v", wsHeader, body)
+			return
+		}
+
+		if bytes.Equal(method, methodCodeTxBroadcast) {
+			fmt.Printf("workerConn receving methodCodeTxBroadcast, %s\n", string(body))
 			return
 		}
 
 		if bytes.Equal(method, methodSendToManager) {
 			body = body[netIdSize:]
 		}
+
 		workerConn.handleMessage(body, strconv.FormatUint(wsHeader.sourceId, 10))
 	}
 
