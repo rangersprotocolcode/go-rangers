@@ -60,11 +60,6 @@ func (workerConn *WorkerConn) Init(ipPort string, selfId []byte, consensusHandle
 			return
 		}
 
-		if bytes.Equal(method, methodCodeBroadcast) {
-			fmt.Printf("workerConn receving methodCodeTxBroadcast, %s\n", strconv.FormatUint(wsHeader.sourceId, 10))
-			return
-		}
-
 		if bytes.Equal(method, methodSendToManager) {
 			body = body[netIdSize:]
 		}
@@ -134,6 +129,8 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 	case GroupResponseMsg:
 		msg := notify.GroupResponseMessage{GroupResponseByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.GroupResponse, &msg)
+	case TxReceived:
+		fmt.Println(string(message.Body))
 	}
 }
 

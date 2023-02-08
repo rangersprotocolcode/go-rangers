@@ -76,6 +76,8 @@ const (
 
 	ReqSharePiece      uint32 = 39
 	ResponseSharePiece uint32 = 40
+
+	TxReceived uint32 = 99
 )
 
 type MsgDigest []byte
