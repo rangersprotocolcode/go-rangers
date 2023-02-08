@@ -61,7 +61,7 @@ func (workerConn *WorkerConn) Init(ipPort string, selfId []byte, consensusHandle
 		}
 
 		if bytes.Equal(method, methodCodeBroadcast) {
-			fmt.Printf("workerConn receving methodCodeTxBroadcast, %s\n", string(body))
+			fmt.Printf("workerConn receving methodCodeTxBroadcast, %s\n", strconv.FormatUint(wsHeader.sourceId, 10))
 			return
 		}
 
