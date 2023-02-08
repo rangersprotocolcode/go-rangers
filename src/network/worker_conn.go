@@ -55,12 +55,12 @@ func (workerConn *WorkerConn) Init(ipPort string, selfId []byte, consensusHandle
 
 	workerConn.doRcv = func(wsHeader wsHeader, body []byte) {
 		method := wsHeader.method
-		if !bytes.Equal(method, methodCodeTxBroadcast) && !bytes.Equal(method, methodCodeSend) && !bytes.Equal(method, methodCodeBroadcast) && !bytes.Equal(method, methodCodeSendToGroup) && !bytes.Equal(method, methodSendToManager) {
+		if !bytes.Equal(method, methodCodeSend) && !bytes.Equal(method, methodCodeBroadcast) && !bytes.Equal(method, methodCodeSendToGroup) && !bytes.Equal(method, methodSendToManager) {
 			workerConn.logger.Error("received wrong method, wsHeader: %v,body:%v", wsHeader, body)
 			return
 		}
 
-		if bytes.Equal(method, methodCodeTxBroadcast) {
+		if bytes.Equal(method, methodCodeBroadcast) {
 			fmt.Printf("workerConn receving methodCodeTxBroadcast, %s\n", string(body))
 			return
 		}
