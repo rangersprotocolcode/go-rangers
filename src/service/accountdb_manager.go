@@ -59,7 +59,7 @@ func initAccountDBManager() {
 	}
 	AccountDBManagerInstance.stateDB = account.NewDatabase(db)
 
-	AccountDBManagerInstance.getTxList()
+	//AccountDBManagerInstance.getTxList()
 }
 
 //todo: 功能增强

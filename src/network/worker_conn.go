@@ -21,7 +21,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"encoding/hex"
-	"fmt"
+	"encoding/json"
 	"hash/fnv"
 	"strconv"
 	"sync"
@@ -130,7 +130,11 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 		msg := notify.GroupResponseMessage{GroupResponseByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.GroupResponse, &msg)
 	case TxReceived:
-		fmt.Println(string(message.Body))
+		var msg notify.ClientTransactionMessage
+		err := json.Unmarshal(message.Body, &msg)
+		if nil == err {
+			notify.BUS.Publish(notify.ClientTransaction, &msg)
+		}
 	}
 }
 
