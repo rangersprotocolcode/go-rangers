@@ -17,6 +17,7 @@
 package common
 
 import (
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -139,4 +140,20 @@ func (s Sign) RecoverPubkey(msg []byte) (pk *PublicKey, err error) {
 	}
 	pk = BytesToPublicKey(pubkey)
 	return
+}
+
+
+// MarshalText returns the hex representation of h.
+func (s Sign) MarshalText() ([]byte, error) {
+	return utility.Bytes(s.Bytes()).MarshalText()
+}
+
+func (s *Sign) UnmarshalText(input []byte) error {
+	result := BytesToSign(FromHex(string(input)))
+
+	s.r = result.r
+	s.s = result.s
+	s.recid = result.recid
+
+	return nil
 }
