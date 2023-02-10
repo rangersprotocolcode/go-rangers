@@ -116,11 +116,10 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) (*acco
 	return manager.latestStateDB, manager.height
 }
 
-//
+// SetLatestStateDBWithNonce 设置nonce
 func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *account.AccountDB, nonce uint64, msg string, height uint64) {
 	defer manager.getCond().L.Unlock()
 	if !manager.debug && msg != "gameExecutor" {
-		//manager.getCond().L.Unlock()
 		manager.getCond().L.Lock()
 	}
 

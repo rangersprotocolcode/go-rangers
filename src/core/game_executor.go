@@ -70,7 +70,7 @@ func (executor *GameExecutor) makeFailedResponse(message string, id string) []by
 
 const maxWriteSize = 100000
 
-// 用于处理client websocket请求
+// GameExecutor 用于处理client websocket请求
 type GameExecutor struct {
 	chain     *blockChain
 	writeChan chan notify.ClientTransactionMessage
@@ -204,6 +204,7 @@ func (executor *GameExecutor) read(msg notify.Message) {
 	go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
 }
 
+// 通过流量控制，初步处理交易信息
 func (executor *GameExecutor) write(msg notify.Message) {
 	message, ok := msg.(*notify.ClientTransactionMessage)
 	if !ok {
@@ -220,6 +221,7 @@ func (executor *GameExecutor) write(msg notify.Message) {
 	executor.writeChan <- *message
 }
 
+// 调度，处理队列里的交易
 func (executor *GameExecutor) loop() {
 	for {
 		select {
@@ -252,7 +254,7 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 		return
 	}
 
-	result, execMessage := executor.runTransaction(accountDB, height, txRaw)
+	//result, execMessage := executor.runTransaction(accountDB, height, txRaw)
 	service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
 	executor.sendTransaction(&txRaw)
 
@@ -260,18 +262,18 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 		return
 	}
 
-	executor.logger.Debugf("txhash: %s, send to user: %s, msg: %s, gatenonce: %d", txRaw.Hash.String(), message.UserId, execMessage, message.GateNonce)
-	// reply to the client
-	var response []byte
-	if result {
-		response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
-	} else {
-		response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
-	}
-
-	if 0 != message.GateNonce {
-		network.GetNetInstance().SendToClientWriter(message.UserId, response, message.GateNonce)
-	}
+	//executor.logger.Debugf("txhash: %s, send to user: %s, msg: %s, gatenonce: %d", txRaw.Hash.String(), message.UserId, execMessage, message.GateNonce)
+	//// reply to the client
+	//var response []byte
+	//if result {
+	//	response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
+	//} else {
+	//	response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
+	//}
+	//
+	//if 0 != message.GateNonce {
+	//	network.GetNetInstance().SendToClientWriter(message.UserId, response, message.GateNonce)
+	//}
 }
 
 func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, height uint64, txRaw types.Transaction) (bool, string) {

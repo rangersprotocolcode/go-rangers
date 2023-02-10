@@ -22,6 +22,7 @@ import (
 	"hash/fnv"
 	"strconv"
 	"testing"
+	"time"
 )
 
 func TestWorkerConn_Init(t *testing.T) {
@@ -31,6 +32,14 @@ func TestWorkerConn_Init(t *testing.T) {
 	worker1.Init("39.104.113.9", []byte("1"), nil, logger)
 	worker2.Init("39.104.113.9", []byte("2"), nil, logger)
 
+}
+
+func TestWorkerConn_Init2(t *testing.T) {
+	var worker WorkerConn
+	logger := log.GetLoggerByIndex(log.P2PLogConfig, "1")
+	p2pLogger = log.GetLoggerByIndex(log.P2PLogConfig, "1")
+	worker.Init("ws://192.168.2.19/phub", []byte("1"), nil, logger)
+	time.Sleep(10 * time.Hour)
 }
 
 func TestGenTargetForgroup(t *testing.T) {
