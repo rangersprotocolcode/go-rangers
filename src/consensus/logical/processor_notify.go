@@ -24,7 +24,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"time"
+	"com.tuntun.rocket/node/src/utility"
 )
 
 func (p *Processor) triggerFutureVerifyMsg(hash common.Hash) {
@@ -94,7 +94,7 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 
 	p.cleanVerifyContext(bh.Height)
 
-	middleware.PerfLogger.Infof("OnBlockAddSuccess. cost: %v, Hash: %v, height: %v", time.Since(bh.CurTime), bh.Hash.String(), bh.Height)
+	middleware.PerfLogger.Infof("OnBlockAddSuccess. cost: %v, Hash: %v, height: %v", utility.GetTime().Sub(bh.CurTime), bh.Hash.String(), bh.Height)
 	if p.isTriggerCastImmediately() {
 		p.triggerCastCheck()
 	}

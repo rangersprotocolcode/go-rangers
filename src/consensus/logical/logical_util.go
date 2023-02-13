@@ -38,7 +38,7 @@ func DeltaHeightByTime(bh *types.BlockHeader, preBH *types.BlockHeader) uint64 {
 		deltaHeightByTime uint64
 	)
 	if bh.Height == 1 {
-		d := time.Since(preBH.CurTime)
+		d := utility.GetTime().Sub(preBH.CurTime)
 		deltaHeightByTime = uint64(d.Seconds())/uint64(model.Param.MaxGroupCastTime) + 1
 	} else {
 		deltaHeightByTime = bh.Height - preBH.Height

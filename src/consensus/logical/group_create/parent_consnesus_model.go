@@ -235,5 +235,5 @@ func (ctx *createGroupBaseInfo) createGroupHeader(memIds []groupsig.ID) *types.G
 
 func (ctx *createGroupContext) String() string {
 	return fmt.Sprintf("baseHeight=%v, topHeight=%v, candidates=%v, isKing=%v, parentGroup=%v, pongs=%v, elapsed=%v",
-		ctx.baseBlockHeader.Height, ctx.createTopHeight, len(ctx.candidates), ctx.isKing(), ctx.parentGroupInfo.GroupID.ShortS(), ctx.receivedPongCount(), time.Since(ctx.createTime).String())
+		ctx.baseBlockHeader.Height, ctx.createTopHeight, len(ctx.candidates), ctx.isKing(), ctx.parentGroupInfo.GroupID.ShortS(), ctx.receivedPongCount(), utility.GetTime().Sub(ctx.createTime).String())
 }

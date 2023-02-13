@@ -22,7 +22,6 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/utility"
-	"time"
 )
 
 type NetworkServerImpl struct {
@@ -106,7 +105,7 @@ func (ns *NetworkServerImpl) SendGroupInitMessage(grm *model.GroupInitMessage) {
 	//logger.Debugf("SendGroupInitMessage hash:%s,  gHash %v", m.Hash(), grm.GInfo.GroupHash().Hex())
 }
 
-//组内广播密钥   for each定向发送 组内广播
+// SendKeySharePiece 组内广播密钥   for each定向发送 组内广播
 func (ns *NetworkServerImpl) SendKeySharePiece(spm *model.SharePieceMessage) {
 	body, e := marshalConsensusSharePieceMessage(spm)
 	if e != nil {
@@ -119,9 +118,8 @@ func (ns *NetworkServerImpl) SendKeySharePiece(spm *model.SharePieceMessage) {
 		return
 	}
 
-	begin := utility.GetTime()
 	go ns.net.SendToStranger(spm.ReceiverId.Serialize(), m)
-	logger.Debugf("SendKeySharePiece to id:%s,hash:%s, gHash:%v, cost time:%v", spm.ReceiverId.GetHexString(), m.Hash(), spm.GroupHash.Hex(), time.Since(begin))
+	logger.Debugf("SendKeySharePiece to id:%s,hash:%s, gHash:%v", spm.ReceiverId.GetHexString(), m.Hash(), spm.GroupHash.Hex())
 }
 
 //组内广播签名公钥
@@ -136,9 +134,8 @@ func (ns *NetworkServerImpl) SendSignPubKey(spkm *model.SignPubKeyMessage) {
 	//给自己发
 	ns.send2Self(spkm.SignInfo.GetSignerID(), m)
 
-	begin := utility.GetTime()
 	go ns.net.SpreadToGroup(spkm.GroupHash.Hex(), m)
-	logger.Debugf("SendSignPubKey hash:%s, dummyId:%v, cost time:%v", m.Hash(), spkm.GroupHash.Hex(), time.Since(begin))
+	logger.Debugf("SendSignPubKey hash:%s, dummyId:%v", m.Hash(), spkm.GroupHash.Hex())
 }
 
 //组初始化完成 广播组信息 全网广播
@@ -228,9 +225,8 @@ func (ns *NetworkServerImpl) AskSignPkMessage(msg *model.SignPubkeyReqMessage, r
 
 	m := network.Message{Code: network.AskSignPkMsg, Body: body}
 
-	begin := utility.GetTime()
 	go ns.net.SendToStranger(receiver.Serialize(), m)
-	logger.Debugf("AskSignPkMessage %v, hash:%s, cost time:%v", receiver.GetHexString(), m.Hash(), time.Since(begin))
+	logger.Debugf("AskSignPkMessage %v, hash:%s", receiver.GetHexString(), m.Hash())
 }
 
 func (ns *NetworkServerImpl) AnswerSignPkMessage(msg *model.SignPubKeyMessage, receiver groupsig.ID) {
@@ -242,9 +238,8 @@ func (ns *NetworkServerImpl) AnswerSignPkMessage(msg *model.SignPubKeyMessage, r
 
 	m := network.Message{Code: network.AnswerSignPkMsg, Body: body}
 
-	begin := utility.GetTime()
 	go ns.net.SendToStranger(receiver.Serialize(), m)
-	logger.Debugf("AnswerSignPkMessage %v, hash:%s, dummyId:%v, cost time:%v", receiver.GetHexString(), m.Hash(), msg.GroupHash.Hex(), time.Since(begin))
+	logger.Debugf("AnswerSignPkMessage %v, hash:%s, dummyId:%v", receiver.GetHexString(), m.Hash(), msg.GroupHash.Hex())
 }
 
 func (ns *NetworkServerImpl) ReqSharePiece(msg *model.ReqSharePieceMessage, receiver groupsig.ID) {

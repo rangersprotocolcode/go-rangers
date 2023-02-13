@@ -62,7 +62,7 @@ func newRtLog(key string) *rtLog {
 const TIMESTAMP_LAYOUT = "2006-01-02/15:04:05.000"
 
 func (r *rtLog) log(format string, p ...interface{}) {
-	cost := time.Since(r.start)
+	cost := utility.GetTime().Sub(r.start)
 	stdLogger.Debugf(fmt.Sprintf("%v:begin at %v, cost %v. %v", r.key, r.start.Format(TIMESTAMP_LAYOUT), cost.String(), fmt.Sprintf(format, p...)))
 }
 
@@ -149,7 +149,7 @@ func (log *slowLog) endStage() {
 }
 
 func (log *slowLog) log(format string, params ... interface{}) {
-	c := time.Since(log.begin)
+	c := utility.GetTime().Sub(log.begin)
 	if c.Seconds() < log.threshold {
 		return
 	}

@@ -17,6 +17,7 @@
 package core
 
 import (
+	"com.tuntun.rocket/node/src/utility"
 	"math/big"
 
 	"com.tuntun.rocket/node/src/common"
@@ -27,7 +28,6 @@ import (
 	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/service"
 	"github.com/golang/protobuf/proto"
-	"time"
 )
 
 const blockResponseSize = 1
@@ -127,7 +127,7 @@ func (ch ChainHandler) newBlockHandler(msg notify.Message) {
 		return
 	}
 
-	middleware.PerfLogger.Debugf("Rcv new block from %s,hash:%v,height:%d,totalQn:%d,tx len:%d, total cost: %v", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions), time.Since(block.Header.CurTime))
+	middleware.PerfLogger.Debugf("Rcv new block from %s,hash:%v,height:%d,totalQn:%d,tx len:%d, total cost: %v", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions), utility.GetTime().Sub(block.Header.CurTime))
 
 	blockChainImpl.AddBlockOnChain(block)
 }

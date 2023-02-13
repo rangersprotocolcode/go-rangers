@@ -25,9 +25,9 @@ import (
 	"com.tuntun.rocket/node/src/core"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rocket/node/src/utility"
 	"github.com/hashicorp/golang-lru"
 	"sync"
-	"time"
 )
 
 var groupCreateLogger log.Logger
@@ -174,7 +174,7 @@ func (p *groupCreateProcessor) ReleaseGroups(topHeight uint64) (needDimissGroups
 
 	gctx := p.context
 	if gctx != nil && gctx.timeout(topHeight) {
-		groupCreateLogger.Infof("releaseRoutine:info=%v, elapsed %v. ready timeout.", gctx.String(), time.Since(gctx.createTime))
+		groupCreateLogger.Infof("releaseRoutine:info=%v, elapsed %v. ready timeout.", gctx.String(), utility.GetTime().Sub(gctx.createTime))
 		p.removeContext()
 	}
 

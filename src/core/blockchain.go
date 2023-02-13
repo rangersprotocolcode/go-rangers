@@ -176,7 +176,7 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	}
 	block.Header.RequestIds = getRequestIdFromTransactions(block.Transactions, latestBlock.RequestIds)
 
-	middleware.PerfLogger.Infof("fin cast object. last: %v height: %v", time.Since(timestamp), height)
+	middleware.PerfLogger.Infof("fin cast object. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
 
 	preStateRoot := common.BytesToHash(latestBlock.StateTree.Bytes())
 	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(preStateRoot)
@@ -187,7 +187,7 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 
 	executor := newVMExecutor(state, block, "casting")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
-	middleware.PerfLogger.Infof("fin execute txs. last: %v height: %v", time.Since(timestamp), height)
+	middleware.PerfLogger.Infof("fin execute txs. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
 
 	transactionHashes := make([]common.Hashes, len(transactions))
 	block.Transactions = transactions
@@ -201,12 +201,12 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	block.Header.Transactions = transactionHashes
 	block.Header.TxTree = calcTxTree(block.Transactions)
 	block.Header.EvictedTxs = evictedTxs
-	middleware.PerfLogger.Infof("fin calcTxTree. last: %v height: %v", time.Since(timestamp), height)
+	middleware.PerfLogger.Infof("fin calcTxTree. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
 
 	block.Header.StateTree = common.BytesToHash(stateRoot.Bytes())
 	block.Header.ReceiptTree = calcReceiptsTree(receipts)
 	block.Header.Hash = block.Header.GenHash()
-	middleware.PerfLogger.Infof("fin calcReceiptsTree. last: %v height: %v", time.Since(timestamp), height)
+	middleware.PerfLogger.Infof("fin calcReceiptsTree. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
 
 	chain.verifiedBlocks.Add(block.Header.Hash, &castingBlock{state: state, receipts: receipts})
 	if len(block.Transactions) != 0 {
