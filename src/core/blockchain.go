@@ -157,7 +157,7 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		middleware.RUnLockBlockchain("castblock")
 		return nil
 	}
-	txs:=chain.transactionPool.PackForCast()
+	txs := chain.transactionPool.PackForCast()
 	middleware.RUnLockBlockchain("castblock")
 
 	block := new(types.Block)

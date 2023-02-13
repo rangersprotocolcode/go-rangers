@@ -62,15 +62,15 @@ func (c *simpleContainer) get(key common.Hash) *types.Transaction {
 }
 
 func (c *simpleContainer) asSlice() []*types.Transaction {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
+	//c.lock.RLock()
+	//defer c.lock.RUnlock()
 
 	return c.txs
 }
 
 func (c *simpleContainer) push(tx *types.Transaction) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	//c.lock.Lock()
+	//defer c.lock.Unlock()
 
 	if c.txs.Len() < c.limit {
 		c.txs = append(c.txs, tx)
