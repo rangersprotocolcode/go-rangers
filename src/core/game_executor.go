@@ -250,7 +250,7 @@ func (executor *GameExecutor) RunWrite() {
 		//	return
 		//}
 
-		accountDB, height := service.AccountDBManagerInstance.LatestStateDB, service.AccountDBManagerInstance.Height
+		_, height := service.AccountDBManagerInstance.LatestStateDB, service.AccountDBManagerInstance.Height
 		if err := service.GetTransactionPool().VerifyTransaction(&txRaw, height); err != nil {
 			//service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
 
@@ -262,7 +262,7 @@ func (executor *GameExecutor) RunWrite() {
 			return
 		}
 
-		result, execMessage := executor.runTransaction(accountDB, height, txRaw)
+		//result, execMessage := executor.runTransaction(accountDB, height, txRaw)
 		//service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
 		executor.sendTransaction(&txRaw)
 
@@ -270,18 +270,18 @@ func (executor *GameExecutor) RunWrite() {
 			return
 		}
 
-		executor.logger.Debugf("txhash: %s, send to user: %s, msg: %s, gatenonce: %d", txRaw.Hash.String(), message.UserId, execMessage, message.GateNonce)
-		// reply to the client
-		var response []byte
-		if result {
-			response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
-		} else {
-			response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
-		}
-
-		if 0 != message.GateNonce {
-			network.GetNetInstance().SendToClientWriter(message.UserId, response, message.GateNonce)
-		}
+		//executor.logger.Debugf("txhash: %s, send to user: %s, msg: %s, gatenonce: %d", txRaw.Hash.String(), message.UserId, execMessage, message.GateNonce)
+		//// reply to the client
+		//var response []byte
+		//if result {
+		//	response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
+		//} else {
+		//	response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
+		//}
+		//
+		//if 0 != message.GateNonce {
+		//	network.GetNetInstance().SendToClientWriter(message.UserId, response, message.GateNonce)
+		//}
 
 	})
 
