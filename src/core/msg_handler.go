@@ -127,7 +127,7 @@ func (ch ChainHandler) newBlockHandler(msg notify.Message) {
 		return
 	}
 
-	middleware.PerfLogger.Debugf("Rcv new block from %s,hash:%v,height:%d,totalQn:%d,tx len:%d, total cost: %v", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions), utility.GetTime().Sub(block.Header.CurTime))
+	middleware.PerfLogger.Infof("Rcv new block from %s,hash: %v,height: %d,totalQn: %d,tx: %d, cost: %v, size: %d", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions), utility.GetTime().Sub(block.Header.CurTime), len(m.BlockByte))
 
 	blockChainImpl.AddBlockOnChain(block)
 }
