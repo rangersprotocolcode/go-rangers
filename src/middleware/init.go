@@ -34,6 +34,11 @@ func InitMiddleware(dbDSN, dbDSNLog string) error {
 	notify.BUS = notify.NewBus()
 	mysql.InitMySql(dbDSN, dbDSNLog)
 
-	lock = NewLoglock("blockchain")
+	InitLock()
 	return nil
+}
+
+func InitLock(){
+	lock = NewLoglock("blockchain")
+	accountDBLock = NewLoglock("accountDB")
 }

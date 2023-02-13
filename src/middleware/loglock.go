@@ -21,6 +21,7 @@ package middleware
 import (
 	"com.tuntun.rocket/node/src/utility"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -36,7 +37,9 @@ type Loglock struct {
 
 var (
 	lockLogger log.Logger
-	lock Loglock
+	lock       Loglock
+
+	accountDBLock Loglock
 )
 
 const costLimit = 10 * time.Microsecond
@@ -48,7 +51,7 @@ func NewLoglock(title string) Loglock {
 	}
 	loglock.addr = fmt.Sprintf("%p", &loglock)
 	if lockLogger == nil {
-		lockLogger = log.GetLoggerByIndex(log.LockLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+		lockLogger = log.GetLoggerByIndex(log.LockLogConfig, strconv.Itoa(common.InstanceIndex))
 	}
 	return loglock
 }
@@ -99,18 +102,35 @@ func (lock *Loglock) RUnlock(msg string) {
 	lockLogger.Debugf("UnRLocked: %s, with msg: %s wait: %v", lock.addr, msg, cost)
 }
 
-func LockBlockchain(msg string){
+func LockBlockchain(msg string) {
 	lock.Lock(msg)
 }
 
-func UnLockBlockchain(msg string){
+func UnLockBlockchain(msg string) {
 	lock.Unlock(msg)
 }
 
-func RLockBlockchain(msg string){
+func RLockBlockchain(msg string) {
 	lock.RLock(msg)
 }
 
-func RUnLockBlockchain(msg string){
+func RUnLockBlockchain(msg string) {
 	lock.RUnlock(msg)
+}
+
+
+func LockAccountDB(msg string) {
+	accountDBLock.Lock(msg)
+}
+
+func UnLockAccountDB(msg string) {
+	accountDBLock.Unlock(msg)
+}
+
+func RLockAccountDB(msg string) {
+	accountDBLock.RLock(msg)
+}
+
+func RUnLockAccountDB(msg string) {
+	accountDBLock.RUnlock(msg)
 }

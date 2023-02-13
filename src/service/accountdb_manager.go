@@ -18,6 +18,7 @@ package service
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/mysql"
@@ -37,11 +38,14 @@ const stateDBPrefix = "state"
 type AccountDBManager struct {
 	conds         sync.Map
 	stateDB       account.AccountDatabase
-	latestStateDB *account.AccountDB
+	LatestStateDB *account.AccountDB
 	requestId     uint64
-	height        uint64
+	Height        uint64
 	debug         bool // debug 为true，则不开启requestId校验
 	logger        log.Logger
+
+	WaitingTxs *PriorityQueue
+	NewTxs     chan byte
 }
 
 var AccountDBManagerInstance AccountDBManager
@@ -51,6 +55,8 @@ func initAccountDBManager() {
 	AccountDBManagerInstance.conds = sync.Map{}
 	AccountDBManagerInstance.logger = log.GetLoggerByIndex(log.AccountDBLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	AccountDBManagerInstance.debug = false
+	AccountDBManagerInstance.WaitingTxs = NewPriorityQueue()
+	AccountDBManagerInstance.NewTxs = make(chan byte, 1)
 
 	db, err := db.NewLDBDatabase(stateDBPrefix, 128, 2048)
 	if err != nil {
@@ -73,16 +79,17 @@ func (manager *AccountDBManager) GetAccountDBByHash(hash common.Hash) (*account.
 }
 
 func (manager *AccountDBManager) GetLatestStateDB() *account.AccountDB {
-	manager.getCond().L.Lock()
-	defer manager.getCond().L.Unlock()
+	middleware.RLockAccountDB("GetLatestStateDB")
+	defer middleware.RUnLockAccountDB("GetLatestStateDB")
 
-	return manager.latestStateDB
+	return manager.LatestStateDB
 }
 
 func (manager *AccountDBManager) GetTrieDB() *trie.NodeDatabase {
 	return manager.stateDB.TrieDB()
 }
 
+// GetAccountDBByGameExecutor deprecated
 func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) (*account.AccountDB, uint64) {
 	waited := false
 	req := manager.requestId
@@ -113,20 +120,20 @@ func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) (*acco
 	if waited {
 		manager.logger.Infof("requestId: %d waited, since: %d", nonce, req)
 	}
-	return manager.latestStateDB, manager.height
+	return manager.LatestStateDB, manager.Height
 }
 
-// SetLatestStateDBWithNonce 设置nonce
+// SetLatestStateDBWithNonce 设置nonce deprecated
 func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *account.AccountDB, nonce uint64, msg string, height uint64) {
 	defer manager.getCond().L.Unlock()
 	if !manager.debug && msg != "gameExecutor" {
 		manager.getCond().L.Lock()
 	}
 
-	manager.height = height
-	if nil == manager.latestStateDB || nonce >= manager.requestId {
+	manager.Height = height
+	if nil == manager.LatestStateDB || nonce >= manager.requestId {
 		if nil != latestStateDB {
-			manager.latestStateDB = latestStateDB
+			manager.LatestStateDB = latestStateDB
 		}
 
 		manager.requestId = nonce
@@ -143,11 +150,24 @@ func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *accoun
 }
 
 func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.AccountDB, requestIds map[string]uint64, height uint64) {
+	middleware.LockAccountDB("SetLatestStateDB")
+	defer middleware.UnLockAccountDB("SetLatestStateDB")
+
 	key := "fixed"
-	value := requestIds[key]
-	manager.SetLatestStateDBWithNonce(latestStateDB, value, "add block", height)
+	nonce := requestIds[key]
+	//manager.SetLatestStateDBWithNonce(latestStateDB, nonce, "add block", height)
+	manager.Height = height
+	if nil == manager.LatestStateDB || nonce >= manager.WaitingTxs.GetThreshold() {
+		if nil != latestStateDB {
+			manager.LatestStateDB = latestStateDB
+		}
+		manager.WaitingTxs.SetThreshold(nonce)
+
+		manager.NewTxs <- 1
+	}
 }
 
+// deprecated
 func (manager *AccountDBManager) getCond() *sync.Cond {
 	gameId := "fixed"
 	defaultValue := sync.NewCond(new(sync.Mutex))
@@ -156,6 +176,7 @@ func (manager *AccountDBManager) getCond() *sync.Cond {
 	return value.(*sync.Cond)
 }
 
+// GetLatestNonce deprecated
 func (manager *AccountDBManager) GetLatestNonce() uint64 {
 	manager.getCond().L.Lock()
 	defer manager.getCond().L.Unlock()
@@ -163,6 +184,7 @@ func (manager *AccountDBManager) GetLatestNonce() uint64 {
 	return manager.requestId
 }
 
+// deprecated
 func (manager *AccountDBManager) getTxList() {
 	go func() {
 		for {
