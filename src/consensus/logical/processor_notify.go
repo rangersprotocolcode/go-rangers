@@ -71,6 +71,9 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	//tlog := newMsgTraceLog("OnBlockAddSuccess", bh.Hash.ShortS(), "")
 	//tlog.log("preHash=%v, height=%v", bh.PreHash.ShortS(), bh.Height)
 
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
 	gid := groupsig.DeserializeID(bh.GroupId)
 	if p.belongGroups.BelongGroup(gid) {
 		bc := p.GetBlockContext(gid)
@@ -85,7 +88,11 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 		}
 		p.removeVerifyMsgCache(bh.Hash)
 	}
-	p.setVrfWorker(nil)
+
+	worker := p.GetVrfWorker()
+	if worker.castHeight == bh.Height{
+		p.setVrfWorker(nil)
+	}
 
 	//p.triggerFutureBlockMsg(bh)
 	p.triggerFutureVerifyMsg(bh.Hash)
