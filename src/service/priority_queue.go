@@ -55,8 +55,16 @@ func (pq *PriorityQueue) Pop() interface{} {
 }
 
 func (pq *PriorityQueue) HeapPush(value *notify.ClientTransactionMessage) {
+	if value == nil {
+		return
+	}
+
 	middleware.LockAccountDB("HeapPush")
 	defer middleware.UnLockAccountDB("HeapPush")
+
+	if value.Nonce < pq.threshold {
+		return
+	}
 
 	x := new(Item)
 	x.Value = value
