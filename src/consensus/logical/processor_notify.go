@@ -90,7 +90,7 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	}
 
 	worker := p.GetVrfWorker()
-	if worker.castHeight == bh.Height{
+	if nil != worker && worker.castHeight == bh.Height {
 		p.setVrfWorker(nil)
 	}
 
