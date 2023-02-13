@@ -121,17 +121,17 @@ func RUnLockBlockchain(msg string) {
 }
 
 func LockAccountDB(msg string) {
-	accountDBLock.Lock(msg)
+	lock.Lock(msg)
 }
 
 func UnLockAccountDB(msg string) {
-	accountDBLock.Unlock(msg)
+	lock.Unlock(msg)
 }
 
 func RLockAccountDB(msg string) {
-	accountDBLock.RLock(msg)
+	lock.RLock(msg)
 }
 
 func RUnLockAccountDB(msg string) {
-	accountDBLock.RUnlock(msg)
+	lock.RUnlock(msg)
 }

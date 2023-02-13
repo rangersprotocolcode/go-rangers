@@ -18,7 +18,6 @@ package service
 
 import (
 	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/storage/account"
@@ -57,20 +56,12 @@ func initAccountDBManager() {
 	AccountDBManagerInstance.stateDB = account.NewDatabase(db)
 }
 
-//todo: 功能增强
-func (manager *AccountDBManager) GetAccountDB(gameId string, isBase bool) *account.AccountDB {
-	return manager.GetLatestStateDB()
-}
-
 func (manager *AccountDBManager) GetAccountDBByHash(hash common.Hash) (*account.AccountDB, error) {
 	//todo: cache
 	return account.NewAccountDB(hash, manager.stateDB)
 }
 
 func (manager *AccountDBManager) GetLatestStateDB() *account.AccountDB {
-	middleware.RLockAccountDB("GetLatestStateDB")
-	defer middleware.RUnLockAccountDB("GetLatestStateDB")
-
 	return manager.LatestStateDB
 }
 

@@ -19,7 +19,6 @@ package core
 import (
 	"com.tuntun.rocket/node/src/common"
 	executors "com.tuntun.rocket/node/src/executor"
-	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -345,9 +344,6 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 }
 
 func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {
-	middleware.LockBlockchain("AddTransaction_game")
-	defer middleware.UnLockBlockchain("AddTransaction_game")
-
 	if ok, err := service.GetTransactionPool().AddTransaction(tx); err != nil || !ok {
 		executor.logger.Errorf("Add tx error:%s", err.Error())
 		return
