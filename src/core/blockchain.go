@@ -278,7 +278,7 @@ func (chain *blockChain) TotalQN() uint64 {
 	return chain.latestBlock.TotalQN
 }
 
-//铸块成功，上链
+// AddBlockOnChain 铸块成功，上链
 //返回值: 0,上链成功
 //       -1，验证失败
 //        1, 丢弃该块(链上已存在该块）

@@ -60,46 +60,48 @@ func (lock *Loglock) Lock(msg string) {
 	if 0 != len(msg) {
 		lockLogger.Debugf("try to lock: %s, with msg: %s", lock.addr, msg)
 	}
+
 	begin := utility.GetTime()
 	lock.lock.Lock()
-	lock.begin = utility.GetTime()
-	cost := time.Since(begin)
+	lock.begin = begin
+	cost := utility.GetTime().Sub(begin)
 
-	lockLogger.Debugf("locked: %s, with msg: %s wait: %v", lock.addr, msg, cost)
+	lockLogger.Debugf("locked: %s, with msg: %s, waited: %v", lock.addr, msg, cost)
 }
 
 func (lock *Loglock) RLock(msg string) {
 	if 0 != len(msg) {
 		lockLogger.Debugf("try to Rlock: %s, with msg: %s", lock.addr, msg)
 	}
+
 	begin := utility.GetTime()
 	lock.lock.RLock()
-	cost := time.Since(begin)
+	lock.begin = begin
+	cost := utility.GetTime().Sub(begin)
 
-	lockLogger.Debugf("Rlocked: %s, with msg: %s wait: %v", lock.addr, msg, cost)
+	lockLogger.Debugf("Rlocked: %s, with msg: %s, waited: %v", lock.addr, msg, cost)
 }
 
 func (lock *Loglock) Unlock(msg string) {
 	if 0 != len(msg) {
 		lockLogger.Debugf("try to UnLock: %s, with msg: %s", lock.addr, msg)
 	}
-	begin := utility.GetTime()
-	lock.lock.Unlock()
-	duration := time.Since(lock.begin)
-	cost := time.Since(begin)
 
-	lockLogger.Debugf("UnLocked: %s, with msg: %s duration:%v wait: %v", lock.addr, msg, duration, cost)
+	lock.lock.Unlock()
+	duration := utility.GetTime().Sub(lock.begin)
+
+	lockLogger.Debugf("UnLocked: %s, with msg: %s, duration:%v", lock.addr, msg, duration)
 }
 
 func (lock *Loglock) RUnlock(msg string) {
 	if 0 != len(msg) {
 		lockLogger.Debugf("try to UnRLock: %s, with msg: %s", lock.addr, msg)
 	}
-	begin := utility.GetTime()
-	lock.lock.RUnlock()
-	cost := time.Since(begin)
 
-	lockLogger.Debugf("UnRLocked: %s, with msg: %s wait: %v", lock.addr, msg, cost)
+	lock.lock.RUnlock()
+	duration := utility.GetTime().Sub(lock.begin)
+
+	lockLogger.Debugf("UnRLocked: %s, with msg: %s, duration:%v", lock.addr, msg, duration)
 }
 
 func LockBlockchain(msg string) {
@@ -117,7 +119,6 @@ func RLockBlockchain(msg string) {
 func RUnLockBlockchain(msg string) {
 	lock.RUnlock(msg)
 }
-
 
 func LockAccountDB(msg string) {
 	accountDBLock.Lock(msg)

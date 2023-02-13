@@ -150,9 +150,7 @@ func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *accoun
 }
 
 func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.AccountDB, requestIds map[string]uint64, height uint64) {
-	middleware.LockAccountDB("SetLatestStateDB")
-	defer middleware.UnLockAccountDB("SetLatestStateDB")
-
+	// 这里无需加锁，因为外面加过了
 	key := "fixed"
 	nonce := requestIds[key]
 	//manager.SetLatestStateDBWithNonce(latestStateDB, nonce, "add block", height)
