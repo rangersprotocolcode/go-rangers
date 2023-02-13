@@ -21,22 +21,13 @@ import (
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/middleware/mysql"
-	"com.tuntun.rocket/node/src/middleware/notify"
-	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/trie"
-	"com.tuntun.rocket/node/src/utility"
-	"encoding/json"
-	"fmt"
-	"sync"
-	"time"
 )
 
 const stateDBPrefix = "state"
 
 type AccountDBManager struct {
-	conds         sync.Map
 	stateDB       account.AccountDatabase
 	LatestStateDB *account.AccountDB
 	requestId     uint64
@@ -52,7 +43,7 @@ var AccountDBManagerInstance AccountDBManager
 
 func initAccountDBManager() {
 	AccountDBManagerInstance = AccountDBManager{}
-	AccountDBManagerInstance.conds = sync.Map{}
+
 	AccountDBManagerInstance.logger = log.GetLoggerByIndex(log.AccountDBLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	AccountDBManagerInstance.debug = false
 	AccountDBManagerInstance.WaitingTxs = NewPriorityQueue()
@@ -64,8 +55,6 @@ func initAccountDBManager() {
 		panic(err)
 	}
 	AccountDBManagerInstance.stateDB = account.NewDatabase(db)
-
-	//AccountDBManagerInstance.getTxList()
 }
 
 //todo: 功能增强
@@ -89,66 +78,6 @@ func (manager *AccountDBManager) GetTrieDB() *trie.NodeDatabase {
 	return manager.stateDB.TrieDB()
 }
 
-// GetAccountDBByGameExecutor deprecated
-func (manager *AccountDBManager) GetAccountDBByGameExecutor(nonce uint64) (*account.AccountDB, uint64) {
-	waited := false
-	req := manager.requestId
-
-	// 校验 nonce
-	if !manager.debug {
-		// requestId 按序执行
-		manager.getCond().L.Lock()
-
-		for nonce != (manager.requestId + 1) {
-			if nonce <= manager.requestId {
-				// 已经执行过的消息，忽略
-				manager.logger.Errorf("%s requestId :%d skipped, current requestId: %d", "", nonce, manager.requestId)
-				manager.getCond().L.Unlock()
-				return nil, 0
-			}
-
-			// waiting until the right requestId
-			manager.logger.Infof("requestId :%d is waiting, current requestId: %d", nonce, manager.requestId)
-			waited = true
-
-			// todo 超时放弃
-			manager.getCond().Wait()
-		}
-	}
-
-	// waiting until the right requestId
-	if waited {
-		manager.logger.Infof("requestId: %d waited, since: %d", nonce, req)
-	}
-	return manager.LatestStateDB, manager.Height
-}
-
-// SetLatestStateDBWithNonce 设置nonce deprecated
-func (manager *AccountDBManager) SetLatestStateDBWithNonce(latestStateDB *account.AccountDB, nonce uint64, msg string, height uint64) {
-	defer manager.getCond().L.Unlock()
-	if !manager.debug && msg != "gameExecutor" {
-		manager.getCond().L.Lock()
-	}
-
-	manager.Height = height
-	if nil == manager.LatestStateDB || nonce >= manager.requestId {
-		if nil != latestStateDB {
-			manager.LatestStateDB = latestStateDB
-		}
-
-		manager.requestId = nonce
-		manager.logger.Warnf("accountDB set success. requestId: %d, current: %d, msg: %s", nonce, manager.requestId, msg)
-
-		if !manager.debug && nonce >= manager.requestId {
-			manager.getCond().Broadcast()
-		}
-
-		return
-	}
-
-	manager.logger.Warnf("accountDB not set. requestId: %d, current: %d, msg: %s", nonce, manager.requestId, msg)
-}
-
 func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.AccountDB, requestIds map[string]uint64, height uint64) {
 	// 这里无需加锁，因为外面加过了
 	key := "fixed"
@@ -163,45 +92,4 @@ func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.Account
 
 		manager.NewTxs <- 1
 	}
-}
-
-// deprecated
-func (manager *AccountDBManager) getCond() *sync.Cond {
-	gameId := "fixed"
-	defaultValue := sync.NewCond(new(sync.Mutex))
-	value, _ := manager.conds.LoadOrStore(gameId, defaultValue)
-
-	return value.(*sync.Cond)
-}
-
-// GetLatestNonce deprecated
-func (manager *AccountDBManager) GetLatestNonce() uint64 {
-	manager.getCond().L.Lock()
-	defer manager.getCond().L.Unlock()
-
-	return manager.requestId
-}
-
-// deprecated
-func (manager *AccountDBManager) getTxList() {
-	go func() {
-		for {
-			txs := mysql.GetTxRaws(manager.GetLatestNonce())
-			if nil != txs {
-				for _, tx := range txs {
-					var txJson types.TxJson
-					err := json.Unmarshal(utility.StrToBytes(tx.Data), &txJson)
-					if nil != err {
-						msg := fmt.Sprintf("handleClientMessage json unmarshal client message error:%s", err.Error())
-						manager.logger.Errorf(msg)
-					}
-					transaction := txJson.ToTransaction()
-
-					msg := notify.ClientTransactionMessage{Tx: transaction, UserId: tx.UserId, Nonce: tx.Nonce, GateNonce: tx.GateNonce}
-					notify.BUS.Publish(notify.ClientTransaction, &msg)
-				}
-			}
-			time.Sleep(time.Millisecond * 10)
-		}
-	}()
 }
