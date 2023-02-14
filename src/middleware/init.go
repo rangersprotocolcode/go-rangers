@@ -27,18 +27,18 @@ import (
 var PerfLogger log.Logger
 var MonitorLogger log.Logger
 
-func InitMiddleware(dbDSN, dbDSNLog string) error {
+func InitMiddleware(dbDSNLog string) error {
 	types.InitSerialzation()
 	PerfLogger = log.GetLoggerByIndex(log.PerformanceLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	MonitorLogger = log.GetLoggerByIndex(log.MonitorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	notify.BUS = notify.NewBus()
-	mysql.InitMySql(dbDSN, dbDSNLog)
+	mysql.InitMySql(dbDSNLog)
 
 	InitLock()
 	return nil
 }
 
-func InitLock(){
+func InitLock() {
 	lock = NewLoglock("blockchain")
 	accountDBLock = NewLoglock("accountDB")
 }

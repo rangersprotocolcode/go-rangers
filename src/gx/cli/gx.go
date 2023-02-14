@@ -95,7 +95,7 @@ func (gx *GX) Run() {
 	env := mineCmd.Flag("env", "the environment application run in").String()
 	gateAddrPoint := mineCmd.Flag("gateaddr", "the gate addr").String()
 	outerGateAddrPoint := mineCmd.Flag("outergateaddr", "the gate addr").String()
-	dbDSNPoint := mineCmd.Flag("mysql", "the db addr").String()
+
 	dbDSNLogPoint := mineCmd.Flag("mysqllog", "the logdb addr").String()
 
 	command, err := app.Parse(os.Args[1:])
@@ -113,10 +113,6 @@ func (gx *GX) Run() {
 	outerGateAddr := *outerGateAddrPoint
 	if 0 == len(outerGateAddr) {
 		outerGateAddr = common.LocalChainConfig.PubHub
-	}
-	dbDSN := *dbDSNPoint
-	if 0 == len(dbDSN) {
-		dbDSN = common.LocalChainConfig.Dsn
 	}
 	dbDSNLog := *dbDSNLogPoint
 
@@ -149,7 +145,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(instance, *env, gateAddr, outerGateAddr, dbDSN, dbDSNLog)
+		gx.initMiner(instance, *env, gateAddr, outerGateAddr, dbDSNLog)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc, gx.account.Sk)
 			if err != nil {
@@ -161,7 +157,7 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, dbDSN, dbDSNLog string) {
+func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, dbDSNLog string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	databaseValue := "chain"
@@ -169,7 +165,7 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, dbDSN, 
 	joinedGroupDatabaseValue := "jgs"
 	common.GlobalConf.SetString(db.ConfigSec, db.DefaultJoinedGroupDatabaseKey, joinedGroupDatabaseValue)
 
-	middleware.InitMiddleware(dbDSN, dbDSNLog)
+	middleware.InitMiddleware(dbDSNLog)
 
 	privateKey := common.GlobalConf.GetString(Section, "privateKey", "")
 	gx.getAccountInfo(privateKey)
