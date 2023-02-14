@@ -246,15 +246,15 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 	tlog := newHashTraceLog("successNewBlock", bh.Hash, p.GetMinerID())
 	tlog.log("height=%v, status=%v", bh.Height, vctx.consensusStatus)
 
-	seed := big.NewInt(0).SetBytes(bh.GroupId)
-	index := seed.Uint64() % uint64(group.GetMemberCount())
+	seed := big.NewInt(0).SetBytes(bh.Hash.Bytes()).Uint64()
+	index := seed % uint64(group.GetMemberCount())
 	id := group.GetMemberID(int(index)).GetBigInt()
 	if id.Cmp(p.mi.ID.GetBigInt()) == 0 {
 		cbm := &model.ConsensusBlockMessage{
 			Block: *block,
 		}
 		p.NetServer.BroadcastNewBlock(cbm)
-		tlog.log("broadcasted height=%v, cost: %v, seed: %d, index: %d", bh.Height, utility.GetTime().Sub(bh.CurTime), seed.Uint64(), index)
+		tlog.log("broadcasted height=%v, cost: %v, seed: %d, index: %d", bh.Height, utility.GetTime().Sub(bh.CurTime), seed, index)
 	}
 
 	//发送日志

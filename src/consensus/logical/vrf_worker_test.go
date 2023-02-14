@@ -94,3 +94,10 @@ func TestBigIntBytes(t *testing.T) {
 	b := bigA.Bytes()
 	fmt.Printf("%v\n", b)
 }
+
+func TestBigIntMod(t *testing.T){
+	seed := big.NewInt(761351)
+	length := big.NewInt(3)
+	index := seed.Mod(seed, length).Uint64()
+	fmt.Println(index)
+}
