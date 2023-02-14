@@ -63,8 +63,7 @@ func (chain *blockChain) addBlockOnChain(coming *types.Block) types.AddBlockResu
 	topBlock := chain.latestBlock
 	comingHeader := coming.Header
 
-	logger.Debugf("coming block:hash=%v, preH=%v, height=%v,totalQn:%d", comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN)
-	logger.Debugf("Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d", topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN)
+	logger.Debugf("coming block: hash: %v, preH: %v, height: %v,totalQn:%d, localTopHash: %v, localPreHash: %v, localHeight: %v, localTotalQn: %d", comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN)
 
 	// 已经存在
 	if comingHeader.Hash == topBlock.Hash || chain.HasBlockByHash(comingHeader.Hash) {
@@ -279,7 +278,7 @@ func (chain *blockChain) updateTxPool(block *types.Block, receipts types.Receipt
 }
 
 func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block) {
-	logger.Infof("ON chain succ! height=%d,hash=%s", remoteBlock.Header.Height, remoteBlock.Header.Hash.Hex())
+	logger.Infof("ON chain succ! height: %d,hash: %s", remoteBlock.Header.Height, remoteBlock.Header.Hash.Hex())
 	notify.BUS.Publish(notify.BlockAddSucc, &notify.BlockOnChainSuccMessage{Block: *remoteBlock})
 	if value, _ := chain.futureBlocks.Get(remoteBlock.Header.Hash); value != nil {
 		block := value.(*types.Block)

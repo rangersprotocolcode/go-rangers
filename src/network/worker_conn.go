@@ -97,7 +97,7 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 	case CurrentGroupCastMsg, CastVerifyMsg, VerifiedCastMsg, AskSignPkMsg, AnswerSignPkMsg, ReqSharePiece, ResponseSharePiece,
 		GroupInitMsg, KeyPieceMsg, SignPubkeyMsg, GroupInitDoneMsg, CreateGroupaRaw, CreateGroupSign, GroupPing, GroupPong:
 		if nil != workerConn.consensusHandler {
-			workerConn.consensusHandler.Handle(from, *message)
+			go workerConn.consensusHandler.Handle(from, *message)
 		}
 	case NewBlockMsg:
 		msg := notify.NewBlockMessage{BlockByte: message.Body, Peer: from}
