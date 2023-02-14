@@ -24,6 +24,7 @@ import (
 	"com.tuntun.rocket/node/src/consensus/model"
 	"com.tuntun.rocket/node/src/consensus/net"
 	"com.tuntun.rocket/node/src/utility"
+	"math/big"
 
 	"com.tuntun.rocket/node/src/middleware/types"
 	"runtime/debug"
@@ -212,12 +213,11 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 	}
 
 	if p.blockOnChain(bh.Hash) { //已经上链
-		blog.log("block alreayd onchain!")
+		blog.log("block already onchain!")
 		return
 	}
 
 	block := p.MainChain.GenerateBlock(*bh)
-
 	if block == nil {
 		blog.log("core.GenerateBlock is nil! won't broadcast block!")
 		return
@@ -229,7 +229,8 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 	//	return
 	//}
 
-	gpk := p.getGroupPubKey(groupsig.DeserializeID(bh.GroupId))
+	group := p.GetGroup(groupsig.DeserializeID(bh.GroupId))
+	gpk := group.GetGroupPubKey()
 	if !slot.VerifyGroupSigns(gpk, vctx.prevBH.Random) { //组签名验证通过
 		blog.log("group pub key local check failed, gpk=%v, hash in slot=%v, hash in bh=%v status=%v.",
 			gpk.ShortS(), slot.BH.Hash.ShortS(), bh.Hash.ShortS(), slot.GetSlotStatus())
@@ -237,21 +238,24 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 	}
 
 	r := p.doAddOnChain(block)
-
 	if r != int8(types.AddBlockSucc) { //分叉调整或 上链失败都不走下面的逻辑
 		slot.setSlotStatus(SS_FAILED)
 		return
 	}
 
 	tlog := newHashTraceLog("successNewBlock", bh.Hash, p.GetMinerID())
-
 	tlog.log("height=%v, status=%v", bh.Height, vctx.consensusStatus)
-	cbm := &model.ConsensusBlockMessage{
-		Block: *block,
-	}
 
-	p.NetServer.BroadcastNewBlock(cbm)
-	tlog.log("broadcasted height=%v, 耗时%v", bh.Height, utility.GetTime().Sub(bh.CurTime))
+	seed := big.NewInt(0).SetBytes(bh.GroupId)
+	index := seed.Uint64() % uint64(group.GetMemberCount())
+	id := group.GetMemberID(int(index)).GetBigInt()
+	if id.Cmp(p.mi.ID.GetBigInt()) == 0 {
+		cbm := &model.ConsensusBlockMessage{
+			Block: *block,
+		}
+		p.NetServer.BroadcastNewBlock(cbm)
+		tlog.log("broadcasted height=%v, 耗时%v", bh.Height, utility.GetTime().Sub(bh.CurTime))
+	}
 
 	//发送日志
 	//le := &monitor.LogEntry{
