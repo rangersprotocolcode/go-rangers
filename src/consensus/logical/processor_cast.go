@@ -254,7 +254,7 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 			Block: *block,
 		}
 		p.NetServer.BroadcastNewBlock(cbm)
-		tlog.log("broadcasted height=%v, 耗时%v", bh.Height, utility.GetTime().Sub(bh.CurTime))
+		tlog.log("broadcasted height=%v, cost: %v, seed: %d, index: %d", bh.Height, utility.GetTime().Sub(bh.CurTime), seed.Uint64(), index)
 	}
 
 	//发送日志
