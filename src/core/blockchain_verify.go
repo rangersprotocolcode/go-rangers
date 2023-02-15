@@ -28,7 +28,9 @@ import (
 func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transaction) ([]common.Hashes, int8) {
 	start := utility.GetTime()
 	logger.Infof("verifyBlock. hash:%v,height:%d,preHash:%v,len header tx:%d,len tx:%d", bh.Hash.String(), bh.Height, bh.PreHash.String(), len(bh.Transactions), len(txs))
-	defer logger.Infof("verifyBlock end. hash:%v,height:%d,preHash:%v,len header tx:%d,len tx:%d, cost: %s", bh.Hash.String(), bh.Height, bh.PreHash.String(), len(bh.Transactions), len(txs), utility.GetTime().Sub(start).String())
+	defer func() {
+		logger.Infof("verifyBlock end. hash:%v,height:%d,preHash:%v,len header tx:%d,len tx:%d, cost: %s", bh.Hash.String(), bh.Height, bh.PreHash.String(), len(bh.Transactions), len(txs), utility.GetTime().Sub(start).String())
+	}()
 
 	// use cache before verify
 	if chain.verifiedBlocks.Contains(bh.Hash) {

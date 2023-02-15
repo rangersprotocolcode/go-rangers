@@ -63,7 +63,7 @@ func (lock *Loglock) Lock(msg string) {
 
 	begin := utility.GetTime()
 	lock.lock.Lock()
-	lock.begin = begin
+	lock.begin = utility.GetTime()
 	cost := utility.GetTime().Sub(begin)
 
 	lockLogger.Debugf("locked: %s, with msg: %s, waited: %v", lock.addr, msg, cost)
@@ -76,7 +76,7 @@ func (lock *Loglock) RLock(msg string) {
 
 	begin := utility.GetTime()
 	lock.lock.RLock()
-	lock.begin = begin
+	lock.begin = utility.GetTime()
 	cost := utility.GetTime().Sub(begin)
 
 	lockLogger.Debugf("Rlocked: %s, with msg: %s, waited: %v", lock.addr, msg, cost)
@@ -87,10 +87,10 @@ func (lock *Loglock) Unlock(msg string) {
 		lockLogger.Debugf("try to UnLock: %s, with msg: %s", lock.addr, msg)
 	}
 
-	lock.lock.Unlock()
 	duration := utility.GetTime().Sub(lock.begin)
+	lock.lock.Unlock()
 
-	lockLogger.Debugf("UnLocked: %s, with msg: %s, duration:%v", lock.addr, msg, duration)
+	lockLogger.Debugf("Unlocked: %s, with msg: %s, duration:%v", lock.addr, msg, duration)
 }
 
 func (lock *Loglock) RUnlock(msg string) {
@@ -98,10 +98,10 @@ func (lock *Loglock) RUnlock(msg string) {
 		lockLogger.Debugf("try to UnRLock: %s, with msg: %s", lock.addr, msg)
 	}
 
-	lock.lock.RUnlock()
 	duration := utility.GetTime().Sub(lock.begin)
+	lock.lock.RUnlock()
 
-	lockLogger.Debugf("UnRLocked: %s, with msg: %s, duration:%v", lock.addr, msg, duration)
+	lockLogger.Debugf("UnRlocked: %s, with msg: %s, duration:%v", lock.addr, msg, duration)
 }
 
 func LockBlockchain(msg string) {
