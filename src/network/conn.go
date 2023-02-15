@@ -150,7 +150,7 @@ func (base *baseConn) logChannel() {
 		sentResult := atomic.LoadUint64(&base.sendCount) * 2 / 1000
 		atomic.StoreUint64(&base.rcvCount, 0)
 		atomic.StoreUint64(&base.sendCount, 0)
-		p2pLogger.Errorf("rcv: %dKB/s, sent: %dKB/s", rcvResult, sentResult)
+		p2pLogger.Errorf("%s, rcv: %dKB/s, sent: %dKB/s", base.path, rcvResult, sentResult)
 	}
 }
 
@@ -258,7 +258,7 @@ func (base *baseConn) unicast(method []byte, strangerId []byte, msg []byte, nonc
 
 	//todo 这里流控方法的参数不一致，暂不使用流控
 	base.sendChan <- byteArray
-	base.logger.Debugf("unicast message. strangerId:%v,msg:%v,byte: %v", strangerId, msg, byteArray)
+	base.logger.Debugf("unicast message. strangerId:%s, length: %d", common.ToHex(strangerId), len(byteArray))
 }
 
 // 构建网络消息
