@@ -90,7 +90,7 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 		return
 	}
 
-	workerConn.logger.Debugf("Rcv from node: %s,code: %d,msg size: %d,hash: %s", from, message.Code, len(data), message.Hash())
+	workerConn.logger.Debugf("Rcv from node: %s,code: %d, msg size: %d", from, message.Code, len(data))
 
 	code := message.Code
 	switch code {

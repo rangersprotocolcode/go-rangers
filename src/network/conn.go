@@ -150,7 +150,7 @@ func (base *baseConn) logChannel() {
 		sentResult := atomic.LoadUint64(&base.sendCount) * 2 / 1000
 		atomic.StoreUint64(&base.rcvCount, 0)
 		atomic.StoreUint64(&base.sendCount, 0)
-		p2pLogger.Errorf("rcv: %dKB, sent: %dKB", rcvResult, sentResult)
+		p2pLogger.Errorf("rcv: %dKB/s, sent: %dKB/s", rcvResult, sentResult)
 	}
 }
 

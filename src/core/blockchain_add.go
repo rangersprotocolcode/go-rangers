@@ -188,7 +188,7 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 	chain.updateTxPool(remoteBlock, receipts)
 	chain.topBlocks.Add(remoteBlock.Header.Height, remoteBlock.Header)
 
-	dumpTxs(remoteBlock.Transactions, remoteBlock.Header.Height)
+	//dumpTxs(remoteBlock.Transactions, remoteBlock.Header.Height)
 	chain.eraseAddBlockMark()
 	chain.successOnChainCallBack(remoteBlock)
 	if chain.latestBlock != nil {
