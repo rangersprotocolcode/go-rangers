@@ -32,7 +32,6 @@ type AccountDBManager struct {
 	LatestStateDB *account.AccountDB
 	requestId     uint64
 	Height        uint64
-	debug         bool // debug 为true，则不开启requestId校验
 	logger        log.Logger
 
 	waitingTxs *PriorityQueue
@@ -54,7 +53,6 @@ func initAccountDBManager() {
 	AccountDBManagerInstance.stateDB = account.NewDatabase(db)
 
 	AccountDBManagerInstance.logger = log.GetLoggerByIndex(log.AccountDBLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	AccountDBManagerInstance.debug = false
 	AccountDBManagerInstance.waitingTxs = NewPriorityQueue()
 	AccountDBManagerInstance.writeChan = make(chan *notify.ClientTransactionMessage, maxWriteSize)
 	AccountDBManagerInstance.loop()
@@ -106,14 +104,16 @@ func (manager *AccountDBManager) write(msg notify.Message) {
 }
 
 func (manager *AccountDBManager) loop() {
-	for {
-		select {
-		case message := <-manager.writeChan:
-			manager.waitingTxs.heapPush(message)
+	go func() {
+		for {
+			select {
+			case message := <-manager.writeChan:
+				manager.waitingTxs.heapPush(message)
+			}
 		}
-	}
+	}()
 }
 
-func (manager *AccountDBManager) SetHandler(handler func(message *Item)){
+func (manager *AccountDBManager) SetHandler(handler func(message *Item)) {
 	manager.waitingTxs.SetHandle(handler)
 }
