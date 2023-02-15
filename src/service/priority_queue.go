@@ -15,6 +15,8 @@ type Item struct {
 type PriorityQueue struct {
 	data      []*Item
 	threshold uint64
+
+	handler func(message *Item)
 }
 
 func NewPriorityQueue() *PriorityQueue {
@@ -27,8 +29,6 @@ func NewPriorityQueue() *PriorityQueue {
 func (pq PriorityQueue) Len() int { return len(pq.data) }
 
 func (pq PriorityQueue) Less(i, j int) bool {
-	// 我们希望 Pop 返回的是最大值而不是最小值，
-	// 因此这里使用大于号进行对比。
 	return pq.data[i].Value.Nonce < pq.data[j].Value.Nonce
 }
 
@@ -54,13 +54,13 @@ func (pq *PriorityQueue) Pop() interface{} {
 	return item
 }
 
-func (pq *PriorityQueue) HeapPush(value *notify.ClientTransactionMessage) {
+func (pq *PriorityQueue) heapPush(value *notify.ClientTransactionMessage) {
 	if value == nil {
 		return
 	}
 
-	middleware.LockAccountDB("HeapPush")
-	defer middleware.UnLockAccountDB("HeapPush")
+	middleware.LockBlockchain("HeapPush")
+	defer middleware.UnLockBlockchain("HeapPush")
 
 	if value.Nonce < pq.threshold {
 		return
@@ -69,12 +69,11 @@ func (pq *PriorityQueue) HeapPush(value *notify.ClientTransactionMessage) {
 	x := new(Item)
 	x.Value = value
 	heap.Push(pq, x)
+
+	pq.tryPop()
 }
 
-func (pq *PriorityQueue) TryPop(handler func(message *Item)) {
-	middleware.LockAccountDB("TryPop")
-	defer middleware.UnLockAccountDB("TryPop")
-
+func (pq *PriorityQueue) tryPop() {
 	if 0 == len(pq.data) || nil == pq.data[0] {
 		return
 	}
@@ -85,7 +84,9 @@ func (pq *PriorityQueue) TryPop(handler func(message *Item)) {
 
 	for 0 < len(pq.data) && nil != pq.data[0] && pq.data[0].Value.Nonce == pq.threshold+1 {
 		pq.threshold++
-		handler(heap.Pop(pq).(*Item))
+		if nil != pq.handler {
+			pq.handler(heap.Pop(pq).(*Item))
+		}
 	}
 
 	return
@@ -93,8 +94,13 @@ func (pq *PriorityQueue) TryPop(handler func(message *Item)) {
 
 func (pq *PriorityQueue) SetThreshold(value uint64) {
 	pq.threshold = value
+	pq.tryPop()
 }
 
 func (pq *PriorityQueue) GetThreshold() uint64 {
 	return pq.threshold
+}
+
+func (pq *PriorityQueue) SetHandle(handler func(message *Item)) {
+	pq.handler = handler
 }

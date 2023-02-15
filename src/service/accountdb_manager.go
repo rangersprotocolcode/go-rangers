@@ -20,6 +20,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
+	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/trie"
 )
@@ -34,9 +35,11 @@ type AccountDBManager struct {
 	debug         bool // debug 为true，则不开启requestId校验
 	logger        log.Logger
 
-	WaitingTxs *PriorityQueue
-	NewTxs     chan byte
+	waitingTxs *PriorityQueue
+	writeChan  chan *notify.ClientTransactionMessage
 }
+
+const maxWriteSize = 100000
 
 var AccountDBManagerInstance AccountDBManager
 
@@ -45,8 +48,8 @@ func initAccountDBManager() {
 
 	AccountDBManagerInstance.logger = log.GetLoggerByIndex(log.AccountDBLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	AccountDBManagerInstance.debug = false
-	AccountDBManagerInstance.WaitingTxs = NewPriorityQueue()
-	AccountDBManagerInstance.NewTxs = make(chan byte, 1)
+	AccountDBManagerInstance.waitingTxs = NewPriorityQueue()
+	AccountDBManagerInstance.writeChan = make(chan *notify.ClientTransactionMessage, maxWriteSize)
 
 	db, err := db.NewLDBDatabase(stateDBPrefix, 128, 2048)
 	if err != nil {
@@ -54,6 +57,8 @@ func initAccountDBManager() {
 		panic(err)
 	}
 	AccountDBManagerInstance.stateDB = account.NewDatabase(db)
+
+	notify.BUS.Subscribe(notify.ClientTransaction, AccountDBManagerInstance.write)
 }
 
 func (manager *AccountDBManager) GetAccountDBByHash(hash common.Hash) (*account.AccountDB, error) {
@@ -75,12 +80,39 @@ func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.Account
 	nonce := requestIds[key]
 	//manager.SetLatestStateDBWithNonce(latestStateDB, nonce, "add block", height)
 	manager.Height = height
-	if nil == manager.LatestStateDB || nonce >= manager.WaitingTxs.GetThreshold() {
+	if nil == manager.LatestStateDB || nonce >= manager.waitingTxs.GetThreshold() {
 		if nil != latestStateDB {
 			manager.LatestStateDB = latestStateDB
 		}
-		manager.WaitingTxs.SetThreshold(nonce)
-
-		manager.NewTxs <- 1
+		manager.waitingTxs.SetThreshold(nonce)
 	}
+}
+
+func (manager *AccountDBManager) write(msg notify.Message) {
+	message, ok := msg.(*notify.ClientTransactionMessage)
+	if !ok {
+		manager.logger.Errorf("AccountDBManager: Write assert not ok!")
+		return
+	}
+
+	if len(manager.writeChan) == maxWriteSize {
+		manager.logger.Errorf("write rcv message error: %v", msg)
+		return
+	}
+
+	manager.logger.Debugf("write rcv message. hash: %s, nonce: %d", message.Tx.Hash.String(), message.Nonce)
+	manager.writeChan <- message
+}
+
+func (manager *AccountDBManager) loop() {
+	for {
+		select {
+		case message := <-manager.writeChan:
+			manager.waitingTxs.heapPush(message)
+		}
+	}
+}
+
+func (manager *AccountDBManager) SetHandler(handler func(message *Item)){
+	manager.waitingTxs.SetHandle(handler)
 }

@@ -67,26 +67,17 @@ func (executor *GameExecutor) makeFailedResponse(message string, id string) []by
 	return result
 }
 
-const maxWriteSize = 100000
-
 // GameExecutor 用于处理client websocket请求
 type GameExecutor struct {
-	chain     *blockChain
-	writeChan chan byte
-	logger    log.Logger
-	cleaner   *time.Ticker
+	chain  *blockChain
+	logger log.Logger
 }
 
 func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor := GameExecutor{chain: blockChainImpl}
 	gameExecutor.logger = log.GetLoggerByIndex(log.GameExecutorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	gameExecutor.writeChan = make(chan byte, 1)
-	gameExecutor.cleaner = time.NewTicker(time.Minute * 10)
-
+	service.AccountDBManagerInstance.SetHandler(gameExecutor.runWrite)
 	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
-	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.write)
-
-	go gameExecutor.loop()
 }
 
 func (executor *GameExecutor) read(msg notify.Message) {
@@ -202,88 +193,52 @@ func (executor *GameExecutor) read(msg notify.Message) {
 	//reply to the client
 	go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
 }
+func (executor *GameExecutor) runWrite(item *service.Item) {
 
-// 通过流量控制，初步处理交易信息
-func (executor *GameExecutor) write(msg notify.Message) {
-	message, ok := msg.(*notify.ClientTransactionMessage)
-	if !ok {
-		executor.logger.Errorf("GameExecutor: Write assert not ok!")
-		return
-	}
+	message := item.Value
+	txRaw := message.Tx
+	txRaw.RequestId = message.Nonce
+	txRaw.SubTransactions = make([]types.UserData, 0)
 
-	if len(executor.writeChan) == maxWriteSize {
-		executor.logger.Errorf("write rcv message error: %v", msg)
-		return
-	}
+	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
 
-	executor.logger.Debugf("write rcv message: %s", message.TOJSONString())
-	service.AccountDBManagerInstance.WaitingTxs.HeapPush(message)
-	executor.writeChan <- 1
-}
+	//accountDB, height := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
+	//if nil == accountDB {
+	//	return
+	//}
 
-// 调度，处理队列里的交易
-func (executor *GameExecutor) loop() {
-	for {
-		select {
-		// 来新交易来
-		case <-executor.writeChan:
-			go executor.RunWrite()
-		// 上块完成
-		case <-service.AccountDBManagerInstance.NewTxs:
-			go executor.RunWrite()
-		}
-	}
-}
-
-func (executor *GameExecutor) RunWrite() {
-	service.AccountDBManagerInstance.WaitingTxs.TryPop(func(item *service.Item) {
-		message := item.Value
-		txRaw := message.Tx
-		txRaw.RequestId = message.Nonce
-		txRaw.SubTransactions = make([]types.UserData, 0)
-
-		executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
-
-		//accountDB, height := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
-		//if nil == accountDB {
-		//	return
-		//}
-
-		_, height := service.AccountDBManagerInstance.LatestStateDB, service.AccountDBManagerInstance.Height
-		if err := service.GetTransactionPool().VerifyTransaction(&txRaw, height); err != nil {
-			//service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
-
-			executor.logger.Errorf("fail to verify tx, txhash: %s, err: %v", txRaw.Hash.String(), err.Error())
-			if 0 != len(message.UserId) {
-				response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
-				go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.GateNonce)
-			}
-			return
-		}
-
-		//result, execMessage := executor.runTransaction(accountDB, height, txRaw)
+	_, height := service.AccountDBManagerInstance.LatestStateDB, service.AccountDBManagerInstance.Height
+	if err := service.GetTransactionPool().VerifyTransaction(&txRaw, height); err != nil {
 		//service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
-		executor.sendTransaction(&txRaw)
 
-		if 0 == len(message.UserId) {
-			return
+		executor.logger.Errorf("fail to verify tx, txhash: %s, err: %v", txRaw.Hash.String(), err.Error())
+		if 0 != len(message.UserId) {
+			response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
+			go network.GetNetInstance().SendToClientWriter(message.UserId, response, message.GateNonce)
 		}
+		return
+	}
 
-		//executor.logger.Debugf("txhash: %s, send to user: %s, msg: %s, gatenonce: %d", txRaw.Hash.String(), message.UserId, execMessage, message.GateNonce)
-		//// reply to the client
-		//var response []byte
-		//if result {
-		//	response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
-		//} else {
-		//	response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
-		//}
-		//
-		//if 0 != message.GateNonce {
-		//	network.GetNetInstance().SendToClientWriter(message.UserId, response, message.GateNonce)
-		//}
+	//result, execMessage := executor.runTransaction(accountDB, height, txRaw)
+	//service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
+	executor.sendTransaction(&txRaw)
 
-	})
+	if 0 == len(message.UserId) {
+		return
+	}
 
+	//executor.logger.Debugf("txhash: %s, send to user: %s, msg: %s, gatenonce: %d", txRaw.Hash.String(), message.UserId, execMessage, message.GateNonce)
+	//// reply to the client
+	//var response []byte
+	//if result {
+	//	response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
+	//} else {
+	//	response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
+	//}
+	//
+	//if 0 != message.GateNonce {
+	//	network.GetNetInstance().SendToClientWriter(message.UserId, response, message.GateNonce)
+	//}
 }
 
 func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, height uint64, txRaw types.Transaction) (bool, string) {
