@@ -153,6 +153,7 @@ func (log *slowLog) log(format string, params ... interface{}) {
 	if c.Seconds() < log.threshold {
 		return
 	}
+
 	s := fmt.Sprintf(format, params...)
 	detail := ""
 	for _, lt := range log.lts {

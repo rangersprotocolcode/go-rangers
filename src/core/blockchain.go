@@ -24,6 +24,7 @@ import (
 	"github.com/hashicorp/golang-lru"
 	"math/big"
 	"os"
+	"strconv"
 
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/service"
@@ -258,8 +259,9 @@ func (chain *blockChain) GenerateBlock(bh types.BlockHeader) *types.Block {
 // 1 无法验证（缺少交易，已异步向网络模块请求）
 // 2 无法验证（前一块在链上不存存在）
 func (chain *blockChain) VerifyBlock(bh types.BlockHeader) ([]common.Hashes, int8) {
-	middleware.LockBlockchain("VerifyCastingBlock")
-	defer middleware.UnLockBlockchain("VerifyCastingBlock")
+	msg := "VerifyCastingBlock: " + strconv.FormatUint(bh.Height, 10)
+	middleware.LockBlockchain(msg)
+	defer middleware.UnLockBlockchain(msg)
 
 	return chain.verifyBlock(bh, nil)
 }
