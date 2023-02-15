@@ -46,17 +46,18 @@ var AccountDBManagerInstance AccountDBManager
 func initAccountDBManager() {
 	AccountDBManagerInstance = AccountDBManager{}
 
-	AccountDBManagerInstance.logger = log.GetLoggerByIndex(log.AccountDBLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	AccountDBManagerInstance.debug = false
-	AccountDBManagerInstance.waitingTxs = NewPriorityQueue()
-	AccountDBManagerInstance.writeChan = make(chan *notify.ClientTransactionMessage, maxWriteSize)
-
 	db, err := db.NewLDBDatabase(stateDBPrefix, 128, 2048)
 	if err != nil {
 		AccountDBManagerInstance.logger.Errorf("Init accountDB error! Error:%s", err.Error())
 		panic(err)
 	}
 	AccountDBManagerInstance.stateDB = account.NewDatabase(db)
+
+	AccountDBManagerInstance.logger = log.GetLoggerByIndex(log.AccountDBLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	AccountDBManagerInstance.debug = false
+	AccountDBManagerInstance.waitingTxs = NewPriorityQueue()
+	AccountDBManagerInstance.writeChan = make(chan *notify.ClientTransactionMessage, maxWriteSize)
+	AccountDBManagerInstance.loop()
 
 	notify.BUS.Subscribe(notify.ClientTransaction, AccountDBManagerInstance.write)
 }
