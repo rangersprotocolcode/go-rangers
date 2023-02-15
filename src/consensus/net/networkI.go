@@ -79,7 +79,7 @@ type NetworkServer interface {
 
 	BroadcastGroupInfo(cgm *model.GroupInitedMessage)
 
-	SendCastVerify(ccm *model.ConsensusCastMessage, group *GroupBrief, body []*types.Transaction)
+	SendCandidate(ccm *model.ConsensusCastMessage, group *GroupBrief, body []*types.Transaction)
 
 	SendVerifiedCast(cvm *model.ConsensusVerifyMessage, receiver groupsig.ID)
 

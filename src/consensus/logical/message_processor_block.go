@@ -306,8 +306,7 @@ func (p *Processor) verifyWithCache(cache *verifyMsgCache, vmsg *model.Consensus
 	p.verifyCastMessage("OMV", msg)
 }
 
-//收到组内成员的出块消息，出块人（KING）用组分片密钥进行了签名
-//有可能没有收到OnMessageCurrent就提前接收了该消息（网络时序问题）
+// OnMessageCast 收到出块消息
 func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 	slog := newSlowLog("OnMessageCast", 0.5)
 	bh := &ccm.BH
@@ -339,7 +338,7 @@ func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 
 }
 
-//收到组内成员的出块验证通过消息（组内成员消息）
+// OnMessageVerify 收到组内成员的出块验证通过消息（组内成员消息）
 func (p *Processor) OnMessageVerify(cvm *model.ConsensusVerifyMessage) {
 	//statistics.AddBlockLog(common.BootId, statistics.RcvVerified, cvm.BH.Height, cvm.BH.ProveValue.Uint64(), -1, -1,
 	//	utility.GetTime().UnixNano(), "", "", common.InstanceIndex, cvm.BH.CurTime.UnixNano())

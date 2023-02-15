@@ -381,7 +381,7 @@ func (p *Processor) blockProposal() {
 		//blog.log("hash=%v, proveRoot=%v, pi=%v, piHash=%v", bh.Hash.ShortS(), root.ShortS(), pi.ShortS(), common.Bytes2Hex(vrf.VRFProof2Hash(pi)))
 		//ccm.GenRandomSign(skey, worker.baseBH.Random)//castor不能对随机数签名
 		tlog.log("铸块成功, SendVerifiedCast, 时间间隔 %v, castor=%v, hash=%v, genHash=%v", bh.CurTime.Sub(bh.PreTime).Seconds(), ccm.SignInfo.GetSignerID().ShortS(), bh.Hash.ShortS(), ccm.SignInfo.GetDataHash().ShortS())
-		p.NetServer.SendCastVerify(&ccm, gb, block.Transactions)
+		p.NetServer.SendCandidate(&ccm, gb, block.Transactions)
 
 		//发送日志
 		//le := &monitor.LogEntry{

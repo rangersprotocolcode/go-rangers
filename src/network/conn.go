@@ -41,7 +41,7 @@ const (
 
 	// 默认等待队列大小
 	defaultRcvSize  = 10000
-	defaultSendSize = 100
+	defaultSendSize = 10000
 
 	// ws读写缓存
 	defaultBufferSize = 1024 * 1024 * 16

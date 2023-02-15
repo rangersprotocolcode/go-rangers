@@ -53,7 +53,7 @@ func (ns *NetworkServerImpl) SendGroupPongMessage(msg *model.CreateGroupPongMess
 		return
 	}
 	m := network.Message{Code: network.GroupPong, Body: body}
-	ns.net.SpreadToGroup(groupId, m)
+	go ns.net.SpreadToGroup(groupId, m)
 	if belongGroup {
 		ns.send2Self(msg.GetSignerID(), m)
 	}
@@ -114,7 +114,7 @@ func (ns *NetworkServerImpl) SendKeySharePiece(spm *model.SharePieceMessage) {
 	}
 	m := network.Message{Code: network.KeyPieceMsg, Body: body}
 	if spm.SignInfo.GetSignerID().IsEqual(spm.ReceiverId) {
-		go ns.send2Self(spm.SignInfo.GetSignerID(), m)
+		ns.send2Self(spm.SignInfo.GetSignerID(), m)
 		return
 	}
 
@@ -157,9 +157,9 @@ func (ns *NetworkServerImpl) BroadcastGroupInfo(cgm *model.GroupInitedMessage) {
 
 //-----------------------------------------------------------------组铸币----------------------------------------------
 
-// 提案节点完成铸币，将blockheader签名后发送至验证组内节点进行验证
+// SendCandidate 提案节点完成铸币，将blockheader签名后发送至验证组内节点进行验证
 // 组内广播
-func (ns *NetworkServerImpl) SendCastVerify(ccm *model.ConsensusCastMessage, group *GroupBrief, body []*types.Transaction) {
+func (ns *NetworkServerImpl) SendCandidate(ccm *model.ConsensusCastMessage, group *GroupBrief, body []*types.Transaction) {
 	var groupId groupsig.ID
 	e1 := groupId.Deserialize(ccm.BH.GroupId)
 	if e1 != nil {
@@ -190,7 +190,7 @@ func (ns *NetworkServerImpl) SendVerifiedCast(cvm *model.ConsensusVerifyMessage,
 	m := network.Message{Code: network.VerifiedCastMsg, Body: body}
 
 	// 验证消息需要给自己也发一份，否则自己的分片中将不包含自己的签名，导致分红没有
-	go ns.send2Self(cvm.SignInfo.GetSignerID(), m)
+	ns.send2Self(cvm.SignInfo.GetSignerID(), m)
 
 	go ns.net.SpreadToGroup(receiver.GetHexString(), m)
 	logger.Debugf("[peer]send VARIFIED_CAST_MSG,hash:%s", cvm.BlockHash.String())
