@@ -140,16 +140,17 @@ func (base *baseConn) start() {
 
 // 定时检查channel堆积情况
 func (base *baseConn) logChannel() {
-	for range time.Tick(time.Millisecond * 1000) {
+	for range time.Tick(time.Millisecond * 500) {
 		rcv, send := len(base.rcvChan), len(base.sendChan)
 		if rcv > 0 || send > 0 {
 			p2pLogger.Errorf("%s channel size. receive: %d, send: %d", base.path, rcv, send)
 		}
 
-		p2pLogger.Errorf("rcv: %dKB, sent: %dKB", atomic.LoadUint64(&base.rcvCount)/1000, atomic.LoadUint64(&base.sendCount)/1000)
+		rcvResult := atomic.LoadUint64(&base.rcvCount) * 2 / 1000
+		sentResult := atomic.LoadUint64(&base.sendCount) * 2 / 1000
 		atomic.StoreUint64(&base.rcvCount, 0)
 		atomic.StoreUint64(&base.sendCount, 0)
-
+		p2pLogger.Errorf("rcv: %dKB, sent: %dKB", rcvResult, sentResult)
 	}
 }
 
