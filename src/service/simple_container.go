@@ -80,8 +80,8 @@ func (c *simpleContainer) push(tx *types.Transaction) {
 }
 
 func (c *simpleContainer) remove(key common.Hash) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
+	//c.lock.Lock()
+	//defer c.lock.Unlock()
 	if c.txsMap[key] == nil {
 		return
 	}
