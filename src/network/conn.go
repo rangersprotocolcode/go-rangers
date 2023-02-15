@@ -32,6 +32,7 @@ import (
 	"net/url"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -85,6 +86,8 @@ type baseConn struct {
 	isSend func(method []byte, target uint64, msg []byte, nonce uint64) bool
 
 	logger log.Logger
+
+	rcvCount, sendCount uint64
 }
 
 // 根据url初始化
@@ -106,6 +109,8 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 	}
 	base.rcvChan = make(chan []byte, base.rcvSize)
 	base.sendChan = make(chan []byte, base.sendSize)
+	base.rcvCount = 0
+	base.sendCount = 0
 
 	// 开启goroutine
 	base.start()
@@ -135,11 +140,16 @@ func (base *baseConn) start() {
 
 // 定时检查channel堆积情况
 func (base *baseConn) logChannel() {
-	for range time.Tick(time.Millisecond * 300) {
+	for range time.Tick(time.Millisecond * 1000) {
 		rcv, send := len(base.rcvChan), len(base.sendChan)
 		if rcv > 0 || send > 0 {
-			base.logger.Errorf("%s channel size. receive: %d, send: %d", base.path, rcv, send)
+			p2pLogger.Errorf("%s channel size. receive: %d, send: %d", base.path, rcv, send)
 		}
+
+		p2pLogger.Errorf("rcv: %dKB, sent: %dKB", atomic.LoadUint64(&base.rcvCount)/1000, atomic.LoadUint64(&base.sendCount)/1000)
+		atomic.StoreUint64(&base.rcvCount, 0)
+		atomic.StoreUint64(&base.sendCount, 0)
+
 	}
 }
 
@@ -148,6 +158,8 @@ func (base *baseConn) loop() {
 	for {
 		select {
 		case message := <-base.rcvChan:
+			atomic.AddUint64(&base.rcvCount, uint64(len(message)))
+
 			// goroutine read process
 			if base.doRcv != nil {
 				header, msg := base.unloadMsg(message)
@@ -155,6 +167,8 @@ func (base *baseConn) loop() {
 			}
 
 		case message := <-base.sendChan:
+			atomic.AddUint64(&base.sendCount, uint64(len(message)))
+
 			conn := base.getConn()
 			if nil == conn {
 				continue
@@ -243,7 +257,7 @@ func (base *baseConn) unicast(method []byte, strangerId []byte, msg []byte, nonc
 
 	//todo 这里流控方法的参数不一致，暂不使用流控
 	base.sendChan <- byteArray
-	p2pLogger.Debugf("unicast message. strangerId:%v,msg:%v,byte: %v", strangerId, msg, byteArray)
+	base.logger.Debugf("unicast message. strangerId:%v,msg:%v,byte: %v", strangerId, msg, byteArray)
 }
 
 // 构建网络消息
