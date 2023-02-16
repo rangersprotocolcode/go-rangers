@@ -179,7 +179,7 @@ func (ns *NetworkServerImpl) SendCandidate(ccm *model.ConsensusCastMessage, grou
 	logger.Debugf("send CAST_VERIFY_MSG,%d-%d to group:%s,invoke SpreadToGroup cost time:%v,time from cast:%v,hash:%s", ccm.BH.Height, ccm.BH.TotalQN, groupId.GetHexString(), utility.GetTime().Sub(begin), timeFromCast, ccm.BH.Hash.String())
 }
 
-// 组内节点  验证通过后 自身签名 广播验证块 组内广播
+// SendVerifiedCast 组内节点  验证通过后 自身签名 广播验证块 组内广播
 // 验证不通过 保持静默
 func (ns *NetworkServerImpl) SendVerifiedCast(cvm *model.ConsensusVerifyMessage, receiver groupsig.ID) {
 	body, e := marshalConsensusVerifyMessage(cvm)

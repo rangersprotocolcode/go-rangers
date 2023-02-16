@@ -41,4 +41,5 @@ func InitMiddleware(dbDSNLog string) error {
 func InitLock() {
 	lock = NewLoglock("blockchain")
 	accountDBLock = NewLoglock("accountDB")
+	InitDataChannel()
 }

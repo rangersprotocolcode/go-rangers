@@ -18,6 +18,7 @@ package service
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
@@ -57,7 +58,7 @@ func initAccountDBManager() {
 	AccountDBManagerInstance.writeChan = make(chan *notify.ClientTransactionMessage, maxWriteSize)
 	AccountDBManagerInstance.loop()
 
-	notify.BUS.Subscribe(notify.ClientTransaction, AccountDBManagerInstance.write)
+	//notify.BUS.Subscribe(notify.ClientTransaction, AccountDBManagerInstance.write)
 }
 
 func (manager *AccountDBManager) GetAccountDBByHash(hash common.Hash) (*account.AccountDB, error) {
@@ -107,7 +108,7 @@ func (manager *AccountDBManager) loop() {
 	go func() {
 		for {
 			select {
-			case message := <-manager.writeChan:
+			case message := <-middleware.DataChannel.RcvedTx:
 				manager.waitingTxs.heapPush(message)
 			}
 		}

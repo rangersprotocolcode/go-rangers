@@ -18,6 +18,7 @@ package network
 
 import (
 	"bytes"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"encoding/hex"
@@ -133,7 +134,8 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 		var msg notify.ClientTransactionMessage
 		err := json.Unmarshal(message.Body, &msg)
 		if nil == err {
-			notify.BUS.Publish(notify.ClientTransaction, &msg)
+			middleware.DataChannel.RcvedTx <- &msg
+			//notify.BUS.Publish(notify.ClientTransaction, &msg)
 		}
 	}
 }
