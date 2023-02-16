@@ -67,7 +67,7 @@ type ExecutedTransaction struct {
 }
 
 type TransactionPool interface {
-	PackForCast() []*types.Transaction
+	PackForCast(height uint64) []*types.Transaction
 
 	//add new transaction to the transaction pool
 	AddTransaction(tx *types.Transaction) (bool, error)
@@ -277,19 +277,25 @@ func (p *TxPool) TxNum() int {
 	return p.received.Len()
 }
 
-func (pool *TxPool) PackForCast() []*types.Transaction {
+func (pool *TxPool) PackForCast(height uint64) []*types.Transaction {
+	packedTxs := make([]*types.Transaction, 0)
+
 	// transactions 已经根据RequestId排序
 	txs := pool.received.asSlice()
-	sort.Sort(types.Transactions(txs))
+	if 0 == len(txs) {
+		txPoolLogger.Debugf("packed no tx. height: %d", height)
+		return packedTxs
+	}
 
-	packedTxs := make([]*types.Transaction, 0)
-	for _, tx := range txs {
+	sort.Sort(types.Transactions(txs))
+	for i, tx := range txs {
 		packedTxs = append(packedTxs, tx)
-		txPoolLogger.Debugf("Pack tx:%s", tx.Hash.String())
-		if len(packedTxs) >= txCountPerBlock {
+		if i >= txCountPerBlock {
 			break
 		}
 	}
+
+	txPoolLogger.Debugf("packed tx. height: %d. nonce from %d to %d.", height, packedTxs[0].RequestId, packedTxs[len(packedTxs)-1].RequestId)
 	return packedTxs
 }
 
