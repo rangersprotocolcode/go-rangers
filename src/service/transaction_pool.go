@@ -149,8 +149,10 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 		return
 	}
 
+	txHashList := make([]common.Hash, len(receipts))
 	for i, receipt := range receipts {
 		hash := receipt.TxHash
+		txHashList[i] = hash
 		var er ExecutedReceipt
 		er.BlockHash = header.Hash
 		er.Height = receipt.Height
@@ -183,15 +185,12 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 		pool.batch.Reset()
 	}
 
-	for _, tx := range txs {
-		pool.remove(tx.Hash)
-	}
 	if evictedTxs != nil {
 		for _, hash := range evictedTxs {
-			pool.remove(hash)
 			pool.evictedTxs.Add(hash, 0)
 		}
 	}
+	pool.remove(txHashList)
 }
 
 func (pool *TxPool) UnMarkExecuted(txs []*types.Transaction, evictedTxs []common.Hash) {
@@ -209,6 +208,8 @@ func (pool *TxPool) UnMarkExecuted(txs []*types.Transaction, evictedTxs []common
 		pool.executed.Delete(tx.Hash.Bytes())
 		pool.add(tx)
 	}
+
+	sort.Sort(pool.received.txs)
 }
 
 func (pool *TxPool) IsExisted(hash common.Hash) bool {
@@ -347,9 +348,10 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 	return true, nil
 }
 
-func (pool *TxPool) remove(txHash common.Hash) {
-	pool.received.remove(txHash)
-	txPoolLogger.Debugf("[pool]Remove tx:%s. After remove, received size:%d", txHash.String(), pool.received.Len())
+func (pool *TxPool) remove(txHashList []common.Hash) {
+	pool.received.remove(txHashList)
+	txPoolLogger.Debugf("[pool]removed tx, %d After remove,received size:%d", len(txHashList), pool.received.Len())
+
 }
 
 func (pool *TxPool) isTransactionExisted(hash common.Hash) bool {

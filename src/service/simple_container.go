@@ -79,18 +79,11 @@ func (c *simpleContainer) push(tx *types.Transaction) {
 	}
 }
 
-func (c *simpleContainer) remove(key common.Hash) {
+func (c *simpleContainer) remove(txHashList []common.Hash) {
 	//c.lock.Lock()
 	//defer c.lock.Unlock()
-	if c.txsMap[key] == nil {
-		return
-	}
-
-	delete(c.txsMap, key)
-	for i, tx := range c.txs {
-		if tx.Hash == key {
-			c.txs = append(c.txs[:i], c.txs[i+1:]...)
-			break
-		}
+	c.txs = c.txs[len(txHashList):]
+	for _, txHash := range txHashList {
+		delete(c.txsMap, txHash)
 	}
 }

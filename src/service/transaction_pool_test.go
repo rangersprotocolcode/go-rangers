@@ -30,3 +30,10 @@ func TestRequestId(t *testing.T) {
 	fmt.Println(sign.GetS())
 	fmt.Println(sign.GetHexString())
 }
+
+func TestSlice(t *testing.T) {
+	data := []byte{1, 2, 3, 4, 5, 6}
+	fmt.Println(data)
+
+	fmt.Println(data[2:])
+}

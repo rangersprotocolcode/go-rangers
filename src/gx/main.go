@@ -33,7 +33,7 @@ func main() {
 
 func initSysParam() {
 	runtime.GOMAXPROCS(8)
-	debug.SetGCPercent(50)
+	debug.SetGCPercent(30)
 	debug.SetMaxStack(1 * 1000 * 1000 * 1000)
 
 	fmt.Printf("Setting gc %s, max memory %s, maxproc %s\n", "50", "1g", "8")
