@@ -43,8 +43,6 @@ const (
 
 	TransactionReq = "transaction_req"
 
-	TransactionGot = "transaction_got"
-
 	TransactionGotAddSucc = "transaction_got_add_succ"
 
 	AcceptGroup = "accept_group"

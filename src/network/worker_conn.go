@@ -115,6 +115,10 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 		}
 
 		for _, tx := range txs {
+			if nil == tx {
+				continue
+			}
+
 			var msg notify.ClientTransactionMessage
 			msg.Tx = *tx
 			msg.Nonce = tx.RequestId
