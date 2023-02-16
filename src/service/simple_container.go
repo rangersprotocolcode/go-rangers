@@ -19,76 +19,46 @@ package service
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"sync"
+	"github.com/gogf/gf/container/gmap"
 )
 
 type simpleContainer struct {
-	limit  int
-	txs    types.Transactions
-	txsMap map[common.Hash]*types.Transaction
-	lock   sync.RWMutex
+	limit int
+	data  *gmap.ListMap
 }
 
 func newSimpleContainer(l int) *simpleContainer {
 	c := &simpleContainer{
-		lock:   sync.RWMutex{},
-		limit:  l,
-		txsMap: map[common.Hash]*types.Transaction{},
-		txs:    types.Transactions{},
+		data:  gmap.NewListMap(true),
+		limit: l,
 	}
 
 	return c
 }
 
 func (c *simpleContainer) Len() int {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
-
-	return len(c.txs)
+	return c.data.Size()
 }
 
 func (c *simpleContainer) contains(key common.Hash) bool {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
-
-	return c.txsMap[key] != nil
+	return c.data.Contains(key)
 }
 
 func (c *simpleContainer) get(key common.Hash) *types.Transaction {
-	c.lock.RLock()
-	defer c.lock.RUnlock()
-
-	return c.txsMap[key]
+	item := c.data.Get(key)
+	return item.(*types.Transaction)
 }
 
-func (c *simpleContainer) asSlice() []*types.Transaction {
-	//c.lock.RLock()
-	//defer c.lock.RUnlock()
-
-	return c.txs
+func (c *simpleContainer) asSlice() []interface{} {
+	return c.data.Values()
 }
 
 func (c *simpleContainer) push(tx *types.Transaction) {
-	//c.lock.Lock()
-	//defer c.lock.Unlock()
-
-	if c.txs.Len() < c.limit {
-		c.txs = append(c.txs, tx)
-		c.txsMap[tx.Hash] = tx
-		return
+	if c.data.Size() < c.limit {
+		c.data.Set(tx.Hash, tx)
 	}
 }
 
-func (c *simpleContainer) remove(txHashList []common.Hash) {
-	//c.lock.Lock()
-	//defer c.lock.Unlock()
-	for _, txHash := range txHashList {
-		delete(c.txsMap, txHash)
-		for i, tx := range c.txs {
-			if tx.Hash == txHash {
-				c.txs = append(c.txs[:i], c.txs[i+1:]...)
-				break
-			}
-		}
-	}
+func (c *simpleContainer) remove(txHashList []interface{}) {
+	c.data.Removes(txHashList)
 }

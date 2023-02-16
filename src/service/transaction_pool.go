@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rocket/node/src/eth_tx"
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
+	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/rlp"
@@ -29,7 +30,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/hashicorp/golang-lru"
-	"sort"
 )
 
 const (
@@ -149,7 +149,7 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 		return
 	}
 
-	txHashList := make([]common.Hash, len(receipts))
+	txHashList := make([]interface{}, len(receipts))
 	for i, receipt := range receipts {
 		hash := receipt.TxHash
 		txHashList[i] = hash
@@ -206,10 +206,13 @@ func (pool *TxPool) UnMarkExecuted(txs []*types.Transaction, evictedTxs []common
 
 	for _, tx := range txs {
 		pool.executed.Delete(tx.Hash.Bytes())
-		pool.add(tx)
+		var msg notify.ClientTransactionMessage
+		msg.Tx = *tx
+		msg.Nonce = tx.RequestId
+		msg.UserId = ""
+		msg.GateNonce = 0
+		middleware.DataChannel.GetRcvedTx() <- &msg
 	}
-
-	sort.Sort(pool.received.txs)
 }
 
 func (pool *TxPool) IsExisted(hash common.Hash) bool {
@@ -250,7 +253,13 @@ func (pool *TxPool) Clear() {
 }
 
 func (pool *TxPool) GetReceived() []*types.Transaction {
-	return pool.received.txs
+	items := pool.received.asSlice()
+	result := make([]*types.Transaction, len(items))
+
+	for i, item := range items {
+		result[i] = item.(*types.Transaction)
+	}
+	return result
 }
 
 func (pool *TxPool) GetExecuted(hash common.Hash) *ExecutedTransaction {
@@ -288,9 +297,8 @@ func (pool *TxPool) PackForCast(height uint64) []*types.Transaction {
 		return packedTxs
 	}
 
-	sort.Sort(types.Transactions(txs))
 	for i, tx := range txs {
-		packedTxs = append(packedTxs, tx)
+		packedTxs = append(packedTxs, tx.(*types.Transaction))
 		if i >= txCountPerBlock {
 			break
 		}
@@ -348,7 +356,7 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 	return true, nil
 }
 
-func (pool *TxPool) remove(txHashList []common.Hash) {
+func (pool *TxPool) remove(txHashList []interface{}) {
 	pool.received.remove(txHashList)
 	txPoolLogger.Debugf("[pool]removed tx, %d After remove,received size:%d", len(txHashList), pool.received.Len())
 
