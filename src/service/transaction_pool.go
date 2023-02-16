@@ -343,7 +343,7 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 		return false, ErrExist
 	}
 	pool.received.push(tx)
-	txPoolLogger.Debugf("[pool]Add tx:%s. After add,received size:%d", tx.Hash.String(), pool.received.Len())
+	txPoolLogger.Debugf("[pool]Add tx:%s. nonce: %d, After add,received size:%d", tx.Hash.String(), tx.RequestId, pool.received.Len())
 	return true, nil
 }
 

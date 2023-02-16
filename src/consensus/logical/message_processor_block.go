@@ -365,7 +365,7 @@ func (p *Processor) cleanVerifyContext(currentHeight uint64) {
 	})
 }
 
-//新的交易到达通知（用于处理大臣验证消息时缺失的交易）
+// OnMessageNewTransactions 新的交易到达通知
 func (p *Processor) OnMessageNewTransactions(ths []common.Hashes) {
 	mtype := "OMNT"
 	blog := newBizLog(mtype)

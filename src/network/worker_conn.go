@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"encoding/hex"
 	"encoding/json"
 	"hash/fnv"
@@ -107,8 +108,24 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 		msg := notify.TransactionReqMessage{TransactionReqByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.TransactionReq, &msg)
 	case TransactionGotMsg:
-		msg := notify.TransactionGotMessage{TransactionGotByte: message.Body, Peer: from}
-		notify.BUS.Publish(notify.TransactionGot, &msg)
+		txs, e := types.UnMarshalTransactions(message.Body)
+		if e != nil {
+			workerConn.logger.Errorf("Unmarshal got transactions error:%s", e.Error())
+			return
+		}
+
+		for _, tx := range txs {
+			var msg notify.ClientTransactionMessage
+			msg.Tx = *tx
+			msg.Nonce = tx.RequestId
+			msg.UserId = ""
+			msg.GateNonce = 0
+			middleware.DataChannel.GetRcvedTx() <- &msg
+		}
+
+		m := notify.TransactionGotAddSuccMessage{Transactions: txs, Peer: from}
+		notify.BUS.Publish(notify.TransactionGotAddSucc, &m)
+
 	case TopBlockInfoMsg:
 		msg := notify.ChainInfoMessage{ChainInfo: message.Body, Peer: from}
 		notify.BUS.Publish(notify.TopBlockInfo, &msg)
