@@ -46,6 +46,10 @@ func (c *simpleContainer) contains(key common.Hash) bool {
 
 func (c *simpleContainer) get(key common.Hash) *types.Transaction {
 	item := c.data.Get(key)
+	if nil == item {
+		return nil
+	}
+
 	return item.(*types.Transaction)
 }
 
