@@ -207,7 +207,7 @@ func (executor *GameExecutor) runWrite(item *service.Item) {
 	//	return
 	//}
 
-	_, height := service.AccountDBManagerInstance.LatestStateDB, service.AccountDBManagerInstance.Height
+	accountDB, height := service.AccountDBManagerInstance.LatestStateDB, service.AccountDBManagerInstance.Height
 	if err := service.GetTransactionPool().VerifyTransaction(&txRaw, height); err != nil {
 		//service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
 
@@ -219,26 +219,25 @@ func (executor *GameExecutor) runWrite(item *service.Item) {
 		return
 	}
 
-	//result, execMessage := executor.runTransaction(accountDB, height, txRaw)
-	//service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
+	result, execMessage := executor.runTransaction(accountDB, height, txRaw)
 	executor.sendTransaction(&txRaw)
 
 	if 0 == len(message.UserId) {
 		return
 	}
 
-	//executor.logger.Debugf("txhash: %s, send to user: %s, msg: %s, gatenonce: %d", txRaw.Hash.String(), message.UserId, execMessage, message.GateNonce)
-	//// reply to the client
-	//var response []byte
-	//if result {
-	//	response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
-	//} else {
-	//	response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
-	//}
-	//
-	//if 0 != message.GateNonce {
-	//	network.GetNetInstance().SendToClientWriter(message.UserId, response, message.GateNonce)
-	//}
+	executor.logger.Debugf("txhash: %s, send to user: %s, msg: %s, gatenonce: %d", txRaw.Hash.String(), message.UserId, execMessage, message.GateNonce)
+	// reply to the client
+	var response []byte
+	if result {
+		response = executor.makeSuccessResponse(execMessage, txRaw.SocketRequestId)
+	} else {
+		response = executor.makeFailedResponse(execMessage, txRaw.SocketRequestId)
+	}
+
+	if 0 != message.GateNonce {
+		network.GetNetInstance().SendToClientWriter(message.UserId, response, message.GateNonce)
+	}
 }
 
 func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, height uint64, txRaw types.Transaction) (bool, string) {
