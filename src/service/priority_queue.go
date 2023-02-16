@@ -84,8 +84,9 @@ func (pq *PriorityQueue) tryPop() {
 
 	for 0 < len(pq.data) && nil != pq.data[0] && pq.data[0].Value.Nonce == pq.threshold+1 {
 		pq.threshold++
+		item := heap.Pop(pq).(*Item)
 		if nil != pq.handler {
-			pq.handler(heap.Pop(pq).(*Item))
+			pq.handler(item)
 		}
 	}
 

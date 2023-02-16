@@ -134,8 +134,7 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 		var msg notify.ClientTransactionMessage
 		err := json.Unmarshal(message.Body, &msg)
 		if nil == err {
-			middleware.DataChannel.RcvedTx <- &msg
-			//notify.BUS.Publish(notify.ClientTransaction, &msg)
+			middleware.DataChannel.GetRcvedTx() <- &msg
 		}
 	}
 }

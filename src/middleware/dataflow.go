@@ -7,10 +7,15 @@ const maxWriteSize = 100000
 var DataChannel dataChannel
 
 type dataChannel struct {
-	RcvedTx chan *notify.ClientTransactionMessage
+	// 客户端的writer ws请求，从tx的数据库过来
+	rcvedTx chan *notify.ClientTransactionMessage
 }
 
 func InitDataChannel() {
 	DataChannel = dataChannel{}
-	DataChannel.RcvedTx = make(chan *notify.ClientTransactionMessage, maxWriteSize)
+	DataChannel.rcvedTx = make(chan *notify.ClientTransactionMessage, maxWriteSize)
+}
+
+func (channel dataChannel) GetRcvedTx() chan *notify.ClientTransactionMessage {
+	return channel.rcvedTx
 }

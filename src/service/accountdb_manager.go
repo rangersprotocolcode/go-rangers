@@ -21,7 +21,6 @@ import (
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/trie"
 )
@@ -36,10 +35,7 @@ type AccountDBManager struct {
 	logger        log.Logger
 
 	waitingTxs *PriorityQueue
-	writeChan  chan *notify.ClientTransactionMessage
 }
-
-const maxWriteSize = 100000
 
 var AccountDBManagerInstance AccountDBManager
 
@@ -55,10 +51,7 @@ func initAccountDBManager() {
 
 	AccountDBManagerInstance.logger = log.GetLoggerByIndex(log.AccountDBLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	AccountDBManagerInstance.waitingTxs = NewPriorityQueue()
-	AccountDBManagerInstance.writeChan = make(chan *notify.ClientTransactionMessage, maxWriteSize)
 	AccountDBManagerInstance.loop()
-
-	//notify.BUS.Subscribe(notify.ClientTransaction, AccountDBManagerInstance.write)
 }
 
 func (manager *AccountDBManager) GetAccountDBByHash(hash common.Hash) (*account.AccountDB, error) {
@@ -88,27 +81,12 @@ func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.Account
 	}
 }
 
-func (manager *AccountDBManager) write(msg notify.Message) {
-	message, ok := msg.(*notify.ClientTransactionMessage)
-	if !ok {
-		manager.logger.Errorf("AccountDBManager: Write assert not ok!")
-		return
-	}
-
-	if len(manager.writeChan) == maxWriteSize {
-		manager.logger.Errorf("write rcv message error: %v", msg)
-		return
-	}
-
-	manager.logger.Debugf("write rcv message. hash: %s, nonce: %d", message.Tx.Hash.String(), message.Nonce)
-	manager.writeChan <- message
-}
-
 func (manager *AccountDBManager) loop() {
 	go func() {
 		for {
 			select {
-			case message := <-middleware.DataChannel.RcvedTx:
+			case message := <-middleware.DataChannel.GetRcvedTx():
+				manager.logger.Debugf("write rcv message. hash: %s, nonce: %d", message.Tx.Hash.String(), message.Nonce)
 				manager.waitingTxs.heapPush(message)
 			}
 		}

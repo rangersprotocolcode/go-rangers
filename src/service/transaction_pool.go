@@ -25,12 +25,11 @@ import (
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/rlp"
 	"com.tuntun.rocket/node/src/utility"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/hashicorp/golang-lru"
 	"sort"
-
-	"encoding/json"
-	"fmt"
 )
 
 const (
@@ -279,8 +278,11 @@ func (p *TxPool) TxNum() int {
 }
 
 func (pool *TxPool) PackForCast() []*types.Transaction {
-	packedTxs := make([]*types.Transaction, 0)
+	// transactions 已经根据RequestId排序
 	txs := pool.received.asSlice()
+	sort.Sort(types.Transactions(txs))
+
+	packedTxs := make([]*types.Transaction, 0)
 	for _, tx := range txs {
 		packedTxs = append(packedTxs, tx)
 		txPoolLogger.Debugf("Pack tx:%s", tx.Hash.String())
@@ -288,8 +290,6 @@ func (pool *TxPool) PackForCast() []*types.Transaction {
 			break
 		}
 	}
-	sort.Sort(types.Transactions(packedTxs))
-	// transactions 已经根据RequestId排序
 	return packedTxs
 }
 

@@ -52,9 +52,6 @@ const (
 	// ClientETHRPC 客户端的jsonrpc http请求，从网关过来
 	ClientETHRPC = "eth_rpc"
 
-	// ClientTransaction 客户端的writer ws请求，从tx的数据库过来
-	ClientTransaction = "client_transaction"
-
 	// ClientTransactionRead 客户端的reader ws请求，从网关过来
 	ClientTransactionRead = "client_transaction_read"
 )
