@@ -18,9 +18,9 @@ package core
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"errors"
@@ -129,7 +129,7 @@ func (chain *blockChain) executeTransaction(block *types.Block) (bool, *account.
 	if len(block.Transactions) > 0 {
 		logger.Debugf("NewAccountDB height:%d StateTree:%s preHash:%s preRoot:%s", block.Header.Height, block.Header.StateTree.Hex(), preBlock.Hash.Hex(), preRoot.Hex())
 	}
-	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(preRoot)
+	state, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(preRoot)
 	if err != nil {
 		logger.Errorf("Fail to new statedb, error:%s", err)
 		return false, state, nil
@@ -239,7 +239,7 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 		return false, state, receipts
 	}
 
-	trieDB := service.AccountDBManagerInstance.GetTrieDB()
+	trieDB := middleware.AccountDBManagerInstance.GetTrieDB()
 	err = trieDB.Commit(root, false)
 	if err != nil {
 		logger.Errorf("Trie commit error:%s", err.Error())
@@ -259,7 +259,7 @@ func (chain *blockChain) updateLastBlock(state *account.AccountDB, block *types.
 	chain.latestBlock = header
 	chain.requestIds = header.RequestIds
 
-	service.AccountDBManagerInstance.SetLatestStateDB(state, block.Header.RequestIds, block.Header.Height)
+	middleware.AccountDBManagerInstance.SetLatestStateDB(state, block.Header.RequestIds, block.Header.Height)
 	logger.Debugf("Update latestStateDB:%s height:%d", header.StateTree.Hex(), header.Height)
 
 	return true

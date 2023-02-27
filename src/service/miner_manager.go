@@ -19,6 +19,7 @@ package service
 import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -117,7 +118,7 @@ func (mm *MinerManager) GetMiner(minerId []byte, accountdb *account.AccountDB) *
 
 func (mm *MinerManager) GetMinerById(id []byte, kind byte, accountdb *account.AccountDB) *types.Miner {
 	if accountdb == nil {
-		accountdb = AccountDBManagerInstance.GetLatestStateDB()
+		accountdb = middleware.AccountDBManagerInstance.GetLatestStateDB()
 	}
 
 	db := mm.getMinerDatabaseAddress(kind)
@@ -206,7 +207,7 @@ func (mm *MinerManager) GetProposerTotalStakeWithDetail(height uint64, accountDB
 }
 
 func (mm *MinerManager) GetProposerTotalStake(height uint64, hash common.Hash) uint64 {
-	accountDB, err := AccountDBManagerInstance.GetAccountDBByHash(hash)
+	accountDB, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(hash)
 	if err != nil {
 		mm.logger.Errorf("Get account db by height %d error:%s", height, err.Error())
 		return 0
@@ -218,7 +219,7 @@ func (mm *MinerManager) GetProposerTotalStake(height uint64, hash common.Hash) u
 }
 
 func (mm *MinerManager) MinerIterator(minerType byte, hash common.Hash) *MinerIterator {
-	accountDB, err := AccountDBManagerInstance.GetAccountDBByHash(hash)
+	accountDB, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(hash)
 	if err != nil {
 		mm.logger.Error("Get account db by hash %s error:%s", hash.Hex(), err.Error())
 		return nil
@@ -394,7 +395,7 @@ func (mm *MinerManager) RemoveMiner(id, account []byte, ttype byte, accountdb *a
 func (mm *MinerManager) minerIterator(minerType byte, accountdb *account.AccountDB) *MinerIterator {
 	db := mm.getMinerDatabaseAddress(minerType)
 	if accountdb == nil {
-		accountdb = AccountDBManagerInstance.GetLatestStateDB()
+		accountdb = middleware.AccountDBManagerInstance.GetLatestStateDB()
 	}
 	iterator := &MinerIterator{db: db, iterator: accountdb.DataIterator(db, []byte("")), logger: mm.logger, accountdb: accountdb}
 	return iterator

@@ -14,11 +14,10 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package service
+package middleware
 
 import (
 	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/storage/account"
@@ -30,9 +29,9 @@ const stateDBPrefix = "state"
 type AccountDBManager struct {
 	stateDB       account.AccountDatabase
 	LatestStateDB *account.AccountDB
-	requestId     uint64
-	Height        uint64
-	logger        log.Logger
+
+	Height uint64
+	logger log.Logger
 
 	waitingTxs *PriorityQueue
 }
@@ -42,6 +41,8 @@ var AccountDBManagerInstance AccountDBManager
 func initAccountDBManager() {
 	AccountDBManagerInstance = AccountDBManager{}
 
+	AccountDBManagerInstance.logger = log.GetLoggerByIndex(log.AccountDBLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+
 	db, err := db.NewLDBDatabase(stateDBPrefix, 128, 2048)
 	if err != nil {
 		AccountDBManagerInstance.logger.Errorf("Init accountDB error! Error:%s", err.Error())
@@ -49,8 +50,8 @@ func initAccountDBManager() {
 	}
 	AccountDBManagerInstance.stateDB = account.NewDatabase(db)
 
-	AccountDBManagerInstance.logger = log.GetLoggerByIndex(log.AccountDBLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	AccountDBManagerInstance.waitingTxs = NewPriorityQueue()
+
 	AccountDBManagerInstance.loop()
 }
 
@@ -85,7 +86,7 @@ func (manager *AccountDBManager) loop() {
 	go func() {
 		for {
 			select {
-			case message := <-middleware.DataChannel.GetRcvedTx():
+			case message := <-DataChannel.GetRcvedTx():
 				manager.logger.Debugf("write rcv message. hash: %s, nonce: %d", message.Tx.Hash.String(), message.Nonce)
 				manager.waitingTxs.heapPush(message)
 			}
@@ -95,4 +96,8 @@ func (manager *AccountDBManager) loop() {
 
 func (manager *AccountDBManager) SetHandler(handler func(message *Item)) {
 	manager.waitingTxs.SetHandle(handler)
+}
+
+func (manager *AccountDBManager) GetThreshold() uint64 {
+	return manager.waitingTxs.threshold
 }

@@ -124,11 +124,11 @@ func initBlockChain() error {
 	} else {
 		chain.ensureChainConsistency()
 
-		state, err := service.AccountDBManagerInstance.GetAccountDBByHash(chain.latestBlock.StateTree)
+		state, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(chain.latestBlock.StateTree)
 		if nil != err {
 			panic(err)
 		}
-		service.AccountDBManagerInstance.SetLatestStateDB(state, chain.latestBlock.RequestIds, chain.latestBlock.Height)
+		middleware.AccountDBManagerInstance.SetLatestStateDB(state, chain.latestBlock.RequestIds, chain.latestBlock.Height)
 		logger.Debugf("refreshed latestStateDB, state: %v, height: %d", chain.latestBlock.StateTree, chain.latestBlock.Height)
 
 		if !chain.versionValidate() {
@@ -180,7 +180,7 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	middleware.PerfLogger.Infof("fin cast object. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
 
 	preStateRoot := common.BytesToHash(latestBlock.StateTree.Bytes())
-	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(preStateRoot)
+	state, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(preStateRoot)
 	if err != nil {
 		logger.Errorf("Fail to new account db while casting block!Latest block height:%d,error:%s", latestBlock.Height, err.Error())
 		return nil
@@ -325,7 +325,7 @@ func (chain *blockChain) GetTransaction(txHash common.Hash) (*types.Transaction,
 }
 
 func (chain *blockChain) GetBalance(address common.Address) *big.Int {
-	latestStateDB := service.AccountDBManagerInstance.GetLatestStateDB()
+	latestStateDB := middleware.AccountDBManagerInstance.GetLatestStateDB()
 	if nil == latestStateDB {
 		return nil
 	}

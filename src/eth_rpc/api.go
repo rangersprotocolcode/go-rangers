@@ -4,6 +4,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/core"
 	"com.tuntun.rocket/node/src/eth_tx"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
@@ -475,7 +476,7 @@ func getAccountDBByHeight(height uint64) (accountDB *account.AccountDB) {
 	if nil == b {
 		return nil
 	}
-	accountDB, _ = service.AccountDBManagerInstance.GetAccountDBByHash(b.StateTree)
+	accountDB, _ = middleware.AccountDBManagerInstance.GetAccountDBByHash(b.StateTree)
 	return
 }
 
@@ -484,7 +485,7 @@ func getAccountDBByHash(hash common.Hash) (accountDB *account.AccountDB) {
 	if nil == b {
 		return nil
 	}
-	accountDB, _ = service.AccountDBManagerInstance.GetAccountDBByHash(b.Header.StateTree)
+	accountDB, _ = middleware.AccountDBManagerInstance.GetAccountDBByHash(b.Header.StateTree)
 	return
 }
 

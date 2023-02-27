@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rocket/node/src/consensus"
 	"com.tuntun.rocket/node/src/consensus/groupsig"
 	"com.tuntun.rocket/node/src/core"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
@@ -331,7 +332,7 @@ func (api *GtasAPI) MinerInfo(addr string) (*Result, error) {
 func (api *GtasAPI) NodeInfo() (*Result, error) {
 	ni := &NodeInfo{}
 	p := consensus.Proc
-	miner := service.MinerManagerImpl.GetMiner(p.GetMinerID().Serialize(), service.AccountDBManagerInstance.GetLatestStateDB())
+	miner := service.MinerManagerImpl.GetMiner(p.GetMinerID().Serialize(), middleware.AccountDBManagerInstance.GetLatestStateDB())
 	if nil == miner {
 		return successResult(ni)
 	}
@@ -344,14 +345,14 @@ func (api *GtasAPI) NodeInfo() (*Result, error) {
 		morts := make([]MortGage, 0)
 		t := ""
 		balance := ""
-		heavyInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeProposer, service.AccountDBManagerInstance.GetLatestStateDB())
+		heavyInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeProposer, middleware.AccountDBManagerInstance.GetLatestStateDB())
 		if heavyInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(heavyInfo))
 			t = "提案节点"
 			balance = walletManager.getBalance(heavyInfo.Account)
 		}
 
-		lightInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeValidator, service.AccountDBManagerInstance.GetLatestStateDB())
+		lightInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeValidator, middleware.AccountDBManagerInstance.GetLatestStateDB())
 		if lightInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(lightInfo))
 			t = " 验证节点"

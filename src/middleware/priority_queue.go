@@ -1,7 +1,6 @@
-package service
+package middleware
 
 import (
-	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"container/heap"
 )
@@ -59,8 +58,8 @@ func (pq *PriorityQueue) heapPush(value *notify.ClientTransactionMessage) {
 		return
 	}
 
-	middleware.LockBlockchain("HeapPush")
-	defer middleware.UnLockBlockchain("HeapPush")
+	LockBlockchain("HeapPush")
+	defer UnLockBlockchain("HeapPush")
 
 	if value.Nonce < pq.threshold {
 		return

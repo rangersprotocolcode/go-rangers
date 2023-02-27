@@ -64,7 +64,7 @@ func TestMinerEcomony(t *testing.T) {
 	vmCtx.GasPrice = big.NewInt(1)
 	vmCtx.GasLimit = 30000000
 
-	accountdb := service.AccountDBManagerInstance.GetLatestStateDB()
+	accountdb := middleware.AccountDBManagerInstance.GetLatestStateDB()
 	fmt.Print("0x908c6d839c5a00eb4a035f1357a798ed6fc07ef6: ")
 	fmt.Println(accountdb.GetBalance(common.HexToAddress("0x908c6d839c5a00eb4a035f1357a798ed6fc07ef6")))
 	fmt.Print("0x9c0e374bf6fba1db2d767c5dc27342a6d200d48a: ")
@@ -158,7 +158,7 @@ func initTestingEnv() {
 	joinedGroupDatabaseValue := "jgs"
 	common.GlobalConf.SetString(db.ConfigSec, db.DefaultJoinedGroupDatabaseKey, joinedGroupDatabaseValue)
 
-	middleware.InitMiddleware("", "")
+	middleware.InitMiddleware("")
 
 	privateKey := common.GenerateKey("")
 	account := getAccountByPrivateKey(privateKey.GetHexString())

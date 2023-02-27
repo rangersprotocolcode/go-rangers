@@ -23,7 +23,6 @@ import (
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"encoding/hex"
-	"encoding/json"
 	"hash/fnv"
 	"strconv"
 	"sync"
@@ -151,12 +150,6 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 	case GroupResponseMsg:
 		msg := notify.GroupResponseMessage{GroupResponseByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.GroupResponse, &msg)
-	case TxReceived:
-		var msg notify.ClientTransactionMessage
-		err := json.Unmarshal(message.Body, &msg)
-		if nil == err {
-			middleware.DataChannel.GetRcvedTx() <- &msg
-		}
 	}
 }
 

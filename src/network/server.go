@@ -16,10 +16,6 @@
 
 package network
 
-import (
-	"com.tuntun.rocket/node/src/middleware/log"
-)
-
 var instance server
 
 type server struct {
@@ -29,15 +25,22 @@ type server struct {
 	// 客户端消息
 	reader ClientConn
 
+	// tx
+	tx TxConn
+
 	isSending bool
 }
 
-func (s *server) Init(logger log.Logger, gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler, isSending bool) {
-	s.worker.Init(gateAddr, selfMinerId, consensusHandler, logger)
+func (s *server) Init(gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler, isSending bool) {
+	s.worker.Init(gateAddr, selfMinerId, consensusHandler, bizLogger)
 	s.isSending = isSending
 	if s.isSending {
-		s.reader.Init(outerGateAddr, "/srv/node", logger)
+		s.reader.Init(outerGateAddr, "/srv/node", bizLogger)
 	}
+}
+
+func (s *server) InitTx(tx string) {
+	s.tx.Init(tx, txRcvLogger)
 }
 
 func (s *server) SendToJSONRPC(msg []byte, sessionId string, requestId uint64) {

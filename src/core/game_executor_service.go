@@ -2,9 +2,9 @@ package core
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/mysql"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"com.tuntun.rocket/node/src/vm"
@@ -220,7 +220,7 @@ func getAccountDBByHeight(height uint64) (accountDB *account.AccountDB) {
 	if nil == bh {
 		return nil
 	}
-	accountDB, _ = service.AccountDBManagerInstance.GetAccountDBByHash(bh.StateTree)
+	accountDB, _ = middleware.AccountDBManagerInstance.GetAccountDBByHash(bh.StateTree)
 	return
 }
 
@@ -229,7 +229,7 @@ func getAccountDBByHash(hash common.Hash) (accountDB *account.AccountDB) {
 	if nil == b {
 		return nil
 	}
-	accountDB, _ = service.AccountDBManagerInstance.GetAccountDBByHash(b.Header.StateTree)
+	accountDB, _ = middleware.AccountDBManagerInstance.GetAccountDBByHash(b.Header.StateTree)
 	return
 }
 

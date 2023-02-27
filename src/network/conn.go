@@ -66,8 +66,9 @@ type baseConn struct {
 	connLock sync.Mutex
 
 	// 读写缓冲区
-	rcvChan  chan []byte
-	sendChan chan []byte
+	rcvChan      chan []byte
+	sendChan     chan []byte
+	sendTextChan chan []byte
 
 	// 读写缓冲区大小
 	rcvSize  int
@@ -109,6 +110,7 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 	}
 	base.rcvChan = make(chan []byte, base.rcvSize)
 	base.sendChan = make(chan []byte, base.sendSize)
+	base.sendTextChan = make(chan []byte, 1)
 	base.rcvCount = 0
 	base.sendCount = 0
 
@@ -177,9 +179,24 @@ func (base *baseConn) loop() {
 
 			err := conn.WriteMessage(websocket.BinaryMessage, message)
 			if err != nil {
-				base.logger.Errorf("Send binary msg error:%s", err.Error())
+				base.logger.Errorf("send binary msg error:%s", err.Error())
 				base.closeConn()
 			}
+		case message := <-base.sendTextChan:
+			atomic.AddUint64(&base.sendCount, uint64(len(message)))
+
+			conn := base.getConn()
+			if nil == conn {
+				base.sendTextChan <- message
+			} else {
+				err := conn.WriteMessage(websocket.TextMessage, message)
+				if err != nil {
+					base.logger.Errorf("send tx msg error:%s", err.Error())
+					base.closeConn()
+					base.sendTextChan <- message
+				}
+			}
+
 		}
 	}
 }
@@ -202,7 +219,7 @@ func (base *baseConn) receiveMessage() {
 		if base.rcv == nil {
 			base.rcvChan <- message
 		} else {
-			base.rcv(message)
+			go base.rcv(message)
 		}
 
 	}

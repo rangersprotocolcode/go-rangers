@@ -1,14 +1,13 @@
-package service
+package middleware
 
 import (
-	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"fmt"
 	"testing"
 )
 
 func TestPriorityQueue_Swap(t *testing.T) {
-	middleware.InitLock()
+	InitLock()
 
 	pq := NewPriorityQueue()
 	pq.SetThreshold(3)

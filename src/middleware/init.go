@@ -35,11 +35,11 @@ func InitMiddleware(dbDSNLog string) error {
 	mysql.InitMySql(dbDSNLog)
 
 	InitLock()
+	InitDataChannel()
+	initAccountDBManager()
 	return nil
 }
 
 func InitLock() {
 	lock = NewLoglock("blockchain")
-	accountDBLock = NewLoglock("accountDB")
-	InitDataChannel()
 }

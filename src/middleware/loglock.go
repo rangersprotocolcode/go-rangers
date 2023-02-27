@@ -38,8 +38,6 @@ type Loglock struct {
 var (
 	lockLogger log.Logger
 	lock       Loglock
-
-	accountDBLock Loglock
 )
 
 const costLimit = 10 * time.Microsecond
@@ -118,20 +116,4 @@ func RLockBlockchain(msg string) {
 
 func RUnLockBlockchain(msg string) {
 	lock.RUnlock(msg)
-}
-
-func LockAccountDB(msg string) {
-	accountDBLock.Lock(msg)
-}
-
-func UnLockAccountDB(msg string) {
-	accountDBLock.Unlock(msg)
-}
-
-func RLockAccountDB(msg string) {
-	accountDBLock.RLock(msg)
-}
-
-func RUnLockAccountDB(msg string) {
-	accountDBLock.RUnlock(msg)
 }

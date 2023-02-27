@@ -20,20 +20,25 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"fmt"
+	"strconv"
 )
 
-var p2pLogger log.Logger
-var bizLogger log.Logger
+var (
+	p2pLogger   log.Logger
+	bizLogger   log.Logger
+	txRcvLogger log.Logger
+)
 
 func InitNetwork(consensusHandler MsgHandler, selfMinerId []byte, env, gate, outerGateAddr string, isSending bool) {
-	p2pLogger = log.GetLoggerByIndex(log.P2PLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	bizLogger = log.GetLoggerByIndex(log.P2PBizLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	p2pLogger = log.GetLoggerByIndex(log.P2PLogConfig, strconv.Itoa(common.InstanceIndex))
+	bizLogger = log.GetLoggerByIndex(log.P2PBizLogConfig, strconv.Itoa(common.InstanceIndex))
+	txRcvLogger = log.GetLoggerByIndex(log.TxRcvLogConfig, strconv.Itoa(common.InstanceIndex))
 	fmt.Println("Connecting to: " + gate)
 	fmt.Print("isSending: ")
 	fmt.Println(isSending)
 
 	var s server
-	s.Init(bizLogger, gate, outerGateAddr, selfMinerId, consensusHandler, isSending)
+	s.Init(gate, outerGateAddr, selfMinerId, consensusHandler, isSending)
 
 	instance = s
 	bizLogger.Warnf("connected gate: %s, env: %s", gate, env)

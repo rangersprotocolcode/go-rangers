@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rocket/node/src/consensus/groupsig"
 	"com.tuntun.rocket/node/src/consensus/model"
 	"com.tuntun.rocket/node/src/consensus/vrf"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
@@ -54,7 +55,7 @@ func (reader *MinerPoolReader) GetProposeMiner(id groupsig.ID, hash common.Hash)
 		return nil
 	}
 
-	accountDB, _ := service.AccountDBManagerInstance.GetAccountDBByHash(hash)
+	accountDB, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(hash)
 	miner := minerManager.GetMinerById(id.Serialize(), common.MinerTypeProposer, accountDB)
 	if miner == nil {
 		//access.blog.log("getMinerById error id %v", id.ShortS())

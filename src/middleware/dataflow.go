@@ -7,7 +7,6 @@ const maxWriteSize = 100000
 var DataChannel dataChannel
 
 type dataChannel struct {
-	// 客户端的writer ws请求，从tx的数据库过来
 	rcvedTx chan *notify.ClientTransactionMessage
 }
 

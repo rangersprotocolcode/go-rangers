@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rocket/node/src/consensus"
 	"com.tuntun.rocket/node/src/consensus/groupsig"
 	"com.tuntun.rocket/node/src/core"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"fmt"
@@ -149,7 +150,7 @@ func convertGroup(g *types.Group) map[string]interface{} {
 }
 
 func (api *GtasAPI) GetMiner(minerId string) (*Result, error) {
-	accountDB := service.AccountDBManagerInstance.GetLatestStateDB()
+	accountDB := middleware.AccountDBManagerInstance.GetLatestStateDB()
 	miner := service.MinerManagerImpl.GetMiner(common.FromHex(minerId), accountDB)
 
 	if nil == miner {

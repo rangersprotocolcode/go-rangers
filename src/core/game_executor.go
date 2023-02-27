@@ -19,6 +19,7 @@ package core
 import (
 	"com.tuntun.rocket/node/src/common"
 	executors "com.tuntun.rocket/node/src/executor"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -76,7 +77,7 @@ type GameExecutor struct {
 func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor := GameExecutor{chain: blockChainImpl}
 	gameExecutor.logger = log.GetLoggerByIndex(log.GameExecutorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	service.AccountDBManagerInstance.SetHandler(gameExecutor.runWrite)
+	middleware.AccountDBManagerInstance.SetHandler(gameExecutor.runWrite)
 	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
 }
 
@@ -193,7 +194,7 @@ func (executor *GameExecutor) read(msg notify.Message) {
 	//reply to the client
 	go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
 }
-func (executor *GameExecutor) runWrite(item *service.Item) {
+func (executor *GameExecutor) runWrite(item *middleware.Item) {
 
 	message := item.Value
 	txRaw := message.Tx
@@ -207,7 +208,7 @@ func (executor *GameExecutor) runWrite(item *service.Item) {
 	//	return
 	//}
 
-	accountDB, height := service.AccountDBManagerInstance.LatestStateDB, service.AccountDBManagerInstance.Height
+	accountDB, height := middleware.AccountDBManagerInstance.LatestStateDB, middleware.AccountDBManagerInstance.Height
 	if err := service.GetTransactionPool().VerifyTransaction(&txRaw, height); err != nil {
 		//service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
 
