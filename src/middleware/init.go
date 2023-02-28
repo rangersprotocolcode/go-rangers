@@ -22,6 +22,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/mysql"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"strconv"
 )
 
 var PerfLogger log.Logger
@@ -29,8 +30,8 @@ var MonitorLogger log.Logger
 
 func InitMiddleware(dbDSNLog string) error {
 	types.InitSerialzation()
-	PerfLogger = log.GetLoggerByIndex(log.PerformanceLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	MonitorLogger = log.GetLoggerByIndex(log.MonitorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	PerfLogger = log.GetLoggerByIndex(log.PerformanceLogConfig, strconv.Itoa(common.InstanceIndex))
+	MonitorLogger = log.GetLoggerByIndex(log.MonitorLogConfig, strconv.Itoa(common.InstanceIndex))
 	notify.BUS = notify.NewBus()
 	mysql.InitMySql(dbDSNLog)
 

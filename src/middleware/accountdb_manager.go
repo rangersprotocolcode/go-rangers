@@ -22,6 +22,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/trie"
+	"strconv"
 )
 
 const stateDBPrefix = "state"
@@ -41,7 +42,7 @@ var AccountDBManagerInstance AccountDBManager
 func initAccountDBManager() {
 	AccountDBManagerInstance = AccountDBManager{}
 
-	AccountDBManagerInstance.logger = log.GetLoggerByIndex(log.AccountDBLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	AccountDBManagerInstance.logger = log.GetLoggerByIndex(log.AccountDBLogConfig,  strconv.Itoa(common.InstanceIndex))
 
 	db, err := db.NewLDBDatabase(stateDBPrefix, 128, 2048)
 	if err != nil {
