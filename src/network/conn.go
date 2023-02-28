@@ -125,7 +125,7 @@ func (base *baseConn) getWSConn() *websocket.Conn {
 	conn, _, err := d.Dial(base.url, nil)
 	if err != nil {
 		base.logger.Errorf("Dial to " + base.url + " err:" + err.Error())
-		time.Sleep(100 * time.Millisecond)
+		time.Sleep(1000 * time.Millisecond)
 		return nil
 	}
 

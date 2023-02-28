@@ -95,7 +95,7 @@ func (gx *GX) Run() {
 	env := mineCmd.Flag("env", "the environment application run in").String()
 	gateAddrPoint := mineCmd.Flag("gateaddr", "the gate addr").String()
 	outerGateAddrPoint := mineCmd.Flag("outergateaddr", "the gate addr").String()
-	txAddrPoint := mineCmd.Flag("tx", "the gate addr").String()
+	txAddrPoint := mineCmd.Flag("tx", "the tx queue addr").String()
 
 	dbDSNLogPoint := mineCmd.Flag("mysqllog", "the logdb addr").String()
 
