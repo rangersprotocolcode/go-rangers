@@ -26,7 +26,7 @@ func (conn *TxConn) Init(ipPort string, logger log.Logger) {
 		var data txMessage
 		err := json.Unmarshal(body, &data)
 		if nil != err || nil == data.Data {
-			logger.Errorf("fail to unmarshal tx json,err: %s", err)
+			logger.Errorf("fail to unmarshal tx json,err: %s, body: %s", err, string(body))
 			return
 		}
 
@@ -44,6 +44,7 @@ func (conn *TxConn) Init(ipPort string, logger log.Logger) {
 		m.Id = middleware.AccountDBManagerInstance.GetThreshold()
 
 		data, _ := json.Marshal(m)
+		logger.Warnf("sent to %s, data: %s", conn.url, string(data))
 		conn.sendTextChan <- data
 	}
 
