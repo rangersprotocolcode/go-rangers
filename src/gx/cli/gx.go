@@ -144,7 +144,7 @@ func (gx *GX) Run() {
 		}
 	case mineCmd.FullCommand():
 		fmt.Println("Use config file: " + *configFile)
-		fmt.Printf("Env:%s,Chain ID:%s,Network ID:%s\n", *env, common.ChainId(utility.MaxUint64), common.NetworkId())
+		fmt.Printf("Env:%s, Chain ID:%s, Network ID:%s, Tx: %s\n", *env, common.ChainId(utility.MaxUint64), common.NetworkId(), txAddr)
 		go func() {
 			http.ListenAndServe(fmt.Sprintf(":%d", *pprofPort), nil)
 			runtime.SetBlockProfileRate(1)
