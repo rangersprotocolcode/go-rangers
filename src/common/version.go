@@ -40,7 +40,6 @@ var (
 	mainNetChainConfig = ChainConfig{
 		ChainId:          "2025",
 		NetworkId:        "2025",
-		Dsn:              "readonly:Readonly>123456@tcp(ds.rangersprotocol.com:6666)/rpservice?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
 		PHub:             "wss://mainnet.rangersprotocol.com/phub",
 		PubHub:           "wss://mainnet.rangersprotocol.com/pubhub",
 		OriginalChainId:  "8888",
@@ -84,7 +83,6 @@ var (
 	devNetChainConfig = ChainConfig{
 		ChainId:          "9500",
 		NetworkId:        "9500",
-		Dsn:              "readonly:Tuntun123456!@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
 		PHub:             "ws://gate.tuntunhz.com:8899",
 		PubHub:           "ws://gate.tuntunhz.com:8888",
 		Tx:               "ws://192.168.2.14:7777",
@@ -109,7 +107,6 @@ var (
 	subNetChainConfig = ChainConfig{
 		ChainId:          "9500",
 		NetworkId:        "9500",
-		Dsn:              "readonly:Tuntun123456!@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
 		PHub:             "ws://gate.tuntunhz.com:8899",
 		PubHub:           "ws://gate.tuntunhz.com:8888",
 		OriginalChainId:  "9500",
@@ -144,7 +141,6 @@ type ChainConfig struct {
 	PHub   string
 	PubHub string
 	Tx     string
-	Dsn    string
 
 	OriginalChainId  string
 	Proposal001Block uint64
@@ -186,6 +182,7 @@ func InitChainConfig(env string) {
 		fmt.Println("no genesisConf, using default")
 	} else if 0 != len(Genesis.ChainId) {
 		LocalChainConfig.NetworkId = Genesis.ChainId
+		LocalChainConfig.ChainId = Genesis.ChainId
 	}
 }
 
