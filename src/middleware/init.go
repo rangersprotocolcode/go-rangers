@@ -28,12 +28,12 @@ import (
 var PerfLogger log.Logger
 var MonitorLogger log.Logger
 
-func InitMiddleware(dbDSNLog string) error {
+func InitMiddleware() error {
 	types.InitSerialzation()
 	PerfLogger = log.GetLoggerByIndex(log.PerformanceLogConfig, strconv.Itoa(common.InstanceIndex))
 	MonitorLogger = log.GetLoggerByIndex(log.MonitorLogConfig, strconv.Itoa(common.InstanceIndex))
 	notify.BUS = notify.NewBus()
-	mysql.InitMySql(dbDSNLog)
+	mysql.InitMySql()
 
 	InitLock()
 	InitDataChannel()

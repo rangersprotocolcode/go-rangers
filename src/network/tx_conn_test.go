@@ -10,7 +10,7 @@ import (
 
 func TestTxConn_Init(t *testing.T) {
 	os.RemoveAll("logs")
-	middleware.InitMiddleware("")
+	middleware.InitMiddleware()
 
 	p2pLogger = log.GetLoggerByIndex(log.P2PLogConfig, "1")
 	logger := log.GetLoggerByIndex(log.TxRcvLogConfig, "1")

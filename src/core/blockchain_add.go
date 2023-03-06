@@ -335,3 +335,7 @@ func dumpTxs(txs []*types.Transaction, blockHeight uint64) {
 		txLogger.Tracef("Tx info;%s", tx.ToTxJson().ToString())
 	}
 }
+
+func (chain *blockChain) ExecuteTransaction(block *types.Block) (bool, *account.AccountDB, types.Receipts) {
+	return chain.executeTransaction(block)
+}

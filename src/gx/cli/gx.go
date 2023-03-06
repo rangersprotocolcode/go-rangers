@@ -27,6 +27,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
+	"com.tuntun.rocket/node/src/middleware/mysql"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/service"
@@ -120,6 +121,7 @@ func (gx *GX) Run() {
 		txAddr = common.LocalChainConfig.Tx
 	}
 	dbDSNLog := *dbDSNLogPoint
+	fmt.Println(dbDSNLog)
 
 	instance := 0
 	if 0 != *instanceIndex {
@@ -150,7 +152,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(instance, *env, gateAddr, outerGateAddr, txAddr, dbDSNLog)
+		gx.initMiner(instance, *env, gateAddr, outerGateAddr, txAddr)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc, gx.account.Sk)
 			if err != nil {
@@ -162,7 +164,7 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, tx, dbDSNLog string) {
+func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, tx string) {
 	common.InstanceIndex = instanceIndex
 	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	databaseValue := "chain"
@@ -170,7 +172,7 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, tx, dbD
 	joinedGroupDatabaseValue := "jgs"
 	common.GlobalConf.SetString(db.ConfigSec, db.DefaultJoinedGroupDatabaseKey, joinedGroupDatabaseValue)
 
-	middleware.InitMiddleware(dbDSNLog)
+	middleware.InitMiddleware()
 
 	privateKey := common.GlobalConf.GetString(Section, "privateKey", "")
 	gx.getAccountInfo(privateKey)
@@ -180,7 +182,7 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, tx, dbD
 	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 
-	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, 0 != len(dbDSNLog))
+	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, false)
 	service.InitService()
 	vm.InitVM()
 
@@ -209,9 +211,33 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, tx, dbD
 	}
 
 	syncChainInfo(*sk, minerInfo.ID.GetHexString())
+	go gx.syncLogs()
 
 	eth_rpc.InitEthMsgHandler()
 	gx.init = true
+}
+
+func (gx *GX) syncLogs() {
+	fmt.Println("start sync logs")
+	i := uint64(1)
+	chain := core.GetBlockChain()
+
+	for {
+		block := chain.QueryBlock(i)
+		if nil == block {
+			time.Sleep(1 * time.Second)
+			continue
+		}
+
+		if 0 != len(block.Transactions) {
+			result, _, receipts := core.GetBlockChain().ExecuteTransaction(block)
+			if result {
+				mysql.InsertLogs(i, receipts, block.Header.Hash)
+			}
+		}
+
+		i++
+	}
 }
 
 func (gx *GX) getAccountInfo(sk string) {

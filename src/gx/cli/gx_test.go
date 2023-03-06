@@ -158,7 +158,7 @@ func initTestingEnv() {
 	joinedGroupDatabaseValue := "jgs"
 	common.GlobalConf.SetString(db.ConfigSec, db.DefaultJoinedGroupDatabaseKey, joinedGroupDatabaseValue)
 
-	middleware.InitMiddleware("")
+	middleware.InitMiddleware()
 
 	privateKey := common.GenerateKey("")
 	account := getAccountByPrivateKey(privateKey.GetHexString())

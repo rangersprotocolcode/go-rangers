@@ -19,6 +19,7 @@ package core
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/storage/account"
 	"math/big"
 	"time"
 )
@@ -74,6 +75,8 @@ type BlockChain interface {
 	HasBlockByHash(hash common.Hash) bool
 
 	GetBlockHash(height uint64) common.Hash
+
+	ExecuteTransaction(block *types.Block) (bool, *account.AccountDB, types.Receipts)
 }
 
 type GroupChain interface {

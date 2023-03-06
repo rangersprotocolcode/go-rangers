@@ -10,7 +10,7 @@ import (
 
 func TestSendRawTransaction(t *testing.T) {
 	common.InitConf("1.ini")
-	middleware.InitMiddleware("", "")
+	middleware.InitMiddleware()
 	InitEthMsgHandler()
 
 	/**

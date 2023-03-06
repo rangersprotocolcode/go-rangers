@@ -4,7 +4,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"database/sql"
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/mattn/go-sqlite3"
 	"strconv"
 	"time"
 )
@@ -16,21 +16,20 @@ var (
 )
 
 // 初始化链接
-func InitMySql(dbDSNLog string) {
+func InitMySql() {
 	logger = log.GetLoggerByIndex(log.MysqlLogConfig, strconv.Itoa(common.InstanceIndex))
-	if 0 == len(dbDSNLog) {
-		return
+	db, err := sql.Open("sqlite3", "file:logs.db?mode=rwc&_journal_mode=WAL&_cache_size=-500000")
+	if err != nil {
+		panic(err)
 	}
 
-	mysqlDBLog, mysqlErr = sql.Open("mysql", dbDSNLog)
+	_, err = db.Exec("CREATE TABLE if NOT EXISTS `contractlogs`( id INTEGER PRIMARY KEY AUTOINCREMENT,`height` INTEGER NOT NULL, `logindex` bigint NOT NULL, `blockhash` varchar(66) NOT NULL, `txhash` varchar(66) NOT NULL, `contractaddress` varchar(66) NOT NULL, `topic` varchar(800) NOT NULL, `data` text, `topic0` varchar(66) DEFAULT '', `topic1` varchar(66) DEFAULT '', `topic2` varchar(66) DEFAULT '', `topic3` varchar(66) DEFAULT '', UNIQUE (`logindex`,`txhash`, `topic`));")
+	_, err = db.Exec("CREATE INDEX if NOT EXISTS height ON contractlogs (height);")
+	_, err = db.Exec("CREATE INDEX if NOT EXISTS blockhash ON contractlogs (blockhash);")
 
-	// 打开连接失败
-	if mysqlErr != nil {
-		logger.Errorf("fail to connect dbDSN: " + dbDSNLog)
-		panic("dbDSN: " + dbDSNLog + mysqlErr.Error())
-	}
+	mysqlDBLog = db
+	logger.Infof("connected sqlite")
 
-	logger.Infof("connected dbDSN: " + dbDSNLog)
 	// 最大连接数
 	mysqlDBLog.SetMaxOpenConns(5)
 	// 闲置连接数
