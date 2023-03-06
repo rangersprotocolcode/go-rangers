@@ -47,3 +47,10 @@ func InitMySql() {
 		panic(mysqlErr.Error())
 	}
 }
+
+func CloseMysql(){
+	if nil!=mysqlDBLog{
+		mysqlDBLog.Close()
+	}
+
+}

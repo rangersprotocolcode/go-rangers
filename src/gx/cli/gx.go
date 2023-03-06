@@ -224,7 +224,7 @@ func (gx *GX) syncLogs() {
 
 	for {
 		if i%1000 == 1 {
-			fmt.Printf("time: %s, height: %d", utility.GetTime().String(), i)
+			fmt.Printf("time: %s, height: %d\n", utility.GetTime().String(), i)
 		}
 
 		block := chain.QueryBlock(i)
@@ -239,7 +239,6 @@ func (gx *GX) syncLogs() {
 				mysql.InsertLogs(i, receipts, block.Header.Hash)
 			}
 		}
-
 
 		i++
 	}
@@ -311,6 +310,8 @@ func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerInfo) {
 
 func (gx *GX) handleExit(ctrlC <-chan bool, quit chan<- bool) {
 	<-ctrlC
+	mysql.CloseMysql()
+
 	if core.GetBlockChain() == nil {
 		return
 	}
