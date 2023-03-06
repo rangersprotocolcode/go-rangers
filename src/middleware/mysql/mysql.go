@@ -4,6 +4,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"database/sql"
+	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"strconv"
 	"time"
@@ -18,7 +19,8 @@ var (
 // 初始化链接
 func InitMySql() {
 	logger = log.GetLoggerByIndex(log.MysqlLogConfig, strconv.Itoa(common.InstanceIndex))
-	db, err := sql.Open("sqlite3", "file:logs.db?mode=rwc&_journal_mode=WAL&_cache_size=-500000")
+	dsn := fmt.Sprintf("file:logs-%s.db?mode=rwc&_journal_mode=WAL&_cache_size=-500000",strconv.Itoa(common.InstanceIndex))
+	db, err := sql.Open("sqlite3", dsn)
 	if err != nil {
 		panic(err)
 	}
@@ -26,6 +28,9 @@ func InitMySql() {
 	_, err = db.Exec("CREATE TABLE if NOT EXISTS `contractlogs`( id INTEGER PRIMARY KEY AUTOINCREMENT,`height` INTEGER NOT NULL, `logindex` bigint NOT NULL, `blockhash` varchar(66) NOT NULL, `txhash` varchar(66) NOT NULL, `contractaddress` varchar(66) NOT NULL, `topic` varchar(800) NOT NULL, `data` text, `topic0` varchar(66) DEFAULT '', `topic1` varchar(66) DEFAULT '', `topic2` varchar(66) DEFAULT '', `topic3` varchar(66) DEFAULT '', UNIQUE (`logindex`,`txhash`, `topic`));")
 	_, err = db.Exec("CREATE INDEX if NOT EXISTS height ON contractlogs (height);")
 	_, err = db.Exec("CREATE INDEX if NOT EXISTS blockhash ON contractlogs (blockhash);")
+	if err != nil {
+		panic(err)
+	}
 
 	mysqlDBLog = db
 	logger.Infof("connected sqlite")

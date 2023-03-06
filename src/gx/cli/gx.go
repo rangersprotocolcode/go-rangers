@@ -223,6 +223,10 @@ func (gx *GX) syncLogs() {
 	chain := core.GetBlockChain()
 
 	for {
+		if i%1000 == 1 {
+			fmt.Printf("time: %s, height: %d", utility.GetTime().String(), i)
+		}
+
 		block := chain.QueryBlock(i)
 		if nil == block {
 			time.Sleep(1 * time.Second)
@@ -235,6 +239,7 @@ func (gx *GX) syncLogs() {
 				mysql.InsertLogs(i, receipts, block.Header.Hash)
 			}
 		}
+
 
 		i++
 	}

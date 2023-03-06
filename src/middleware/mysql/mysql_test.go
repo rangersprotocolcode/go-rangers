@@ -9,12 +9,12 @@ import (
 func TestInitMySql(t *testing.T) {
 	defer func() {
 		os.RemoveAll("logs")
-		os.RemoveAll("logs.db")
-		os.RemoveAll("logs.db-shm")
-		os.RemoveAll("logs.db-wal")
+		os.RemoveAll("logs-0.db")
+		os.RemoveAll("logs-0.db-shm")
+		os.RemoveAll("logs-0.db-wal")
 	}()
 
-
+	//os.Mkdir("storage0",777)
 	InitMySql()
 
 	stmt, err := mysqlDBLog.Prepare("replace INTO contractlogs(height,logindex,blockhash, txhash, contractaddress, topic, data, topic0,topic1,topic2,topic3) values(?,?,?,?,?,?,?,?,?,?,?)")
