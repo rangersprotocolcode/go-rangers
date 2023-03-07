@@ -59,7 +59,7 @@ func initGroupChain() {
 		panic("Init group chain error:" + err.Error())
 	}
 
-	chain.joinedGroups, err = db.NewLDBDatabase(common.GlobalConf.GetString(db.ConfigSec, db.DefaultJoinedGroupDatabaseKey, "jgs"), 1, 1)
+	chain.joinedGroups, err = db.NewLDBDatabase(common.GlobalConf.GetString(common.ConfigSec, common.DefaultJoinedGroupDatabaseKey, "jgs"), 1, 1)
 	if err != nil {
 		panic("newLDBDatabase fail, file=" + "" + "err=" + err.Error())
 	}

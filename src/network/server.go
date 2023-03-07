@@ -40,6 +40,10 @@ func (s *server) Init(gateAddr, outerGateAddr string, selfMinerId []byte, consen
 }
 
 func (s *server) InitTx(tx string) {
+	if 0 == len(tx) {
+		return
+	}
+
 	s.tx.Init(tx, txRcvLogger)
 }
 

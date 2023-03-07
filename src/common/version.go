@@ -160,7 +160,7 @@ type ChainConfig struct {
 	mainNodeContract Address
 }
 
-func InitChainConfig(env string) {
+func initChainConfig(env string) {
 	if env == ENV_DEV {
 		LocalChainConfig = devNetChainConfig
 	} else if env == ENV_MAINNET {

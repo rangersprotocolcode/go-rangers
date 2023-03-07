@@ -25,7 +25,6 @@ import (
 	"com.tuntun.rocket/node/src/core"
 	"com.tuntun.rocket/node/src/eth_rpc"
 	"com.tuntun.rocket/node/src/middleware"
-	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/mysql"
 	"com.tuntun.rocket/node/src/middleware/types"
@@ -47,10 +46,6 @@ const (
 	GXVersion = "1.0.12"
 	// Section 默认section配置
 	Section = "gx"
-
-	instanceSection = "instance"
-
-	indexKey = "index"
 )
 
 type GX struct {
@@ -104,8 +99,8 @@ func (gx *GX) Run() {
 	if err != nil {
 		kingpin.Fatalf("%s, try --help", err)
 	}
-	common.InitChainConfig(*env)
-	common.InitConf(*configFile)
+
+	common.Init(*instanceIndex, *configFile, *env)
 
 	// using default
 	gateAddr := *gateAddrPoint
@@ -122,16 +117,6 @@ func (gx *GX) Run() {
 	}
 	dbDSNLog := *dbDSNLogPoint
 	fmt.Println(dbDSNLog)
-
-	instance := 0
-	if 0 != *instanceIndex {
-		instance = *instanceIndex
-		common.GlobalConf.SetInt(instanceSection, indexKey, *instanceIndex)
-	} else {
-		instance = common.GlobalConf.GetInt(instanceSection, indexKey, 0)
-	}
-
-	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString(instanceSection, indexKey, ""))
 
 	walletManager = newWallets()
 
@@ -152,7 +137,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(instance, *env, gateAddr, outerGateAddr, txAddr)
+		gx.initMiner(*env, gateAddr, outerGateAddr, txAddr)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc, gx.account.Sk)
 			if err != nil {
@@ -164,14 +149,7 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, tx string) {
-	common.InstanceIndex = instanceIndex
-	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
-	databaseValue := "chain"
-	common.GlobalConf.SetString(db.ConfigSec, db.DefaultDatabase, databaseValue)
-	joinedGroupDatabaseValue := "jgs"
-	common.GlobalConf.SetString(db.ConfigSec, db.DefaultJoinedGroupDatabaseKey, joinedGroupDatabaseValue)
-
+func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 	middleware.InitMiddleware()
 
 	privateKey := common.GlobalConf.GetString(Section, "privateKey", "")
@@ -182,7 +160,7 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, tx stri
 	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 
-	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, false)
+	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, 0 != len(tx) && 0 != len(outerGateAddr))
 	service.InitService()
 	vm.InitVM()
 
@@ -271,7 +249,7 @@ func syncChainInfo(privateKey common.PrivateKey, id string) {
 			topBlock := core.GetBlockChain().TopBlock()
 			jsonObject := types.NewJSONObject()
 			jsonObject.Put("chainId", common.ChainId(utility.MaxUint64))
-			jsonObject.Put("instanceNum", common.GlobalConf.GetInt(instanceSection, indexKey, 0))
+			jsonObject.Put("instanceNum", common.InstanceIndex)
 			jsonObject.Put("candidateHeight", candidateHeight)
 			if topBlock != nil {
 				jsonObject.Put("localHeight", topBlock.Height)

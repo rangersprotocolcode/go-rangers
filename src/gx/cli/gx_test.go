@@ -7,8 +7,6 @@ import (
 	"com.tuntun.rocket/node/src/consensus/model"
 	"com.tuntun.rocket/node/src/core"
 	"com.tuntun.rocket/node/src/middleware"
-	"com.tuntun.rocket/node/src/middleware/db"
-	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
@@ -146,17 +144,7 @@ func transfer(db vm.StateDB, sender, recipient common.Address, amount *big.Int) 
 }
 
 func initTestingEnv() {
-	common.InitChainConfig("dev")
-	common.InitConf("1.ini")
-	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, "")
-
-	instanceIndex := 0
-	common.InstanceIndex = instanceIndex
-	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
-	databaseValue := "chain"
-	common.GlobalConf.SetString(db.ConfigSec, db.DefaultDatabase, databaseValue)
-	joinedGroupDatabaseValue := "jgs"
-	common.GlobalConf.SetString(db.ConfigSec, db.DefaultJoinedGroupDatabaseKey, joinedGroupDatabaseValue)
+	common.Init(0, "1.ini", "dev")
 
 	middleware.InitMiddleware()
 
@@ -186,4 +174,17 @@ func initTestingEnv() {
 
 	//consensus.Proc.BeginGenesisGroupMember()
 	group_create.GroupCreateProcessor.BeginGenesisGroupMember()
+}
+
+func TestNewGX(t *testing.T) {
+	os.RemoveAll("logs")
+	os.RemoveAll("logs-0.db")
+	os.RemoveAll("logs-0.db-shm")
+	os.RemoveAll("logs-0.db-wal")
+	gx := NewGX()
+
+	common.Init(0, "1.ini", "robin")
+	gx.initMiner("robin", "ws://49.0.249.103:1017", "", "")
+
+	time.Sleep(10*time.Hour)
 }

@@ -34,9 +34,9 @@ import (
 
 func TestRPC(t *testing.T) {
 	gx := NewGX()
-	common.InitConf("rp.ini")
+	common.Init(0, "rp.ini", "dev")
 	walletManager = newWallets()
-	gx.initMiner(0, "dev", "", "", "")
+	gx.initMiner("dev", "", "", "")
 
 	host := "0.0.0.0"
 	var port uint = 8989

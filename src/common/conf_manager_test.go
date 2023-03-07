@@ -20,7 +20,7 @@ import "testing"
 
 var (
 	PATH = "tas_test.ini"
-	cm   = NewConfINIManager(PATH)
+	cm   = newConfINIManager(PATH)
 )
 
 func TestConfFileManager_SetBool(t *testing.T) {

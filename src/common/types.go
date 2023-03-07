@@ -32,8 +32,10 @@ func getDefaultCurve() elliptic.Curve {
 	return secp256k1.S256()
 }
 
-var DefaultLogger log.Logger
-var InstanceIndex int
+var (
+	DefaultLogger log.Logger
+	InstanceIndex int
+)
 
 //160位地址
 type Address [AddressLength]byte

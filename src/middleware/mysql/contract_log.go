@@ -168,8 +168,9 @@ func InsertLogs(height uint64, receipts types.Receipts, hash common.Hash) {
 		//影响行数
 		rowsAffected, _ := res.RowsAffected()
 
-		logger.Debugf("%d, %d", lastInsertID, rowsAffected)
+		logger.Infof("inserted height: %d, blockhash: %s, lines: %d, lastId: %d", height, hash.String(), rowsAffected, lastInsertID)
 	}
+
 	logger.Infof("end height: %d, receipts: %d, blockhash: %s", height, len(receipts), hash.String())
 }
 
