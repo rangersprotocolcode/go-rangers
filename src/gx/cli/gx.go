@@ -116,7 +116,6 @@ func (gx *GX) Run() {
 		txAddr = common.LocalChainConfig.Tx
 	}
 	dbDSNLog := *dbDSNLogPoint
-	fmt.Println(dbDSNLog)
 
 	walletManager = newWallets()
 
@@ -137,7 +136,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(*env, gateAddr, outerGateAddr, txAddr)
+		gx.initMiner(*env, gateAddr, outerGateAddr, txAddr, dbDSNLog)
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc, gx.account.Sk)
 			if err != nil {
@@ -149,7 +148,7 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
+func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx, dsn string) {
 	middleware.InitMiddleware()
 
 	privateKey := common.GlobalConf.GetString(Section, "privateKey", "")
@@ -161,7 +160,7 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 
 	//isSend:=0 != len(tx) && 0 != len(outerGateAddr)
-	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, false)
+	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, 0 == len(dsn))
 	service.InitService()
 	vm.InitVM()
 
@@ -197,41 +196,7 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 }
 
 func (gx *GX) syncLogs() {
-	fmt.Println("start sync logs")
-	i := uint64(5903)
-	chain := core.GetBlockChain()
-
-	for {
-		if i%1000 == 1 {
-			fmt.Printf("time: %s, height: %d\n", utility.GetTime().String(), i)
-		}
-
-		block := chain.QueryBlock(i)
-		if nil == block {
-			time.Sleep(1 * time.Second)
-			continue
-		}
-
-		if i == 5903 {
-			fmt.Println(block.Header.Hash.String())
-			fmt.Println(len(block.Transactions))
-			fmt.Println(block.Transactions[0])
-		}
-
-		if 0 != len(block.Transactions) {
-			result, _, receipts := core.GetBlockChain().ExecuteTransaction(block)
-			if i == 5903 {
-				fmt.Println(result)
-				fmt.Println(receipts)
-			}
-
-			if result {
-				mysql.InsertLogs(i, receipts, block.Header.Hash)
-			}
-		}
-
-		i++
-	}
+	mysql.SyncOldData()
 }
 
 func (gx *GX) getAccountInfo(sk string) {

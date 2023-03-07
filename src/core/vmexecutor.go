@@ -175,9 +175,9 @@ func (executor *VMExecutor) after() {
 	service.RefundManagerImpl.Add(types.GetRefundInfo(executor.context), executor.accountdb)
 
 	// 计算出块奖励
-	if common.IsSub(){
+	if common.IsSub() {
 		executor.calcSubReward()
-	}else{
+	} else {
 		data := service.RewardCalculatorImpl.CalculateReward(height, executor.accountdb, executor.block.Header, executor.situation)
 		service.RefundManagerImpl.Add(data, executor.accountdb)
 	}

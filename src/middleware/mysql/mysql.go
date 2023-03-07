@@ -19,7 +19,7 @@ var (
 // 初始化链接
 func InitMySql() {
 	logger = log.GetLoggerByIndex(log.MysqlLogConfig, strconv.Itoa(common.InstanceIndex))
-	dsn := fmt.Sprintf("file:logs-%s.db?mode=rwc&_journal_mode=WAL&_cache_size=-500000",strconv.Itoa(common.InstanceIndex))
+	dsn := fmt.Sprintf("file:logs-%s.db?mode=rwc&_journal_mode=WAL&_cache_size=-500000", strconv.Itoa(common.InstanceIndex))
 	db, err := sql.Open("sqlite3", dsn)
 	if err != nil {
 		panic(err)
@@ -48,8 +48,8 @@ func InitMySql() {
 	}
 }
 
-func CloseMysql(){
-	if nil!=mysqlDBLog{
+func CloseMysql() {
+	if nil != mysqlDBLog {
 		mysqlDBLog.Close()
 	}
 
