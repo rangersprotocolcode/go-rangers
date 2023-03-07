@@ -160,7 +160,8 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 
-	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, 0 != len(tx) && 0 != len(outerGateAddr))
+	//isSend:=0 != len(tx) && 0 != len(outerGateAddr)
+	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, false)
 	service.InitService()
 	vm.InitVM()
 
@@ -197,7 +198,7 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 
 func (gx *GX) syncLogs() {
 	fmt.Println("start sync logs")
-	i := uint64(1)
+	i := uint64(5903)
 	chain := core.GetBlockChain()
 
 	for {
@@ -211,8 +212,19 @@ func (gx *GX) syncLogs() {
 			continue
 		}
 
+		if i == 5903 {
+			fmt.Println(block.Header.Hash.String())
+			fmt.Println(len(block.Transactions))
+			fmt.Println(block.Transactions[0])
+		}
+
 		if 0 != len(block.Transactions) {
 			result, _, receipts := core.GetBlockChain().ExecuteTransaction(block)
+			if i == 5903 {
+				fmt.Println(result)
+				fmt.Println(receipts)
+			}
+
 			if result {
 				mysql.InsertLogs(i, receipts, block.Header.Hash)
 			}
