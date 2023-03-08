@@ -275,12 +275,9 @@ func insertLog(height, index uint64, blockhash, txhash, contractaddress, topic, 
 	defer stmt.Close()
 
 	//format all vals at once
-	res, err := stmt.Exec(height, index, blockhash, txhash, contractaddress, topic, data, topic0, topic1, topic2, topic3)
+	_, err = stmt.Exec(height, index, blockhash, txhash, contractaddress, topic, data, topic0, topic1, topic2, topic3)
 	if err != nil {
 		logger.Errorf("fail to insert log, err: ", err)
 		return
 	}
-	//影响行数
-	rowsAffected, _ := res.RowsAffected()
-	logger.Infof("inserted log. lines: %d", rowsAffected)
 }
