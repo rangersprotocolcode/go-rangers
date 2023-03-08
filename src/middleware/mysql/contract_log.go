@@ -204,6 +204,7 @@ func SyncOldData() {
 		return
 	}
 
+	logger.Warnf("start sync logs. %s", dsn)
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		logger.Errorf("open mysql error. DSN: %s, error: %s", dsn, err)
