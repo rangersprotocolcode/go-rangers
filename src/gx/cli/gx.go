@@ -93,7 +93,7 @@ func (gx *GX) Run() {
 	outerGateAddrPoint := mineCmd.Flag("outergateaddr", "the gate addr").String()
 	txAddrPoint := mineCmd.Flag("tx", "the tx queue addr").String()
 
-	syncLogs := mineCmd.Flag("logs", "start rpc server").Default("false").Bool()
+	syncLogs := mineCmd.Flag("logs", "start rpc server").Default("0").String()
 	dbDSNLogPoint := mineCmd.Flag("mysqllog", "the logdb addr").String()
 
 	command, err := app.Parse(os.Args[1:])
@@ -139,7 +139,7 @@ func (gx *GX) Run() {
 		}()
 		gx.initMiner(*env, gateAddr, outerGateAddr, txAddr, dbDSNLog)
 
-		if *syncLogs {
+		if *syncLogs != "0" {
 			go gx.syncLogs()
 		}
 
