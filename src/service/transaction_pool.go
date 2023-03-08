@@ -84,7 +84,7 @@ type TransactionPool interface {
 
 	MarkExecuted(header *types.BlockHeader, receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash)
 
-	UnMarkExecuted(txs []*types.Transaction, evictedTxs []common.Hash)
+	UnMarkExecuted(block *types.Block)
 
 	Clear()
 
@@ -149,6 +149,8 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 		return
 	}
 
+	//mysql.InsertLogs(header.Height, receipts, header.Hash)
+
 	txHashList := make([]interface{}, len(receipts))
 	for i, receipt := range receipts {
 		hash := receipt.TxHash
@@ -193,10 +195,15 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 	pool.remove(txHashList)
 }
 
-func (pool *TxPool) UnMarkExecuted(txs []*types.Transaction, evictedTxs []common.Hash) {
+func (pool *TxPool) UnMarkExecuted(block *types.Block) {
+	txs := block.Transactions
+	evictedTxs := block.Header.EvictedTxs
+
 	if nil == txs || 0 == len(txs) {
 		return
 	}
+
+	//mysql.DeleteLogs(block.Header.Height, block.Header.Hash)
 
 	if evictedTxs != nil {
 		for _, hash := range evictedTxs {

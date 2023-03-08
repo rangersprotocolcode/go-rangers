@@ -399,7 +399,7 @@ func (chain *blockChain) remove(block *types.Block) bool {
 	preHeaderByte, _ := types.MarshalBlockHeader(preHeader)
 	chain.heightDB.Put([]byte(latestBlockKey), preHeaderByte)
 
-	chain.transactionPool.UnMarkExecuted(block.Transactions, block.Header.EvictedTxs)
+	chain.transactionPool.UnMarkExecuted(block)
 	chain.eraseRemoveBlockMark()
 	if chain.latestBlock != nil {
 		common.SetBlockHeight(chain.latestBlock.Height)
