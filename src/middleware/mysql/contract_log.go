@@ -271,7 +271,7 @@ func SyncOldData() {
 			err := rows.Scan(&height, &index, &blockhash, &txhash, &contractaddress, &topic, &data, &topic0, &topic1, &topic2, &topic3)
 			if err != nil {
 				logger.Errorf("scan mysql error. sql: %s, DSN: %s, error: %s", sql, dsn, err)
-				break
+				panic(err)
 			}
 			insertLog(height, index, blockhash, txhash, contractaddress, topic, data, topic0, topic1, topic2, topic3)
 			count++
@@ -280,6 +280,7 @@ func SyncOldData() {
 
 		if count < j {
 			logger.Warnf("rows less than 100, try again %d-%d", i, count)
+			i += count
 			time.Sleep(5 * time.Second)
 		} else {
 			i += j
