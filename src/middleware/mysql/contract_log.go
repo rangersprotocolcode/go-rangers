@@ -11,6 +11,32 @@ import (
 	"time"
 )
 
+func countLogs() uint64 {
+	if nil == mysqlDBLog {
+		return 0
+	}
+
+	sql := "select count(*) as num FROM contractlogs"
+	rows, err := mysqlDBLog.Query(sql)
+	if err != nil {
+		return 0
+	}
+	defer rows.Close()
+
+	// 循环读取结果集中的数据
+	var result uint64
+	for rows.Next() {
+		err := rows.Scan(&result)
+		if err != nil {
+			logger.Errorf("scan failed, err: %v", err)
+			return 0
+		}
+		return result
+	}
+
+	return result
+}
+
 func SelectLogs(from, to uint64, contractAddresses []common.Address) []*types.Log {
 	if nil == mysqlDBLog {
 		return nil
@@ -204,7 +230,6 @@ func SyncOldData() {
 		return
 	}
 
-	logger.Warnf("start sync logs. %s", dsn)
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
 		logger.Errorf("open mysql error. DSN: %s, error: %s", dsn, err)
@@ -222,10 +247,11 @@ func SyncOldData() {
 		return
 	}
 
+	i, j := countLogs(), uint64(100)
+	logger.Warnf("start sync logs. %s. from: %d", dsn, i)
+
 	base := "select height,logindex, blockhash,txhash,contractaddress,topic," +
 		"data,topic0,topic1,topic2,topic3 FROM contractlogs order by height, logindex limit"
-
-	i, j := 0, 100
 	for {
 		sql := fmt.Sprintf("%s %d,%d", base, i, j)
 
@@ -236,7 +262,7 @@ func SyncOldData() {
 			continue
 		}
 
-		count := 0
+		count := uint64(0)
 		for rows.Next() {
 			var (
 				height, index                                                                   uint64
