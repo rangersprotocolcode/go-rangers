@@ -195,11 +195,15 @@ func (executor *GameExecutor) read(msg notify.Message) {
 	go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
 }
 func (executor *GameExecutor) runWrite(item *middleware.Item) {
-
 	message := item.Value
 	txRaw := message.Tx
 	txRaw.RequestId = message.Nonce
 	txRaw.SubTransactions = make([]types.UserData, 0)
+
+	if txRaw.Type == 0 {
+		executor.logger.Infof("rcv tx with nonce: %d, txhash: %s, type: 0. skipped", txRaw.RequestId, txRaw.Hash.String())
+		return
+	}
 
 	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
 

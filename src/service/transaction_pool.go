@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rocket/node/src/eth_tx"
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
+	"com.tuntun.rocket/node/src/middleware/mysql"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
@@ -149,7 +150,7 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 		return
 	}
 
-	//mysql.InsertLogs(header.Height, receipts, header.Hash)
+	mysql.InsertLogs(header.Height, receipts, header.Hash)
 
 	txHashList := make([]interface{}, len(receipts))
 	for i, receipt := range receipts {
@@ -198,12 +199,11 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 func (pool *TxPool) UnMarkExecuted(block *types.Block) {
 	txs := block.Transactions
 	evictedTxs := block.Header.EvictedTxs
-
 	if nil == txs || 0 == len(txs) {
 		return
 	}
 
-	//mysql.DeleteLogs(block.Header.Height, block.Header.Hash)
+	mysql.DeleteLogs(block.Header.Height, block.Header.Hash)
 
 	if evictedTxs != nil {
 		for _, hash := range evictedTxs {

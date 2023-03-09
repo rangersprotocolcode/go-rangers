@@ -11,32 +11,6 @@ import (
 	"time"
 )
 
-func countLogs() uint64 {
-	if nil == mysqlDBLog {
-		return 0
-	}
-
-	sql := "select count(*) as num FROM contractlogs"
-	rows, err := mysqlDBLog.Query(sql)
-	if err != nil {
-		return 0
-	}
-	defer rows.Close()
-
-	// 循环读取结果集中的数据
-	var result uint64
-	for rows.Next() {
-		err := rows.Scan(&result)
-		if err != nil {
-			logger.Errorf("scan failed, err: %v", err)
-			return 0
-		}
-		return result
-	}
-
-	return result
-}
-
 func SelectLogs(from, to uint64, contractAddresses []common.Address) []*types.Log {
 	if nil == mysqlDBLog {
 		return nil
@@ -50,8 +24,6 @@ func SelectLogs(from, to uint64, contractAddresses []common.Address) []*types.Lo
 		}
 		sql = sql[:len(sql)-2] + ")"
 	}
-
-	sql += " limit 100"
 
 	rows, err := mysqlDBLog.Query(sql, from, to)
 	if err != nil {
@@ -101,8 +73,6 @@ func SelectLogsByHash(blockhash common.Hash, contractAddresses []common.Address)
 		}
 		sql = sql[:len(sql)-2] + ")"
 	}
-
-	sql += " limit 100"
 
 	rows, err := mysqlDBLog.Query(sql, blockhash.Hex())
 	if err != nil {
@@ -290,6 +260,32 @@ func SyncOldData() {
 			logger.Infof("sync old data. %d", i)
 		}
 	}
+}
+
+func countLogs() uint64 {
+	if nil == mysqlDBLog {
+		return 0
+	}
+
+	sql := "select count(*) as num FROM contractlogs"
+	rows, err := mysqlDBLog.Query(sql)
+	if err != nil {
+		return 0
+	}
+	defer rows.Close()
+
+	// 循环读取结果集中的数据
+	var result uint64
+	for rows.Next() {
+		err := rows.Scan(&result)
+		if err != nil {
+			logger.Errorf("scan failed, err: %v", err)
+			return 0
+		}
+		return result
+	}
+
+	return result
 }
 
 func insertLog(height, index uint64, blockhash, txhash, contractaddress, topic, data, topic0, topic1, topic2, topic3 string) {
