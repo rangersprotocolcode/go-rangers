@@ -13,9 +13,10 @@ func TestInitMySql(t *testing.T) {
 		os.RemoveAll("logs-0.db")
 		os.RemoveAll("logs-0.db-shm")
 		os.RemoveAll("logs-0.db-wal")
+		os.RemoveAll("1.ini")
+		os.RemoveAll("storage0")
 	}()
 
-	//os.Mkdir("storage0",777)
 	InitMySql()
 
 	stmt, err := mysqlDBLog.Prepare("replace INTO contractlogs(height,logindex,blockhash, txhash, contractaddress, topic, data, topic0,topic1,topic2,topic3) values(?,?,?,?,?,?,?,?,?,?,?)")
@@ -57,6 +58,6 @@ func TestSelectLogs(t *testing.T) {
 	logs := SelectLogs(0, 100000000, nil)
 
 	for _, log := range logs {
-		fmt.Printf("%d %s %s\n", log.BlockNumber, log.BlockHash.String(),log.TxHash.Hex())
+		fmt.Printf("%d %s %s\n", log.BlockNumber, log.BlockHash.String(), log.TxHash.Hex())
 	}
 }
