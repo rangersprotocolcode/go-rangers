@@ -109,9 +109,6 @@ func (gx *GX) Run() {
 		gateAddr = common.LocalChainConfig.PHub
 	}
 	outerGateAddr := *outerGateAddrPoint
-	if 0 == len(outerGateAddr) {
-		outerGateAddr = common.LocalChainConfig.PubHub
-	}
 	txAddr := *txAddrPoint
 	if 0 == len(txAddr) {
 		txAddr = common.LocalChainConfig.Tx
