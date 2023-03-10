@@ -43,6 +43,8 @@ func TestSyncOldData(t *testing.T) {
 	os.RemoveAll("logs-0.db")
 	os.RemoveAll("logs-0.db-shm")
 	os.RemoveAll("logs-0.db-wal")
+	os.RemoveAll("1.ini")
+	os.RemoveAll("storage0")
 
 	common.Init(0, "1.ini", "robin")
 	common.LocalChainConfig.MysqlDSN = "rpservice_v2:oJ2*bA0:hB3%@tcp(49.0.248.137:5555)/rpservice_v2?charset=utf8&parseTime=true&loc=Asia%2FShanghai"
@@ -54,6 +56,15 @@ func TestSyncOldData(t *testing.T) {
 }
 
 func TestSelectLogs(t *testing.T) {
+	defer func() {
+		os.RemoveAll("logs")
+		os.RemoveAll("logs-0.db")
+		os.RemoveAll("logs-0.db-shm")
+		os.RemoveAll("logs-0.db-wal")
+		os.RemoveAll("1.ini")
+		os.RemoveAll("storage0")
+	}()
+
 	InitMySql()
 	logs := SelectLogs(0, 100000000, nil)
 
