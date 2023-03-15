@@ -1,18 +1,18 @@
-// Copyright 2020 The RocketProtocol Authors
-// This file is part of the RocketProtocol library.
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RangersProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package vm
 
@@ -181,10 +181,6 @@ func (evm *EVM) Interpreter() Interpreter {
 // the necessary steps to create accounts and reverses the state in case of an
 // execution error or failed value transfer.
 func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, logs []*types.Log, err error) {
-	//if evm.vmConfig.NoRecursion && evm.depth > 0 {
-	//	return nil, gas, nil
-	//}
-
 	// Fail if we're trying to execute above the call depth limit
 	if evm.depth > int(CallCreateDepth) {
 		return nil, gas, nil, ErrDepth
@@ -197,9 +193,6 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 	p, isPrecompile := evm.precompile(addr)
 
 	if !evm.StateDB.Exist(addr) {
-		/**todo
-		origin:if !isPrecompile && evm.chainRules.IsEIP158 && value.Sign() == 0
-		*/
 		if !isPrecompile && value.Sign() == 0 {
 			// Calling a non existing account, don't do anything, but ping the tracer
 			//if evm.vmConfig.Debug && evm.depth == 0
@@ -212,15 +205,6 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 		evm.StateDB.CreateAccount(addr)
 	}
 	evm.Transfer(evm.StateDB, caller.Address(), addr, value)
-
-	// Capture the tracer start/end events in debug mode
-	//if evm.vmConfig.Debug && evm.depth == 0
-	//if evm.depth == 0 {
-	//	evm.tracer.CaptureStart(caller.Address(), addr, false, input, gas, value)
-	//	defer func(startGas uint64, startTime time.Time) { // Lazy evaluation of the parameters
-	//		evm.tracer.CaptureEnd(ret, startGas-gas, time.Since(startTime), err)
-	//	}(gas, time.Now())
-	//}
 
 	if isPrecompile {
 		ret, gas, err = RunPrecompiledContract(p, input, gas)
@@ -263,10 +247,6 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 // CallCode differs from Call in the sense that it executes the given address'
 // code with the caller as context.
 func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, logs []*types.Log, err error) {
-	//if evm.vmConfig.NoRecursion && evm.depth > 0 {
-	//	return nil, gas, nil
-	//}
-
 	// Fail if we're trying to execute above the call depth limit
 	if evm.depth > int(CallCreateDepth) {
 		return nil, gas, nil, ErrDepth
@@ -307,10 +287,6 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 // DelegateCall differs from CallCode in the sense that it executes the given address'
 // code with the caller as context and the caller is set to the caller of the caller.
 func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, logs []*types.Log, err error) {
-	//if evm.vmConfig.NoRecursion && evm.depth > 0 {
-	//	return nil, gas, nil
-	//}
-
 	// Fail if we're trying to execute above the call depth limit
 	if evm.depth > int(CallCreateDepth) {
 		return nil, gas, nil, ErrDepth
@@ -342,10 +318,6 @@ func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []by
 // Opcodes that attempt to perform such modifications will result in exceptions
 // instead of performing the modifications.
 func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte, gas uint64) (ret []byte, leftOverGas uint64, logs []*types.Log, err error) {
-	//if evm.vmConfig.NoRecursion && evm.depth > 0 {
-	//	return nil, gas, nil
-	//}
-
 	// Fail if we're trying to execute above the call depth limit
 	if evm.depth > int(CallCreateDepth) {
 		return nil, gas, nil, ErrDepth
@@ -417,12 +389,6 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	}
 	// We add this to the access list _before_ taking a snapshot. Even if the creation fails,
 	// the access-list change should not be rolled back
-	/*todo
-	origin:
-	if evm.chainRules.IsYoloV2 {
-		evm.StateDB.AddAddressToAccessList(address)
-	}
-	*/
 	evm.StateDB.AddAddressToAccessList(address)
 
 	// Ensure there's no existing contract already at the designated address
@@ -433,12 +399,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	// Create a new account on the state
 	snapshot := evm.StateDB.Snapshot()
 	evm.StateDB.CreateAccount(address)
-	/*todo
-	origin:
-	if evm.chainRules.IsEIP158 {
-		evm.StateDB.SetNonce(address, 1)
-	}
-	*/
+
 	evm.StateDB.SetNonce(address, 1)
 
 	evm.Transfer(evm.StateDB, caller.Address(), address, value)
@@ -448,23 +409,9 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	contract := NewContract(caller, AccountRef(address), value, gas)
 	contract.SetCodeOptionalHash(&address, codeAndHash)
 
-	//if evm.vmConfig.NoRecursion && evm.depth > 0 {
-	//	return nil, address, gas, nil
-	//}
-
-	//if evm.vmConfig.Debug && evm.depth == 0
-	//if evm.depth == 0 {
-	//	evm.tracer.CaptureStart(caller.Address(), address, true, codeAndHash.code, gas, value)
-	//}
-	//start := time.Now()
-
 	ret, logs, err := run(evm, contract, nil, false)
 
 	// check whether the max code size has been exceeded
-	/**todo
-	origin:
-	maxCodeSizeExceeded := evm.chainRules.IsEIP158 && len(ret) > MaxCodeSize
-	*/
 	maxCodeSizeExceeded := len(ret) > MaxCodeSize
 	// if the contract creation ran successfully and no errors were returned
 	// calculate the gas required to store the code. If the code could not
@@ -483,10 +430,6 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	// When an error was returned by the EVM or when setting the creation code
 	// above we revert to the snapshot and consume any gas remaining. Additionally
 	// when we're in homestead this also counts for code storage gas errors.
-	/*todo
-	origin:
-		if maxCodeSizeExceeded || (err != nil && (evm.chainRules.IsHomestead || err != ErrCodeStoreOutOfGas))
-	*/
 	if maxCodeSizeExceeded || (err != nil && err != ErrCodeStoreOutOfGas) {
 		evm.StateDB.RevertToSnapshot(snapshot)
 		if err != ErrExecutionReverted {
@@ -497,10 +440,6 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	if maxCodeSizeExceeded && err == nil {
 		err = ErrMaxCodeSizeExceeded
 	}
-	//if evm.vmConfig.Debug && evm.depth == 0
-	//if evm.depth == 0 {
-	//	evm.tracer.CaptureEnd(ret, gas-contract.Gas, time.Since(start), err)
-	//}
 	return ret, address, contract.Gas, logs, err
 
 }
@@ -526,10 +465,6 @@ func (evm *EVM) Create2(caller ContractRef, code []byte, gas uint64, endowment *
 //transfer and gas will be paid by sponsor
 //It reverses the state in case of an execution error.
 func (evm *EVM) AuthCall(sponsor common.Address, caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, logs []*types.Log, err error) {
-	//if evm.vmConfig.NoRecursion && evm.depth > 0 {
-	//	return nil, gas, nil
-	//}
-
 	// Fail if we're trying to execute above the call depth limit
 	if evm.depth > int(CallCreateDepth) {
 		return nil, gas, nil, ErrDepth
@@ -542,9 +477,6 @@ func (evm *EVM) AuthCall(sponsor common.Address, caller ContractRef, addr common
 	p, isPrecompile := evm.precompile(addr)
 
 	if !evm.StateDB.Exist(addr) {
-		/**todo
-		origin:if !isPrecompile && evm.chainRules.IsEIP158 && value.Sign() == 0
-		*/
 		if !isPrecompile && value.Sign() == 0 {
 			// Calling a non existing account, don't do anything, but ping the tracer
 			//if evm.vmConfig.Debug && evm.depth == 0
@@ -557,15 +489,6 @@ func (evm *EVM) AuthCall(sponsor common.Address, caller ContractRef, addr common
 		evm.StateDB.CreateAccount(addr)
 	}
 	evm.Transfer(evm.StateDB, sponsor, addr, value)
-
-	// Capture the tracer start/end events in debug mode
-	//if evm.vmConfig.Debug && evm.depth == 0
-	//if evm.depth == 0 {
-	//	evm.tracer.CaptureStart(caller.Address(), addr, false, input, gas, value)
-	//	defer func(startGas uint64, startTime time.Time) { // Lazy evaluation of the parameters
-	//		evm.tracer.CaptureEnd(ret, startGas-gas, time.Since(startTime), err)
-	//	}(gas, time.Now())
-	//}
 
 	if isPrecompile {
 		ret, gas, err = RunPrecompiledContract(p, input, gas)
@@ -593,9 +516,6 @@ func (evm *EVM) AuthCall(sponsor common.Address, caller ContractRef, addr common
 		if err != ErrExecutionReverted {
 			gas = 0
 		}
-		// TODO: consider clearing up unused snapshots:
-		//} else {
-		//	evm.StateDB.DiscardSnapshot(snapshot)
 	}
 	return ret, gas, logs, err
 }

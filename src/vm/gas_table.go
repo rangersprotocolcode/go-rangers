@@ -1,18 +1,18 @@
-// Copyright 2020 The RocketProtocol Authors
-// This file is part of the RocketProtocol library.
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RangersProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package vm
 
@@ -225,16 +225,7 @@ func gasCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize
 		transfersValue = !stack.Back(2).IsZero()
 		address        = common.Address(stack.Back(1).Bytes20())
 	)
-	/*todo
-	origin:
-	if evm.chainRules.IsEIP158 {
-		if transfersValue && evm.StateDB.Empty(address) {
-			gas += CallNewAccountGas
-		}
-	} else if !evm.StateDB.Exist(address) {
-		gas += CallNewAccountGas
-	}
-	*/
+
 	if transfersValue && evm.StateDB.Empty(address) {
 		gas += CallNewAccountGas
 	}
@@ -320,25 +311,10 @@ func gasStaticCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memo
 
 func gasSelfdestruct(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	var gas uint64
-	/*todo
-	origin:	if evm.chainRules.IsEIP150
-	*/
-	// EIP150 homestead gas reprice fork:
 	if true {
 		gas = SelfdestructGasEIP150
 		var address = common.Address(stack.Back(0).Bytes20())
 
-		/*todo
-		origin:
-		if evm.chainRules.IsEIP158 {
-			// if empty and transfers value
-			if evm.StateDB.Empty(address) && evm.StateDB.GetBalance(contract.Address()).Sign() != 0 {
-				gas += CreateBySelfdestructGas
-			}
-		} else if !evm.StateDB.Exist(address) {
-			gas += CreateBySelfdestructGas
-		}
-		*/
 		// if empty and transfers value
 		if evm.StateDB.Empty(address) && evm.StateDB.GetBalance(contract.Address()).Sign() != 0 {
 			gas += CreateBySelfdestructGas

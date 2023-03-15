@@ -1,18 +1,18 @@
-// Copyright 2020 The RocketProtocol Authors
-// This file is part of the RocketProtocol library.
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RangersProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package vm
 
@@ -254,11 +254,6 @@ func opSha3(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	}
 	interpreter.hasher.Write(data)
 	interpreter.hasher.Read(interpreter.hasherBuf[:])
-
-	//evm := interpreter.evm
-	//if evm.vmConfig.EnablePreimageRecording {
-	//	evm.StateDB.AddPreimage(interpreter.hasherBuf, data)
-	//}
 
 	size.SetBytes(interpreter.hasherBuf[:])
 	return nil, nil
@@ -614,12 +609,6 @@ func opCreate(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]
 		input        = callContext.memory.GetCopy(int64(offset.Uint64()), int64(size.Uint64()))
 		gas          = callContext.contract.Gas
 	)
-	/**todo
-	origin:
-	if interpreter.evm.chainRules.IsEIP150 {
-		gas -= gas / 64
-	}
-	*/
 	gas -= gas / 64
 
 	// reuse size int for stackvalue
@@ -640,9 +629,6 @@ func opCreate(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]
 	// homestead we must check for CodeStoreOutOfGasError (homestead only
 	// rule) and treat as an error, if the ruleset is frontier we must
 	// ignore this error and pretend the operation was successful.
-	/*todo
-	origin: interpreter.evm.chainRules.IsHomestead && suberr == ErrCodeStoreOutOfGas
-	*/
 	if suberr == ErrCodeStoreOutOfGas {
 		stackvalue.Clear()
 	} else if suberr != nil && suberr != ErrCodeStoreOutOfGas {
@@ -975,7 +961,7 @@ func printLog(log types.Log) {
 	fmt.Println(buffer.String())
 }
 
-//-----------------rocket protocol defined execute function------------------------------------------------------------------------------
+//-----------------rangers protocol defined execute function------------------------------------------------------------------------------
 
 func popUint256(callContext *callCtx) uint256.Int {
 	return callContext.stack.pop()
@@ -1085,7 +1071,7 @@ func opUnStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 		} else {
 			refundInfo := types.RefundInfoList{}
 
-			// 退的太多，直接退出了矿工身份
+			// refund too much,do not a miner anymore
 			if realMoney.Cmp(money) > 0 {
 				remain := big.NewInt(0)
 				remain.Sub(realMoney, money)
