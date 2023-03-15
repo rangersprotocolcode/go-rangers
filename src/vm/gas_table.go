@@ -225,16 +225,7 @@ func gasCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize
 		transfersValue = !stack.Back(2).IsZero()
 		address        = common.Address(stack.Back(1).Bytes20())
 	)
-	/*todo
-	origin:
-	if evm.chainRules.IsEIP158 {
-		if transfersValue && evm.StateDB.Empty(address) {
-			gas += CallNewAccountGas
-		}
-	} else if !evm.StateDB.Exist(address) {
-		gas += CallNewAccountGas
-	}
-	*/
+
 	if transfersValue && evm.StateDB.Empty(address) {
 		gas += CallNewAccountGas
 	}
@@ -320,25 +311,10 @@ func gasStaticCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memo
 
 func gasSelfdestruct(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	var gas uint64
-	/*todo
-	origin:	if evm.chainRules.IsEIP150
-	*/
-	// EIP150 homestead gas reprice fork:
 	if true {
 		gas = SelfdestructGasEIP150
 		var address = common.Address(stack.Back(0).Bytes20())
 
-		/*todo
-		origin:
-		if evm.chainRules.IsEIP158 {
-			// if empty and transfers value
-			if evm.StateDB.Empty(address) && evm.StateDB.GetBalance(contract.Address()).Sign() != 0 {
-				gas += CreateBySelfdestructGas
-			}
-		} else if !evm.StateDB.Exist(address) {
-			gas += CreateBySelfdestructGas
-		}
-		*/
 		// if empty and transfers value
 		if evm.StateDB.Empty(address) && evm.StateDB.GetBalance(contract.Address()).Sign() != 0 {
 			gas += CreateBySelfdestructGas

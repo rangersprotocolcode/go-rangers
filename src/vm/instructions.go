@@ -254,11 +254,6 @@ func opSha3(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	interpreter.hasher.Write(data)
 	interpreter.hasher.Read(interpreter.hasherBuf[:])
 
-	//evm := interpreter.evm
-	//if evm.vmConfig.EnablePreimageRecording {
-	//	evm.StateDB.AddPreimage(interpreter.hasherBuf, data)
-	//}
-
 	size.SetBytes(interpreter.hasherBuf[:])
 	return nil, nil
 }
@@ -613,12 +608,6 @@ func opCreate(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]
 		input        = callContext.memory.GetCopy(int64(offset.Uint64()), int64(size.Uint64()))
 		gas          = callContext.contract.Gas
 	)
-	/**todo
-	origin:
-	if interpreter.evm.chainRules.IsEIP150 {
-		gas -= gas / 64
-	}
-	*/
 	gas -= gas / 64
 
 	// reuse size int for stackvalue
@@ -639,9 +628,6 @@ func opCreate(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]
 	// homestead we must check for CodeStoreOutOfGasError (homestead only
 	// rule) and treat as an error, if the ruleset is frontier we must
 	// ignore this error and pretend the operation was successful.
-	/*todo
-	origin: interpreter.evm.chainRules.IsHomestead && suberr == ErrCodeStoreOutOfGas
-	*/
 	if suberr == ErrCodeStoreOutOfGas {
 		stackvalue.Clear()
 	} else if suberr != nil && suberr != ErrCodeStoreOutOfGas {
@@ -974,7 +960,7 @@ func printLog(log types.Log) {
 	fmt.Println(buffer.String())
 }
 
-//-----------------rocket protocol defined execute function------------------------------------------------------------------------------
+//-----------------rangers protocol defined execute function------------------------------------------------------------------------------
 
 func popUint256(callContext *callCtx) uint256.Int {
 	return callContext.stack.pop()
@@ -1084,7 +1070,7 @@ func opUnStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 		} else {
 			refundInfo := types.RefundInfoList{}
 
-			// 退的太多，直接退出了矿工身份
+			// refund too much,do not a miner anymore
 			if realMoney.Cmp(money) > 0 {
 				remain := big.NewInt(0)
 				remain.Sub(realMoney, money)
