@@ -237,3 +237,25 @@ func TestRecoverPubkeyFromMsg(t *testing.T) {
 	fmt.Println(pubkey.GetHexString())
 	fmt.Println(pubkey.GetAddress().String())
 }
+
+func TestSign1(t *testing.T) {
+	hash := FromHex("0xad7c3d5da478dd1d01c155f5c48e495550d9145445017759065ebc5b7165d0de")
+	privateKeyStr := "0x0db05c85c5d4685a9fad2d5581f24ee4e42c3b57b92ff0f00ef287532b7da58a"
+	var privateKey = HexStringToSecKey(privateKeyStr)
+	sign := privateKey.Sign(hash)
+	//r := sign.GetR()
+	//s := sign.GetS()
+	fmt.Printf("%s\n", privateKey.GetPubKey().GetAddress().String())
+	fmt.Printf("%s\n", sign.GetHexString())
+}
+func TestRecoverPubkeyFromMsg1(t *testing.T) {
+	sig := FromHex("0xe08a43675b3e8f933cb51172f27aa0b5524ab8e51f90a465e6ab01fe881579144066187359addf9788257ba527461fe0c5ff1fd9499a7cf3f1b98d75beb9342d1c")
+	msg := FromHex("0xad7c3d5da478dd1d01c155f5c48e495550d9145445017759065ebc5b7165d0de")
+	pubkeyBytes, err := secp256k1.RecoverPubkey(msg, sig)
+	if err != nil {
+		t.Errorf("recover error: %s", err)
+	}
+	pubkey := BytesToPublicKey(pubkeyBytes)
+	fmt.Println(pubkey.GetHexString())
+	fmt.Println(pubkey.GetAddress().String())
+}

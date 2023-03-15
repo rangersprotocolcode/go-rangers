@@ -388,6 +388,31 @@ func (s *ethAPIService) GetTransactionByHash(hash common.Hash) (*RPCTransaction,
 	return nil, nil
 }
 
+// GetTransactionByBlockNumberAndIndex returns the transaction for the given block number and index.
+func (s *ethAPIService) GetTransactionByBlockNumberAndIndex(blockNr BlockNumber, index utility.Uint) *RPCTransaction {
+	var block *types.Block
+	if blockNr == PendingBlockNumber || blockNr == LatestBlockNumber || blockNr == EarliestBlockNumber {
+		height := core.GetBlockChain().Height()
+		block = core.GetBlockChain().QueryBlock(height)
+	} else {
+		block = core.GetBlockChain().QueryBlock(uint64(blockNr))
+	}
+
+	if block == nil || uint64(index) >= uint64(len(block.Transactions)) {
+		return nil
+	}
+	return newRPCTransaction(block.Transactions[index], block.Header.Hash, block.Header.Height, uint64(index))
+}
+
+// GetTransactionByBlockHashAndIndex returns the transaction for the given block hash and index.
+func (s *ethAPIService) GetTransactionByBlockHashAndIndex(blockHash common.Hash, index utility.Uint) *RPCTransaction {
+	block := core.GetBlockChain().QueryBlockByHash(blockHash)
+	if block == nil || uint64(index) >= uint64(len(block.Transactions)) {
+		return nil
+	}
+	return newRPCTransaction(block.Transactions[index], block.Header.Hash, block.Header.Height, uint64(index))
+}
+
 //// GetLogs returns logs matching the given argument that are stored within the state.
 //
 // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getlogs
@@ -417,7 +442,7 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 	var data types.ContractData
 	err := json.Unmarshal([]byte(tx.Data), &data)
 	if err == nil {
-		result.Input = utility.Bytes(data.AbiData)
+		result.Input = common.FromHex(data.AbiData)
 
 		transferValue, err := utility.StrToBigInt(data.TransferValue)
 		if err == nil {
