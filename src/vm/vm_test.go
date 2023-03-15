@@ -389,7 +389,26 @@ func TestStakeAndUnStake(t *testing.T) {
 	config.GasLimit = 3000000
 	config.GasPrice = big.NewInt(1)
 
-	contractCodeBytes := common.Hex2Bytes("6080604052348015600f57600080fd5b503073ffffffffffffffffffffffffffffffffffffffff16eb5060518060366000396000f3fe6080604052600080fdfea26469706673582212204596029f71628cc37563073091ce72e5b74330e2a5904263fc76f9860cf2026664736f6c6375302e372e352b636f6d6d69742e65623737656430380045")
+	contractCodeBytes := common.Hex2Bytes("6080604052348015600f57600080fd5b50737c8b97af5d3f745564a7ae035a5228bc3d1034e573ffffffffffffffffffffffffffffffffffffffff163073ffffffffffffffffffffffffffffffffffffffff16eaee503073ffffffffffffffffffffffffffffffffffffffff166002ee503073ffffffffffffffffffffffffffffffffffffffff166003ef503073ffffffffffffffffffffffffffffffffffffffff16ec503073ffffffffffffffffffffffffffffffffffffffff16eb506051806100cb6000396000f3fe6080604052600080fdfea26469706673582212206a7ed8a8de5387f83eea85f343f38f2f5d68711fcecaa2ca44830e11e3238aa764736f6c6375302e372e352b636f6d6d69742e65623737656430380045")
+	createResult, contractAddress, createLeftGas, createErr := mockCreate(contractCodeBytes, config)
+	fmt.Printf("New create contract address:%s\n", contractAddress.GetHexString())
+	fmt.Printf("New create contract createResult:%v,%d\n", createResult, len(createResult))
+	fmt.Printf("New create contract createResult:%s,%d\n", common.ToHex(createResult), len(createResult))
+	fmt.Printf("New create contract costGas:%v,createErr:%v\n", config.GasLimit-createLeftGas, createErr)
+}
+
+func TestEIP3074(t *testing.T) {
+	mockInit()
+	config := new(testConfig)
+	setDefaults(config)
+	defer log.Close()
+
+	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, "")
+	config.Origin = common.HexToAddress("0x407988d14785a6ae45e3106b4f9799c0ab0af3d0c85447ce1ddb09f089872257")
+	config.GasLimit = 3000000
+	config.GasPrice = big.NewInt(1)
+
+	contractCodeBytes := common.Hex2Bytes("608060405234801561001057600080fd5b506000737c8b97af5d3f745564a7ae035a5228bc3d1034e5905060006001905060006002905060006003905060007f112233445566778899001122334455667788990011223344556677889900112260001b90508484848484f6506000600190506000600290506060600267ffffffffffffffff8111801561009157600080fd5b506040519080825280601f01601f1916602001820160405280156100c45781602001600182028036833780820191505090505b509050600160f81b816000815181106100d957fe5b60200101907effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916908160001a905350600260f81b8160018151811061011a57fe5b60200101907effffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff1916908160001a90535060006060848a858560405162010000f7508092508193505050848a858360405162010000f75080925081935050505050505050505050505060518061018f6000396000f3fe6080604052600080fdfea26469706673582212205c3e1e108e2b3788dd62cd332abad9818d6665e4d426055eae0ed8eb4403b6a864736f6c6375302e372e352b636f6d6d69742e65623737656430380045")
 	createResult, contractAddress, createLeftGas, createErr := mockCreate(contractCodeBytes, config)
 	fmt.Printf("New create contract address:%s\n", contractAddress.GetHexString())
 	fmt.Printf("New create contract createResult:%v,%d\n", createResult, len(createResult))

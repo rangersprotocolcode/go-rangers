@@ -102,7 +102,6 @@ func (gx *GX) Run() {
 	if err != nil {
 		kingpin.Fatalf("%s, try --help", err)
 	}
-
 	common.InitChainConfig(*env)
 	common.InitConf(*configFile)
 
@@ -144,7 +143,6 @@ func (gx *GX) Run() {
 		}
 	case mineCmd.FullCommand():
 		fmt.Println("Use config file: " + *configFile)
-		fmt.Println("Welcome to be a RangersProtocol miner!")
 		fmt.Printf("Env:%s,Chain ID:%s,Network ID:%s\n", *env, common.ChainId(utility.MaxUint64), common.NetworkId())
 		go func() {
 			http.ListenAndServe(fmt.Sprintf(":%d", *pprofPort), nil)
@@ -185,11 +183,13 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, dbDSN, 
 	service.InitService()
 	vm.InitVM()
 
+	// 启动链，包括创始块构建
 	err := core.InitCore(consensus.NewConsensusHelper(minerInfo.ID), *sk, minerInfo.ID.GetHexString())
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
 	}
 
+	// 共识部分启动
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
 	if !ok {
 		panic("Init miner consensus init error!")
@@ -204,6 +204,7 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, dbDSN, 
 	if !ok {
 		panic("Init miner start miner error!")
 	}
+
 	syncChainInfo(*sk, minerInfo.ID.GetHexString())
 
 	eth_rpc.InitEthMsgHandler()
@@ -221,7 +222,7 @@ func (gx *GX) getAccountInfo(sk string) {
 }
 
 func syncChainInfo(privateKey common.PrivateKey, id string) {
-	fmt.Println("Syncing block and group info from RangersProtocol net. Waiting...")
+	fmt.Println("Syncing block and group info. Waiting...")
 	core.StartSync()
 	go func() {
 		timer := time.NewTicker(time.Second * 10)

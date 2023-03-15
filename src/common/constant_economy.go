@@ -22,7 +22,7 @@ const (
 	CastingCheckInterval = 50
 
 	// 出块间隔，单位ms
-	CastingInterval = 1000
+	castingInterval = 1000
 
 	// 10个小时，单位ms
 	// 计算一次奖励的时间间隔
@@ -31,19 +31,22 @@ const (
 
 	RefundTime = 50 * 1000
 
-	// 按照出块速度，计算奖励所需要的块数目
-	RewardBlocks = uint64(rewardTime / CastingInterval)
-
-	RefundBlocks = uint64(RefundTime / CastingInterval)
-
 	// 一天，单位ms
 	oneDay = 24 * 3600 * 1000
 
 	// 释放周期
 	epoch = 180 * oneDay
+)
+
+var (
+
+	// 按照出块速度，计算奖励所需要的块数目
+	RewardBlocks = rewardTime / GetCastingInterval()
+
+	RefundBlocks = RefundTime / GetCastingInterval()
 
 	// 一个epoch内，出块总量
-	BlocksPerEpoch = epoch / CastingInterval
+	BlocksPerEpoch = epoch / GetCastingInterval()
 )
 
 // 奖励
@@ -76,3 +79,13 @@ const (
 )
 
 var FeeAccount = HexToAddress("0x3966eafd38c5f10cc91eaacaeff1b6682b83ced4")
+
+func GetCastingInterval() uint64 {
+	if IsSub() {
+		return Genesis.Cast
+	}
+
+	return castingInterval
+}
+
+var EconomyContract = HexToAddress("0x71d9cfd1b7adb1e8eb4c193ce6ffbe19b4aee0db")

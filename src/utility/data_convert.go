@@ -31,7 +31,10 @@ const (
 	defaultDecimal = 18
 )
 
-var ten = big.NewInt(10)
+var (
+	ten      = big.NewInt(10)
+	tenToAny = []string{"0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "a", "b", "c", "d", "e", "f"}
+)
 
 func UInt64ToByte(i uint64) []byte {
 	buf := bytes.NewBuffer([]byte{})
@@ -180,4 +183,19 @@ func FormatDecimalForRocket(number *big.Int, decimal int64) *big.Int {
 	numberString := bigIntToStr(number, int(decimal))
 	result, _ := StrToBigInt(numberString)
 	return result
+}
+
+func BigIntBase10toN(bigInt *big.Int, base int) string {
+	// 进制转换所需要的除数
+	bigInt64 := big.NewInt(int64(base))
+	mod := big.NewInt(0)
+	finalRes := ""
+
+	for bigInt.Sign() != 0 {
+		// 取余
+		bigInt.DivMod(bigInt, bigInt64, mod)
+		finalRes = tenToAny[mod.Int64()] + finalRes
+	}
+
+	return finalRes
 }

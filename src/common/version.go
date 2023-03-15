@@ -18,8 +18,12 @@ package common
 
 import (
 	"com.tuntun.rocket/node/src/middleware/log"
+	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"math"
 	"math/big"
+	"os"
 	"sync/atomic"
 )
 
@@ -28,7 +32,7 @@ const (
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
-	ENV_TESTNET_ROBIN = "test"
+	ENV_TESTNET_ROBIN = "robin"
 	ENV_MAINNET       = "mainnet"
 )
 
@@ -101,7 +105,35 @@ var (
 		Proposal013Block: 0,
 	}
 
+	subNetChainConfig = ChainConfig{
+		ChainId:          "9500",
+		NetworkId:        "9500",
+		Dsn:              "readonly:Tuntun123456!@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
+		PHub:             "ws://gate.tuntunhz.com:8899",
+		PubHub:           "ws://gate.tuntunhz.com:8888",
+		OriginalChainId:  "9500",
+		mainNodeContract: HexToAddress("0x27B01A9E699F177634f480Cc2150425009Edc5fD"),
+
+		Proposal001Block: 0,
+		Proposal002Block: 0,
+		Proposal003Block: 0,
+		Proposal004Block: 0,
+		Proposal005Block: 0,
+		Proposal006Block: 0,
+		Proposal007Block: 0,
+		Proposal008Block: 0,
+		Proposal009Block: 0,
+		Proposal010Block: 0,
+		Proposal011Block: 0,
+		Proposal012Block: 0,
+		Proposal013Block: 0,
+	}
+
 	LocalChainConfig ChainConfig
+
+	filename = "genesis.json"
+
+	Genesis *GenesisConf
 )
 
 type ChainConfig struct {
@@ -135,8 +167,10 @@ func InitChainConfig(env string) {
 		LocalChainConfig = devNetChainConfig
 	} else if env == ENV_MAINNET {
 		LocalChainConfig = mainNetChainConfig
-	} else {
+	} else if env == ENV_TESTNET_ROBIN {
 		LocalChainConfig = robinChainConfig
+	} else {
+		LocalChainConfig = subNetChainConfig
 	}
 
 	localChainInfo = chainInfo{
@@ -144,10 +178,51 @@ func InitChainConfig(env string) {
 	}
 	localChainInfo.currentBlockHeight.Store(uint64(0))
 	blockHeightLogger = log.GetLoggerByIndex(log.BlockHeightConfig, "")
+
+	Genesis = getGenesisConf(filename)
+	if nil == Genesis {
+		fmt.Println("no genesisConf, using default")
+	} else if 0 != len(Genesis.ChainId) {
+		LocalChainConfig.NetworkId = Genesis.ChainId
+	}
+}
+
+// reading genesis info
+func getGenesisConf(name string) *GenesisConf {
+	file, err := os.Open(name)
+	if err != nil {
+		fmt.Println("no such file: " + name)
+		return nil
+	}
+
+	defer file.Close()
+
+	content, err := ioutil.ReadAll(file)
+	if err != nil {
+		fmt.Println("file: " + name + "reading error: " + err.Error())
+		return nil
+	}
+
+	fmt.Println("get genesis.json")
+
+	var genesisConf GenesisConf
+	err = json.Unmarshal(content, &genesisConf)
+	if err != nil {
+		fmt.Println("file: " + name + " reading error: " + err.Error())
+		return nil
+	}
+
+	return &genesisConf
 }
 
 func GetChainId(height uint64) *big.Int {
-	chainIdStr := ChainId(height)
+	var chainIdStr string
+	if nil != Genesis && 0 != len(Genesis.ChainId) {
+		chainIdStr = Genesis.ChainId
+	} else {
+		chainIdStr = ChainId(height)
+	}
+
 	chainId, _ := big.NewInt(0).SetString(chainIdStr, 10)
 	return chainId
 }
@@ -171,6 +246,9 @@ func IsDEV() bool {
 }
 func IsMainnet() bool {
 	return LocalChainConfig.ChainId == mainNetChainConfig.ChainId
+}
+func IsSub() bool {
+	return Genesis != nil
 }
 
 func IsProposal001(height uint64) bool {

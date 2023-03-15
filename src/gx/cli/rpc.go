@@ -20,11 +20,11 @@ import (
 	"com.tuntun.rocket/node/src/gx/rpc"
 	"net"
 	"net/http"
+	"strings"
 
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"fmt"
-	"strings"
 	"sync"
 )
 
@@ -63,7 +63,7 @@ func startHTTP(endpoint string, apis []rpc.API, modules []string, cors []string,
 
 func startHttps(httpPort uint, privateKey string) error {
 	endpoint := fmt.Sprintf("0.0.0.0:%d", httpPort+1000)
-	fmt.Println(endpoint)
+	fmt.Println("self http: " + endpoint)
 	var (
 		listener net.Listener
 		err      error
@@ -92,6 +92,10 @@ func StartRPC(host string, port uint, privateKey string) error {
 		{Namespace: "Rocket", Version: "1", Service: GtasAPIImpl, Public: true},
 		{Namespace: "Rangers", Version: "1", Service: GtasAPIImpl, Public: true},
 	}
+	if common.IsSub() {
+		apis = append(apis, rpc.API{Namespace: common.Genesis.Name, Version: "1", Service: GtasAPIImpl, Public: true})
+	}
+
 	for plus := 0; plus < 40; plus++ {
 		err = startHTTP(fmt.Sprintf("%s:%d", host, port+uint(plus)), apis, []string{}, []string{}, []string{})
 		if err == nil {
