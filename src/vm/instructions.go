@@ -18,11 +18,12 @@ package vm
 
 import (
 	"bytes"
-	crypto "com.tuntun.rocket/node/src/eth_crypto"
 	"fmt"
 	"math"
 	"math/big"
 	"strconv"
+
+	crypto "com.tuntun.rocket/node/src/eth_crypto"
 
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/utility"
@@ -1189,11 +1190,26 @@ func opStakeNum(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 
 func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
 	ret := false
-	commit := popBytes32(callContext)
-	v := popUint256(callContext)
-	s := popUint256(callContext)
-	r := popUint256(callContext)
+
 	authorityAddr := popAddress(callContext)
+	offset := popUint256(callContext)
+	length := popUint256(callContext)
+
+	if length.Uint64() < 128 {
+		pushBool(callContext, ret)
+		return nil, nil
+	}
+
+	r := uint256.NewInt()
+	r.SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()), 32))
+	s := uint256.NewInt()
+	s.SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()+32), 32))
+	v := uint256.NewInt()
+	v.SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()+64), 32))
+	c := uint256.NewInt()
+	c.SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()+96), 32))
+	commit := c.Bytes32()
+
 	callContext.authorized = nil
 	logger.Debugf("[opAuth]authority:%s,commit:%s,r:%s,s:%s,v:%s", authorityAddr.String(), common.ToHex(commit[:]), r.ToBig().String(), s.ToBig().String(), v.ToBig().String())
 
@@ -1236,15 +1252,24 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 }
 
 func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	//retSize :=
-	popUint256(callContext)
-	retOffset := popUint256(callContext)
-	data, _ := popBytes(callContext)
-	value := popUint256(callContext)
+	gas := popUint256(callContext)
 	addr := popAddress(callContext)
-	//gas but not used
-	popUint256(callContext)
-	gas := interpreter.evm.callGasTemp
+	value := popUint256(callContext)
+	valueExt := popUint256(callContext)
+	argsOffset := popUint256(callContext)
+	argsLength := popUint256(callContext)
+	retOffset := popUint256(callContext)
+	retLength := popUint256(callContext)
+
+	callgas := interpreter.evm.callGasTemp
+
+	data := callContext.memory.GetPtr(int64(argsOffset.Uint64()), int64(argsLength.Uint64()))
+
+	if !valueExt.IsZero() {
+		logger.Debugf("valueExt in the input stack is not zero")
+		pushBool(callContext, false)
+		return nil, nil
+	}
 
 	if callContext.authorized == nil {
 		logger.Debugf("authcall failed:authorized address is nil")
@@ -1263,7 +1288,7 @@ func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 	sponsor := interpreter.evm.Origin
 	caller := AccountRef(*callContext.authorized)
 	logger.Debugf("[authcall] sponsor:%s,from:%s,to:%s,value:%v,gas:%v,data:%s", sponsor.String(), caller.Address().String(), addr.String(), bigVal.String(), gas, common.ToHex(data))
-	ret, returnGas, logs, err := interpreter.evm.AuthCall(sponsor, caller, addr, data, gas, bigVal)
+	ret, returnGas, logs, err := interpreter.evm.AuthCall(sponsor, caller, addr, data, callgas, bigVal)
 	for _, log := range logs {
 		callContext.logs = append(callContext.logs, log)
 	}
@@ -1273,10 +1298,10 @@ func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 		pushBool(callContext, true)
 	}
 	if err == nil || err == ErrExecutionReverted {
-		pushBytes(callContext, retOffset.Uint64(), ret)
+		callContext.memory.Set(retOffset.Uint64(), retLength.Uint64(), ret)
 	}
 	callContext.contract.Gas += returnGas
-	return nil, nil
+	return ret, nil
 }
 
 //EIP-3074 cal hash

@@ -113,5 +113,16 @@ func memoryLog(stack *Stack) (uint64, bool) {
 }
 
 func memoryAuthCall(stack *Stack) (uint64, bool) {
-	return calcMemSize64(stack.Back(0), stack.Back(1))
+	x, overflow := calcMemSize64(stack.Back(6), stack.Back(7))
+	if overflow {
+		return 0, true
+	}
+	y, overflow := calcMemSize64(stack.Back(4), stack.Back(5))
+	if overflow {
+		return 0, true
+	}
+	if x > y {
+		return x, false
+	}
+	return y, false
 }
