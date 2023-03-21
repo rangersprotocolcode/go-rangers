@@ -35,10 +35,10 @@ func Init(instanceIndex int, configFile, env string) {
 
 	instance := 0
 	if 0 != instanceIndex {
-		instance = instanceIndex
+		InstanceIndex = instanceIndex
 		GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
 	} else {
-		instance = GlobalConf.GetInt(instanceSection, indexKey, 0)
+		InstanceIndex = GlobalConf.GetInt(instanceSection, indexKey, 0)
 	}
 
 	databaseValue := "chain"
