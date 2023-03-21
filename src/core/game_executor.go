@@ -202,6 +202,7 @@ func (executor *GameExecutor) runWrite(item *middleware.Item) {
 
 	if txRaw.Type == 0 {
 		executor.logger.Infof("rcv tx with nonce: %d, txhash: %s, type: 0. skipped", txRaw.RequestId, txRaw.Hash.String())
+		executor.sendTransaction(&txRaw)
 		return
 	}
 

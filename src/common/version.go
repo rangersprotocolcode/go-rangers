@@ -41,7 +41,6 @@ var (
 		ChainId:          "2025",
 		NetworkId:        "2025",
 		PHub:             "wss://mainnet.rangersprotocol.com/phub",
-		PubHub:           "wss://mainnet.rangersprotocol.com/pubhub",
 		OriginalChainId:  "8888",
 		Proposal001Block: 894116,
 		Proposal002Block: 3353000,
@@ -87,7 +86,6 @@ var (
 		ChainId:          "9500",
 		NetworkId:        "9500",
 		PHub:             "ws://gate.tuntunhz.com:8899",
-		PubHub:           "ws://gate.tuntunhz.com:8888",
 		Tx:               "ws://192.168.2.14:7777",
 		OriginalChainId:  "9500",
 		mainNodeContract: HexToAddress("0x27B01A9E699F177634f480Cc2150425009Edc5fD"),
@@ -111,7 +109,6 @@ var (
 		ChainId:          "9500",
 		NetworkId:        "9500",
 		PHub:             "ws://gate.tuntunhz.com:8899",
-		PubHub:           "ws://gate.tuntunhz.com:8888",
 		OriginalChainId:  "9500",
 		mainNodeContract: HexToAddress("0x27B01A9E699F177634f480Cc2150425009Edc5fD"),
 
@@ -142,7 +139,6 @@ type ChainConfig struct {
 	NetworkId string
 
 	PHub   string
-	PubHub string
 	Tx     string
 
 	OriginalChainId  string

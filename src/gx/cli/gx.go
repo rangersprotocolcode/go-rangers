@@ -162,8 +162,7 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx, dsn string) {
 	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 
-	//isSend:=0 != len(tx) && 0 != len(outerGateAddr)
-	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, 0 == len(outerGateAddr))
+	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, 0 != len(outerGateAddr))
 	service.InitService()
 	vm.InitVM()
 
