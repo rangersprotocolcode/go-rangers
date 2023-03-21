@@ -33,7 +33,6 @@ const (
 func Init(instanceIndex int, configFile, env string) {
 	initConf(configFile)
 
-	instance := 0
 	if 0 != instanceIndex {
 		InstanceIndex = instanceIndex
 		GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
@@ -46,7 +45,7 @@ func Init(instanceIndex int, configFile, env string) {
 	joinedGroupDatabaseValue := "jgs"
 	GlobalConf.SetString(ConfigSec, DefaultJoinedGroupDatabaseKey, joinedGroupDatabaseValue)
 
-	DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, strconv.Itoa(instance))
+	DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, strconv.Itoa(InstanceIndex))
 
 	initChainConfig(env)
 }
