@@ -383,7 +383,8 @@ func findTxInList(txs []*types.Transaction, txHash common.Hash, receiptIndex int
 	if nil == txs || 0 == len(txs) {
 		return nil
 	}
-	if txs[receiptIndex].Hash == txHash {
+
+	if receiptIndex < len(txs) &&txs[receiptIndex].Hash == txHash {
 		return txs[receiptIndex]
 	}
 

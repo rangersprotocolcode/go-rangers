@@ -75,6 +75,10 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 	}
 
 	for i, transaction := range txs {
+		if 0 == transaction.Type {
+			continue
+		}
+		
 		if common.IsProposal013() {
 			this.accountdb.Prepare(transaction.Hash, common.Hash{}, i)
 		}
