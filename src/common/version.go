@@ -86,7 +86,7 @@ var (
 		ChainId:          "9500",
 		NetworkId:        "9500",
 		PHub:             "ws://gate.tuntunhz.com:8899",
-		Tx:               "ws://192.168.2.14:7777",
+
 		OriginalChainId:  "9500",
 		mainNodeContract: HexToAddress("0x27B01A9E699F177634f480Cc2150425009Edc5fD"),
 
@@ -139,7 +139,6 @@ type ChainConfig struct {
 	NetworkId string
 
 	PHub   string
-	Tx     string
 
 	OriginalChainId  string
 	Proposal001Block uint64

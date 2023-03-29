@@ -110,9 +110,7 @@ func (gx *GX) Run() {
 	}
 	outerGateAddr := *outerGateAddrPoint
 	txAddr := *txAddrPoint
-	if 0 == len(txAddr) {
-		txAddr = common.LocalChainConfig.Tx
-	}
+
 	dbDSNLog := *dbDSNLogPoint
 
 	walletManager = newWallets()
@@ -162,7 +160,7 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx, dsn string) {
 	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 
-	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, 0 != len(outerGateAddr))
+	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, 0 != len(outerGateAddr) && 0 != len(tx))
 	service.InitService()
 	vm.InitVM()
 
