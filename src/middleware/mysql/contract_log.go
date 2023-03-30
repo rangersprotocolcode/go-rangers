@@ -111,17 +111,13 @@ func SelectLogsByHash(blockhash common.Hash, contractAddresses []common.Address)
 // 插入数据
 func InsertLogs(height uint64, receipts types.Receipts, hash common.Hash) {
 	logger.Infof("start height: %d, receipts: %d, blockhash: %s", height, len(receipts), hash.String())
-	vals := []interface{}{}
-	sqlStr := "replace INTO contractlogs(height,logindex,blockhash, txhash, contractaddress, topic, data, topic0,topic1,topic2,topic3) values "
 	for _, receipt := range receipts {
 		if nil != receipt.Logs && 0 != len(receipt.Logs) {
 			for i, log := range receipt.Logs {
-				sqlStr += "(?, ?, ?, ?, ?, ?, ?,?,?,?,?),"
-				topicData, _ := json.Marshal(log.Topics)
-				var topic0 string
-				var topic1 string
-				var topic2 string
-				var topic3 string
+				sqlStr := "replace INTO contractlogs(height,logindex,blockhash, txhash, contractaddress, topic, data, topic0,topic1,topic2,topic3) values (?, ?, ?, ?, ?, ?, ?,?,?,?,?)"
+				var vals []interface{}
+
+				var topic0, topic1, topic2, topic3 string
 				switch len(log.Topics) {
 				case 0:
 					break
@@ -134,41 +130,41 @@ func InsertLogs(height uint64, receipts types.Receipts, hash common.Hash) {
 					topic0 = log.Topics[0].String()
 					topic1 = log.Topics[1].String()
 					topic2 = log.Topics[2].String()
-				default:
+				case 4:
 					topic0 = log.Topics[0].String()
 					topic1 = log.Topics[1].String()
 					topic2 = log.Topics[2].String()
 					topic3 = log.Topics[3].String()
 				}
+
+				topicData, _ := json.Marshal(log.Topics)
+
 				vals = append(vals, height, uint64(i), hash.Hex(), receipt.TxHash.Hex(), log.Address.GetHexString(), utility.BytesToStr(topicData), common.ToHex(log.Data), topic0, topic1, topic2, topic3)
+
+				stmt, err := mysqlDBLog.Prepare(sqlStr)
+				if err != nil {
+					logger.Errorf("fail to insert, err: %s. sql: %s", err, sqlStr)
+					continue
+				}
+
+				//format all vals at once
+				res, err := stmt.Exec(vals...)
+				if err != nil {
+					logger.Errorf("fail to insert exec, err: %s. sql: %s", err, sqlStr)
+					stmt.Close()
+					continue
+				}
+
+				//插入数据的主键id
+				lastInsertID, _ := res.LastInsertId()
+
+				//影响行数
+				rowsAffected, _ := res.RowsAffected()
+
+				logger.Infof("inserted height: %d, blockhash: %s, lines: %d, lastId: %d", height, hash.String(), rowsAffected, lastInsertID)
+				stmt.Close()
 			}
 		}
-	}
-
-	if 0 != len(vals) {
-		sqlStr = sqlStr[0 : len(sqlStr)-1]
-		//prepare the statement
-		stmt, err := mysqlDBLog.Prepare(sqlStr)
-		if err != nil {
-			logger.Errorf("fail to insert, err: ", err)
-			return
-		}
-		defer stmt.Close()
-
-		//format all vals at once
-		res, err := stmt.Exec(vals...)
-		if err != nil {
-			logger.Errorf("fail to insert, err: ", err)
-			return
-		}
-
-		//插入数据的主键id
-		lastInsertID, _ := res.LastInsertId()
-
-		//影响行数
-		rowsAffected, _ := res.RowsAffected()
-
-		logger.Infof("inserted height: %d, blockhash: %s, lines: %d, lastId: %d", height, hash.String(), rowsAffected, lastInsertID)
 	}
 
 	logger.Infof("end height: %d, receipts: %d, blockhash: %s", height, len(receipts), hash.String())

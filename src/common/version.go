@@ -132,6 +132,8 @@ var (
 	filename = "genesis.json"
 
 	Genesis *GenesisConf
+
+	IsSyncLogs bool
 )
 
 type ChainConfig struct {
