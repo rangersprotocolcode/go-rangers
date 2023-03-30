@@ -30,4 +30,53 @@ func TestInsertLogs(t *testing.T) {
 	list[0] = &rec
 
 	InsertLogs(100000, list, common.HexToHash("0x1ec9d7fb2bbfcae65110c3cc3e7a9da2a1c8c90683897efc755787ccea638ff5"))
+
+	contract := common.HexToAddress("0x021f5327280b68f382171056aa34dce310dc6c1d")
+	contractAddresses := make([]common.Address, 1)
+	contractAddresses[0] = contract
+	logs := SelectLogsByHash(common.HexToHash("0x1ec9d7fb2bbfcae65110c3cc3e7a9da2a1c8c90683897efc755787ccea638ff5"), contractAddresses)
+	if 1 != len(logs) {
+		t.Fatal("fail to select 0x021f5327280b68f382171056aa34dce310dc6c1d")
+	}
+
+	contract2 := common.HexToAddress("0x9c1cbfe5328dfb1733d59a7652d0a49228c7e12c")
+	contractAddresses2 := make([]common.Address, 1)
+	contractAddresses2[0] = contract2
+	logs2 := SelectLogsByHash(common.HexToHash("0x1ec9d7fb2bbfcae65110c3cc3e7a9da2a1c8c90683897efc755787ccea638ff5"), contractAddresses2)
+	if 1 != len(logs2) {
+		t.Fatal("fail to select 0x9c1cbfe5328dfb1733d59a7652d0a49228c7e12c")
+	}
+
+	contract3 := common.HexToAddress("0xff")
+	contractAddresses3 := make([]common.Address, 1)
+	contractAddresses3[0] = contract3
+	logs3 := SelectLogsByHash(common.HexToHash("0x1ec9d7fb2bbfcae65110c3cc3e7a9da2a1c8c90683897efc755787ccea638ff5"), contractAddresses3)
+	if 0 != len(logs3) {
+		t.Fatal("fail to select 0xff")
+	}
+}
+
+func TestInsertLogs2(t *testing.T) {
+	defer func() {
+		os.RemoveAll("logs-0.db")
+		os.RemoveAll("logs-0.db-shm")
+		os.RemoveAll("logs-0.db-wal")
+		os.RemoveAll("1.ini")
+		os.RemoveAll("storage0")
+	}()
+
+	InitMySql()
+
+	//var list types.Receipts
+	list := make([]*types.Receipt, 0)
+
+	InsertLogs(100000, list, common.HexToHash("0x1ec9d7fb2bbfcae65110c3cc3e7a9da2a1c8c90683897efc755787ccea638ff5"))
+
+	contract3 := common.HexToAddress("0xff")
+	contractAddresses3 := make([]common.Address, 1)
+	contractAddresses3[0] = contract3
+	logs3 := SelectLogsByHash(common.HexToHash("0x1ec9d7fb2bbfcae65110c3cc3e7a9da2a1c8c90683897efc755787ccea638ff5"), contractAddresses3)
+	if 0 != len(logs3) {
+		t.Fatal("fail to select 0xff")
+	}
 }

@@ -111,12 +111,25 @@ func SelectLogsByHash(blockhash common.Hash, contractAddresses []common.Address)
 // 插入数据
 func InsertLogs(height uint64, receipts types.Receipts, hash common.Hash) {
 	logger.Infof("start height: %d, receipts: %d, blockhash: %s", height, len(receipts), hash.String())
-	for _, receipt := range receipts {
-		if nil != receipt.Logs && 0 != len(receipt.Logs) {
-			for i, log := range receipt.Logs {
-				sqlStr := "replace INTO contractlogs(height,logindex,blockhash, txhash, contractaddress, topic, data, topic0,topic1,topic2,topic3) values (?, ?, ?, ?, ?, ?, ?,?,?,?,?)"
-				var vals []interface{}
 
+	tx, err := mysqlDBLog.Begin()
+	if err != nil {
+		logger.Errorf("fail to begin. end height: %d, receipts: %d, blockhash: %s", height, len(receipts), hash.String())
+		return
+	}
+	defer tx.Commit()
+
+	sqlStr := "replace INTO contractlogs(height,logindex,blockhash, txhash, contractaddress, topic, data, topic0,topic1,topic2,topic3) values (?, ?, ?, ?, ?, ?, ?,?,?,?,?)"
+	stmt, err := tx.Prepare(sqlStr)
+	if err != nil {
+		logger.Errorf("fail to prepare. end height: %d, receipts: %d, blockhash: %s", height, len(receipts), hash.String())
+		return
+	}
+	defer stmt.Close()
+
+	for _, receipt := range receipts {
+		if nil != receipt && nil != receipt.Logs && 0 != len(receipt.Logs) {
+			for i, log := range receipt.Logs {
 				var topic0, topic1, topic2, topic3 string
 				switch len(log.Topics) {
 				case 0:
@@ -139,19 +152,13 @@ func InsertLogs(height uint64, receipts types.Receipts, hash common.Hash) {
 
 				topicData, _ := json.Marshal(log.Topics)
 
+				var vals []interface{}
 				vals = append(vals, height, uint64(i), hash.Hex(), receipt.TxHash.Hex(), log.Address.GetHexString(), utility.BytesToStr(topicData), common.ToHex(log.Data), topic0, topic1, topic2, topic3)
-
-				stmt, err := mysqlDBLog.Prepare(sqlStr)
-				if err != nil {
-					logger.Errorf("fail to insert, err: %s. sql: %s", err, sqlStr)
-					continue
-				}
 
 				//format all vals at once
 				res, err := stmt.Exec(vals...)
 				if err != nil {
 					logger.Errorf("fail to insert exec, err: %s. sql: %s", err, sqlStr)
-					stmt.Close()
 					continue
 				}
 
@@ -162,7 +169,6 @@ func InsertLogs(height uint64, receipts types.Receipts, hash common.Hash) {
 				rowsAffected, _ := res.RowsAffected()
 
 				logger.Infof("inserted height: %d, blockhash: %s, lines: %d, lastId: %d", height, hash.String(), rowsAffected, lastInsertID)
-				stmt.Close()
 			}
 		}
 	}
