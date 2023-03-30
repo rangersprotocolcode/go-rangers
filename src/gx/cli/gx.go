@@ -135,6 +135,8 @@ func (gx *GX) Run() {
 		gx.initMiner(*env, gateAddr, outerGateAddr, txAddr, dbDSNLog)
 
 		common.IsSyncLogs = *syncLogs != "0"
+		fmt.Print("isSyncLogs")
+		fmt.Println(common.IsSyncLogs)
 		if common.IsSyncLogs {
 			go gx.syncLogs()
 		}
