@@ -152,11 +152,7 @@ func InsertLogs(height uint64, receipts types.Receipts, hash common.Hash) {
 
 				topicData, _ := json.Marshal(log.Topics)
 
-				var vals []interface{}
-				vals = append(vals, height, uint64(i), hash.Hex(), receipt.TxHash.Hex(), log.Address.GetHexString(), utility.BytesToStr(topicData), common.ToHex(log.Data), topic0, topic1, topic2, topic3)
-
-				//format all vals at once
-				res, err := stmt.Exec(vals...)
+				res, err := stmt.Exec(height, uint64(i), hash.Hex(), receipt.TxHash.Hex(), log.Address.GetHexString(), utility.BytesToStr(topicData), common.ToHex(log.Data), topic0, topic1, topic2, topic3)
 				if err != nil {
 					logger.Errorf("fail to insert exec, err: %s. sql: %s", err, sqlStr)
 					continue
