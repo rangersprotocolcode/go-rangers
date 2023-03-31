@@ -17,7 +17,7 @@
 package utility
 
 import (
-	"fmt"
+	"com.tuntun.rocket/node/src/middleware/log"
 	"sync"
 	"time"
 )
@@ -28,7 +28,12 @@ var (
 	ntpInit     sync.Once
 	ntpInitFlag = false
 	cstZone     = time.FixedZone("CST", 8*3600)
+	logger      log.Logger
 )
+
+func Init(otherLogger log.Logger) {
+	logger = otherLogger
+}
 
 func GetTime() time.Time {
 	if !ntpInitFlag {
@@ -41,13 +46,12 @@ func GetTime() time.Time {
 					offsetResult := ntpOffset(false)
 					if offsetResult != 0 {
 						timeOffset = offsetResult
-						fmt.Printf("refresh ntp, timeOffset: %s\n", timeOffset)
+						logger.Debugf("refresh ntp, timeOffset: %s", timeOffset)
+
 					} else {
-						fmt.Printf("refresh ntp failed, use last timeOffset: %s\n", timeOffset)
+						logger.Debugf("refresh ntp failed, use last timeOffset: %s", timeOffset)
 					}
-
 				}
-
 			}()
 		})
 	}

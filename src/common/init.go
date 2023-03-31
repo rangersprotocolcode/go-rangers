@@ -18,6 +18,7 @@ package common
 
 import (
 	"com.tuntun.rocket/node/src/middleware/log"
+	"com.tuntun.rocket/node/src/utility"
 	"strconv"
 )
 
@@ -46,6 +47,8 @@ func Init(instanceIndex int, configFile, env string) {
 	GlobalConf.SetString(ConfigSec, DefaultJoinedGroupDatabaseKey, joinedGroupDatabaseValue)
 
 	DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, strconv.Itoa(InstanceIndex))
+
+	utility.Init(DefaultLogger)
 
 	initChainConfig(env)
 }

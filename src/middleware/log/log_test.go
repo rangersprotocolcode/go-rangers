@@ -112,3 +112,17 @@ func TestGetLoggerByName(t *testing.T) {
 	//l.Debug("TestGetLoggerByName logFunc debug output")
 	Close()
 }
+
+func TestGetLoggerBySameName(t *testing.T) {
+	name := "littleBear"
+	logger := GetLoggerByName(name)
+	logger.Debug("TestGetLoggerByName logFunc debug output")
+	logger.Info("TestGetLoggerByName logFunc info output")
+	logger.Warn("TestGetLoggerByName logFunc Warn output")
+	logger.Error("TestGetLoggerByName logFunc error output")
+
+	l := GetLoggerByName(name)
+	l.Debug("TestGetLoggerBySameName logFunc debug output")
+	l.Error("TestGetLoggerBySameName logFunc error output")
+	Close()
+}
