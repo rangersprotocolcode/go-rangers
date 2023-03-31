@@ -150,9 +150,7 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 		return
 	}
 
-	if !common.IsSyncLogs {
-		mysql.InsertLogs(header.Height, receipts, header.Hash)
-	}
+	mysql.InsertLogs(header.Height, receipts, header.Hash)
 
 	txHashList := make([]interface{}, len(receipts))
 	for i, receipt := range receipts {

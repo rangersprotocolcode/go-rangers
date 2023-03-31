@@ -93,7 +93,6 @@ func (gx *GX) Run() {
 	outerGateAddrPoint := mineCmd.Flag("outergateaddr", "the gate addr").String()
 	txAddrPoint := mineCmd.Flag("tx", "the tx queue addr").String()
 
-	syncLogs := mineCmd.Flag("logs", "start rpc server").Default("0").String()
 	dbDSNLogPoint := mineCmd.Flag("mysqllog", "the logdb addr").String()
 
 	command, err := app.Parse(os.Args[1:])
@@ -133,13 +132,6 @@ func (gx *GX) Run() {
 			runtime.SetMutexProfileFraction(1)
 		}()
 		gx.initMiner(*env, gateAddr, outerGateAddr, txAddr, dbDSNLog)
-
-		common.IsSyncLogs = *syncLogs != "0"
-		fmt.Print("isSyncLogs")
-		fmt.Println(common.IsSyncLogs)
-		if common.IsSyncLogs {
-			go gx.syncLogs()
-		}
 
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc, gx.account.Sk)
@@ -195,10 +187,6 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx, dsn string) {
 
 	eth_rpc.InitEthMsgHandler()
 	gx.init = true
-}
-
-func (gx *GX) syncLogs() {
-	mysql.SyncOldData()
 }
 
 func (gx *GX) getAccountInfo(sk string) {

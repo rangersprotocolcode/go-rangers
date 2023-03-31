@@ -4,11 +4,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/utility"
-	"database/sql"
 	"encoding/json"
-	"fmt"
-	_ "github.com/go-sql-driver/mysql"
-	"time"
 )
 
 func SelectLogs(from, to uint64, contractAddresses []common.Address) []*types.Log {
@@ -189,117 +185,4 @@ func DeleteLogs(height uint64, blockHash common.Hash) {
 	rowsAffected, _ := result.RowsAffected()
 	logger.Debugf("deleted:%d %s, rowsAffected %d", height, blockHash.Hex(), rowsAffected)
 
-}
-
-func SyncOldData() {
-	dsn := common.LocalChainConfig.MysqlDSN
-	if 0 == len(dsn) {
-		logger.Errorf("no mysql DSN")
-		return
-	}
-
-	db, err := sql.Open("mysql", dsn)
-	if err != nil {
-		logger.Errorf("open mysql error. DSN: %s, error: %s", dsn, err)
-		return
-	}
-	// 最大连接数
-	db.SetMaxOpenConns(5)
-	// 闲置连接数
-	db.SetMaxIdleConns(5)
-	// 最大连接周期
-	db.SetConnMaxLifetime(100 * time.Second)
-	if err = db.Ping(); nil != err {
-		db.Close()
-		logger.Errorf("ping mysql error. DSN: %s, error: %s", dsn, err)
-		return
-	}
-
-	i, j := countLogs(), uint64(100)
-	logger.Warnf("start sync logs. %s. from: %d", dsn, i)
-
-	base := "select height,logindex, blockhash,txhash,contractaddress,topic," +
-		"data,topic0,topic1,topic2,topic3 FROM contractlogs order by height, logindex limit"
-	for {
-		sql := fmt.Sprintf("%s %d,%d", base, i, j)
-
-		rows, err := db.Query(sql)
-		if err != nil {
-			logger.Errorf("query mysql error. sql: %s, DSN: %s, error: %s", sql, dsn, err)
-			rows.Close()
-			continue
-		}
-
-		count := uint64(0)
-		for rows.Next() {
-			var (
-				height, index                                                                   uint64
-				blockhash, txhash, contractaddress, topic, data, topic0, topic1, topic2, topic3 string
-			)
-			err := rows.Scan(&height, &index, &blockhash, &txhash, &contractaddress, &topic, &data, &topic0, &topic1, &topic2, &topic3)
-			if err != nil {
-				logger.Errorf("scan mysql error. sql: %s, DSN: %s, error: %s", sql, dsn, err)
-				panic(err)
-			}
-			insertLog(height, index, blockhash, txhash, contractaddress, topic, data, topic0, topic1, topic2, topic3)
-			count++
-		}
-		rows.Close()
-
-		if count < j {
-			logger.Warnf("rows less than 100, try again %d-%d", i, count)
-			i += count
-			time.Sleep(5 * time.Second)
-		} else {
-			i += j
-		}
-
-		if i%1000 == 0 {
-			logger.Infof("sync old data. %d", i)
-		}
-	}
-}
-
-func countLogs() uint64 {
-	if nil == mysqlDBLog {
-		return 0
-	}
-
-	sql := "select count(*) as num FROM contractlogs"
-	rows, err := mysqlDBLog.Query(sql)
-	if err != nil {
-		return 0
-	}
-	defer rows.Close()
-
-	// 循环读取结果集中的数据
-	var result uint64
-	for rows.Next() {
-		err := rows.Scan(&result)
-		if err != nil {
-			logger.Errorf("scan failed, err: %v", err)
-			return 0
-		}
-		return result
-	}
-
-	return result
-}
-
-func insertLog(height, index uint64, blockhash, txhash, contractaddress, topic, data, topic0, topic1, topic2, topic3 string) {
-	sql := "replace INTO contractlogs(height,logindex,blockhash, txhash, contractaddress, topic, data, topic0,topic1,topic2,topic3) values (?,?,?,?,?,?,?,?,?,?,?)"
-
-	stmt, err := mysqlDBLog.Prepare(sql)
-	if err != nil {
-		logger.Errorf("fail to prepare insert log, err: ", err)
-		return
-	}
-	defer stmt.Close()
-
-	//format all vals at once
-	_, err = stmt.Exec(height, index, blockhash, txhash, contractaddress, topic, data, topic0, topic1, topic2, topic3)
-	if err != nil {
-		logger.Errorf("fail to insert log, err: ", err)
-		return
-	}
 }

@@ -12,7 +12,6 @@ require (
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/glacjay/goini v0.0.0-20161120062552-fd3024d87ee2
 	github.com/go-playground/validator/v10 v10.10.0
-	github.com/go-sql-driver/mysql v1.6.0
 	github.com/gogf/gf v1.16.9
 	github.com/gogo/protobuf v1.3.1
 	github.com/golang/protobuf v1.4.2
