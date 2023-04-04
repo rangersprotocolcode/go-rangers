@@ -135,7 +135,7 @@ const (
 	Bls12381MapG2Gas          uint64 = 110000 // Gas price for BLS12-381 mapping field element to G2 operation
 
 	AuthGas                  uint64 = 3100
-	AuthCallValueTransferGas uint64 = 7600 // Paid for AuthCALL when the value transfer is non-zero.
+	AuthCallValueTransferGas uint64 = 6700 // Paid for AuthCALL when the value transfer is non-zero.
 
 	PrintGas      uint64 = 1000
 	StakeGas      uint64 = 20000
