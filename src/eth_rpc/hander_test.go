@@ -5,11 +5,12 @@ import (
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"encoding/json"
+	"fmt"
 	"testing"
 )
 
 func TestSendRawTransaction(t *testing.T) {
-	common.InitConf("1.ini")
+	//common.InitConf("1.ini")
 	middleware.InitMiddleware()
 	InitEthMsgHandler()
 
@@ -32,4 +33,10 @@ func TestSendRawTransaction(t *testing.T) {
 	msg := notify.ETHRPCMessage{RequestId: 100, Message: piece}
 	handler.process(&msg)
 	handler.process(&msg)
+}
+
+func TestRevertReason(t *testing.T) {
+	ret := common.FromHex("0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000204f776e61626c653a2063616c6c6572206973206e6f7420746865206f776e6572")
+	reason := getRevertReason(ret)
+	fmt.Printf("%s\n", reason)
 }

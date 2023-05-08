@@ -8,6 +8,7 @@ require (
 	github.com/alecthomas/units v0.0.0-20190924025748-f65c72e2690d // indirect
 	github.com/astaxie/beego v1.12.1
 	github.com/axgle/mahonia v0.0.0-20180208002826-3358181d7394
+	github.com/boolw/go-web3 v1.0.4
 	github.com/btcsuite/btcd v0.0.0-20190213025234-306aecffea32
 	github.com/cihub/seelog v0.0.0-20170130134532-f561c5e57575
 	github.com/glacjay/goini v0.0.0-20161120062552-fd3024d87ee2

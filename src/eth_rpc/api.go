@@ -13,6 +13,8 @@ import (
 	"com.tuntun.rocket/node/src/vm"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/boolw/go-web3/abi"
 	"math/big"
 	"sync"
 )
@@ -174,6 +176,7 @@ func (s *ethAPIService) Call(args CallArgs, blockNrOrHash BlockNumberOrHash) (ut
 	}
 
 	if err != nil {
+		err := adaptErrorOutput(err, result)
 		return nil, revertError{err, common.ToHex(result)}
 	}
 	return result, nil
@@ -550,4 +553,28 @@ func adaptRPCBlock(block *types.Block, fullTx bool) *RPCBlock {
 		rpcBlock.TransactionsRoot = header.TxTree
 	}
 	return &rpcBlock
+}
+
+func adaptErrorOutput(err error, result []byte) error {
+	if err != vm.ErrExecutionReverted {
+		return err
+	}
+	reason := getRevertReason(result)
+	err = fmt.Errorf("execution reverted: %v", reason)
+	return err
+}
+
+func getRevertReason(result []byte) string {
+	if len(result) < 36 {
+		return ""
+	}
+	typ, err := abi.NewType("string")
+	if err != nil {
+		return ""
+	}
+	decoded, err := typ.Decode(result[36:])
+	if err != nil {
+		return ""
+	}
+	return decoded.(string)
 }
