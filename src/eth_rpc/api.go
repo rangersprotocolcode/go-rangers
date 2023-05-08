@@ -560,7 +560,9 @@ func adaptErrorOutput(err error, result []byte) error {
 		return err
 	}
 	reason := getRevertReason(result)
-	err = fmt.Errorf("execution reverted: %v", reason)
+	if reason != "" {
+		err = fmt.Errorf("execution reverted: %v", reason)
+	}
 	return err
 }
 
