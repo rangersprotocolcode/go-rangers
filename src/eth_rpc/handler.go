@@ -59,8 +59,9 @@ func (handler ethMsgHandler) process(message notify.Message) {
 		response := handler.ProcessSingleRequest(singleMessage.Message)
 		responseJson, err := json.Marshal(response)
 		if err != nil {
-			logger.Debugf("marshal err:%v", err)
+			logger.Errorf("marshal err: %v", err)
 		}
+
 		logger.Debugf("Response:%s,socketRequestId:%v,sessionId:%v", string(responseJson), singleMessage.RequestId, singleMessage.SessionId)
 		network.GetNetInstance().SendToJSONRPC(responseJson, singleMessage.SessionId, singleMessage.RequestId)
 		return

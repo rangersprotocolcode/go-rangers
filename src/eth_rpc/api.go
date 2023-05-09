@@ -5,6 +5,7 @@ import (
 	"com.tuntun.rocket/node/src/core"
 	"com.tuntun.rocket/node/src/eth_tx"
 	"com.tuntun.rocket/node/src/middleware"
+	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
@@ -110,6 +111,15 @@ func (api *ethAPIService) SendRawTransaction(encodedTx utility.Bytes) (common.Ha
 	}
 
 	rocketTx := eth_tx.ConvertTx(tx, sender, encodedTx)
+
+	// save tx
+	var msg notify.ClientTransactionMessage
+	msg.Tx = *rocketTx
+	msg.UserId = ""
+	msg.GateNonce = 0
+	msg.Nonce = 0
+	middleware.DataChannel.GetRcvedTx() <- &msg
+
 	return rocketTx.Hash, rocketTx, nil
 }
 

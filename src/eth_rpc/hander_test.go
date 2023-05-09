@@ -5,11 +5,17 @@ import (
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"encoding/json"
+	"os"
 	"testing"
 )
 
 func TestSendRawTransaction(t *testing.T) {
-	common.InitConf("1.ini")
+	defer func() {
+		os.RemoveAll("logs")
+		os.RemoveAll("1.ini")
+		os.RemoveAll("storage0")
+	}()
+	common.Init(0, "1.ini", "robin")
 	middleware.InitMiddleware()
 	InitEthMsgHandler()
 

@@ -61,7 +61,7 @@ func (pq *PriorityQueue) heapPush(value *notify.ClientTransactionMessage) {
 	LockBlockchain("HeapPush")
 	defer UnLockBlockchain("HeapPush")
 
-	if value.Nonce < pq.threshold {
+	if 0 != value.Nonce && value.Nonce <= pq.threshold {
 		return
 	}
 
@@ -77,8 +77,17 @@ func (pq *PriorityQueue) tryPop() {
 		return
 	}
 
-	for i := pq.data[0].Value.Nonce; i <= pq.threshold && 0 < len(pq.data); i++ {
-		heap.Pop(pq)
+	i := pq.data[0].Value.Nonce
+	for i <= pq.threshold && 0 < len(pq.data) {
+		item := heap.Pop(pq).(*Item)
+		if nil != item && 0 == item.Value.Nonce && nil != pq.handler {
+			pq.handler(item)
+		}
+
+		if 0 == len(pq.data) {
+			break
+		}
+		i = pq.data[0].Value.Nonce
 	}
 
 	for 0 < len(pq.data) && nil != pq.data[0] && pq.data[0].Value.Nonce == pq.threshold+1 {

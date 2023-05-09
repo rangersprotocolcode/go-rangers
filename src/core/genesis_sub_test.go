@@ -22,8 +22,7 @@ func TestCreateSubCrossContract(t *testing.T) {
 		os.RemoveAll("1.ini")
 	}()
 
-	common.InitChainConfig("dev")
-	common.InitConf("1.ini")
+	common.Init(0,"1.ini","dev")
 	vm.InitVM()
 
 	block := new(types.Block)
@@ -69,8 +68,7 @@ func TestEconomyContract(t *testing.T) {
 		os.RemoveAll("1.ini")
 	}()
 
-	common.InitChainConfig("dev")
-	common.InitConf("1.ini")
+	common.Init(0,"1.ini","dev")
 	vm.InitVM()
 
 	block := new(types.Block)

@@ -15,7 +15,7 @@ func TestUint64(t *testing.T) {
 }
 
 func TestChainId(t *testing.T) {
-	InitChainConfig(ENV_MAINNET)
+	initChainConfig(ENV_MAINNET)
 	chainId1 := ChainId(1000000)
 	fmt.Printf("chain id 1:%s\n", chainId1)
 
