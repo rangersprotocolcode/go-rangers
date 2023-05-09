@@ -77,9 +77,9 @@ func (pq *PriorityQueue) tryPop() {
 		return
 	}
 
-	for 0 < len(pq.data) && pq.data[0].Value.Nonce <= pq.threshold {
+	for 0 < len(pq.data) && nil != pq.data[0] && pq.data[0].Value.Nonce <= pq.threshold {
 		item := heap.Pop(pq).(*Item)
-		if nil != item && 0 == item.Value.Nonce && nil != pq.handler {
+		if 0 == item.Value.Nonce && nil != pq.handler {
 			pq.handler(item)
 		}
 	}

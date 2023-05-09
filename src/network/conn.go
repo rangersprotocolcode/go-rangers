@@ -362,7 +362,7 @@ func (clientConn *ClientConn) Init(ipPort, path string, logger log.Logger) {
 	clientConn.doRcv = func(wsHeader wsHeader, body []byte) {
 		clientConn.logger.Debugf("received. header: %s, from: %d, nonce: %d, bodyLength: %d", common.ToHex(wsHeader.method), wsHeader.sourceId, wsHeader.nonce, len(body))
 
-		// ws /api/reader /api/writer
+		// ws /api/reader
 		if bytes.Equal(wsHeader.method, methodClientReader) {
 			clientConn.handleClientMessage(body, strconv.FormatUint(wsHeader.sourceId, 10), wsHeader.nonce)
 			return
