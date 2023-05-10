@@ -70,7 +70,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 	this.prepare()
 
 	txs := types.Transactions(this.block.Transactions)
-	if 0 != len(txs) && 0 != strings.Compare(this.situation, "casting") {
+	if 0 != len(txs) {
 		sort.Sort(txs)
 	}
 
@@ -78,7 +78,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		if 0 == transaction.Type {
 			continue
 		}
-		
+
 		if common.IsProposal013() {
 			this.accountdb.Prepare(transaction.Hash, common.Hash{}, i)
 		}

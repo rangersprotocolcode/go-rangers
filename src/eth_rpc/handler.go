@@ -62,7 +62,7 @@ func (handler ethMsgHandler) process(message notify.Message) {
 			logger.Errorf("marshal err: %v", err)
 		}
 
-		logger.Debugf("Response:%s,socketRequestId:%v,sessionId:%v", string(responseJson), singleMessage.RequestId, singleMessage.SessionId)
+		logger.Debugf("Response: %s, socketRequestId: %v, sessionId: %v", string(responseJson), singleMessage.RequestId, singleMessage.SessionId)
 		network.GetNetInstance().SendToJSONRPC(responseJson, singleMessage.SessionId, singleMessage.RequestId)
 		return
 	}

@@ -18,6 +18,7 @@ package types
 
 import (
 	"bytes"
+	"math/big"
 	"strconv"
 
 	"com.tuntun.rocket/node/src/common"
@@ -130,7 +131,9 @@ func (c Transactions) Swap(i, j int) {
 }
 func (c Transactions) Less(i, j int) bool {
 	if c[i].RequestId == 0 && c[j].RequestId == 0 {
-		return c[i].Nonce < c[j].Nonce
+		num1 := new(big.Int).SetBytes(c[i].Hash.Bytes())
+		num2 := new(big.Int).SetBytes(c[j].Hash.Bytes())
+		return num1.Cmp(num2) > 0
 	}
 
 	return c[i].RequestId < c[j].RequestId

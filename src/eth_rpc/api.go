@@ -106,7 +106,7 @@ func (api *ethAPIService) SendRawTransaction(encodedTx utility.Bytes) (common.Ha
 	signer := eth_tx.NewEIP155Signer(common.GetChainId(utility.MaxUint64))
 	sender, err := eth_tx.Sender(signer, tx)
 	if err != nil {
-		logger.Debugf("err:%v", err.Error())
+		logger.Errorf("raw tx hash: %s, err:%v", tx.Hash().String(), err.Error())
 		return common.Hash{}, nil, err
 	}
 

@@ -311,7 +311,7 @@ func (pool *TxPool) PackForCast(height uint64) []*types.Transaction {
 		}
 	}
 
-	txPoolLogger.Debugf("packed tx. height: %d. nonce from %d to %d.", height, packedTxs[0].RequestId, packedTxs[len(packedTxs)-1].RequestId)
+	txPoolLogger.Debugf("packed tx. height: %d. nonce from %d to %d. size: %d", height, packedTxs[0].RequestId, packedTxs[len(packedTxs)-1].RequestId, len(packedTxs))
 	return packedTxs
 }
 
