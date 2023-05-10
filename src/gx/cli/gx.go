@@ -95,12 +95,15 @@ func (gx *GX) Run() {
 
 	dbDSNLogPoint := mineCmd.Flag("mysqllog", "the logdb addr").String()
 
+	//fullnode
+	fullNodeCmd := app.Command("fullnode", "sync data full node")
+	fullNodeJSONPRCPort := fullNodeCmd.Flag("httpport", "jsonrpc port").Short('p').Default("7988").Uint()
+	fullNodeEnv := fullNodeCmd.Flag("env", "the environment application run in").String()
+
 	command, err := app.Parse(os.Args[1:])
 	if err != nil {
 		kingpin.Fatalf("%s, try --help", err)
 	}
-
-	common.Init(*instanceIndex, *configFile, *env)
 
 	// using default
 	gateAddr := *gateAddrPoint
@@ -124,6 +127,7 @@ func (gx *GX) Run() {
 			fmt.Errorf(err.Error())
 		}
 	case mineCmd.FullCommand():
+		common.Init(*instanceIndex, *configFile, *env)
 		fmt.Println("Use config file: " + *configFile)
 		fmt.Printf("Env:%s, Chain ID:%s, Network ID:%s, Tx: %s\n", *env, common.ChainId(utility.MaxUint64), common.NetworkId(), txAddr)
 		go func() {
@@ -140,6 +144,9 @@ func (gx *GX) Run() {
 				return
 			}
 		}
+	case fullNodeCmd.FullCommand():
+		gx.initFullNode(*fullNodeEnv, *fullNodeJSONPRCPort)
+		break
 	}
 	<-quitChan
 }
@@ -269,4 +276,23 @@ func (gx *GX) handleExit(ctrlC <-chan bool, quit chan<- bool) {
 	} else {
 		os.Exit(0)
 	}
+}
+
+func (gx *GX) initFullNode(env string, jsonRPCPort uint) {
+	common.Init(0, "", env)
+	common.SetFullNode(true)
+	fmt.Printf("Start full node mode.\n")
+	fmt.Printf("Chain ID:%s,Network ID:%s\n", common.ChainId(utility.MaxUint64), common.NetworkId())
+
+	outerGateAddr := "" //do not connect outerGate
+	tx := ""            //do not connect tx
+	dsn := ""           //do not connect dsn
+	gateAddr := common.LocalChainConfig.PHub
+	gx.initMiner(env, gateAddr, outerGateAddr, tx, dsn)
+
+	err := StartJSONRPCHttp(jsonRPCPort)
+	if err != nil {
+		panic(err)
+	}
+	gx.init = true
 }
