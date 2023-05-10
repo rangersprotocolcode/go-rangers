@@ -64,6 +64,7 @@ var (
 	robinChainConfig = ChainConfig{
 		ChainId:          "9527",
 		NetworkId:        "9527",
+		PHub:             "wss://robin.rangersprotocol.com/phub",
 		OriginalChainId:  "9527",
 		Proposal001Block: 0,
 		Proposal002Block: 2802000,

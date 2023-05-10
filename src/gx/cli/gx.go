@@ -115,8 +115,6 @@ func (gx *GX) Run() {
 
 	dbDSNLog := *dbDSNLogPoint
 
-	walletManager = newWallets()
-
 	switch command {
 	case versionCmd.FullCommand():
 		fmt.Println("Version:", GXVersion)
@@ -128,6 +126,8 @@ func (gx *GX) Run() {
 		}
 	case mineCmd.FullCommand():
 		common.Init(*instanceIndex, *configFile, *env)
+		walletManager = newWallets()
+
 		fmt.Println("Use config file: " + *configFile)
 		fmt.Printf("Env:%s, Chain ID:%s, Network ID:%s, Tx: %s\n", *env, common.ChainId(utility.MaxUint64), common.NetworkId(), txAddr)
 		go func() {
@@ -145,7 +145,7 @@ func (gx *GX) Run() {
 			}
 		}
 	case fullNodeCmd.FullCommand():
-		gx.initFullNode(*fullNodeEnv, *fullNodeJSONPRCPort)
+		gx.initFullNode(*fullNodeEnv, *configFile, *fullNodeJSONPRCPort)
 		break
 	}
 	<-quitChan
@@ -278,8 +278,8 @@ func (gx *GX) handleExit(ctrlC <-chan bool, quit chan<- bool) {
 	}
 }
 
-func (gx *GX) initFullNode(env string, jsonRPCPort uint) {
-	common.Init(0, "", env)
+func (gx *GX) initFullNode(env string, configFile string, jsonRPCPort uint) {
+	common.Init(0, configFile, env)
 	common.SetFullNode(true)
 	fmt.Printf("Start full node mode.\n")
 	fmt.Printf("Chain ID:%s,Network ID:%s\n", common.ChainId(utility.MaxUint64), common.NetworkId())
