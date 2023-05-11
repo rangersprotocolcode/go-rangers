@@ -3,7 +3,6 @@ package db
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
-	"fmt"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/filter"
@@ -39,7 +38,7 @@ func NewLDBDatabase(file string, cache int, handles int) (*LDBDatabase, error) {
 	}
 
 	path := "storage" + strconv.Itoa(common.InstanceIndex) + "/" + file
-	fmt.Println(path)
+	//fmt.Println(path)
 	db, err := newLevelDBInstance(path, 8, 8)
 	if err != nil {
 		return nil, err
