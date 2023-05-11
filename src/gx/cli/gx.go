@@ -127,7 +127,7 @@ func (gx *GX) Run() {
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(*env, gateAddr, outerGateAddr)
+		gx.initMiner(*env, gateAddr, outerGateAddr, txAddr)
 
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc, gx.account.Sk)
@@ -140,7 +140,7 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(env, gateAddr, outerGateAddr string) {
+func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 	middleware.InitMiddleware()
 
 	privateKey := common.GlobalConf.GetString(Section, "privateKey", "")
@@ -151,7 +151,7 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr string) {
 	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 
-	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, 0 != len(outerGateAddr))
+	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, 0 != len(outerGateAddr) && 0 != len(tx))
 	service.InitService()
 	vm.InitVM()
 
@@ -160,6 +160,8 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr string) {
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
 	}
+
+	network.GetNetInstance().InitTx(tx)
 
 	// 共识部分启动
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
