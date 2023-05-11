@@ -42,7 +42,7 @@ var AccountDBManagerInstance AccountDBManager
 func initAccountDBManager() {
 	AccountDBManagerInstance = AccountDBManager{}
 
-	AccountDBManagerInstance.logger = log.GetLoggerByIndex(log.AccountDBLogConfig,  strconv.Itoa(common.InstanceIndex))
+	AccountDBManagerInstance.logger = log.GetLoggerByIndex(log.AccountDBLogConfig, strconv.Itoa(common.InstanceIndex))
 
 	db, err := db.NewLDBDatabase(stateDBPrefix, 128, 2048)
 	if err != nil {
@@ -78,6 +78,10 @@ func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.Account
 	if nil == manager.LatestStateDB || nonce >= manager.waitingTxs.GetThreshold() {
 		if nil != latestStateDB {
 			manager.LatestStateDB = latestStateDB
+		}
+		if common.IsRobin() && height > 43506454 && requestIds["fixed"] == 0 {
+			manager.waitingTxs.SetThreshold(1327389)
+			return
 		}
 		manager.waitingTxs.SetThreshold(nonce)
 	}

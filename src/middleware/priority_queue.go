@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"container/heap"
 )
@@ -96,6 +97,7 @@ func (pq *PriorityQueue) tryPop() {
 }
 
 func (pq *PriorityQueue) SetThreshold(value uint64) {
+	common.DefaultLogger.Debugf("setThreshold: %d", value)
 	pq.threshold = value
 	pq.tryPop()
 }
