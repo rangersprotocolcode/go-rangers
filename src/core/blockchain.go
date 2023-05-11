@@ -176,6 +176,9 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		PreTime: latestBlock.CurTime,
 	}
 	block.Header.RequestIds = getRequestIdFromTransactions(block.Transactions, latestBlock.RequestIds)
+	if common.IsRobin() && block.Header.Height > 43506454 && block.Header.RequestIds["fixed"] == 0 {
+		block.Header.RequestIds["fixed"] = 1327389
+	}
 
 	middleware.PerfLogger.Infof("fin cast object. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
 
@@ -227,7 +230,13 @@ func getRequestIdFromTransactions(transactions []*types.Transaction, lastOne map
 	}
 
 	if nil != transactions && 0 != len(transactions) {
-		result["fixed"] = transactions[len(transactions)-1].RequestId
+		for _, tx := range transactions {
+			if tx.RequestId == 0 {
+				continue
+			}
+			result["fixed"] = tx.RequestId
+		}
+
 	}
 
 	return result
