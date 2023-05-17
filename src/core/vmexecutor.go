@@ -24,12 +24,12 @@ import (
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
-	"sort"
 	"strings"
 	"time"
 )
 
-/**
+/*
+*
 nonce:
 version1:创建合约在计算地址之后+1，所有交易结束后如果成功nonce+1
 version2:Proposal006 所有交易刚开始nonce+1
@@ -69,12 +69,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 
 	this.prepare()
 
-	txs := types.Transactions(this.block.Transactions)
-	if 0 != len(txs) {
-		sort.Sort(txs)
-	}
-
-	for i, transaction := range txs {
+	for i, transaction := range this.block.Transactions {
 		if 0 == transaction.Type {
 			continue
 		}
