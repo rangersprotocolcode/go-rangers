@@ -24,6 +24,7 @@ import (
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
+	"sort"
 	"strings"
 	"time"
 )
@@ -68,8 +69,12 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 	evictedTxs := make([]common.Hash, 0)
 
 	this.prepare()
+	txs := types.Transactions(this.block.Transactions)
+	if 0 != len(txs) {
+		sort.Sort(txs)
+	}
 
-	for i, transaction := range this.block.Transactions {
+	for i, transaction := range txs {
 		if 0 == transaction.Type {
 			continue
 		}
