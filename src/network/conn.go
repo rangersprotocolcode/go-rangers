@@ -94,13 +94,14 @@ type baseConn struct {
 
 // 根据url初始化
 func (base *baseConn) init(ipPort, path string, logger log.Logger) {
+	base.connLock = sync.Mutex{}
+
 	base.logger = logger
 	base.path = path
 
 	ipPortString, _ := url.QueryUnescape(ipPort)
 	base.url = fmt.Sprintf("%s%s", ipPortString, path)
 	base.conn = base.getConn()
-	base.connLock = sync.Mutex{}
 
 	// 初始化读写缓存
 	if 0 == base.rcvSize {
