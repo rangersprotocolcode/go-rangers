@@ -15,7 +15,7 @@ func TestSendRawTransaction(t *testing.T) {
 		os.RemoveAll("1.ini")
 		os.RemoveAll("storage0")
 	}()
-	common.Init(0, "1.ini", "robin")
+	common.Init(0, "1.ini", "dev")
 	middleware.InitMiddleware()
 	InitEthMsgHandler()
 
@@ -32,10 +32,9 @@ func TestSendRawTransaction(t *testing.T) {
 	        }
 	*/
 	//p := []string{"0xf88b808609184e72a00082271094407d73d8a49eeb85d32cf465507dd71d507100c1821234a47f746573743200000000000000000000000000000000000000000000000000000060005725a0468be9f58932931d9c7256b0937496d24035dc4bcc7c6223bb85c0b965035df6a067d42b7cf2e56d50082499754f4f4a18c050ac50a41f581462e3786392cadd14"}
-	p := []string{"0xf8692501827b0c945643ede07854c47a5bb482e6910cd716aeb4b57e881bc16d674ec8000080824a92a0b425452a506afdb4e4958333a2aa513d67baecb95cfa45647d40b377ca613ac9a020e737bd2bfa94c2d801ff33ea3a12b6b4743839f32de34d9fefc501a7035621"}
+	p := []string{"0xf8640601832dc6c0942f4f09b722a6e5b77be17c9a99c785fa7035a09f8203e880824a5ba0458a14eed6c67985231ac2f61e540ff4f1b3facba6aed5e81b1da3f011b57e6fa006308ce6da36de5037f3ad10ce26b7e54cdf43791afda824871cc0989e931938"}
 	b, _ := json.Marshal(p)
 	piece := notify.ETHRPCPiece{Id: 1, Method: "eth_sendRawTransaction", Params: b}
-	msg := notify.ETHRPCMessage{RequestId: 100, Message: piece}
-	handler.process(&msg)
+	msg := notify.ETHRPCMessage{GateNonce: 100, Message: piece}
 	handler.process(&msg)
 }

@@ -90,7 +90,7 @@ func TestRefundManager_Add(t *testing.T) {
 	defer os.Remove("1.ini")
 	defer os.RemoveAll("storage0")
 
-	common.InitConf("1.ini")
+	common.Init(0, "1.ini", "dev")
 	InitRefundManager(nil, nil)
 
 	data := make(map[uint64]types.RefundInfoList, 2)
@@ -115,7 +115,7 @@ func TestRefundManager_CheckAndMove(t *testing.T) {
 	defer os.Remove("1.ini")
 	defer os.RemoveAll("storage0")
 
-	common.InitConf("1.ini")
+	common.Init(0, "1.ini", "dev")
 	InitRefundManager(nil, nil)
 
 	addr := common.HexToAddress("0x4c1a42165e9009d747e4bcedc5654252b6bc9b8b")

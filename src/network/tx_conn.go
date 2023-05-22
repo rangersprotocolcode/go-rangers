@@ -21,6 +21,7 @@ type TxConn struct {
 	baseConn
 }
 
+// txConn 处理 /api/writer
 func (conn *TxConn) Init(ipPort string, logger log.Logger) {
 	conn.rcv = func(body []byte) {
 		var data txMessage

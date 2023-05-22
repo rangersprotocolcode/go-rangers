@@ -45,7 +45,7 @@ func (m *BlockOnChainSuccMessage) GetData() interface{} {
 	return m.Block
 }
 
-//-------------------------------------sync---------------------
+// -------------------------------------sync---------------------
 type ChainInfoMessage struct {
 	ChainInfo []byte
 	Peer      string
@@ -131,7 +131,7 @@ func (m *GroupResponseMessage) GetData() interface{} {
 	return m
 }
 
-//--------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 type GroupMessage struct {
 	Group types.Group
 }
@@ -167,7 +167,7 @@ func (m *GroupInfoMessage) GetData() interface{} {
 	return m
 }
 
-//---------------------------------------------------------------------------------------------------------------------
+// ---------------------------------------------------------------------------------------------------------------------
 type TransactionBroadcastMessage struct {
 	TransactionsByte []byte
 	Peer             string
@@ -265,11 +265,10 @@ func (m *ETHRPCWrongMessage) GetData() interface{} {
 	return m
 }
 
-
 type ETHRPCMessage struct {
 	Message ETHRPCPiece `json:"jsonrpc"`
 
-	RequestId uint64 `json:"request_id"`
+	GateNonce uint64 `json:"request_id"`
 	SessionId string `json:"session_id"`
 }
 
@@ -283,7 +282,7 @@ func (m *ETHRPCMessage) GetData() interface{} {
 type ETHRPCBatchMessage struct {
 	Message []ETHRPCPiece `json:"jsonrpc"`
 
-	RequestId uint64 `json:"request_id"`
+	GateNonce uint64 `json:"request_id"`
 	SessionId string `json:"session_id"`
 }
 

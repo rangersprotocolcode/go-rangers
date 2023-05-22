@@ -5,7 +5,6 @@ import (
 	"com.tuntun.rocket/node/src/core"
 	"com.tuntun.rocket/node/src/eth_tx"
 	"com.tuntun.rocket/node/src/middleware"
-	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
@@ -96,10 +95,10 @@ var (
 
 // SendRawTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
-func (api *ethAPIService) SendRawTransaction(encodedTx utility.Bytes) (common.Hash, *types.Transaction, error) {
+func (api *ethAPIService) SendRawTransaction(encodedTx utility.Bytes) (*types.Transaction, error) {
 	tx := new(eth_tx.Transaction)
 	if err := rlp.DecodeBytes(encodedTx, tx); err != nil {
-		return common.Hash{}, nil, err
+		return nil, err
 	}
 	logger.Debugf("raw tx hash:%v", tx.Hash().String())
 
@@ -107,28 +106,20 @@ func (api *ethAPIService) SendRawTransaction(encodedTx utility.Bytes) (common.Ha
 	sender, err := eth_tx.Sender(signer, tx)
 	if err != nil {
 		logger.Errorf("raw tx hash: %s, err:%v", tx.Hash().String(), err.Error())
-		return common.Hash{}, nil, err
+		return nil, err
 	}
 
 	rocketTx := eth_tx.ConvertTx(tx, sender, encodedTx)
 
-	// save tx
-	var msg notify.ClientTransactionMessage
-	msg.Tx = *rocketTx
-	msg.UserId = ""
-	msg.GateNonce = 0
-	msg.Nonce = 0
-	middleware.DataChannel.GetRcvedTx() <- &msg
-
-	return rocketTx.Hash, rocketTx, nil
+	return rocketTx, nil
 }
 
 //Call executes the given transaction on the state for the given block number.
 
 //Additionally, the caller can specify a batch of contract for fields overriding.
 
-//Note, this function doesn't make and changes in the state/blockchain and is
-//useful to execute and retrieve values.
+// Note, this function doesn't make and changes in the state/blockchain and is
+// useful to execute and retrieve values.
 func (s *ethAPIService) Call(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error) {
 
 	number, _ := blockNrOrHash.Number()
@@ -361,10 +352,10 @@ func (s *ethAPIService) GetBlockByHash(hash common.Hash, fullTx bool) (*RPCBlock
 }
 
 // GetBlockByNumber returns the requested canonical block.
-// * When blockNr is -1 the chain head is returned.
-// * When blockNr is -2 the pending chain head is returned.
-// * When fullTx is true all transactions in the block are returned, otherwise
-//   only the transaction hash is returned.
+//   - When blockNr is -1 the chain head is returned.
+//   - When blockNr is -2 the pending chain head is returned.
+//   - When fullTx is true all transactions in the block are returned, otherwise
+//     only the transaction hash is returned.
 func (s *ethAPIService) GetBlockByNumber(number BlockNumber, fullTx bool) (*RPCBlock, error) {
 	var block *types.Block
 	if number == PendingBlockNumber || number == LatestBlockNumber || number == EarliestBlockNumber {
@@ -399,7 +390,7 @@ func (s *ethAPIService) GetTransactionByHash(hash common.Hash) (*RPCTransaction,
 	return nil, nil
 }
 
-//// GetLogs returns logs matching the given argument that are stored within the state.
+// // GetLogs returns logs matching the given argument that are stored within the state.
 //
 // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getlogs
 func (s *ethAPIService) GetLogs(crit types.FilterCriteria) ([]*types.Log, error) {
@@ -460,7 +451,7 @@ func signatureValues(tx *types.Transaction) (*utility.Big, *utility.Big, *utilit
 	return (*utility.Big)(r), (*utility.Big)(s), (*utility.Big)(v)
 }
 
-//-----------------------------------------------------------------------------
+// -----------------------------------------------------------------------------
 func getAccountDBByHashOrHeight(blockNrOrHash BlockNumberOrHash) *account.AccountDB {
 	var accountDB *account.AccountDB
 	if blockNrOrHash.BlockHash != nil {

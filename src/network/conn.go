@@ -238,7 +238,7 @@ func (base *baseConn) getConn() *websocket.Conn {
 	}
 	base.conn = base.getWSConn()
 	if nil != base.conn && nil != base.afterReconnected {
-		go base.afterReconnected()
+		base.afterReconnected()
 	}
 	return base.conn
 }
@@ -265,7 +265,7 @@ func (base *baseConn) send(method []byte, target uint64, msg []byte, nonce uint6
 	base.logger.Debugf("send message. wsHeader: %v, body length: %d", header, len(msg))
 }
 
-//新的单播接口使用
+// 新的单播接口使用
 func (base *baseConn) unicast(method []byte, strangerId []byte, msg []byte, nonce uint64) {
 	byteArray := make([]byte, protocolHeaderSize+netIdSize+len(msg))
 	copy(byteArray[0:4], method)
@@ -337,6 +337,8 @@ var (
 
 	methodClientReader, _  = hex.DecodeString("00000001")
 	methodClientJSONRpc, _ = hex.DecodeString("00000000")
+	methodHandShake, _     = hex.DecodeString("000007e9")
+	methodAck, _           = hex.DecodeString("00000003")
 )
 
 type ClientConn struct {
@@ -393,6 +395,14 @@ func (clientConn *ClientConn) Init(ipPort, path string, logger log.Logger) {
 		return len(clientConn.sendChan) < clientConn.sendSize
 	}
 
+	clientConn.afterReconnected = func() {
+		header := wsHeader{method: methodHandShake, nonce: 0}
+		bytes := clientConn.headerToBytes(header)
+		err := clientConn.conn.WriteMessage(websocket.BinaryMessage, bytes)
+		if nil != err {
+			panic(err)
+		}
+	}
 	clientConn.init(ipPort, path, logger)
 
 }
@@ -413,13 +423,13 @@ func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, no
 	notify.BUS.Publish(notify.ClientTransactionRead, &msg)
 }
 
-func (clientConn *ClientConn) handleJSONClientMessage(body []byte, userId string, nonce uint64) {
+func (clientConn *ClientConn) handleJSONClientMessage(body []byte, userId string, gateNonce uint64) {
 	message := notify.ETHRPCMessage{}
 	err := json.Unmarshal(body, &message.Message)
 	if err == nil {
 		clientConn.logger.Debugf("get body from jsonrpcConn, bodyHex: %s, publishing", string(body))
 		message.SessionId = userId
-		message.RequestId = nonce
+		message.GateNonce = gateNonce
 		notify.BUS.Publish(notify.ClientETHRPC, &message)
 		return
 	}
@@ -428,7 +438,7 @@ func (clientConn *ClientConn) handleJSONClientMessage(body []byte, userId string
 	err = json.Unmarshal(body, &messageBatch.Message)
 	if err == nil {
 		messageBatch.SessionId = userId
-		messageBatch.RequestId = nonce
+		messageBatch.GateNonce = gateNonce
 		clientConn.logger.Debugf("get body from jsonrpcConn, bodyHex: %s, publishing", string(body))
 		notify.BUS.Publish(notify.ClientETHRPC, &messageBatch)
 		return
@@ -437,7 +447,7 @@ func (clientConn *ClientConn) handleJSONClientMessage(body []byte, userId string
 	// for error response
 	wrong := notify.ETHRPCWrongMessage{}
 	wrong.Sid = userId
-	wrong.Rid = nonce
+	wrong.Rid = gateNonce
 	notify.BUS.Publish(notify.ClientETHRPC, &wrong)
 
 	clientConn.logger.Errorf("fail to get body from jsonrpcConn, bodyHex: %s,err:%s", string(body), err.Error())

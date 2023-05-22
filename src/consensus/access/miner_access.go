@@ -33,7 +33,11 @@ type MinerPoolReader struct {
 	minerManager *service.MinerManager
 }
 
-func NewMinerPoolReader(mp *service.MinerManager) *MinerPoolReader {
+func NewMinerPoolReader() *MinerPoolReader {
+	return newMinerPoolReader(service.MinerManagerImpl)
+}
+
+func newMinerPoolReader(mp *service.MinerManager) *MinerPoolReader {
 	if logger == nil {
 		logger = log.GetLoggerByIndex(log.AccessLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	}
@@ -98,7 +102,7 @@ func (reader *MinerPoolReader) getAllMiner(minerType byte, hash common.Hash) []*
 	return mds
 }
 
-//convert2MinerDO
+// convert2MinerDO
 func (reader *MinerPoolReader) convert2MinerDO(miner *types.Miner) *model.MinerInfo {
 	if miner == nil {
 		return nil

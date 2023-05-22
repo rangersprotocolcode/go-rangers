@@ -17,11 +17,9 @@
 package logical
 
 import (
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/service"
-
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/consensus/access"
+	"com.tuntun.rocket/node/src/consensus/groupsig"
 	"com.tuntun.rocket/node/src/consensus/model"
 	"com.tuntun.rocket/node/src/consensus/net"
 	"com.tuntun.rocket/node/src/consensus/ticker"
@@ -35,7 +33,7 @@ import (
 	"sync/atomic"
 )
 
-//见证人处理器
+// 见证人处理器
 type Processor struct {
 	ready bool //是否已初始化完成
 	conf  common.ConfManager
@@ -76,7 +74,7 @@ func (p Processor) getPrefix() string {
 //	return model.NewPubKeyInfo(p.mi.GetMinerID(), p.mi.GetDefaultPubKey())
 //}
 
-//初始化矿工数据（和组无关）
+// 初始化矿工数据（和组无关）
 func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joinedGroupStorage *access.JoinedGroupStorage) bool {
 	p.ready = false
 	p.lock = sync.Mutex{}
@@ -93,7 +91,7 @@ func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joined
 	p.blockContexts = NewCastBlockContexts()
 	p.NetServer = net.NewNetworkServer()
 
-	p.minerReader = access.NewMinerPoolReader(service.MinerManagerImpl)
+	p.minerReader = access.NewMinerPoolReader()
 	//pkPoolInit(p.minerReader)
 
 	//p.groupManager = NewGroupManager(p)
@@ -119,7 +117,7 @@ func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joined
 	return true
 }
 
-//取得矿工ID（和组无关）
+// 取得矿工ID（和组无关）
 func (p Processor) GetMinerID() groupsig.ID {
 	return p.mi.GetMinerID()
 }
@@ -152,7 +150,7 @@ func (p Processor) GetMinerInfo() *model.MinerInfo {
 //	return true
 //}
 
-//检查提案节点是否合法
+// 检查提案节点是否合法
 func (p *Processor) isCastLegal(bh *types.BlockHeader, preHeader *types.BlockHeader) (ok bool, group *model.GroupInfo, err error) {
 	blog := newBizLog("isCastLegal")
 	castor := groupsig.DeserializeID(bh.Castor)
@@ -240,7 +238,7 @@ func (p *Processor) getMinerPos(gid groupsig.ID, uid groupsig.ID) int32 {
 //	return secPiece
 //}
 
-//取得特定的组
+// 取得特定的组
 func (p Processor) GetGroup(gid groupsig.ID) *model.GroupInfo {
 	if g, err := p.globalGroups.GetGroupByID(gid); err != nil {
 		panic("GetSelfGroup failed.")
@@ -249,7 +247,7 @@ func (p Processor) GetGroup(gid groupsig.ID) *model.GroupInfo {
 	}
 }
 
-//取得一个铸块组的公钥(processer初始化时从链上加载)
+// 取得一个铸块组的公钥(processer初始化时从链上加载)
 func (p Processor) getGroupPubKey(gid groupsig.ID) groupsig.Pubkey {
 	if g, err := p.globalGroups.GetGroupByID(gid); err != nil {
 		panic("GetSelfGroup failed.")
