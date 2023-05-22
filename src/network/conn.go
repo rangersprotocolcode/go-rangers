@@ -407,11 +407,11 @@ func (clientConn *ClientConn) Init(ipPort, path string, logger log.Logger) {
 		bytes := clientConn.headerToBytes(header)
 		err := clientConn.conn.WriteMessage(websocket.BinaryMessage, bytes)
 		if nil != err {
-			panic(err)
+			p2pLogger.Errorf("afterReconnected. err: %s", err)
 		}
 	}
 	clientConn.init(ipPort, path, logger)
-
+	clientConn.afterReconnected()
 }
 
 func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, nonce uint64) {
