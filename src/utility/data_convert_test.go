@@ -286,3 +286,8 @@ func TestBigIntBase10to16(t *testing.T) {
 		t.Fatalf("expect: 33b2e3c9fd0803ce8000001, but: %s", result)
 	}
 }
+
+func TestStrToBigInt8(t *testing.T) {
+	time, _ := strconv.ParseUint("168474387910679205", 10, 64)
+	fmt.Println(time)
+}

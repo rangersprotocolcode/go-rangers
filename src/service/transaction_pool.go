@@ -94,6 +94,8 @@ type TransactionPool interface {
 	VerifyTransaction(tx *types.Transaction, height uint64) error
 
 	ProcessFee(tx types.Transaction, accountDB *account.AccountDB) error
+
+	GetGateNonce() uint64
 }
 
 type TxPool struct {
@@ -135,6 +137,25 @@ func newTransactionPool() TransactionPool {
 	return pool
 }
 
+func (pool *TxPool) refreshGateNonce(tx *types.Transaction) {
+	sub := tx.SubTransactions
+	if 1 != len(sub) && 0 == sub[0].Address {
+		return
+	}
+
+	txPoolLogger.Debugf("refreshGateNonce. txhash: %s, gateNonce: %d", tx.Hash.String(), sub[0].Address)
+	pool.batch.Put(utility.StrToBytes(txDataBasePrefix), utility.UInt64ToByte(sub[0].Address))
+}
+
+func (pool *TxPool) GetGateNonce() uint64 {
+	data, err := pool.executed.Get(utility.StrToBytes(txDataBasePrefix))
+	if err != nil || 0 == len(data) {
+		return 0
+	}
+
+	return utility.ByteToUInt64(data)
+}
+
 func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 	if pool.evictedTxs.Contains(tx.Hash) {
 		txPoolLogger.Infof("Tx is marked evicted tx,do not add pool. Hash:%s", tx.Hash.String())
@@ -142,6 +163,9 @@ func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 	}
 
 	b, err := pool.add(tx)
+	if nil == err {
+		pool.refreshGateNonce(tx)
+	}
 	return b, err
 }
 
@@ -182,6 +206,7 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 			pool.batch.Write()
 			pool.batch.Reset()
 		}
+		pool.refreshGateNonce(tx)
 	}
 	if pool.batch.ValueSize() > 0 {
 		pool.batch.Write()

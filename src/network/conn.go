@@ -22,6 +22,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/utility"
 	"crypto/md5"
 	"encoding/binary"
@@ -396,7 +397,12 @@ func (clientConn *ClientConn) Init(ipPort, path string, logger log.Logger) {
 	}
 
 	clientConn.afterReconnected = func() {
-		header := wsHeader{method: methodHandShake, nonce: 0}
+		nonce := uint64(0)
+		if nil != service.GetTransactionPool() {
+			nonce = service.GetTransactionPool().GetGateNonce()
+		}
+
+		header := wsHeader{method: methodHandShake, nonce: nonce}
 		bytes := clientConn.headerToBytes(header)
 		err := clientConn.conn.WriteMessage(websocket.BinaryMessage, bytes)
 		if nil != err {

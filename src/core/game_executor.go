@@ -199,10 +199,12 @@ func (executor *GameExecutor) runWrite(item *middleware.Item) {
 	message := item.Value
 	txRaw := message.Tx
 	txRaw.RequestId = message.Nonce
-	txRaw.SubTransactions = make([]types.UserData, 0)
+	txRaw.SubTransactions = make([]types.UserData, 1)
+	data := types.UserData{Address: message.GateNonce}
+	txRaw.SubTransactions[0] = data
 
 	if txRaw.Type == 0 || 0 == txRaw.RequestId {
-		executor.logger.Infof("rcv tx with nonce: %d, txhash: %s, type: %d, nonce: %d, send to transaction pool", txRaw.RequestId, txRaw.Hash.String(), txRaw.Type, txRaw.RequestId)
+		executor.logger.Infof("rcv tx with nonce: %d, txhash: %s, type: %d, gateNonce: %d, send to transaction pool", txRaw.RequestId, txRaw.Hash.String(), txRaw.Type, txRaw.SubTransactions[0].Address)
 		executor.sendTransaction(&txRaw)
 		return
 	}
