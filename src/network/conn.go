@@ -99,7 +99,7 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 
 	ipPortString, _ := url.QueryUnescape(ipPort)
 	base.url = fmt.Sprintf("%s%s", ipPortString, path)
-	base.conn = base.getWSConn()
+	base.conn = base.getConn()
 	base.connLock = sync.Mutex{}
 
 	// 初始化读写缓存
