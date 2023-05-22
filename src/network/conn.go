@@ -411,7 +411,9 @@ func (clientConn *ClientConn) Init(ipPort, path string, logger log.Logger) {
 		}
 	}
 	clientConn.init(ipPort, path, logger)
-	clientConn.afterReconnected()
+	if nil != clientConn.conn {
+		clientConn.afterReconnected()
+	}
 }
 
 func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, nonce uint64) {
