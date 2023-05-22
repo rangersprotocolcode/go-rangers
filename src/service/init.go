@@ -19,12 +19,13 @@ package service
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
+	"strconv"
 )
 
 var logger, txLogger, txPoolLogger log.Logger
 
 func InitService() {
-	index := common.GlobalConf.GetString("instance", "index", "")
+	index := strconv.Itoa(common.InstanceIndex)
 	logger = log.GetLoggerByIndex(log.CoreLogConfig, index)
 	txLogger = log.GetLoggerByIndex(log.TxLogConfig, index)
 	txPoolLogger = log.GetLoggerByIndex(log.TxPoolLogConfig, index)

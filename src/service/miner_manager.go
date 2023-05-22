@@ -29,6 +29,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 )
 
 var (
@@ -48,7 +49,7 @@ func InitMinerManager() {
 	}
 
 	MinerManagerImpl = &MinerManager{pkCache: pkp}
-	MinerManagerImpl.logger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	MinerManagerImpl.logger = log.GetLoggerByIndex(log.TxLogConfig, strconv.Itoa(common.InstanceIndex))
 }
 
 func (mm *MinerManager) GetAllMinerIdAndAccount(height uint64, accountDB *account.AccountDB) (map[string]common.Address, map[string]common.Address) {

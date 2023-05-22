@@ -24,15 +24,12 @@ import (
 )
 
 var (
-	p2pLogger   log.Logger
-	bizLogger   log.Logger
-	txRcvLogger log.Logger
+	p2pLogger   = log.GetLoggerByIndex(log.P2PLogConfig, strconv.Itoa(common.InstanceIndex))
+	bizLogger   = log.GetLoggerByIndex(log.P2PBizLogConfig, strconv.Itoa(common.InstanceIndex))
+	txRcvLogger = log.GetLoggerByIndex(log.TxRcvLogConfig, strconv.Itoa(common.InstanceIndex))
 )
 
 func InitNetwork(consensusHandler MsgHandler, selfMinerId []byte, env, gate, outerGateAddr string, isSending bool) {
-	p2pLogger = log.GetLoggerByIndex(log.P2PLogConfig, strconv.Itoa(common.InstanceIndex))
-	bizLogger = log.GetLoggerByIndex(log.P2PBizLogConfig, strconv.Itoa(common.InstanceIndex))
-	txRcvLogger = log.GetLoggerByIndex(log.TxRcvLogConfig, strconv.Itoa(common.InstanceIndex))
 	fmt.Println("Connecting to: " + gate)
 	fmt.Print("isSending: ")
 	fmt.Println(isSending)
