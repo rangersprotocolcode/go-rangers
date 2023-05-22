@@ -101,7 +101,7 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 
 	ipPortString, _ := url.QueryUnescape(ipPort)
 	base.url = fmt.Sprintf("%s%s", ipPortString, path)
-	base.conn = base.getConn()
+	base.conn = base.getWSConn()
 
 	// 初始化读写缓存
 	if 0 == base.rcvSize {
