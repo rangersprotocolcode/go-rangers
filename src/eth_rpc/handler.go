@@ -64,7 +64,7 @@ func (handler ethMsgHandler) process(message notify.Message) {
 			logger.Errorf("marshal err: %v", err)
 		}
 
-		logger.Debugf("Response: %s, socketRequestId: %v, sessionId: %v", string(responseJson), singleMessage.GateNonce, singleMessage.SessionId)
+		logger.Debugf("Method: %s, params: %s, Response: %s, socketRequestId: %v, sessionId: %v", singleMessage.Message.Method, singleMessage.Message.Params, string(responseJson), singleMessage.GateNonce, singleMessage.SessionId)
 		network.GetNetInstance().SendToJSONRPC(responseJson, singleMessage.SessionId, singleMessage.GateNonce)
 		return
 	}
@@ -94,7 +94,7 @@ func (handler ethMsgHandler) ProcessBatchRequest(ethRpcMessage []notify.ETHRPCPi
 }
 
 func (handler ethMsgHandler) ProcessSingleRequest(ethRpcMessage notify.ETHRPCPiece, gateNonce uint64) jsonResponse {
-	logger.Debugf("Method:%s,params:%s,nonce:%d,id:%v", ethRpcMessage.Method, ethRpcMessage.Params, ethRpcMessage.Nonce, ethRpcMessage.Id)
+	logger.Debugf("Method: %s,params: %s,nonce: %d, id: %v", ethRpcMessage.Method, ethRpcMessage.Params, ethRpcMessage.Nonce, ethRpcMessage.Id)
 	handlerFunc, arguments, err := handler.parseRequest(ethRpcMessage)
 	var response jsonResponse
 	if err != nil {
