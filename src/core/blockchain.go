@@ -227,13 +227,16 @@ func getRequestIdFromTransactions(transactions []*types.Transaction, lastOne map
 	}
 
 	if nil != transactions && 0 != len(transactions) {
+		maxRequestId := uint64(0)
 		for _, tx := range transactions {
-			if tx.RequestId == 0 {
-				continue
+			if tx.RequestId > maxRequestId {
+				maxRequestId = tx.RequestId
 			}
-			result["fixed"] = tx.RequestId
 		}
 
+		if 0 != maxRequestId {
+			result["fixed"] = maxRequestId
+		}
 	}
 
 	return result

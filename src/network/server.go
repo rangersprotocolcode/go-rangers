@@ -44,7 +44,7 @@ func (s *server) InitTx(tx string) {
 		return
 	}
 
-	s.tx.Init(tx)
+	//s.tx.Init(tx)
 }
 
 func (s *server) SendToJSONRPC(msg []byte, sessionId string, requestId uint64) {
