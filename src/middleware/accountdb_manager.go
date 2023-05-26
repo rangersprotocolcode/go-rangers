@@ -69,20 +69,21 @@ func (manager *AccountDBManager) GetTrieDB() *trie.NodeDatabase {
 	return manager.stateDB.TrieDB()
 }
 
-func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.AccountDB, requestIds map[string]uint64, height uint64) {
+func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.AccountDB, nonces map[string]uint64, height uint64) {
 	// 这里无需加锁，因为外面加过了
 	key := "fixed"
-	nonce := requestIds[key]
+	nonce := nonces[key]
+	if 0 == nonce {
+		return
+	}
+
 	//manager.SetLatestStateDBWithNonce(latestStateDB, nonce, "add block", height)
 	manager.Height = height
 	if nil == manager.LatestStateDB || nonce >= manager.waitingTxs.GetThreshold() {
 		if nil != latestStateDB {
 			manager.LatestStateDB = latestStateDB
 		}
-		if common.IsRobin() && height > 43506454 && requestIds["fixed"] == 0 {
-			manager.waitingTxs.SetThreshold(1327389)
-			return
-		}
+
 		manager.waitingTxs.SetThreshold(nonce)
 	}
 }

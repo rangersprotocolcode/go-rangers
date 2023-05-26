@@ -254,8 +254,8 @@ func (chain *blockChain) GenerateBlock(bh types.BlockHeader) *types.Block {
 	return block
 }
 
-//验证一个铸块（如本地缺少交易，则异步网络请求该交易）
-//返回值:
+// 验证一个铸块（如本地缺少交易，则异步网络请求该交易）
+// 返回值:
 // 0, 验证通过
 // -1，验证失败
 // 1 无法验证（缺少交易，已异步向网络模块请求）
@@ -283,11 +283,12 @@ func (chain *blockChain) TotalQN() uint64 {
 }
 
 // AddBlockOnChain 铸块成功，上链
-//返回值: 0,上链成功
-//       -1，验证失败
-//        1, 丢弃该块(链上已存在该块）
-//        2,丢弃该块（链上存在QN值更大的相同高度块)
-//        3,分叉调整
+// 返回值: 0,上链成功
+//
+//	-1，验证失败
+//	 1, 丢弃该块(链上已存在该块）
+//	 2,丢弃该块（链上存在QN值更大的相同高度块)
+//	 3,分叉调整
 func (chain *blockChain) AddBlockOnChain(b *types.Block) types.AddBlockResult {
 	if validateCode, result := chain.consensusVerify(b); !result {
 		return validateCode
@@ -472,7 +473,7 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 		var tx *types.Transaction
 		if verifiedTxs != nil {
 			for _, verifiedTx := range verifiedTxs {
-				if verifiedTx.Hash == hash[0] && verifiedTx.SubHash == hash[1] {
+				if verifiedTx.Hash == hash[0] {
 					tx = verifiedTx
 					break
 				}

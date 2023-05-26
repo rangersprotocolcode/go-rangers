@@ -122,7 +122,10 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 			msg.Tx = *tx
 			msg.Nonce = tx.RequestId
 			msg.UserId = ""
-			msg.GateNonce = 0
+			if 1 == len(tx.SubTransactions) && 0 != tx.SubTransactions[0].Address {
+				msg.GateNonce = tx.SubTransactions[0].Address
+			}
+
 			middleware.DataChannel.GetRcvedTx() <- &msg
 		}
 
@@ -190,7 +193,7 @@ func (workerConn *WorkerConn) SendToEveryone(msg Message) {
 	workerConn.sendMessage(methodCodeBroadcast, 0, msg, 0)
 }
 
-//加入组网络
+// 加入组网络
 func (workerConn *WorkerConn) JoinGroupNet(groupId string) {
 	workerConn.joinedGroupLock.Lock()
 	defer workerConn.joinedGroupLock.Unlock()
@@ -205,7 +208,7 @@ func (workerConn *WorkerConn) joinGroupNet(groupId string) {
 	workerConn.logger.Debugf("Join group: %v,targetId:%v,hex:%v", groupId, header.targetId, strconv.FormatUint(header.targetId, 16))
 }
 
-//退出组网络
+// 退出组网络
 func (workerConn *WorkerConn) QuitGroupNet(groupId string) {
 	workerConn.joinedGroupLock.Lock()
 	defer workerConn.joinedGroupLock.Unlock()
