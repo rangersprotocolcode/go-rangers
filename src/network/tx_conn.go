@@ -2,7 +2,6 @@ package network
 
 import (
 	"com.tuntun.rocket/node/src/middleware"
-	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"encoding/json"
 )
@@ -22,12 +21,13 @@ type TxConn struct {
 }
 
 // txConn 处理 /api/writer
-func (conn *TxConn) Init(ipPort string, logger log.Logger) {
+func (conn *TxConn) Init(ipPort string) {
 	conn.rcv = func(body []byte) {
 		var data txMessage
 		err := json.Unmarshal(body, &data)
 		if nil != err || nil == data.Data {
-			logger.Errorf("fail to unmarshal tx json,err: %s, body: %s", err, string(body))
+			txRcvLogger.Errorf("fail to unmarshal tx json, err: %s, body: %s", err, string(body))
+			conn.afterReconnected()
 			return
 		}
 
@@ -37,18 +37,23 @@ func (conn *TxConn) Init(ipPort string, logger log.Logger) {
 			conn.logger.Debugf("rcv tx. hash: %s, nonce: %d", msg.Tx.Hash.String(), msg.Nonce)
 			middleware.DataChannel.GetRcvedTx() <- &msg
 		}
+		conn.ack(data.Id)
 	}
 
 	conn.afterReconnected = func() {
-		var m txMessage
-		m.MsgType = 0
-		m.Id = middleware.AccountDBManagerInstance.GetThreshold()
-
-		data, _ := json.Marshal(m)
-		logger.Warnf("sent to %s, data: %s", conn.url, string(data))
-		conn.sendTextChan <- data
+		conn.ack(middleware.AccountDBManagerInstance.GetThreshold())
 	}
 
-	conn.init(ipPort, "/tx", logger)
+	conn.init(ipPort, "/tx", txRcvLogger)
 	conn.afterReconnected()
+}
+
+func (conn *TxConn) ack(id uint64) {
+	var m txMessage
+	m.MsgType = 1
+	m.Id = id + 1
+
+	data, _ := json.Marshal(m)
+	txRcvLogger.Warnf("sent ack to %s, data: %s", conn.url, string(data))
+	conn.sendTextChan <- data
 }

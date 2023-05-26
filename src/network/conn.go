@@ -112,7 +112,7 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 	}
 	base.rcvChan = make(chan []byte, base.rcvSize)
 	base.sendChan = make(chan []byte, base.sendSize)
-	base.sendTextChan = make(chan []byte, 1)
+	base.sendTextChan = make(chan []byte, defaultSendSize)
 	base.rcvCount = 0
 	base.sendCount = 0
 
@@ -188,14 +188,11 @@ func (base *baseConn) loop() {
 			atomic.AddUint64(&base.sendCount, uint64(len(message)))
 
 			conn := base.getConn()
-			if nil == conn {
-				base.sendTextChan <- message
-			} else {
+			if nil != conn {
 				err := conn.WriteMessage(websocket.TextMessage, message)
 				if err != nil {
 					base.logger.Errorf("send tx msg error:%s", err.Error())
 					base.closeConn()
-					base.sendTextChan <- message
 				}
 			}
 
