@@ -73,9 +73,6 @@ func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.Account
 	// 这里无需加锁，因为外面加过了
 	key := "fixed"
 	nonce := nonces[key]
-	if 0 == nonce {
-		return
-	}
 
 	//manager.SetLatestStateDBWithNonce(latestStateDB, nonce, "add block", height)
 	manager.Height = height
@@ -84,7 +81,9 @@ func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.Account
 			manager.LatestStateDB = latestStateDB
 		}
 
-		manager.waitingTxs.SetThreshold(nonce)
+		if nonce > 0 {
+			manager.waitingTxs.SetThreshold(nonce)
+		}
 	}
 }
 
