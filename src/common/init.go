@@ -31,6 +31,11 @@ const (
 	DefaultJoinedGroupDatabaseKey = "joinedGroupDatabase"
 )
 
+var (
+	DefaultLogger log.Logger
+	InstanceIndex int
+)
+
 func Init(instanceIndex int, configFile, env string) {
 	initConf(configFile)
 

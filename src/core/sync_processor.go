@@ -136,7 +136,7 @@ func (p *syncProcessor) broadcastChainInfo(bh *types.BlockHeader) {
 	p.broadcastTimer.Reset(broadcastBlockInfoInterval)
 }
 
-//rcv chain info from neighborhood
+// rcv chain info from neighborhood
 func (p *syncProcessor) chainInfoNotifyHandler(msg notify.Message) {
 	bnm, ok := msg.GetData().(*notify.ChainInfoMessage)
 	if !ok {
