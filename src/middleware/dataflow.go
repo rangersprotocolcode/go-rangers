@@ -2,7 +2,7 @@ package middleware
 
 import "com.tuntun.rocket/node/src/middleware/notify"
 
-const maxWriteSize = 100000
+const maxWriteSize = 1000
 
 var DataChannel dataChannel
 
