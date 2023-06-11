@@ -22,18 +22,29 @@ import (
 	"com.tuntun.rocket/node/src/middleware/mysql"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"fmt"
+	"strconv"
+	"time"
 )
 
 var PerfLogger log.Logger
 var MonitorLogger log.Logger
 
-func InitMiddleware(dbDSN, dbDSNLog string) error {
+func InitMiddleware() error {
 	types.InitSerialzation()
-	PerfLogger = log.GetLoggerByIndex(log.PerformanceLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	MonitorLogger = log.GetLoggerByIndex(log.MonitorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	PerfLogger = log.GetLoggerByIndex(log.PerformanceLogConfig, strconv.Itoa(common.InstanceIndex))
+	MonitorLogger = log.GetLoggerByIndex(log.MonitorLogConfig, strconv.Itoa(common.InstanceIndex))
 	notify.BUS = notify.NewBus()
-	mysql.InitMySql(dbDSN, dbDSNLog)
+	fmt.Println(time.Now().String() + " before init mysql")
+	mysql.InitMySql()
+	fmt.Println(time.Now().String() + " after init mysql")
 
-	lock = NewLoglock("blockchain")
+	InitLock()
+	InitDataChannel()
+	initAccountDBManager()
 	return nil
+}
+
+func InitLock() {
+	lock = NewLoglock("blockchain")
 }

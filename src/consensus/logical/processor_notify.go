@@ -24,7 +24,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"time"
+	"com.tuntun.rocket/node/src/utility"
 )
 
 func (p *Processor) triggerFutureVerifyMsg(hash common.Hash) {
@@ -71,6 +71,9 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	//tlog := newMsgTraceLog("OnBlockAddSuccess", bh.Hash.ShortS(), "")
 	//tlog.log("preHash=%v, height=%v", bh.PreHash.ShortS(), bh.Height)
 
+	p.lock.Lock()
+	defer p.lock.Unlock()
+
 	gid := groupsig.DeserializeID(bh.GroupId)
 	if p.belongGroups.BelongGroup(gid) {
 		bc := p.GetBlockContext(gid)
@@ -85,7 +88,11 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 		}
 		p.removeVerifyMsgCache(bh.Hash)
 	}
-	p.setVrfWorker(nil)
+
+	worker := p.GetVrfWorker()
+	if nil != worker && worker.castHeight <= bh.Height {
+		p.setVrfWorker(nil)
+	}
 
 	//p.triggerFutureBlockMsg(bh)
 	p.triggerFutureVerifyMsg(bh.Hash)
@@ -94,7 +101,7 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 
 	p.cleanVerifyContext(bh.Height)
 
-	middleware.PerfLogger.Infof("OnBlockAddSuccess. cost: %v, Hash: %v, height: %v", time.Since(bh.CurTime), bh.Hash.String(), bh.Height)
+	middleware.PerfLogger.Infof("OnBlockAddSuccess. cost: %v, Hash: %v, height: %v", utility.GetTime().Sub(bh.CurTime), bh.Hash.String(), bh.Height)
 	if p.isTriggerCastImmediately() {
 		p.triggerCastCheck()
 	}

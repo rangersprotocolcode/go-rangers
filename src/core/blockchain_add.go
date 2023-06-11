@@ -18,9 +18,9 @@ package core
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"errors"
@@ -63,8 +63,7 @@ func (chain *blockChain) addBlockOnChain(coming *types.Block) types.AddBlockResu
 	topBlock := chain.latestBlock
 	comingHeader := coming.Header
 
-	logger.Debugf("coming block:hash=%v, preH=%v, height=%v,totalQn:%d", comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN)
-	logger.Debugf("Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d", topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN)
+	logger.Debugf("coming block: hash: %v, preH: %v, height: %v,totalQn:%d, localTopHash: %v, localPreHash: %v, localHeight: %v, localTotalQn: %d", comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN)
 
 	// 已经存在
 	if comingHeader.Hash == topBlock.Hash || chain.HasBlockByHash(comingHeader.Hash) {
@@ -130,7 +129,7 @@ func (chain *blockChain) executeTransaction(block *types.Block) (bool, *account.
 	if len(block.Transactions) > 0 {
 		logger.Debugf("NewAccountDB height:%d StateTree:%s preHash:%s preRoot:%s", block.Header.Height, block.Header.StateTree.Hex(), preBlock.Hash.Hex(), preRoot.Hex())
 	}
-	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(preRoot)
+	state, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(preRoot)
 	if err != nil {
 		logger.Errorf("Fail to new statedb, error:%s", err)
 		return false, state, nil
@@ -189,7 +188,7 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 	chain.updateTxPool(remoteBlock, receipts)
 	chain.topBlocks.Add(remoteBlock.Header.Height, remoteBlock.Header)
 
-	dumpTxs(remoteBlock.Transactions, remoteBlock.Header.Height)
+	//dumpTxs(remoteBlock.Transactions, remoteBlock.Header.Height)
 	chain.eraseAddBlockMark()
 	chain.successOnChainCallBack(remoteBlock)
 	if chain.latestBlock != nil {
@@ -240,7 +239,7 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 		return false, state, receipts
 	}
 
-	trieDB := service.AccountDBManagerInstance.GetTrieDB()
+	trieDB := middleware.AccountDBManagerInstance.GetTrieDB()
 	err = trieDB.Commit(root, false)
 	if err != nil {
 		logger.Errorf("Trie commit error:%s", err.Error())
@@ -260,7 +259,7 @@ func (chain *blockChain) updateLastBlock(state *account.AccountDB, block *types.
 	chain.latestBlock = header
 	chain.requestIds = header.RequestIds
 
-	service.AccountDBManagerInstance.SetLatestStateDB(state, block.Header.RequestIds, block.Header.Height)
+	middleware.AccountDBManagerInstance.SetLatestStateDB(state, block.Header.RequestIds, block.Header.Height)
 	logger.Debugf("Update latestStateDB:%s height:%d", header.StateTree.Hex(), header.Height)
 
 	return true
@@ -279,7 +278,7 @@ func (chain *blockChain) updateTxPool(block *types.Block, receipts types.Receipt
 }
 
 func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block) {
-	logger.Infof("ON chain succ! height=%d,hash=%s", remoteBlock.Header.Height, remoteBlock.Header.Hash.Hex())
+	logger.Infof("ON chain succ! height: %d,hash: %s", remoteBlock.Header.Height, remoteBlock.Header.Hash.Hex())
 	notify.BUS.Publish(notify.BlockAddSucc, &notify.BlockOnChainSuccMessage{Block: *remoteBlock})
 	if value, _ := chain.futureBlocks.Get(remoteBlock.Header.Hash); value != nil {
 		block := value.(*types.Block)
@@ -335,4 +334,8 @@ func dumpTxs(txs []*types.Transaction, blockHeight uint64) {
 	for _, tx := range txs {
 		txLogger.Tracef("Tx info;%s", tx.ToTxJson().ToString())
 	}
+}
+
+func (chain *blockChain) ExecuteTransaction(block *types.Block) (bool, *account.AccountDB, types.Receipts) {
+	return chain.executeTransaction(block)
 }

@@ -23,7 +23,6 @@ import (
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"errors"
@@ -288,7 +287,7 @@ func (fork *blockChainFork) verifyStateAndReceipt(coming *types.Block) (bool, *a
 		return false, nil
 	}
 	fork.logger.Debugf("pre state root:%s", preBlock.Header.StateTree.String())
-	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(preBlock.Header.StateTree)
+	state, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(preBlock.Header.StateTree)
 	if err != nil {
 		fork.logger.Errorf("Fail to new statedb, error:%s", err)
 		return false, state
@@ -342,7 +341,7 @@ func (fork *blockChainFork) saveState(state *account.AccountDB) error {
 	}
 	fork.logger.Debugf("commit state root:%s", root.Hex())
 
-	trieDB := service.AccountDBManagerInstance.GetTrieDB()
+	trieDB := middleware.AccountDBManagerInstance.GetTrieDB()
 	err = trieDB.Commit(root, false)
 	if err != nil {
 		fork.logger.Errorf("Trie commit error:%s", err.Error())

@@ -104,3 +104,14 @@ func generateCall(salt int, address common.Address) []byte {
 	inputString := fmt.Sprintf("0x8e900fd2%s%s000000000000000000000000%s", pad, saltString, addressString[2:])
 	return common.FromHex(inputString)
 }
+
+func TestNodeResult(t *testing.T)  {
+	dataHex:="0x000000000000000000000000a495e75de1c8f06fcde1bb6cca7c52c94f1c3e690000000000000000000000000000000000000000000000000000000000000000000000000000000000000000df764badfdf3c27753f9c4a269a850d028f01dbc000000000000000000000000000000000000000000000000000000000000000000000000000000000000000025716527aad0ae1dd24bd247af9232dae78595b0000000000000000000000000000000000000000000000015af1d78b58c400000"
+	data:=common.FromHex(dataHex)
+
+	realAddress := data[12:32]
+
+	fmt.Println(common.ToHex(realAddress))
+	fmt.Println(common.BytesToAddress(data[:32]))
+
+}

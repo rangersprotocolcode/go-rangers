@@ -21,16 +21,16 @@ import (
 	"com.tuntun.rocket/node/src/eth_tx"
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/db"
+	"com.tuntun.rocket/node/src/middleware/mysql"
+	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/rlp"
 	"com.tuntun.rocket/node/src/utility"
-	"errors"
-	"github.com/hashicorp/golang-lru"
-	"sort"
-
 	"encoding/json"
+	"errors"
 	"fmt"
+	"github.com/hashicorp/golang-lru"
 )
 
 const (
@@ -68,7 +68,7 @@ type ExecutedTransaction struct {
 }
 
 type TransactionPool interface {
-	PackForCast() []*types.Transaction
+	PackForCast(height uint64) []*types.Transaction
 
 	//add new transaction to the transaction pool
 	AddTransaction(tx *types.Transaction) (bool, error)
@@ -85,7 +85,7 @@ type TransactionPool interface {
 
 	MarkExecuted(header *types.BlockHeader, receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash)
 
-	UnMarkExecuted(txs []*types.Transaction, evictedTxs []common.Hash)
+	UnMarkExecuted(block *types.Block)
 
 	Clear()
 
@@ -94,6 +94,8 @@ type TransactionPool interface {
 	VerifyTransaction(tx *types.Transaction, height uint64) error
 
 	ProcessFee(tx types.Transaction, accountDB *account.AccountDB) error
+
+	GetGateNonce() uint64
 }
 
 type TxPool struct {
@@ -135,6 +137,25 @@ func newTransactionPool() TransactionPool {
 	return pool
 }
 
+func (pool *TxPool) refreshGateNonce(tx *types.Transaction) {
+	sub := tx.SubTransactions
+	if 1 != len(sub) && 0 == sub[0].Address {
+		return
+	}
+
+	txPoolLogger.Debugf("refreshGateNonce. txhash: %s, gateNonce: %d", tx.Hash.String(), sub[0].Address)
+	pool.batch.Put(utility.StrToBytes(txDataBasePrefix), utility.UInt64ToByte(sub[0].Address))
+}
+
+func (pool *TxPool) GetGateNonce() uint64 {
+	data, err := pool.executed.Get(utility.StrToBytes(txDataBasePrefix))
+	if err != nil || 0 == len(data) {
+		return 0
+	}
+
+	return utility.ByteToUInt64(data)
+}
+
 func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 	if pool.evictedTxs.Contains(tx.Hash) {
 		txPoolLogger.Infof("Tx is marked evicted tx,do not add pool. Hash:%s", tx.Hash.String())
@@ -142,6 +163,9 @@ func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 	}
 
 	b, err := pool.add(tx)
+	if nil == err {
+		pool.refreshGateNonce(tx)
+	}
 	return b, err
 }
 
@@ -150,8 +174,12 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 		return
 	}
 
+	mysql.InsertLogs(header.Height, receipts, header.Hash)
+
+	txHashList := make([]interface{}, len(receipts))
 	for i, receipt := range receipts {
 		hash := receipt.TxHash
+		txHashList[i] = hash
 		var er ExecutedReceipt
 		er.BlockHash = header.Hash
 		er.Height = receipt.Height
@@ -178,27 +206,29 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 			pool.batch.Write()
 			pool.batch.Reset()
 		}
+		pool.refreshGateNonce(tx)
 	}
 	if pool.batch.ValueSize() > 0 {
 		pool.batch.Write()
 		pool.batch.Reset()
 	}
 
-	for _, tx := range txs {
-		pool.remove(tx.Hash)
-	}
 	if evictedTxs != nil {
 		for _, hash := range evictedTxs {
-			pool.remove(hash)
 			pool.evictedTxs.Add(hash, 0)
 		}
 	}
+	pool.remove(txHashList)
 }
 
-func (pool *TxPool) UnMarkExecuted(txs []*types.Transaction, evictedTxs []common.Hash) {
+func (pool *TxPool) UnMarkExecuted(block *types.Block) {
+	txs := block.Transactions
+	evictedTxs := block.Header.EvictedTxs
 	if nil == txs || 0 == len(txs) {
 		return
 	}
+
+	mysql.DeleteLogs(block.Header.Height, block.Header.Hash)
 
 	if evictedTxs != nil {
 		for _, hash := range evictedTxs {
@@ -208,7 +238,12 @@ func (pool *TxPool) UnMarkExecuted(txs []*types.Transaction, evictedTxs []common
 
 	for _, tx := range txs {
 		pool.executed.Delete(tx.Hash.Bytes())
-		pool.add(tx)
+		var msg notify.ClientTransactionMessage
+		msg.Tx = *tx
+		msg.Nonce = tx.RequestId
+		msg.UserId = ""
+		msg.GateNonce = 0
+		middleware.DataChannel.GetRcvedTx() <- &msg
 	}
 }
 
@@ -250,7 +285,13 @@ func (pool *TxPool) Clear() {
 }
 
 func (pool *TxPool) GetReceived() []*types.Transaction {
-	return pool.received.txs
+	items := pool.received.asSlice()
+	result := make([]*types.Transaction, len(items))
+
+	for i, item := range items {
+		result[i] = item.(*types.Transaction)
+	}
+	return result
 }
 
 func (pool *TxPool) GetExecuted(hash common.Hash) *ExecutedTransaction {
@@ -278,18 +319,24 @@ func (p *TxPool) TxNum() int {
 	return p.received.Len()
 }
 
-func (pool *TxPool) PackForCast() []*types.Transaction {
+func (pool *TxPool) PackForCast(height uint64) []*types.Transaction {
 	packedTxs := make([]*types.Transaction, 0)
+
+	// transactions 已经根据RequestId排序
 	txs := pool.received.asSlice()
-	for _, tx := range txs {
-		packedTxs = append(packedTxs, tx)
-		txPoolLogger.Debugf("Pack tx:%s", tx.Hash.String())
-		if len(packedTxs) >= txCountPerBlock {
+	if 0 == len(txs) {
+		txPoolLogger.Debugf("packed no tx. height: %d", height)
+		return packedTxs
+	}
+
+	for i, tx := range txs {
+		packedTxs = append(packedTxs, tx.(*types.Transaction))
+		if i >= txCountPerBlock {
 			break
 		}
 	}
-	sort.Sort(types.Transactions(packedTxs))
-	// transactions 已经根据RequestId排序
+
+	txPoolLogger.Debugf("packed tx. height: %d. nonce from %d to %d. size: %d", height, packedTxs[0].RequestId, packedTxs[len(packedTxs)-1].RequestId, len(packedTxs))
 	return packedTxs
 }
 
@@ -337,13 +384,14 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 		return false, ErrExist
 	}
 	pool.received.push(tx)
-	txPoolLogger.Debugf("[pool]Add tx:%s. After add,received size:%d", tx.Hash.String(), pool.received.Len())
+	txPoolLogger.Debugf("[pool]Add tx:%s. nonce: %d, After add,received size:%d", tx.Hash.String(), tx.RequestId, pool.received.Len())
 	return true, nil
 }
 
-func (pool *TxPool) remove(txHash common.Hash) {
-	pool.received.remove(txHash)
-	txPoolLogger.Debugf("[pool]Remove tx:%s. After remove, received size:%d", txHash.String(), pool.received.Len())
+func (pool *TxPool) remove(txHashList []interface{}) {
+	pool.received.remove(txHashList)
+	txPoolLogger.Debugf("[pool]removed tx, %d After remove,received size:%d", len(txHashList), pool.received.Len())
+
 }
 
 func (pool *TxPool) isTransactionExisted(hash common.Hash) bool {
@@ -360,7 +408,8 @@ func findTxInList(txs []*types.Transaction, txHash common.Hash, receiptIndex int
 	if nil == txs || 0 == len(txs) {
 		return nil
 	}
-	if txs[receiptIndex].Hash == txHash {
+
+	if receiptIndex < len(txs) && txs[receiptIndex].Hash == txHash {
 		return txs[receiptIndex]
 	}
 

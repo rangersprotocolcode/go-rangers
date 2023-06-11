@@ -661,12 +661,11 @@ func clean() {
 }
 
 func setup(id string) {
-	common.InitChainConfig("dev")
+	common.Init(0,"1.ini","dev")
 	common.SetBlockHeight(1)
 
 	fmt.Printf("Before %s tests\n", id)
 	clean()
-	common.InitConf("1.ini")
 	logger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
 	groupChainImplLocal = dummyGroupChain{}

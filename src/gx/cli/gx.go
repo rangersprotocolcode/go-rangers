@@ -25,8 +25,8 @@ import (
 	"com.tuntun.rocket/node/src/core"
 	"com.tuntun.rocket/node/src/eth_rpc"
 	"com.tuntun.rocket/node/src/middleware"
-	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/log"
+	"com.tuntun.rocket/node/src/middleware/mysql"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/service"
@@ -43,13 +43,9 @@ import (
 )
 
 const (
-	GXVersion = "1.0.11"
+	GXVersion = "1.0.13"
 	// Section 默认section配置
 	Section = "gx"
-
-	instanceSection = "instance"
-
-	indexKey = "index"
 )
 
 type GX struct {
@@ -95,15 +91,14 @@ func (gx *GX) Run() {
 	env := mineCmd.Flag("env", "the environment application run in").String()
 	gateAddrPoint := mineCmd.Flag("gateaddr", "the gate addr").String()
 	outerGateAddrPoint := mineCmd.Flag("outergateaddr", "the gate addr").String()
-	dbDSNPoint := mineCmd.Flag("mysql", "the db addr").String()
-	dbDSNLogPoint := mineCmd.Flag("mysqllog", "the logdb addr").String()
+	txAddrPoint := mineCmd.Flag("tx", "the tx queue addr").String()
 
 	command, err := app.Parse(os.Args[1:])
 	if err != nil {
 		kingpin.Fatalf("%s, try --help", err)
 	}
-	common.InitChainConfig(*env)
-	common.InitConf(*configFile)
+
+	common.Init(*instanceIndex, *configFile, *env)
 
 	// using default
 	gateAddr := *gateAddrPoint
@@ -111,24 +106,7 @@ func (gx *GX) Run() {
 		gateAddr = common.LocalChainConfig.PHub
 	}
 	outerGateAddr := *outerGateAddrPoint
-	if 0 == len(outerGateAddr) {
-		outerGateAddr = common.LocalChainConfig.PubHub
-	}
-	dbDSN := *dbDSNPoint
-	if 0 == len(dbDSN) {
-		dbDSN = common.LocalChainConfig.Dsn
-	}
-	dbDSNLog := *dbDSNLogPoint
-
-	instance := 0
-	if 0 != *instanceIndex {
-		instance = *instanceIndex
-		common.GlobalConf.SetInt(instanceSection, indexKey, *instanceIndex)
-	} else {
-		instance = common.GlobalConf.GetInt(instanceSection, indexKey, 0)
-	}
-
-	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, common.GlobalConf.GetString(instanceSection, indexKey, ""))
+	txAddr := *txAddrPoint
 
 	walletManager = newWallets()
 
@@ -143,13 +121,14 @@ func (gx *GX) Run() {
 		}
 	case mineCmd.FullCommand():
 		fmt.Println("Use config file: " + *configFile)
-		fmt.Printf("Env:%s,Chain ID:%s,Network ID:%s\n", *env, common.ChainId(utility.MaxUint64), common.NetworkId())
+		fmt.Printf("Env:%s, Chain ID:%s, Network ID:%s, Tx: %s\n", *env, common.ChainId(utility.MaxUint64), common.NetworkId(), txAddr)
 		go func() {
 			http.ListenAndServe(fmt.Sprintf(":%d", *pprofPort), nil)
 			runtime.SetBlockProfileRate(1)
 			runtime.SetMutexProfileFraction(1)
 		}()
-		gx.initMiner(instance, *env, gateAddr, outerGateAddr, dbDSN, dbDSNLog)
+		gx.initMiner(*env, gateAddr, outerGateAddr, txAddr)
+
 		if *rpc {
 			err = StartRPC(addrRpc.String(), *portRpc, gx.account.Sk)
 			if err != nil {
@@ -161,15 +140,8 @@ func (gx *GX) Run() {
 	<-quitChan
 }
 
-func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, dbDSN, dbDSNLog string) {
-	common.InstanceIndex = instanceIndex
-	common.GlobalConf.SetInt(instanceSection, indexKey, instanceIndex)
-	databaseValue := "chain"
-	common.GlobalConf.SetString(db.ConfigSec, db.DefaultDatabase, databaseValue)
-	joinedGroupDatabaseValue := "jgs"
-	common.GlobalConf.SetString(db.ConfigSec, db.DefaultJoinedGroupDatabaseKey, joinedGroupDatabaseValue)
-
-	middleware.InitMiddleware(dbDSN, dbDSNLog)
+func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
+	middleware.InitMiddleware()
 
 	privateKey := common.GlobalConf.GetString(Section, "privateKey", "")
 	gx.getAccountInfo(privateKey)
@@ -179,8 +151,9 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, dbDSN, 
 	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 
-	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, 0 != len(dbDSNLog))
 	service.InitService()
+	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, 0 != len(outerGateAddr) && 0 != len(tx))
+
 	vm.InitVM()
 
 	// 启动链，包括创始块构建
@@ -188,6 +161,8 @@ func (gx *GX) initMiner(instanceIndex int, env, gateAddr, outerGateAddr, dbDSN, 
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
 	}
+
+	network.GetNetInstance().InitTx(tx)
 
 	// 共识部分启动
 	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
@@ -238,7 +213,7 @@ func syncChainInfo(privateKey common.PrivateKey, id string) {
 			topBlock := core.GetBlockChain().TopBlock()
 			jsonObject := types.NewJSONObject()
 			jsonObject.Put("chainId", common.ChainId(utility.MaxUint64))
-			jsonObject.Put("instanceNum", common.GlobalConf.GetInt(instanceSection, indexKey, 0))
+			jsonObject.Put("instanceNum", common.InstanceIndex)
 			jsonObject.Put("candidateHeight", candidateHeight)
 			if topBlock != nil {
 				jsonObject.Put("localHeight", topBlock.Height)
@@ -277,6 +252,8 @@ func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerInfo) {
 
 func (gx *GX) handleExit(ctrlC <-chan bool, quit chan<- bool) {
 	<-ctrlC
+	mysql.CloseMysql()
+
 	if core.GetBlockChain() == nil {
 		return
 	}

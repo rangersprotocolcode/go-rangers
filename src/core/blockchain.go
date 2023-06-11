@@ -24,6 +24,7 @@ import (
 	"github.com/hashicorp/golang-lru"
 	"math/big"
 	"os"
+	"strconv"
 
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/service"
@@ -123,11 +124,11 @@ func initBlockChain() error {
 	} else {
 		chain.ensureChainConsistency()
 
-		state, err := service.AccountDBManagerInstance.GetAccountDBByHash(chain.latestBlock.StateTree)
+		state, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(chain.latestBlock.StateTree)
 		if nil != err {
 			panic(err)
 		}
-		service.AccountDBManagerInstance.SetLatestStateDB(state, chain.latestBlock.RequestIds, chain.latestBlock.Height)
+		middleware.AccountDBManagerInstance.SetLatestStateDB(state, chain.latestBlock.RequestIds, chain.latestBlock.Height)
 		logger.Debugf("refreshed latestStateDB, state: %v, height: %d", chain.latestBlock.StateTree, chain.latestBlock.Height)
 
 		if !chain.versionValidate() {
@@ -157,7 +158,7 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		middleware.RUnLockBlockchain("castblock")
 		return nil
 	}
-	txs:=chain.transactionPool.PackForCast()
+	txs := chain.transactionPool.PackForCast(height)
 	middleware.RUnLockBlockchain("castblock")
 
 	block := new(types.Block)
@@ -176,10 +177,10 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	}
 	block.Header.RequestIds = getRequestIdFromTransactions(block.Transactions, latestBlock.RequestIds)
 
-	middleware.PerfLogger.Infof("fin cast object. last: %v height: %v", time.Since(timestamp), height)
+	middleware.PerfLogger.Infof("fin cast object. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
 
 	preStateRoot := common.BytesToHash(latestBlock.StateTree.Bytes())
-	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(preStateRoot)
+	state, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(preStateRoot)
 	if err != nil {
 		logger.Errorf("Fail to new account db while casting block!Latest block height:%d,error:%s", latestBlock.Height, err.Error())
 		return nil
@@ -187,7 +188,7 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 
 	executor := newVMExecutor(state, block, "casting")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
-	middleware.PerfLogger.Infof("fin execute txs. last: %v height: %v", time.Since(timestamp), height)
+	middleware.PerfLogger.Infof("fin execute txs. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
 
 	transactionHashes := make([]common.Hashes, len(transactions))
 	block.Transactions = transactions
@@ -201,12 +202,12 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	block.Header.Transactions = transactionHashes
 	block.Header.TxTree = calcTxTree(block.Transactions)
 	block.Header.EvictedTxs = evictedTxs
-	middleware.PerfLogger.Infof("fin calcTxTree. last: %v height: %v", time.Since(timestamp), height)
+	middleware.PerfLogger.Infof("fin calcTxTree. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
 
 	block.Header.StateTree = common.BytesToHash(stateRoot.Bytes())
 	block.Header.ReceiptTree = calcReceiptsTree(receipts)
 	block.Header.Hash = block.Header.GenHash()
-	middleware.PerfLogger.Infof("fin calcReceiptsTree. last: %v height: %v", time.Since(timestamp), height)
+	middleware.PerfLogger.Infof("fin calcReceiptsTree. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
 
 	chain.verifiedBlocks.Add(block.Header.Hash, &castingBlock{state: state, receipts: receipts})
 	if len(block.Transactions) != 0 {
@@ -226,10 +227,15 @@ func getRequestIdFromTransactions(transactions []*types.Transaction, lastOne map
 	}
 
 	if nil != transactions && 0 != len(transactions) {
+		maxRequestId := uint64(0)
 		for _, tx := range transactions {
-			if result["fixed"] < tx.RequestId {
-				result["fixed"] = tx.RequestId
+			if tx.RequestId > maxRequestId {
+				maxRequestId = tx.RequestId
 			}
+		}
+
+		if 0 != maxRequestId {
+			result["fixed"] = maxRequestId
 		}
 	}
 
@@ -251,15 +257,16 @@ func (chain *blockChain) GenerateBlock(bh types.BlockHeader) *types.Block {
 	return block
 }
 
-//验证一个铸块（如本地缺少交易，则异步网络请求该交易）
-//返回值:
+// 验证一个铸块（如本地缺少交易，则异步网络请求该交易）
+// 返回值:
 // 0, 验证通过
 // -1，验证失败
 // 1 无法验证（缺少交易，已异步向网络模块请求）
 // 2 无法验证（前一块在链上不存存在）
 func (chain *blockChain) VerifyBlock(bh types.BlockHeader) ([]common.Hashes, int8) {
-	middleware.LockBlockchain("VerifyCastingBlock")
-	defer middleware.UnLockBlockchain("VerifyCastingBlock")
+	msg := "VerifyCastingBlock: " + strconv.FormatUint(bh.Height, 10)
+	middleware.LockBlockchain(msg)
+	defer middleware.UnLockBlockchain(msg)
 
 	return chain.verifyBlock(bh, nil)
 }
@@ -278,12 +285,13 @@ func (chain *blockChain) TotalQN() uint64 {
 	return chain.latestBlock.TotalQN
 }
 
-//铸块成功，上链
-//返回值: 0,上链成功
-//       -1，验证失败
-//        1, 丢弃该块(链上已存在该块）
-//        2,丢弃该块（链上存在QN值更大的相同高度块)
-//        3,分叉调整
+// AddBlockOnChain 铸块成功，上链
+// 返回值: 0,上链成功
+//
+//	-1，验证失败
+//	 1, 丢弃该块(链上已存在该块）
+//	 2,丢弃该块（链上存在QN值更大的相同高度块)
+//	 3,分叉调整
 func (chain *blockChain) AddBlockOnChain(b *types.Block) types.AddBlockResult {
 	if validateCode, result := chain.consensusVerify(b); !result {
 		return validateCode
@@ -327,7 +335,7 @@ func (chain *blockChain) GetTransaction(txHash common.Hash) (*types.Transaction,
 }
 
 func (chain *blockChain) GetBalance(address common.Address) *big.Int {
-	latestStateDB := service.AccountDBManagerInstance.GetLatestStateDB()
+	latestStateDB := middleware.AccountDBManagerInstance.GetLatestStateDB()
 	if nil == latestStateDB {
 		return nil
 	}
@@ -401,7 +409,7 @@ func (chain *blockChain) remove(block *types.Block) bool {
 	preHeaderByte, _ := types.MarshalBlockHeader(preHeader)
 	chain.heightDB.Put([]byte(latestBlockKey), preHeaderByte)
 
-	chain.transactionPool.UnMarkExecuted(block.Transactions, block.Header.EvictedTxs)
+	chain.transactionPool.UnMarkExecuted(block)
 	chain.eraseRemoveBlockMark()
 	if chain.latestBlock != nil {
 		common.SetBlockHeight(chain.latestBlock.Height)
@@ -468,7 +476,7 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 		var tx *types.Transaction
 		if verifiedTxs != nil {
 			for _, verifiedTx := range verifiedTxs {
-				if verifiedTx.Hash == hash[0] && verifiedTx.SubHash == hash[1] {
+				if verifiedTx.Hash == hash[0] {
 					tx = verifiedTx
 					break
 				}

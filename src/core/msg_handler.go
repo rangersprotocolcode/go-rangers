@@ -17,6 +17,7 @@
 package core
 
 import (
+	"com.tuntun.rocket/node/src/utility"
 	"math/big"
 
 	"com.tuntun.rocket/node/src/common"
@@ -27,10 +28,7 @@ import (
 	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/service"
 	"github.com/golang/protobuf/proto"
-	"time"
 )
-
-const blockResponseSize = 1
 
 type ChainHandler struct{}
 
@@ -39,7 +37,6 @@ func initChainHandler() {
 
 	notify.BUS.Subscribe(notify.NewBlock, handler.newBlockHandler)
 	notify.BUS.Subscribe(notify.TransactionReq, handler.transactionReqHandler)
-	notify.BUS.Subscribe(notify.TransactionGot, handler.transactionGotHandler)
 }
 
 func (c *ChainHandler) Handle(sourceId string, msg network.Message) error {
@@ -52,6 +49,7 @@ func (ch ChainHandler) transactionReqHandler(msg notify.Message) {
 		logger.Debugf("transactionReqHandler:Message assert not ok!")
 		return
 	}
+
 	m, e := unMarshalTransactionRequestMessage(trm.TransactionReqByte)
 	if e != nil {
 		logger.Errorf("unmarshal transaction request message error:%s", e.Error())
@@ -61,58 +59,19 @@ func (ch ChainHandler) transactionReqHandler(msg notify.Message) {
 	source := trm.Peer
 	logger.Debugf("receive transaction req from %s,block height:%d,block hash:%s,tx_len:%d", source, m.BlockHeight, m.CurrentBlockHash.String(), len(m.TransactionHashes))
 	if nil == blockChainImpl {
+		logger.Errorf("no blockChainImpl, cannot find txs")
 		return
 	}
+
 	transactions, need, e := blockChainImpl.queryTxsByBlockHash(m.CurrentBlockHash, m.TransactionHashes)
 	if e == service.ErrNil {
 		m.TransactionHashes = need
 	}
 
-	for _, tx := range transactions {
-		if tx == nil {
-			logger.Debugf("local find nil tx")
-			continue
-		}
-
-		logger.Debugf("local find tx :%s,%v", tx.Hash.String(), tx)
-	}
+	logger.Debugf("local find txs, length: %d, source: %s", len(transactions), source)
 	if nil != transactions && 0 != len(transactions) {
 		sendTransactions(transactions, source)
 	}
-	return
-}
-
-func (ch ChainHandler) transactionGotHandler(msg notify.Message) {
-	tgm, ok := msg.(*notify.TransactionGotMessage)
-	if !ok {
-		logger.Debugf("transactionGotHandler:Message assert not ok!")
-		return
-	}
-
-	txs, e := types.UnMarshalTransactions(tgm.TransactionGotByte)
-	if e != nil {
-		logger.Errorf("Unmarshal got transactions error:%s", e.Error())
-		return
-	}
-
-	gotTxValid := true
-	middleware.LockBlockchain("AddTransaction")
-	defer middleware.UnLockBlockchain("AddTransaction")
-
-	for _, tx := range txs {
-		if err := service.GetTransactionPool().VerifyTransaction(tx, blockChainImpl.Height()); err == nil {
-			service.GetTransactionPool().AddTransaction(tx)
-		} else {
-			logger.Infof("tx received from others verify error.Hash:%s,error:%s", tx.Hash.String(), e.Error())
-			gotTxValid = false
-		}
-	}
-
-	if gotTxValid {
-		m := notify.TransactionGotAddSuccMessage{Transactions: txs, Peer: tgm.Peer}
-		notify.BUS.Publish(notify.TransactionGotAddSucc, &m)
-	}
-	return
 }
 
 func (ch ChainHandler) newBlockHandler(msg notify.Message) {
@@ -127,7 +86,7 @@ func (ch ChainHandler) newBlockHandler(msg notify.Message) {
 		return
 	}
 
-	middleware.PerfLogger.Debugf("Rcv new block from %s,hash:%v,height:%d,totalQn:%d,tx len:%d, total cost: %v", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions), time.Since(block.Header.CurTime))
+	middleware.PerfLogger.Infof("Rcv new block from %s,hash: %v,height: %d,totalQn: %d,tx: %d, cost: %v, size: %d", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions), utility.GetTime().Sub(block.Header.CurTime), len(m.BlockByte))
 
 	blockChainImpl.AddBlockOnChain(block)
 }

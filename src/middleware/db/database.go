@@ -28,11 +28,6 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 )
 
-const (
-	ConfigSec                     = "chain"
-	DefaultDatabase               = "database"
-	DefaultJoinedGroupDatabaseKey = "joinedGroupDatabase"
-)
 
 var (
 	ErrLDBInit   = errors.New("LDB instance not inited")
@@ -76,7 +71,7 @@ func getInstance() (*LDBDatabase, error) {
 	}
 
 	defaultConfig := &databaseConfig{
-		database: DefaultDatabase,
+		database: common.DefaultDatabase,
 		cache:    256,
 		handler:  2048,
 	}
@@ -84,7 +79,7 @@ func getInstance() (*LDBDatabase, error) {
 	if nil == common.GlobalConf {
 		instanceInner, err = NewLDBDatabase(defaultConfig.database, defaultConfig.cache, defaultConfig.handler)
 	} else {
-		instanceInner, err = NewLDBDatabase(common.GlobalConf.GetString(ConfigSec, DefaultDatabase, defaultConfig.database), common.GlobalConf.GetInt(ConfigSec, "cache", defaultConfig.cache), common.GlobalConf.GetInt(ConfigSec, "handler", defaultConfig.handler))
+		instanceInner, err = NewLDBDatabase(common.GlobalConf.GetString(common.ConfigSec, common.DefaultDatabase, defaultConfig.database), common.GlobalConf.GetInt(common.ConfigSec, "cache", defaultConfig.cache), common.GlobalConf.GetInt(common.ConfigSec, "handler", defaultConfig.handler))
 	}
 
 	if nil == err {

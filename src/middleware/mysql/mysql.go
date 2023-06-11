@@ -4,59 +4,45 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"database/sql"
-	_ "github.com/go-sql-driver/mysql"
+	"fmt"
+	_ "github.com/mattn/go-sqlite3"
+	"os"
 	"strconv"
 	"time"
 )
 
 var (
-	MysqlDB, mysqlDBLog *sql.DB
-	mysqlErr            error
-	logger              log.Logger
+	mysqlDBLog *sql.DB
+	mysqlErr   error
+	logger     log.Logger
 )
 
 // 初始化链接
-func InitMySql(dbDSN, dbDSNLog string) {
+func InitMySql() {
+	mkWorkingDir()
 	logger = log.GetLoggerByIndex(log.MysqlLogConfig, strconv.Itoa(common.InstanceIndex))
-	if 0 == len(dbDSN) {
-		return
+	dsn := fmt.Sprintf("file:storage%s/logs/logs.db?mode=rwc&_journal_mode=WAL&_cache_size=-500000", strconv.Itoa(common.InstanceIndex))
+	db, err := sql.Open("sqlite3", dsn)
+	if err != nil {
+		panic(err)
 	}
 
-	//dbDSN := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=%s", USERNAME, PASSWORD, HOST, PORT, DATABASE, CHARSET)
-	MysqlDB, mysqlErr = sql.Open("mysql", dbDSN)
-
-	// 打开连接失败
-	if mysqlErr != nil {
-		logger.Errorf("fail to connect dbDSN: " + dbDSN)
-		panic("dbDSN: " + dbDSN + mysqlErr.Error())
+	_, err = db.Exec("CREATE TABLE if NOT EXISTS `contractlogs`( id INTEGER PRIMARY KEY AUTOINCREMENT,`height` INTEGER NOT NULL, `logindex` bigint NOT NULL, `blockhash` varchar(66) NOT NULL, `txhash` varchar(66) NOT NULL, `contractaddress` varchar(66) NOT NULL, `topic` varchar(800) NOT NULL, `data` text, `topic0` varchar(66) DEFAULT '', `topic1` varchar(66) DEFAULT '', `topic2` varchar(66) DEFAULT '', `topic3` varchar(66) DEFAULT '', UNIQUE (`logindex`,`txhash`, `topic`));")
+	if err != nil {
+		panic(err)
+	}
+	_, err = db.Exec("CREATE INDEX if NOT EXISTS height ON contractlogs (height);")
+	if err != nil {
+		panic(err)
+	}
+	_, err = db.Exec("CREATE INDEX if NOT EXISTS blockhash ON contractlogs (blockhash);")
+	if err != nil {
+		panic(err)
 	}
 
-	logger.Infof("connected dbDSN: " + dbDSN)
-	// 最大连接数
-	MysqlDB.SetMaxOpenConns(40)
-	// 闲置连接数
-	MysqlDB.SetMaxIdleConns(5)
-	// 最大连接周期
-	MysqlDB.SetConnMaxLifetime(100 * time.Second)
+	mysqlDBLog = db
+	logger.Infof("connected sqlite")
 
-	if mysqlErr = MysqlDB.Ping(); nil != mysqlErr {
-		MysqlDB.Close()
-		panic(mysqlErr.Error())
-	}
-
-	if 0 == len(dbDSNLog) {
-		return
-	}
-
-	mysqlDBLog, mysqlErr = sql.Open("mysql", dbDSNLog)
-
-	// 打开连接失败
-	if mysqlErr != nil {
-		logger.Errorf("fail to connect dbDSN: " + dbDSNLog)
-		panic("dbDSN: " + dbDSNLog + mysqlErr.Error())
-	}
-
-	logger.Infof("connected dbDSN: " + dbDSNLog)
 	// 最大连接数
 	mysqlDBLog.SetMaxOpenConns(5)
 	// 闲置连接数
@@ -68,4 +54,21 @@ func InitMySql(dbDSN, dbDSNLog string) {
 		mysqlDBLog.Close()
 		panic(mysqlErr.Error())
 	}
+}
+
+func mkWorkingDir() {
+	path := "storage" + strconv.Itoa(common.InstanceIndex)+"/logs"
+	_, err := os.Stat(path)
+	if err == nil {
+		return
+	}
+
+	os.MkdirAll(path, os.ModePerm)
+}
+
+func CloseMysql() {
+	if nil != mysqlDBLog {
+		mysqlDBLog.Close()
+	}
+
 }

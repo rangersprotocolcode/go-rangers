@@ -4,6 +4,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"math/big"
+	"strconv"
 )
 
 // LogConfig are the configuration options for structured logger the EVM
@@ -18,8 +19,7 @@ var vmTracer Tracer
 var logger log.Logger
 
 func InitVM() {
-	index := common.GlobalConf.GetString("instance", "index", "")
-	logger = log.GetLoggerByIndex(log.VMLogConfig, index)
+	logger = log.GetLoggerByIndex(log.VMLogConfig, strconv.Itoa(common.InstanceIndex))
 }
 
 // CanTransfer checks whether there are enough funds in the address' account to make a transfer.

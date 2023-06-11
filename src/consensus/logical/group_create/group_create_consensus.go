@@ -22,8 +22,8 @@ import (
 	"com.tuntun.rocket/node/src/consensus/groupsig"
 	"com.tuntun.rocket/node/src/consensus/model"
 	"com.tuntun.rocket/node/src/middleware/notify"
+	"com.tuntun.rocket/node/src/utility"
 	"fmt"
-	"time"
 )
 
 //新建组成员收到父亲组建组消息
@@ -239,7 +239,7 @@ func (p *groupCreateProcessor) handleSharePieceMessage(groupHash common.Hash, sh
 	// All piece collected
 	if result == 1 {
 		recover = true
-		groupCreateLogger.Infof("Collected all share piece: groupHash=%v, cost=%v.", groupHash.ShortS(), time.Since(context.createTime).String())
+		groupCreateLogger.Infof("Collected all share piece: groupHash=%v, cost=%v.", groupHash.ShortS(), utility.GetTime().Sub(context.createTime).String())
 		joinedGroupInfo := model.NewJoindGroupInfo(context.nodeInfo.getSignSecKey(), context.nodeInfo.getGroupPubKey(), context.groupInitInfo.GroupHash())
 		p.joinedGroupStorage.JoinGroup(joinedGroupInfo, p.minerInfo.ID)
 

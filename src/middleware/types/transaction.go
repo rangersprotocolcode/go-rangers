@@ -18,6 +18,7 @@ package types
 
 import (
 	"bytes"
+	"math/big"
 	"strconv"
 
 	"com.tuntun.rocket/node/src/common"
@@ -75,11 +76,12 @@ type Transaction struct {
 	Nonce           uint64 // 用户级别nonce
 	RequestId       uint64 // 消息编号 由网关添加
 	SocketRequestId string // websocket id，用于客户端标示请求id，方便回调处理
-	ChainId         string //用于区分不同的链
+
+	ChainId string //用于区分不同的链
 }
 
-//source 在hash计算范围内
-//RequestId 不列入hash计算范围
+// source 在hash计算范围内
+// RequestId 不列入hash计算范围
 func (tx *Transaction) GenHash() common.Hash {
 	if nil == tx {
 		return common.Hash{}
@@ -96,16 +98,6 @@ func (tx *Transaction) GenHash() common.Hash {
 	buffer.Write([]byte(tx.ChainId))
 
 	return common.BytesToHash(common.Sha256(buffer.Bytes()))
-}
-
-func (tx *Transaction) AppendSubTransaction(sub UserData) {
-	tx.SubTransactions = append(tx.SubTransactions, sub)
-	buffer := bytes.Buffer{}
-	buffer.Write(sub.Hash())
-	buffer.Write(tx.SubHash.Bytes())
-
-	//todo: 性能优化点
-	tx.SubHash = common.BytesToHash(common.Sha256(buffer.Bytes()))
 }
 
 func (tx *Transaction) GenHashes() common.Hashes {
@@ -130,7 +122,9 @@ func (c Transactions) Swap(i, j int) {
 }
 func (c Transactions) Less(i, j int) bool {
 	if c[i].RequestId == 0 && c[j].RequestId == 0 {
-		return c[i].Nonce < c[j].Nonce
+		num1 := new(big.Int).SetBytes(c[i].Hash.Bytes())
+		num2 := new(big.Int).SetBytes(c[j].Hash.Bytes())
+		return num1.Cmp(num2) > 0
 	}
 
 	return c[i].RequestId < c[j].RequestId

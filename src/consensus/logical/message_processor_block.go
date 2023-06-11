@@ -199,7 +199,7 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 	blog.debug("%v start UserVerified, height=%v, hash=%v", mtype, bh.Height, bh.Hash.ShortS())
 
 	id := utility.GetGoroutineId()
-	middleware.PerfLogger.Infof("verify before UserVerified %s, id: %d, cost: %v, height: %v, hash: %v", mtype, id, time.Since(bh.CurTime), bh.Height, bh.Hash.String())
+	middleware.PerfLogger.Infof("verify before UserVerified %s, id: %d, cost: %v, height: %v, hash: %v", mtype, id, utility.GetTime().Sub(bh.CurTime), bh.Height, bh.Hash.String())
 
 	verifyResult, err := vctx.UserVerified(bh, si, pk, slog)
 	slog.endStage()
@@ -292,7 +292,7 @@ func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMess
 	}
 
 	id := utility.GetGoroutineId()
-	middleware.PerfLogger.Infof("verified %s, id: %d, cost: %v, height: %v, hash: %v", mtype, id, time.Since(bh.CurTime), bh.Height, bh.Hash.String())
+	middleware.PerfLogger.Infof("verified %s, id: %d, cost: %v, height: %v, hash: %v", mtype, id, utility.GetTime().Sub(bh.CurTime), bh.Height, bh.Hash.String())
 	return
 }
 
@@ -306,8 +306,7 @@ func (p *Processor) verifyWithCache(cache *verifyMsgCache, vmsg *model.Consensus
 	p.verifyCastMessage("OMV", msg)
 }
 
-//收到组内成员的出块消息，出块人（KING）用组分片密钥进行了签名
-//有可能没有收到OnMessageCurrent就提前接收了该消息（网络时序问题）
+// OnMessageCast 收到出块消息
 func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 	slog := newSlowLog("OnMessageCast", 0.5)
 	bh := &ccm.BH
@@ -339,7 +338,7 @@ func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 
 }
 
-//收到组内成员的出块验证通过消息（组内成员消息）
+// OnMessageVerify 收到组内成员的出块验证通过消息（组内成员消息）
 func (p *Processor) OnMessageVerify(cvm *model.ConsensusVerifyMessage) {
 	//statistics.AddBlockLog(common.BootId, statistics.RcvVerified, cvm.BH.Height, cvm.BH.ProveValue.Uint64(), -1, -1,
 	//	utility.GetTime().UnixNano(), "", "", common.InstanceIndex, cvm.BH.CurTime.UnixNano())
@@ -366,7 +365,7 @@ func (p *Processor) cleanVerifyContext(currentHeight uint64) {
 	})
 }
 
-//新的交易到达通知（用于处理大臣验证消息时缺失的交易）
+// OnMessageNewTransactions 新的交易到达通知
 func (p *Processor) OnMessageNewTransactions(ths []common.Hashes) {
 	mtype := "OMNT"
 	blog := newBizLog(mtype)

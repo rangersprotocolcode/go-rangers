@@ -117,7 +117,7 @@ func TestVMExecutorAll(t *testing.T) {
 func vmExecutorSetup(name string) {
 	common.InitConf("1.ini")
 	txLogger = log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	middleware.InitMiddleware("", "")
+	middleware.InitMiddleware()
 	service.InitService()
 	setup(name)
 	executor.InitExecutors()

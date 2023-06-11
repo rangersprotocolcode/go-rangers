@@ -18,6 +18,7 @@ package core
 
 import (
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
@@ -42,17 +43,17 @@ type GenesisProposer struct {
 }
 
 func (chain *blockChain) insertGenesisBlock() {
-	state, err := service.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
+	state, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	if nil == err {
 		var genesisBlock *types.Block
 		if common.IsSub() {
-			genesisBlock = genSubGenesisBlock(state, service.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
+			genesisBlock = genSubGenesisBlock(state, middleware.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
 		} else if common.IsMainnet() {
-			genesisBlock = genGenesisBlock(state, service.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
+			genesisBlock = genGenesisBlock(state, middleware.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
 		} else if common.IsDEV() {
-			genesisBlock = genDevGenesisBlock(state, service.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
+			genesisBlock = genDevGenesisBlock(state, middleware.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
 		} else {
-			genesisBlock = genRobinGenesisBlock(state, service.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
+			genesisBlock = genRobinGenesisBlock(state, middleware.AccountDBManagerInstance.GetTrieDB(), consensusHelper.GenerateGenesisInfo())
 		}
 
 		logger.Debugf("GenesisBlock Hash:%s,StateTree:%s", genesisBlock.Header.Hash.String(), genesisBlock.Header.StateTree.Hex())

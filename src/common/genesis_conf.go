@@ -1,22 +1,8 @@
 package common
-//
-//type GenesisConf struct {
-//	ChainId string `json:"chainId"`
-//	Name    string `json:"name"`
-//
-//	Cast      uint64 `json:"cast"`
-//	GroupLife uint64 `json:"groupLife"`
-//
-//	GenesisTime int64 `json:"genesisTime"`
-//
-//	Group       string `json:"group"`
-//	JoinedGroup string `json:"joined"`
-//
-//	ProposerInfo []string `json:"proposers"`
-//}
-
 
 type GenesisConf struct {
+	Creator string `json:"creator"`
+
 	ChainId string `json:"chainId"`
 	Name    string `json:"name"`
 
@@ -31,6 +17,7 @@ type GenesisConf struct {
 	TokenName      string `json:"tokenName"`
 	TotalSupply    uint64 `json:"totalsupply"`
 	Symbol         string `json:"symbol"`
+	ReleaseRate    int    `json:"d"`
 	ProposalToken  int    `json:"ptoken"`
 	ValidatorToken int    `json:"vtoken"`
 
@@ -38,4 +25,6 @@ type GenesisConf struct {
 	Group        string   `json:"group"`
 	JoinedGroup  string   `json:"joined"`
 	ProposerInfo []string `json:"proposers"`
+
+	Dev byte `json:"dev"`
 }

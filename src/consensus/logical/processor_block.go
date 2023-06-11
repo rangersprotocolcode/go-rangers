@@ -26,7 +26,6 @@ import (
 	"com.tuntun.rocket/node/src/utility"
 	"fmt"
 	"sync"
-	"time"
 )
 
 type FutureMessageHolder struct {
@@ -134,7 +133,7 @@ func (p *Processor) getBlockHeaderByHash(hash common.Hash) *types.BlockHeader {
 	begin := utility.GetTime()
 	defer func() {
 		if utility.GetTime().Sub(begin).Seconds() > 0.5 {
-			slowLogger.Warnf("slowQueryBlockHeaderByHash: cost %v, hash=%v", time.Since(begin).String(), hash.ShortS())
+			slowLogger.Warnf("slowQueryBlockHeaderByHash: cost %v, hash=%v", utility.GetTime().Sub(begin), hash.ShortS())
 		}
 	}()
 	b := p.MainChain.QueryBlockByHash(hash)

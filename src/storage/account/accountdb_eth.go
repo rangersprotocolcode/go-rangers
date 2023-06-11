@@ -54,6 +54,10 @@ func (self *AccountDB) GetERC20Binding(name string) (found bool, contract common
 		if 0 == bytes.Compare(rpgContractAddress.Bytes(), common.Address{}.Bytes()) {
 			self.loadContractCache()
 		}
+
+		if common.IsSub() {
+			return true, rpgContractAddress, 4, 18
+		}
 		return true, rpgContractAddress, 3, 18
 	}
 

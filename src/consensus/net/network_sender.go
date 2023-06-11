@@ -22,7 +22,6 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/utility"
-	"time"
 )
 
 type NetworkServerImpl struct {
@@ -54,7 +53,7 @@ func (ns *NetworkServerImpl) SendGroupPongMessage(msg *model.CreateGroupPongMess
 		return
 	}
 	m := network.Message{Code: network.GroupPong, Body: body}
-	ns.net.SpreadToGroup(groupId, m)
+	go ns.net.SpreadToGroup(groupId, m)
 	if belongGroup {
 		ns.send2Self(msg.GetSignerID(), m)
 	}
@@ -106,7 +105,7 @@ func (ns *NetworkServerImpl) SendGroupInitMessage(grm *model.GroupInitMessage) {
 	//logger.Debugf("SendGroupInitMessage hash:%s,  gHash %v", m.Hash(), grm.GInfo.GroupHash().Hex())
 }
 
-//组内广播密钥   for each定向发送 组内广播
+// SendKeySharePiece 组内广播密钥   for each定向发送 组内广播
 func (ns *NetworkServerImpl) SendKeySharePiece(spm *model.SharePieceMessage) {
 	body, e := marshalConsensusSharePieceMessage(spm)
 	if e != nil {
@@ -115,13 +114,12 @@ func (ns *NetworkServerImpl) SendKeySharePiece(spm *model.SharePieceMessage) {
 	}
 	m := network.Message{Code: network.KeyPieceMsg, Body: body}
 	if spm.SignInfo.GetSignerID().IsEqual(spm.ReceiverId) {
-		go ns.send2Self(spm.SignInfo.GetSignerID(), m)
+		ns.send2Self(spm.SignInfo.GetSignerID(), m)
 		return
 	}
 
-	begin := utility.GetTime()
 	go ns.net.SendToStranger(spm.ReceiverId.Serialize(), m)
-	logger.Debugf("SendKeySharePiece to id:%s,hash:%s, gHash:%v, cost time:%v", spm.ReceiverId.GetHexString(), m.Hash(), spm.GroupHash.Hex(), time.Since(begin))
+	logger.Debugf("SendKeySharePiece to id:%s,hash:%s, gHash:%v", spm.ReceiverId.GetHexString(), m.Hash(), spm.GroupHash.Hex())
 }
 
 //组内广播签名公钥
@@ -136,9 +134,8 @@ func (ns *NetworkServerImpl) SendSignPubKey(spkm *model.SignPubKeyMessage) {
 	//给自己发
 	ns.send2Self(spkm.SignInfo.GetSignerID(), m)
 
-	begin := utility.GetTime()
 	go ns.net.SpreadToGroup(spkm.GroupHash.Hex(), m)
-	logger.Debugf("SendSignPubKey hash:%s, dummyId:%v, cost time:%v", m.Hash(), spkm.GroupHash.Hex(), time.Since(begin))
+	logger.Debugf("SendSignPubKey hash:%s, dummyId:%v", m.Hash(), spkm.GroupHash.Hex())
 }
 
 //组初始化完成 广播组信息 全网广播
@@ -160,9 +157,9 @@ func (ns *NetworkServerImpl) BroadcastGroupInfo(cgm *model.GroupInitedMessage) {
 
 //-----------------------------------------------------------------组铸币----------------------------------------------
 
-// 提案节点完成铸币，将blockheader签名后发送至验证组内节点进行验证
+// SendCandidate 提案节点完成铸币，将blockheader签名后发送至验证组内节点进行验证
 // 组内广播
-func (ns *NetworkServerImpl) SendCastVerify(ccm *model.ConsensusCastMessage, group *GroupBrief, body []*types.Transaction) {
+func (ns *NetworkServerImpl) SendCandidate(ccm *model.ConsensusCastMessage, group *GroupBrief, body []*types.Transaction) {
 	var groupId groupsig.ID
 	e1 := groupId.Deserialize(ccm.BH.GroupId)
 	if e1 != nil {
@@ -182,7 +179,7 @@ func (ns *NetworkServerImpl) SendCastVerify(ccm *model.ConsensusCastMessage, gro
 	logger.Debugf("send CAST_VERIFY_MSG,%d-%d to group:%s,invoke SpreadToGroup cost time:%v,time from cast:%v,hash:%s", ccm.BH.Height, ccm.BH.TotalQN, groupId.GetHexString(), utility.GetTime().Sub(begin), timeFromCast, ccm.BH.Hash.String())
 }
 
-// 组内节点  验证通过后 自身签名 广播验证块 组内广播
+// SendVerifiedCast 组内节点  验证通过后 自身签名 广播验证块 组内广播
 // 验证不通过 保持静默
 func (ns *NetworkServerImpl) SendVerifiedCast(cvm *model.ConsensusVerifyMessage, receiver groupsig.ID) {
 	body, e := marshalConsensusVerifyMessage(cvm)
@@ -193,7 +190,7 @@ func (ns *NetworkServerImpl) SendVerifiedCast(cvm *model.ConsensusVerifyMessage,
 	m := network.Message{Code: network.VerifiedCastMsg, Body: body}
 
 	// 验证消息需要给自己也发一份，否则自己的分片中将不包含自己的签名，导致分红没有
-	go ns.send2Self(cvm.SignInfo.GetSignerID(), m)
+	ns.send2Self(cvm.SignInfo.GetSignerID(), m)
 
 	go ns.net.SpreadToGroup(receiver.GetHexString(), m)
 	logger.Debugf("[peer]send VARIFIED_CAST_MSG,hash:%s", cvm.BlockHash.String())
@@ -228,9 +225,8 @@ func (ns *NetworkServerImpl) AskSignPkMessage(msg *model.SignPubkeyReqMessage, r
 
 	m := network.Message{Code: network.AskSignPkMsg, Body: body}
 
-	begin := utility.GetTime()
 	go ns.net.SendToStranger(receiver.Serialize(), m)
-	logger.Debugf("AskSignPkMessage %v, hash:%s, cost time:%v", receiver.GetHexString(), m.Hash(), time.Since(begin))
+	logger.Debugf("AskSignPkMessage %v, hash:%s", receiver.GetHexString(), m.Hash())
 }
 
 func (ns *NetworkServerImpl) AnswerSignPkMessage(msg *model.SignPubKeyMessage, receiver groupsig.ID) {
@@ -242,9 +238,8 @@ func (ns *NetworkServerImpl) AnswerSignPkMessage(msg *model.SignPubKeyMessage, r
 
 	m := network.Message{Code: network.AnswerSignPkMsg, Body: body}
 
-	begin := utility.GetTime()
 	go ns.net.SendToStranger(receiver.Serialize(), m)
-	logger.Debugf("AnswerSignPkMessage %v, hash:%s, dummyId:%v, cost time:%v", receiver.GetHexString(), m.Hash(), msg.GroupHash.Hex(), time.Since(begin))
+	logger.Debugf("AnswerSignPkMessage %v, hash:%s, dummyId:%v", receiver.GetHexString(), m.Hash(), msg.GroupHash.Hex())
 }
 
 func (ns *NetworkServerImpl) ReqSharePiece(msg *model.ReqSharePieceMessage, receiver groupsig.ID) {

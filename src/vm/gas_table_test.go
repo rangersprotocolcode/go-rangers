@@ -75,7 +75,7 @@ var eip2200Tests = []struct {
 }
 
 func TestEIP2200(t *testing.T) {
-	common.InitConf("1.ini")
+	common.Init(0, "1.ini", "dev")
 	InitVM()
 
 	for i, tt := range eip2200Tests {

@@ -6,7 +6,6 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/utility"
-	"encoding/json"
 	"math/big"
 	"strconv"
 )
@@ -154,11 +153,6 @@ func ConvertTransaction(tx *types.Transaction) *RPCTransaction {
 
 	if tx.Sign != nil {
 		trans.Signature = tx.Sign.GetHexString()
-	}
-
-	data, err := json.Marshal(tx.SubTransactions)
-	if err == nil {
-		trans.SubTransactions = string(data)
 	}
 
 	return trans

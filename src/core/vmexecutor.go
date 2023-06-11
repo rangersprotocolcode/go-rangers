@@ -29,7 +29,8 @@ import (
 	"time"
 )
 
-/**
+/*
+*
 nonce:
 version1:创建合约在计算地址之后+1，所有交易结束后如果成功nonce+1
 version2:Proposal006 所有交易刚开始nonce+1
@@ -68,13 +69,16 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 	evictedTxs := make([]common.Hash, 0)
 
 	this.prepare()
-
 	txs := types.Transactions(this.block.Transactions)
-	if 0 != len(txs) && 0 != strings.Compare(this.situation, "casting") {
+	if 0 != len(txs) {
 		sort.Sort(txs)
 	}
 
 	for i, transaction := range txs {
+		if 0 == transaction.Type {
+			continue
+		}
+
 		if common.IsProposal013() {
 			this.accountdb.Prepare(transaction.Hash, common.Hash{}, i)
 		}
@@ -152,7 +156,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 
 	state := this.accountdb.IntermediateRoot(true)
 
-	middleware.PerfLogger.Debugf("VMExecutor End. %s height: %d, cost: %v, txs: %d", this.situation, this.block.Header.Height, time.Since(beginTime), len(this.block.Transactions))
+	middleware.PerfLogger.Debugf("VMExecutor End. %s height: %d, cost: %v, txs: %d", this.situation, this.block.Header.Height, utility.GetTime().Sub(beginTime), len(this.block.Transactions))
 	return state, evictedTxs, transactions, receipts
 }
 
@@ -175,8 +179,12 @@ func (executor *VMExecutor) after() {
 	service.RefundManagerImpl.Add(types.GetRefundInfo(executor.context), executor.accountdb)
 
 	// 计算出块奖励
-	data := service.RewardCalculatorImpl.CalculateReward(height, executor.accountdb, executor.block.Header, executor.situation)
-	service.RefundManagerImpl.Add(data, executor.accountdb)
+	if common.IsSub() {
+		executor.calcSubReward()
+	} else {
+		data := service.RewardCalculatorImpl.CalculateReward(height, executor.accountdb, executor.block.Header, executor.situation)
+		service.RefundManagerImpl.Add(data, executor.accountdb)
+	}
 
 	service.RefundManagerImpl.CheckAndMove(height, executor.accountdb)
 	if common.LocalChainConfig.Proposal004Block == height {

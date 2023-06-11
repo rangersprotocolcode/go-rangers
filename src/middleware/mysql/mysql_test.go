@@ -1,39 +1,56 @@
 package mysql
 
 import (
-	"com.tuntun.rocket/node/src/middleware/notify"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/utility"
-	"encoding/json"
 	"fmt"
+	"os"
 	"testing"
 )
 
-func TestGetTxRaws(t *testing.T) {
-	notify.BUS = notify.NewBus()
-	InitMySql("rpservice_dev:!890rpServiceDev@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai", "")
-	if nil == MysqlDB {
-		t.Errorf("fail to open mysql")
-	}
-	defer MysqlDB.Close()
+func TestInitMySql(t *testing.T) {
+	defer func() {
+		os.RemoveAll("logs")
+		os.RemoveAll("logs-0.db")
+		os.RemoveAll("logs-0.db-shm")
+		os.RemoveAll("logs-0.db-wal")
+		os.RemoveAll("1.ini")
+		os.RemoveAll("storage0")
+	}()
 
-	txs := GetTxRaws(0)
-	fmt.Println(len(txs))
-	tx := txs[0]
+	InitMySql()
 
-	var transaction types.Transaction
-	// jsonrpc请求
-	if 0 == len(tx.UserId) {
-
-	} else {
-		var txJson types.TxJson
-		err := json.Unmarshal(utility.StrToBytes(tx.Data), &txJson)
-		if nil != err {
-			msg := fmt.Sprintf("handleClientMessage json unmarshal client message error:%s", err.Error())
-			t.Fatal(msg)
-		}
-		transaction = txJson.ToTransaction()
+	stmt, err := mysqlDBLog.Prepare("replace INTO contractlogs(height,logindex,blockhash, txhash, contractaddress, topic, data, topic0,topic1,topic2,topic3) values(?,?,?,?,?,?,?,?,?,?,?)")
+	result, err := stmt.Exec("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11")
+	if nil != err {
+		t.Fatal(err)
 	}
 
-	fmt.Println(transaction.Sign.GetHexString())
+	fmt.Println(result.RowsAffected())
+	fmt.Println(result.LastInsertId())
+
+	stmt, err = mysqlDBLog.Prepare("replace INTO contractlogs(height,logindex,blockhash, txhash, contractaddress, topic, data, topic0,topic1,topic2,topic3) values(?,?,?,?,?,?,?,?,?,?,?)")
+	result, err = stmt.Exec("1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11")
+	if nil != err {
+		t.Fatal(err)
+	}
+
+	fmt.Println(result.RowsAffected())
+	fmt.Println(result.LastInsertId())
+}
+
+func TestSelectLogs(t *testing.T) {
+	defer func() {
+		os.RemoveAll("logs")
+		os.RemoveAll("logs-0.db")
+		os.RemoveAll("logs-0.db-shm")
+		os.RemoveAll("logs-0.db-wal")
+		os.RemoveAll("1.ini")
+		os.RemoveAll("storage0")
+	}()
+
+	InitMySql()
+	logs := SelectLogs(0, 100000000, nil)
+
+	for _, log := range logs {
+		fmt.Printf("%d %s %s\n", log.BlockNumber, log.BlockHash.String(), log.TxHash.Hex())
+	}
 }

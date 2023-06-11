@@ -22,6 +22,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/utility"
 	"crypto/md5"
 	"encoding/binary"
@@ -32,6 +33,7 @@ import (
 	"net/url"
 	"strconv"
 	"sync"
+	"sync/atomic"
 	"time"
 )
 
@@ -41,7 +43,7 @@ const (
 
 	// 默认等待队列大小
 	defaultRcvSize  = 10000
-	defaultSendSize = 100
+	defaultSendSize = 10000
 
 	// ws读写缓存
 	defaultBufferSize = 1024 * 1024 * 16
@@ -65,8 +67,9 @@ type baseConn struct {
 	connLock sync.Mutex
 
 	// 读写缓冲区
-	rcvChan  chan []byte
-	sendChan chan []byte
+	rcvChan      chan []byte
+	sendChan     chan []byte
+	sendTextChan chan []byte
 
 	// 读写缓冲区大小
 	rcvSize  int
@@ -85,17 +88,20 @@ type baseConn struct {
 	isSend func(method []byte, target uint64, msg []byte, nonce uint64) bool
 
 	logger log.Logger
+
+	rcvCount, sendCount uint64
 }
 
 // 根据url初始化
 func (base *baseConn) init(ipPort, path string, logger log.Logger) {
+	base.connLock = sync.Mutex{}
+
 	base.logger = logger
 	base.path = path
 
 	ipPortString, _ := url.QueryUnescape(ipPort)
 	base.url = fmt.Sprintf("%s%s", ipPortString, path)
 	base.conn = base.getWSConn()
-	base.connLock = sync.Mutex{}
 
 	// 初始化读写缓存
 	if 0 == base.rcvSize {
@@ -106,6 +112,9 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 	}
 	base.rcvChan = make(chan []byte, base.rcvSize)
 	base.sendChan = make(chan []byte, base.sendSize)
+	base.sendTextChan = make(chan []byte, defaultSendSize)
+	base.rcvCount = 0
+	base.sendCount = 0
 
 	// 开启goroutine
 	base.start()
@@ -135,11 +144,17 @@ func (base *baseConn) start() {
 
 // 定时检查channel堆积情况
 func (base *baseConn) logChannel() {
-	for range time.Tick(time.Millisecond * 300) {
+	for range time.Tick(time.Millisecond * 500) {
 		rcv, send := len(base.rcvChan), len(base.sendChan)
 		if rcv > 0 || send > 0 {
-			base.logger.Errorf("%s channel size. receive: %d, send: %d", base.path, rcv, send)
+			p2pLogger.Errorf("%s channel size. receive: %d, send: %d", base.path, rcv, send)
 		}
+
+		rcvResult := atomic.LoadUint64(&base.rcvCount) * 2 / 1000
+		sentResult := atomic.LoadUint64(&base.sendCount) * 2 / 1000
+		atomic.StoreUint64(&base.rcvCount, 0)
+		atomic.StoreUint64(&base.sendCount, 0)
+		p2pLogger.Errorf("%s, rcv: %dKB/s, sent: %dKB/s", base.path, rcvResult, sentResult)
 	}
 }
 
@@ -148,6 +163,8 @@ func (base *baseConn) loop() {
 	for {
 		select {
 		case message := <-base.rcvChan:
+			atomic.AddUint64(&base.rcvCount, uint64(len(message)))
+
 			// goroutine read process
 			if base.doRcv != nil {
 				header, msg := base.unloadMsg(message)
@@ -155,6 +172,8 @@ func (base *baseConn) loop() {
 			}
 
 		case message := <-base.sendChan:
+			atomic.AddUint64(&base.sendCount, uint64(len(message)))
+
 			conn := base.getConn()
 			if nil == conn {
 				continue
@@ -162,9 +181,21 @@ func (base *baseConn) loop() {
 
 			err := conn.WriteMessage(websocket.BinaryMessage, message)
 			if err != nil {
-				base.logger.Errorf("Send binary msg error:%s", err.Error())
+				base.logger.Errorf("send binary msg error:%s", err.Error())
 				base.closeConn()
 			}
+		case message := <-base.sendTextChan:
+			atomic.AddUint64(&base.sendCount, uint64(len(message)))
+
+			conn := base.getConn()
+			if nil != conn {
+				err := conn.WriteMessage(websocket.TextMessage, message)
+				if err != nil {
+					base.logger.Errorf("send tx msg error:%s", err.Error())
+					base.closeConn()
+				}
+			}
+
 		}
 	}
 }
@@ -187,7 +218,7 @@ func (base *baseConn) receiveMessage() {
 		if base.rcv == nil {
 			base.rcvChan <- message
 		} else {
-			base.rcv(message)
+			go base.rcv(message)
 		}
 
 	}
@@ -206,7 +237,7 @@ func (base *baseConn) getConn() *websocket.Conn {
 	}
 	base.conn = base.getWSConn()
 	if nil != base.conn && nil != base.afterReconnected {
-		go base.afterReconnected()
+		base.afterReconnected()
 	}
 	return base.conn
 }
@@ -233,7 +264,7 @@ func (base *baseConn) send(method []byte, target uint64, msg []byte, nonce uint6
 	base.logger.Debugf("send message. wsHeader: %v, body length: %d", header, len(msg))
 }
 
-//新的单播接口使用
+// 新的单播接口使用
 func (base *baseConn) unicast(method []byte, strangerId []byte, msg []byte, nonce uint64) {
 	byteArray := make([]byte, protocolHeaderSize+netIdSize+len(msg))
 	copy(byteArray[0:4], method)
@@ -243,7 +274,7 @@ func (base *baseConn) unicast(method []byte, strangerId []byte, msg []byte, nonc
 
 	//todo 这里流控方法的参数不一致，暂不使用流控
 	base.sendChan <- byteArray
-	p2pLogger.Debugf("unicast message. strangerId:%v,msg:%v,byte: %v", strangerId, msg, byteArray)
+	base.logger.Debugf("unicast message. strangerId:%s, length: %d", common.ToHex(strangerId), len(byteArray))
 }
 
 // 构建网络消息
@@ -305,6 +336,8 @@ var (
 
 	methodClientReader, _  = hex.DecodeString("00000001")
 	methodClientJSONRpc, _ = hex.DecodeString("00000000")
+	methodHandShake, _     = hex.DecodeString("000007e9")
+	methodAck, _           = hex.DecodeString("00000003")
 )
 
 type ClientConn struct {
@@ -330,11 +363,13 @@ func (clientConn *ClientConn) Init(ipPort, path string, logger log.Logger) {
 	clientConn.doRcv = func(wsHeader wsHeader, body []byte) {
 		clientConn.logger.Debugf("received. header: %s, from: %d, nonce: %d, bodyLength: %d", common.ToHex(wsHeader.method), wsHeader.sourceId, wsHeader.nonce, len(body))
 
+		// ws /api/reader
 		if bytes.Equal(wsHeader.method, methodClientReader) {
 			clientConn.handleClientMessage(body, strconv.FormatUint(wsHeader.sourceId, 10), wsHeader.nonce)
 			return
 		}
 
+		// http client: /api/jsonrpc
 		if bytes.Equal(wsHeader.method, methodClientJSONRpc) {
 			clientConn.handleJSONClientMessage(body, strconv.FormatUint(wsHeader.sourceId, 10), wsHeader.nonce)
 			return
@@ -359,8 +394,23 @@ func (clientConn *ClientConn) Init(ipPort, path string, logger log.Logger) {
 		return len(clientConn.sendChan) < clientConn.sendSize
 	}
 
-	clientConn.init(ipPort, path, logger)
+	clientConn.afterReconnected = func() {
+		nonce := uint64(0)
+		if nil != service.GetTransactionPool() {
+			nonce = service.GetTransactionPool().GetGateNonce()
+		}
 
+		header := wsHeader{method: methodHandShake, nonce: nonce}
+		bytes := clientConn.headerToBytes(header)
+		err := clientConn.conn.WriteMessage(websocket.BinaryMessage, bytes)
+		if nil != err {
+			p2pLogger.Errorf("afterReconnected. err: %s", err)
+		}
+	}
+	clientConn.init(ipPort, path, logger)
+	if nil != clientConn.conn {
+		clientConn.afterReconnected()
+	}
 }
 
 func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, nonce uint64) {
@@ -379,13 +429,13 @@ func (clientConn *ClientConn) handleClientMessage(body []byte, userId string, no
 	notify.BUS.Publish(notify.ClientTransactionRead, &msg)
 }
 
-func (clientConn *ClientConn) handleJSONClientMessage(body []byte, userId string, nonce uint64) {
+func (clientConn *ClientConn) handleJSONClientMessage(body []byte, userId string, gateNonce uint64) {
 	message := notify.ETHRPCMessage{}
 	err := json.Unmarshal(body, &message.Message)
 	if err == nil {
 		clientConn.logger.Debugf("get body from jsonrpcConn, bodyHex: %s, publishing", string(body))
 		message.SessionId = userId
-		message.RequestId = nonce
+		message.GateNonce = gateNonce
 		notify.BUS.Publish(notify.ClientETHRPC, &message)
 		return
 	}
@@ -394,7 +444,7 @@ func (clientConn *ClientConn) handleJSONClientMessage(body []byte, userId string
 	err = json.Unmarshal(body, &messageBatch.Message)
 	if err == nil {
 		messageBatch.SessionId = userId
-		messageBatch.RequestId = nonce
+		messageBatch.GateNonce = gateNonce
 		clientConn.logger.Debugf("get body from jsonrpcConn, bodyHex: %s, publishing", string(body))
 		notify.BUS.Publish(notify.ClientETHRPC, &messageBatch)
 		return
@@ -403,7 +453,7 @@ func (clientConn *ClientConn) handleJSONClientMessage(body []byte, userId string
 	// for error response
 	wrong := notify.ETHRPCWrongMessage{}
 	wrong.Sid = userId
-	wrong.Rid = nonce
+	wrong.Rid = gateNonce
 	notify.BUS.Publish(notify.ClientETHRPC, &wrong)
 
 	clientConn.logger.Errorf("fail to get body from jsonrpcConn, bodyHex: %s,err:%s", string(body), err.Error())

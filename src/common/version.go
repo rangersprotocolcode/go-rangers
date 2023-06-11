@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	Version           = "1.0.11"
+	Version           = "1.0.13"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -40,9 +40,7 @@ var (
 	mainNetChainConfig = ChainConfig{
 		ChainId:          "2025",
 		NetworkId:        "2025",
-		Dsn:              "readonly:Readonly>123456@tcp(ds.rangersprotocol.com:6666)/rpservice?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
 		PHub:             "wss://mainnet.rangersprotocol.com/phub",
-		PubHub:           "wss://mainnet.rangersprotocol.com/pubhub",
 		OriginalChainId:  "8888",
 		Proposal001Block: 894116,
 		Proposal002Block: 3353000,
@@ -58,6 +56,7 @@ var (
 		Proposal012Block: 22815000,
 		Proposal013Block: 28998000,
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
+		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
 	}
 
 	robinChainConfig = ChainConfig{
@@ -79,14 +78,15 @@ var (
 		Proposal013Block: 29063000,
 
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
+
+		MysqlDSN: "rpservice_v2:oJ2*bA0:hB3%@tcp(192.168.0.172:5555)/rpservice_v2?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
 	}
 
 	devNetChainConfig = ChainConfig{
-		ChainId:          "9500",
-		NetworkId:        "9500",
-		Dsn:              "readonly:Tuntun123456!@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
-		PHub:             "ws://gate.tuntunhz.com:8899",
-		PubHub:           "ws://gate.tuntunhz.com:8888",
+		ChainId:   "9500",
+		NetworkId: "9500",
+		PHub:      "ws://gate.tuntunhz.com:8899",
+
 		OriginalChainId:  "9500",
 		mainNodeContract: HexToAddress("0x27B01A9E699F177634f480Cc2150425009Edc5fD"),
 
@@ -108,9 +108,7 @@ var (
 	subNetChainConfig = ChainConfig{
 		ChainId:          "9500",
 		NetworkId:        "9500",
-		Dsn:              "readonly:Tuntun123456!@tcp(api.tuntunhz.com:3336)/rpservice_dev?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
 		PHub:             "ws://gate.tuntunhz.com:8899",
-		PubHub:           "ws://gate.tuntunhz.com:8888",
 		OriginalChainId:  "9500",
 		mainNodeContract: HexToAddress("0x27B01A9E699F177634f480Cc2150425009Edc5fD"),
 
@@ -140,9 +138,7 @@ type ChainConfig struct {
 	ChainId   string
 	NetworkId string
 
-	PHub   string
-	PubHub string
-	Dsn    string
+	PHub string
 
 	OriginalChainId  string
 	Proposal001Block uint64
@@ -160,9 +156,11 @@ type ChainConfig struct {
 	Proposal013Block uint64
 
 	mainNodeContract Address
+
+	MysqlDSN string
 }
 
-func InitChainConfig(env string) {
+func initChainConfig(env string) {
 	if env == ENV_DEV {
 		LocalChainConfig = devNetChainConfig
 	} else if env == ENV_MAINNET {
@@ -184,6 +182,7 @@ func InitChainConfig(env string) {
 		fmt.Println("no genesisConf, using default")
 	} else if 0 != len(Genesis.ChainId) {
 		LocalChainConfig.NetworkId = Genesis.ChainId
+		LocalChainConfig.ChainId = Genesis.ChainId
 	}
 }
 

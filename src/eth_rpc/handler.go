@@ -3,8 +3,10 @@ package eth_rpc
 import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
 	"encoding/json"
 	"fmt"
@@ -55,50 +57,66 @@ func (handler ethMsgHandler) process(message notify.Message) {
 
 	singleMessage, single := message.GetData().(*notify.ETHRPCMessage)
 	if single {
-		logger.Debugf("Rcv single eth prc message.requestId: %d,session id: %s", singleMessage.RequestId, singleMessage.SessionId)
-		response := handler.ProcessSingleRequest(singleMessage.Message)
+		logger.Debugf("Rcv single eth prc message.requestId: %d,session id: %s", singleMessage.GateNonce, singleMessage.SessionId)
+		response := handler.ProcessSingleRequest(singleMessage.Message, singleMessage.GateNonce)
 		responseJson, err := json.Marshal(response)
 		if err != nil {
-			logger.Debugf("marshal err:%v", err)
+			logger.Errorf("marshal err: %v", err)
 		}
-		logger.Debugf("Response:%s,socketRequestId:%v,sessionId:%v", string(responseJson), singleMessage.RequestId, singleMessage.SessionId)
-		network.GetNetInstance().SendToJSONRPC(responseJson, singleMessage.SessionId, singleMessage.RequestId)
+
+		logger.Debugf("Method: %s, params: %s, Response: %s, socketRequestId: %v, sessionId: %v", singleMessage.Message.Method, singleMessage.Message.Params, string(responseJson), singleMessage.GateNonce, singleMessage.SessionId)
+		network.GetNetInstance().SendToJSONRPC(responseJson, singleMessage.SessionId, singleMessage.GateNonce)
 		return
 	}
 
 	batchMessage, batch := message.GetData().(*notify.ETHRPCBatchMessage)
 	if batch {
-		logger.Debugf("Rcv batch eth prc message.requestId:%d,session id:%d", batchMessage.RequestId, batchMessage.SessionId)
-		response := handler.ProcessBatchRequest(batchMessage.Message)
+		logger.Debugf("Rcv batch eth prc message.requestId:%d,session id:%d", batchMessage.GateNonce, batchMessage.SessionId)
+		response := handler.ProcessBatchRequest(batchMessage.Message, batchMessage.GateNonce)
 		responseJson, _ := json.Marshal(response)
-		logger.Debugf("Response:%s,socketRequestId:%v,sessionId:%v", string(responseJson), batchMessage.RequestId, batchMessage.SessionId)
-		network.GetNetInstance().SendToJSONRPC(responseJson, batchMessage.SessionId, batchMessage.RequestId)
+		logger.Debugf("Response:%s,socketRequestId:%v,sessionId:%v", string(responseJson), batchMessage.GateNonce, batchMessage.SessionId)
+		network.GetNetInstance().SendToJSONRPC(responseJson, batchMessage.SessionId, batchMessage.GateNonce)
 		return
 	}
 }
 
-func (handler ethMsgHandler) ProcessBatchRequest(ethRpcMessage []notify.ETHRPCPiece) []jsonResponse {
+func (handler ethMsgHandler) ProcessBatchRequest(ethRpcMessage []notify.ETHRPCPiece, gateNonce uint64) []jsonResponse {
 	result := make([]jsonResponse, 0)
 	if ethRpcMessage == nil {
 		return result
 	}
 
 	for _, msg := range ethRpcMessage {
-		response := handler.ProcessSingleRequest(msg)
+		response := handler.ProcessSingleRequest(msg, gateNonce)
 		result = append(result, response)
 	}
 	return result
 }
 
-func (handler ethMsgHandler) ProcessSingleRequest(ethRpcMessage notify.ETHRPCPiece) jsonResponse {
-	logger.Debugf("Method:%s,params:%s,nonce:%d,id:%v", ethRpcMessage.Method, ethRpcMessage.Params, ethRpcMessage.Nonce, ethRpcMessage.Id)
+func (handler ethMsgHandler) ProcessSingleRequest(ethRpcMessage notify.ETHRPCPiece, gateNonce uint64) jsonResponse {
+	logger.Debugf("Method: %s,params: %s,nonce: %d, id: %v", ethRpcMessage.Method, ethRpcMessage.Params, ethRpcMessage.Nonce, ethRpcMessage.Id)
 	handlerFunc, arguments, err := handler.parseRequest(ethRpcMessage)
 	var response jsonResponse
 	if err != nil {
 		response = makeResponse(nil, err, ethRpcMessage.Id)
 	} else {
 		returnValue, err := handler.exec(handlerFunc, arguments, ethRpcMessage.Method, ethRpcMessage.Nonce, string(ethRpcMessage.Params))
-		response = makeResponse(returnValue, err, ethRpcMessage.Id)
+
+		if sendRawTransactionMethod == ethRpcMessage.Method {
+			rocketTx := returnValue.(*types.Transaction)
+			// save tx
+			var msg notify.ClientTransactionMessage
+			msg.Tx = *rocketTx
+			msg.UserId = ""
+			msg.GateNonce = gateNonce
+			msg.Nonce = 0
+			middleware.DataChannel.GetRcvedTx() <- &msg
+
+			response = makeResponse(rocketTx.Hash, err, ethRpcMessage.Id)
+		} else {
+			response = makeResponse(returnValue, err, ethRpcMessage.Id)
+		}
+
 	}
 	return response
 }

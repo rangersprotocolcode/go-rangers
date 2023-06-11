@@ -20,6 +20,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/pb"
 	"fmt"
 	"github.com/gogo/protobuf/proto"
+	"strconv"
 
 	"com.tuntun.rocket/node/src/common"
 	"math/big"
@@ -32,7 +33,7 @@ import (
 var logger log.Logger
 
 func InitSerialzation() {
-	logger = log.GetLoggerByIndex(log.MiddlewareLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	logger = log.GetLoggerByIndex(log.MiddlewareLogConfig, strconv.Itoa(common.InstanceIndex))
 }
 
 // 从[]byte反序列化为*Transaction

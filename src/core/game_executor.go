@@ -68,26 +68,17 @@ func (executor *GameExecutor) makeFailedResponse(message string, id string) []by
 	return result
 }
 
-const maxWriteSize = 100000
-
-// 用于处理client websocket请求
+// GameExecutor 用于处理client websocket请求
 type GameExecutor struct {
-	chain     *blockChain
-	writeChan chan notify.ClientTransactionMessage
-	logger    log.Logger
-	cleaner   *time.Ticker
+	chain  *blockChain
+	logger log.Logger
 }
 
 func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor := GameExecutor{chain: blockChainImpl}
 	gameExecutor.logger = log.GetLoggerByIndex(log.GameExecutorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	gameExecutor.writeChan = make(chan notify.ClientTransactionMessage, maxWriteSize)
-	gameExecutor.cleaner = time.NewTicker(time.Minute * 10)
-
+	middleware.AccountDBManagerInstance.SetHandler(gameExecutor.runWrite)
 	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
-	notify.BUS.Subscribe(notify.ClientTransaction, gameExecutor.write)
-
-	go gameExecutor.loop()
 }
 
 func (executor *GameExecutor) read(msg notify.Message) {
@@ -204,45 +195,30 @@ func (executor *GameExecutor) read(msg notify.Message) {
 	go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
 }
 
-func (executor *GameExecutor) write(msg notify.Message) {
-	message, ok := msg.(*notify.ClientTransactionMessage)
-	if !ok {
-		executor.logger.Errorf("GameExecutor: Write assert not ok!")
-		return
-	}
-
-	if len(executor.writeChan) == maxWriteSize {
-		executor.logger.Errorf("write rcv message error: %v", msg)
-		return
-	}
-
-	executor.logger.Debugf("write rcv message: %s", message.TOJSONString())
-	executor.writeChan <- *message
-}
-
-func (executor *GameExecutor) loop() {
-	for {
-		select {
-		case msg := <-executor.writeChan:
-			go executor.RunWrite(msg)
-		}
-	}
-}
-
-func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) {
+func (executor *GameExecutor) runWrite(item *middleware.Item) {
+	message := item.Value
 	txRaw := message.Tx
 	txRaw.RequestId = message.Nonce
-	txRaw.SubTransactions = make([]types.UserData, 0)
+	txRaw.SubTransactions = make([]types.UserData, 1)
+	data := types.UserData{Address: message.GateNonce}
+	txRaw.SubTransactions[0] = data
+
+	if txRaw.Type == 0 || 0 == txRaw.RequestId {
+		executor.logger.Infof("rcv tx with nonce: %d, txhash: %s, type: %d, gateNonce: %d, send to transaction pool", txRaw.RequestId, txRaw.Hash.String(), txRaw.Type, txRaw.SubTransactions[0].Address)
+		executor.sendTransaction(&txRaw)
+		return
+	}
 
 	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
 
-	accountDB, height := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
-	if nil == accountDB {
-		return
-	}
+	//accountDB, height := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
+	//if nil == accountDB {
+	//	return
+	//}
 
+	accountDB, height := middleware.AccountDBManagerInstance.LatestStateDB, middleware.AccountDBManagerInstance.Height
 	if err := service.GetTransactionPool().VerifyTransaction(&txRaw, height); err != nil {
-		service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
+		//service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
 
 		executor.logger.Errorf("fail to verify tx, txhash: %s, err: %v", txRaw.Hash.String(), err.Error())
 		if 0 != len(message.UserId) {
@@ -253,7 +229,6 @@ func (executor *GameExecutor) RunWrite(message notify.ClientTransactionMessage) 
 	}
 
 	result, execMessage := executor.runTransaction(accountDB, height, txRaw)
-	service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
 	executor.sendTransaction(&txRaw)
 
 	if 0 == len(message.UserId) {
@@ -332,9 +307,6 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 }
 
 func (executor *GameExecutor) sendTransaction(tx *types.Transaction) {
-	middleware.LockBlockchain("AddTransaction_game")
-	defer middleware.UnLockBlockchain("AddTransaction_game")
-
 	if ok, err := service.GetTransactionPool().AddTransaction(tx); err != nil || !ok {
 		executor.logger.Errorf("Add tx error:%s", err.Error())
 		return

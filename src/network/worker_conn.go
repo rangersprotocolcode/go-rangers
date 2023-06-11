@@ -18,8 +18,10 @@ package network
 
 import (
 	"bytes"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/notify"
+	"com.tuntun.rocket/node/src/middleware/types"
 	"encoding/hex"
 	"hash/fnv"
 	"strconv"
@@ -34,6 +36,7 @@ var (
 	methodCodeQuitGroup, _   = hex.DecodeString("80000005")
 	methodSetNetId, _        = hex.DecodeString("10000000")
 	methodSendToManager, _   = hex.DecodeString("80000006")
+	methodCodeTxBroadcast, _ = hex.DecodeString("80000007")
 )
 
 type WorkerConn struct {
@@ -61,6 +64,7 @@ func (workerConn *WorkerConn) Init(ipPort string, selfId []byte, consensusHandle
 		if bytes.Equal(method, methodSendToManager) {
 			body = body[netIdSize:]
 		}
+
 		workerConn.handleMessage(body, strconv.FormatUint(wsHeader.sourceId, 10))
 	}
 
@@ -87,14 +91,14 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 		return
 	}
 
-	p2pLogger.Debugf("Rcv from node: %s,code: %d,msg size: %d,hash: %s", from, message.Code, len(data), message.Hash())
+	workerConn.logger.Debugf("Rcv from node: %s,code: %d, msg size: %d", from, message.Code, len(data))
 
 	code := message.Code
 	switch code {
 	case CurrentGroupCastMsg, CastVerifyMsg, VerifiedCastMsg, AskSignPkMsg, AnswerSignPkMsg, ReqSharePiece, ResponseSharePiece,
 		GroupInitMsg, KeyPieceMsg, SignPubkeyMsg, GroupInitDoneMsg, CreateGroupaRaw, CreateGroupSign, GroupPing, GroupPong:
 		if nil != workerConn.consensusHandler {
-			workerConn.consensusHandler.Handle(from, *message)
+			go workerConn.consensusHandler.Handle(from, *message)
 		}
 	case NewBlockMsg:
 		msg := notify.NewBlockMessage{BlockByte: message.Body, Peer: from}
@@ -103,8 +107,31 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 		msg := notify.TransactionReqMessage{TransactionReqByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.TransactionReq, &msg)
 	case TransactionGotMsg:
-		msg := notify.TransactionGotMessage{TransactionGotByte: message.Body, Peer: from}
-		notify.BUS.Publish(notify.TransactionGot, &msg)
+		txs, e := types.UnMarshalTransactions(message.Body)
+		if e != nil {
+			workerConn.logger.Errorf("Unmarshal got transactions error:%s", e.Error())
+			return
+		}
+
+		for _, tx := range txs {
+			if nil == tx {
+				continue
+			}
+
+			var msg notify.ClientTransactionMessage
+			msg.Tx = *tx
+			msg.Nonce = tx.RequestId
+			msg.UserId = ""
+			if 1 == len(tx.SubTransactions) && 0 != tx.SubTransactions[0].Address {
+				msg.GateNonce = tx.SubTransactions[0].Address
+			}
+
+			middleware.DataChannel.GetRcvedTx() <- &msg
+		}
+
+		m := notify.TransactionGotAddSuccMessage{Transactions: txs, Peer: from}
+		notify.BUS.Publish(notify.TransactionGotAddSucc, &m)
+
 	case TopBlockInfoMsg:
 		msg := notify.ChainInfoMessage{ChainInfo: message.Body, Peer: from}
 		notify.BUS.Publish(notify.TopBlockInfo, &msg)
@@ -166,7 +193,7 @@ func (workerConn *WorkerConn) SendToEveryone(msg Message) {
 	workerConn.sendMessage(methodCodeBroadcast, 0, msg, 0)
 }
 
-//加入组网络
+// 加入组网络
 func (workerConn *WorkerConn) JoinGroupNet(groupId string) {
 	workerConn.joinedGroupLock.Lock()
 	defer workerConn.joinedGroupLock.Unlock()
@@ -181,7 +208,7 @@ func (workerConn *WorkerConn) joinGroupNet(groupId string) {
 	workerConn.logger.Debugf("Join group: %v,targetId:%v,hex:%v", groupId, header.targetId, strconv.FormatUint(header.targetId, 16))
 }
 
-//退出组网络
+// 退出组网络
 func (workerConn *WorkerConn) QuitGroupNet(groupId string) {
 	workerConn.joinedGroupLock.Lock()
 	defer workerConn.joinedGroupLock.Unlock()

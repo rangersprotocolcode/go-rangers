@@ -18,7 +18,6 @@ package common
 
 import (
 	"com.tuntun.rocket/node/src/common/secp256k1"
-	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/utility"
 	"crypto/elliptic"
 	"encoding/hex"
@@ -32,17 +31,14 @@ func getDefaultCurve() elliptic.Curve {
 	return secp256k1.S256()
 }
 
-var DefaultLogger log.Logger
-var InstanceIndex int
-
-//160位地址
+// 160位地址
 type Address [AddressLength]byte
 
 func (a Address) MarshalJSON() ([]byte, error) {
 	return []byte("\"" + a.GetHexString() + "\""), nil
 }
 
-//构造函数族
+// 构造函数族
 func BytesToAddress(b []byte) Address {
 	var a Address
 	a.SetBytes(b)
@@ -53,7 +49,7 @@ func StringToAddress(s string) Address { return BytesToAddress(utility.StrToByte
 func BigToAddress(b *big.Int) Address  { return BytesToAddress(b.Bytes()) }
 func HexToAddress(s string) Address    { return BytesToAddress(FromHex(s)) }
 
-//赋值函数，如b超出a的容量则截取后半部分
+// 赋值函数，如b超出a的容量则截取后半部分
 func (a *Address) SetBytes(b []byte) {
 	if len(b) > len(a) {
 		b = b[len(b)-AddressLength:]
@@ -70,24 +66,24 @@ func (a *Address) Set(other Address) {
 }
 
 // MarshalText returns the hex representation of a.
-//把地址编码成十六进制字符串
+// 把地址编码成十六进制字符串
 func (a Address) MarshalText() ([]byte, error) {
 	return utility.Bytes(a[:]).MarshalText()
 }
 
 // UnmarshalText parses a hash in hex syntax.
-//把十六进制字符串解码成地址
+// 把十六进制字符串解码成地址
 func (a *Address) UnmarshalText(input []byte) error {
 	return utility.UnmarshalFixedText("Address", input, a[:])
 }
 
 // UnmarshalJSON parses a hash in hex syntax.
-//把十六进制JSONG格式字符串解码成地址
+// 把十六进制JSONG格式字符串解码成地址
 func (a *Address) UnmarshalJSON(input []byte) error {
 	return utility.UnmarshalFixedJSON(addressT, input, a[:])
 }
 
-//类型转换输出函数
+// 类型转换输出函数
 func (a Address) Bytes() []byte        { return a[:] }
 func (a Address) BigInteger() *big.Int { return new(big.Int).SetBytes(a[:]) }
 func (a Address) Hash() Hash           { return BytesToHash(a[:]) }
@@ -123,7 +119,7 @@ func IsHexAddress(s string) bool {
 	return len(s) == 2*AddressLength && isHex(s)
 }
 
-//256位哈希
+// 256位哈希
 type Hash [HashLength]byte
 
 func BytesToHash(b []byte) Hash {

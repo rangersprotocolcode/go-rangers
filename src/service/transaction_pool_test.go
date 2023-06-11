@@ -19,6 +19,7 @@ package service
 import (
 	"com.tuntun.rocket/node/src/common"
 	"fmt"
+	"github.com/gogf/gf/container/gmap"
 	"testing"
 )
 
@@ -29,4 +30,25 @@ func TestRequestId(t *testing.T) {
 	fmt.Println(sign.GetR())
 	fmt.Println(sign.GetS())
 	fmt.Println(sign.GetHexString())
+}
+
+func TestSlice(t *testing.T) {
+	data := []byte{1, 2, 3, 4, 5, 6}
+	fmt.Println(data)
+
+	fmt.Println(data[2:])
+}
+
+func TestGMap(t *testing.T) {
+	listMap := gmap.NewListMap(true)
+
+	listMap.Set("1", "a")
+	listMap.Set("3", "b")
+	listMap.Set("2", "c")
+	listMap.Set("5", "d")
+	listMap.Set("4", "e")
+
+	fmt.Println(listMap.Size())
+	fmt.Println(listMap.Keys())
+	fmt.Println(listMap.Values())
 }

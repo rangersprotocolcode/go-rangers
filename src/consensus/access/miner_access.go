@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rocket/node/src/consensus/groupsig"
 	"com.tuntun.rocket/node/src/consensus/model"
 	"com.tuntun.rocket/node/src/consensus/vrf"
+	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
@@ -32,7 +33,11 @@ type MinerPoolReader struct {
 	minerManager *service.MinerManager
 }
 
-func NewMinerPoolReader(mp *service.MinerManager) *MinerPoolReader {
+func NewMinerPoolReader() *MinerPoolReader {
+	return newMinerPoolReader(service.MinerManagerImpl)
+}
+
+func newMinerPoolReader(mp *service.MinerManager) *MinerPoolReader {
 	if logger == nil {
 		logger = log.GetLoggerByIndex(log.AccessLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	}
@@ -54,7 +59,7 @@ func (reader *MinerPoolReader) GetProposeMiner(id groupsig.ID, hash common.Hash)
 		return nil
 	}
 
-	accountDB, _ := service.AccountDBManagerInstance.GetAccountDBByHash(hash)
+	accountDB, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(hash)
 	miner := minerManager.GetMinerById(id.Serialize(), common.MinerTypeProposer, accountDB)
 	if miner == nil {
 		//access.blog.log("getMinerById error id %v", id.ShortS())
@@ -97,7 +102,7 @@ func (reader *MinerPoolReader) getAllMiner(minerType byte, hash common.Hash) []*
 	return mds
 }
 
-//convert2MinerDO
+// convert2MinerDO
 func (reader *MinerPoolReader) convert2MinerDO(miner *types.Miner) *model.MinerInfo {
 	if miner == nil {
 		return nil

@@ -62,9 +62,14 @@ func (p *Processor) checkSelfCastRoutine() bool {
 	defer p.lock.Unlock()
 
 	worker := p.GetVrfWorker()
-	if worker != nil && worker.workingOn(top, castHeight) {
+	if worker == nil {
+		blog.log("castHeight=%v, worker nil ", castHeight)
+	} else if worker.workingOn(top, castHeight) {
 		blog.log("already working on that block height=%v, status=%v", castHeight, worker.getStatus())
 		return false
+	} else {
+		blog.log("castHeight=%v, worker not nil, worker cast height: %d, expired: %s, baseHash: %s  ", castHeight, worker.castHeight, worker.expire.String(), worker.baseBH.Hash.String())
+
 	}
 
 	var expireTime time.Time

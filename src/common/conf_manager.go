@@ -76,13 +76,13 @@ type SectionConfFileManager struct {
 
 var GlobalConf ConfManager
 
-func InitConf(path string) {
+func initConf(path string) {
 	if GlobalConf == nil {
-		GlobalConf = NewConfINIManager(path)
+		GlobalConf = newConfINIManager(path)
 	}
 }
 
-func NewConfINIManager(path string) ConfManager {
+func newConfINIManager(path string) ConfManager {
 	cs := &ConfFileManager{
 		path: path,
 	}

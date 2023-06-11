@@ -21,6 +21,7 @@ package middleware
 import (
 	"com.tuntun.rocket/node/src/utility"
 	"fmt"
+	"strconv"
 	"sync"
 	"time"
 
@@ -36,7 +37,7 @@ type Loglock struct {
 
 var (
 	lockLogger log.Logger
-	lock Loglock
+	lock       Loglock
 )
 
 const costLimit = 10 * time.Microsecond
@@ -48,7 +49,7 @@ func NewLoglock(title string) Loglock {
 	}
 	loglock.addr = fmt.Sprintf("%p", &loglock)
 	if lockLogger == nil {
-		lockLogger = log.GetLoggerByIndex(log.LockLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+		lockLogger = log.GetLoggerByIndex(log.LockLogConfig, strconv.Itoa(common.InstanceIndex))
 	}
 	return loglock
 }
@@ -57,60 +58,62 @@ func (lock *Loglock) Lock(msg string) {
 	if 0 != len(msg) {
 		lockLogger.Debugf("try to lock: %s, with msg: %s", lock.addr, msg)
 	}
+
 	begin := utility.GetTime()
 	lock.lock.Lock()
 	lock.begin = utility.GetTime()
-	cost := time.Since(begin)
+	cost := utility.GetTime().Sub(begin)
 
-	lockLogger.Debugf("locked: %s, with msg: %s wait: %v", lock.addr, msg, cost)
+	lockLogger.Debugf("locked: %s, with msg: %s, waited: %v", lock.addr, msg, cost)
 }
 
 func (lock *Loglock) RLock(msg string) {
 	if 0 != len(msg) {
 		lockLogger.Debugf("try to Rlock: %s, with msg: %s", lock.addr, msg)
 	}
+
 	begin := utility.GetTime()
 	lock.lock.RLock()
-	cost := time.Since(begin)
+	lock.begin = utility.GetTime()
+	cost := utility.GetTime().Sub(begin)
 
-	lockLogger.Debugf("Rlocked: %s, with msg: %s wait: %v", lock.addr, msg, cost)
+	lockLogger.Debugf("Rlocked: %s, with msg: %s, waited: %v", lock.addr, msg, cost)
 }
 
 func (lock *Loglock) Unlock(msg string) {
 	if 0 != len(msg) {
 		lockLogger.Debugf("try to UnLock: %s, with msg: %s", lock.addr, msg)
 	}
-	begin := utility.GetTime()
-	lock.lock.Unlock()
-	duration := time.Since(lock.begin)
-	cost := time.Since(begin)
 
-	lockLogger.Debugf("UnLocked: %s, with msg: %s duration:%v wait: %v", lock.addr, msg, duration, cost)
+	duration := utility.GetTime().Sub(lock.begin)
+	lock.lock.Unlock()
+
+	lockLogger.Debugf("Unlocked: %s, with msg: %s, duration:%v", lock.addr, msg, duration)
 }
 
 func (lock *Loglock) RUnlock(msg string) {
 	if 0 != len(msg) {
 		lockLogger.Debugf("try to UnRLock: %s, with msg: %s", lock.addr, msg)
 	}
-	begin := utility.GetTime()
-	lock.lock.RUnlock()
-	cost := time.Since(begin)
 
-	lockLogger.Debugf("UnRLocked: %s, with msg: %s wait: %v", lock.addr, msg, cost)
+	duration := utility.GetTime().Sub(lock.begin)
+	lock.lock.RUnlock()
+
+	lockLogger.Debugf("UnRlocked: %s, with msg: %s, duration:%v", lock.addr, msg, duration)
 }
 
-func LockBlockchain(msg string){
+func LockBlockchain(msg string) {
 	lock.Lock(msg)
 }
 
-func UnLockBlockchain(msg string){
+func UnLockBlockchain(msg string) {
 	lock.Unlock(msg)
 }
 
-func RLockBlockchain(msg string){
+func RLockBlockchain(msg string) {
 	lock.RLock(msg)
 }
 
-func RUnLockBlockchain(msg string){
+func RUnLockBlockchain(msg string) {
 	lock.RUnlock(msg)
 }

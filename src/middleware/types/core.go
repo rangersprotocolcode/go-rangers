@@ -80,7 +80,7 @@ func NewTransactionError(code int, msg string) *TransactionError {
 	return &TransactionError{Code: code, Message: msg}
 }
 
-//区块头结构
+// 区块头结构
 type BlockHeader struct {
 	Hash         common.Hash // 本块的hash，to do : 是对哪些数据的哈希
 	Height       uint64      // 本块的高度
@@ -220,9 +220,8 @@ type Group struct {
 	GroupHeight uint64
 }
 
-// 用于状态机内通过SDK调用layer2的数据结构
 type UserData struct {
-	Address string `json:"address"`
+	Address uint64 `json:"address"`
 	TransferData
 	Assets map[string]string
 }

@@ -16,10 +16,6 @@
 
 package network
 
-import (
-	"com.tuntun.rocket/node/src/middleware/log"
-)
-
 const (
 	//-----------组初始化---------------------------------
 
@@ -93,7 +89,9 @@ type Network interface {
 
 	SendToClientWriter(id string, msg []byte, nonce uint64)
 
-	Init(logger log.Logger, gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler, isSending bool)
+	Init(gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler, isSending bool)
+
+	InitTx(tx string)
 
 	JoinGroupNet(groupId string)
 
