@@ -57,11 +57,13 @@ var (
 		Proposal013Block: 28998000,
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
+		JsonRPCUrl:       "https://mainnet.rangersprotocol.com/api/jsonrpc",
 	}
 
 	robinChainConfig = ChainConfig{
 		ChainId:          "9527",
 		NetworkId:        "9527",
+		PHub:             "wss://robin.rangersprotocol.com/phub",
 		OriginalChainId:  "9527",
 		Proposal001Block: 0,
 		Proposal002Block: 2802000,
@@ -79,7 +81,8 @@ var (
 
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 
-		MysqlDSN: "rpservice_v2:oJ2*bA0:hB3%@tcp(192.168.0.172:5555)/rpservice_v2?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
+		MysqlDSN:   "rpservice_v2:oJ2*bA0:hB3%@tcp(192.168.0.172:5555)/rpservice_v2?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
+		JsonRPCUrl: "https://robin.rangersprotocol.com/api/jsonrpc",
 	}
 
 	devNetChainConfig = ChainConfig{
@@ -157,7 +160,8 @@ type ChainConfig struct {
 
 	mainNodeContract Address
 
-	MysqlDSN string
+	MysqlDSN   string
+	JsonRPCUrl string
 }
 
 func initChainConfig(env string) {

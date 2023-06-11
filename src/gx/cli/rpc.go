@@ -116,3 +116,18 @@ func StartRPC(host string, port uint, privateKey string) error {
 	err = startHttps(port, privateKey)
 	return err
 }
+
+func StartJSONRPCHttp(port uint) error {
+	endpoint := fmt.Sprintf("0.0.0.0:%d", port)
+	var (
+		listener net.Listener
+		err      error
+	)
+	if listener, err = net.Listen("tcp", endpoint); err != nil {
+		return err
+	}
+	server := &http.Server{Handler: NewETHServer()}
+	go server.Serve(listener)
+	common.DefaultLogger.Infof("JSONRPC http serving on %s \n", endpoint)
+	return nil
+}

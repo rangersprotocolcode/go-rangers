@@ -6,6 +6,7 @@ import (
 	"com.tuntun.rocket/node/src/eth_tx"
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/rlp"
@@ -110,6 +111,10 @@ func (api *ethAPIService) SendRawTransaction(encodedTx utility.Bytes) (*types.Tr
 	}
 
 	rocketTx := eth_tx.ConvertTx(tx, sender, encodedTx)
+	if common.IsFullNode() {
+		_, err := broadcastRawTx(encodedTx.String())
+		return nil, err
+	}
 
 	return rocketTx, nil
 }
@@ -398,6 +403,31 @@ func (s *ethAPIService) GetLogs(crit types.FilterCriteria) ([]*types.Log, error)
 	return result, nil
 }
 
+// GetTransactionByBlockNumberAndIndex returns the transaction for the given block number and index.
+func (s *ethAPIService) GetTransactionByBlockNumberAndIndex(blockNr BlockNumber, index utility.Uint) *RPCTransaction {
+	var block *types.Block
+	if blockNr == PendingBlockNumber || blockNr == LatestBlockNumber || blockNr == EarliestBlockNumber {
+		height := core.GetBlockChain().Height()
+		block = core.GetBlockChain().QueryBlock(height)
+	} else {
+		block = core.GetBlockChain().QueryBlock(uint64(blockNr))
+	}
+
+	if block == nil || uint64(index) >= uint64(len(block.Transactions)) {
+		return nil
+	}
+	return newRPCTransaction(block.Transactions[index], block.Header.Hash, block.Header.Height, uint64(index))
+}
+
+// GetTransactionByBlockHashAndIndex returns the transaction for the given block hash and index.
+func (s *ethAPIService) GetTransactionByBlockHashAndIndex(blockHash common.Hash, index utility.Uint) *RPCTransaction {
+	block := core.GetBlockChain().QueryBlockByHash(blockHash)
+	if block == nil || uint64(index) >= uint64(len(block.Transactions)) {
+		return nil
+	}
+	return newRPCTransaction(block.Transactions[index], block.Header.Hash, block.Header.Height, uint64(index))
+}
+
 // newRPCTransaction returns a transaction that will serialize to the RPC
 // representation, with the given location metadata set (if available).
 func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber uint64, index uint64) *RPCTransaction {
@@ -419,7 +449,7 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 	var data types.ContractData
 	err := json.Unmarshal([]byte(tx.Data), &data)
 	if err == nil {
-		result.Input = utility.Bytes(data.AbiData)
+		result.Input = common.FromHex(data.AbiData)
 
 		transferValue, err := utility.StrToBigInt(data.TransferValue)
 		if err == nil {
@@ -551,4 +581,21 @@ func adaptRPCBlock(block *types.Block, fullTx bool) *RPCBlock {
 		rpcBlock.TransactionsRoot = header.TxTree
 	}
 	return &rpcBlock
+}
+
+func broadcastRawTx(rawTx string) (common.Hash, error) {
+	url := common.LocalChainConfig.JsonRPCUrl
+	method := "eth_sendRawTransaction"
+	params := rawTx
+	responseOBJ, err := network.JSONRPCPost(url, method, params)
+	if err != nil {
+		logger.Error("broadcast raw tx error:%v", err)
+		return common.Hash{}, err
+	}
+	hashStr, ok := responseOBJ.Result.(string)
+	if !ok {
+		return common.Hash{}, errors.New("illegal return data")
+	}
+	hash := common.HexToHash(hashStr)
+	return hash, nil
 }
