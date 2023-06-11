@@ -28,7 +28,7 @@ import (
 )
 
 const (
-	Version           = "1.0.12"
+	Version           = "1.0.13"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -83,9 +83,9 @@ var (
 	}
 
 	devNetChainConfig = ChainConfig{
-		ChainId:          "9500",
-		NetworkId:        "9500",
-		PHub:             "ws://gate.tuntunhz.com:8899",
+		ChainId:   "9500",
+		NetworkId: "9500",
+		PHub:      "ws://gate.tuntunhz.com:8899",
 
 		OriginalChainId:  "9500",
 		mainNodeContract: HexToAddress("0x27B01A9E699F177634f480Cc2150425009Edc5fD"),
@@ -138,7 +138,7 @@ type ChainConfig struct {
 	ChainId   string
 	NetworkId string
 
-	PHub   string
+	PHub string
 
 	OriginalChainId  string
 	Proposal001Block uint64
