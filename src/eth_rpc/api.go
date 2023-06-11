@@ -113,8 +113,7 @@ func (api *ethAPIService) SendRawTransaction(encodedTx utility.Bytes) (*types.Tr
 	rocketTx := eth_tx.ConvertTx(tx, sender, encodedTx)
 	if common.IsFullNode() {
 		_, err := broadcastRawTx(encodedTx.String())
-		logger.Errorf("err:%v", err.Error())
-		return nil, err
+		return rocketTx, err
 	}
 
 	return rocketTx, nil
