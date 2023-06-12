@@ -22,22 +22,18 @@ import (
 	"com.tuntun.rocket/node/src/middleware/mysql"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"fmt"
 	"strconv"
-	"time"
 )
 
-var PerfLogger log.Logger
-var MonitorLogger log.Logger
+var (
+	PerfLogger    = log.GetLoggerByIndex(log.PerformanceLogConfig, strconv.Itoa(common.InstanceIndex))
+	MonitorLogger = log.GetLoggerByIndex(log.MonitorLogConfig, strconv.Itoa(common.InstanceIndex))
+)
 
 func InitMiddleware() error {
 	types.InitSerialzation()
-	PerfLogger = log.GetLoggerByIndex(log.PerformanceLogConfig, strconv.Itoa(common.InstanceIndex))
-	MonitorLogger = log.GetLoggerByIndex(log.MonitorLogConfig, strconv.Itoa(common.InstanceIndex))
 	notify.BUS = notify.NewBus()
-	fmt.Println(time.Now().String() + " before init mysql")
 	mysql.InitMySql()
-	fmt.Println(time.Now().String() + " after init mysql")
 
 	InitLock()
 	InitDataChannel()

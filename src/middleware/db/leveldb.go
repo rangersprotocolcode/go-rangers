@@ -3,7 +3,6 @@ package db
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
-	"fmt"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/filter"
@@ -13,6 +12,7 @@ import (
 	"os"
 	"strconv"
 	"sync"
+	"time"
 )
 
 type LDBDatabase struct {
@@ -38,8 +38,13 @@ func NewLDBDatabase(file string, cache int, handles int) (*LDBDatabase, error) {
 		handles = 8
 	}
 
+	start := time.Now()
 	path := "storage" + strconv.Itoa(common.InstanceIndex) + "/" + file
-	fmt.Println(path)
+	common.DefaultLogger.Infof("start leveldb: %s", path)
+	defer func() {
+		common.DefaultLogger.Infof("end leveldb: %s, cost: %s", path, time.Now().Sub(start).String())
+	}()
+
 	db, err := newLevelDBInstance(path, 8, 8)
 	if err != nil {
 		return nil, err
