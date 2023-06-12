@@ -103,14 +103,6 @@ func (gx *GX) Run() {
 		kingpin.Fatalf("%s, try --help", err)
 	}
 
-	// using default
-	gateAddr := *gateAddrPoint
-	if 0 == len(gateAddr) {
-		gateAddr = common.LocalChainConfig.PHub
-	}
-	outerGateAddr := *outerGateAddrPoint
-	txAddr := *txAddrPoint
-
 	switch command {
 	case versionCmd.FullCommand():
 		fmt.Println("Version:", GXVersion)
@@ -122,6 +114,14 @@ func (gx *GX) Run() {
 		}
 	case mineCmd.FullCommand():
 		common.Init(*instanceIndex, *configFile, *env)
+		// using default
+		gateAddr := *gateAddrPoint
+		if 0 == len(gateAddr) {
+			gateAddr = common.LocalChainConfig.PHub
+		}
+		outerGateAddr := *outerGateAddrPoint
+		txAddr := *txAddrPoint
+
 		walletManager = newWallets()
 		fmt.Println("Use config file: " + *configFile)
 		fmt.Printf("Env:%s, Chain ID:%s, Network ID:%s, Tx: %s\n", *env, common.ChainId(utility.MaxUint64), common.NetworkId(), txAddr)
