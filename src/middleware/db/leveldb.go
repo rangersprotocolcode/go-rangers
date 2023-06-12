@@ -12,7 +12,6 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"time"
 )
 
 type LDBDatabase struct {
@@ -39,13 +38,6 @@ func NewLDBDatabase(file string, cache int, handles int) (*LDBDatabase, error) {
 	}
 
 	path := "storage" + strconv.Itoa(common.InstanceIndex) + "/" + file
-
-	start := time.Now()
-	common.DefaultLogger.Infof("start leveldb: %s", path)
-	defer func() {
-		common.DefaultLogger.Infof("end leveldb: %s, cost: %s", path, time.Now().Sub(start).String())
-	}()
-
 	db, err := newLevelDBInstance(path, 8, 8)
 	if err != nil {
 		return nil, err

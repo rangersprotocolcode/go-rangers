@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -152,14 +152,15 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 		common.DefaultLogger.Infof("end initMiner")
 	}()
 
-	middleware.InitMiddleware()
-
 	privateKey := common.GlobalConf.GetString(Section, "privateKey", "")
 	gx.getAccountInfo(privateKey)
 	fmt.Println("Your Miner Address:", gx.account.Address)
 	sk := common.HexStringToSecKey(gx.account.Sk)
 	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
+	gx.dumpAccountInfo(minerInfo)
+
+	middleware.InitMiddleware()
 
 	service.InitService()
 
@@ -182,7 +183,6 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 
 	}
 
-	gx.dumpAccountInfo(minerInfo)
 	group_create.GroupCreateProcessor.BeginGenesisGroupMember()
 
 	ok = consensus.StartMiner()
@@ -190,7 +190,7 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 		panic("Init miner start miner error!")
 	}
 
-	syncChainInfo(*sk, minerInfo.ID.GetHexString())
+	syncChainInfo()
 
 	eth_rpc.InitEthMsgHandler()
 	gx.init = true
@@ -206,9 +206,15 @@ func (gx *GX) getAccountInfo(sk string) {
 	gx.account = getAccountByPrivateKey(sk)
 }
 
-func syncChainInfo(privateKey common.PrivateKey, id string) {
-	fmt.Println("Syncing block and group info. Waiting...")
+func syncChainInfo() {
+	start := time.Now()
+	common.DefaultLogger.Infof("start syncChainInfo")
+	defer func() {
+		common.DefaultLogger.Infof("end syncChainInfo, cost: %s", time.Now().Sub(start).String())
+	}()
+
 	core.StartSync()
+
 	go func() {
 		timer := time.NewTicker(time.Second * 10)
 		output := true
@@ -241,22 +247,20 @@ func syncChainInfo(privateKey common.PrivateKey, id string) {
 }
 
 func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerInfo) {
-	if nil != common.DefaultLogger {
-		common.DefaultLogger.Infof("SecKey: %s", gx.account.Sk)
-		common.DefaultLogger.Infof("PubKey: %s", gx.account.Pk)
-		common.DefaultLogger.Infof("Miner SecKey: %s", minerDO.SecKey.GetHexString())
-		common.DefaultLogger.Infof("Miner PubKey: %s", minerDO.PubKey.GetHexString())
-		common.DefaultLogger.Infof("VRF PrivateKey: %s", minerDO.VrfSK.GetHexString())
-		common.DefaultLogger.Infof("VRF PubKey: %s", minerDO.VrfPK.GetHexString())
-		common.DefaultLogger.Infof("Miner ID: %s", minerDO.ID.GetHexString())
+	common.DefaultLogger.Infof("SecKey: %s", gx.account.Sk)
+	common.DefaultLogger.Infof("PubKey: %s", gx.account.Pk)
+	common.DefaultLogger.Infof("Miner SecKey: %s", minerDO.SecKey.GetHexString())
+	common.DefaultLogger.Infof("Miner PubKey: %s", minerDO.PubKey.GetHexString())
+	common.DefaultLogger.Infof("VRF PrivateKey: %s", minerDO.VrfSK.GetHexString())
+	common.DefaultLogger.Infof("VRF PubKey: %s", minerDO.VrfPK.GetHexString())
+	common.DefaultLogger.Infof("Miner ID: %s", minerDO.ID.GetHexString())
 
-		miner := types.Miner{}
-		miner.Id = minerDO.ID.Serialize()
-		miner.PublicKey = minerDO.PubKey.Serialize()
-		miner.VrfPublicKey = minerDO.VrfPK.GetBytes()
-		minerBytes, _ := json.Marshal(miner)
-		common.DefaultLogger.Infof("Miner apply info:%s|%s", minerDO.ID.GetHexString(), string(minerBytes))
-	}
+	miner := types.Miner{}
+	miner.Id = minerDO.ID.Serialize()
+	miner.PublicKey = minerDO.PubKey.Serialize()
+	miner.VrfPublicKey = minerDO.VrfPK.GetBytes()
+	minerBytes, _ := json.Marshal(miner)
+	common.DefaultLogger.Infof("Miner apply info:%s|%s", minerDO.ID.GetHexString(), string(minerBytes))
 
 }
 

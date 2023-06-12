@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -47,7 +47,7 @@ type genesisGroup struct {
 
 var genesisGroupInfo []*genesisGroup
 
-//GenerateGenesis
+// GenerateGenesis
 func GetGenesisInfo() []*types.GenesisInfo {
 	genesisGroups := getGenesisGroupInfo()
 	var genesisInfos = make([]*types.GenesisInfo, 0)
@@ -69,8 +69,8 @@ func GetGenesisInfo() []*types.GenesisInfo {
 	return genesisInfos
 }
 
-//生成创世组成员信息
-//BeginGenesisGroupMember
+// BeginGenesisGroupMember 生成创世组成员信息
+// BeginGenesisGroupMember
 func (p *groupCreateProcessor) BeginGenesisGroupMember() {
 	genesisGroups := getGenesisGroupInfo()
 	joinedGroups := genGenesisJoinedGroup()
@@ -128,7 +128,7 @@ func getGenesisGroupInfo() []*genesisGroup {
 	return genesisGroupInfo
 }
 
-//genGenesisStaticGroupInfo
+// genGenesisStaticGroupInfo
 func genGenesisGroupInfo() []*genesisGroup {
 	var genesisGroupInfo string
 	if nil != common.Genesis {
@@ -159,7 +159,7 @@ func genGenesisGroupInfo() []*genesisGroup {
 	return groups
 }
 
-//ConvertStaticGroup2CoreGroup
+// ConvertStaticGroup2CoreGroup
 func convertToGroup(groupInfo *model.GroupInfo) *types.Group {
 	members := make([][]byte, groupInfo.GetMemberCount())
 	for idx, miner := range groupInfo.GroupInitInfo.GroupMembers {
