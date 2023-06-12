@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/log"
 	"fmt"
 	"strconv"
+	"time"
 )
 
 var (
@@ -30,6 +31,12 @@ var (
 )
 
 func InitNetwork(consensusHandler MsgHandler, selfMinerId []byte, env, gate, outerGateAddr string, isSending bool) {
+	start := time.Now()
+	common.DefaultLogger.Infof("start InitNetwork")
+	defer func() {
+		common.DefaultLogger.Infof("end InitNetwork, cost: %s", time.Now().Sub(start).String())
+	}()
+
 	fmt.Println("Connecting to: " + gate)
 	fmt.Print("isSending: ")
 	fmt.Println(isSending)

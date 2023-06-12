@@ -1,4 +1,4 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
 // The RocketProtocol library is free software: you can redistribute it and/or modify
@@ -20,15 +20,21 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"strconv"
+	"time"
 )
 
-var logger, txLogger, txPoolLogger log.Logger
+var (
+	logger       = log.GetLoggerByIndex(log.CoreLogConfig, strconv.Itoa(common.InstanceIndex))
+	txLogger     = log.GetLoggerByIndex(log.TxLogConfig, strconv.Itoa(common.InstanceIndex))
+	txPoolLogger = log.GetLoggerByIndex(log.TxPoolLogConfig, strconv.Itoa(common.InstanceIndex))
+)
 
 func InitService() {
-	index := strconv.Itoa(common.InstanceIndex)
-	logger = log.GetLoggerByIndex(log.CoreLogConfig, index)
-	txLogger = log.GetLoggerByIndex(log.TxLogConfig, index)
-	txPoolLogger = log.GetLoggerByIndex(log.TxPoolLogConfig, index)
+	start := time.Now()
+	common.DefaultLogger.Infof("start InitService")
+	defer func() {
+		common.DefaultLogger.Infof("end InitService, cost: %s", time.Now().Sub(start).String())
+	}()
 
 	InitMinerManager()
 	initTransactionPool()

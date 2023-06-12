@@ -15,8 +15,10 @@ type LogConfig struct {
 	DisableReturnData bool // disable return data capture
 }
 
-var vmTracer Tracer
-var logger log.Logger
+var (
+	vmTracer Tracer
+	logger   log.Logger
+)
 
 func InitVM() {
 	logger = log.GetLoggerByIndex(log.VMLogConfig, strconv.Itoa(common.InstanceIndex))

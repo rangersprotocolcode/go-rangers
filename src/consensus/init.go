@@ -23,6 +23,7 @@ import (
 	"com.tuntun.rocket/node/src/consensus/logical/group_create"
 	"com.tuntun.rocket/node/src/consensus/model"
 	"com.tuntun.rocket/node/src/consensus/net"
+	"time"
 )
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -32,27 +33,33 @@ import (
 
 var Proc logical.Processor
 
-//共识初始化
-//mid: 矿工ID
-//返回：true初始化成功，可以启动铸块。内部会和链进行交互，进行初始数据加载和预处理。失败返回false。
-func ConsensusInit(mi model.SelfMinerInfo, conf common.ConfManager) bool {
+// InitConsensus 共识初始化
+// mid: 矿工ID
+// 返回：true初始化成功，可以启动铸块。内部会和链进行交互，进行初始数据加载和预处理。失败返回false。
+func InitConsensus(mi model.SelfMinerInfo, conf common.ConfManager) bool {
+	start := time.Now()
+	common.DefaultLogger.Infof("start InitConsensus")
+	defer func() {
+		common.DefaultLogger.Infof("end InitConsensus, cost: %s", time.Now().Sub(start).String())
+	}()
+
 	logical.InitConsensus()
 	joinedGroupStorage := initJoinedGroupStorage()
 
 	group_create.GroupCreateProcessor.Init(mi, joinedGroupStorage)
 	ret := Proc.Init(mi, conf, joinedGroupStorage)
 	net.MessageHandler.Init(&group_create.GroupCreateProcessor, &Proc)
-	
+
 	return ret
 }
 
-//启动矿工进程，参与铸块。
-//成功返回true，失败返回false。
+// 启动矿工进程，参与铸块。
+// 成功返回true，失败返回false。
 func StartMiner() bool {
 	return Proc.Start()
 }
 
-//结束矿工进程，不再参与铸块。
+// 结束矿工进程，不再参与铸块。
 func StopMiner() {
 	Proc.Stop()
 	Proc.Finalize()

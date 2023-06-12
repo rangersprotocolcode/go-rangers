@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 )
 
 const sendRawTransactionMethod = "eth_sendRawTransaction"
@@ -23,10 +24,12 @@ type execFunc struct {
 	errPos   int            // err return idx, of -1 when method cannot return error
 }
 
-var handler ethMsgHandler
-var logger log.Logger
-var nilJson, _ = json.Marshal(nil)
-var wrongData = &invalidParamsError{"wrong json data"}
+var (
+	handler    ethMsgHandler
+	logger     = log.GetLoggerByIndex(log.ETHRPCLogConfig, strconv.Itoa(common.InstanceIndex))
+	nilJson, _ = json.Marshal(nil)
+	wrongData  = &invalidParamsError{"wrong json data"}
+)
 
 type ethMsgHandler struct {
 	service map[string]*execFunc
@@ -34,9 +37,6 @@ type ethMsgHandler struct {
 
 func InitEthMsgHandler() {
 	handler = ethMsgHandler{}
-	index := common.GlobalConf.GetString("instance", "index", "")
-	logger = log.GetLoggerByIndex(log.ETHRPCLogConfig, index)
-
 	handler.registerAPI(&ethAPIService{})
 	notify.BUS.Subscribe(notify.ClientETHRPC, handler.process)
 }

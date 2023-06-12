@@ -22,25 +22,30 @@ import (
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
+	"strconv"
+	"time"
 )
 
 var (
-	logger           log.Logger
-	txLogger         log.Logger
-	consensusHelper  types.ConsensusHelper
-	syncLogger       log.Logger
-	syncHandleLogger log.Logger
+	logger           = log.GetLoggerByIndex(log.CoreLogConfig, strconv.Itoa(common.InstanceIndex))
+	txLogger         = log.GetLoggerByIndex(log.TxLogConfig, strconv.Itoa(common.InstanceIndex))
+	syncLogger       = log.GetLoggerByIndex(log.SyncLogConfig, strconv.Itoa(common.InstanceIndex))
+	syncHandleLogger = log.GetLoggerByIndex(log.SyncHandleLogConfig, strconv.Itoa(common.InstanceIndex))
+
+	consensusHelper types.ConsensusHelper
 )
 
 func InitCore(helper types.ConsensusHelper, privateKey common.PrivateKey, id string) error {
-	index := common.GlobalConf.GetString("instance", "index", "")
-	logger = log.GetLoggerByIndex(log.CoreLogConfig, index)
-	txLogger = log.GetLoggerByIndex(log.TxLogConfig, index)
-	syncLogger = log.GetLoggerByIndex(log.SyncLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	syncHandleLogger = log.GetLoggerByIndex(log.SyncHandleLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	start := time.Now()
+	common.DefaultLogger.Infof("start InitCore")
+	defer func() {
+		common.DefaultLogger.Infof("end InitCore, cost: %s", time.Now().Sub(start).String())
+	}()
+
 	consensusHelper = helper
 
 	initPeerManager(syncLogger)
+
 	if nil == blockChainImpl {
 		err := initBlockChain()
 		if err != nil {
@@ -51,6 +56,7 @@ func InitCore(helper types.ConsensusHelper, privateKey common.PrivateKey, id str
 	if nil == groupChainImpl {
 		initGroupChain()
 	}
+
 	InitSyncProcessor(privateKey, id)
 
 	executor.InitExecutors()

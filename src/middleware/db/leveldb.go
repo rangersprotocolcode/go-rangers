@@ -38,8 +38,9 @@ func NewLDBDatabase(file string, cache int, handles int) (*LDBDatabase, error) {
 		handles = 8
 	}
 
-	start := time.Now()
 	path := "storage" + strconv.Itoa(common.InstanceIndex) + "/" + file
+
+	start := time.Now()
 	common.DefaultLogger.Infof("start leveldb: %s", path)
 	defer func() {
 		common.DefaultLogger.Infof("end leveldb: %s, cost: %s", path, time.Now().Sub(start).String())

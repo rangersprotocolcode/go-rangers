@@ -147,17 +147,22 @@ func (gx *GX) Run() {
 }
 
 func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
+	common.DefaultLogger.Infof("start initMiner")
+	defer func() {
+		common.DefaultLogger.Infof("end initMiner")
+	}()
+
 	middleware.InitMiddleware()
 
 	privateKey := common.GlobalConf.GetString(Section, "privateKey", "")
 	gx.getAccountInfo(privateKey)
 	fmt.Println("Your Miner Address:", gx.account.Address)
-
 	sk := common.HexStringToSecKey(gx.account.Sk)
 	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 
 	service.InitService()
+
 	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, 0 != len(outerGateAddr) && 0 != len(tx))
 
 	vm.InitVM()
@@ -171,14 +176,13 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 	network.GetNetInstance().InitTx(tx)
 
 	// 共识部分启动
-	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
+	ok := consensus.InitConsensus(minerInfo, common.GlobalConf)
 	if !ok {
 		panic("Init miner consensus init error!")
 
 	}
-	gx.dumpAccountInfo(minerInfo)
 
-	//consensus.Proc.BeginGenesisGroupMember()
+	gx.dumpAccountInfo(minerInfo)
 	group_create.GroupCreateProcessor.BeginGenesisGroupMember()
 
 	ok = consensus.StartMiner()

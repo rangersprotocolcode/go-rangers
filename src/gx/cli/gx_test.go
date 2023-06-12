@@ -166,7 +166,7 @@ func initTestingEnv() {
 	}
 
 	// 共识部分启动
-	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
+	ok := consensus.InitConsensus(minerInfo, common.GlobalConf)
 	if !ok {
 		panic("Init miner consensus init error!")
 
@@ -186,5 +186,5 @@ func TestNewGX(t *testing.T) {
 	common.Init(0, "1.ini", "robin")
 	gx.initMiner("robin", "ws://49.0.249.103:1017", "", "")
 
-	time.Sleep(10*time.Hour)
+	time.Sleep(10 * time.Hour)
 }

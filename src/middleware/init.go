@@ -23,6 +23,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"strconv"
+	"time"
 )
 
 var (
@@ -31,6 +32,12 @@ var (
 )
 
 func InitMiddleware() error {
+	start := time.Now()
+	common.DefaultLogger.Infof("start InitMiddleware")
+	defer func() {
+		common.DefaultLogger.Infof("end InitMiddleware, cost: %s", time.Now().Sub(start).String())
+	}()
+
 	types.InitSerialzation()
 	notify.BUS = notify.NewBus()
 	mysql.InitMySql()
