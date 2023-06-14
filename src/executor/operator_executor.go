@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -36,31 +36,26 @@ func (this *operatorExecutor) Execute(transaction *types.Transaction, header *ty
 
 }
 
-// 处理转账
-// 支持多人转账{"address1":"value1", "address2":"value2"}
-
-// 处理转账
-// 支持source地址给多人转账，包含余额，ft，nft
-// 数据格式{"address1":{"balance":"127","ft":{"name1":"189","name2":"1"},"nft":["id1","sword2"]}, "address2":{"balance":"1"}}
+// {"address1":{"balance":"127","ft":{"name1":"189","name2":"1"},"nft":["id1","sword2"]}, "address2":{"balance":"1"}}
 //
-//{
-//	"address1": {
-//		"bnt": {
-//          "ETH.ETH":"0.008",
-//          "NEO.CGAS":"100"
-//      },
-//		"ft": {
-//			"name1": "189",
-//			"name2": "1"
+//	{
+//		"address1": {
+//			"bnt": {
+//	         "ETH.ETH":"0.008",
+//	         "NEO.CGAS":"100"
+//	     },
+//			"ft": {
+//				"name1": "189",
+//				"name2": "1"
+//			},
+//			"nft": [{"setId":"suit1","id":"xizhuang"},
+//	             {"setId":"gun","id":"rifle"}
+//					]
 //		},
-//		"nft": [{"setId":"suit1","id":"xizhuang"},
-//              {"setId":"gun","id":"rifle"}
-// 				]
-//	},
-//	"address2": {
-//		"balance": "1"
+//		"address2": {
+//			"balance": "1"
+//		}
 //	}
-//}
 func (this *operatorExecutor) transfer(source, data, hash string, accountdb *account.AccountDB) (bool, string) {
 	if 0 == len(data) {
 		return true, ""
