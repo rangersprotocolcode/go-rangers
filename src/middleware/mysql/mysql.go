@@ -1,3 +1,19 @@
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RocketProtocol library.
+//
+// The RangersProtocol library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The RangersProtocol library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+
 package mysql
 
 import (
@@ -17,7 +33,6 @@ var (
 	logger     log.Logger
 )
 
-// 初始化链接
 func InitMySql() {
 	mkWorkingDir()
 	logger = log.GetLoggerByIndex(log.MysqlLogConfig, strconv.Itoa(common.InstanceIndex))
@@ -43,11 +58,8 @@ func InitMySql() {
 	mysqlDBLog = db
 	logger.Infof("connected sqlite")
 
-	// 最大连接数
 	mysqlDBLog.SetMaxOpenConns(5)
-	// 闲置连接数
 	mysqlDBLog.SetMaxIdleConns(5)
-	// 最大连接周期
 	mysqlDBLog.SetConnMaxLifetime(100 * time.Second)
 
 	if mysqlErr = mysqlDBLog.Ping(); nil != mysqlErr {
@@ -57,7 +69,7 @@ func InitMySql() {
 }
 
 func mkWorkingDir() {
-	path := "storage" + strconv.Itoa(common.InstanceIndex)+"/logs"
+	path := "storage" + strconv.Itoa(common.InstanceIndex) + "/logs"
 	_, err := os.Stat(path)
 	if err == nil {
 		return

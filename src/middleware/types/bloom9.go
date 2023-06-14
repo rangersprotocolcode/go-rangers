@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -138,18 +138,6 @@ func (b *Bloom) add(d []byte, buf []byte) {
 	b[i2] |= v2
 	b[i3] |= v3
 }
-
-//func LogsBloom(logs []*Log) *big.Int {
-//	bin := new(big.Int)
-//	for _, log := range logs {
-//		bin.Or(bin, bloom9(log.Address.Bytes()))
-//		for _, b := range log.Topics {
-//			bin.Or(bin, bloom9(b[:]))
-//		}
-//	}
-//
-//	return bin
-//}
 
 func bloom9(b []byte) *big.Int {
 	bi := sha256.Sum256(b[:])

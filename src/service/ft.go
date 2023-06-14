@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -33,7 +33,6 @@ type FTManager struct {
 
 var FTManagerInstance *FTManager
 
-// 地址相关常量
 var (
 	name        = utility.StrToBytes("n")
 	symbol      = utility.StrToBytes("s")
@@ -50,7 +49,6 @@ func initFTManager() {
 	FTManagerInstance.lock = sync.RWMutex{}
 }
 
-// 查询
 func (self *FTManager) GetFTSet(id string, accountDB *account.AccountDB) *types.FTSet {
 	self.lock.RLock()
 	defer self.lock.RUnlock()
@@ -79,10 +77,7 @@ func (self *FTManager) GetFTSet(id string, accountDB *account.AccountDB) *types.
 }
 
 func (self *FTManager) GenerateFTSet(name, symbol, appId, total, owner, createTime string, kind byte) *types.FTSet {
-	// 生成id
 	id := fmt.Sprintf("%s-%s", appId, symbol)
-
-	// 生成ftSet
 	ftSet := &types.FTSet{
 		ID:          id,
 		Name:        name,
@@ -98,14 +93,6 @@ func (self *FTManager) GenerateFTSet(name, symbol, appId, total, owner, createTi
 	return ftSet
 }
 
-//
-// ID     string // 代币ID，在发行时由layer2生成。生成规则时appId-symbol。例如0x12ef3-NOX。特别的，对于公链币，layer2会自动发行，例如official-ETH
-// Name   string // 代币名字，例如以太坊
-// Symbol string // 代币代号，例如ETH
-// AppId  string // 发行方
-// TotalSupply int64 // 发行总数， -1表示无限量（对于公链币，也是如此）
-// Remain      int64 // 还剩下多少，-1表示无限（对于公链币，也是如此）
-// Type        byte  // 类型，0代表公链币，1代表游戏发行的FT
 func (self *FTManager) PublishFTSet(ftSet *types.FTSet, accountDB *account.AccountDB) (string, bool) {
 	self.lock.Lock()
 	defer self.lock.Unlock()
@@ -114,12 +101,10 @@ func (self *FTManager) PublishFTSet(ftSet *types.FTSet, accountDB *account.Accou
 		return "", false
 	}
 
-	// checkId
 	if 0 == len(ftSet.AppId) || 0 == len(ftSet.Symbol) || strings.Contains(ftSet.AppId, "-") || strings.Contains(ftSet.Symbol, "-") || ftSet.AppId == common.Official {
 		return "appId or symbol wrong", false
 	}
 
-	// 检查id是否已存在
 	ftAddress := common.GenerateFTSetAddress(ftSet.ID)
 	if accountDB.Exist(ftAddress) {
 		return ftSet.ID, false
@@ -143,7 +128,6 @@ func (self *FTManager) PublishFTSet(ftSet *types.FTSet, accountDB *account.Accou
 	return ftSet.ID, true
 }
 
-// 扣
 func (self *FTManager) SubFTSet(triedOwner, ftId string, amount *big.Int, accountDB *account.AccountDB) bool {
 	self.lock.Lock()
 	defer self.lock.Unlock()
@@ -217,7 +201,6 @@ func (self *FTManager) TransferFT(source, ftId, target, supply string, accountDB
 
 }
 
-// 发行方转币给玩家
 func (self *FTManager) MintFT(owner, ftId, target, supply string, accountDB *account.AccountDB) (string, bool) {
 	txLogger.Tracef("MintFT ftId %s,target:%s,supply:%s", ftId, target, supply)
 	if 0 == len(target) || 0 == len(ftId) || 0 == len(supply) {

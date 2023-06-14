@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -22,20 +22,17 @@ import (
 )
 
 func TestCreateLDB(t *testing.T) {
-	// 创建ldb实例
 	ldb, err := NewDatabase("testldb")
 	if err != nil {
 		fmt.Printf("error to create ldb : %s\n", "testldb")
 		return
 	}
 
-	// 测试put
 	err = ldb.Put([]byte("testkey"), []byte("testvalue"))
 	if err != nil {
 		fmt.Printf("failed to put key in testldb\n")
 	}
 
-	// 测试get
 	result, err := ldb.Get([]byte("testkey"))
 	if err != nil {
 		fmt.Printf("failed to get key in testldb\n")
@@ -44,7 +41,6 @@ func TestCreateLDB(t *testing.T) {
 		fmt.Printf("get key : testkey, value: %s \n", result)
 	}
 
-	// 测试has
 	exist, err := ldb.Has([]byte("testkey"))
 	if err != nil {
 		fmt.Printf("error to check key : %s\n", "testkey")
@@ -54,15 +50,12 @@ func TestCreateLDB(t *testing.T) {
 		fmt.Printf("get key : %s\n", "testkey")
 	}
 
-	// 测试delete
 	err = ldb.Delete([]byte("testkey"))
 	if err != nil {
 		fmt.Printf("error to delete key : %s\n", "testkey")
 
 	}
 
-	// 测试get空
-	// key不存在，会返回err
 	result, err = ldb.Get([]byte("testkey"))
 	if err != nil {
 		fmt.Printf("failed to get key in testldb\n")
@@ -126,7 +119,6 @@ func TestClearLDB(t *testing.T) {
 		return
 	}
 
-	// 测试put
 	err = ldb.Put([]byte("testkey"), []byte("testvalue"))
 	if err != nil {
 		t.Fatalf("failed to put key in testldb\n")
@@ -137,26 +129,12 @@ func TestClearLDB(t *testing.T) {
 		return
 	}
 
-	// 测试get，期待为null
-	//result, err := ldb.Get([]byte("testkey"))
-	//if result != nil {
-	//	t.Fatalf("get key : testkey, value: %s \n", result)
-	//
-	//} else {
-	//	fmt.Printf("get key : testkey, value: null")
-	//}
 }
 
 func TestLDB(t *testing.T) {
 
-	ldb:= newLDB()
-	// 测试put
-	//err = ldb.Put([]byte("testkey"), []byte("testvalue"))
-	//if err != nil {
-	//	fmt.Printf("failed to put key in testldb\n")
-	//}
+	ldb := newLDB()
 
-	// 测试put
 	byte, err := ldb.Get([]byte("testkey"))
 	if err != nil {
 		fmt.Printf("failed to put key in testldb\n")
@@ -164,8 +142,7 @@ func TestLDB(t *testing.T) {
 	fmt.Printf("got byte:%v\n", byte)
 }
 
-func newLDB()*LDBDatabase{
-	// 创建ldb实例
+func newLDB() *LDBDatabase {
 	ldb, err := NewLDBDatabase("testldb", 128, 128)
 	if err != nil {
 		fmt.Printf("error to create ldb : %s\n", "testldb")

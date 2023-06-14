@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -34,9 +34,7 @@ func NewReentrantLock() *ReentrantLock {
 	return lock
 }
 
-// 获取资源锁
 func (self *ReentrantLock) Lock(newOwner string) {
-	// 已经获取到了，直接返回
 	self.ownerLock.Lock()
 	defer self.ownerLock.Unlock()
 
@@ -52,7 +50,6 @@ func (self *ReentrantLock) Lock(newOwner string) {
 
 }
 
-// owner释放资源
 func (self *ReentrantLock) Unlock(owner string) {
 	self.ownerLock.Lock()
 	defer self.ownerLock.Unlock()
@@ -67,7 +64,6 @@ func (self *ReentrantLock) Unlock(owner string) {
 	}
 }
 
-// owner释放资源
 func (self *ReentrantLock) Release(owner string) {
 	self.ownerLock.Lock()
 	defer self.ownerLock.Unlock()

@@ -1,3 +1,19 @@
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RocketProtocol library.
+//
+// The RangersProtocol library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The RangersProtocol library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+
 package network
 
 import (
@@ -7,9 +23,8 @@ import (
 )
 
 // Message
-// msgType 0: 从某个id开始发送，无需ack确认
-// msgType 1: 获取某个id
-// msgType 2: ack获取某个id，发送下一个。客户端状态，待实现
+// msgType 0
+// msgType 1
 type txMessage struct {
 	MsgType byte   `json:"type"`
 	Id      uint64 `json:"id"`
@@ -20,7 +35,6 @@ type TxConn struct {
 	baseConn
 }
 
-// Init txConn 处理 /api/writer
 func (conn *TxConn) Init(ipPort string) {
 	conn.rcv = func(body []byte) {
 		var data txMessage

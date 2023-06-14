@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -80,22 +80,21 @@ func NewTransactionError(code int, msg string) *TransactionError {
 	return &TransactionError{Code: code, Message: msg}
 }
 
-// 区块头结构
 type BlockHeader struct {
-	Hash         common.Hash // 本块的hash，to do : 是对哪些数据的哈希
-	Height       uint64      // 本块的高度
-	PreHash      common.Hash //上一块哈希
-	PreTime      time.Time   //上一块铸块时间
-	ProveValue   *big.Int    //轮转序号
-	TotalQN      uint64      //整条链的QN
-	CurTime      time.Time   //当前铸块时间
-	Castor       []byte      //出块人ID
-	GroupId      []byte      //组ID，groupsig.ID的二进制表示
-	Signature    []byte      // 组签名
-	Nonce        uint64      //盐 当前含义为版本号
+	Hash         common.Hash
+	Height       uint64
+	PreHash      common.Hash
+	PreTime      time.Time
+	ProveValue   *big.Int
+	TotalQN      uint64
+	CurTime      time.Time
+	Castor       []byte
+	GroupId      []byte
+	Signature    []byte
+	Nonce        uint64
 	RequestIds   map[string]uint64
-	Transactions []common.Hashes // 交易集哈希列表
-	TxTree       common.Hash     // 交易默克尔树根hash
+	Transactions []common.Hashes
+	TxTree       common.Hash
 	ReceiptTree  common.Hash
 	StateTree    common.Hash
 	ExtraData    []byte
@@ -103,20 +102,19 @@ type BlockHeader struct {
 	EvictedTxs   []common.Hash
 }
 
-// 辅助
 type header struct {
-	Height       uint64      // 本块的高度
-	PreHash      common.Hash //上一块哈希
-	PreTime      time.Time   //上一块铸块时间
-	ProveValue   *big.Int    //轮转序号
-	TotalQN      uint64      //整条链的QN
-	CurTime      time.Time   //当前铸块时间
-	Castor       []byte      //出块人ID
-	GroupId      []byte      //组ID，groupsig.ID的二进制表示
-	Nonce        uint64      //盐
+	Height       uint64
+	PreHash      common.Hash
+	PreTime      time.Time
+	ProveValue   *big.Int
+	TotalQN      uint64
+	CurTime      time.Time
+	Castor       []byte
+	GroupId      []byte
+	Nonce        uint64
 	RequestId    map[string]uint64
-	Transactions []common.Hashes // 交易集哈希列表
-	TxTree       common.Hash     // 交易默克尔树根hash
+	Transactions []common.Hashes
+	TxTree       common.Hash
 	ReceiptTree  common.Hash
 	StateTree    common.Hash
 	ExtraData    []byte
@@ -165,8 +163,7 @@ func (bh *BlockHeader) ToString() string {
 		ReceiptTree:  bh.ReceiptTree,
 		StateTree:    bh.StateTree,
 		ExtraData:    bh.ExtraData,
-		//ProveRoot:    bh.ProveRoot,
-		EvictedTxs: bh.EvictedTxs,
+		EvictedTxs:   bh.EvictedTxs,
 	}
 	blockByte, _ := json.Marshal(header)
 	return string(blockByte)
@@ -183,17 +180,17 @@ type Member struct {
 }
 
 type GroupHeader struct {
-	Hash            common.Hash //组头hash
-	Parent          []byte      //父亲组 的组ID
-	PreGroup        []byte      //前一块的ID
-	CreateBlockHash []byte      //创建组的块HASH
+	Hash            common.Hash
+	Parent          []byte
+	PreGroup        []byte
+	CreateBlockHash []byte
 	BeginTime       time.Time
-	MemberRoot      common.Hash //成员列表hash
-	CreateHeight    uint64      //建组高度
-	ReadyHeight     uint64      //准备就绪最迟高度
-	WorkHeight      uint64      //组开始参与铸块的高度
-	DismissHeight   uint64      //组解散的高度
-	Extends         string      //带外数据
+	MemberRoot      common.Hash
+	CreateHeight    uint64
+	ReadyHeight     uint64
+	WorkHeight      uint64
+	DismissHeight   uint64
+	Extends         string
 }
 
 func (gh *GroupHeader) GenHash() common.Hash {
@@ -202,8 +199,6 @@ func (gh *GroupHeader) GenHash() common.Hash {
 	buf.Write(gh.PreGroup)
 	buf.Write(gh.CreateBlockHash)
 
-	//bt, _ := gh.BeginTime.MarshalBinary()
-	//buf.Write(bt)
 	buf.Write(gh.MemberRoot.Bytes())
 	buf.Write(utility.UInt64ToByte(gh.CreateHeight))
 	buf.WriteString(gh.Extends)
@@ -211,12 +206,11 @@ func (gh *GroupHeader) GenHash() common.Hash {
 }
 
 type Group struct {
-	Header *GroupHeader
-	//不参与签名
+	Header      *GroupHeader
 	Id          []byte
 	PubKey      []byte
 	Signature   []byte
-	Members     [][]byte //成员id列表
+	Members     [][]byte
 	GroupHeight uint64
 }
 
@@ -234,7 +228,6 @@ func (sub *UserData) Hash() []byte {
 	return common.Sha256(buffer.Bytes())
 }
 
-// 转账时写在extraData里的复杂结构，用于转账NFT、FT以及余额
 type TransferData struct {
 	Balance string            `json:"balance,omitempty"`
 	Coin    map[string]string `json:"coin,omitempty"`
@@ -255,15 +248,11 @@ type FTID struct {
 }
 
 type TxJson struct {
-	// 用户id
 	Source string `json:"source"`
-	// 游戏id
 	Target string `json:"target"`
-	// 场景id
-	Type int32  `json:"type"`
-	Time string `json:"time,omitempty"`
+	Type   int32  `json:"type"`
+	Time   string `json:"time,omitempty"`
 
-	// 入参
 	Data      string `json:"data,omitempty"`
 	ExtraData string `json:"extraData,omitempty"`
 
@@ -361,21 +350,6 @@ func (object *JSONObject) TOJSONString() string {
 func (object *JSONObject) GetData() map[string]interface{} {
 	return object.data
 }
-
-//func (object *JSONObject) MarshalJSON() ([]byte, error) {
-//	data := bytes.Buffer{}
-//	for k, v := range object.Data {
-//		value, err := json.Marshal(v)
-//		if err != nil {
-//			return nil, err
-//		}
-//
-//		data.Write([]byte(k))
-//		data.Write(value)
-//	}
-//
-//	return data.Bytes(), nil
-//}
 
 func ReplaceBigInt(one, other interface{}) interface{} {
 	bigInt := other.(*big.Int)

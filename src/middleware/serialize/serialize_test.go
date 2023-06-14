@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -31,7 +31,7 @@ type Account struct {
 }
 
 func TestSerialize(t *testing.T) {
-	a := Account{Nonce: 100, Root: common.BytesToHash([]byte{1, 2, 3}), CodeHash: []byte{4, 5, 6},Balance:new(big.Int)}
+	a := Account{Nonce: 100, Root: common.BytesToHash([]byte{1, 2, 3}), CodeHash: []byte{4, 5, 6}, Balance: new(big.Int)}
 	accountDump(a)
 	byte, err := EncodeToBytes(a)
 	if err != nil {
@@ -39,7 +39,7 @@ func TestSerialize(t *testing.T) {
 	}
 	fmt.Println(byte)
 
-	var b  = Account{}
+	var b = Account{}
 	decodeErr := DecodeBytes(byte, &b)
 	if decodeErr != nil {
 		fmt.Printf("decode error\n" + decodeErr.Error())
@@ -48,5 +48,5 @@ func TestSerialize(t *testing.T) {
 }
 
 func accountDump(a Account) {
-	fmt.Printf("Account nounce:%d,Root:%s,CodeHash:%v,Balance:%v\n", a.Nonce, a.Root.String(), a.CodeHash,a.Balance.Sign())
+	fmt.Printf("Account nounce:%d,Root:%s,CodeHash:%v,Balance:%v\n", a.Nonce, a.Root.String(), a.CodeHash, a.Balance.Sign())
 }

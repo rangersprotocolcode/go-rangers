@@ -1,3 +1,19 @@
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RocketProtocol library.
+//
+// The RangersProtocol library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The RangersProtocol library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+
 package network
 
 import (
@@ -7,7 +23,6 @@ import (
 	"net/http"
 )
 
-// RPCReqObj 完整的rpc请求体
 type rpcReqObj struct {
 	Method  string        `json:"method"`
 	Params  []interface{} `json:"params"`
@@ -15,7 +30,6 @@ type rpcReqObj struct {
 	ID      uint          `json:"id"`
 }
 
-// RPCResObj 完整的rpc返回体
 type RPCResObj struct {
 	Jsonrpc string      `json:"jsonrpc"`
 	ID      uint        `json:"id"`
@@ -41,7 +55,6 @@ func JSONRPCPost(url string, method string, params ...interface{}) (*RPCResObj, 
 	}
 	defer resp.Body.Close()
 	responseBytes, err := ioutil.ReadAll(resp.Body)
-	//fmt.Println(string(responseBytes))
 
 	if err != nil {
 		return nil, err

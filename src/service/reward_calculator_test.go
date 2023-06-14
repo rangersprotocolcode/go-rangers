@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -34,10 +34,10 @@ func TestGetEpoch(t *testing.T) {
 
 	ff, _, _ := big.ParseFloat(f.String(), 10, 256, big.ToNearestEven)
 	sf, _, _ := big.ParseFloat(s.String(), 10, 256, big.ToNearestEven)
-	fmt.Println(ff.Text('f',256))
-	fmt.Println(sf.Text('f',256))
+	fmt.Println(ff.Text('f', 256))
+	fmt.Println(sf.Text('f', 256))
 	r := new(big.Float).Quo(ff, sf)
-	fmt.Println(r.Text('f',256))
+	fmt.Println(r.Text('f', 256))
 
 	year := getEpoch(1)
 	if 0 != year {
@@ -70,11 +70,11 @@ func TestGetTotalReward(t *testing.T) {
 		t.Fatalf("reward error for 1000000")
 	}
 	reward = getTotalReward(common.BlocksPerEpoch)
-	if  0.03478395061728395 != reward {
+	if 0.03478395061728395 != reward {
 		t.Fatalf("reward error for BlocksPerYear, %v", reward)
 	}
 	reward = getTotalReward(common.BlocksPerEpoch + 1)
-	if  0.03478395061728395 != reward {
+	if 0.03478395061728395 != reward {
 		t.Fatalf("reward error for BlocksPerYear+1")
 	}
 	reward = getTotalReward(common.BlocksPerEpoch * 2)

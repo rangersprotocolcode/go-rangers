@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -18,7 +18,6 @@ package notify
 
 import (
 	"fmt"
-	"sync"
 	"testing"
 	"time"
 )
@@ -32,28 +31,6 @@ func TestBus_Publish(t *testing.T) {
 	bus := NewBus()
 	bus.Publish("test", &DummyMessage{})
 
-}
-
-func TestNewBus(t *testing.T) {
-	condition := false // 条件不满足
-	var mu sync.Mutex
-	cond := sync.NewCond(&mu)
-	// 让例程去创造条件
-	go func() {
-		mu.Lock()
-		condition = true // 更改条件
-		cond.Signal()    // 发送通知：条件已经满足
-		mu.Unlock()
-	}()
-	mu.Lock()
-	// 检查条件是否满足，避免虚假通知，同时避免 Signal 提前于 Wait 执行。
-	for !condition {
-		// 等待条件满足的通知，如果收到虚假通知，则循环继续等待。
-		cond.Wait() // 等待时 mu 处于解锁状态，唤醒时重新锁定。
-	}
-	fmt.Println("条件满足，开始后续动作...")
-	mu.Unlock()
-	fmt.Println("条件满足2，开始后续动作...")
 }
 
 func produce(ch chan<- int) {

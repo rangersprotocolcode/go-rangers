@@ -1,8 +1,25 @@
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RocketProtocol library.
+//
+// The RangersProtocol library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The RangersProtocol library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+
 package db
 
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
+	"fmt"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/errors"
 	"github.com/syndtr/goleveldb/leveldb/filter"
@@ -53,7 +70,6 @@ func NewLDBDatabase(file string, cache int, handles int) (*LDBDatabase, error) {
 	}, nil
 }
 
-// 生成leveldb实例
 func newLevelDBInstance(file string, cache int, handles int) (*leveldb.DB, error) {
 	db, err := leveldb.OpenFile(file, &opt.Options{
 		OpenFilesCacheCapacity: handles,
@@ -77,7 +93,6 @@ func (ldb *LDBDatabase) Clear() error {
 	ldb.inited = false
 	ldb.Close()
 
-	// todo: 直接删除文件，是不是过于粗暴？
 	os.RemoveAll(ldb.Path())
 
 	db, err := newLevelDBInstance(ldb.Path(), ldb.cacheConfig, ldb.handlesConfig)
@@ -153,17 +168,11 @@ func (db *LDBDatabase) Close() {
 		errc := make(chan error)
 		db.quitChan <- errc
 		if err := <-errc; err != nil {
-			//db.log.Error("Metrics collection failed", "err", err)
+			fmt.Println(err)
 		}
 	}
 
 	db.db.Close()
-	//err := db.db.Close()
-	//if err == nil {
-	//	db.log.Info("Database closed")
-	//} else {
-	//	db.log.Error("Failed to close database", "err", err)
-	//}
 }
 
 func (db *LDBDatabase) NewBatch() Batch {

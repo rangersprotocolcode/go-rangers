@@ -1,3 +1,19 @@
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RocketProtocol library.
+//
+// The RangersProtocol library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The RangersProtocol library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+
 package vm
 
 import (
@@ -105,9 +121,9 @@ func generateCall(salt int, address common.Address) []byte {
 	return common.FromHex(inputString)
 }
 
-func TestNodeResult(t *testing.T)  {
-	dataHex:="0x000000000000000000000000a495e75de1c8f06fcde1bb6cca7c52c94f1c3e690000000000000000000000000000000000000000000000000000000000000000000000000000000000000000df764badfdf3c27753f9c4a269a850d028f01dbc000000000000000000000000000000000000000000000000000000000000000000000000000000000000000025716527aad0ae1dd24bd247af9232dae78595b0000000000000000000000000000000000000000000000015af1d78b58c400000"
-	data:=common.FromHex(dataHex)
+func TestNodeResult(t *testing.T) {
+	dataHex := "0x000000000000000000000000a495e75de1c8f06fcde1bb6cca7c52c94f1c3e690000000000000000000000000000000000000000000000000000000000000000000000000000000000000000df764badfdf3c27753f9c4a269a850d028f01dbc000000000000000000000000000000000000000000000000000000000000000000000000000000000000000025716527aad0ae1dd24bd247af9232dae78595b0000000000000000000000000000000000000000000000015af1d78b58c400000"
+	data := common.FromHex(dataHex)
 
 	realAddress := data[12:32]
 
