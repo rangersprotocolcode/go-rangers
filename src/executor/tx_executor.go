@@ -20,6 +20,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"strconv"
 )
 
 type txExecutors struct {
@@ -33,7 +34,7 @@ func GetTxExecutor(txType int32) executor {
 }
 
 func InitExecutors() {
-	logger := log.GetLoggerByIndex(log.TxLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	logger := log.GetLoggerByIndex(log.TxLogConfig, strconv.Itoa(common.InstanceIndex))
 
 	executors := make(map[int32]executor)
 
