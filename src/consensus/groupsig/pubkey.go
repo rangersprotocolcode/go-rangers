@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -27,20 +27,16 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-//用户公钥
 type Pubkey struct {
 	value bn_curve.G2
 }
 
-//由私钥构建公钥
-//NewPubkeyFromSeckey
 func GeneratePubkey(sec Seckey) *Pubkey {
 	pub := new(Pubkey)
 	pub.value.ScalarBaseMult(sec.value.getBigInt())
 	return pub
 }
 
-//DeserializePubkeyBytes
 func ByteToPublicKey(bytes []byte) Pubkey {
 	var pk Pubkey
 	if err := pk.Deserialize(bytes); err != nil {
@@ -49,23 +45,19 @@ func ByteToPublicKey(bytes []byte) Pubkey {
 	return pk
 }
 
-//把公钥转换成字节切片（小端模式）
 func (pub Pubkey) Serialize() []byte {
 	return pub.value.Marshal()
 }
 
-//由字节切片初始化私钥  ToDoCheck
 func (pub *Pubkey) Deserialize(b []byte) error {
 	_, error := pub.value.Unmarshal(b)
 	return error
 }
 
-//把公钥转换成十六进制字符串，包含0x前缀
 func (pub Pubkey) GetHexString() string {
 	return PREFIX + common.Bytes2Hex(pub.value.Marshal())
 }
 
-//由十六进制字符串初始化公钥
 func (pub *Pubkey) SetHexString(s string) error {
 	if len(s) < len(PREFIX) || s[:len(PREFIX)] != PREFIX {
 		return fmt.Errorf("arg failed")
@@ -80,7 +72,6 @@ func (pub Pubkey) IsEmpty() bool {
 	return pub.value.IsEmpty()
 }
 
-//判断两个公钥是否相同   
 func (pub Pubkey) IsEqual(rhs Pubkey) bool {
 	return bytes.Equal(pub.value.Marshal(), rhs.value.Marshal())
 }
@@ -89,13 +80,11 @@ func (pub Pubkey) IsValid() bool {
 	return !pub.IsEmpty()
 }
 
-//由公钥生成地址
 func (pub Pubkey) GetAddress() common.Address {
-	h := sha3.Sum256(pub.Serialize())  //取得公钥的SHA3 256位哈希
-	return common.BytesToAddress(h[:]) //由256位哈希生成160位地址
+	h := sha3.Sum256(pub.Serialize())
+	return common.BytesToAddress(h[:])
 }
 
-//公钥聚合函数
 func AggregatePubkeys(pubs []Pubkey) *Pubkey {
 	if len(pubs) == 0 {
 		log.Printf("AggregatePubkeys no pubs")
@@ -141,35 +130,3 @@ func (pub *Pubkey) UnmarshalJSON(data []byte) error {
 	str = str[1 : len(str)-1]
 	return pub.SetHexString(str)
 }
-
-////公钥分片生成函数，用多项式替换生成特定于某个ID的公钥分片
-////mpub : master公钥切片
-////id : 获得该分片的id
-//func SharePubkey(mpub []Pubkey, id ID) *Pubkey {
-//	pub := &Pubkey{}
-//	// degree of polynomial, need k >= 1, i.e. len(msec) >= 2
-//	k := len(mpub) - 1
-//	// msec = c_0, c_1, ..., c_k
-//	// evaluate polynomial f(x) with coefficients c0, ..., ck
-//	pub.Deserialize(mpub[k].Serialize())
-//
-//	x := id.GetBigInt() //取得id的big.Int值
-//	for j := k - 1; j >= 0; j-- { //从master key切片的尾部-1往前遍历
-//		pub.value.ScalarMult(&pub.value, x)
-//		pub.value.Add(&pub.value, &mpub[j].value)
-//	}
-//
-//	return pub
-//}
-//
-////以i作为ID，调用公钥分片生成函数
-//func SharePubkeyByInt(mpub []Pubkey, i int) *Pubkey {
-//	return SharePubkey(mpub, *NewIDFromInt(i))
-//}
-//
-////以id+1作为ID，调用公钥分片生成函数
-//func SharePubkeyByMembershipNumber(mpub []Pubkey, id int) *Pubkey {
-//	return SharePubkey(mpub, *NewIDFromInt(id + 1))
-//}
-
-//type PubkeyMap map[string]Pubkey

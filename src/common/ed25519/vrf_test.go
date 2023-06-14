@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -30,7 +30,7 @@ import (
 	"time"
 )
 
-//---------------------------------------Function Test-----------------------------------------------------------------
+// ---------------------------------------Function Test-----------------------------------------------------------------
 func TestKeyLength(test *testing.T) {
 	privateKey, publicKey := genRandomKey(nil)
 	fmt.Printf("privateKey:%v,len:%d\n", privateKey, len(privateKey))
@@ -90,7 +90,7 @@ func runGenProveAndVerifyOnce(test *testing.T, random io.Reader) {
 	assert.Equal(test, true, verifyResult)
 }
 
-//---------------------------------------Benchmark Test-----------------------------------------------------------------
+// ---------------------------------------Benchmark Test-----------------------------------------------------------------
 var testCount = 1000
 var privateKeyList = make([]PrivateKey, testCount)
 var publicKeyList = make([]PublicKey, testCount)
@@ -175,7 +175,7 @@ func prepareData() {
 	}
 }
 
-//---------------------------------------Standard Data Test---------------------------------------------------------------
+// ---------------------------------------Standard Data Test---------------------------------------------------------------
 func TestVRFStandard(test *testing.T) {
 
 	fileName := "vrf_standard_data.txt"
@@ -219,7 +219,7 @@ func TestVRFStandard(test *testing.T) {
 	}
 }
 
-//---------------------------------------Comparison Test---------------------------------------------------------------
+// ---------------------------------------Comparison Test---------------------------------------------------------------
 const prefix = "0x"
 
 func TestGenComparisonData(test *testing.T) {

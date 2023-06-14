@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -28,7 +28,7 @@ import (
 )
 
 // OnMessageSharePieceReq receives share piece request from other members
-// It happens in the case that the current node didn't heard from the other part during the piece-sharing with each other process.
+// It happens in the case that the current node didn't hear from the other part during the piece-sharing with each other process.
 func (p *groupCreateProcessor) OnMessageSharePieceReq(msg *model.ReqSharePieceMessage) {
 	groupCreateLogger.Debugf("Rcv share piece req! groupHash=%v, sender=%v", msg.GroupHash.ShortS(), msg.SignInfo.GetSignerID().ShortS())
 

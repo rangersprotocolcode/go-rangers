@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -31,14 +31,12 @@ func getDefaultCurve() elliptic.Curve {
 	return secp256k1.S256()
 }
 
-// 160位地址
 type Address [AddressLength]byte
 
 func (a Address) MarshalJSON() ([]byte, error) {
 	return []byte("\"" + a.GetHexString() + "\""), nil
 }
 
-// 构造函数族
 func BytesToAddress(b []byte) Address {
 	var a Address
 	a.SetBytes(b)
@@ -49,7 +47,6 @@ func StringToAddress(s string) Address { return BytesToAddress(utility.StrToByte
 func BigToAddress(b *big.Int) Address  { return BytesToAddress(b.Bytes()) }
 func HexToAddress(s string) Address    { return BytesToAddress(FromHex(s)) }
 
-// 赋值函数，如b超出a的容量则截取后半部分
 func (a *Address) SetBytes(b []byte) {
 	if len(b) > len(a) {
 		b = b[len(b)-AddressLength:]
@@ -66,24 +63,20 @@ func (a *Address) Set(other Address) {
 }
 
 // MarshalText returns the hex representation of a.
-// 把地址编码成十六进制字符串
 func (a Address) MarshalText() ([]byte, error) {
 	return utility.Bytes(a[:]).MarshalText()
 }
 
 // UnmarshalText parses a hash in hex syntax.
-// 把十六进制字符串解码成地址
 func (a *Address) UnmarshalText(input []byte) error {
 	return utility.UnmarshalFixedText("Address", input, a[:])
 }
 
 // UnmarshalJSON parses a hash in hex syntax.
-// 把十六进制JSONG格式字符串解码成地址
 func (a *Address) UnmarshalJSON(input []byte) error {
 	return utility.UnmarshalFixedJSON(addressT, input, a[:])
 }
 
-// 类型转换输出函数
 func (a Address) Bytes() []byte        { return a[:] }
 func (a Address) BigInteger() *big.Int { return new(big.Int).SetBytes(a[:]) }
 func (a Address) Hash() Hash           { return BytesToHash(a[:]) }
@@ -119,7 +112,6 @@ func IsHexAddress(s string) bool {
 	return len(s) == 2*AddressLength && isHex(s)
 }
 
-// 256位哈希
 type Hash [HashLength]byte
 
 func BytesToHash(b []byte) Hash {
@@ -181,7 +173,7 @@ func (h Hash) MarshalText() ([]byte, error) {
 // Sets the hash to the value of b. If b is larger than len(h), 'b' will be cropped (from the left).
 func (h *Hash) SetBytes(b []byte) {
 	if len(b) > len(h) {
-		b = b[len(b)-HashLength:] //截取右边部分
+		b = b[len(b)-HashLength:]
 	}
 
 	copy(h[HashLength-len(b):], b)
@@ -199,9 +191,9 @@ func (h *Hash) Set(other Hash) {
 
 // Generate implements testing/quick.Generator.
 func (h Hash) Generate(rand *rand.Rand, size int) reflect.Value {
-	m := rand.Intn(len(h))            //m为0-len(h)之间的伪随机数
-	for i := len(h) - 1; i > m; i-- { //从高位到m之间进行遍历
-		h[i] = byte(rand.Uint32()) //rand.Uint32为32位非负伪随机数
+	m := rand.Intn(len(h))
+	for i := len(h) - 1; i > m; i-- {
+		h[i] = byte(rand.Uint32())
 	}
 	return reflect.ValueOf(h)
 }

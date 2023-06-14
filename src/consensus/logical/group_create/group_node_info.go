@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -24,10 +24,8 @@ import (
 	"sync"
 )
 
-// GroupNode
-//当前节点作为组成员参与建某个组的信息
 type groupNodeInfo struct {
-	secretSeed         base.Rand //通过矿工信息 为某个组生成的秘密种子
+	secretSeed         base.Rand
 	groupMemberNum     int       // Number of group members
 	receivedSharePiece map[string]model.SharePiece
 
@@ -37,7 +35,7 @@ type groupNodeInfo struct {
 	lock sync.RWMutex
 }
 
-//InitForMiner+InitForGroup
+// InitForMiner+InitForGroup
 func NewGroupNodeInfo(mi *model.SelfMinerInfo, groupHash common.Hash, groupMemberNum int) *groupNodeInfo {
 	var nodeInfo = groupNodeInfo{}
 	nodeInfo.secretSeed = mi.GenSecretForGroup(groupHash) // Generate a private seed for the group
@@ -61,12 +59,13 @@ func (nodeInfo *groupNodeInfo) genSharePiece(mems []groupsig.ID) map[string]grou
 	return shares
 }
 
-//SetInitPiece
+// SetInitPiece
 // Receiving secret sharing,
 // Returns:
-// 			0: normal reception
-// 			-1: exception
-// 			1: complete signature private key aggregation and group public key aggregation
+//
+//	0: normal reception
+//	-1: exception
+//	1: complete signature private key aggregation and group public key aggregation
 func (nodeInfo *groupNodeInfo) handleSharePiece(id groupsig.ID, share *model.SharePiece) int {
 	nodeInfo.lock.Lock()
 	defer nodeInfo.lock.Unlock()
@@ -89,7 +88,7 @@ func (nodeInfo *groupNodeInfo) handleSharePiece(id groupsig.ID, share *model.Sha
 	return 0
 }
 
-//hasPiece
+// hasPiece
 func (nodeInfo *groupNodeInfo) hasSharePiece(id groupsig.ID) bool {
 	nodeInfo.lock.RLock()
 	defer nodeInfo.lock.RUnlock()
@@ -117,7 +116,7 @@ func (nodeInfo *groupNodeInfo) threshold() int {
 	return model.Param.GetGroupK(nodeInfo.groupMemberNum)
 }
 
-// GenSecKey generate a private private key list for a group
+// GenSecKey generate a private key list for a group
 // threshold : threshold number
 func (nodeInfo *groupNodeInfo) genSecKeyList(threshold int) []groupsig.Seckey {
 	secs := make([]groupsig.Seckey, threshold)
@@ -131,7 +130,7 @@ func (nodeInfo *groupNodeInfo) gotAllSharePiece() bool {
 	return nodeInfo.receivedSharePieceCount() == nodeInfo.groupMemberNum
 }
 
-//GetSize
+// GetSize
 func (nodeInfo *groupNodeInfo) receivedSharePieceCount() int {
 	return len(nodeInfo.receivedSharePiece)
 }
@@ -167,7 +166,7 @@ func (nodeInfo *groupNodeInfo) genGroupPubKey() *groupsig.Pubkey {
 	return gpk
 }
 
-// GenSecKey generate a private private key for a group
+// GenSecKey generate a  private key for a group
 func (nodeInfo *groupNodeInfo) genSeedSecKey() groupsig.Seckey {
 	return *groupsig.NewSeckeyFromRand(nodeInfo.secretSeed.Deri(0))
 }

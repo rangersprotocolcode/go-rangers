@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -46,30 +46,12 @@ func (p *Processor) triggerFutureVerifyMsg(hash common.Hash) {
 
 }
 
-//func (p *Processor) triggerFutureBlockMsg(preBH *types.BlockHeader) {
-//	futureMsgs := p.getFutureBlockMsgs(preBH.Hash)
-//	if futureMsgs == nil || len(futureMsgs) == 0 {
-//		return
-//	}
-//	log.Printf("handle future blocks, size=%v\n", len(futureMsgs))
-//	for _, msg := range futureMsgs {
-//		tbh := msg.Block.Header
-//		tlog := newHashTraceLog("OMB-FUTRUE", tbh.Hash, groupsig.DeserializeId(tbh.Castor))
-//		tlog.log( "%v", "trigger cached future block")
-//		p.receiveBlock(&msg.Block, preBH)
-//	}
-//	p.removeFutureBlockMsgs(preBH.Hash)
-//}
-
 func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	if !p.Ready() {
 		return
 	}
 	block := message.GetData().(types.Block)
 	bh := block.Header
-
-	//tlog := newMsgTraceLog("OnBlockAddSuccess", bh.Hash.ShortS(), "")
-	//tlog.log("preHash=%v, height=%v", bh.PreHash.ShortS(), bh.Height)
 
 	p.lock.Lock()
 	defer p.lock.Unlock()
@@ -82,7 +64,6 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 			bc.updateSignedMaxQN(bh.TotalQN)
 			vctx := bc.GetVerifyContextByHash(bh.Hash)
 			if vctx != nil && vctx.prevBH.Hash == bh.PreHash {
-				//如果本地没有广播准备，说明是其他节点广播过来的块，则标记为已广播
 				vctx.markBroadcast()
 			}
 		}
@@ -94,7 +75,6 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 		p.setVrfWorker(nil)
 	}
 
-	//p.triggerFutureBlockMsg(bh)
 	p.triggerFutureVerifyMsg(bh.Hash)
 
 	group_create.GroupCreateProcessor.StartCreateGroupPolling()
@@ -107,7 +87,6 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	}
 }
 
-// todo: 触发条件可以更丰富，更动态
 func (p *Processor) isTriggerCastImmediately() bool {
 	return false
 	//return p.MainChain.GetTransactionPool().TxNum() > 200

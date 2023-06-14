@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -36,7 +36,7 @@ import (
 
 type CastBlockContexts struct {
 	blockCtxs    sync.Map //string -> *BlockContext
-	reservedVctx sync.Map //blockHash -> *VerifyContext 存储已经有签出块的verifyContext，待广播
+	reservedVctx sync.Map //blockHash -> *VerifyContext
 }
 
 func NewCastBlockContexts() *CastBlockContexts {
@@ -103,22 +103,17 @@ func (bctx *CastBlockContexts) forEachReservedVctx(f func(vctx *VerifyContext) b
 	})
 }
 
-//增加一个铸块上下文（一个组有一个铸块上下文）
 func (p *Processor) AddBlockContext(bc *BlockContext) bool {
 	var add = p.blockContexts.addBlockContext(bc)
 	newBizLog("AddBlockContext").log("gid=%v, result=%v\n.", bc.MinerID.Gid.ShortS(), add)
 	return add
 }
 
-//取得一个铸块上下文
-//gid:组ID hex 字符串
 func (p *Processor) GetBlockContext(gid groupsig.ID) *BlockContext {
 	return p.blockContexts.getBlockContext(gid)
 }
 
-//立即触发一次检查自己是否下个铸块组
 func (p *Processor) triggerCastCheck() {
-	//p.Ticker.StartTickerRoutine(p.getCastCheckRoutineName(), true)
 	p.Ticker.StartAndTriggerRoutine(p.getCastCheckRoutineName())
 }
 
@@ -163,7 +158,7 @@ func (p *Processor) reserveBlock(vctx *VerifyContext) {
 	blog := newBizLog("reserveBLock")
 	blog.log("height=%v, totalQN=%v, hash=%v, slotStatus=%v", bh.Height, bh.TotalQN, bh.Hash.ShortS(), slot.GetSlotStatus())
 	if slot.IsRecovered() {
-		vctx.markCastSuccess() //onBlockAddSuccess方法中也mark了，该处调用是异步的
+		vctx.markCastSuccess()
 		p.blockContexts.addReservedVctx(vctx)
 		if !p.tryBroadcastBlock(vctx) {
 			blog.log("reserved, hash=%v", vctx.blockHash)
@@ -178,8 +173,7 @@ func (p *Processor) tryBroadcastBlock(vctx *VerifyContext) bool {
 		tlog := newHashTraceLog("tryBroadcastBlock", bh.Hash, p.GetMinerID())
 		tlog.log("try broadcast, height=%v, totalQN=%v, 耗时%v", bh.Height, bh.TotalQN, utility.GetTime().Sub(bh.CurTime))
 
-		//异步进行，使得请求快速返回，防止消息积压
-		go p.successNewBlock(vctx, sc) //上链和组外广播
+		go p.successNewBlock(vctx, sc)
 
 		p.blockContexts.removeReservedVctx(vctx.blockHash)
 		return true
@@ -187,9 +181,6 @@ func (p *Processor) tryBroadcastBlock(vctx *VerifyContext) bool {
 	return false
 }
 
-//在某个区块高度的QN值成功出块，保存上链，向组外广播
-//同一个高度，可能会因QN不同而多次调用该函数
-//但一旦低的QN出过，就不该出高的QN。即该函数可能被多次调用，但是调用的QN值越来越小
 func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -212,7 +203,7 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 		return
 	}
 
-	if p.blockOnChain(bh.Hash) { //已经上链
+	if p.blockOnChain(bh.Hash) {
 		blog.log("block already onchain!")
 		return
 	}
@@ -222,23 +213,17 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 		blog.log("core.GenerateBlock is nil! won't broadcast block!")
 		return
 	}
-	//下一块的验证组
-	//gb := p.spreadGroupBrief(bh, bh.CurTime, bh.Height+1)
-	//if gb == nil {
-	//	blog.log("spreadGroupBrief nil, bh=%v, height=%v", bh.Hash.ShortS(), bh.Height)
-	//	return
-	//}
 
 	group := p.GetGroup(groupsig.DeserializeID(bh.GroupId))
 	gpk := group.GetGroupPubKey()
-	if !slot.VerifyGroupSigns(gpk, vctx.prevBH.Random) { //组签名验证通过
+	if !slot.VerifyGroupSigns(gpk, vctx.prevBH.Random) {
 		blog.log("group pub key local check failed, gpk=%v, hash in slot=%v, hash in bh=%v status=%v.",
 			gpk.ShortS(), slot.BH.Hash.ShortS(), bh.Hash.ShortS(), slot.GetSlotStatus())
 		return
 	}
 
 	r := p.doAddOnChain(block)
-	if r != int8(types.AddBlockSucc) { //分叉调整或 上链失败都不走下面的逻辑
+	if r != int8(types.AddBlockSucc) {
 		slot.setSlotStatus(SS_FAILED)
 		return
 	}
@@ -257,17 +242,6 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 		tlog.log("broadcasted height=%v, cost: %v, seed: %d, index: %d", bh.Height, utility.GetTime().Sub(bh.CurTime), seed, index)
 	}
 
-	//发送日志
-	//le := &monitor.LogEntry{
-	//	LogType:  monitor.LogTypeBlockBroadcast,
-	//	Height:   bh.Height,
-	//	Hash:     bh.Hash.Hex(),
-	//	PreHash:  bh.PreHash.Hex(),
-	//	Proposer: slot.castor.GetHexString(),
-	//	Verifier: gb.Gid.GetHexString(),
-	//}
-	//monitor.Instance.AddLog(le)
-
 	vctx.broadcastSlot = slot
 	vctx.markBroadcast()
 	slot.setSlotStatus(SS_SUCCESS)
@@ -276,10 +250,7 @@ func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
 	return
 }
 
-//对该id进行区块抽样
 func (p *Processor) sampleBlockHeight(heightLimit uint64, rand []byte, id groupsig.ID) uint64 {
-	//随机抽取10块前的块，确保不抽取到分叉上的块
-	//
 	if heightLimit > 2*model.Param.Epoch {
 		heightLimit -= 2 * model.Param.Epoch
 	}
@@ -349,7 +320,6 @@ func (p *Processor) blockProposal() {
 	gid := gb.Gid
 	middleware.PerfLogger.Debugf("after spreadGroupBrief, last: %v, height: %v", utility.GetTime().Sub(start), height)
 
-	//随机抽取n个块，生成proveHash
 	//proveHash, root := p.GenProveHashs(height, worker.getBaseBH().Random, gb.MemIds)
 
 	middleware.PerfLogger.Infof("start cast block, last: %v, height: %v", utility.GetTime().Sub(start), height)
@@ -366,40 +336,24 @@ func (p *Processor) blockProposal() {
 	tlog.logStart("height=%v,qn=%v, preHash=%v, verifyGroup=%v", bh.Height, qn, bh.PreHash.ShortS(), gid.ShortS())
 
 	if bh.Height > 0 && bh.Height == height && bh.PreHash == worker.baseBH.Hash {
-		skey := p.mi.SecKey //此处需要用普通私钥，非组相关私钥
-		//发送该出块消息
+		skey := p.mi.SecKey
+
 		var ccm model.ConsensusCastMessage
 		ccm.BH = *bh
 		ccm.ProveHash = []common.Hash{}
-		//ccm.GroupID = gid
+
 		if signInfo, ok := model.NewSignInfo(p.mi.SecKey, p.mi.ID, &ccm); !ok {
 			blog.log("sign fail, id=%v, sk=%v", p.GetMinerID().ShortS(), skey.ShortS())
 			return
 		} else {
 			ccm.SignInfo = signInfo
 		}
-		//blog.log("hash=%v, proveRoot=%v, pi=%v, piHash=%v", bh.Hash.ShortS(), root.ShortS(), pi.ShortS(), common.Bytes2Hex(vrf.VRFProof2Hash(pi)))
-		//ccm.GenRandomSign(skey, worker.baseBH.Random)//castor不能对随机数签名
-		tlog.log("铸块成功, SendVerifiedCast, 时间间隔 %v, castor=%v, hash=%v, genHash=%v", bh.CurTime.Sub(bh.PreTime).Seconds(), ccm.SignInfo.GetSignerID().ShortS(), bh.Hash.ShortS(), ccm.SignInfo.GetDataHash().ShortS())
+		tlog.log("cast successfully, SendVerifiedCast, cost: %v, castor=%v, hash=%v, genHash=%v", bh.CurTime.Sub(bh.PreTime).Seconds(), ccm.SignInfo.GetSignerID().ShortS(), bh.Hash.ShortS(), ccm.SignInfo.GetDataHash().ShortS())
 		p.NetServer.SendCandidate(&ccm, gb, block.Transactions)
-
-		//发送日志
-		//le := &monitor.LogEntry{
-		//	LogType:  monitor.LogTypeProposal,
-		//	Height:   bh.Height,
-		//	Hash:     bh.Hash.Hex(),
-		//	PreHash:  bh.PreHash.Hex(),
-		//	Proposer: p.GetMinerID().GetHexString(),
-		//	Verifier: gb.Gid.GetHexString(),
-		//	Ext:      fmt.Sprintf("qn:%v,totalQN:%v", qn, bh.TotalQN),
-		//}
-		//monitor.Instance.AddLog(le)
 
 		worker.markProposed()
 
 		middleware.PerfLogger.Infof("fin block, last: %v, hash: %v, height: %v", utility.GetTime().Sub(start), bh.Hash.String(), bh.Height)
-		//statistics.AddBlockLog(common.BootId, statistics.SendCast, ccm.BH.Height, ccm.BH.ProveValue.Uint64(), -1, -1,
-		//	utility.GetTime().UnixNano(), p.GetMinerID().ShortS(), gid.ShortS(), common.InstanceIndex, ccm.BH.CurTime.UnixNano())
 	} else {
 		blog.log("bh/prehash Error or sign Error, bh=%v, real height=%v. bc.prehash=%v, bh.prehash=%v", height, bh.Height, worker.baseBH.Hash, bh.PreHash)
 	}

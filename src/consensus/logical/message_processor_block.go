@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -49,8 +49,6 @@ func (p *Processor) genCastGroupSummary(bh *types.BlockHeader) *model.CastGroupS
 	return cgs
 }
 
-// 已经恢复出组签名
-// 出块
 func (p *Processor) thresholdPieceVerify(vctx *VerifyContext) {
 	blog := newBizLog("thresholdPieceVerify")
 
@@ -63,7 +61,6 @@ func (p *Processor) thresholdPieceVerify(vctx *VerifyContext) {
 	p.reserveBlock(vctx)
 }
 
-// 收集签名
 func (p *Processor) normalPieceVerify(gid groupsig.ID, vctx *VerifyContext, traceLog *msgTraceLog) {
 	slot := vctx.slot
 	bh := slot.BH
@@ -81,7 +78,7 @@ func (p *Processor) normalPieceVerify(gid groupsig.ID, vctx *VerifyContext, trac
 			cvm.GenRandomSign(skey, vctx.prevBH.Random)
 			blog.debug("call network service SendVerifiedCast hash=%v, height=%v", bh.Hash.ShortS(), bh.Height)
 			traceLog.log("SendVerifiedCast height=%v, castor=%v", bh.Height, slot.castor.ShortS())
-			//验证消息需要给自己也发一份，否则自己的分片中将不包含自己的签名，导致分红没有???
+
 			p.NetServer.SendVerifiedCast(&cvm, gid)
 		} else {
 			blog.log("genSign fail, id=%v, sk=%v %v", p.GetMinerID().ShortS(), skey.ShortS(), p.belongGroups.BelongGroup(gid))
@@ -89,7 +86,6 @@ func (p *Processor) normalPieceVerify(gid groupsig.ID, vctx *VerifyContext, trac
 	}
 }
 
-// mtype 输出日志用的
 func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, traceLog *msgTraceLog, blog *bizLog, slog *slowLog) (err error) {
 	bh := &msg.BH
 	bh.CurTime = utility.FormatTime(bh.CurTime)
@@ -116,7 +112,7 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 	slog.addStage("baseCheck")
 	if preBH == nil {
 		p.addFutureVerifyMsg(msg)
-		return fmt.Errorf("父块未到达")
+		return fmt.Errorf("no parent block")
 	}
 
 	timeNow := utility.GetTime()
@@ -131,12 +127,12 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 
 	bc := p.GetBlockContext(gid)
 	if bc == nil {
-		err = fmt.Errorf("未获取到blockcontext, gid=" + gid.ShortS())
+		err = fmt.Errorf("cannot get blockcontext, gid=" + gid.ShortS())
 		return
 	}
 
 	if _, same := bc.IsHashCasted(bh.Hash, bh.PreHash); same {
-		err = fmt.Errorf("该hash已铸过 %v", bh.Hash)
+		err = fmt.Errorf("hash already casted %v", bh.Hash)
 		return
 	}
 
@@ -146,7 +142,7 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 
 	vctx := bc.GetOrNewVerifyContext(bh, preBH)
 	if vctx == nil {
-		err = fmt.Errorf("获取vctx为空，可能preBH已经被删除")
+		err = fmt.Errorf("no vctx，preBH may be deleted")
 		return
 	}
 	var slot *SlotContext
@@ -160,7 +156,7 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 	isProposal := castor.IsEqual(si.GetSignerID())
 
 	slog.addStage("getPK")
-	if isProposal { //提案者
+	if isProposal {
 		castorDO := p.minerReader.GetProposeMiner(castor, preBH.StateTree)
 		if castorDO == nil {
 			err = fmt.Errorf("castorDO nil id=%v", castor.ShortS())
@@ -182,7 +178,6 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 		return
 	}
 
-	//未签过名的情况下，需要校验铸块合法性和全量账本检查
 	if slot == nil || slot.IsWaiting() {
 		slog.addStage("checkLegal")
 		ok, _, err2 := p.isCastLegal(bh, preBH)
@@ -227,9 +222,6 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 	return
 }
 
-// 这个方法会被调用多次：
-// 1：收到candidate块，验证 OMC
-// 2：收到别的验证者的消息，要验证 OMV
 func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMessage) {
 	bh := &msg.BH
 	si := &msg.SignInfo
@@ -251,20 +243,16 @@ func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMess
 		slog.log("sender=%v, hash=%v, gid=%v, height=%v", si.GetSignerID().ShortS(), bh.Hash.ShortS(), groupId.ShortS(), bh.Height)
 	}()
 
-	// 不要重复验证
-	if !p.belongGroups.BelongGroup(groupId) { //检测当前节点是否在该铸块组
+	if !p.belongGroups.BelongGroup(groupId) {
 		result = fmt.Sprintf("don't belong to group, gid=%v, hash=%v, id=%v", groupId.ShortS(), bh.Hash.ShortS(), p.GetMinerID().ShortS())
 		return
 	}
 
-	//castor要忽略自己的消息
-	// 不要重复验证
 	if castor.IsEqual(p.GetMinerID()) && si.GetSignerID().IsEqual(p.GetMinerID()) {
 		result = "ignore self message"
 		return
 	}
 
-	// 要重复验证
 	if msg.GenHash() != si.GetDataHash() {
 		blog.debug("msg proveHash=%v", msg.ProveHash)
 		result = fmt.Sprintf("msg genHash %v diff from si.DataHash %v", msg.GenHash().ShortS(), si.GetDataHash().ShortS())
@@ -273,7 +261,7 @@ func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMess
 
 	bc := p.GetBlockContext(groupId)
 	if bc == nil {
-		result = fmt.Sprintf("未获取到blockcontext, gid=" + groupId.ShortS())
+		result = fmt.Sprintf("no blockcontext, gid=" + groupId.ShortS())
 		return
 	}
 	vctx := bc.GetVerifyContextByHash(bh.Hash)
@@ -285,7 +273,6 @@ func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMess
 		}
 	}
 
-	// 主要耗时点
 	err := p.doVerify(mtype, msg, traceLog, blog, slog)
 	if err != nil {
 		result = err.Error()
@@ -306,7 +293,6 @@ func (p *Processor) verifyWithCache(cache *verifyMsgCache, vmsg *model.Consensus
 	p.verifyCastMessage("OMV", msg)
 }
 
-// OnMessageCast 收到出块消息
 func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 	slog := newSlowLog("OnMessageCast", 0.5)
 	bh := &ccm.BH
@@ -321,7 +307,6 @@ func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 
 	slog.addStage("OMC")
 
-	// 主要耗时点
 	p.verifyCastMessage("OMC", ccm)
 	slog.endStage()
 
@@ -338,10 +323,7 @@ func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 
 }
 
-// OnMessageVerify 收到组内成员的出块验证通过消息（组内成员消息）
 func (p *Processor) OnMessageVerify(cvm *model.ConsensusVerifyMessage) {
-	//statistics.AddBlockLog(common.BootId, statistics.RcvVerified, cvm.BH.Height, cvm.BH.ProveValue.Uint64(), -1, -1,
-	//	utility.GetTime().UnixNano(), "", "", common.InstanceIndex, cvm.BH.CurTime.UnixNano())
 	if p.blockOnChain(cvm.BlockHash) {
 		return
 	}
@@ -352,8 +334,6 @@ func (p *Processor) OnMessageVerify(cvm *model.ConsensusVerifyMessage) {
 	} else {
 		stdLogger.Infof("OMV:no cast msg, cached, hash=%v", cvm.BlockHash.ShortS())
 
-		// 块没收到，验证消息先到？？？
-		// 那为啥不触发校验？
 		p.addVerifyMsgToCache(cvm)
 	}
 }
@@ -365,7 +345,6 @@ func (p *Processor) cleanVerifyContext(currentHeight uint64) {
 	})
 }
 
-// OnMessageNewTransactions 新的交易到达通知
 func (p *Processor) OnMessageNewTransactions(ths []common.Hashes) {
 	mtype := "OMNT"
 	blog := newBizLog(mtype)

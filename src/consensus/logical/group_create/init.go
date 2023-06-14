@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -26,22 +26,26 @@ import (
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/utility"
 	"github.com/hashicorp/golang-lru"
+	"strconv"
 	"sync"
 )
 
-var groupCreateLogger log.Logger
-var groupCreateDebugLogger log.Logger
+var (
+	groupCreateLogger      = log.GetLoggerByIndex(log.GroupCreateLogConfig, strconv.Itoa(common.InstanceIndex))
+	groupCreateDebugLogger = log.GetLoggerByIndex(log.GroupCreateDebugLogConfig, strconv.Itoa(common.InstanceIndex))
 
-var GroupCreateProcessor groupCreateProcessor
+	GroupCreateProcessor groupCreateProcessor
+)
 
 type groupCreateProcessor struct {
 	minerInfo model.SelfMinerInfo
 	context   *createGroupContext
 
-	createGroupCache *lru.Cache //key:create group hash,value:create group base height
-	//数组循环使用，用来存储已经创建过的组的高度
-	//todo 有木有更好的方案？
-	createdHeights      [50]uint64 // Identifies whether the group height has already been created
+	//key:create group hash,value:create group base height
+	createGroupCache *lru.Cache
+
+	// Identifies whether the group height has already been created
+	createdHeights      [50]uint64
 	createdHeightsIndex int
 
 	groupInitContextCache groupInitContextCache
@@ -59,8 +63,6 @@ type groupCreateProcessor struct {
 }
 
 func (p *groupCreateProcessor) Init(minerInfo model.SelfMinerInfo, joinedGroupStorage *access.JoinedGroupStorage) {
-	groupCreateLogger = log.GetLoggerByIndex(log.GroupCreateLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	groupCreateDebugLogger = log.GetLoggerByIndex(log.GroupCreateDebugLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	p.minerInfo = minerInfo
 	p.createdHeightsIndex = 0
 
@@ -107,14 +109,11 @@ func (p *groupCreateProcessor) OnGroupAddSuccess(g *model.GroupInfo) {
 		p.removeContext()
 		groupCreateDebugLogger.Infof("Group create success. Group hash:%s, group id:%s\n", ctx.groupInitInfo.GroupHash().String(), g.GroupID.GetHexString())
 	}
-	//p.joiningGroups.Clean(sgi.GInfo.GroupHash())
-	//p.globalGroups.removeInitedGroup(sgi.GInfo.GroupHash())
 
-	//p.groupInitContextCache.Clean(g.GroupInitInfo.GroupHash())
 	p.groupSignCollectorMap.Delete(g.GroupInitInfo.GroupHash().Hex())
 	if p.joinedGroupStorage.BelongGroup(g.GroupID) {
 		p.groupInitContextCache.RemoveContext(g.GroupInitInfo.GroupHash())
-		//退出DUMMY 网络
+
 		p.NetServer.ReleaseGroupNet(g.GroupInitInfo.GroupHash().String())
 	}
 	p.createGroupCache.Remove(g.GroupInitInfo.GroupHash())
@@ -126,7 +125,6 @@ func (p *groupCreateProcessor) removeContext() {
 }
 
 func (p *groupCreateProcessor) ReleaseGroups(topHeight uint64) (needDimissGroups []groupsig.ID) {
-	//在当前高度解散的组不应立即从缓存删除，延缓一个建组周期删除。保证该组解散前夕建的块有效
 	groups := p.groupAccessor.GetDismissGroups(topHeight - model.Param.CreateGroupInterval)
 	ids := make([]groupsig.ID, 0)
 	for _, g := range groups {
@@ -140,13 +138,11 @@ func (p *groupCreateProcessor) ReleaseGroups(topHeight uint64) (needDimissGroups
 		p.joinedGroupStorage.LeaveGroups(ids)
 		for _, g := range groups {
 			gid := g.GroupID
-			//quit group net.real group:group id
 			p.NetServer.ReleaseGroupNet(gid.GetHexString())
 			p.groupInitContextCache.RemoveContext(g.GroupInitInfo.GroupHash())
 		}
 	}
 
-	//释放超时未建成组的组网络和相应的dummy组
 	invalidDummyGroups := make([]common.Hash, 0)
 	p.groupInitContextCache.forEach(func(gc *groupInitContext) bool {
 		if gc.groupInitInfo == nil || gc.status == GisGroupInitDone {
@@ -154,7 +150,7 @@ func (p *groupCreateProcessor) ReleaseGroups(topHeight uint64) (needDimissGroups
 		}
 		groupInitInfo := gc.groupInitInfo
 		gHash := groupInitInfo.GroupHash()
-		//已经达到组可以开始工作的高度，但是组还没建成
+
 		if groupInitInfo.ReadyTimeout(topHeight) {
 			if topHeight < groupInitInfo.GroupHeader.CreateHeight+model.Param.GroupReadyGap+model.Param.CreateGroupInterval {
 				p.tryReqSharePiece(gc)
@@ -181,14 +177,12 @@ func (p *groupCreateProcessor) ReleaseGroups(topHeight uint64) (needDimissGroups
 		hash := ig.groupInitInfo.GroupHash()
 		if ig.groupInitInfo.ReadyTimeout(topHeight) {
 			groupCreateLogger.Debugf("remove groupPubkeyCollector, gHash %v", hash.ShortS())
-			//quit group net.group hash
 			p.NetServer.ReleaseGroupNet(hash.Hex())
 			p.groupSignCollectorMap.Delete(hash.Hex())
 		}
 		return true
 	})
 
-	//清理超时的签名公钥请求
 	cleanSignPkReqRecord()
 	return
 }

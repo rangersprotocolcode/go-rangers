@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -37,7 +37,6 @@ func DeserializeSign(b []byte) *Signature {
 	return sig
 }
 
-//把签名转换为字节切片
 func (sig Signature) Serialize() []byte {
 	if sig.IsNil() {
 		return []byte{}
@@ -45,7 +44,6 @@ func (sig Signature) Serialize() []byte {
 	return sig.value.Marshal()
 }
 
-//由字节切片初始化签名
 func (sig *Signature) Deserialize(b []byte) error {
 	if len(b) == 0 {
 		return fmt.Errorf("signature Deserialized failed.")
@@ -54,12 +52,10 @@ func (sig *Signature) Deserialize(b []byte) error {
 	return nil
 }
 
-//把签名转换为十六进制字符串
 func (sig Signature) GetHexString() string {
 	return PREFIX + common.Bytes2Hex(sig.value.Marshal())
 }
 
-//由十六进制字符串初始化签名
 func (sig *Signature) SetHexString(s string) error {
 	if len(s) < len(PREFIX) || s[:len(PREFIX)] != PREFIX {
 		return fmt.Errorf("arg failed")
@@ -78,7 +74,6 @@ func (sig *Signature) IsNil() bool {
 	return sig.value.IsNil()
 }
 
-//比较两个签名是否相同
 func (sig Signature) IsEqual(rhs Signature) bool {
 	return bytes.Equal(sig.value.Marshal(), rhs.value.Marshal())
 }
@@ -92,14 +87,12 @@ func (sig Signature) IsValid() bool {
 	return sig.value.IsValid()
 }
 
-//签名函数。用私钥对明文（哈希）进行签名，返回签名对象
 func Sign(sec Seckey, msg []byte) (sig Signature) {
 	bg := hashToG1(string(msg))
 	sig.value.ScalarMult(bg, sec.GetBigInt())
 	return sig
 }
 
-//验证函数。验证某个签名是否来自公钥对应的私钥。
 func VerifySig(pub Pubkey, msg []byte, sig Signature) bool {
 	if sig.IsNil() || !sig.IsValid() {
 		return false
@@ -119,7 +112,6 @@ func VerifySig(pub Pubkey, msg []byte, sig Signature) bool {
 	return bn_curve.PairIsEuqal(p1, p2)
 }
 
-//签名恢复函数，m为map(ID->签名)，k为门限值
 func RecoverGroupSignature(memberSignMap map[string]Signature, thresholdValue int) *Signature {
 	if thresholdValue < len(memberSignMap) {
 		memberSignMap = getRandomKSignInfo(memberSignMap, thresholdValue)
@@ -127,17 +119,17 @@ func RecoverGroupSignature(memberSignMap map[string]Signature, thresholdValue in
 	ids := make([]ID, thresholdValue)
 	sigs := make([]Signature, thresholdValue)
 	i := 0
-	for s_id, si := range memberSignMap { //map遍历
+	for s_id, si := range memberSignMap {
 		var id ID
 		id.SetHexString(s_id)
-		ids[i] = id  //组成员ID值
-		sigs[i] = si //组成员签名
+		ids[i] = id
+		sigs[i] = si
 		i++
 		if i >= thresholdValue {
 			break
 		}
 	}
-	return recoverSignature(sigs, ids) //调用签名恢复函数
+	return recoverSignature(sigs, ids)
 }
 
 func (sig Signature) ShortS() string {
@@ -165,37 +157,31 @@ func getRandomKSignInfo(memberSignMap map[string]Signature, k int) map[string]Si
 	return ret
 }
 
-//用签名切片和id切片恢复出master签名（通过拉格朗日插值法）
-//RecoverXXX族函数的切片数量都固定是k（门限值）
 func recoverSignature(sigs []Signature, ids []ID) *Signature {
-	//secret := big.NewInt(0) //组私钥
-	k := len(sigs) //取得输出切片的大小，即门限值k
+	k := len(sigs)
 	xs := make([]*big.Int, len(ids))
 	for i := 0; i < len(xs); i++ {
-		xs[i] = ids[i].GetBigInt() //把所有的id转化为big.Int，放到xs切片
+		xs[i] = ids[i].GetBigInt()
 	}
 	// need len(ids) = k > 0
 	sig := &Signature{}
 	new_sig := &Signature{}
-	for i := 0; i < k; i++ { //输入元素遍历
-		// compute delta_i depending on ids only
-		//为什么前面delta/num/den初始值是1，最后一个diff初始值是0？
+	for i := 0; i < k; i++ {
 		var delta, num, den, diff *big.Int = big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(0)
 		for j := 0; j < k; j++ { //ID遍历
 			if j != i { //不是自己
-				num.Mul(num, xs[j])      //num值先乘上当前ID
-				num.Mod(num, curveOrder) //然后对曲线域求模
-				diff.Sub(xs[j], xs[i])   //diff=当前节点（内循环）-基节点（外循环）
-				den.Mul(den, diff)       //den=den*diff
-				den.Mod(den, curveOrder) //den对曲线域求模
+				num.Mul(num, xs[j])
+				num.Mod(num, curveOrder)
+				diff.Sub(xs[j], xs[i])
+				den.Mul(den, diff)
+				den.Mod(den, curveOrder)
 			}
 		}
-		// delta = num / den
-		den.ModInverse(den, curveOrder) //模逆
+
+		den.ModInverse(den, curveOrder)
 		delta.Mul(num, den)
 		delta.Mod(delta, curveOrder)
 
-		//最终需要的值是delta
 		new_sig.value.Set(&sigs[i].value)
 		new_sig.mul(delta)
 

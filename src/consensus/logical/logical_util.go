@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -27,7 +27,7 @@ import (
 
 func GetCastExpireTime(base time.Time, deltaHeight uint64, castHeight uint64) time.Time {
 	t := uint64(0)
-	if castHeight == 1 { //铸高度1的时候，过期时间为5倍，以防节点启动不同步时，先提案的块过早过期导致同一节点对高度1提案多次
+	if castHeight == 1 {
 		t = 2
 	}
 	return base.Add(time.Second * time.Duration((t+deltaHeight)*uint64(model.Param.MaxGroupCastTime)))
@@ -71,12 +71,6 @@ func IsGroupWorkQualifiedAt(gh *types.GroupHeader, h uint64) bool {
 }
 
 func CalDeltaByTime(after time.Time, before time.Time) int {
-	// 创世块可能年代久远，导致第一块需要多次计算Hash引发出块超时
-	// 这里特殊处理
 	result := int(after.Sub(before).Seconds())/model.MAX_GROUP_BLOCK_TIME + 1
-	//if result > 8 {
-	//	result = 8
-	//}
-
 	return result
 }

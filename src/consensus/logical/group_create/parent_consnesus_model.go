@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -32,10 +32,9 @@ import (
 const (
 	waitingPong = 1 // waitingPong indicates the context is waiting for pong response from nodes
 	waitingSign = 2 // waitingSign indicates the context is waiting for the group signature for the group-creating proposal
-	sendInit    = 3 // sendInit indicates the context has send group init message to the members who make up the new group
+	sendInit    = 3 // sendInit indicates the context has sent group init message to the members who make up the new group
 )
 
-//组创建基本信息，第一步就可以得到生成
 type createGroupBaseInfo struct {
 	parentGroupInfo *model.GroupInfo   // the parent group info
 	baseBlockHeader *types.BlockHeader // the blockHeader the group-create routine based on
@@ -65,7 +64,7 @@ func (ctx *createGroupBaseInfo) readyHeight() uint64 {
 	return ctx.baseBlockHeader.Height + model.Param.GroupReadyGap
 }
 
-//readyTimeout
+// readyTimeout
 func (ctx *createGroupBaseInfo) timeout(h uint64) bool {
 	return h >= ctx.readyHeight()
 }
@@ -114,7 +113,7 @@ func (ctx *createGroupContext) acceptPiece(from groupsig.ID, sign groupsig.Signa
 	return
 }
 
-//pongDeadline
+// pongDeadline
 func (ctx *createGroupContext) isPongTimeout(h uint64) bool {
 	return h >= ctx.baseBlockHeader.Height+model.Param.GroupWaitPongGap
 }
@@ -123,7 +122,7 @@ func (ctx *createGroupContext) isKing() bool {
 	return ctx.belongKings
 }
 
-//addPong
+// addPong
 func (ctx *createGroupContext) handlePong(h uint64, uid groupsig.ID) (add bool, size int) {
 	if ctx.isPongTimeout(h) {
 		return false, ctx.receivedPongCount()
@@ -139,7 +138,7 @@ func (ctx *createGroupContext) handlePong(h uint64, uid groupsig.ID) (add bool, 
 	return
 }
 
-//pongSize
+// pongSize
 func (ctx *createGroupContext) receivedPongCount() int {
 	ctx.lock.RLock()
 	defer ctx.lock.RUnlock()
@@ -158,7 +157,6 @@ func (ctx *createGroupContext) setStatus(st int8) {
 	ctx.status = st
 }
 
-//生成组初始化信息(mask groupheader, 成员)
 func (ctx *createGroupContext) genGroupInitInfo(h uint64) bool {
 	ctx.lock.Lock()
 	defer ctx.lock.Unlock()

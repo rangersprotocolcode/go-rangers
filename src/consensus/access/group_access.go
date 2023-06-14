@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -31,7 +31,7 @@ import (
 
 var groupAccessorInstance *GroupAccessor
 
-//GlobalGroups
+// GlobalGroups
 // GlobalGroup caches all work-group slices, and as the new group joins, the old group is dismissed,
 // and the cache is constantly updated.
 //
@@ -44,7 +44,7 @@ type GroupAccessor struct {
 	lock  sync.RWMutex
 }
 
-//newGlobalGroups
+// newGlobalGroups
 func NewGroupAccessor(chain core.GroupChain) *GroupAccessor {
 	if groupAccessorInstance == nil {
 		groupAccessorInstance = &GroupAccessor{
@@ -57,7 +57,7 @@ func NewGroupAccessor(chain core.GroupChain) *GroupAccessor {
 	return groupAccessorInstance
 }
 
-//AddStaticGroup
+// AddStaticGroup
 // AddStaticGroup adda a legal effective group to the cache, which may be a work group currently or in the near future
 //
 // Consider the group synchronization process, the method may be called concurrently,
@@ -138,14 +138,14 @@ func (groupAccessor *GroupAccessor) IsGroupMember(groupId groupsig.ID, minerId g
 	return false
 }
 
-//GetGroupSize
+// GetGroupSize
 func (groupAccessor *GroupAccessor) GroupSize() int {
 	groupAccessor.lock.RLock()
 	defer groupAccessor.lock.RUnlock()
 	return len(groupAccessor.groups)
 }
 
-//DismissGroups
+// DismissGroups
 func (groupAccessor *GroupAccessor) GetDismissGroups(height uint64) []*model.GroupInfo {
 	groupAccessor.lock.RLock()
 	defer groupAccessor.lock.RUnlock()
@@ -162,7 +162,7 @@ func (groupAccessor *GroupAccessor) GetDismissGroups(height uint64) []*model.Gro
 	return ids
 }
 
-//GetEffective
+// GetEffective
 // SelectNextGroupFromCache determines the next verification group through the cached work-group slices according to the previous random number.
 // The result is random and certain
 func (groupAccessor *GroupAccessor) SelectVerifyGroupFromCache(hash common.Hash, height uint64) (groupsig.ID, error) {
@@ -184,7 +184,7 @@ func (groupAccessor *GroupAccessor) SelectVerifyGroupFromCache(hash common.Hash,
 	return ga, fmt.Errorf("SelectVerifyGroupFromCache failed, hash %v, qualified groups %v", hash.ShortS(), gids)
 }
 
-//SelectNextGroupFromChain
+// SelectNextGroupFromChain
 // SelectNextGroupFromChain determines the next verification group through the chained work-groups according to the previous random number.
 // The result is random and certain, and mostly should be the same as method SelectNextGroupFromCache
 //
@@ -207,7 +207,7 @@ func (groupAccessor *GroupAccessor) SelectVerifyGroupFromChain(hash common.Hash,
 	return ga, fmt.Errorf("SelectVerifyGroupFromChain failed, arg error")
 }
 
-//GetCastQualifiedGroups
+// GetCastQualifiedGroups
 // GetCastQualifiedGroups gets all work-groups at the specified height
 func (groupAccessor *GroupAccessor) GetEffectiveGroups(height uint64) []*model.GroupInfo {
 	groupAccessor.lock.RLock()

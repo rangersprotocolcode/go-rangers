@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -22,7 +22,6 @@ import (
 	"com.tuntun.rocket/node/src/consensus/model"
 	"com.tuntun.rocket/node/src/consensus/vrf"
 	"com.tuntun.rocket/node/src/middleware"
-	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 )
@@ -38,9 +37,6 @@ func NewMinerPoolReader() *MinerPoolReader {
 }
 
 func newMinerPoolReader(mp *service.MinerManager) *MinerPoolReader {
-	if logger == nil {
-		logger = log.GetLoggerByIndex(log.AccessLogConfig, common.GlobalConf.GetString("instance", "index", ""))
-	}
 	if minerPoolReaderInstance == nil {
 		minerPoolReaderInstance = &MinerPoolReader{
 			minerManager: mp,
@@ -74,7 +70,6 @@ func (reader *MinerPoolReader) GetCandidateMiners(h uint64, hash common.Hash) []
 	rets := make([]model.MinerInfo, 0)
 	logger.Debugf("all light nodes size %v", len(miners))
 	for _, md := range miners {
-		//access.blog.log("%v %v %v %v", md.ID.ShortS(), md.ApplyHeight, md.NType, md.CanJoinGroupAt(h))
 		if md.CanJoinGroupAt(h) {
 			rets = append(rets, *md)
 		}

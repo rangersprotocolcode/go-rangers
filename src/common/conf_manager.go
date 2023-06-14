@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -27,10 +27,10 @@ import (
 type ConfManager interface {
 	//read basic conf from tas.conf file
 	//返回section组下的key的值, 若未配置, 则返回默认值defv
-	GetString(section string, key string, defaultValue string) (string)
-	GetBool(section string, key string, defaultValue bool) (bool)
-	GetDouble(section string, key string, defaultValue float64) (float64)
-	GetInt(section string, key string, defaultValue int) (int)
+	GetString(section string, key string, defaultValue string) string
+	GetBool(section string, key string, defaultValue bool) bool
+	GetDouble(section string, key string, defaultValue float64) float64
+	GetInt(section string, key string, defaultValue int) int
 
 	//set basic conf to tas.conf file
 	SetString(section string, key string, value string)
@@ -48,10 +48,10 @@ type ConfManager interface {
 type SectionConfManager interface {
 	//read basic conf from tas.conf file
 	//返回section组下的key的值, 若未配置, 则返回默认值defv
-	GetString(key string, defaultValue string) (string)
-	GetBool(key string, defaultValue bool) (bool)
-	GetDouble(key string, defaultValue float64) (float64)
-	GetInt(key string, defaultValue int) (int)
+	GetString(key string, defaultValue string) string
+	GetBool(key string, defaultValue bool) bool
+	GetDouble(key string, defaultValue float64) float64
+	GetInt(key string, defaultValue int) int
 
 	//set basic conf to tas.conf file
 	SetString(key string, value string)
@@ -111,19 +111,19 @@ func (cs *ConfFileManager) GetSectionManager(section string) SectionConfManager 
 	}
 }
 
-func (sfm *SectionConfFileManager) GetString(key string, defaultValue string) (string) {
+func (sfm *SectionConfFileManager) GetString(key string, defaultValue string) string {
 	return sfm.cfm.GetString(sfm.section, key, defaultValue)
 }
 
-func (sfm *SectionConfFileManager) GetBool(key string, defaultValue bool) (bool) {
+func (sfm *SectionConfFileManager) GetBool(key string, defaultValue bool) bool {
 	return sfm.cfm.GetBool(sfm.section, key, defaultValue)
 }
 
-func (sfm *SectionConfFileManager) GetDouble(key string, defaultValue float64) (float64) {
+func (sfm *SectionConfFileManager) GetDouble(key string, defaultValue float64) float64 {
 	return sfm.cfm.GetDouble(sfm.section, key, defaultValue)
 }
 
-func (sfm *SectionConfFileManager) GetInt(key string, defaultValue int) (int) {
+func (sfm *SectionConfFileManager) GetInt(key string, defaultValue int) int {
 	return sfm.cfm.GetInt(sfm.section, key, defaultValue)
 }
 
@@ -147,7 +147,7 @@ func (sfm *SectionConfFileManager) Del(key string) {
 	sfm.cfm.Del(sfm.section, key)
 }
 
-func (cs *ConfFileManager) GetString(section string, key string, defaultValue string) (string) {
+func (cs *ConfFileManager) GetString(section string, key string, defaultValue string) string {
 	cs.lock.RLock()
 	defer cs.lock.RUnlock()
 
@@ -157,7 +157,7 @@ func (cs *ConfFileManager) GetString(section string, key string, defaultValue st
 	return defaultValue
 }
 
-func (cs *ConfFileManager) GetBool(section string, key string, defaultValue bool) (bool) {
+func (cs *ConfFileManager) GetBool(section string, key string, defaultValue bool) bool {
 	cs.lock.RLock()
 	defer cs.lock.RUnlock()
 
@@ -167,7 +167,7 @@ func (cs *ConfFileManager) GetBool(section string, key string, defaultValue bool
 	return defaultValue
 }
 
-func (cs *ConfFileManager) GetDouble(section string, key string, defaultValue float64) (float64) {
+func (cs *ConfFileManager) GetDouble(section string, key string, defaultValue float64) float64 {
 	cs.lock.RLock()
 	defer cs.lock.RUnlock()
 
@@ -177,7 +177,7 @@ func (cs *ConfFileManager) GetDouble(section string, key string, defaultValue fl
 	return defaultValue
 }
 
-func (cs *ConfFileManager) GetInt(section string, key string, defaultValue int) (int) {
+func (cs *ConfFileManager) GetInt(section string, key string, defaultValue int) int {
 	cs.lock.RLock()
 	defer cs.lock.RUnlock()
 

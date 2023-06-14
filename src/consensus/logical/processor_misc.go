@@ -25,7 +25,6 @@ import (
 	"fmt"
 )
 
-// 后续如有全局定时器，从这个函数启动
 func (p *Processor) Start() bool {
 	// 检查是否要出块
 	p.Ticker.RegisterRoutine(p.getCastCheckRoutineName(), p.checkSelfCastRoutine, common.CastingCheckInterval)

@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -76,41 +76,12 @@ func (holder *FutureMessageHolder) size() int {
 	return cnt
 }
 
-//func (p *Processor) addFutureBlockMsg(msg *model.ConsensusBlockMessage) {
-//	b := msg.Block
-//	log.Printf("future block receive cached! h=%v, hash=%v\n", b.Header.Height, b.Header.Hash.ShortS())
-//
-//	p.futureBlockMsgs.addMessage(b.Header.PreHash, msg)
-//}
-//
-//func (p *Processor) getFutureBlockMsgs(hash common.Hash) []*model.ConsensusBlockMessage {
-//	if vs := p.futureBlockMsgs.getMessages(hash); vs != nil {
-//		ret := make([]*model.ConsensusBlockMessage, len(vs))
-//		for idx, m := range vs {
-//			ret[idx] = m.(*model.ConsensusBlockMessage)
-//		}
-//		return ret
-//	}
-//	return nil
-//}
-//
-//func (p *Processor) removeFutureBlockMsgs(hash common.Hash) {
-//	p.futureBlockMsgs.remove(hash)
-//}
-
 func (p *Processor) doAddOnChain(block *types.Block) (result int8) {
-	//begin := utility.GetTime()
-	//defer func() {
-	//	log.Printf("doAddOnChain begin at %v, cost %v\n", begin.String(), time.Since(begin).String())
-	//}()
 	bh := block.Header
 
 	rlog := newRtLog("doAddOnChain")
 	rlog.log("start, height=%v, hash=%v", bh.Height, bh.Hash.ShortS())
 	result = int8(p.MainChain.AddBlockOnChain(block))
-
-	//log.Printf("AddBlockOnChain header %v \n", p.blockPreview(bh))
-	//log.Printf("QueryTopBlock header %v \n", p.blockPreview(p.MainChain.QueryTopBlock()))
 	rlog.log("height=%v, hash=%v, result=%v.", bh.Height, bh.Hash.ShortS(), result)
 	castor := groupsig.DeserializeID(bh.Castor)
 	tlog := newHashTraceLog("doAddOnChain", bh.Hash, castor)
@@ -170,18 +141,14 @@ func (p *Processor) blockPreview(bh *types.BlockHeader) string {
 }
 
 func (p *Processor) prepareForCast(sgi *model.GroupInfo) {
-	//加入组网络 真正的组网络 group id
 	p.NetServer.JoinGroupNet(sgi.GroupID.GetHexString())
 
 	bc := NewBlockContext(p, sgi)
 
 	stdLogger.Debugf("prepareForCast current ID %v.\n", p.GetMinerID().ShortS())
-	//to do:只有自己属于这个组的节点才需要调用AddBlockConext
+
 	b := p.AddBlockContext(bc)
 	stdLogger.Infof("(proc:%v) prepareForCast Add BlockContext result = %v, bc_size=%v.\n", p.getPrefix(), b, p.blockContexts.blockContextSize())
-
-	//bc.registerTicker()
-	//p.triggerCastCheck()
 }
 
 func (p *Processor) getNearestBlockByHeight(h uint64) *types.Block {
@@ -191,14 +158,6 @@ func (p *Processor) getNearestBlockByHeight(h uint64) *types.Block {
 			b := p.MainChain.QueryBlockByHash(b.Header.Hash)
 			if b != nil {
 				return b
-			} else {
-				//bh2 := p.MainChain.QueryBlockByHeight(h)
-				//stdLogger.Debugf("get bh not nil, but block is nil! hash1=%v, hash2=%v, height=%v", bh.Hash.ShortS(), bh2.Hash.ShortS(), bh.Height)
-				//if bh2.Hash == bh.Hash {
-				//	panic("chain queryBlockByHash nil!")
-				//} else {
-				//	continue
-				//}
 			}
 		}
 		if h == 0 {
@@ -222,7 +181,6 @@ func (p *Processor) getNearestVerifyHashByHeight(h uint64) (realHeight uint64, v
 		if h == 0 {
 			panic("cannot find verifyHash of height 0")
 		}
-		//todo 暂不检查取样块高不存在的,可能计算量很大
 		break
 		h--
 	}
@@ -310,7 +268,7 @@ func (p *Processor) VerifyGroup(g *types.Group) (ok bool, err error) {
 		GroupHeader:     g.Header,
 		GroupMembers:    mems,
 	}
-	//检验头和签名
+
 	if _, ok, err := group_create.GroupCreateProcessor.ValidateGroupInfo(gInfo); ok {
 		gpk := groupsig.ByteToPublicKey(g.PubKey)
 		gid := groupsig.NewIDFromPubkey(gpk).Serialize()

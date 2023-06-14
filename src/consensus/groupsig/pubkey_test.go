@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -22,46 +22,43 @@ import (
 	"testing"
 )
 
-//测试用衍生随机数生成私钥，从私钥萃取公钥，以及公钥的序列化
 func TestPubkey(t *testing.T) {
 	fmt.Printf("\nbegin test pub key...\n")
 	t.Log("testPubkey")
-	r := base.NewRand() //生成随机数
+	r := base.NewRand()
 
 	fmt.Printf("size of rand = %v\n.", len(r))
-	sec := NewSeckeyFromRand(r.Deri(1)) //以r的衍生随机数生成私钥
+	sec := NewSeckeyFromRand(r.Deri(1))
 	if sec == nil {
 		t.Fatal("NewSeckeyFromRand")
 	}
 
-	pub := GeneratePubkey(*sec) //从私钥萃取出公钥
+	pub := GeneratePubkey(*sec)
 	if pub == nil {
 		t.Log("NewPubkeyFromSeckey")
 	}
 
 	{
 		var pub2 Pubkey
-		err := pub2.SetHexString(pub.GetHexString()) //测试公钥的字符串导出
-		if err != nil || !pub.IsEqual(pub2) {        //检查字符串导入生成的公钥是否跟之前的公钥相同
+		err := pub2.SetHexString(pub.GetHexString())
+		if err != nil || !pub.IsEqual(pub2) {
 			t.Log("pub != pub2")
 		}
 	}
 	{
 		var pub2 Pubkey
-		err := pub2.Deserialize(pub.Serialize()) //测试公钥的序列化
-		if err != nil || !pub.IsEqual(pub2) {    //检查反序列化生成的公钥是否跟之前的公钥相同
+		err := pub2.Deserialize(pub.Serialize())
+		if err != nil || !pub.IsEqual(pub2) {
 			t.Log("pub != pub2")
 		}
 	}
 	fmt.Printf("\nend test pub key.\n")
 }
 
-
-
 func BenchmarkPubkeyFromSeckey(b *testing.B) {
 	b.StopTimer()
 
-	r := base.NewRand() //生成随机数
+	r := base.NewRand()
 
 	//var sec Seckey
 	for n := 0; n < b.N; n++ {
@@ -72,4 +69,3 @@ func BenchmarkPubkeyFromSeckey(b *testing.B) {
 		b.StopTimer()
 	}
 }
-

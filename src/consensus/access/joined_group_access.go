@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -33,15 +33,14 @@ const (
 	suffixGInfo   = "_gInfo"
 )
 
-//BelongGroups
-// BelongGroups stores all group-related infos which is important to the members
+// JoinedGroupStorage BelongGroups stores all group-related infos which is important to the members
 type JoinedGroupStorage struct {
 	groupChain core.GroupChain
 	cache      *lru.Cache
 	initMutex  sync.Mutex
 }
 
-//NewBelongGroups
+// NewJoinedGroupStorage NewBelongGroups
 func NewJoinedGroupStorage() *JoinedGroupStorage {
 	return &JoinedGroupStorage{
 		groupChain: core.GetGroupChain(),
@@ -107,16 +106,16 @@ func (storage *JoinedGroupStorage) Close() {
 	//storage.db.Close()
 }
 
-//IsMinerGroup
-// IsMinerGroup detecting whether a group is a miner's ingot group
+// BelongGroup IsMinerGroup detecting whether a group is a miner's ingot group
 // (a miner can participate in multiple groups)
 func (storage *JoinedGroupStorage) BelongGroup(groupId groupsig.ID) bool {
 	return storage.GetJoinedGroupInfo(groupId) != nil
 }
 
-// joinGroup join a group (a miner ID can join multiple groups)
-//			gid : group ID (not dummy id)
-//			sk: user's group member signature private key
+// JoinGroup join a group (a miner ID can join multiple groups)
+//
+//	gid : group ID (not dummy id)
+//	sk: user's group member signature private key
 func (storage *JoinedGroupStorage) JoinGroup(joinedGroupInfo *model.JoinedGroupInfo, selfMinerId groupsig.ID) {
 	logger.Infof("(%v):join group,group id=%v,secKey:%v\n", selfMinerId.GetHexString(), joinedGroupInfo.GroupID.ShortS(), joinedGroupInfo.SignSecKey.GetHexString())
 	if !storage.BelongGroup(joinedGroupInfo.GroupID) {
@@ -174,13 +173,13 @@ func (storage *JoinedGroupStorage) load(gid groupsig.ID) *model.JoinedGroupInfo 
 	}
 	joinedGroupInfo := new(model.JoinedGroupInfo)
 	joinedGroupInfo.MemberSignPubkeyMap = make(map[string]groupsig.Pubkey, 0)
+
 	// Load signature private key
 	bs, err := storage.groupChain.GetJoinedGroup(signKeySuffix(gid))
 	if err != nil {
 		logger.Infof("get signKey fail, gid=%v, err=%v", gid.ShortS(), err.Error())
 		return nil
 	}
-	//logger.Debugf("load bs:%v,privateKey:%v",bs,storage.privateKey.GetHexString())
 	joinedGroupInfo.SignSecKey.Deserialize(bs)
 
 	// Load group information

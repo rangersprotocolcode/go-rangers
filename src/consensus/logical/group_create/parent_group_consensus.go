@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -25,7 +25,6 @@ import (
 	"fmt"
 )
 
-//发送PING 信息
 // pingNodes send ping messages to the new members,
 // in order to avoid too much ping messages, the current node does this only when he is one of kings.
 func (p *groupCreateProcessor) pingNodes() {
@@ -47,7 +46,6 @@ func (p *groupCreateProcessor) pingNodes() {
 	}
 }
 
-//组成员候选人处理PING 信息
 // OnMessageCreateGroupPing handles Ping request from parent nodes
 // It only happens when current node is chosen to join a new group
 func (p *groupCreateProcessor) OnMessageCreateGroupPing(msg *model.CreateGroupPingMessage) {
@@ -90,7 +88,6 @@ func (p *groupCreateProcessor) OnMessageCreateGroupPing(msg *model.CreateGroupPi
 	}
 }
 
-//父亲组成员收到PONG信息
 // OnMessageCreateGroupPong handles Pong response from new group candidates
 // It only happens among the parent group nodes
 func (p *groupCreateProcessor) OnMessageCreateGroupPong(msg *model.CreateGroupPongMessage) {
@@ -124,8 +121,7 @@ func (p *groupCreateProcessor) OnMessageCreateGroupPong(msg *model.CreateGroupPo
 	}
 }
 
-//检查条件 生成组初始化信息，用自己的组签名私钥 签名并发送
-//checkReqCreateGroupSign
+// checkReqCreateGroupSign
 func (p *groupCreateProcessor) tryStartParentConsensus(topHeight uint64) bool {
 	ctx := p.context
 	if ctx == nil {
@@ -185,10 +181,8 @@ func (p *groupCreateProcessor) tryStartParentConsensus(topHeight uint64) bool {
 	return true
 }
 
-//父亲组成员收到建组消息后 用组签名私钥签名发送
 // OnMessageCreateGroupRaw triggered when receives raw group-create message from other nodes of the parent group
 // It check and sign the group-create message for the requester
-//
 // Before the formation of the new group, the parent group needs to reach a consensus on the information of the new group
 // which transited by ConsensusCreateGroupRawMessage.
 func (p *groupCreateProcessor) OnMessageParentGroupConsensus(msg *model.ParentGroupConsensusMessage) {
@@ -203,9 +197,6 @@ func (p *groupCreateProcessor) OnMessageParentGroupConsensus(msg *model.ParentGr
 	groupCreateDebugLogger.Debugf("Effective candidate:%s num:%d", candidateBuff.String(), len(msg.GroupInitInfo.GroupMembers))
 	p.createGroupCache.Add(msg.GroupInitInfo.GroupHash(), msg.GroupInitInfo.GroupHeader.CreateHeight)
 
-	//if p.minerInfo.GetMinerID().IsEqual(msg.SignInfo.GetSignerID()) {
-	//	return
-	//}
 	parentGid := msg.GroupInitInfo.ParentGroupID()
 
 	gpk, ok := p.GetMemberSignPubKey(parentGid, msg.SignInfo.GetSignerID())
@@ -241,7 +232,7 @@ func (p *groupCreateProcessor) OnMessageParentGroupConsensus(msg *model.ParentGr
 	}
 }
 
-//onMessageCreateGroupRaw
+// onMessageCreateGroupRaw
 func (p *groupCreateProcessor) validateCreateGroupInfo(msg *model.ParentGroupConsensusMessage) (bool, error) {
 	ctx := p.context
 	if ctx == nil {
@@ -267,7 +258,7 @@ func (p *groupCreateProcessor) validateCreateGroupInfo(msg *model.ParentGroupCon
 
 // OnMessageCreateGroupSign receives sign message from other members after ConsensusCreateGroupRawMessage was sent
 // during the new-group-info consensus process
-//OnMessageCreateGroupSign
+// OnMessageCreateGroupSign
 func (p *groupCreateProcessor) OnMessageParentGroupConsensusSign(msg *model.ParentGroupConsensusSignMessage) {
 	groupCreateLogger.Debugf("(%v)Rcv ParentGroupConsensusSignMessage, groupHash=%v, sender=%v", p.minerInfo.ID.ShortS(), msg.GroupHash.ShortS(), msg.SignInfo.GetSignerID().ShortS())
 	if p.minerInfo.GetMinerID().IsEqual(msg.SignInfo.GetSignerID()) {
@@ -321,7 +312,6 @@ func (p *groupCreateProcessor) OnMessageParentGroupConsensusSign(msg *model.Pare
 	}
 }
 
-//父亲组成员收到 带签名的组创建信息
 func (p *groupCreateProcessor) tryRecoverParentGroupSig(msg *model.ParentGroupConsensusSignMessage) (bool, error) {
 	ctx := p.context
 	if ctx == nil {

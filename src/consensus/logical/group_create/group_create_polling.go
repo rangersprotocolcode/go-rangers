@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -27,13 +27,8 @@ import (
 	"math"
 )
 
-//检查建组
 // CreateNextGroupRoutine start the group-create routine
 func (p *groupCreateProcessor) StartCreateGroupPolling() {
-	//todo 这里要确定是否是由创始组创建其他组
-	//if !gm.processor.genesisMember {
-	//	return
-	//}
 	top := p.blockChain.TopBlock()
 	topHeight := top.Height
 
@@ -63,7 +58,6 @@ func (p *groupCreateProcessor) StartCreateGroupPolling() {
 	}
 }
 
-//检查建组条件
 // checkCreateGroupRoutine check if the height meets the conditions for creating a group
 // if so then start the group-create process
 func (p *groupCreateProcessor) tryCreateGroup(baseHeight uint64) {
@@ -106,7 +100,6 @@ func (p *groupCreateProcessor) tryCreateGroup(baseHeight uint64) {
 	create = true
 }
 
-//随机选一半的组成员作为KING
 // selectKing just choose half of the people. Each person's weight is decremented in order
 func (p *groupCreateProcessor) selectKing(theBH *types.BlockHeader, group *model.GroupInfo) (kings []groupsig.ID, isKing bool) {
 	num := int(math.Ceil(float64(group.GetMemberCount() / 2)))
@@ -131,7 +124,6 @@ func (p *groupCreateProcessor) selectKing(theBH *types.BlockHeader, group *model
 }
 
 // selectParentGroup determine the parent group randomly and the result is deterministic because of the base BlockHeader
-//获取父亲组
 func (p *groupCreateProcessor) selectParentGroup(baseBH *types.BlockHeader, preGroupID []byte) (*model.GroupInfo, error) {
 	//return p.groupAccessor.GetGenesisGroup(), nil
 	rand := baseBH.Random
@@ -148,7 +140,6 @@ func (p *groupCreateProcessor) selectParentGroup(baseBH *types.BlockHeader, preG
 	return groupInfo, nil
 }
 
-//生成 CreateGroupContext
 func (p *groupCreateProcessor) genCreateGroupBaseInfo(baseHeight uint64) (*createGroupBaseInfo, error) {
 	lastGroup := p.groupChain.LastGroup()
 	baseBH := p.blockChain.QueryBlockHeaderByHeight(baseHeight, true)
@@ -169,7 +160,6 @@ func (p *groupCreateProcessor) genCreateGroupBaseInfo(baseHeight uint64) (*creat
 	return newCreateGroupBaseInfo(sgi, baseBH, lastGroup, candidates), nil
 }
 
-//选取候选人
 // selectCandidates randomly select a sufficient number of miners from the miners' pool as new group candidates
 func (p *groupCreateProcessor) selectCandidates(theBH *types.BlockHeader) (enough bool, cands []groupsig.ID) {
 	min := model.Param.CreateGroupMinCandidates()
@@ -248,7 +238,7 @@ func (p *groupCreateProcessor) availableGroupsAt(h uint64) []*types.Group {
 	return gs
 }
 
-//heightCreated
+// heightCreated
 func (p *groupCreateProcessor) hasCreatedGroup(h uint64) bool {
 	p.lock.RLock()
 	defer p.lock.RUnlock()
@@ -265,7 +255,7 @@ func (p *groupCreateProcessor) setCreatingGroupContext(baseCtx *createGroupBaseI
 	p.context = ctx
 }
 
-//checkCreate
+// checkCreate
 func validateHeight(h uint64) bool {
 	return h > 0 && h%model.Param.CreateGroupInterval == 0
 }

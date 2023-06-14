@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -33,7 +33,6 @@ type PrivateKey struct {
 	PrivKey ecdsa.PrivateKey
 }
 
-//私钥签名函数
 func (pk PrivateKey) Sign(hash []byte) Sign {
 	var sign Sign
 	sig, err := secp256k1.Sign(hash, pk.PrivKey.D.Bytes())
@@ -49,7 +48,6 @@ func (pk PrivateKey) Sign(hash []byte) Sign {
 	return sign
 }
 
-//私钥生成函数
 func GenerateKey(s string) PrivateKey {
 	var r io.Reader
 	if len(s) > 0 {
@@ -67,21 +65,18 @@ func GenerateKey(s string) PrivateKey {
 	return pk
 }
 
-//由私钥萃取公钥函数
 func (pk *PrivateKey) GetPubKey() PublicKey {
 	var pubk PublicKey
 	pubk.PubKey = pk.PrivKey.PublicKey
 	return pubk
 }
 
-//导出函数
 func (pk *PrivateKey) GetHexString() string {
 	buf := pk.PrivKey.D.Bytes()
 	str := PREFIX + hex.EncodeToString(buf)
 	return str
 }
 
-//导入函数
 func HexStringToSecKey(s string) (sk *PrivateKey) {
 	if len(s) < len(PREFIX) || s[:len(PREFIX)] != PREFIX {
 		return
@@ -93,7 +88,6 @@ func HexStringToSecKey(s string) (sk *PrivateKey) {
 	return
 }
 
-//私钥解密消息
 func (pk *PrivateKey) Decrypt(rand io.Reader, ct []byte) (m []byte, err error) {
 	prv := ecies.ImportECDSA(&pk.PrivKey)
 	return prv.Decrypt(rand, ct, nil, nil)
