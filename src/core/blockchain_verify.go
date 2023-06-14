@@ -103,7 +103,7 @@ func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Tran
 		for _, tx := range missing {
 			logger.Debugf("miss tx:%s", tx.ShortS())
 		}
-		//向CASTOR索取交易
+
 		m := &transactionRequestMessage{TransactionHashes: missing, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue}
 		go requestTransaction(*m, castorId.GetHexString())
 		return true, missing, transactions
@@ -137,23 +137,11 @@ func calcTxTree(txs []*types.Transaction) common.Hash {
 	return common.BytesToHash(common.Sha256(buf.Bytes()))
 }
 
-//todo: performance. this function costs too much
+// todo: performance. this function costs too much
 func calcReceiptsTree(receipts types.Receipts) common.Hash {
 	if nil == receipts || 0 == len(receipts) {
 		return emptyHash
 	}
-
-	//keybuf := new(bytes.Buffer)
-	//trie := new(trie.Trie)
-	//for i := 0; i < len(receipts); i++ {
-	//	if receipts[i] != nil {
-	//		keybuf.Reset()
-	//		serialize.Encode(keybuf, uint(i))
-	//		encode, _ := serialize.EncodeToBytes(receipts[i])
-	//		trie.Update(keybuf.Bytes(), encode)
-	//	}
-	//}
-	//hash := trie.Hash()
 
 	buf := new(bytes.Buffer)
 	for _, receipt := range receipts {

@@ -56,10 +56,10 @@ type blockChain struct {
 	latestBlock *types.BlockHeader
 	requestIds  map[string]uint64
 
-	topBlocks         *lru.Cache // key：块高，value：header
-	futureBlocks      *lru.Cache // key：块hash，value：block（体积很大）
-	verifiedBlocks    *lru.Cache // key：块hash，value：receipts(体积大) &stateroot
-	verifiedBodyCache *lru.Cache // key：块hash，value：块对应的transaction(体积大)
+	topBlocks         *lru.Cache
+	futureBlocks      *lru.Cache
+	verifiedBlocks    *lru.Cache
+	verifiedBodyCache *lru.Cache
 
 	hashDB       db.Database
 	heightDB     db.Database
@@ -171,7 +171,6 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		GroupId:   groupid,
 		TotalQN:   latestBlock.TotalQN + qn,
 		StateTree: common.BytesToHash(latestBlock.StateTree.Bytes()),
-		//ProveRoot:  proveRoot,
 		PreHash: latestBlock.Hash,
 		PreTime: latestBlock.CurTime,
 	}
@@ -257,12 +256,6 @@ func (chain *blockChain) GenerateBlock(bh types.BlockHeader) *types.Block {
 	return block
 }
 
-// 验证一个铸块（如本地缺少交易，则异步网络请求该交易）
-// 返回值:
-// 0, 验证通过
-// -1，验证失败
-// 1 无法验证（缺少交易，已异步向网络模块请求）
-// 2 无法验证（前一块在链上不存存在）
 func (chain *blockChain) VerifyBlock(bh types.BlockHeader) ([]common.Hashes, int8) {
 	msg := "VerifyCastingBlock: " + strconv.FormatUint(bh.Height, 10)
 	middleware.LockBlockchain(msg)
@@ -285,13 +278,6 @@ func (chain *blockChain) TotalQN() uint64 {
 	return chain.latestBlock.TotalQN
 }
 
-// AddBlockOnChain 铸块成功，上链
-// 返回值: 0,上链成功
-//
-//	-1，验证失败
-//	 1, 丢弃该块(链上已存在该块）
-//	 2,丢弃该块（链上存在QN值更大的相同高度块)
-//	 3,分叉调整
 func (chain *blockChain) AddBlockOnChain(b *types.Block) types.AddBlockResult {
 	if validateCode, result := chain.consensusVerify(b); !result {
 		return validateCode
@@ -380,7 +366,6 @@ func (chain *blockChain) QueryBlockHeaderByHeight(height interface{}, cache bool
 	}
 }
 
-// 删除块 只删除最高块
 func (chain *blockChain) remove(block *types.Block) bool {
 	if nil == block {
 		return true
@@ -487,21 +472,9 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 			tx, err = chain.transactionPool.GetTransaction(hash[0])
 		}
 
-		// 没有找到
 		if tx == nil {
 			need = append(need, hash)
 		}
-
-		// 找到了
-		//if tx.SubHash == hash[1] {
-		//	txs = append(txs, tx)
-		//} else {
-		//	// 状态机出事了，同一笔交易，执行结果不一致
-		//	abnormal[tx.Target] = true
-		//	// 为了能跑下去，先找出块人要
-		//	need = append(need, hash)
-		//}
-
 		txs = append(txs, tx)
 	}
 	return txs, need, err

@@ -211,7 +211,6 @@ func (executor *GameExecutor) callVM(param callVMData) string {
 	return common.ToHex(result)
 }
 
-//-----------------------------------------------------------------------------
 func getAccountDBByHashOrHeight(height string, hash string) *account.AccountDB {
 	var accountDB *account.AccountDB
 	if height == "" && hash == "" {

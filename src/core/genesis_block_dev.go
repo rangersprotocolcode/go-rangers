@@ -57,7 +57,6 @@ func genDevGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, g
 	block.Header.Signature = common.Sha256([]byte("tuntunhz"))
 	block.Header.Random = common.Sha256([]byte("RangersProtocolVRF"))
 
-	//创建创始合约
 	proxy := createGenesisContract(block.Header, stateDB)
 
 	genesisProposers := getDevGenesisOneProposer()
@@ -76,7 +75,6 @@ func genDevGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, g
 	stateDB.SetNonce(common.ProposerDBAddress, 1)
 	stateDB.SetNonce(common.ValidatorDBAddress, 1)
 
-	// 跨链手续费地址
 	two, _ := utility.StrToBigInt("2")
 	stateDB.SetBalance(common.HexToAddress("0x7edd0ef9da9cec334a7887966cc8dd71d590eeb7"), two)
 

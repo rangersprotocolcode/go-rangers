@@ -65,8 +65,6 @@ func (executor *VMExecutor) calcSubReward() {
 func (executor *VMExecutor) generateCode(header *types.BlockHeader) (string, bool) {
 	proposals, validators := service.MinerManagerImpl.GetAllMinerIdAndAccount(header.Height, executor.accountdb)
 
-	//"0x7822b9ac"+出块人奖励地址+padding+common.GenerateCallDataUint((4+len(proposes))*32)
-	//		+common.GenerateCallDataUint(len(proposes))+所有的提案组成员地址+common.GenerateCallDataUint(len(验证组成员))+验证组成员地址
 	code := "0x7822b9ac" + common.GenerateCallDataAddress(proposals[common.ToHex(header.Castor)]) + padding + common.GenerateCallDataUint(uint64(4+len(proposals))*32)
 	code += common.GenerateCallDataUint(uint64(len(proposals)))
 	for _, addr := range proposals {

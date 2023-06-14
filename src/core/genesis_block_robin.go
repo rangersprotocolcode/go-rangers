@@ -56,7 +56,6 @@ func genRobinGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase,
 	block.Header.Signature = common.Sha256([]byte("tuntunhz"))
 	block.Header.Random = common.Sha256([]byte("RangersProtocolVRF"))
 
-	//创建创始合约
 	proxy := createGenesisContract(block.Header, stateDB)
 
 	genesisProposers := getRobinGenesisProposer()
@@ -75,7 +74,6 @@ func genRobinGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase,
 	stateDB.SetNonce(common.ProposerDBAddress, 1)
 	stateDB.SetNonce(common.ValidatorDBAddress, 1)
 
-	// 跨链手续费地址
 	two, _ := utility.StrToBigInt("2")
 	stateDB.SetBalance(common.HexToAddress("0x7edd0ef9da9cec334a7887966cc8dd71d590eeb7"), two)
 
@@ -131,6 +129,4 @@ func addRobinTestAsset(stateDB *account.AccountDB) {
 	stateDB.SetBalance(common.HexToAddress("0x42c8c9b13fc0573d18028b3398a887c4297ff646"), valueBillion)
 	//used for faucet
 	stateDB.SetBalance(common.HexToAddress("0x8744c51069589296fcb7faa2f891b1f513a0310c"), valueBillion)
-
-	//stateDB.SetBalance(common.HexToAddress("0x25716527aad0ae1dd24bd247af9232dae78595b0"), valueBillion)
 }

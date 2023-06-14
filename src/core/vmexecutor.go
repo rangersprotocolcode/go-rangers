@@ -29,15 +29,7 @@ import (
 	"time"
 )
 
-/*
-*
-nonce:
-version1:创建合约在计算地址之后+1，所有交易结束后如果成功nonce+1
-version2:Proposal006 所有交易刚开始nonce+1
-version3:
-Proposal007 创建合约在计算地址之后+1，call合约 call之前+1
-其他交易 完成后+1
-*/
+
 const MaxCastBlockTime = time.Second * 3
 
 type VMExecutor struct {
@@ -175,10 +167,8 @@ func (executor *VMExecutor) after() {
 
 	height := executor.block.Header.Height
 
-	// 计算定时任务（冻结、退款等等）
 	service.RefundManagerImpl.Add(types.GetRefundInfo(executor.context), executor.accountdb)
 
-	// 计算出块奖励
 	if common.IsSub() {
 		executor.calcSubReward()
 	} else {

@@ -83,25 +83,20 @@ func genSubGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, g
 	stateDB.SetNonce(common.ProposerDBAddress, 1)
 	stateDB.SetNonce(common.ValidatorDBAddress, 1)
 
-	//创建经济模型相关合约
 	economyContract := createEconomyContract(block.Header, stateDB, common.Genesis)
 
-	// 创建跨链合约
 	proxy := createSubCrossContract(block.Header, stateDB, common.Genesis.Name)
 
 	ten, _ := utility.StrToBigInt("10")
-	// todo: 给跨链合约地址一笔钱，作为流动性
-	stateDB.SetBalance(proxy, ten)
 
-	// 跨链手续费地址
+	stateDB.SetBalance(proxy, ten)
 	stateDB.SetBalance(common.HexToAddress("0xf58e5Fab29788F914a38Ac710a36C950B7EBC9F3"), ten)
 	stateDB.SetBalance(common.HexToAddress("0xF44Ce46191380AFB962460D3db9417d7d70E0Dd6"), ten)
 
-	// 将钱给经济模型合约
 	money, _ := utility.StrToBigInt(strconv.FormatUint(common.Genesis.TotalSupply, 10))
 	stateDB.SetBalance(economyContract, money)
 
-	// gnosis合约使用
+	// gnosis
 	one, _ := utility.StrToBigInt("1")
 	stateDB.SetBalance(gnosisAddr, one)
 	stateDB.SetBalance(gnosisCreate2Addr, one)

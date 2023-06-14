@@ -142,10 +142,10 @@ func TestMinerRefund(t *testing.T) {
 	txList := make([]string, 0)
 	//miner 15
 	//source := "0xaf7ec99107ab9920b8ddc00d9ae2bdcc4a4fcd63"
-	tx := types.Transaction{Type: types.TransactionTypeMinerRefund, Source: source, Time: time.Now().String(),ChainId: "8888"}
-	str :=`{"amount":"100","minerId":"0xdd50117c639e6134598755b55d8d9fb8b76b2e635880e5853549e62574ecd686"}`
+	tx := types.Transaction{Type: types.TransactionTypeMinerRefund, Source: source, Time: time.Now().String(), ChainId: "8888"}
+	str := `{"amount":"100","minerId":"0xdd50117c639e6134598755b55d8d9fb8b76b2e635880e5853549e62574ecd686"}`
 	var refund MinerRefundData
-	json.Unmarshal(utility.StrToBytes(str),&refund)
+	json.Unmarshal(utility.StrToBytes(str), &refund)
 
 	amount := MinerRefundData{Amount: "100", MinerId: "0xdd50117c639e6134598755b55d8d9fb8b76b2e635880e5853549e62574ecd686"}
 	data, _ := json.Marshal(amount)
@@ -239,7 +239,7 @@ func genMinerAddTx(data string) string {
 	source := privateKey.GetPubKey().GetAddress().String()
 
 	//source := "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
-	tx := types.Transaction{Type: types.TransactionTypeMinerAdd, Source: source, Time: time.Now().String(),ChainId: "8888"}
+	tx := types.Transaction{Type: types.TransactionTypeMinerAdd, Source: source, Time: time.Now().String(), ChainId: "8888"}
 
 	tx.Data = string(data)
 	tx.Hash = tx.GenHash()

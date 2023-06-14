@@ -29,8 +29,10 @@ import (
 	"github.com/oleiade/lane"
 )
 
-var verifyGroupNotOnChainErr = errors.New("Verify group not on group chain")
-var verifyBlockErr = errors.New("verify block error")
+var (
+	verifyGroupNotOnChainErr = errors.New("Verify group not on group chain")
+	verifyBlockErr           = errors.New("verify block error")
+)
 
 type blockChainFork struct {
 	rcvLastBlock bool
@@ -369,18 +371,6 @@ func refreshBlockForkDB(commonAncestor types.Block) db.Database {
 		db.Delete(generateHeightKey(i))
 	}
 
-	//use for clean dirty data
-	//iterator := db.NewIterator()
-	//for iterator.Next() {
-	//	key := iterator.Key()
-	//	realKey := key[9:]
-	//	if len(realKey) == 8 {
-	//		syncLogger.Debugf("key height:%d", utility.ByteToUInt64(realKey))
-	//	} else {
-	//		syncLogger.Debugf("key hash:%s", common.ToHex(realKey))
-	//	}
-	//	db.Delete(realKey)
-	//}
 	db.Put([]byte(blockCommonAncestorHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
 	db.Put([]byte(latestBlockHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
 	return db

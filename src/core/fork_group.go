@@ -26,9 +26,11 @@ import (
 	"github.com/oleiade/lane"
 )
 
-var verifyGroupErr = errors.New("verify group error")
-var preGroupNilErr = errors.New("pre group is nil")
-var parentGroupNilErr = errors.New("parent group is nil")
+var (
+	verifyGroupErr = errors.New("verify group error")
+	preGroupNilErr = errors.New("pre group is nil")
+	parentGroupNilErr = errors.New("parent group is nil")
+)
 
 type groupChainFork struct {
 	rcvLastGroup bool
