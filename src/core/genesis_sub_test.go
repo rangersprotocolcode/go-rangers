@@ -31,6 +31,41 @@ import (
 	"time"
 )
 
+func TestGnosisContract(t *testing.T) {
+	defer func() {
+		os.RemoveAll("storage0")
+		os.RemoveAll("logs")
+		os.RemoveAll("1.ini")
+	}()
+
+	common.Init(0, "1.ini", "dev")
+	vm.InitVM()
+
+	block := new(types.Block)
+	pv := big.NewInt(0)
+	block.Header = &types.BlockHeader{
+		Height:       0,
+		ProveValue:   pv,
+		TotalQN:      0,
+		Transactions: make([]common.Hashes, 0), //important!!
+		EvictedTxs:   make([]common.Hash, 0),   //important!!
+		Nonce:        ChainDataVersion,
+	}
+
+	block.Header.RequestIds = make(map[string]uint64)
+
+	db, err := db.NewLDBDatabase("state", 128, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stateDB, err := account.NewAccountDB(common.Hash{}, account.NewDatabase(db))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	createGnosisContract(block.Header, stateDB)
+}
+
 func TestCreateSubCrossContract(t *testing.T) {
 	defer func() {
 		os.RemoveAll("storage0")
@@ -38,7 +73,7 @@ func TestCreateSubCrossContract(t *testing.T) {
 		os.RemoveAll("1.ini")
 	}()
 
-	common.Init(0,"1.ini","dev")
+	common.Init(0, "1.ini", "dev")
 	vm.InitVM()
 
 	block := new(types.Block)
@@ -84,7 +119,7 @@ func TestEconomyContract(t *testing.T) {
 		os.RemoveAll("1.ini")
 	}()
 
-	common.Init(0,"1.ini","dev")
+	common.Init(0, "1.ini", "dev")
 	vm.InitVM()
 
 	block := new(types.Block)
@@ -141,7 +176,7 @@ func TestEconomyContract(t *testing.T) {
 
 	vmCtx.GasPrice = big.NewInt(1)
 	vmCtx.GasLimit = 30000000
-	vmInstance := vm.NewEVMWithNFT(vmCtx, stateDB,stateDB)
+	vmInstance := vm.NewEVMWithNFT(vmCtx, stateDB, stateDB)
 	caller := vm.AccountRef(vmCtx.Origin)
 
 	//code := "0x7822b9ac"
@@ -158,9 +193,8 @@ func TestEconomyContract(t *testing.T) {
 	}
 }
 
-
 func TransferWithLog(db vm.StateDB, sender, recipient common.Address, amount *big.Int) {
-	fmt.Printf("sender: %s, recipient: %s, amount: %s\n",sender.String(),recipient.String(),amount.String())
+	fmt.Printf("sender: %s, recipient: %s, amount: %s\n", sender.String(), recipient.String(), amount.String())
 	db.SubBalance(sender, amount)
 	db.AddBalance(recipient, amount)
 }
