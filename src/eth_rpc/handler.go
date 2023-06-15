@@ -121,16 +121,21 @@ func (handler ethMsgHandler) ProcessSingleRequest(ethRpcMessage notify.ETHRPCPie
 		returnValue, err := handler.exec(handlerFunc, arguments, ethRpcMessage.Method, ethRpcMessage.Nonce, string(ethRpcMessage.Params))
 
 		if sendRawTransactionMethod == ethRpcMessage.Method {
-			rocketTx := returnValue.(*types.Transaction)
-			// save tx
-			var msg notify.ClientTransactionMessage
-			msg.Tx = *rocketTx
-			msg.UserId = ""
-			msg.GateNonce = gateNonce
-			msg.Nonce = 0
-			middleware.DataChannel.GetRcvedTx() <- &msg
+			if nil != err {
+				response = makeResponse(common.Hash{}, err, ethRpcMessage.Id)
+			} else {
+				rocketTx := returnValue.(*types.Transaction)
+				// save tx
+				var msg notify.ClientTransactionMessage
+				msg.Tx = *rocketTx
+				msg.UserId = ""
+				msg.GateNonce = gateNonce
+				msg.Nonce = 0
+				middleware.DataChannel.GetRcvedTx() <- &msg
 
-			response = makeResponse(rocketTx.Hash, err, ethRpcMessage.Id)
+				response = makeResponse(rocketTx.Hash, err, ethRpcMessage.Id)
+			}
+
 		} else {
 			response = makeResponse(returnValue, err, ethRpcMessage.Id)
 		}
