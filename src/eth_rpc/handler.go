@@ -121,7 +121,7 @@ func (handler ethMsgHandler) ProcessSingleRequest(ethRpcMessage notify.ETHRPCPie
 		returnValue, err := handler.exec(handlerFunc, arguments, ethRpcMessage.Method, ethRpcMessage.Nonce, string(ethRpcMessage.Params))
 
 		if sendRawTransactionMethod == ethRpcMessage.Method {
-			if nil != err {
+			if nil != err || nil == returnValue {
 				response = makeResponse(common.Hash{}, err, ethRpcMessage.Id)
 			} else {
 				rocketTx := returnValue.(*types.Transaction)
