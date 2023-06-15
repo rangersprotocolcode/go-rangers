@@ -29,7 +29,10 @@ import (
 
 // emptyCodeHash is used by create to ensure deployment is disallowed to already
 // deployed contract addresses (relevant after the account abstraction).
-var emptyCodeHash = crypto.Keccak256Hash(nil)
+var (
+	emptyCodeHash       = crypto.Keccak256Hash(nil)
+	errSubChainNoCreate = errors.New("not allowed to create contract")
+)
 
 type (
 	// CanTransferFunc is the signature of a transfer guard function
@@ -403,6 +406,16 @@ func (c *codeAndHash) Hash() common.Hash {
 
 // create creates a new contract using code as deployment code.
 func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64, value *big.Int, address common.Address) ([]byte, common.Address, uint64, []*types.Log, error) {
+	// check owner if subnet
+	if common.IsSub() {
+		addr := caller.Address().String()
+		if addr != "0x826f575031a074fd914a869b5dc1c4eae620fef5" && addr != "0xCA8E4c934CF34e22b578ECe48c657f02B1053367" && addr != "0x7edd0ef9da9cec334a7887966cc8dd71d590eeb7" && addr != "0x2f4f09b722a6e5b77be17c9a99c785fa7035a09f" && addr != "0x3fab184622dc19b6109349b94811493bf2a45362" {
+			// todo: need contract data
+			return nil, common.Address{}, 0, nil, errSubChainNoCreate
+		}
+
+	}
+
 	// Depth check execution. Fail if we're trying to execute above the
 	// limit.
 	if evm.depth > int(CallCreateDepth) {
