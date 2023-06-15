@@ -190,7 +190,7 @@ func createEconomyContract(header *types.BlockHeader, statedb *account.AccountDB
 
 	vmCtx.GasPrice = big.NewInt(1)
 	vmCtx.GasLimit = 30000000
-	vmInstance := vm.NewEVM(vmCtx, statedb)
+	vmInstance := vm.NewEVMWithNFT(vmCtx, statedb, statedb)
 	caller := vm.AccountRef(vmCtx.Origin)
 
 	//
@@ -238,7 +238,7 @@ func createSubCrossContract(header *types.BlockHeader, statedb *account.AccountD
 
 	vmCtx.GasPrice = big.NewInt(1)
 	vmCtx.GasLimit = 30000000
-	vmInstance := vm.NewEVM(vmCtx, statedb)
+	vmInstance := vm.NewEVMWithNFT(vmCtx, statedb, statedb)
 	caller := vm.AccountRef(vmCtx.Origin)
 
 	multiSignContractCode := multiSignContract
@@ -282,7 +282,7 @@ func createSubCrossContract(header *types.BlockHeader, statedb *account.AccountD
 
 	vmCtx.GasPrice = big.NewInt(1)
 	vmCtx.GasLimit = 30000000
-	vmInstance = vm.NewEVM(vmCtx, statedb)
+	vmInstance = vm.NewEVMWithNFT(vmCtx, statedb, statedb)
 	caller = vm.AccountRef(vmCtx.Origin)
 	contractCodeBytes = common.FromHex(callProxyBase + common.GenerateCallDataString(chainName))
 	_, _, _, err = vmInstance.Call(caller, proxy, contractCodeBytes, vmCtx.GasLimit, big.NewInt(0))
