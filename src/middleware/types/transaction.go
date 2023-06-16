@@ -117,20 +117,13 @@ func (c Transactions) Swap(i, j int) {
 }
 func (c Transactions) Less(i, j int) bool {
 	if c[i].RequestId == 0 && c[j].RequestId == 0 {
-		return c.compareSameRequestId(i, j)
+		num1 := new(big.Int).SetBytes(c[i].Hash.Bytes())
+		num2 := new(big.Int).SetBytes(c[j].Hash.Bytes())
+		return num1.Cmp(num2) > 0
 	}
 	return c[i].RequestId < c[j].RequestId
 }
 
 func IsContractTx(txType int32) bool {
 	return txType == TransactionTypeETHTX || txType == TransactionTypeContract
-}
-
-func (c Transactions) compareSameRequestId(i, j int) bool {
-	if common.IsProposal014() {
-		num1 := new(big.Int).SetBytes(c[i].Hash.Bytes())
-		num2 := new(big.Int).SetBytes(c[j].Hash.Bytes())
-		return num1.Cmp(num2) > 0
-	}
-	return c[i].Nonce < c[j].Nonce
 }
