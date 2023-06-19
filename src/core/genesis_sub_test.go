@@ -24,6 +24,7 @@ import (
 	"com.tuntun.rocket/node/src/utility"
 	"com.tuntun.rocket/node/src/vm"
 	"fmt"
+	"golang.org/x/crypto/sha3"
 	"math/big"
 	"os"
 	"strconv"
@@ -99,6 +100,7 @@ func TestCreateSubCrossContract(t *testing.T) {
 	}
 
 	conf := &common.GenesisConf{
+		Creator:        "0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2",
 		Name:           "testChain001",
 		TokenName:      "myCoin",
 		Symbol:         "mc",
@@ -109,7 +111,7 @@ func TestCreateSubCrossContract(t *testing.T) {
 		ValidatorToken: 40,
 	}
 	createEconomyContract(block.Header, stateDB, conf)
-	createSubCrossContract(block.Header, stateDB, conf.Name)
+	createSubCrossContract(block.Header, stateDB, conf)
 }
 
 func TestEconomyContract(t *testing.T) {
@@ -157,7 +159,7 @@ func TestEconomyContract(t *testing.T) {
 	}
 
 	economyContract := createEconomyContract(block.Header, stateDB, conf)
-	createSubCrossContract(block.Header, stateDB, conf.Name)
+	createSubCrossContract(block.Header, stateDB, conf)
 	money, _ := utility.StrToBigInt(strconv.FormatUint(conf.TotalSupply, 10))
 	stateDB.SetBalance(economyContract, money)
 
@@ -197,4 +199,66 @@ func TransferWithLog(db vm.StateDB, sender, recipient common.Address, amount *bi
 	fmt.Printf("sender: %s, recipient: %s, amount: %s\n", sender.String(), recipient.String(), amount.String())
 	db.SubBalance(sender, amount)
 	db.AddBalance(recipient, amount)
+}
+
+func TestSubWhiteList(t *testing.T) {
+	defer func() {
+		os.RemoveAll("storage0")
+		os.RemoveAll("logs")
+		os.RemoveAll("1.ini")
+	}()
+
+	common.Init(0, "1.ini", "dev")
+	vm.InitVM()
+
+	db, err := db.NewLDBDatabase("state", 128, 2048)
+	if err != nil {
+		t.Fatal(err)
+	}
+	stateDB, err := account.NewAccountDB(common.Hash{}, account.NewDatabase(db))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	source := "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4"
+	vmCtx := vm.Context{}
+	vmCtx.CanTransfer = vm.CanTransfer
+	vmCtx.Transfer = vm.Transfer
+	vmCtx.GetHash = func(uint64) common.Hash { return emptyHash }
+
+	vmCtx.Origin = common.HexToAddress(source)
+	vmCtx.Coinbase = common.HexToAddress("0x5B38Da6a701c568545dCfcB03FcB875f56beddC4")
+	vmCtx.BlockNumber = new(big.Int).SetUint64(1)
+	vmCtx.Time = new(big.Int).SetUint64(uint64(time.Now().UnixMilli()))
+
+	vmCtx.GasPrice = big.NewInt(1)
+	vmCtx.GasLimit = 30000000
+	vmInstance := vm.NewEVMWithNFT(vmCtx, stateDB, stateDB)
+	caller := vm.AccountRef(vmCtx.Origin)
+
+	addr := common.HexToAddress("0x5B38Da6a701c568545dCfcB03FcB875f56beddC4")
+	code := createWhiteList + common.GenerateCallDataAddress(addr)
+	_, whitelist, _, _, err := vmInstance.Create(caller, common.FromHex(code), vmCtx.GasLimit, big.NewInt(0))
+	if err != nil {
+		panic("Genesis createWhiteList create error:" + err.Error())
+	}
+	fmt.Println("After execute whitelist contract create! Contract address: " + whitelist.GetHexString())
+
+	data := stateDB.GetData(whitelist, getKey(addr))
+	fmt.Println(data[len(data)-1])
+
+	addr1 := common.HexToAddress("0x5B38Da6a701c568545dCfcB03FcB875f56beddC1")
+	fmt.Println(stateDB.GetData(whitelist, getKey(addr1)))
+}
+
+func getKey(address common.Address) []byte {
+	data := [64]byte{}
+	copy(data[12:], address.Bytes())
+	copy(data[64-len(common.CreateWhiteListPostion):], common.CreateWhiteListPostion)
+	hasher := sha3.NewLegacyKeccak256().(common.KeccakState)
+	hasher.Write(data[:])
+	key := [32]byte{}
+	hasher.Read(key[:])
+
+	return key[:]
 }

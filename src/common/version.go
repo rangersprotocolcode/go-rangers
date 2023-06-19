@@ -18,6 +18,7 @@ package common
 
 import (
 	"com.tuntun.rocket/node/src/middleware/log"
+	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -139,6 +140,11 @@ var (
 	filename = "genesis.json"
 
 	Genesis *GenesisConf
+)
+
+var (
+	CreateWhiteListAddr    = HexToAddress("0x9c1cbfe5328dfb1733d59a7652d0a49228c7e12c")
+	CreateWhiteListPostion = utility.UInt64ToByte(0)
 )
 
 type ChainConfig struct {
