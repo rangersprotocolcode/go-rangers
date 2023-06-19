@@ -24,12 +24,16 @@ import (
 )
 
 var (
-	logger       = log.GetLoggerByIndex(log.CoreLogConfig, strconv.Itoa(common.InstanceIndex))
-	txLogger     = log.GetLoggerByIndex(log.TxLogConfig, strconv.Itoa(common.InstanceIndex))
-	txPoolLogger = log.GetLoggerByIndex(log.TxPoolLogConfig, strconv.Itoa(common.InstanceIndex))
+	logger       log.Logger
+	txLogger     log.Logger
+	txPoolLogger log.Logger
 )
 
 func InitService() {
+	logger = log.GetLoggerByIndex(log.CoreLogConfig, strconv.Itoa(common.InstanceIndex))
+	txLogger = log.GetLoggerByIndex(log.TxLogConfig, strconv.Itoa(common.InstanceIndex))
+	txPoolLogger = log.GetLoggerByIndex(log.TxPoolLogConfig, strconv.Itoa(common.InstanceIndex))
+
 	start := time.Now()
 	common.DefaultLogger.Infof("start InitService")
 	defer func() {
