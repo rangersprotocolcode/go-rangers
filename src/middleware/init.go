@@ -27,8 +27,9 @@ import (
 )
 
 var (
-	PerfLogger    = log.GetLoggerByIndex(log.PerformanceLogConfig, strconv.Itoa(common.InstanceIndex))
-	MonitorLogger = log.GetLoggerByIndex(log.MonitorLogConfig, strconv.Itoa(common.InstanceIndex))
+	PerfLogger log.Logger
+
+	MonitorLogger log.Logger
 )
 
 func InitMiddleware() error {
@@ -37,6 +38,9 @@ func InitMiddleware() error {
 	defer func() {
 		common.DefaultLogger.Infof("end InitMiddleware, cost: %s", time.Now().Sub(start).String())
 	}()
+
+	PerfLogger = log.GetLoggerByIndex(log.PerformanceLogConfig, strconv.Itoa(common.InstanceIndex))
+	MonitorLogger = log.GetLoggerByIndex(log.MonitorLogConfig, strconv.Itoa(common.InstanceIndex))
 
 	types.InitSerialzation()
 	notify.BUS = notify.NewBus()

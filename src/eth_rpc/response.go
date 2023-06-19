@@ -35,7 +35,7 @@ type jsonSuccessResponse struct {
 }
 
 type jsonError struct {
-	Code    int         `json:"status"`
+	Code    int         `json:"code"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
 }
@@ -54,13 +54,24 @@ func (r jsonErrResponse) encodeJson() ([]byte, error) {
 	return json.Marshal(r)
 }
 
-func makeResponse(returnValue interface{}, error Error, id interface{}) jsonResponse {
+func makeResponse(returnValue interface{}, error error, id interface{}) jsonResponse {
 	if error == nil {
 		successResponse := jsonSuccessResponse{Version: jsonrpcVersion, Id: id, Result: returnValue}
 		return successResponse
 	} else {
-		err := jsonError{Code: error.ErrorCode(), Message: error.Error(), Data: returnValue}
-		errResponse := jsonErrResponse{Version: jsonrpcVersion, Id: id, Error: err}
+		errResponse := jsonErrResponse{Version: jsonrpcVersion, Id: id}
+
+		errMsg := jsonError{Code: defaultErrorCode, Message: error.Error(), Data: returnValue}
+		ec, ok := error.(Error)
+		if ok {
+			errMsg.Code = ec.ErrorCode()
+		}
+		de, ok := error.(DataError)
+		if ok {
+			errMsg.Data = de.ErrorData()
+		}
+
+		errResponse.Error = errMsg
 		return errResponse
 	}
 }

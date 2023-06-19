@@ -57,7 +57,6 @@ var (
 		Proposal011Block: 11750354,
 		Proposal012Block: 22815000,
 		Proposal013Block: 28998000,
-		Proposal014Block: 42795527,
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
 		JsonRPCUrl:       "https://mainnet.rangersprotocol.com/api/jsonrpc",
@@ -81,7 +80,6 @@ var (
 		Proposal011Block: math.MaxUint64, //robin never use Proposal011
 		Proposal012Block: 23120000,
 		Proposal013Block: 29063000,
-		Proposal014Block: 42795527, //robin use same height with mainnet here
 
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 
@@ -110,7 +108,6 @@ var (
 		Proposal011Block: 0,
 		Proposal012Block: 0,
 		Proposal013Block: 0,
-		Proposal014Block: 0,
 	}
 
 	subNetChainConfig = ChainConfig{
@@ -167,7 +164,6 @@ type ChainConfig struct {
 	Proposal011Block uint64
 	Proposal012Block uint64
 	Proposal013Block uint64
-	Proposal014Block uint64
 
 	mainNodeContract Address
 
@@ -308,10 +304,6 @@ func IsProposal012() bool {
 
 func IsProposal013() bool {
 	return isForked(LocalChainConfig.Proposal013Block, GetBlockHeight())
-}
-
-func IsProposal014() bool {
-	return isForked(LocalChainConfig.Proposal014Block, GetBlockHeight())
 }
 
 func isForked(base uint64, height uint64) bool {

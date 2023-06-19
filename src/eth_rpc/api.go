@@ -30,6 +30,8 @@ import (
 	"com.tuntun.rocket/node/src/vm"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/boolw/go-web3/abi"
 	"math/big"
 	"sync"
 )
@@ -195,8 +197,13 @@ func (s *ethAPIService) Call(args CallArgs, blockNrOrHash BlockNumberOrHash) (ut
 		logger.Debugf("[eth_call]After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
 	}
 
+	// If the result contains a revert reason, try to unpack and return it.
+	if err == vm.ErrExecutionReverted && len(result) > 0 {
+		err := adaptErrorOutput(err, result)
+		return nil, &revertError{err, common.ToHex(result)}
+	}
 	if err != nil {
-		return nil, revertError{err, common.ToHex(result)}
+		return nil, err
 	}
 	return result, nil
 }
@@ -614,4 +621,27 @@ func broadcastRawTx(rawTx string) (common.Hash, error) {
 	}
 	hash := common.HexToHash(hashStr)
 	return hash, nil
+}
+
+func adaptErrorOutput(err error, result []byte) error {
+	reason := getRevertReason(result)
+	if reason != "" {
+		err = fmt.Errorf("execution reverted: %v", reason)
+	}
+	return err
+}
+
+func getRevertReason(result []byte) string {
+	if len(result) < 36 {
+		return ""
+	}
+	typ, err := abi.NewType("string")
+	if err != nil {
+		return ""
+	}
+	decoded, err := typ.Decode(result[36:])
+	if err != nil {
+		return ""
+	}
+	return decoded.(string)
 }
