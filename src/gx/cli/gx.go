@@ -30,6 +30,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"com.tuntun.rocket/node/src/vm"
 	"encoding/json"
@@ -159,6 +160,8 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
 	gx.dumpAccountInfo(minerInfo)
+
+	account.Init()
 
 	middleware.InitMiddleware()
 
