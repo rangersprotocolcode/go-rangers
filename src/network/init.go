@@ -25,12 +25,16 @@ import (
 )
 
 var (
-	p2pLogger   = log.GetLoggerByIndex(log.P2PLogConfig, strconv.Itoa(common.InstanceIndex))
-	bizLogger   = log.GetLoggerByIndex(log.P2PBizLogConfig, strconv.Itoa(common.InstanceIndex))
-	txRcvLogger = log.GetLoggerByIndex(log.TxRcvLogConfig, strconv.Itoa(common.InstanceIndex))
+	p2pLogger   log.Logger
+	bizLogger   log.Logger
+	txRcvLogger log.Logger
 )
 
 func InitNetwork(consensusHandler MsgHandler, selfMinerId []byte, env, gate, outerGateAddr string, isSending bool) {
+	p2pLogger = log.GetLoggerByIndex(log.P2PLogConfig, strconv.Itoa(common.InstanceIndex))
+	bizLogger = log.GetLoggerByIndex(log.P2PBizLogConfig, strconv.Itoa(common.InstanceIndex))
+	txRcvLogger = log.GetLoggerByIndex(log.TxRcvLogConfig, strconv.Itoa(common.InstanceIndex))
+
 	start := time.Now()
 	common.DefaultLogger.Infof("start InitNetwork")
 	defer func() {

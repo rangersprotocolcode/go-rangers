@@ -22,6 +22,7 @@ import (
 	"com.tuntun.rocket/node/src/consensus/model"
 	"com.tuntun.rocket/node/src/consensus/vrf"
 	"com.tuntun.rocket/node/src/middleware"
+	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 )
@@ -37,6 +38,9 @@ func NewMinerPoolReader() *MinerPoolReader {
 }
 
 func newMinerPoolReader(mp *service.MinerManager) *MinerPoolReader {
+	if logger == nil {
+		logger = log.GetLoggerByIndex(log.AccessLogConfig, common.GlobalConf.GetString("instance", "index", ""))
+	}
 	if minerPoolReaderInstance == nil {
 		minerPoolReaderInstance = &MinerPoolReader{
 			minerManager: mp,

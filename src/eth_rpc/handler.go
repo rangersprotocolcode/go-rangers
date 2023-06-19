@@ -44,7 +44,7 @@ type execFunc struct {
 
 var (
 	handler    ethMsgHandler
-	logger     = log.GetLoggerByIndex(log.ETHRPCLogConfig, strconv.Itoa(common.InstanceIndex))
+	logger     log.Logger
 	nilJson, _ = json.Marshal(nil)
 	wrongData  = &invalidParamsError{"wrong json data"}
 )
@@ -54,6 +54,7 @@ type ethMsgHandler struct {
 }
 
 func InitEthMsgHandler() {
+	logger = log.GetLoggerByIndex(log.ETHRPCLogConfig, strconv.Itoa(common.InstanceIndex))
 	handler = ethMsgHandler{}
 	handler.registerAPI(&ethAPIService{})
 	notify.BUS.Subscribe(notify.ClientETHRPC, handler.process)

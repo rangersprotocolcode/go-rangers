@@ -17,14 +17,12 @@
 package access
 
 import (
-	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/consensus/groupsig"
 	"com.tuntun.rocket/node/src/middleware/log"
-	"strconv"
 )
 
 var (
-	logger = log.GetLoggerByIndex(log.AccessLogConfig, strconv.Itoa(common.InstanceIndex))
+	logger log.Logger
 	pkPool pubkeyPool
 )
 

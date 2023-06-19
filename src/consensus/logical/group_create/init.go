@@ -31,8 +31,8 @@ import (
 )
 
 var (
-	groupCreateLogger      = log.GetLoggerByIndex(log.GroupCreateLogConfig, strconv.Itoa(common.InstanceIndex))
-	groupCreateDebugLogger = log.GetLoggerByIndex(log.GroupCreateDebugLogConfig, strconv.Itoa(common.InstanceIndex))
+	groupCreateLogger      log.Logger
+	groupCreateDebugLogger log.Logger
 
 	GroupCreateProcessor groupCreateProcessor
 )
@@ -63,6 +63,9 @@ type groupCreateProcessor struct {
 }
 
 func (p *groupCreateProcessor) Init(minerInfo model.SelfMinerInfo, joinedGroupStorage *access.JoinedGroupStorage) {
+	groupCreateLogger = log.GetLoggerByIndex(log.GroupCreateLogConfig, strconv.Itoa(common.InstanceIndex))
+	groupCreateDebugLogger = log.GetLoggerByIndex(log.GroupCreateDebugLogConfig, strconv.Itoa(common.InstanceIndex))
+
 	p.minerInfo = minerInfo
 	p.createdHeightsIndex = 0
 

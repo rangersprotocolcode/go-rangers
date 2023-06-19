@@ -26,15 +26,20 @@ import (
 const ConsensusConfSection = "consensus"
 
 var (
-	consensusLogger = log.GetLoggerByIndex(log.ConsensusLogConfig, strconv.Itoa(common.InstanceIndex))
-	stdLogger       = log.GetLoggerByIndex(log.StdConsensusLogConfig, strconv.Itoa(common.InstanceIndex))
-	groupLogger     = log.GetLoggerByIndex(log.GroupLogConfig, strconv.Itoa(common.InstanceIndex))
-	slowLogger      = log.GetLoggerByIndex(log.SlowLogConfig, strconv.Itoa(common.InstanceIndex))
+	consensusLogger log.Logger
+	stdLogger       log.Logger
+	groupLogger     log.Logger
+	slowLogger      log.Logger
 
 	consensusConfManager common.SectionConfManager
 )
 
 func InitConsensus() {
+	consensusLogger = log.GetLoggerByIndex(log.ConsensusLogConfig, strconv.Itoa(common.InstanceIndex))
+	stdLogger = log.GetLoggerByIndex(log.StdConsensusLogConfig, strconv.Itoa(common.InstanceIndex))
+	groupLogger = log.GetLoggerByIndex(log.GroupLogConfig, strconv.Itoa(common.InstanceIndex))
+	slowLogger = log.GetLoggerByIndex(log.SlowLogConfig, strconv.Itoa(common.InstanceIndex))
+
 	consensusConfManager = common.GlobalConf.GetSectionManager(ConsensusConfSection)
 	model.InitParam(consensusConfManager)
 }
