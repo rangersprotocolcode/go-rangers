@@ -31,6 +31,7 @@ var (
 	txLogger         log.Logger
 	syncLogger       log.Logger
 	syncHandleLogger log.Logger
+	rewardLog        log.Logger
 
 	consensusHelper types.ConsensusHelper
 )
@@ -40,6 +41,7 @@ func InitCore(helper types.ConsensusHelper, privateKey common.PrivateKey, id str
 	txLogger = log.GetLoggerByIndex(log.TxLogConfig, strconv.Itoa(common.InstanceIndex))
 	syncLogger = log.GetLoggerByIndex(log.SyncLogConfig, strconv.Itoa(common.InstanceIndex))
 	syncHandleLogger = log.GetLoggerByIndex(log.SyncHandleLogConfig, strconv.Itoa(common.InstanceIndex))
+	rewardLog = log.GetLoggerByIndex(log.RewardLogConfig, strconv.Itoa(common.InstanceIndex))
 
 	start := time.Now()
 	common.DefaultLogger.Infof("start InitCore")

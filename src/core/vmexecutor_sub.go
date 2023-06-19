@@ -18,16 +18,13 @@ package core
 
 import (
 	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/vm"
 	"math/big"
-	"strconv"
 )
 
 var (
-	rewardLog     = log.GetLoggerByIndex(log.RewardLogConfig, strconv.Itoa(common.InstanceIndex))
 	callerAddress = common.HexToAddress("0x1111111111111111111111111111111111111111")
 )
 
