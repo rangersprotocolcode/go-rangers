@@ -18,9 +18,17 @@ package eth_rpc
 
 import "fmt"
 
+const defaultErrorCode = -32000
+
 type Error interface {
 	Error() string  // returns the message
 	ErrorCode() int // returns the code
+}
+
+// A DataError contains some data in addition to the error message.
+type DataError interface {
+	Error() string          // returns the message
+	ErrorData() interface{} // returns the error data
 }
 
 // request is for an unknown service

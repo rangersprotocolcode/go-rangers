@@ -241,7 +241,7 @@ func (handler ethMsgHandler) parseRequest(ethRpcMessage notify.ETHRPCPiece) (han
 }
 
 // execute RPC method and return result
-func (handler ethMsgHandler) exec(handlerFunc *execFunc, arguments []reflect.Value, method string, nonce uint64, params string) (interface{}, Error) {
+func (handler ethMsgHandler) exec(handlerFunc *execFunc, arguments []reflect.Value, method string, nonce uint64, params string) (interface{}, error) {
 	reply := handlerFunc.method.Func.Call(arguments)
 	if len(reply) == 0 {
 		return nil, nil
@@ -249,7 +249,7 @@ func (handler ethMsgHandler) exec(handlerFunc *execFunc, arguments []reflect.Val
 	if handlerFunc.errPos >= 0 { // test if method returned an error
 		if !reply[handlerFunc.errPos].IsNil() {
 			e := reply[handlerFunc.errPos].Interface().(error)
-			return nil, &callbackError{e.Error()}
+			return nil, e
 		}
 	}
 

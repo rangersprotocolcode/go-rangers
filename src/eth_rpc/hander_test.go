@@ -21,6 +21,8 @@ import (
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"testing"
 )
@@ -53,4 +55,24 @@ func TestSendRawTransaction(t *testing.T) {
 	piece := notify.ETHRPCPiece{Id: 1, Method: "eth_sendRawTransaction", Params: b}
 	msg := notify.ETHRPCMessage{GateNonce: 100, Message: piece}
 	handler.process(&msg)
+}
+
+func TestRevertError(t *testing.T) {
+
+	e := getErr()
+	ec, ok := e.(Error)
+	if ok {
+		fmt.Printf("code:%d\n", ec.ErrorCode())
+	}
+	de, ok := e.(DataError)
+	if ok {
+		fmt.Printf("msg:%s\n", de.ErrorData())
+	}
+
+}
+
+func getErr() error {
+	err := errors.New("123")
+	e := revertError{err, "reason here"}
+	return &e
 }
