@@ -32,7 +32,7 @@ func formatName(name string) string {
 	if len(ret) > 0 {
 		ret[0] = unicode.ToLower(ret[0])
 	}
-	if string(ret) == "version" {
+	if string(ret) == "version" || string(ret) == "listening" {
 		return netMethodPrefix + string(ret)
 	}
 	if string(ret) == "clientVersion" {

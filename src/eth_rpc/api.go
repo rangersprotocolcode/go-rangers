@@ -213,19 +213,9 @@ func (api *ethAPIService) ChainId() *utility.Big {
 	return (*utility.Big)(common.GetChainId(utility.MaxUint64))
 }
 
-// Version returns the current ethereum protocol version.
-func (s *ethAPIService) Version() string {
-	return common.NetworkId()
-}
-
 // ProtocolVersion returns the current Ethereum protocol version this node supports
 func (s *ethAPIService) ProtocolVersion() utility.Uint {
 	return utility.Uint(common.ProtocolVersion)
-}
-
-// ClientVersion returns the current client version.
-func (api *ethAPIService) ClientVersion() string {
-	return "Rangers/" + common.Version + "/centos-amd64/go1.17.3"
 }
 
 // BlockNumber returns the block number of the chain head.
@@ -449,6 +439,24 @@ func (s *ethAPIService) GetTransactionByBlockHashAndIndex(blockHash common.Hash,
 		return nil
 	}
 	return newRPCTransaction(block.Transactions[index], block.Header.Hash, block.Header.Height, uint64(index))
+}
+
+// Version returns the current ethereum protocol version.
+// net_version
+func (s *ethAPIService) Version() string {
+	return common.NetworkId()
+}
+
+// Listening Returns true if client is actively listening for network connections.
+// net_listening
+func (s *ethAPIService) Listening() bool {
+	return true
+}
+
+// ClientVersion returns the current client version.
+// web3_clientVersion
+func (api *ethAPIService) ClientVersion() string {
+	return "Rangers/" + common.Version + "/centos-amd64/go1.17.3"
 }
 
 // newRPCTransaction returns a transaction that will serialize to the RPC
