@@ -35,7 +35,7 @@ type jsonSuccessResponse struct {
 }
 
 type jsonError struct {
-	Code    int         `json:"code"`
+	Code    int         `json:"status"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
 }
@@ -43,7 +43,7 @@ type jsonError struct {
 type jsonErrResponse struct {
 	Version string      `json:"jsonrpc"`
 	Id      interface{} `json:"id,omitempty"`
-	Error   jsonError   `json:"error"`
+	Error   jsonError   `json:"result"`
 }
 
 func (r jsonSuccessResponse) encodeJson() ([]byte, error) {
