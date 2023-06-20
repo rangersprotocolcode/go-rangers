@@ -139,12 +139,10 @@ func newTransactionPool() TransactionPool {
 
 func (pool *TxPool) refreshGateNonce(tx *types.Transaction) {
 	sub := tx.SubTransactions
-	if 1 != len(sub) && 0 == sub[0].Address {
-		return
+	if 1 == len(sub) && 0 != sub[0].Address {
+		txPoolLogger.Debugf("refreshGateNonce. txhash: %s, gateNonce: %d", tx.Hash.String(), sub[0].Address)
+		pool.batch.Put(utility.StrToBytes(txDataBasePrefix), utility.UInt64ToByte(sub[0].Address))
 	}
-
-	txPoolLogger.Debugf("refreshGateNonce. txhash: %s, gateNonce: %d", tx.Hash.String(), sub[0].Address)
-	pool.batch.Put(utility.StrToBytes(txDataBasePrefix), utility.UInt64ToByte(sub[0].Address))
 }
 
 func (pool *TxPool) GetGateNonce() uint64 {
