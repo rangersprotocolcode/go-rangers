@@ -1197,12 +1197,12 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 		return nil, nil
 	}
 
-	r := uint256.NewInt()
-	r.SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()), 32))
-	s := uint256.NewInt()
-	s.SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()+32), 32))
 	v := uint256.NewInt()
-	v.SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()+64), 32))
+	v.SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()), 32))
+	r := uint256.NewInt()
+	r.SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()+32), 32))
+	s := uint256.NewInt()
+	s.SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()+64), 32))
 	c := uint256.NewInt()
 	c.SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()+96), 32))
 	commit := c.Bytes32()
