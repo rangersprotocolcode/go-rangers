@@ -173,6 +173,7 @@ var (
 	gasMStore8 = pureMemoryGascost
 	gasMStore  = pureMemoryGascost
 	gasCreate  = pureMemoryGascost
+	gasAuth    = pureMemoryGascost
 )
 
 func gasCreate2(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
@@ -324,4 +325,43 @@ func gasSelfdestruct(evm *EVM, contract *Contract, stack *Stack, mem *Memory, me
 		evm.StateDB.AddRefund(SelfdestructRefundGas)
 	}
 	return gas, nil
+}
+
+func gasAuthCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
+	var (
+		dynamicGas     uint64
+		transfersValue = !stack.Back(2).IsZero()
+		address        = common.Address(stack.Back(1).Bytes20())
+	)
+
+	//memory_expansion_fee
+	memoryGas, err := memoryGasCost(mem, memorySize)
+	if err != nil {
+		return 0, err
+	}
+	var overflow bool
+	if dynamicGas, overflow = utility.SafeAdd(dynamicGas, memoryGas); overflow {
+		return 0, ErrGasUintOverflow
+	}
+
+	if !evm.StateDB.AddressInAccessList(address) {
+		evm.StateDB.AddAddressToAccessList(address)
+		dynamicGas += ColdAccountAccessCostEIP2929 - WarmStorageReadCostEIP2929
+	}
+
+	if transfersValue {
+		dynamicGas += AuthCallValueTransferGas
+		if evm.StateDB.Empty(address) {
+			dynamicGas += CallNewAccountGas
+		}
+	}
+
+	evm.callGasTemp, err = authCallGas(contract.Gas, dynamicGas, stack.Back(0))
+	if err != nil {
+		return 0, err
+	}
+	if dynamicGas, overflow = utility.SafeAdd(dynamicGas, evm.callGasTemp); overflow {
+		return 0, ErrGasUintOverflow
+	}
+	return dynamicGas, nil
 }

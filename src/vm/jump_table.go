@@ -1087,57 +1087,58 @@ func newInstructionSet() JumpTable {
 
 	instructionSet[PRINTF] = &operation{
 		execute:     opPrintF,
-		constantGas: GasExtStep,
+		constantGas: PrintGas,
 		minStack:    minStack(0, 0),
 		maxStack:    maxStack(0, 0),
 	}
 
 	instructionSet[STAKE] = &operation{
 		execute:     opStake,
-		constantGas: GasExtStep,
+		constantGas: StakeGas,
 		minStack:    minStack(2, 1),
 		maxStack:    maxStack(2, 1),
 	}
 
 	instructionSet[UNSTAKE] = &operation{
 		execute:     opUnStake,
-		constantGas: GasExtStep,
+		constantGas: UnStakeGas,
 		minStack:    minStack(2, 1),
 		maxStack:    maxStack(2, 1),
 	}
 
 	instructionSet[GETSTAKE] = &operation{
 		execute:     opGetStake,
-		constantGas: GasExtStep,
+		constantGas: GetStake,
 		minStack:    minStack(1, 1),
 		maxStack:    maxStack(1, 1),
 	}
 
 	instructionSet[UNSTAKEALL] = &operation{
 		execute:     opUnStakeAll,
-		constantGas: GasExtStep,
+		constantGas: UnStakeAllGas,
 		minStack:    minStack(1, 1),
 		maxStack:    maxStack(1, 1),
 	}
 
 	instructionSet[STAKENUM] = &operation{
 		execute:     opStakeNum,
-		constantGas: GasExtStep,
+		constantGas: StakeNumGas,
 		minStack:    minStack(0, 1),
 		maxStack:    maxStack(0, 1),
 	}
 
 	instructionSet[AUTH] = &operation{
 		execute:     opAuth,
-		constantGas: GasExtStep,
+		constantGas: AuthGas,
+		dynamicGas:  gasAuth,
 		minStack:    minStack(3, 1),
 		maxStack:    maxStack(3, 1),
 	}
 
 	instructionSet[AUTHCALL] = &operation{
 		execute:     opAuthCall,
-		constantGas: GasExtStep,
-		dynamicGas:  gasCall,
+		constantGas: WarmStorageReadCostEIP2929,
+		dynamicGas:  gasAuthCall,
 		minStack:    minStack(8, 1),
 		maxStack:    maxStack(8, 1),
 		memorySize:  memoryAuthCall,

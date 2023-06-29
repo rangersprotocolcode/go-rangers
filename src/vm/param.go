@@ -133,6 +133,16 @@ const (
 	Bls12381PairingPerPairGas uint64 = 23000  // Per-point pair gas price for BLS12-381 elliptic curve pairing check
 	Bls12381MapG1Gas          uint64 = 5500   // Gas price for BLS12-381 mapping field element to G1 operation
 	Bls12381MapG2Gas          uint64 = 110000 // Gas price for BLS12-381 mapping field element to G2 operation
+
+	AuthGas                  uint64 = 3100
+	AuthCallValueTransferGas uint64 = 7600 // Paid for AuthCALL when the value transfer is non-zero.
+
+	PrintGas      uint64 = 1000
+	StakeGas      uint64 = 20000
+	UnStakeGas    uint64 = 20000
+	UnStakeAllGas uint64 = 100000
+	GetStake      uint64 = 1000
+	StakeNumGas   uint64 = 5000
 )
 
 // Gas discount table for BLS12-381 G1 and G2 multi exponentiation operations
