@@ -119,7 +119,13 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 		}
 		result, leftOverGas, logs, err = vmInstance.Call(caller, contractAddress, input, vmCtx.GasLimit, transferValue)
 
-		this.logger.Tracef("After execute contract call[%s]! result:%v,leftOverGas: %d,error:%v,logs:%v", transaction.Hash.String(), result, leftOverGas, err, logs)
+		this.logger.Tracef("After execute contract call[%s]! result:%v,leftOverGas: %d,error:%v", transaction.Hash.String(), result, leftOverGas, err)
+		if transaction.Hash.String() == "0xf3e5020142d8cb4e43ea48a6bceca64ec8fa0969afefe8f1c631b3c50ce15be3" && logs != nil {
+			for _, log := range logs {
+				this.logger.Tracef("logs:")
+				this.logger.Tracef(log.String())
+			}
+		}
 	}
 
 	context["logs"] = logs
