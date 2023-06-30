@@ -29,7 +29,6 @@ import (
 	"time"
 )
 
-
 const MaxCastBlockTime = time.Second * 3
 
 type VMExecutor struct {
@@ -137,6 +136,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 			receipt.ContractAddress = contractAddress.(common.Address)
 		}
 		receipt.TxHash = transaction.Hash
+		printReceipt(*receipt)
 		receipts = append(receipts, receipt)
 	}
 
@@ -204,4 +204,9 @@ func removeUnusedValidator(accountdb *account.AccountDB) {
 		}
 		service.MinerManagerImpl.RemoveMiner(minerId, miner.Account[:], miner.Type, accountdb, 0)
 	}
+}
+
+func printReceipt(receipt types.Receipt) {
+	logger.Debugf("tx[%s] receipt:%d,%d,%d,%s,%s", receipt.TxHash.String(), receipt.Status, receipt.CumulativeGasUsed, receipt.Height, receipt.ContractAddress, receipt.Result)
+	logger.Debugf("logs:%v", receipt.Logs)
 }
