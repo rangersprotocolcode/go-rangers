@@ -138,7 +138,6 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 			receipt.ContractAddress = contractAddress.(common.Address)
 		}
 		receipt.TxHash = transaction.Hash
-		printReceipt(*receipt)
 		receipts = append(receipts, receipt)
 	}
 
@@ -205,13 +204,5 @@ func removeUnusedValidator(accountdb *account.AccountDB) {
 			continue
 		}
 		service.MinerManagerImpl.RemoveMiner(minerId, miner.Account[:], miner.Type, accountdb, 0)
-	}
-}
-
-func printReceipt(receipt types.Receipt) {
-	logger.Debugf("tx[%s] receipt:%d,%d,%d,%s,%s", receipt.TxHash.String(), receipt.Status, receipt.CumulativeGasUsed, receipt.Height, receipt.ContractAddress, receipt.Result)
-	logger.Debugf("logs:")
-	for _, log := range receipt.Logs {
-		logger.Debugf("tx hash:%s,block hash:%s,address:%s,block num:%d,log index:%d,tx index:%d,removed:%v,data:%s,topics:%v", log.TxHash.String(), log.BlockHash.String(), log.Address.String(), log.BlockNumber, log.Index, log.TxIndex, log.Removed, common.ToHex(log.Data), log.Topics)
 	}
 }

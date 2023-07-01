@@ -23,6 +23,7 @@ import (
 	"com.tuntun.rocket/node/src/storage/account"
 	"errors"
 	"github.com/holiman/uint256"
+	"golang.org/x/crypto/sha3"
 	"math/big"
 	"sync/atomic"
 )
@@ -407,20 +408,20 @@ func (c *codeAndHash) Hash() common.Hash {
 // create creates a new contract using code as deployment code.
 func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64, value *big.Int, address common.Address) ([]byte, common.Address, uint64, []*types.Log, error) {
 	// check owner when subnet
-	//if common.IsSub() && 0 != evm.BlockNumber.Uint64() {
-	//	data := [64]byte{}
-	//	copy(data[12:], caller.Address().Bytes())
-	//	copy(data[64-len(common.CreateWhiteListPostion):], common.CreateWhiteListPostion)
-	//	hasher := sha3.NewLegacyKeccak256().(common.KeccakState)
-	//	hasher.Write(data[:])
-	//	key := [32]byte{}
-	//	hasher.Read(key[:])
-	//
-	//	value := evm.accountDB.GetData(common.CreateWhiteListAddr, key[:])
-	//	if 0 == len(value) || 1 != value[len(value)-1] {
-	//		return nil, common.Address{}, 0, nil, errSubChainNoCreate
-	//	}
-	//}
+	if common.IsSub() && 0 != evm.BlockNumber.Uint64() {
+		data := [64]byte{}
+		copy(data[12:], caller.Address().Bytes())
+		copy(data[64-len(common.CreateWhiteListPostion):], common.CreateWhiteListPostion)
+		hasher := sha3.NewLegacyKeccak256().(common.KeccakState)
+		hasher.Write(data[:])
+		key := [32]byte{}
+		hasher.Read(key[:])
+
+		value := evm.accountDB.GetData(common.CreateWhiteListAddr, key[:])
+		if 0 == len(value) || 1 != value[len(value)-1] {
+			return nil, common.Address{}, 0, nil, errSubChainNoCreate
+		}
+	}
 
 	// Depth check execution. Fail if we're trying to execute above the
 	// limit.
