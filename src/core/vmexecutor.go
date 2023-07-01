@@ -48,7 +48,9 @@ func newVMExecutor(accountdb *account.AccountDB, block *types.Block, situation s
 	}
 	vm.context["chain"] = blockChainImpl
 	vm.context["situation"] = situation
-
+	if situation == "fork" {
+		vm.context["chain"] = SyncProcessor
+	}
 	return vm
 }
 
