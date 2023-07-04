@@ -395,3 +395,11 @@ func tryAddBlockOnChain(chain *blockChain, forkBlock *types.Block) (success bool
 	syncLogger.Debugf("add block on chain failed.%s,%d-%d", forkBlock.Header.Hash.String(), forkBlock.Header.Height, forkBlock.Header.TotalQN)
 	return false, false
 }
+
+func (p *syncProcessor) GetBlockHash(height uint64) common.Hash {
+	header := p.GetBlockHeader(height)
+	if header != nil {
+		return header.Hash
+	}
+	return common.Hash{}
+}
