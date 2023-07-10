@@ -39,6 +39,8 @@ var (
 	ErrGasUintOverflow          = errors.New("gas uint64 overflow")
 	ErrInvalidRetsub            = errors.New("invalid retsub")
 	ErrReturnStackExceeded      = errors.New("return stack limit reached")
+	ErrNonceTooLow              = errors.New("nonce too low")
+	ErrNonceTooHigh             = errors.New("nonce too high")
 )
 
 // ErrStackUnderflow wraps an evm error when the items on the stack less

@@ -494,6 +494,10 @@ func (evm *EVM) AuthCall(sponsor common.Address, caller ContractRef, addr common
 	if value.Sign() != 0 && !evm.Context.CanTransfer(evm.StateDB, sponsor, value) {
 		return nil, gas, nil, ErrInsufficientBalance
 	}
+	//authcall caller's nonce increase
+	nonce := evm.StateDB.GetNonce(caller.Address())
+	evm.StateDB.SetNonce(caller.Address(), nonce+1)
+
 	snapshot := evm.StateDB.Snapshot()
 	p, isPrecompile := evm.precompile(addr)
 

@@ -1249,6 +1249,7 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 }
 
 func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
+	authorizedNonce := popUint256(callContext)
 	gas := popUint256(callContext)
 	addr := popAddress(callContext)
 	value := popUint256(callContext)
@@ -1257,6 +1258,7 @@ func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 	argsLength := popUint256(callContext)
 	retOffset := popUint256(callContext)
 	retLength := popUint256(callContext)
+	logger.Debugf("[opAuthCall]authorizedNonce:%s,gas:%d,addr:%s,value:%d,valueExt:%d,", authorizedNonce, gas, addr, value, valueExt)
 
 	callgas := interpreter.evm.callGasTemp
 
@@ -1271,6 +1273,20 @@ func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 	if callContext.authorized == nil {
 		logger.Debugf("authcall failed:authorized address is nil")
 		pushBool(callContext, false)
+		return nil, nil
+	}
+
+	// Make sure authorized address's nonce is correct.
+	expectedAuthorizedNonce := interpreter.evm.StateDB.GetNonce(*callContext.authorized)
+	if expectedAuthorizedNonce < authorizedNonce.Uint64() {
+		pushBool(callContext, false)
+		callContext.memory.Set(retOffset.Uint64(), retLength.Uint64(), []byte(ErrNonceTooHigh.Error()))
+		logger.Debugf("[opAuthCall]nonce too high,except:%s,but:%s", expectedAuthorizedNonce, authorizedNonce)
+		return nil, nil
+	} else if expectedAuthorizedNonce > authorizedNonce.Uint64() {
+		pushBool(callContext, false)
+		callContext.memory.Set(retOffset.Uint64(), retLength.Uint64(), []byte(ErrNonceTooLow.Error()))
+		logger.Debugf("[opAuthCall]nonce too low,except:%s,but:%s", expectedAuthorizedNonce, authorizedNonce)
 		return nil, nil
 	}
 
