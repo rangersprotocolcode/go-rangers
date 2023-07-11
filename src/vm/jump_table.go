@@ -1139,8 +1139,8 @@ func newInstructionSet() JumpTable {
 		execute:     opAuthCall,
 		constantGas: WarmStorageReadCostEIP2929,
 		dynamicGas:  gasAuthCall,
-		minStack:    minStack(8, 1),
-		maxStack:    maxStack(8, 1),
+		minStack:    minStack(9, 1),
+		maxStack:    maxStack(9, 1),
 		memorySize:  memoryAuthCall,
 	}
 
