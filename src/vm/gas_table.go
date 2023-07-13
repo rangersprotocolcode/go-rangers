@@ -336,6 +336,7 @@ func gasAuthCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memory
 
 	//memory_expansion_fee
 	memoryGas, err := memoryGasCost(mem, memorySize)
+	logger.Debugf("[gasAuthCall]memoryGas:%d", memoryGas)
 	if err != nil {
 		return 0, err
 	}
@@ -343,11 +344,13 @@ func gasAuthCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memory
 	if dynamicGas, overflow = utility.SafeAdd(dynamicGas, memoryGas); overflow {
 		return 0, ErrGasUintOverflow
 	}
+	logger.Debugf("[gasAuthCall]memoryGas:%d", memoryGas)
 
 	if !evm.StateDB.AddressInAccessList(address) {
 		evm.StateDB.AddAddressToAccessList(address)
 		dynamicGas += ColdAccountAccessCostEIP2929 - WarmStorageReadCostEIP2929
 	}
+	logger.Debugf("[gasAuthCall]memoryGas:%d", memoryGas)
 
 	if transfersValue {
 		dynamicGas += AuthCallValueTransferGas
@@ -355,6 +358,7 @@ func gasAuthCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memory
 			dynamicGas += CallNewAccountGas
 		}
 	}
+	logger.Debugf("[gasAuthCall]memoryGas:%d", memoryGas)
 
 	evm.callGasTemp, err = authCallGas(contract.Gas, dynamicGas, stack.Back(0))
 	if err != nil {

@@ -1305,7 +1305,7 @@ func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 	for _, log := range logs {
 		callContext.logs = append(callContext.logs, log)
 	}
-	logger.Debugf("[authcall]ret:%v,err:%v", ret, err)
+	logger.Debugf("[authcall]ret:%v,err:%v,gasleft:%d", ret, err, returnGas)
 	if err != nil {
 		pushBool(callContext, false)
 	} else {

@@ -54,6 +54,7 @@ func callGas(isEip150 bool, availableGas, base uint64, callCost *uint256.Int) (u
 
 // authCallGas returns the actual gas cost of the auth call.
 func authCallGas(availableGas, base uint64, callCost *uint256.Int) (uint64, error) {
+	logger.Debugf("[authCallGas]availableGas:%d,base:%d,callcost:%d", availableGas, base, callCost)
 	availableGas = availableGas - base
 	gas := availableGas - availableGas/64
 
