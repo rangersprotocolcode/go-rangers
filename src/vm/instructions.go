@@ -1300,7 +1300,7 @@ func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 
 	sponsor := interpreter.evm.Origin
 	caller := AccountRef(*callContext.authorized)
-	logger.Debugf("[authcall] sponsor:%s,from:%s,to:%s,value:%v,gas:%v,data:%s", sponsor.String(), caller.Address().String(), addr.String(), bigVal.String(), gas, common.ToHex(data))
+	logger.Debugf("[authcall] sponsor:%s,from:%s,to:%s,value:%v,gas:%d,data:%s", sponsor.String(), caller.Address().String(), addr.String(), bigVal.String(), callgas, common.ToHex(data))
 	ret, returnGas, logs, err := interpreter.evm.AuthCall(sponsor, caller, addr, data, callgas, bigVal)
 	for _, log := range logs {
 		callContext.logs = append(callContext.logs, log)
