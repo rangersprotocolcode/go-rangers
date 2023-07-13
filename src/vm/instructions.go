@@ -1251,7 +1251,7 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
 	stack := callContext.stack
 	logger.Debugf("before opAuthCall0,stack len:%d, %d,%d,%d,%d,%d,%d,%d,%d,%d,%d", stack.len(), stack.Back(0), stack.Back(1), stack.Back(2), stack.Back(3), stack.Back(4), stack.Back(5), stack.Back(6), stack.Back(7), stack.Back(8), stack.Back(9))
-	logger.Debugf("before opAuthCall1,stack len:%d, %v,%v,%v,%v,%v,%v,%v,%v,%v,%v", stack.len(), stack.Back(0), stack.Back(1), stack.Back(2), stack.Back(3), stack.Back(4), stack.Back(5), stack.Back(6), stack.Back(7), stack.Back(8), stack.Back(9))
+	logger.Debugf("before opAuthCall1,stack len:%d, %v,%v,%v,%v,%v,%v,%v,%v,%v,%v", stack.len(), *stack.Back(0), *stack.Back(1), *stack.Back(2), *stack.Back(3), *stack.Back(4), *stack.Back(5), *stack.Back(6), *stack.Back(7), *stack.Back(8), *stack.Back(9))
 	authorizedNonce := popUint256(callContext)
 	logger.Debugf("before opAuthCall2,stack len:%d, %v,%v,%v,%v,%v,%v,%v,%v,%v,%v", stack.len(), stack.Back(0), stack.Back(1), stack.Back(2), stack.Back(3), stack.Back(4), stack.Back(5), stack.Back(6), stack.Back(7), stack.Back(8), stack.Back(9))
 	gas := popUint256(callContext)
