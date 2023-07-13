@@ -360,6 +360,7 @@ func gasAuthCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memory
 	}
 	logger.Debugf("[gasAuthCall]memoryGas:%d", memoryGas)
 
+	logger.Debugf("before authCallGas,stack len:%d, %d,%d,%d,%d,%d", stack.len(), stack.Back(0), stack.Back(1), stack.Back(2), stack.Back(3), stack.Back(4))
 	evm.callGasTemp, err = authCallGas(contract.Gas, dynamicGas, stack.Back(0))
 	if err != nil {
 		return 0, err
