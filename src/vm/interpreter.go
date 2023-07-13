@@ -228,6 +228,9 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		// consume the gas and return an error if not enough gas is available.
 		// cost is explicitly set so that the capture state defer method can get the proper cost
 		if operation.dynamicGas != nil {
+			if op == AUTHCALL {
+				logger.Debugf("op AUTHCALL,stack len:%d,  %d,%d,%d,%d,%d,%d,%d,%d,%d,%d", stack.len(), stack.Back(0), stack.Back(1), stack.Back(2), stack.Back(3), stack.Back(4), stack.Back(5), stack.Back(6), stack.Back(7), stack.Back(8), stack.Back(9))
+			}
 			var dynamicCost uint64
 			dynamicCost, err = operation.dynamicGas(in.evm, contract, stack, mem, memorySize)
 			cost += dynamicCost // total cost, for debug tracing
@@ -242,6 +245,9 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		//in.tracer.CaptureState(in.evm, pc, op, gasCopy, cost, mem, stack, returns, in.returnData, contract, in.evm.depth, err)
 		//logged = true
 
+		if op == AUTHCALL {
+			logger.Debugf("op AUTHCALL,stack len:%d,  %d,%d,%d,%d,%d,%d,%d,%d,%d,%d", stack.len(), stack.Back(0), stack.Back(1), stack.Back(2), stack.Back(3), stack.Back(4), stack.Back(5), stack.Back(6), stack.Back(7), stack.Back(8), stack.Back(9))
+		}
 		// execute the operation
 		res, err = operation.execute(&pc, in, callContext)
 		// if the operation clears the return data (e.g. it has returning data)
