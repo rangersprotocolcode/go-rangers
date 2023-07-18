@@ -64,9 +64,7 @@ func authCallGas(availableGas, base uint64, callCost *uint256.Int) (uint64, erro
 	if gas < callCost.Uint64() {
 		//implement different from 3074,just give max remain gas,may be sub_call use less than remaining_gas
 		//be the same with call here
-		logger.Debugf("[authCallGas]return:%d", callCost.Uint64())
 		return gas, nil
 	}
-	logger.Debugf("[authCallGas]return:%d", callCost.Uint64())
 	return callCost.Uint64(), nil
 }

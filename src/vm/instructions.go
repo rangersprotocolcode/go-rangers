@@ -1227,7 +1227,7 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	s.WriteToSlice(sig[32:64])
 	sig[64] = vAdapt
 
-	logger.Debugf("hash:%s,sig:%v", common.ToHex(hash[:]), sig)
+	logger.Debugf("hash:%s,sig:%v", common.ToHex(hash[:]), common.ToHex(sig[:]))
 	pub, err := crypto.Ecrecover(hash[:], sig)
 	if err != nil {
 		logger.Debugf("[opAuth]ecrecover error:%s", err.Error())
@@ -1249,11 +1249,7 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 }
 
 func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	stack := callContext.stack
-	logger.Debugf("before opAuthCall0,stack len:%d, %d,%d,%d,%d,%d,%d,%d,%d,%d,%d", stack.len(), stack.Back(0), stack.Back(1), stack.Back(2), stack.Back(3), stack.Back(4), stack.Back(5), stack.Back(6), stack.Back(7), stack.Back(8), stack.Back(9))
-	logger.Debugf("before opAuthCall1,stack len:%d, %v,%v,%v,%v,%v,%v,%v,%v,%v,%v", stack.len(), *stack.Back(0), *stack.Back(1), *stack.Back(2), *stack.Back(3), *stack.Back(4), *stack.Back(5), *stack.Back(6), *stack.Back(7), *stack.Back(8), *stack.Back(9))
 	authorizedNonce := popUint256(callContext)
-	logger.Debugf("before opAuthCall2,stack len:%d, %v,%v,%v,%v,%v,%v,%v,%v,%v,%v", stack.len(), stack.Back(0), stack.Back(1), stack.Back(2), stack.Back(3), stack.Back(4), stack.Back(5), stack.Back(6), stack.Back(7), stack.Back(8), stack.Back(9))
 	gas := popUint256(callContext)
 	addr := popAddress(callContext)
 	value := popUint256(callContext)
@@ -1262,8 +1258,7 @@ func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 	argsLength := popUint256(callContext)
 	retOffset := popUint256(callContext)
 	retLength := popUint256(callContext)
-	logger.Debugf("before opAuthCall3,stack len:%d, %v,%v,%v,%v,%v,%v,%v,%v,%v,%v", stack.len(), stack.Back(0), stack.Back(1), stack.Back(2), stack.Back(3), stack.Back(4), stack.Back(5), stack.Back(6), stack.Back(7), stack.Back(8), stack.Back(9))
-	logger.Debugf("[opAuthCall]authorizedNonce:%d,gas:%d,addr:%s,value:%d,valueExt:%d,", authorizedNonce, gas, addr, value, valueExt)
+	logger.Debugf("[opAuthCall]authorizedNonce:%d,gas:%d,addr:%s,value:%d,valueExt:%d,", authorizedNonce.Uint64(), gas.Uint64(), addr, value.Uint64(), valueExt.Uint64())
 
 	callgas := interpreter.evm.callGasTemp
 
@@ -1286,12 +1281,12 @@ func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 	if expectedAuthorizedNonce < authorizedNonce.Uint64() {
 		pushBool(callContext, false)
 		callContext.memory.Set(retOffset.Uint64(), retLength.Uint64(), []byte(ErrNonceTooHigh.Error()))
-		logger.Debugf("[opAuthCall]nonce too high,except:%d,but:%d", expectedAuthorizedNonce, authorizedNonce)
+		logger.Debugf("[opAuthCall]nonce too high,except:%d,but:%d", expectedAuthorizedNonce, authorizedNonce.Uint64())
 		return nil, nil
 	} else if expectedAuthorizedNonce > authorizedNonce.Uint64() {
 		pushBool(callContext, false)
 		callContext.memory.Set(retOffset.Uint64(), retLength.Uint64(), []byte(ErrNonceTooLow.Error()))
-		logger.Debugf("[opAuthCall]nonce too low,except:%d,but:%d", expectedAuthorizedNonce, authorizedNonce)
+		logger.Debugf("[opAuthCall]nonce too low,except:%d,but:%d", expectedAuthorizedNonce, authorizedNonce.Uint64())
 		return nil, nil
 	}
 

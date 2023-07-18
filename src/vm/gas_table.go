@@ -328,7 +328,6 @@ func gasSelfdestruct(evm *EVM, contract *Contract, stack *Stack, mem *Memory, me
 }
 
 func gasAuthCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	logger.Debugf("before authCallGas,stack len:%d, %d,%d,%d,%d,%d,%d,%d,%d,%d,%d", stack.len(), stack.Back(0), stack.Back(1), stack.Back(2), stack.Back(3), stack.Back(4), stack.Back(5), stack.Back(6), stack.Back(7), stack.Back(8), stack.Back(9))
 	var (
 		dynamicGas     uint64
 		transfersValue = !stack.Back(3).IsZero()
