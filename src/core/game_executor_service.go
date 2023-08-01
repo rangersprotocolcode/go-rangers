@@ -25,10 +25,15 @@ import (
 	"com.tuntun.rocket/node/src/utility"
 	"com.tuntun.rocket/node/src/vm"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"strconv"
 )
+
+const getLogsBlockLimit = 1000
+
+var limitExceededError = errors.New("limit exceeded")
 
 type queryLogData struct {
 	FromBlock uint64 `json:"fromBlock,omitempty"`
@@ -118,12 +123,15 @@ func getTransaction(hash common.Hash) string {
 }
 
 func getPastLogs(crit types.FilterCriteria) string {
-	logs := GetLogs(crit)
+	logs, err := GetLogs(crit)
+	if err != nil {
+		return err.Error()
+	}
 	result, _ := json.Marshal(logs)
 	return string(result)
 }
 
-func GetLogs(crit types.FilterCriteria) []*types.Log {
+func GetLogs(crit types.FilterCriteria) ([]*types.Log, error) {
 	var logs []*types.Log
 	if crit.BlockHash != nil {
 		logs = mysql.SelectLogsByHash(*crit.BlockHash, crit.Addresses)
@@ -140,14 +148,18 @@ func GetLogs(crit types.FilterCriteria) []*types.Log {
 		} else {
 			end = crit.ToBlock.Uint64()
 		}
+
+		if end-begin > getLogsBlockLimit {
+			return nil, limitExceededError
+		}
 		logs = mysql.SelectLogs(begin, end, crit.Addresses)
 	}
 
 	result := types.FilterLogsByTopics(logs, crit.Topics)
 	if result == nil {
-		return []*types.Log{}
+		return []*types.Log{}, nil
 	}
-	return result
+	return result, nil
 }
 
 func (executor *GameExecutor) callVM(param callVMData) string {

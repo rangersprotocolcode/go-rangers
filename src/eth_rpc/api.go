@@ -412,7 +412,10 @@ func (s *ethAPIService) GetTransactionByHash(hash common.Hash) (*RPCTransaction,
 //
 // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getlogs
 func (s *ethAPIService) GetLogs(crit types.FilterCriteria) ([]*types.Log, error) {
-	result := core.GetLogs(crit)
+	result, err := core.GetLogs(crit)
+	if err != nil {
+		return nil, err
+	}
 	return result, nil
 }
 
