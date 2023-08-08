@@ -84,6 +84,14 @@ func TestGetTotalReward(t *testing.T) {
 
 }
 
+func TestGetTotalReward2(t *testing.T) {
+	fmt.Println(getTotalReward(1) * float64(common.BlocksPerEpoch) * 0.14 / 0.35)
+	fmt.Println(getTotalReward(common.BlocksPerEpoch) * float64(common.BlocksPerEpoch) * 0.14 / 0.35)
+	fmt.Println(getTotalReward(common.BlocksPerEpoch*2) * float64(common.BlocksPerEpoch) * 0.14 / 0.35)
+	fmt.Println(getTotalReward(common.BlocksPerEpoch*3) * float64(common.BlocksPerEpoch) * 0.14 / 0.35)
+
+}
+
 func TestFloat64Stake(t *testing.T) {
 	total := uint64(1111111111)
 	stake := uint64(99)

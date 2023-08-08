@@ -109,9 +109,19 @@ func TestCreateSubCrossContract(t *testing.T) {
 		TimeCycle:      10,
 		ProposalToken:  30,
 		ValidatorToken: 40,
+		Stake:          "1000",
 	}
+
+	proxy, rpg := createSubCrossContract(block.Header, stateDB, conf)
+
+	amount, err := utility.StrToBigInt(conf.Stake)
+	if err != nil {
+		panic(err)
+	}
+	createSubGovernance(block.Header, stateDB, rpg, proxy, common.HexToAddress(conf.Creator), amount)
+
 	createEconomyContract(block.Header, stateDB, conf)
-	createSubCrossContract(block.Header, stateDB, conf)
+
 }
 
 func TestEconomyContract(t *testing.T) {
