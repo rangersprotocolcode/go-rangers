@@ -20,6 +20,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/db"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"com.tuntun.rocket/node/src/vm"
@@ -121,6 +122,8 @@ func TestCreateSubCrossContract(t *testing.T) {
 	createSubGovernance(block.Header, stateDB, rpg, proxy, common.HexToAddress(conf.Creator), amount)
 
 	createEconomyContract(block.Header, stateDB, conf)
+
+	fmt.Println(service.GetSubChainStatus(stateDB))
 
 }
 

@@ -174,10 +174,11 @@ func getSubGenesisValidators(genesisInfo []*types.GenesisInfo) []*types.Miner {
 	return verifyMiners
 }
 
-// create three contracts:
+// create four contracts:
 // 1. chain coin erc20
-// 2. chain reward (missing)
+// 2. chain reward
 // 3. whiteList for creating contract
+// 4. rpg reward contract (missing)
 // return chain reward addr
 func createEconomyContract(header *types.BlockHeader, statedb *account.AccountDB, conf *common.GenesisConf) common.Address {
 	tokenName := conf.TokenName

@@ -177,6 +177,18 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 		panic("Init miner core init error:" + err.Error())
 	}
 
+	if common.IsSub() {
+		accountDB := middleware.AccountDBManagerInstance.GetLatestStateDB()
+		if nil == accountDB {
+			panic("wrong accountDB")
+		}
+
+		if 3 == service.GetSubChainStatus(accountDB) {
+			fmt.Println("subChain ended")
+			return
+		}
+	}
+
 	network.GetNetInstance().InitTx(tx)
 
 	// 共识部分启动
@@ -194,6 +206,10 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 	}
 
 	syncChainInfo()
+
+	if common.IsSub() {
+		checkStatus()
+	}
 
 	eth_rpc.InitEthMsgHandler()
 	gx.init = true
@@ -247,6 +263,31 @@ func syncChainInfo() {
 			middleware.MonitorLogger.Infof("|height|%s", jsonObject.TOJSONString())
 		}
 	}()
+}
+
+func checkStatus() {
+	go func() {
+		for range time.Tick(10 * time.Second) {
+			accountDB := middleware.AccountDBManagerInstance.GetLatestStateDB()
+			if nil == accountDB {
+				continue
+			}
+
+			if 3 == service.GetSubChainStatus(accountDB) {
+				fmt.Println("subChain ended")
+
+				mysql.CloseMysql()
+				if core.GetBlockChain() != nil {
+					core.GetBlockChain().Close()
+				}
+				log.Close()
+				consensus.StopMiner()
+				os.Exit(0)
+				return
+			}
+		}
+	}()
+
 }
 
 func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerInfo) {

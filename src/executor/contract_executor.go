@@ -20,6 +20,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"com.tuntun.rocket/node/src/vm"
@@ -62,6 +63,14 @@ func toHex(b []byte) string {
 }
 
 func (this *contractExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	// check chain status if it is subChain
+	if common.IsSub() && transaction.Target == common.WhitelistForCreate {
+		status := service.GetSubChainStatus(accountdb)
+		if 2 != status {
+			return false, fmt.Sprintf("cannot call contract , status: %d", status)
+		}
+	}
+
 	vmCtx := vm.Context{}
 	vmCtx.CanTransfer = vm.CanTransfer
 	vmCtx.Transfer = vm.Transfer
