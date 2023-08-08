@@ -9,6 +9,9 @@ var (
 
 	WhitelistForCreate = "0x9c1cbfe5328dfb1733d59a7652d0a49228c7e12c"
 
-	CreateWhiteListAddr    = HexToAddress(WhitelistForCreate)
+	RpgReward = HexToAddress("0x57d9b509004657dfade3121d9aa32a3586c1ef49")
+
+	CreateWhiteListAddr = HexToAddress(WhitelistForCreate)
+
 	CreateWhiteListPostion = utility.UInt64ToByte(0)
 )
