@@ -25,8 +25,7 @@ import (
 )
 
 var (
-	callerAddress    = common.HexToAddress("0x1111111111111111111111111111111111111111")
-	callerRPGAddress = common.HexToAddress("0x0")
+	callerAddress = common.HexToAddress("0x1111111111111111111111111111111111111111")
 )
 
 const padding = "0000000000000000000000000000000000000000000000000000000000000060"
@@ -103,7 +102,7 @@ func (executor *VMExecutor) calcSubRPGReward(proposals, validators map[string]co
 	vmCtx.CanTransfer = vm.CanTransfer
 	vmCtx.Transfer = transfer
 	vmCtx.GetHash = func(uint64) common.Hash { return emptyHash }
-	//vmCtx.Origin = callerRPGAddress
+	vmCtx.Origin = callerAddress
 	vmCtx.Coinbase = common.BytesToAddress(header.Castor)
 	vmCtx.BlockNumber = new(big.Int).SetUint64(header.Height)
 	vmCtx.Time = new(big.Int).SetUint64(uint64(header.CurTime.Unix()))
