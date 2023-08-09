@@ -189,7 +189,9 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 		}
 	}
 
-	network.GetNetInstance().InitTx(tx)
+	if !common.IsSub(){
+		network.GetNetInstance().InitTx(tx)
+	}
 
 	// 共识部分启动
 	ok := consensus.InitConsensus(minerInfo, common.GlobalConf)

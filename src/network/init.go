@@ -42,8 +42,10 @@ func InitNetwork(consensusHandler MsgHandler, selfMinerId []byte, env, gate, out
 	}()
 
 	fmt.Println("Connecting to: " + gate)
-	fmt.Print("isSending: ")
-	fmt.Println(isSending)
+	if !common.IsSub() {
+		fmt.Print("isSending: ")
+		fmt.Println(isSending)
+	}
 
 	var s server
 	s.Init(gate, outerGateAddr, selfMinerId, consensusHandler, isSending)

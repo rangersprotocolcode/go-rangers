@@ -16,6 +16,8 @@
 
 package network
 
+import "com.tuntun.rocket/node/src/common"
+
 var instance server
 
 type server struct {
@@ -31,6 +33,10 @@ type server struct {
 
 func (s *server) Init(gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler, isSending bool) {
 	s.worker.Init(gateAddr, selfMinerId, consensusHandler, bizLogger)
+	if common.IsSub() {
+		isSending = true
+	}
+
 	s.isSending = isSending
 	if s.isSending {
 		s.reader.Init(outerGateAddr, "/srv/node", bizLogger)
