@@ -119,9 +119,9 @@ func (executor *VMExecutor) calcSubRPGReward(proposals, validators map[string]co
 	}
 
 	codeBytes := common.FromHex(code)
-	_, _, _, err := vmInstance.Call(caller, common.EconomyContract, codeBytes, vmCtx.GasLimit, big.NewInt(0))
+	ret, _, logs, err := vmInstance.Call(caller, common.EconomyContract, codeBytes, vmCtx.GasLimit, big.NewInt(0))
 	if err != nil {
-		rewardLog.Errorf("calcSubRPGReward error: %s. code: %s", err.Error(), code)
+		rewardLog.Errorf("calcSubRPGReward error: %s. code: %s. ret: %v, logs: %v", err.Error(), code, ret, logs)
 	} else {
 		rewardLog.Debugf("calcSubRPGReward successfully. code: %s", code)
 	}
