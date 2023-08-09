@@ -97,6 +97,10 @@ func genSubGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, g
 	stateDB.SetNonce(common.ProposerDBAddress, 1)
 	stateDB.SetNonce(common.ValidatorDBAddress, 1)
 
+	economyContract := createEconomyContract(block.Header, stateDB, common.Genesis)
+	money, _ := utility.StrToBigInt(strconv.FormatUint(common.Genesis.TotalSupply, 10))
+	stateDB.SetBalance(economyContract, money)
+
 	proxy, rpg := createSubCrossContract(block.Header, stateDB, common.Genesis)
 	ten, _ := utility.StrToBigInt("10")
 	stateDB.SetBalance(proxy, ten)
@@ -108,10 +112,6 @@ func genSubGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, g
 		panic(err)
 	}
 	createSubGovernance(block.Header, stateDB, rpg, proxy, common.HexToAddress(common.Genesis.Creator), amount)
-
-	economyContract := createEconomyContract(block.Header, stateDB, common.Genesis)
-	money, _ := utility.StrToBigInt(strconv.FormatUint(common.Genesis.TotalSupply, 10))
-	stateDB.SetBalance(economyContract, money)
 
 	// gnosis
 	one, _ := utility.StrToBigInt("1")
