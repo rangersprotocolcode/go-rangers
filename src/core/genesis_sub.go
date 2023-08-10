@@ -169,7 +169,7 @@ func getSubGenesisValidators(genesisInfo []*types.GenesisInfo) []*types.Miner {
 	for _, genesis := range genesisInfo {
 		for i, member := range genesis.Group.Members {
 			miner := &types.Miner{Type: common.MinerTypeValidator, Id: member, PublicKey: genesis.Pks[i], VrfPublicKey: genesis.VrfPKs[i], Stake: common.ValidatorStake}
-			miner.Account = common.FromHex(validatorAccounts[i])
+			miner.Account = common.BytesToAddress(member).Bytes()
 			verifyMiners = append(verifyMiners, miner)
 		}
 	}
