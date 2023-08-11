@@ -114,6 +114,7 @@ func TestCreateSubCrossContract(t *testing.T) {
 		TotalReward:    "10000",
 		TargetHeight:   100000,
 	}
+	createEconomyContract(block.Header, stateDB, conf)
 
 	proxy, rpg := createSubCrossContract(block.Header, stateDB, conf)
 
@@ -123,10 +124,43 @@ func TestCreateSubCrossContract(t *testing.T) {
 	}
 	createSubGovernance(block.Header, stateDB, rpg, proxy, common.HexToAddress(conf.Creator), amount, conf.TotalReward, conf.TargetHeight)
 
-	createEconomyContract(block.Header, stateDB, conf)
-
 	fmt.Println(service.GetSubChainStatus(stateDB))
 
+	source := conf.Creator
+	vmCtx := vm.Context{}
+	vmCtx.CanTransfer = vm.CanTransfer
+	vmCtx.Transfer = vm.Transfer
+	vmCtx.GetHash = func(uint64) common.Hash { return emptyHash }
+	vmCtx.Origin = common.HexToAddress(source)
+	vmCtx.Coinbase = vmCtx.Origin
+	vmCtx.BlockNumber = new(big.Int).SetUint64(1)
+	vmCtx.Time = new(big.Int).SetInt64(time.Now().UnixMilli())
+	vmCtx.GasPrice = big.NewInt(1)
+	vmCtx.GasLimit = 30000000
+	vmInstance := vm.NewEVMWithNFT(vmCtx, stateDB, stateDB)
+	caller := vm.AccountRef(vmCtx.Origin)
+	whitelist := common.HexToAddress("0x826f575031a074fd914a869b5dc1c4eae620fef5")
+	contractCodeBytes := common.FromHex("0a3b0a4f" + common.GenerateCallDataAddress(whitelist))
+	_, _, _, err = vmInstance.Call(caller, common.CreateWhiteListAddr, contractCodeBytes, vmCtx.GasLimit, big.NewInt(0))
+	if err != nil {
+		panic("Genesis cross contract create error:" + err.Error())
+	}
+
+	data := [64]byte{}
+	copy(data[12:], common.FromHex("0x826f575031a074fd914a869b5dc1c4eae620fef5"))
+	copy(data[64-len(common.CreateWhiteListPostion):], common.CreateWhiteListPostion)
+	hasher := sha3.NewLegacyKeccak256().(common.KeccakState)
+	hasher.Write(data[:])
+	key := [32]byte{}
+	hasher.Read(key[:])
+
+	value := stateDB.GetData(common.CreateWhiteListAddr, key[:])
+	fmt.Println(value)
+	if 0 == len(value) || 1 != value[len(value)-1] {
+		panic("whitelist error")
+	}
+	value = stateDB.GetData(common.CreateWhiteListAddr, []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1})
+	fmt.Println(common.ToHex(value))
 }
 
 func TestEconomyContract(t *testing.T) {

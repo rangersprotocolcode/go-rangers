@@ -5,11 +5,11 @@ import "com.tuntun.rocket/node/src/utility"
 var (
 	EconomyContract = HexToAddress("0x71d9cfd1b7adb1e8eb4c193ce6ffbe19b4aee0db")
 
-	ProxySubGovernance = HexToAddress("0x795c5d906ee23d1f46654b51c8db6ecd60526a6b")
+	ProxySubGovernance = HexToAddress("0xe3e5df5d1ea7e2a7e107e35098412aa6016bf89c")
 
 	WhitelistForCreate = "0x9c1cbfe5328dfb1733d59a7652d0a49228c7e12c"
 
-	RpgReward = HexToAddress("0x57d9b509004657dfade3121d9aa32a3586c1ef49")
+	RpgReward = HexToAddress("0xcde68d63304537f693214b0ab730b99eda6281a9")
 
 	CreateWhiteListAddr = HexToAddress(WhitelistForCreate)
 
