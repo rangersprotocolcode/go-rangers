@@ -311,7 +311,7 @@ func createSubCrossContract(header *types.BlockHeader, statedb *account.AccountD
 	} else {
 		callString += "00000000000000000000000082e80EbF5c2F641D4b5f6dCd782f655C8D340349"
 	}
-	callString = callString + common.GenerateCallDataAddress(proxy) + common.GenerateCallDataAddress(rpg) + common.GenerateCallDataString(conf.Name)
+	callString = callString + "0000000000000000000000007c8A141e0b9aD3A79b5084fc85A38DC7B08eA7Fa" + common.GenerateCallDataAddress(rpg) + common.GenerateCallDataString(conf.Name)
 	contractCodeBytes = common.FromHex(callString)
 	_, _, _, err = vmInstance.Call(caller, proxy, contractCodeBytes, vmCtx.GasLimit, big.NewInt(0))
 	if err != nil {
