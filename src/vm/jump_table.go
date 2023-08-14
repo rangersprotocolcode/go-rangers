@@ -1127,21 +1127,21 @@ func newInstructionSet() JumpTable {
 		maxStack:    maxStack(1, 1),
 	}
 
-	instructionSet[AUTH] = &operation{
-		execute:     opAuth,
-		constantGas: 0,
-		minStack:    minStack(6, 6),
-		maxStack:    maxStack(6, 6),
-	}
-
-	instructionSet[AUTHCALL] = &operation{
-		execute:     opAuthCall,
-		constantGas: 0,
-		dynamicGas:  gasCall,
-		minStack:    minStack(6, 6),
-		maxStack:    maxStack(6, 6),
-		memorySize:  memoryAuthCall,
-	}
+	//instructionSet[AUTH] = &operation{
+	//	execute:     opAuth,
+	//	constantGas: 0,
+	//	minStack:    minStack(6, 6),
+	//	maxStack:    maxStack(6, 6),
+	//}
+	//
+	//instructionSet[AUTHCALL] = &operation{
+	//	execute:     opAuthCall,
+	//	constantGas: 0,
+	//	dynamicGas:  gasCall,
+	//	minStack:    minStack(6, 6),
+	//	maxStack:    maxStack(6, 6),
+	//	memorySize:  memoryAuthCall,
+	//}
 
 	return instructionSet
 }
