@@ -132,6 +132,7 @@ var (
 		Proposal011Block: 0,
 		Proposal012Block: 0,
 		Proposal013Block: 0,
+		Proposal014Block: 0,
 	}
 
 	LocalChainConfig ChainConfig
