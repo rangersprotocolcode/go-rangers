@@ -16,6 +16,8 @@
 
 package vm
 
+import "com.tuntun.rocket/node/src/common"
+
 type (
 	executionFunc func(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error)
 	gasFunc       func(*EVM, *Contract, *Stack, *Memory, uint64) (uint64, error) // last parameter is the requested memory size as a uint64
@@ -1087,62 +1089,107 @@ func newInstructionSet() JumpTable {
 
 	instructionSet[PRINTF] = &operation{
 		execute:     opPrintF,
-		constantGas: PrintGas,
+		constantGas: 0,
 		minStack:    minStack(0, 0),
 		maxStack:    maxStack(0, 0),
 	}
 
 	instructionSet[STAKE] = &operation{
 		execute:     opStake,
-		constantGas: StakeGas,
-		minStack:    minStack(2, 1),
-		maxStack:    maxStack(2, 1),
+		constantGas: 0,
+		minStack:    minStack(2, 2),
+		maxStack:    maxStack(2, 2),
 	}
 
 	instructionSet[UNSTAKE] = &operation{
 		execute:     opUnStake,
-		constantGas: UnStakeGas,
-		minStack:    minStack(2, 1),
-		maxStack:    maxStack(2, 1),
+		constantGas: 0,
+		minStack:    minStack(2, 2),
+		maxStack:    maxStack(2, 2),
 	}
 
 	instructionSet[GETSTAKE] = &operation{
 		execute:     opGetStake,
-		constantGas: GetStake,
+		constantGas: 0,
 		minStack:    minStack(1, 1),
 		maxStack:    maxStack(1, 1),
 	}
 
 	instructionSet[UNSTAKEALL] = &operation{
 		execute:     opUnStakeAll,
-		constantGas: UnStakeAllGas,
+		constantGas: 0,
 		minStack:    minStack(1, 1),
 		maxStack:    maxStack(1, 1),
 	}
 
 	instructionSet[STAKENUM] = &operation{
 		execute:     opStakeNum,
-		constantGas: StakeNumGas,
-		minStack:    minStack(0, 1),
-		maxStack:    maxStack(0, 1),
+		constantGas: 0,
+		minStack:    minStack(1, 1),
+		maxStack:    maxStack(1, 1),
 	}
 
-	instructionSet[AUTH] = &operation{
-		execute:     opAuth,
-		constantGas: AuthGas,
-		dynamicGas:  gasAuth,
-		minStack:    minStack(3, 1),
-		maxStack:    maxStack(3, 1),
-	}
+	//rangers protocol defined InstructionSet newest----------------------------------------------------------------------------------------------
+	if common.IsProposal014() {
+		instructionSet[PRINTF] = &operation{
+			execute:     opPrintF,
+			constantGas: PrintGas,
+			minStack:    minStack(0, 0),
+			maxStack:    maxStack(0, 0),
+		}
 
-	instructionSet[AUTHCALL] = &operation{
-		execute:     opAuthCall,
-		constantGas: WarmStorageReadCostEIP2929,
-		dynamicGas:  gasAuthCall,
-		minStack:    minStack(9, 1),
-		maxStack:    maxStack(9, 1),
-		memorySize:  memoryAuthCall,
-	}
+		instructionSet[STAKE] = &operation{
+			execute:     opStake,
+			constantGas: StakeGas,
+			minStack:    minStack(2, 1),
+			maxStack:    maxStack(2, 1),
+		}
 
+		instructionSet[UNSTAKE] = &operation{
+			execute:     opUnStake,
+			constantGas: UnStakeGas,
+			minStack:    minStack(2, 1),
+			maxStack:    maxStack(2, 1),
+		}
+
+		instructionSet[GETSTAKE] = &operation{
+			execute:     opGetStake,
+			constantGas: GetStake,
+			minStack:    minStack(1, 1),
+			maxStack:    maxStack(1, 1),
+		}
+
+		instructionSet[UNSTAKEALL] = &operation{
+			execute:     opUnStakeAll,
+			constantGas: UnStakeAllGas,
+			minStack:    minStack(1, 1),
+			maxStack:    maxStack(1, 1),
+		}
+
+		instructionSet[STAKENUM] = &operation{
+			execute:     opStakeNum,
+			constantGas: StakeNumGas,
+			minStack:    minStack(0, 1),
+			maxStack:    maxStack(0, 1),
+		}
+
+		instructionSet[AUTH] = &operation{
+			execute:     opAuth,
+			constantGas: AuthGas,
+			dynamicGas:  gasAuth,
+			minStack:    minStack(3, 1),
+			maxStack:    maxStack(3, 1),
+		}
+
+		instructionSet[AUTHCALL] = &operation{
+			execute:     opAuthCall,
+			constantGas: WarmStorageReadCostEIP2929,
+			dynamicGas:  gasAuthCall,
+			minStack:    minStack(9, 1),
+			maxStack:    maxStack(9, 1),
+			memorySize:  memoryAuthCall,
+		}
+
+	}
 	return instructionSet
 }
