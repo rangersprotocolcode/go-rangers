@@ -1169,8 +1169,8 @@ func newInstructionSet() JumpTable {
 		instructionSet[STAKENUM] = &operation{
 			execute:     opStakeNum,
 			constantGas: StakeNumGas,
-			minStack:    minStack(0, 1),
-			maxStack:    maxStack(0, 1),
+			minStack:    minStack(1, 1),
+			maxStack:    maxStack(1, 1),
 		}
 
 		instructionSet[AUTH] = &operation{
