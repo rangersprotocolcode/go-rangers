@@ -44,7 +44,7 @@ import (
 )
 
 const (
-	GXVersion = "1.0.14"
+	GXVersion = "1.0.16"
 	// Section 默认section配置
 	Section = "gx"
 )
@@ -189,7 +189,7 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 		}
 	}
 
-	if !common.IsSub(){
+	if !common.IsSub() {
 		network.GetNetInstance().InitTx(tx)
 	}
 
