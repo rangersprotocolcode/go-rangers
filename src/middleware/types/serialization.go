@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -36,7 +36,6 @@ func InitSerialzation() {
 	logger = log.GetLoggerByIndex(log.MiddlewareLogConfig, strconv.Itoa(common.InstanceIndex))
 }
 
-// 从[]byte反序列化为*Transaction
 func UnMarshalTransaction(b []byte) (Transaction, error) {
 	t := new(middleware_pb.Transaction)
 	error := proto.Unmarshal(b, t)
@@ -48,7 +47,6 @@ func UnMarshalTransaction(b []byte) (Transaction, error) {
 	return transaction, nil
 }
 
-// 从[]byte反序列化为[]*Transaction
 func UnMarshalTransactions(b []byte) ([]*Transaction, error) {
 	ts := new(middleware_pb.TransactionSlice)
 	error := proto.Unmarshal(b, ts)
@@ -61,7 +59,6 @@ func UnMarshalTransactions(b []byte) ([]*Transaction, error) {
 	return result, nil
 }
 
-// 从[]byte反序列化为*Block
 func UnMarshalBlock(bytes []byte) (*Block, error) {
 	b := new(middleware_pb.Block)
 	error := proto.Unmarshal(bytes, b)
@@ -73,7 +70,6 @@ func UnMarshalBlock(bytes []byte) (*Block, error) {
 	return block, nil
 }
 
-// 从[]byte反序列化为*BlockHeader
 func UnMarshalBlockHeader(bytes []byte) (*BlockHeader, error) {
 	b := new(middleware_pb.BlockHeader)
 	error := proto.Unmarshal(bytes, b)
@@ -85,7 +81,6 @@ func UnMarshalBlockHeader(bytes []byte) (*BlockHeader, error) {
 	return header, nil
 }
 
-// 从[]byte反序列化为*Member
 func UnMarshalMember(b []byte) (*Member, error) {
 	member := new(middleware_pb.Member)
 	e := proto.Unmarshal(b, member)
@@ -97,7 +92,6 @@ func UnMarshalMember(b []byte) (*Member, error) {
 	return m, nil
 }
 
-// 从[]byte反序列化为*Group
 func UnMarshalGroup(b []byte) (*Group, error) {
 	group := new(middleware_pb.Group)
 	e := proto.Unmarshal(b, group)
@@ -109,20 +103,17 @@ func UnMarshalGroup(b []byte) (*Group, error) {
 	return g, nil
 }
 
-// 序列化*Transaction
 func MarshalTransaction(t *Transaction) ([]byte, error) {
 	transaction := transactionToPb(t)
 	return proto.Marshal(transaction)
 }
 
-// 序列化[]*Transaction
 func MarshalTransactions(txs []*Transaction) ([]byte, error) {
 	transactions := TransactionsToPb(txs)
 	transactionSlice := middleware_pb.TransactionSlice{Transactions: transactions}
 	return proto.Marshal(&transactionSlice)
 }
 
-// 序列化*Block
 func MarshalBlock(b *Block) ([]byte, error) {
 	block := BlockToPb(b)
 	if block == nil {
@@ -131,7 +122,6 @@ func MarshalBlock(b *Block) ([]byte, error) {
 	return proto.Marshal(block)
 }
 
-// 序列化*BlockHeader
 func MarshalBlockHeader(b *BlockHeader) ([]byte, error) {
 	block := BlockHeaderToPb(b)
 	if block == nil {
@@ -140,22 +130,15 @@ func MarshalBlockHeader(b *BlockHeader) ([]byte, error) {
 	return proto.Marshal(block)
 }
 
-// 序列化*Member
 func MarshalMember(m *Member) ([]byte, error) {
 	member := memberToPb(m)
 	return proto.Marshal(member)
 }
 
-// 序列化*Group
 func MarshalGroup(g *Group) ([]byte, error) {
 	group := GroupToPb(g)
 	return proto.Marshal(group)
 }
-
-//func MarshalGroupRequest(info *sync.GroupRequestInfo) ([]byte, error) {
-//	group := GroupRequestInfoToPB(info)
-//	return proto.Marshal(group)
-//}
 
 func pbToTransaction(t *middleware_pb.Transaction) Transaction {
 	if t == nil {
@@ -304,11 +287,6 @@ func PbToGroupHeader(g *middleware_pb.GroupHeader) *GroupHeader {
 }
 
 func PbToGroup(g *middleware_pb.Group) *Group {
-	//members := make([]Member, 0)
-	//for _, m := range g.Members {
-	//	member := pbToMember(m)
-	//	members = append(members, *member)
-	//}
 	if g == nil {
 		return nil
 	}

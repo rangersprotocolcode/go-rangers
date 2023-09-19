@@ -1,3 +1,19 @@
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RocketProtocol library.
+//
+// The RangersProtocol library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The RangersProtocol library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+
 package core
 
 import (
@@ -9,10 +25,15 @@ import (
 	"com.tuntun.rocket/node/src/utility"
 	"com.tuntun.rocket/node/src/vm"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/big"
 	"strconv"
 )
+
+const getLogsBlockLimit = 1000
+
+var limitExceededError = errors.New("limit exceeded")
 
 type queryLogData struct {
 	FromBlock uint64 `json:"fromBlock,omitempty"`
@@ -102,12 +123,15 @@ func getTransaction(hash common.Hash) string {
 }
 
 func getPastLogs(crit types.FilterCriteria) string {
-	logs := GetLogs(crit)
+	logs, err := GetLogs(crit)
+	if err != nil {
+		return err.Error()
+	}
 	result, _ := json.Marshal(logs)
 	return string(result)
 }
 
-func GetLogs(crit types.FilterCriteria) []*types.Log {
+func GetLogs(crit types.FilterCriteria) ([]*types.Log, error) {
 	var logs []*types.Log
 	if crit.BlockHash != nil {
 		logs = mysql.SelectLogsByHash(*crit.BlockHash, crit.Addresses)
@@ -124,14 +148,18 @@ func GetLogs(crit types.FilterCriteria) []*types.Log {
 		} else {
 			end = crit.ToBlock.Uint64()
 		}
+
+		if end-begin > getLogsBlockLimit {
+			return nil, limitExceededError
+		}
 		logs = mysql.SelectLogs(begin, end, crit.Addresses)
 	}
 
 	result := types.FilterLogsByTopics(logs, crit.Topics)
 	if result == nil {
-		return []*types.Log{}
+		return []*types.Log{}, nil
 	}
-	return result
+	return result, nil
 }
 
 func (executor *GameExecutor) callVM(param callVMData) string {
@@ -195,7 +223,6 @@ func (executor *GameExecutor) callVM(param callVMData) string {
 	return common.ToHex(result)
 }
 
-//-----------------------------------------------------------------------------
 func getAccountDBByHashOrHeight(height string, hash string) *account.AccountDB {
 	var accountDB *account.AccountDB
 	if height == "" && hash == "" {

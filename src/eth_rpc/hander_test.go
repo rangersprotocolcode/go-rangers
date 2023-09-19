@@ -1,3 +1,19 @@
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RocketProtocol library.
+//
+// The RangersProtocol library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The RangersProtocol library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+
 package eth_rpc
 
 import (
@@ -5,6 +21,8 @@ import (
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"os"
 	"testing"
 )
@@ -32,9 +50,35 @@ func TestSendRawTransaction(t *testing.T) {
 	        }
 	*/
 	//p := []string{"0xf88b808609184e72a00082271094407d73d8a49eeb85d32cf465507dd71d507100c1821234a47f746573743200000000000000000000000000000000000000000000000000000060005725a0468be9f58932931d9c7256b0937496d24035dc4bcc7c6223bb85c0b965035df6a067d42b7cf2e56d50082499754f4f4a18c050ac50a41f581462e3786392cadd14"}
-	p := []string{"0xf8640601832dc6c0942f4f09b722a6e5b77be17c9a99c785fa7035a09f8203e880824a5ba0458a14eed6c67985231ac2f61e540ff4f1b3facba6aed5e81b1da3f011b57e6fa006308ce6da36de5037f3ad10ce26b7e54cdf43791afda824871cc0989e931938"}
+	p := []string{"0xf8a58085174876e800830186a08080b853604580600e600039806000f350fe7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffe03601600081602082378035828234f58015156039578182fd5b8082525050506014600cf31ba02222222222222222222222222222222222222222222222222222222222222222a02222222222222222222222222222222222222222222222222222222222222222"}
 	b, _ := json.Marshal(p)
 	piece := notify.ETHRPCPiece{Id: 1, Method: "eth_sendRawTransaction", Params: b}
 	msg := notify.ETHRPCMessage{GateNonce: 100, Message: piece}
 	handler.process(&msg)
+}
+
+func TestRevertError(t *testing.T) {
+
+	e := getErr()
+	ec, ok := e.(Error)
+	if ok {
+		fmt.Printf("code:%d\n", ec.ErrorCode())
+	}
+	de, ok := e.(DataError)
+	if ok {
+		fmt.Printf("msg:%s\n", de.ErrorData())
+	}
+
+}
+
+func getErr() error {
+	err := errors.New("123")
+	e := revertError{err, "reason here"}
+	return &e
+}
+
+func TestRevertReason(t *testing.T) {
+	s := common.FromHex("0x08c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000c408c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000006408c379a0000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000076e6f2063617264000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000")
+	reason := getRevertReason(s)
+	fmt.Println(reason)
 }

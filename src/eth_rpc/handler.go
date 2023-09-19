@@ -1,3 +1,19 @@
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RocketProtocol library.
+//
+// The RangersProtocol library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The RangersProtocol library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+
 package eth_rpc
 
 import (
@@ -11,10 +27,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"reflect"
+	"strconv"
 )
 
-const sendRawTransactionMethod = "eth_sendRawTransaction"
-const sendTransactionMethod = "eth_sendTransaction"
+const (
+	sendRawTransactionMethod = "eth_sendRawTransaction"
+	sendTransactionMethod    = "eth_sendTransaction"
+)
 
 type execFunc struct {
 	receiver reflect.Value  // receiver of method
@@ -23,20 +42,20 @@ type execFunc struct {
 	errPos   int            // err return idx, of -1 when method cannot return error
 }
 
-var handler ethMsgHandler
-var logger log.Logger
-var nilJson, _ = json.Marshal(nil)
-var wrongData = &invalidParamsError{"wrong json data"}
+var (
+	handler    ethMsgHandler
+	logger     log.Logger
+	nilJson, _ = json.Marshal(nil)
+	wrongData  = &invalidParamsError{"wrong json data"}
+)
 
 type ethMsgHandler struct {
 	service map[string]*execFunc
 }
 
 func InitEthMsgHandler() {
+	logger = log.GetLoggerByIndex(log.ETHRPCLogConfig, strconv.Itoa(common.InstanceIndex))
 	handler = ethMsgHandler{}
-	index := common.GlobalConf.GetString("instance", "index", "")
-	logger = log.GetLoggerByIndex(log.ETHRPCLogConfig, index)
-
 	handler.registerAPI(&ethAPIService{})
 	notify.BUS.Subscribe(notify.ClientETHRPC, handler.process)
 }
@@ -103,16 +122,21 @@ func (handler ethMsgHandler) ProcessSingleRequest(ethRpcMessage notify.ETHRPCPie
 		returnValue, err := handler.exec(handlerFunc, arguments, ethRpcMessage.Method, ethRpcMessage.Nonce, string(ethRpcMessage.Params))
 
 		if sendRawTransactionMethod == ethRpcMessage.Method {
-			rocketTx := returnValue.(*types.Transaction)
-			// save tx
-			var msg notify.ClientTransactionMessage
-			msg.Tx = *rocketTx
-			msg.UserId = ""
-			msg.GateNonce = gateNonce
-			msg.Nonce = 0
-			middleware.DataChannel.GetRcvedTx() <- &msg
+			if nil != err || nil == returnValue {
+				response = makeResponse(nil, err, ethRpcMessage.Id)
+			} else {
+				rocketTx := returnValue.(*types.Transaction)
+				// save tx
+				var msg notify.ClientTransactionMessage
+				msg.Tx = *rocketTx
+				msg.UserId = ""
+				msg.GateNonce = gateNonce
+				msg.Nonce = 0
+				middleware.DataChannel.GetRcvedTx() <- &msg
 
-			response = makeResponse(rocketTx.Hash, err, ethRpcMessage.Id)
+				response = makeResponse(rocketTx.Hash, err, ethRpcMessage.Id)
+			}
+
 		} else {
 			response = makeResponse(returnValue, err, ethRpcMessage.Id)
 		}
@@ -218,7 +242,7 @@ func (handler ethMsgHandler) parseRequest(ethRpcMessage notify.ETHRPCPiece) (han
 }
 
 // execute RPC method and return result
-func (handler ethMsgHandler) exec(handlerFunc *execFunc, arguments []reflect.Value, method string, nonce uint64, params string) (interface{}, Error) {
+func (handler ethMsgHandler) exec(handlerFunc *execFunc, arguments []reflect.Value, method string, nonce uint64, params string) (interface{}, error) {
 	reply := handlerFunc.method.Func.Call(arguments)
 	if len(reply) == 0 {
 		return nil, nil
@@ -226,7 +250,7 @@ func (handler ethMsgHandler) exec(handlerFunc *execFunc, arguments []reflect.Val
 	if handlerFunc.errPos >= 0 { // test if method returned an error
 		if !reply[handlerFunc.errPos].IsNil() {
 			e := reply[handlerFunc.errPos].Interface().(error)
-			return nil, &callbackError{e.Error()}
+			return nil, e
 		}
 	}
 

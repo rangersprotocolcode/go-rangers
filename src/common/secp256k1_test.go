@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -29,7 +29,7 @@ import (
 	"time"
 )
 
-//---------------------------------------Function Test-----------------------------------------------------------------
+// ---------------------------------------Function Test-----------------------------------------------------------------
 func TestKeyLength(test *testing.T) {
 	key := genRandomKey()
 	privateKey := key.PrivKey.D.Bytes()
@@ -137,7 +137,7 @@ func runSigAndVerifyOnce(test *testing.T) {
 	assert.Equal(test, true, verifyResult)
 }
 
-//---------------------------------------Benchmark Test-----------------------------------------------------------------
+// ---------------------------------------Benchmark Test-----------------------------------------------------------------
 var testCount = 1000
 var privateList = make([]PrivateKey, testCount)
 var messageList = make([][]byte, testCount)
@@ -206,7 +206,7 @@ func prepareData() {
 	}
 }
 
-//---------------------------------------Comparison Test---------------------------------------------------------------
+// ---------------------------------------Comparison Test---------------------------------------------------------------
 func TestGenComparisonData(test *testing.T) {
 	fileName := "secp256_comparisonData_go.txt"
 
@@ -300,7 +300,7 @@ func validateFunction(privateKeyStr, publicKeyStr, message, signStr, idStr strin
 	assert.Equal(test, idStr, ToHex(id[:]))
 }
 
-//------------------------------fix key -------------------------------------------------------------------------------
+// ------------------------------fix key -------------------------------------------------------------------------------
 func TestRecoverSanity(t *testing.T) {
 	msg, _ := hex.DecodeString("f4e13f7ac3be5bb16ca36afbe5f4f58bc908abda1f536bd131207e00ab9555f4")
 	sig, _ := hex.DecodeString("c81da60b590a289e631173a03ef5c0d38048bfe2a03b3a75f8205defa5cbce58184b1de78acffeffb806ff70b89f6c6e68f0cd1cd4bf7b90331fb0ffbf9117111c")

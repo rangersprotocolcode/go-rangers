@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -64,7 +64,6 @@ func GetReceipt(txHash common.Hash) string {
 	return string(result)
 }
 
-//获取合约的存储数据
 func GetContractStorageAt(address string, key string, accountDB *account.AccountDB) string {
 	if accountDB == nil {
 		return ""
@@ -84,9 +83,6 @@ func GetCode(address string, accountDB *account.AccountDB) string {
 	return base64.StdEncoding.EncodeToString(value)
 }
 
-// false 表示转账失败
-// 这里的转账包括货币、FT、NFT
-// 这里不处理事务。调用本方法之前自行处理事务
 func ChangeAssets(source string, targets map[string]types.TransferData, accountdb *account.AccountDB) (string, bool) {
 	sourceAddr := common.HexToAddress(source)
 
@@ -130,23 +126,19 @@ func transferBalance(value string, source common.Address, target common.Address,
 	if err != nil {
 		return false, nil
 	}
-	// 不能扣钱
+
 	if balance.Sign() == -1 {
 		return false, nil
 	}
 
 	sourceBalance := accountDB.GetBalance(source)
 
-	// 钱不够转账，再见
 	if sourceBalance.Cmp(balance) == -1 {
 		logger.Debugf("transfer bnt:bnt not enough!")
 		return false, nil
 	}
 
-	// 目标加钱
 	accountDB.AddBalance(target, balance)
-
-	// 自己减钱
 	left := accountDB.SubBalance(source, balance)
 
 	return true, left

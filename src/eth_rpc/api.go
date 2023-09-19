@@ -1,3 +1,19 @@
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RocketProtocol library.
+//
+// The RangersProtocol library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The RangersProtocol library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+
 package eth_rpc
 
 import (
@@ -6,6 +22,7 @@ import (
 	"com.tuntun.rocket/node/src/eth_tx"
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/storage/rlp"
@@ -13,6 +30,8 @@ import (
 	"com.tuntun.rocket/node/src/vm"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"github.com/boolw/go-web3/abi"
 	"math/big"
 	"sync"
 )
@@ -110,6 +129,10 @@ func (api *ethAPIService) SendRawTransaction(encodedTx utility.Bytes) (*types.Tr
 	}
 
 	rocketTx := eth_tx.ConvertTx(tx, sender, encodedTx)
+	if common.IsFullNode() {
+		_, err := broadcastRawTx(encodedTx.String())
+		return rocketTx, err
+	}
 
 	return rocketTx, nil
 }
@@ -174,8 +197,13 @@ func (s *ethAPIService) Call(args CallArgs, blockNrOrHash BlockNumberOrHash) (ut
 		logger.Debugf("[eth_call]After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
 	}
 
+	// If the result contains a revert reason, try to unpack and return it.
+	if err == vm.ErrExecutionReverted && len(result) > 0 {
+		err := adaptErrorOutput(err, result)
+		return nil, &revertError{err, common.ToHex(result)}
+	}
 	if err != nil {
-		return nil, revertError{err, common.ToHex(result)}
+		return nil, err
 	}
 	return result, nil
 }
@@ -185,19 +213,9 @@ func (api *ethAPIService) ChainId() *utility.Big {
 	return (*utility.Big)(common.GetChainId(utility.MaxUint64))
 }
 
-// Version returns the current ethereum protocol version.
-func (s *ethAPIService) Version() string {
-	return common.NetworkId()
-}
-
 // ProtocolVersion returns the current Ethereum protocol version this node supports
 func (s *ethAPIService) ProtocolVersion() utility.Uint {
 	return utility.Uint(common.ProtocolVersion)
-}
-
-// ClientVersion returns the current client version.
-func (api *ethAPIService) ClientVersion() string {
-	return "Rangers/" + common.Version + "/centos-amd64/go1.17.3"
 }
 
 // BlockNumber returns the block number of the chain head.
@@ -394,8 +412,54 @@ func (s *ethAPIService) GetTransactionByHash(hash common.Hash) (*RPCTransaction,
 //
 // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getlogs
 func (s *ethAPIService) GetLogs(crit types.FilterCriteria) ([]*types.Log, error) {
-	result := core.GetLogs(crit)
+	result, err := core.GetLogs(crit)
+	if err != nil {
+		return nil, err
+	}
 	return result, nil
+}
+
+// GetTransactionByBlockNumberAndIndex returns the transaction for the given block number and index.
+func (s *ethAPIService) GetTransactionByBlockNumberAndIndex(blockNr BlockNumber, index utility.Uint) *RPCTransaction {
+	var block *types.Block
+	if blockNr == PendingBlockNumber || blockNr == LatestBlockNumber || blockNr == EarliestBlockNumber {
+		height := core.GetBlockChain().Height()
+		block = core.GetBlockChain().QueryBlock(height)
+	} else {
+		block = core.GetBlockChain().QueryBlock(uint64(blockNr))
+	}
+
+	if block == nil || uint64(index) >= uint64(len(block.Transactions)) {
+		return nil
+	}
+	return newRPCTransaction(block.Transactions[index], block.Header.Hash, block.Header.Height, uint64(index))
+}
+
+// GetTransactionByBlockHashAndIndex returns the transaction for the given block hash and index.
+func (s *ethAPIService) GetTransactionByBlockHashAndIndex(blockHash common.Hash, index utility.Uint) *RPCTransaction {
+	block := core.GetBlockChain().QueryBlockByHash(blockHash)
+	if block == nil || uint64(index) >= uint64(len(block.Transactions)) {
+		return nil
+	}
+	return newRPCTransaction(block.Transactions[index], block.Header.Hash, block.Header.Height, uint64(index))
+}
+
+// Version returns the current ethereum protocol version.
+// net_version
+func (s *ethAPIService) Version() string {
+	return common.NetworkId()
+}
+
+// Listening Returns true if client is actively listening for network connections.
+// net_listening
+func (s *ethAPIService) Listening() bool {
+	return true
+}
+
+// ClientVersion returns the current client version.
+// web3_clientVersion
+func (api *ethAPIService) ClientVersion() string {
+	return "Rangers/" + common.Version + "/centos-amd64/go1.17.3"
 }
 
 // newRPCTransaction returns a transaction that will serialize to the RPC
@@ -419,7 +483,7 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 	var data types.ContractData
 	err := json.Unmarshal([]byte(tx.Data), &data)
 	if err == nil {
-		result.Input = utility.Bytes(data.AbiData)
+		result.Input = common.FromHex(data.AbiData)
 
 		transferValue, err := utility.StrToBigInt(data.TransferValue)
 		if err == nil {
@@ -551,4 +615,44 @@ func adaptRPCBlock(block *types.Block, fullTx bool) *RPCBlock {
 		rpcBlock.TransactionsRoot = header.TxTree
 	}
 	return &rpcBlock
+}
+
+func broadcastRawTx(rawTx string) (common.Hash, error) {
+	url := common.LocalChainConfig.JsonRPCUrl
+	method := "eth_sendRawTransaction"
+	params := rawTx
+	responseOBJ, err := network.JSONRPCPost(url, method, params)
+	if err != nil {
+		logger.Error("broadcast raw tx error:%v", err)
+		return common.Hash{}, err
+	}
+	hashStr, ok := responseOBJ.Result.(string)
+	if !ok {
+		return common.Hash{}, errors.New("illegal return data")
+	}
+	hash := common.HexToHash(hashStr)
+	return hash, nil
+}
+
+func adaptErrorOutput(err error, result []byte) error {
+	reason := getRevertReason(result)
+	if reason != "" {
+		err = fmt.Errorf("execution reverted: %v", reason)
+	}
+	return err
+}
+
+func getRevertReason(result []byte) string {
+	if len(result) < 36 {
+		return ""
+	}
+	typ, err := abi.NewType("string")
+	if err != nil {
+		return ""
+	}
+	decoded, err := typ.Decode(result[36:])
+	if err != nil {
+		return ""
+	}
+	return decoded.(string)
 }

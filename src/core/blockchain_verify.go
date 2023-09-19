@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -103,7 +103,7 @@ func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Tran
 		for _, tx := range missing {
 			logger.Debugf("miss tx:%s", tx.ShortS())
 		}
-		//向CASTOR索取交易
+
 		m := &transactionRequestMessage{TransactionHashes: missing, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue}
 		go requestTransaction(*m, castorId.GetHexString())
 		return true, missing, transactions
@@ -137,23 +137,11 @@ func calcTxTree(txs []*types.Transaction) common.Hash {
 	return common.BytesToHash(common.Sha256(buf.Bytes()))
 }
 
-//todo: performance. this function costs too much
+// todo: performance. this function costs too much
 func calcReceiptsTree(receipts types.Receipts) common.Hash {
 	if nil == receipts || 0 == len(receipts) {
 		return emptyHash
 	}
-
-	//keybuf := new(bytes.Buffer)
-	//trie := new(trie.Trie)
-	//for i := 0; i < len(receipts); i++ {
-	//	if receipts[i] != nil {
-	//		keybuf.Reset()
-	//		serialize.Encode(keybuf, uint(i))
-	//		encode, _ := serialize.EncodeToBytes(receipts[i])
-	//		trie.Update(keybuf.Bytes(), encode)
-	//	}
-	//}
-	//hash := trie.Hash()
 
 	buf := new(bytes.Buffer)
 	for _, receipt := range receipts {

@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -31,23 +31,22 @@ import (
 )
 
 const (
-	SS_INITING  int32 = iota
-	SS_WAITING   //等待签名片段达到阈值
-	SS_SIGNED    //自己是否签名过
-	SS_RECOVERD  //恢复出组签名
-	SS_VERIFIED  //组签名用组公钥验证通过
-	SS_SUCCESS   //已上链广播
-	SS_FAILED    //铸块过程中失败，不可逆
+	SS_INITING int32 = iota
+	SS_WAITING
+	SS_SIGNED
+	SS_RECOVERD
+	SS_VERIFIED
+	SS_SUCCESS
+	SS_FAILED
 )
 
-//铸块槽结构，和某个KING的共识数据一一对应
 type SlotContext struct {
 	//验证相关
-	BH *types.BlockHeader //出块头详细数据
+	BH *types.BlockHeader
 
 	vrfValue       *big.Int
-	gSignGenerator *model.GroupSignGenerator //块签名产生器
-	rSignGenerator *model.GroupSignGenerator //随机数签名产生器
+	gSignGenerator *model.GroupSignGenerator
+	rSignGenerator *model.GroupSignGenerator
 	slotStatus     int32
 	lostTxHash     set.Interface
 
@@ -69,7 +68,6 @@ func createSlotContext(bh *types.BlockHeader, threshold int) *SlotContext {
 	}
 }
 
-//加锁，只要初始化一次（verifyblock）
 func (sc *SlotContext) initIfNeeded() bool {
 	sc.initLock.Lock()
 	defer sc.initLock.Unlock()
@@ -123,11 +121,9 @@ func (sc *SlotContext) addLostTrans(txs []common.Hashes) {
 	}
 }
 
-//用接收到的新交易更新缺失的交易集
-//返回接收前以及接收后是否不在缺失交易
 func (sc *SlotContext) AcceptTrans(ths []common.Hashes) bool {
 	l := sc.lostTransSize()
-	if l == 0 { //已经无缺失
+	if l == 0 {
 		return false
 	}
 	for _, tx := range ths {
@@ -140,9 +136,6 @@ func (sc SlotContext) MessageSize() int {
 	return sc.gSignGenerator.WitnessCount()
 }
 
-//验证组签名
-//pk：组公钥
-//返回true验证通过，返回false失败。
 func (sc *SlotContext) VerifyGroupSigns(pk groupsig.Pubkey, preRandom []byte) bool {
 	if sc.IsVerified() || sc.IsSuccess() {
 		return true
@@ -151,7 +144,7 @@ func (sc *SlotContext) VerifyGroupSigns(pk groupsig.Pubkey, preRandom []byte) bo
 	if b {
 		b = sc.rSignGenerator.VerifyGroupSign(pk, preRandom)
 		if b {
-			sc.setSlotStatus(SS_VERIFIED) //组签名验证通过
+			sc.setSlotStatus(SS_VERIFIED)
 		}
 	}
 	if !b {
@@ -178,8 +171,6 @@ func (sc *SlotContext) IsWaiting() bool {
 	return sc.GetSlotStatus() == SS_WAITING
 }
 
-//收到一个组内验证签名片段
-//返回：=0, 验证请求被接受，阈值达到组签名数量。=1，验证请求被接受，阈值尚未达到组签名数量。=2，重复的验签。=3，数据异常。
 func (sc *SlotContext) AcceptVerifyPiece(bh *types.BlockHeader, si *model.SignInfo) (ret CAST_BLOCK_MESSAGE_RESULT, err error) {
 	if bh.Hash != sc.BH.Hash {
 		return CBMR_BH_HASH_DIFF, fmt.Errorf("hash diff")
@@ -199,14 +190,14 @@ func (sc *SlotContext) AcceptVerifyPiece(bh *types.BlockHeader, si *model.SignIn
 	if !add { //已经收到过该成员的验签
 		//忽略
 		return CBMR_IGNORE_REPEAT, fmt.Errorf("CBMR_IGNORE_REPEAT")
-	} else { //没有收到过该用户的签名
+	} else {
 		rsign := groupsig.DeserializeSign(bh.Random)
 		if !rsign.IsValid() {
 			panic(fmt.Sprintf("rsign is invalid, bhHash=%v, height=%v, random=%v", bh.Hash.ShortS(), bh.Height, bh.Random))
 		}
 		radd, rgen := sc.rSignGenerator.AddWitnessSign(si.GetSignerID(), *rsign)
 
-		if radd && generate && rgen { //达到组签名条件
+		if radd && generate && rgen {
 			sc.setSlotStatus(SS_RECOVERD)
 			sc.BH.Signature = sc.gSignGenerator.GetGroupSign().Serialize()
 			sc.BH.Random = sc.rSignGenerator.GetGroupSign().Serialize()
@@ -230,5 +221,5 @@ func (sc *SlotContext) StatusTransform(from int32, to int32) bool {
 }
 
 func (sc *SlotContext) TransBrief() string {
-	return fmt.Sprintf("总交易数%v，缺失%v", len(sc.BH.Transactions), sc.lostTransSize())
+	return fmt.Sprintf("total: %d，missing: %d", len(sc.BH.Transactions), sc.lostTransSize())
 }

@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -17,8 +17,6 @@
 package network
 
 const (
-	//-----------组初始化---------------------------------
-
 	GroupInitMsg uint32 = 1
 
 	KeyPieceMsg uint32 = 2
@@ -27,22 +25,18 @@ const (
 
 	GroupInitDoneMsg uint32 = 4
 
-	//-----------组铸币---------------------------------
 	CurrentGroupCastMsg uint32 = 5
 
-	// 提案者发送候选块，待验证
 	CastVerifyMsg uint32 = 6
 
-	// 验证组内，验证完块后，发送签名片段
 	VerifiedCastMsg uint32 = 36
 
 	NewBlockMsg uint32 = 8
-	//--------------交易-----------------------------
+
 	ReqTransactionMsg uint32 = 9
 
 	TransactionGotMsg uint32 = 10
 
-	//-----------同步---------------------------------
 	TopBlockInfoMsg uint32 = 12
 
 	BlockChainPieceReqMsg uint32 = 13
@@ -57,16 +51,13 @@ const (
 
 	GroupResponseMsg uint32 = 20
 
-	//---------------------组创建确认-----------------------
 	CreateGroupaRaw uint32 = 22
 
 	CreateGroupSign uint32 = 23
 
-	//===================请求组内成员签名公钥======
 	AskSignPkMsg    uint32 = 34
 	AnswerSignPkMsg uint32 = 35
 
-	//建组时ping pong
 	GroupPing uint32 = 37
 	GroupPong uint32 = 38
 

@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -32,7 +32,6 @@ import (
 	"time"
 )
 
-// 客户端web socket 请求的返回数据结构
 type response struct {
 	Id      string `json:"id"`
 	Status  string `json:"status"`
@@ -68,7 +67,6 @@ func (executor *GameExecutor) makeFailedResponse(message string, id string) []by
 	return result
 }
 
-// GameExecutor 用于处理client websocket请求
 type GameExecutor struct {
 	chain  *blockChain
 	logger log.Logger
@@ -102,63 +100,52 @@ func (executor *GameExecutor) read(msg notify.Message) {
 		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
 		result = service.GetRawBalance(source, accountDB)
 		break
-		//查询network ID
 	case types.TransactionTypeGetNetworkId:
 		result = service.GetNetWorkId()
 		break
-		//查询CHAIN ID
 	case types.TransactionTypeGetChainId:
 		result = service.GetChainId()
 		break
-		//查询最新块
 	case types.TransactionTypeGetBlockNumber:
 		result = getBlockNumber()
 		break
-		//根据高度或者HASH查询block
 	case types.TransactionTypeGetBlock:
 		query := queryBlockData{}
 		json.Unmarshal([]byte(txRaw.Data), &query)
 		result = getBlock(query.Height, query.Hash, query.ReturnTransactionObjects)
 		break
-		//查询NONCE
 	case types.TransactionTypeGetNonce:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
 		result = service.GetNonce(source, accountDB)
 		break
-		//查询交易
 	case types.TransactionTypeGetTx:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		result = getTransaction(common.HexToHash(param["txHash"]))
 		break
-		//查询收据
 	case types.TransactionTypeGetReceipt:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		result = service.GetReceipt(common.HexToHash(param["txHash"]))
 		break
-		//查询交易数量
 	case types.TransactionTypeGetTxCount:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		result = getTransactionCount(param["height"], param["hash"])
 		break
-		//根据索引查询块中交易
 	case types.TransactionTypeGetTxFromBlock:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		result = getTransactionFromBlock(param["height"], param["hash"], param["index"])
 		break
-		//查询存储信息
 	case types.TransactionTypeGetContractStorage:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
 		result = service.GetContractStorageAt(param["address"], param["key"], accountDB)
 		break
-		//查询CODE
 	case types.TransactionTypeGetCode:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
@@ -176,7 +163,6 @@ func (executor *GameExecutor) read(msg notify.Message) {
 		executor.logger.Debugf("rcv TransactionTypeGetPastLogs:%d,%d,%v,%v", query.FromBlock, query.ToBlock, query.Addresses, query.Topics)
 		result = getPastLogs(query)
 		break
-		//call vm
 	case types.TransactionTypeCallVM:
 		data := callVMData{}
 		err := json.Unmarshal([]byte(txRaw.Data), &data)
@@ -211,15 +197,8 @@ func (executor *GameExecutor) runWrite(item *middleware.Item) {
 
 	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
 
-	//accountDB, height := service.AccountDBManagerInstance.GetAccountDBByGameExecutor(message.Nonce)
-	//if nil == accountDB {
-	//	return
-	//}
-
 	accountDB, height := middleware.AccountDBManagerInstance.LatestStateDB, middleware.AccountDBManagerInstance.Height
 	if err := service.GetTransactionPool().VerifyTransaction(&txRaw, height); err != nil {
-		//service.AccountDBManagerInstance.SetLatestStateDBWithNonce(accountDB, message.Nonce, "gameExecutor", height)
-
 		executor.logger.Errorf("fail to verify tx, txhash: %s, err: %v", txRaw.Hash.String(), err.Error())
 		if 0 != len(message.UserId) {
 			response := executor.makeFailedResponse(err.Error(), txRaw.SocketRequestId)
@@ -236,6 +215,7 @@ func (executor *GameExecutor) runWrite(item *middleware.Item) {
 	}
 
 	executor.logger.Debugf("txhash: %s, send to user: %s, msg: %s, gatenonce: %d", txRaw.Hash.String(), message.UserId, execMessage, message.GateNonce)
+
 	// reply to the client
 	var response []byte
 	if result {

@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -29,15 +29,6 @@ import (
 	"time"
 )
 
-/*
-*
-nonce:
-version1:创建合约在计算地址之后+1，所有交易结束后如果成功nonce+1
-version2:Proposal006 所有交易刚开始nonce+1
-version3:
-Proposal007 创建合约在计算地址之后+1，call合约 call之前+1
-其他交易 完成后+1
-*/
 const MaxCastBlockTime = time.Second * 3
 
 type VMExecutor struct {
@@ -57,7 +48,9 @@ func newVMExecutor(accountdb *account.AccountDB, block *types.Block, situation s
 	}
 	vm.context["chain"] = blockChainImpl
 	vm.context["situation"] = situation
-
+	if situation == "fork" {
+		vm.context["chain"] = SyncProcessor
+	}
 	return vm
 }
 
@@ -175,10 +168,8 @@ func (executor *VMExecutor) after() {
 
 	height := executor.block.Header.Height
 
-	// 计算定时任务（冻结、退款等等）
 	service.RefundManagerImpl.Add(types.GetRefundInfo(executor.context), executor.accountdb)
 
-	// 计算出块奖励
 	if common.IsSub() {
 		executor.calcSubReward()
 	} else {

@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -24,11 +24,12 @@ import (
 	"math"
 	"math/big"
 	"os"
+	"strconv"
 	"sync/atomic"
 )
 
 const (
-	Version           = "1.0.13"
+	Version           = "1.0.16"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -55,13 +56,16 @@ var (
 		Proposal011Block: 11750354,
 		Proposal012Block: 22815000,
 		Proposal013Block: 28998000,
+		Proposal014Block: 48081000,
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
+		JsonRPCUrl:       "https://mainnet.rangersprotocol.com/api/jsonrpc",
 	}
 
 	robinChainConfig = ChainConfig{
 		ChainId:          "9527",
 		NetworkId:        "9527",
+		PHub:             "wss://robin.rangersprotocol.com/phub",
 		OriginalChainId:  "9527",
 		Proposal001Block: 0,
 		Proposal002Block: 2802000,
@@ -76,10 +80,12 @@ var (
 		Proposal011Block: math.MaxUint64, //robin never use Proposal011
 		Proposal012Block: 23120000,
 		Proposal013Block: 29063000,
+		Proposal014Block: 0,
 
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 
-		MysqlDSN: "rpservice_v2:oJ2*bA0:hB3%@tcp(192.168.0.172:5555)/rpservice_v2?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
+		MysqlDSN:   "rpservice_v2:oJ2*bA0:hB3%@tcp(192.168.0.172:5555)/rpservice_v2?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
+		JsonRPCUrl: "https://robin.rangersprotocol.com/api/jsonrpc",
 	}
 
 	devNetChainConfig = ChainConfig{
@@ -103,6 +109,7 @@ var (
 		Proposal011Block: 0,
 		Proposal012Block: 0,
 		Proposal013Block: 0,
+		Proposal014Block: 0,
 	}
 
 	subNetChainConfig = ChainConfig{
@@ -125,6 +132,7 @@ var (
 		Proposal011Block: 0,
 		Proposal012Block: 0,
 		Proposal013Block: 0,
+		Proposal014Block: 0,
 	}
 
 	LocalChainConfig ChainConfig
@@ -154,10 +162,12 @@ type ChainConfig struct {
 	Proposal011Block uint64
 	Proposal012Block uint64
 	Proposal013Block uint64
+	Proposal014Block uint64
 
 	mainNodeContract Address
 
-	MysqlDSN string
+	MysqlDSN   string
+	JsonRPCUrl string
 }
 
 func initChainConfig(env string) {
@@ -175,7 +185,7 @@ func initChainConfig(env string) {
 		currentBlockHeight: atomic.Value{},
 	}
 	localChainInfo.currentBlockHeight.Store(uint64(0))
-	blockHeightLogger = log.GetLoggerByIndex(log.BlockHeightConfig, "")
+	blockHeightLogger = log.GetLoggerByIndex(log.BlockHeightConfig, strconv.Itoa(InstanceIndex))
 
 	Genesis = getGenesisConf(filename)
 	if nil == Genesis {
@@ -293,6 +303,10 @@ func IsProposal012() bool {
 
 func IsProposal013() bool {
 	return isForked(LocalChainConfig.Proposal013Block, GetBlockHeight())
+}
+
+func IsProposal014() bool {
+	return isForked(LocalChainConfig.Proposal014Block, GetBlockHeight())
 }
 
 func isForked(base uint64, height uint64) bool {

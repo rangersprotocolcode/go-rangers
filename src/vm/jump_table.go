@@ -1,20 +1,22 @@
-// Copyright 2020 The RocketProtocol Authors
-// This file is part of the RocketProtocol library.
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RangersProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package vm
+
+import "com.tuntun.rocket/node/src/common"
 
 type (
 	executionFunc func(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error)
@@ -1127,21 +1129,67 @@ func newInstructionSet() JumpTable {
 		maxStack:    maxStack(1, 1),
 	}
 
-	instructionSet[AUTH] = &operation{
-		execute:     opAuth,
-		constantGas: 0,
-		minStack:    minStack(6, 6),
-		maxStack:    maxStack(6, 6),
-	}
+	//rangers protocol defined InstructionSet newest----------------------------------------------------------------------------------------------
+	if common.IsProposal014() {
+		instructionSet[PRINTF] = &operation{
+			execute:     opPrintF,
+			constantGas: PrintGas,
+			minStack:    minStack(0, 0),
+			maxStack:    maxStack(0, 0),
+		}
 
-	instructionSet[AUTHCALL] = &operation{
-		execute:     opAuthCall,
-		constantGas: 0,
-		dynamicGas:  gasCall,
-		minStack:    minStack(6, 6),
-		maxStack:    maxStack(6, 6),
-		memorySize:  memoryAuthCall,
-	}
+		instructionSet[STAKE] = &operation{
+			execute:     opStake,
+			constantGas: StakeGas,
+			minStack:    minStack(2, 1),
+			maxStack:    maxStack(2, 1),
+		}
 
+		instructionSet[UNSTAKE] = &operation{
+			execute:     opUnStake,
+			constantGas: UnStakeGas,
+			minStack:    minStack(2, 1),
+			maxStack:    maxStack(2, 1),
+		}
+
+		instructionSet[GETSTAKE] = &operation{
+			execute:     opGetStake,
+			constantGas: GetStake,
+			minStack:    minStack(1, 1),
+			maxStack:    maxStack(1, 1),
+		}
+
+		instructionSet[UNSTAKEALL] = &operation{
+			execute:     opUnStakeAll,
+			constantGas: UnStakeAllGas,
+			minStack:    minStack(1, 1),
+			maxStack:    maxStack(1, 1),
+		}
+
+		instructionSet[STAKENUM] = &operation{
+			execute:     opStakeNum,
+			constantGas: StakeNumGas,
+			minStack:    minStack(1, 1),
+			maxStack:    maxStack(1, 1),
+		}
+
+		instructionSet[AUTH] = &operation{
+			execute:     opAuth,
+			constantGas: AuthGas,
+			dynamicGas:  gasAuth,
+			minStack:    minStack(3, 1),
+			maxStack:    maxStack(3, 1),
+		}
+
+		instructionSet[AUTHCALL] = &operation{
+			execute:     opAuthCall,
+			constantGas: WarmStorageReadCostEIP2929,
+			dynamicGas:  gasAuthCall,
+			minStack:    minStack(9, 1),
+			maxStack:    maxStack(9, 1),
+			memorySize:  memoryAuthCall,
+		}
+
+	}
 	return instructionSet
 }

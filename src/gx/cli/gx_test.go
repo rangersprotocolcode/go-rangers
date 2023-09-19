@@ -1,3 +1,19 @@
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RocketProtocol library.
+//
+// The RangersProtocol library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The RangersProtocol library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+
 package cli
 
 import (
@@ -166,7 +182,7 @@ func initTestingEnv() {
 	}
 
 	// 共识部分启动
-	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
+	ok := consensus.InitConsensus(minerInfo, common.GlobalConf)
 	if !ok {
 		panic("Init miner consensus init error!")
 
@@ -186,5 +202,5 @@ func TestNewGX(t *testing.T) {
 	common.Init(0, "1.ini", "robin")
 	gx.initMiner("robin", "ws://49.0.249.103:1017", "", "")
 
-	time.Sleep(10*time.Hour)
+	time.Sleep(10 * time.Hour)
 }

@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -58,19 +58,16 @@ func (chain *blockChain) consensusVerify(b *types.Block) (types.AddBlockResult, 
 	return types.ValidateBlockOk, true
 }
 
-// 这里判断处理分叉
 func (chain *blockChain) addBlockOnChain(coming *types.Block) types.AddBlockResult {
 	topBlock := chain.latestBlock
 	comingHeader := coming.Header
 
 	logger.Debugf("coming block: hash: %v, preH: %v, height: %v,totalQn:%d, localTopHash: %v, localPreHash: %v, localHeight: %v, localTotalQn: %d", comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN)
 
-	// 已经存在
 	if comingHeader.Hash == topBlock.Hash || chain.HasBlockByHash(comingHeader.Hash) {
 		return types.BlockExisted
 	}
 
-	// 校验块
 	if _, verifyResult := chain.verifyBlock(*comingHeader, coming.Transactions); verifyResult != 0 {
 		logger.Errorf("Fail to VerifyCastingBlock, reason code:%d \n", verifyResult)
 		if verifyResult == 2 {
@@ -79,13 +76,11 @@ func (chain *blockChain) addBlockOnChain(coming *types.Block) types.AddBlockResu
 		return types.AddBlockFailed
 	}
 
-	// 正好是下一块
 	if comingHeader.PreHash == topBlock.Hash {
 		result, _ := chain.insertBlock(coming)
 		return result
 	}
 
-	// 比本地链要差，丢掉
 	if comingHeader.TotalQN < topBlock.TotalQN {
 		return types.BlockTotalQnLessThanLocal
 	}
@@ -95,7 +90,7 @@ func (chain *blockChain) addBlockOnChain(coming *types.Block) types.AddBlockResu
 		logger.Warnf("Block chain query nil block!Hash:%s", comingHeader.PreHash)
 		return types.AddBlockFailed
 	}
-	// 比本地链好，要
+
 	if comingHeader.TotalQN > topBlock.TotalQN {
 		logger.Warnf("coming qn great than local. Remove from common ancestor and add...coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
 			comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
@@ -103,7 +98,6 @@ func (chain *blockChain) addBlockOnChain(coming *types.Block) types.AddBlockResu
 		return chain.addBlockOnChain(coming)
 	}
 
-	// 不是同一块，但是QN与本地链相同，需要二次判断
 	localNextBlock := chain.QueryBlockHeaderByHeight(commonAncestor.Height+1, true)
 	if localNextBlock == nil {
 		logger.Warnf("Block chain query nil block!Height:%s", commonAncestor.Height+1)
@@ -113,10 +107,10 @@ func (chain *blockChain) addBlockOnChain(coming *types.Block) types.AddBlockResu
 		return types.BlockTotalQnLessThanLocal
 	}
 
-	// 要了
 	logger.Warnf("coming pv great to local. Remove from common ancestor and add...coming block:hash=%v, preH=%v, height=%v,totalQn:%d. Local topHash=%v, topPreHash=%v, height=%v,totalQn:%d. commonAncestor hash:%s height:%d",
 		comingHeader.Hash.Hex(), comingHeader.PreHash.Hex(), comingHeader.Height, comingHeader.TotalQN, topBlock.Hash.Hex(), topBlock.PreHash.Hex(), topBlock.Height, topBlock.TotalQN, commonAncestor.Hash.Hex(), commonAncestor.Height)
 	chain.removeFromCommonAncestor(commonAncestor)
+
 	return chain.addBlockOnChain(coming)
 }
 
@@ -188,7 +182,6 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 	chain.updateTxPool(remoteBlock, receipts)
 	chain.topBlocks.Add(remoteBlock.Header.Height, remoteBlock.Header)
 
-	//dumpTxs(remoteBlock.Transactions, remoteBlock.Header.Height)
 	chain.eraseAddBlockMark()
 	chain.successOnChainCallBack(remoteBlock)
 	if chain.latestBlock != nil {
@@ -272,8 +265,6 @@ func (chain *blockChain) updateVerifyHash(block *types.Block) {
 }
 
 func (chain *blockChain) updateTxPool(block *types.Block, receipts types.Receipts) {
-	//go chain.notifyReceipts(receipts)
-	//go chain.notifyVMEvents(receipts)
 	chain.transactionPool.MarkExecuted(block.Header, receipts, block.Transactions, block.Header.EvictedTxs)
 }
 
@@ -283,7 +274,7 @@ func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block) {
 	if value, _ := chain.futureBlocks.Get(remoteBlock.Header.Hash); value != nil {
 		block := value.(*types.Block)
 		logger.Debugf("Get block from future blocks,hash:%s,height:%d", block.Header.Hash.String(), block.Header.Height)
-		//todo 这里为了避免死锁只能调用这个方法，但是没办法调用CheckProveRoot全量账本验证了
+
 		chain.addBlockOnChain(block)
 		return
 	}

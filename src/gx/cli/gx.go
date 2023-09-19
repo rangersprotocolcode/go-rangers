@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -30,6 +30,7 @@ import (
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
 	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"com.tuntun.rocket/node/src/vm"
 	"encoding/json"
@@ -43,7 +44,7 @@ import (
 )
 
 const (
-	GXVersion = "1.0.13"
+	GXVersion = "1.0.16"
 	// Section 默认section配置
 	Section = "gx"
 )
@@ -93,22 +94,15 @@ func (gx *GX) Run() {
 	outerGateAddrPoint := mineCmd.Flag("outergateaddr", "the gate addr").String()
 	txAddrPoint := mineCmd.Flag("tx", "the tx queue addr").String()
 
+	//fullnode
+	fullNodeCmd := app.Command("fullnode", "sync data full node")
+	fullNodeJSONPRCPort := fullNodeCmd.Flag("httpport", "jsonrpc port").Short('p').Default("7988").Uint()
+	fullNodeEnv := fullNodeCmd.Flag("env", "the environment application run in").String()
+
 	command, err := app.Parse(os.Args[1:])
 	if err != nil {
 		kingpin.Fatalf("%s, try --help", err)
 	}
-
-	common.Init(*instanceIndex, *configFile, *env)
-
-	// using default
-	gateAddr := *gateAddrPoint
-	if 0 == len(gateAddr) {
-		gateAddr = common.LocalChainConfig.PHub
-	}
-	outerGateAddr := *outerGateAddrPoint
-	txAddr := *txAddrPoint
-
-	walletManager = newWallets()
 
 	switch command {
 	case versionCmd.FullCommand():
@@ -120,6 +114,16 @@ func (gx *GX) Run() {
 			fmt.Errorf(err.Error())
 		}
 	case mineCmd.FullCommand():
+		common.Init(*instanceIndex, *configFile, *env)
+		// using default
+		gateAddr := *gateAddrPoint
+		if 0 == len(gateAddr) {
+			gateAddr = common.LocalChainConfig.PHub
+		}
+		outerGateAddr := *outerGateAddrPoint
+		txAddr := *txAddrPoint
+
+		walletManager = newWallets()
 		fmt.Println("Use config file: " + *configFile)
 		fmt.Printf("Env:%s, Chain ID:%s, Network ID:%s, Tx: %s\n", *env, common.ChainId(utility.MaxUint64), common.NetworkId(), txAddr)
 		go func() {
@@ -136,22 +140,33 @@ func (gx *GX) Run() {
 				return
 			}
 		}
+	case fullNodeCmd.FullCommand():
+		gx.initFullNode(*fullNodeEnv, *configFile, *fullNodeJSONPRCPort)
+		break
 	}
 	<-quitChan
 }
 
 func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
-	middleware.InitMiddleware()
+	common.DefaultLogger.Infof("start initMiner")
+	defer func() {
+		common.DefaultLogger.Infof("end initMiner")
+	}()
 
 	privateKey := common.GlobalConf.GetString(Section, "privateKey", "")
 	gx.getAccountInfo(privateKey)
 	fmt.Println("Your Miner Address:", gx.account.Address)
-
 	sk := common.HexStringToSecKey(gx.account.Sk)
 	minerInfo := model.NewSelfMinerInfo(*sk)
 	common.GlobalConf.SetString(Section, "miner", minerInfo.ID.GetHexString())
+	gx.dumpAccountInfo(minerInfo)
+
+	account.Init()
+
+	middleware.InitMiddleware()
 
 	service.InitService()
+
 	network.InitNetwork(cnet.MessageHandler, minerInfo.ID.Serialize(), env, gateAddr, outerGateAddr, 0 != len(outerGateAddr) && 0 != len(tx))
 
 	vm.InitVM()
@@ -162,17 +177,29 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 		panic("Init miner core init error:" + err.Error())
 	}
 
-	network.GetNetInstance().InitTx(tx)
+	if common.IsSub() {
+		accountDB := middleware.AccountDBManagerInstance.GetLatestStateDB()
+		if nil == accountDB {
+			panic("wrong accountDB")
+		}
+
+		if 3 == service.GetSubChainStatus(accountDB) {
+			fmt.Println("subChain ended")
+			return
+		}
+	}
+
+	if !common.IsSub() {
+		network.GetNetInstance().InitTx(tx)
+	}
 
 	// 共识部分启动
-	ok := consensus.ConsensusInit(minerInfo, common.GlobalConf)
+	ok := consensus.InitConsensus(minerInfo, common.GlobalConf)
 	if !ok {
 		panic("Init miner consensus init error!")
 
 	}
-	gx.dumpAccountInfo(minerInfo)
 
-	//consensus.Proc.BeginGenesisGroupMember()
 	group_create.GroupCreateProcessor.BeginGenesisGroupMember()
 
 	ok = consensus.StartMiner()
@@ -180,7 +207,11 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 		panic("Init miner start miner error!")
 	}
 
-	syncChainInfo(*sk, minerInfo.ID.GetHexString())
+	syncChainInfo()
+
+	if common.IsSub() {
+		checkStatus()
+	}
 
 	eth_rpc.InitEthMsgHandler()
 	gx.init = true
@@ -196,9 +227,15 @@ func (gx *GX) getAccountInfo(sk string) {
 	gx.account = getAccountByPrivateKey(sk)
 }
 
-func syncChainInfo(privateKey common.PrivateKey, id string) {
-	fmt.Println("Syncing block and group info. Waiting...")
+func syncChainInfo() {
+	start := time.Now()
+	common.DefaultLogger.Infof("start syncChainInfo")
+	defer func() {
+		common.DefaultLogger.Infof("end syncChainInfo, cost: %s", time.Now().Sub(start).String())
+	}()
+
 	core.StartSync()
+
 	go func() {
 		timer := time.NewTicker(time.Second * 10)
 		output := true
@@ -230,23 +267,46 @@ func syncChainInfo(privateKey common.PrivateKey, id string) {
 	}()
 }
 
-func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerInfo) {
-	if nil != common.DefaultLogger {
-		common.DefaultLogger.Infof("SecKey: %s", gx.account.Sk)
-		common.DefaultLogger.Infof("PubKey: %s", gx.account.Pk)
-		common.DefaultLogger.Infof("Miner SecKey: %s", minerDO.SecKey.GetHexString())
-		common.DefaultLogger.Infof("Miner PubKey: %s", minerDO.PubKey.GetHexString())
-		common.DefaultLogger.Infof("VRF PrivateKey: %s", minerDO.VrfSK.GetHexString())
-		common.DefaultLogger.Infof("VRF PubKey: %s", minerDO.VrfPK.GetHexString())
-		common.DefaultLogger.Infof("Miner ID: %s", minerDO.ID.GetHexString())
+func checkStatus() {
+	go func() {
+		for range time.Tick(10 * time.Second) {
+			accountDB := middleware.AccountDBManagerInstance.GetLatestStateDB()
+			if nil == accountDB {
+				continue
+			}
 
-		miner := types.Miner{}
-		miner.Id = minerDO.ID.Serialize()
-		miner.PublicKey = minerDO.PubKey.Serialize()
-		miner.VrfPublicKey = minerDO.VrfPK.GetBytes()
-		minerBytes, _ := json.Marshal(miner)
-		common.DefaultLogger.Infof("Miner apply info:%s|%s", minerDO.ID.GetHexString(), string(minerBytes))
-	}
+			if 3 == service.GetSubChainStatus(accountDB) {
+				fmt.Println("subChain ended")
+
+				mysql.CloseMysql()
+				if core.GetBlockChain() != nil {
+					core.GetBlockChain().Close()
+				}
+				log.Close()
+				consensus.StopMiner()
+				os.Exit(0)
+				return
+			}
+		}
+	}()
+
+}
+
+func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerInfo) {
+	common.DefaultLogger.Infof("SecKey: %s", gx.account.Sk)
+	common.DefaultLogger.Infof("PubKey: %s", gx.account.Pk)
+	common.DefaultLogger.Infof("Miner SecKey: %s", minerDO.SecKey.GetHexString())
+	common.DefaultLogger.Infof("Miner PubKey: %s", minerDO.PubKey.GetHexString())
+	common.DefaultLogger.Infof("VRF PrivateKey: %s", minerDO.VrfSK.GetHexString())
+	common.DefaultLogger.Infof("VRF PubKey: %s", minerDO.VrfPK.GetHexString())
+	common.DefaultLogger.Infof("Miner ID: %s", minerDO.ID.GetHexString())
+
+	miner := types.Miner{}
+	miner.Id = minerDO.ID.Serialize()
+	miner.PublicKey = minerDO.PubKey.Serialize()
+	miner.VrfPublicKey = minerDO.VrfPK.GetBytes()
+	minerBytes, _ := json.Marshal(miner)
+	common.DefaultLogger.Infof("Miner apply info:%s|%s", minerDO.ID.GetHexString(), string(minerBytes))
 
 }
 
@@ -266,4 +326,23 @@ func (gx *GX) handleExit(ctrlC <-chan bool, quit chan<- bool) {
 	} else {
 		os.Exit(0)
 	}
+}
+
+func (gx *GX) initFullNode(env string, configFile string, jsonRPCPort uint) {
+	common.Init(0, configFile, env)
+	common.SetFullNode(true)
+	fmt.Printf("Start full node mode.\n")
+	fmt.Printf("Chain ID:%s,Network ID:%s\n", common.ChainId(utility.MaxUint64), common.NetworkId())
+
+	outerGateAddr := "" //do not connect outerGate
+	tx := ""            //do not connect tx
+	//dsn := ""           //do not connect dsn
+	gateAddr := common.LocalChainConfig.PHub
+	gx.initMiner(env, gateAddr, outerGateAddr, tx)
+
+	err := StartJSONRPCHttp(jsonRPCPort)
+	if err != nil {
+		panic(err)
+	}
+	gx.init = true
 }

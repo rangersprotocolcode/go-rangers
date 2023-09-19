@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -26,23 +26,19 @@ import (
 	"io"
 )
 
-//用户公钥
 type PublicKey struct {
 	PubKey ecdsa.PublicKey
 }
 
-//公钥验证函数
 func (pk PublicKey) Verify(hash []byte, s *Sign) bool {
 	return secp256k1.VerifySignature(pk.ToBytes(), hash, s.Bytes()[:64])
 }
 
-//由公钥萃取地址函数
 func (pk PublicKey) GetAddress() Address {
 	addrBuf := pk.GetID()
 	return BytesToAddress(addrBuf[:])
 }
 
-//由公钥萃取矿工ID
 func (pk PublicKey) GetID() []byte {
 	x := pk.PubKey.X.Bytes()
 	y := pk.PubKey.Y.Bytes()
@@ -57,13 +53,11 @@ func (pk PublicKey) GetID() []byte {
 	return hash
 }
 
-//把公钥转换成字节切片
 func (pk PublicKey) ToBytes() []byte {
 	buf := elliptic.Marshal(pk.PubKey.Curve, pk.PubKey.X, pk.PubKey.Y)
 	return buf
 }
 
-//从字节切片转换到公钥
 func BytesToPublicKey(data []byte) (pk *PublicKey) {
 	pk = new(PublicKey)
 	pk.PubKey.Curve = getDefaultCurve()
@@ -76,7 +70,6 @@ func BytesToPublicKey(data []byte) (pk *PublicKey) {
 	return
 }
 
-//导出函数
 func (pk PublicKey) GetHexString() string {
 	buf := pk.ToBytes()
 	str := PREFIX + hex.EncodeToString(buf)
@@ -87,7 +80,6 @@ func (pk *PublicKey) Encrypt(rand io.Reader, msg []byte) ([]byte, error) {
 	return Encrypt(rand, pk, msg)
 }
 
-//导入函数
 func HexStringToPubKey(s string) (pk *PublicKey) {
 	if len(s) < len(PREFIX) || s[:len(PREFIX)] != PREFIX {
 		return
@@ -97,7 +89,6 @@ func HexStringToPubKey(s string) (pk *PublicKey) {
 	return
 }
 
-//公钥加密消息
 func Encrypt(rand io.Reader, pub *PublicKey, msg []byte) (ct []byte, err error) {
 	pubECIES := ecies.ImportECDSAPublic(&pub.PubKey)
 	return ecies.Encrypt(rand, pubECIES, msg, nil, nil)

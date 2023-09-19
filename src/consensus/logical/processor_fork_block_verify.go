@@ -1,3 +1,19 @@
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RocketProtocol library.
+//
+// The RangersProtocol library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The RangersProtocol library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+
 package logical
 
 import (
@@ -10,7 +26,7 @@ import (
 	"time"
 )
 
-//检查提案节点是否合法
+
 func (p *Processor) IsCastLegalForFork(bh *types.BlockHeader, preHeader *types.BlockHeader) (ok bool, err error) {
 	blog := newBizLog("isCastLegal")
 	castor := groupsig.DeserializeID(bh.Castor)
@@ -36,7 +52,7 @@ func (p *Processor) IsCastLegalForFork(bh *types.BlockHeader, preHeader *types.B
 		return
 	}
 
-	if !bytes.Equal(selectedGroupFromFork.Id, bh.GroupId) { //有可能组已经解散，需要再从链上取
+	if !bytes.Equal(selectedGroupFromFork.Id, bh.GroupId) {
 		err = common.ErrSelectGroupInequal
 		stdLogger.Debugf("selectGroupId from fork not equal, expect %v, receive %v.bh hash:%s,height:%d,castor:%s", common.ToHex(selectedGroupFromFork.Id), common.ToHex(bh.GroupId), bh.Hash.String(), bh.Height, hex.EncodeToString(bh.Castor))
 		return

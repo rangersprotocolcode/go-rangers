@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -18,13 +18,11 @@ package account
 
 import (
 	crypto "com.tuntun.rocket/node/src/eth_crypto"
-	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/utility"
 	"fmt"
 	"math/big"
 	"sort"
-	"strconv"
 	"sync"
 
 	"com.tuntun.rocket/node/src/storage/trie"
@@ -46,9 +44,6 @@ var (
 
 	// emptyCode is the known hash of the empty TVM bytecode.
 	emptyCode = sha3.Sum256(nil)
-
-	// log
-	accountLog = log.GetLoggerByIndex(log.AccountLogConfig, strconv.Itoa(common.InstanceIndex))
 )
 
 // AccountDB are used to store anything
@@ -448,7 +443,7 @@ func (adb *AccountDB) DataIterator(addr common.Address, prefix []byte) *trie.Ite
 //	return fmt.Sprintf(`{"key":"%s","value":%s,"hasValue":%d}`, key, value, hasValue)
 //}
 
-//// Snapshot returns an identifier for the current revision of the account.
+// // Snapshot returns an identifier for the current revision of the account.
 func (adb *AccountDB) Snapshot() int {
 	id := adb.nextRevisionID
 	adb.nextRevisionID++
@@ -560,15 +555,15 @@ func (adb *AccountDB) Commit(deleteEmptyObjects bool) (root common.Hash, err err
 	return root, err
 }
 
-//----------------------------------------------------add interface method to implement-------------------------------
+// ----------------------------------------------------add interface method to implement-------------------------------
 // CreateAccount explicitly creates a state object. If a state object with the address
 // already exists the balance is carried over to the new account.
 //
 // CreateAccount is called during the EVM CREATE operation. The situation might arise that
 // a contract does the following:
 //
-//   1. sends funds to sha(account ++ (nonce + 1))
-//   2. tx_create(sha(account ++ nonce)) (note that this gets the address of 1)
+//  1. sends funds to sha(account ++ (nonce + 1))
+//  2. tx_create(sha(account ++ nonce)) (note that this gets the address of 1)
 //
 // Carrying over the balance ensures that Ether doesn't disappear.
 func (adb *AccountDB) CreateAccount(addr common.Address) {

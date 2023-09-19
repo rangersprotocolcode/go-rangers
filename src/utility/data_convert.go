@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -56,12 +56,12 @@ func BigIntBytesToStr(value []byte) string {
 	return BigIntToStr(amount)
 }
 
-//"11.22"->11220000000
+// "11.22"->11220000000
 func StrToBigInt(s string) (*big.Int, error) {
 	return strToBigInt(s, defaultDecimal)
 }
 
-//"11.22"->11220000000
+// "11.22"->11220000000
 func strToBigInt(s string, decimal int64) (*big.Int, error) {
 	// 空字符串，默认返回0
 	if 0 == len(s) {
@@ -136,7 +136,7 @@ func bigIntToStr(n *big.Int, precision int) string {
 	return fmt.Sprintf("%s%s.%s", starter, first, last)
 }
 
-//11.22->11220000000
+// 11.22->11220000000
 func Float64ToBigInt(number float64) *big.Int {
 	base := new(big.Float)
 	base.SetInt(big.NewInt(baseNumber))

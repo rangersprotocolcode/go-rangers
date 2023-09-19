@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -25,6 +25,7 @@ import (
 
 	"encoding/json"
 )
+
 func getString(trie *trie.Trie, k string) []byte {
 	return trie.Get([]byte(k))
 }
@@ -41,54 +42,51 @@ func TestExpandTrie(t *testing.T) {
 	triedb := NewDatabase(diskdb)
 	trie1, _ := trie.NewTrie(common.Hash{}, triedb.TrieDB())
 
-	for i:=0;i<100;i++{
+	for i := 0; i < 100; i++ {
 		updateString(trie1, strconv.Itoa(i), strconv.Itoa(i))
 	}
 	trie1.SetCacheLimit(10)
-	for i:= 0;i<11;i++{
+	for i := 0; i < 11; i++ {
 		trie1.Commit(nil)
 	}
 
-	root,_:=trie1.Commit(nil)
-	triedb.TrieDB().Commit(root,false)
+	root, _ := trie1.Commit(nil)
+	triedb.TrieDB().Commit(root, false)
 
-	for i:=0;i<100;i++{
-		vl:= string(getString(trie1,strconv.Itoa(i)))
-		if vl != strconv.Itoa(i){
+	for i := 0; i < 100; i++ {
+		vl := string(getString(trie1, strconv.Itoa(i)))
+		if vl != strconv.Itoa(i) {
 			t.Errorf("wrong value: %v", vl)
 		}
 	}
 	data := encode(trie1)
 
-
-	newTrie:=decode(data)
-	for i:=0;i<100;i++{
-		vl:= string(getString(newTrie,strconv.Itoa(i)))
-		if vl != strconv.Itoa(i){
+	newTrie := decode(data)
+	for i := 0; i < 100; i++ {
+		vl := string(getString(newTrie, strconv.Itoa(i)))
+		if vl != strconv.Itoa(i) {
 			t.Errorf("wrong value: %v", vl)
 		}
 	}
 
 }
 
-
-func decode(data []byte)*trie.Trie{
+func decode(data []byte) *trie.Trie {
 	//buffer := bytes.NewBuffer(data)
 	//decoder := gob.NewDecoder(buffer)
 	var n trie.Trie
-	err := json.Unmarshal(data,&n)
-	if  err != nil{
+	err := json.Unmarshal(data, &n)
+	if err != nil {
 		panic(err)
 	}
 	return &n
 }
 
-func encode(n Trie)[]byte{
-	b , err := json. Marshal (n)
+func encode(n Trie) []byte {
+	b, err := json.Marshal(n)
 
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 	return b
 }
-

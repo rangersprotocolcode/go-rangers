@@ -1,18 +1,18 @@
-// Copyright 2020 The RocketProtocol Authors
-// This file is part of the RocketProtocol library.
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RangersProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package vm
 
@@ -113,5 +113,16 @@ func memoryLog(stack *Stack) (uint64, bool) {
 }
 
 func memoryAuthCall(stack *Stack) (uint64, bool) {
-	return calcMemSize64(stack.Back(0), stack.Back(1))
+	x, overflow := calcMemSize64(stack.Back(7), stack.Back(8))
+	if overflow {
+		return 0, true
+	}
+	y, overflow := calcMemSize64(stack.Back(5), stack.Back(6))
+	if overflow {
+		return 0, true
+	}
+	if x > y {
+		return x, false
+	}
+	return y, false
 }

@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -53,7 +53,6 @@ const (
 	GisGroupInitDone
 )
 
-//GroupContext
 // GroupContext is the group consensus context, and the verification determines
 // whether a message comes from within the group.
 //
@@ -68,7 +67,6 @@ type groupInitContext struct {
 	createTime    time.Time
 }
 
-//CreateGroupContextWithRawMessage
 // CreateGroupContextWithRawMessage creates a GroupContext structure from
 // a group initialization message
 func newGroupInitContext(groupInitInfo *model.GroupInitInfo, candidates []groupsig.ID, minerInfo *model.SelfMinerInfo) *groupInitContext {
@@ -102,9 +100,6 @@ func (context *groupInitContext) GenSharePieces() map[string]model.SharePiece {
 	return shares
 }
 
-//PieceMessage
-// PieceMessage Received a secret sharing message
-//
 // Return -1 is abnormal, return 0 is normal, return 1 is the private key
 // of the aggregated group member (used for signing)
 func (context *groupInitContext) HandleSharePiece(id groupsig.ID, share *model.SharePiece) int {
@@ -112,16 +107,11 @@ func (context *groupInitContext) HandleSharePiece(id groupsig.ID, share *model.S
 	return result
 }
 
-//GetNode
-//func (gc *GroupContext) GetNodeInfo() *GroupNode {
-//	return gc.node
-//}
-
 func (context *groupInitContext) GetGroupStatus() int32 {
 	return atomic.LoadInt32(&context.status)
 }
 
-//getMembers
+// getMembers
 func (context *groupInitContext) getGroupMembers() []groupsig.ID {
 	return context.groupInitInfo.GroupMembers
 }
@@ -130,7 +120,7 @@ func (context *groupInitContext) MemExist(id groupsig.ID) bool {
 	return context.groupInitInfo.MemberExists(id)
 }
 
-//StatusTransfrom
+// StatusTransfrom
 func (context *groupInitContext) TransformStatus(from, to int32) bool {
 	return atomic.CompareAndSwapInt32(&context.status, from, to)
 }
@@ -148,7 +138,7 @@ func (context *groupInitContext) generateMemberMask() (mask []byte) {
 	return
 }
 
-//JoiningGroups
+// JoiningGroups
 type groupInitContextCache struct {
 	cache *lru.Cache //key= groupHash,value = groupInitContext
 }
@@ -159,7 +149,7 @@ func newGroupInitContextCache() groupInitContextCache {
 	}
 }
 
-//ConfirmGroupFromRaw
+// ConfirmGroupFromRaw
 func (groupInitContextCache *groupInitContextCache) GetOrNewContext(groupInitInfo *model.GroupInitInfo, candidates []groupsig.ID, mi *model.SelfMinerInfo) *groupInitContext {
 	groupHash := groupInitInfo.GroupHash()
 	v := groupInitContextCache.GetContext(groupHash)
@@ -177,7 +167,7 @@ func (groupInitContextCache *groupInitContextCache) GetOrNewContext(groupInitInf
 	return v
 }
 
-//GetGroup
+// GetGroup
 func (groupInitContextCache *groupInitContextCache) GetContext(groupHash common.Hash) *groupInitContext {
 	if v, ok := groupInitContextCache.cache.Get(groupHash.Hex()); ok {
 		return v.(*groupInitContext)
@@ -185,15 +175,15 @@ func (groupInitContextCache *groupInitContextCache) GetContext(groupHash common.
 	return nil
 }
 
-//Clean
-//todo  rename
+// Clean
+// todo  rename
 func (groupInitContextCache *groupInitContextCache) Clean(groupHash common.Hash) {
 	gc := groupInitContextCache.GetContext(groupHash)
 	if gc != nil && gc.TransformStatus(GisSendInited, GisGroupInitDone) {
 	}
 }
 
-//RemoveGroup
+// RemoveGroup
 func (groupInitContextCache *groupInitContextCache) RemoveContext(groupHash common.Hash) {
 	groupInitContextCache.cache.Remove(groupHash.Hex())
 }
@@ -211,9 +201,6 @@ func (groupInitContextCache *groupInitContextCache) forEach(f func(context *grou
 	}
 }
 
-//InitedGroup
-// InitedGroup is miner node processor
-//用于收集组成员的组公钥，得到真正正确的组公钥
 type groupPubkeyCollector struct {
 	groupInitInfo *model.GroupInitInfo
 
@@ -240,7 +227,7 @@ func NewGroupPubkeyCollector(groupInitInfo *model.GroupInitInfo) *groupPubkeyCol
 	}
 }
 
-//receive
+// receive
 func (collector *groupPubkeyCollector) handleGroupSign(memberId groupsig.ID, groupPubkey groupsig.Pubkey) int32 {
 	status := atomic.LoadInt32(&collector.status)
 	if status != Initing {
@@ -255,7 +242,7 @@ func (collector *groupPubkeyCollector) handleGroupSign(memberId groupsig.ID, gro
 	return collector.status
 }
 
-//receiveSize
+// receiveSize
 func (collector *groupPubkeyCollector) receiveGroupPKCount() int {
 	collector.lock.RLock()
 	defer collector.lock.RUnlock()
@@ -271,7 +258,7 @@ func (collector *groupPubkeyCollector) hasReceived(id groupsig.ID) bool {
 	return ok
 }
 
-//convergence
+// convergence
 // convergence find out the most received values
 func (collector *groupPubkeyCollector) tryGenGroupPubkey() {
 	groupCreateLogger.Debugf("GroupPubkeyCollector try gen grouo pubkey, threshold=%v\n", collector.threshold)
@@ -313,7 +300,7 @@ func (collector *groupPubkeyCollector) tryGenGroupPubkey() {
 	}
 }
 
-//getInitedGroup
+// getInitedGroup
 func (p *groupCreateProcessor) getGroupPubkeyCollector(groupHash common.Hash) *groupPubkeyCollector {
 	if v, ok := p.groupSignCollectorMap.Load(groupHash.Hex()); ok {
 		return v.(*groupPubkeyCollector)
@@ -321,13 +308,13 @@ func (p *groupCreateProcessor) getGroupPubkeyCollector(groupHash common.Hash) *g
 	return nil
 }
 
-//addInitedGroup
+// addInitedGroup
 func (p *groupCreateProcessor) addGroupPubkeyCollector(collector *groupPubkeyCollector) *groupPubkeyCollector {
 	v, _ := p.groupSignCollectorMap.LoadOrStore(collector.groupInitInfo.GroupHash().Hex(), collector)
 	return v.(*groupPubkeyCollector)
 }
 
-//removeInitedGroup
+// removeInitedGroup
 func (p *groupCreateProcessor) removeGroupPubkeyCollector(groupHash common.Hash) {
 	p.groupSignCollectorMap.Delete(groupHash.Hex())
 }

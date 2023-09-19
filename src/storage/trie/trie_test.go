@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -21,7 +21,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
-	
+
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -29,16 +29,14 @@ import (
 	"testing"
 	"testing/quick"
 
-	
 	"com.tuntun.rocket/node/src/common"
-	
+
 	"com.tuntun.rocket/node/src/middleware/db"
 )
 
-
 // Used for testing
 func newEmpty() *Trie {
-	db,_ := db.NewMemDatabase()
+	db, _ := db.NewMemDatabase()
 	trie, _ := NewTrie(common.Hash{}, NewDatabase(db))
 	return trie
 }
@@ -63,7 +61,7 @@ func TestNull(t *testing.T) {
 }
 
 func TestMissingRoot(t *testing.T) {
-	db,_ := db.NewMemDatabase()
+	db, _ := db.NewMemDatabase()
 	trie, err := NewTrie(common.HexToHash("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33"), NewDatabase(db))
 	if trie != nil {
 		t.Error("NewTrie returned non-nil trie for invalid root")
@@ -77,7 +75,7 @@ func TestMissingNodeDisk(t *testing.T)    { testMissingNode(t, false) }
 func TestMissingNodeMemonly(t *testing.T) { testMissingNode(t, true) }
 
 func testMissingNode(t *testing.T, memonly bool) {
-	diskdb,_ := db.NewMemDatabase()
+	diskdb, _ := db.NewMemDatabase()
 	triedb := NewDatabase(diskdb)
 
 	trie, _ := NewTrie(common.Hash{}, triedb)
@@ -408,7 +406,7 @@ func (randTest) Generate(r *rand.Rand, size int) reflect.Value {
 }
 
 func runRandTest(rt randTest) bool {
-	db,_ := db.NewMemDatabase()
+	db, _ := db.NewMemDatabase()
 	triedb := NewDatabase(db)
 
 	tr, _ := NewTrie(common.Hash{}, triedb)
@@ -574,4 +572,3 @@ func updateString(trie *Trie, k, v string) {
 func deleteString(trie *Trie, k string) {
 	trie.Delete([]byte(k))
 }
-

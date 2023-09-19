@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -26,7 +26,6 @@ import (
 	"fmt"
 )
 
-//新建组成员收到父亲组建组消息
 // OnMessageGroupInit receives new-group-info messages from parent nodes and starts the group formation process
 // That indicates the current node is chosen to be a member of the new group
 func (p *groupCreateProcessor) OnMessageGroupInit(msg *model.GroupInitMessage) {
@@ -35,11 +34,11 @@ func (p *groupCreateProcessor) OnMessageGroupInit(msg *model.GroupInitMessage) {
 	groupHeader := groupInitInfo.GroupHeader
 
 	groupCreateLogger.Debugf("(%v)Rcv group init message, sender=%v, groupHash=%v...", p.minerInfo.ID.ShortS(), msg.SignInfo.GetSignerID().ShortS(), groupHash.ShortS())
-	//tlog := newHashTraceLog("OMGI", gHash, msg.SI.GetID())
 
 	if msg.SignInfo.GetDataHash() != msg.GenHash() || groupHeader.Hash != groupHeader.GenHash() {
 		panic("msg gis hash diff")
 	}
+
 	// Non-group members do not follow the follow-up process
 	if !msg.MemberExist(p.minerInfo.GetMinerID()) {
 		return
@@ -62,7 +61,6 @@ func (p *groupCreateProcessor) OnMessageGroupInit(msg *model.GroupInitMessage) {
 		groupCreateLogger.Debugf("group header illegal, err=%v", err)
 		return
 	}
-	//tlog.logStart("%v", "")
 
 	groupInitContext = p.groupInitContextCache.GetOrNewContext(&groupInitInfo, candidates, &p.minerInfo)
 	if groupInitContext == nil {
@@ -103,8 +101,7 @@ func (p *groupCreateProcessor) OnMessageGroupInit(msg *model.GroupInitMessage) {
 	return
 }
 
-//checkGroupInfo
-// checkGroupInfo check whether the group info is legal
+// ValidateGroupInfo check whether the group info is legal
 func (p *groupCreateProcessor) ValidateGroupInfo(groupInitInfo *model.GroupInitInfo) ([]groupsig.ID, bool, error) {
 	groupHeader := groupInitInfo.GroupHeader
 	if groupHeader.Hash != groupHeader.GenHash() {
@@ -115,7 +112,7 @@ func (p *groupCreateProcessor) ValidateGroupInfo(groupInitInfo *model.GroupInitI
 	if !model.Param.IsGroupMemberCountLegal(len(groupInitInfo.GroupMembers)) {
 		return nil, false, fmt.Errorf("group member size error %v(%v-%v)", len(groupInitInfo.GroupMembers), model.Param.GroupMemberMin, model.Param.GroupMemberMax)
 	}
-	// check if the create height is legal
+	// check if the created height is legal
 	if !validateHeight(groupHeader.CreateHeight) {
 		return nil, false, fmt.Errorf("cannot create at the height %v", groupHeader.CreateHeight)
 	}
@@ -145,7 +142,7 @@ func (p *groupCreateProcessor) ValidateGroupInfo(groupInitInfo *model.GroupInitI
 	if !sgi.GroupID.IsEqual(pid) {
 		return nil, false, fmt.Errorf("select parent group not equal, expect %v, recieve %v", sgi.GroupID.ShortS(), pid.ShortS())
 	}
-	//todo
+
 	gpk := p.getGroupPubKey(groupsig.DeserializeID(groupHeader.Parent))
 
 	// check the signature of the parent group
@@ -233,8 +230,6 @@ func (p *groupCreateProcessor) handleSharePieceMessage(groupHash common.Hash, sh
 	if isShareReqResponse {
 		messageType = "On message share piece response"
 	}
-	//tlog := newHashTraceLog(mtype, gHash, si.GetID())
-	//tlog.log("number of pieces received %v, collecting slices %v, missing %v etc.", gc.node.groupInitPool.GetSize(), result == 1, waitPieceIds)
 
 	// All piece collected
 	if result == 1 {
@@ -363,6 +358,7 @@ func (p *groupCreateProcessor) OnMessageGroupInited(msg *model.GroupInitedMessag
 	}
 
 	groupInitInfo := groupPubkeyCollector.groupInitInfo
+
 	// Check the time window, deny messages out of date
 	if groupInitInfo.ReadyTimeout(p.blockChain.Height()) {
 		groupCreateLogger.Warnf("group ready timeout, gid=%v", msg.GroupID.ShortS())
@@ -437,7 +433,6 @@ func (p *groupCreateProcessor) addGroupOnChain(groupInfo *model.GroupInfo) {
 	if p.groupChain.GetGroupById(group.Id) != nil {
 		groupCreateLogger.Debugf("group already onchain, accept, id=%v\n", groupInfo.GroupID.ShortS())
 
-		//p.acceptGroup(groupInfo)
 		msg := notify.GroupMessage{Group: *convertToGroup(groupInfo)}
 		notify.BUS.Publish(notify.AcceptGroup, &msg)
 		err = fmt.Errorf("group already onchain")

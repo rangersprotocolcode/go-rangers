@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -36,7 +36,6 @@ type Sign struct {
 	recid byte
 }
 
-//数据签名结构 for message casting
 type SignData struct {
 	DataHash Hash   //哈希值
 	DataSign Sign   //签名
@@ -68,14 +67,12 @@ func (signData SignData) ValidateSign(hasher Hasher) error {
 	return nil
 }
 
-//签名构造函数
 func (s *Sign) Set(_r, _s *big.Int, recid int) {
 	s.r = *_r
 	s.s = *_s
 	s.recid = byte(recid)
 }
 
-//检查签名是否有效
 func (s Sign) Valid() bool {
 	return s.r.BitLen() != 0 && s.s.BitLen() != 0 && s.recid < 4
 }
@@ -88,7 +85,6 @@ func (s Sign) GetS() big.Int {
 	return s.s
 }
 
-//Sign必须65 bytes
 func (s Sign) Bytes() []byte {
 	rb := s.r.Bytes()
 	sb := s.s.Bytes()
@@ -99,7 +95,6 @@ func (s Sign) Bytes() []byte {
 	return r
 }
 
-//Sign必须65 bytes
 func BytesToSign(b []byte) *Sign {
 	if len(b) == 65 {
 		var r, s big.Int
@@ -123,7 +118,6 @@ func (s Sign) GetHexString() string {
 	return str
 }
 
-//导入函数
 func HexStringToSign(s string) (si *Sign) {
 	if len(s) < len(PREFIX) || s[:len(PREFIX)] != PREFIX {
 		return
@@ -141,7 +135,6 @@ func (s Sign) RecoverPubkey(msg []byte) (pk *PublicKey, err error) {
 	pk = BytesToPublicKey(pubkey)
 	return
 }
-
 
 // MarshalText returns the hex representation of h.
 func (s Sign) MarshalText() ([]byte, error) {

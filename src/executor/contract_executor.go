@@ -1,9 +1,26 @@
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RocketProtocol library.
+//
+// The RangersProtocol library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The RangersProtocol library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+
 package executor
 
 import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/middleware/log"
 	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rocket/node/src/service"
 	"com.tuntun.rocket/node/src/storage/account"
 	"com.tuntun.rocket/node/src/utility"
 	"com.tuntun.rocket/node/src/vm"
@@ -46,6 +63,14 @@ func toHex(b []byte) string {
 }
 
 func (this *contractExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
+	// check chain status if it is subChain
+	if common.IsSub() && transaction.Target == common.WhitelistForCreate {
+		status := service.GetSubChainStatus(accountdb)
+		if 2 != status {
+			return false, fmt.Sprintf("cannot call contract , status: %d", status)
+		}
+	}
+
 	vmCtx := vm.Context{}
 	vmCtx.CanTransfer = vm.CanTransfer
 	vmCtx.Transfer = vm.Transfer
@@ -88,11 +113,13 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 		result          []byte
 		leftOverGas     uint64
 		logs            []*types.Log
-		contractAddress common.Address = common.HexToAddress(transaction.Target)
+		contractAddress = common.HexToAddress(transaction.Target)
 	)
+
 	if transaction.Target == "" {
 		result, contractAddress, leftOverGas, logs, err = vmInstance.Create(caller, input, vmCtx.GasLimit, transferValue)
 		context["contractAddress"] = contractAddress
+
 		this.logger.Tracef("After execute contract create!Contract address:%s, leftOverGas: %d,error:%v", contractAddress.GetHexString(), leftOverGas, err)
 	} else {
 		if common.IsProposal007() {
@@ -100,12 +127,15 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 			accountdb.SetNonce(caller.Address(), nonce+1)
 		}
 		result, leftOverGas, logs, err = vmInstance.Call(caller, contractAddress, input, vmCtx.GasLimit, transferValue)
-		this.logger.Tracef("After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
+
+		this.logger.Tracef("After execute contract call[%s]! result:%v,leftOverGas: %d,error:%v", transaction.Hash.String(), result, leftOverGas, err)
 	}
+
 	context["logs"] = logs
 	if err != nil {
 		return false, err.Error()
 	}
+
 	returnData := executeResultData{contractAddress.GetHexString(), toHex(result), logs}
 	json, _ := json.Marshal(returnData)
 	return true, string(json)

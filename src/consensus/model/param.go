@@ -22,19 +22,19 @@ import (
 )
 
 const (
-	MAX_GROUP_BLOCK_TIME   int = 2            //组铸块最大允许时间=5s
-	MAX_WAIT_BLOCK_TIME    int = 0            //广播出块前等待最大时间=2s
-	CONSENSUS_VERSION          = 1            //共识版本号
-	MAX_UNKNOWN_BLOCKS         = 5            //内存保存最大不能上链的未来块（中间块没有收到）
-	GROUP_INIT_MAX_SECONDS     = 60 * 60 * 24 //10分钟内完成初始化，否则该组失败。不再有初始化机会。(测试改成一天)
+	MAX_GROUP_BLOCK_TIME   int = 2
+	MAX_WAIT_BLOCK_TIME    int = 0
+	CONSENSUS_VERSION          = 1
+	MAX_UNKNOWN_BLOCKS         = 5
+	GROUP_INIT_MAX_SECONDS     = 60 * 60 * 24
 
-	SSSS_THRESHOLD       int = 51 //1-100
-	GROUP_MAX_MEMBERS    int = 10 //一个组最大的成员数量
-	GROUP_MIN_MEMBERS    int = 5  //一个组最大的成员数量
-	CANDIDATES_MIN_RATIO     = 1  //最小的候选人相对于组成员数量的倍数
+	SSSS_THRESHOLD       int = 51
+	GROUP_MAX_MEMBERS    int = 10
+	GROUP_MIN_MEMBERS    int = 5
+	CANDIDATES_MIN_RATIO     = 1
 
 	Group_Wait_Pong_Gap   = common.Group_Create_Gap + common.EPOCH*2
-	GROUP_Ready_GAP       = common.Group_Create_Gap + common.EPOCH*6 //组准备就绪(建成组)的间隔为1个epoch
+	GROUP_Ready_GAP       = common.Group_Create_Gap + common.EPOCH*6
 	Group_Create_Interval = common.EPOCH * 10
 )
 
@@ -56,15 +56,14 @@ type ConsensusParam struct {
 	GroupworkDuration   uint64
 	GroupCreateGap      uint64
 	GroupWaitPongGap    uint64
-	//EffectGapAfterApply uint64	//矿工申请后，到生效的高度间隔
 
-	PotentialProposal      uint64 //潜在提案者
+	PotentialProposal      uint64
 	PotentialProposalMax   uint64
 	PotentialProposalIndex int
 
-	ProposalBonus uint64 //提案奖励
-	PackBonus     uint64 //打包一个分红交易奖励
-	VerifyBonus   uint64 //验证者总奖励
+	ProposalBonus uint64
+	PackBonus     uint64
+	VerifyBonus   uint64
 
 	MaxSlotSize int
 }
@@ -115,13 +114,3 @@ func (p *ConsensusParam) CreateGroupMemberCount(availCandidates int) int {
 	}
 	return cnt
 }
-
-//取得门限值
-//func  (p *ConsensusParam) GetThreshold() int {
-//	return p.GetGroupK(p.GroupMemberMax)
-//}
-
-//获取组成员个数
-//func (p *ConsensusParam) GetGroupMemberNum() int {
-//	return p.GroupMemberMax
-//}

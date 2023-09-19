@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -60,31 +60,24 @@ type wsHeader struct {
 }
 
 type baseConn struct {
-	// 链接
 	url      string
 	path     string
 	conn     *websocket.Conn
 	connLock sync.Mutex
 
-	// 读写缓冲区
 	rcvChan      chan []byte
 	sendChan     chan []byte
 	sendTextChan chan []byte
 
-	// 读写缓冲区大小
 	rcvSize  int
 	sendSize int
 
-	// 处理消息的业务逻辑
 	doRcv func(wsHeader wsHeader, msg []byte)
 
-	//断线重连后的处理
 	afterReconnected func()
 
-	// 处理[]byte原始消息，用于流控
 	rcv func(msg []byte)
 
-	// 判断是否要发送，用于流控
 	isSend func(method []byte, target uint64, msg []byte, nonce uint64) bool
 
 	logger log.Logger
@@ -92,7 +85,6 @@ type baseConn struct {
 	rcvCount, sendCount uint64
 }
 
-// 根据url初始化
 func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 	base.connLock = sync.Mutex{}
 
@@ -103,7 +95,6 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 	base.url = fmt.Sprintf("%s%s", ipPortString, path)
 	base.conn = base.getWSConn()
 
-	// 初始化读写缓存
 	if 0 == base.rcvSize {
 		base.rcvSize = defaultRcvSize
 	}
@@ -116,11 +107,9 @@ func (base *baseConn) init(ipPort, path string, logger log.Logger) {
 	base.rcvCount = 0
 	base.sendCount = 0
 
-	// 开启goroutine
 	base.start()
 }
 
-// 建立ws连接
 func (base *baseConn) getWSConn() *websocket.Conn {
 	base.logger.Debugf("connecting to %s", base.url)
 	d := websocket.Dialer{ReadBufferSize: defaultBufferSize, WriteBufferSize: defaultBufferSize}
@@ -135,14 +124,12 @@ func (base *baseConn) getWSConn() *websocket.Conn {
 	return conn
 }
 
-// 开工
 func (base *baseConn) start() {
 	go base.receiveMessage()
 	go base.loop()
 	go base.logChannel()
 }
 
-// 定时检查channel堆积情况
 func (base *baseConn) logChannel() {
 	for range time.Tick(time.Millisecond * 500) {
 		rcv, send := len(base.rcvChan), len(base.sendChan)
@@ -158,7 +145,6 @@ func (base *baseConn) logChannel() {
 	}
 }
 
-// 调度器
 func (base *baseConn) loop() {
 	for {
 		select {
@@ -200,7 +186,6 @@ func (base *baseConn) loop() {
 	}
 }
 
-// 读消息
 func (base *baseConn) receiveMessage() {
 	for {
 		conn := base.getConn()
@@ -252,7 +237,6 @@ func (base *baseConn) closeConn() {
 	base.conn = nil
 }
 
-// 发送消息
 func (base *baseConn) send(method []byte, target uint64, msg []byte, nonce uint64) {
 	header := wsHeader{method: method, nonce: nonce, targetId: target}
 
@@ -264,7 +248,6 @@ func (base *baseConn) send(method []byte, target uint64, msg []byte, nonce uint6
 	base.logger.Debugf("send message. wsHeader: %v, body length: %d", header, len(msg))
 }
 
-// 新的单播接口使用
 func (base *baseConn) unicast(method []byte, strangerId []byte, msg []byte, nonce uint64) {
 	byteArray := make([]byte, protocolHeaderSize+netIdSize+len(msg))
 	copy(byteArray[0:4], method)
@@ -272,12 +255,10 @@ func (base *baseConn) unicast(method []byte, strangerId []byte, msg []byte, nonc
 	copy(byteArray[protocolHeaderSize:protocolHeaderSize+netIdSize], strangerId)
 	copy(byteArray[protocolHeaderSize+netIdSize:], msg)
 
-	//todo 这里流控方法的参数不一致，暂不使用流控
 	base.sendChan <- byteArray
 	base.logger.Debugf("unicast message. strangerId:%s, length: %d", common.ToHex(strangerId), len(byteArray))
 }
 
-// 构建网络消息
 func (base *baseConn) loadMsg(header wsHeader, body []byte) []byte {
 	h := base.headerToBytes(header)
 
@@ -287,7 +268,6 @@ func (base *baseConn) loadMsg(header wsHeader, body []byte) []byte {
 	return message
 }
 
-// 解包消息
 func (base *baseConn) unloadMsg(m []byte) (header wsHeader, body []byte) {
 	if len(m) < protocolHeaderSize {
 		return header, nil
@@ -327,7 +307,6 @@ func (base *baseConn) generateTarget(targetId string) (uint64, error) {
 	return target, nil
 }
 
-// 处理客户端的read/write请求
 var (
 	methodNotify, _          = hex.DecodeString("20000000")
 	methodNotifyBroadcast, _ = hex.DecodeString("20000001")
@@ -379,7 +358,6 @@ func (clientConn *ClientConn) Init(ipPort, path string, logger log.Logger) {
 		clientConn.logger.Error(msg)
 	}
 
-	//流控方法
 	clientConn.rcv = func(msg []byte) {
 		if len(clientConn.rcvChan) == clientConn.rcvSize {
 			clientConn.logger.Errorf("client rcvChan full, remove it, msg size: %d", len(msg))
@@ -389,7 +367,6 @@ func (clientConn *ClientConn) Init(ipPort, path string, logger log.Logger) {
 		clientConn.rcvChan <- msg
 	}
 
-	// 流控方法
 	clientConn.isSend = func(method []byte, target uint64, msg []byte, nonce uint64) bool {
 		return len(clientConn.sendChan) < clientConn.sendSize
 	}

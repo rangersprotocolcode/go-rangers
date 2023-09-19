@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -142,10 +142,10 @@ func TestMinerRefund(t *testing.T) {
 	txList := make([]string, 0)
 	//miner 15
 	//source := "0xaf7ec99107ab9920b8ddc00d9ae2bdcc4a4fcd63"
-	tx := types.Transaction{Type: types.TransactionTypeMinerRefund, Source: source, Time: time.Now().String(),ChainId: "8888"}
-	str :=`{"amount":"100","minerId":"0xdd50117c639e6134598755b55d8d9fb8b76b2e635880e5853549e62574ecd686"}`
+	tx := types.Transaction{Type: types.TransactionTypeMinerRefund, Source: source, Time: time.Now().String(), ChainId: "8888"}
+	str := `{"amount":"100","minerId":"0xdd50117c639e6134598755b55d8d9fb8b76b2e635880e5853549e62574ecd686"}`
 	var refund MinerRefundData
-	json.Unmarshal(utility.StrToBytes(str),&refund)
+	json.Unmarshal(utility.StrToBytes(str), &refund)
 
 	amount := MinerRefundData{Amount: "100", MinerId: "0xdd50117c639e6134598755b55d8d9fb8b76b2e635880e5853549e62574ecd686"}
 	data, _ := json.Marshal(amount)
@@ -239,7 +239,7 @@ func genMinerAddTx(data string) string {
 	source := privateKey.GetPubKey().GetAddress().String()
 
 	//source := "0x38780174572fb5b4735df1b7c69aee77ff6e9f49"
-	tx := types.Transaction{Type: types.TransactionTypeMinerAdd, Source: source, Time: time.Now().String(),ChainId: "8888"}
+	tx := types.Transaction{Type: types.TransactionTypeMinerAdd, Source: source, Time: time.Now().String(), ChainId: "8888"}
 
 	tx.Data = string(data)
 	tx.Hash = tx.GenHash()

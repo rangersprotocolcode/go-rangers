@@ -1,18 +1,18 @@
-// Copyright 2020 The RocketProtocol Authors
-// This file is part of the RocketProtocol library.
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RangersProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package vm
 
@@ -94,19 +94,19 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 	return 0, nil
 }
 
-// 0. If *gasleft* is less than or equal to 2300, fail the current call.
-// 1. If current value equals new value (this is a no-op), SLOAD_GAS is deducted.
-// 2. If current value does not equal new value:
-//   2.1. If original value equals current value (this storage slot has not been changed by the current execution context):
+//  0. If *gasleft* is less than or equal to 2300, fail the current call.
+//  1. If current value equals new value (this is a no-op), SLOAD_GAS is deducted.
+//  2. If current value does not equal new value:
+//     2.1. If original value equals current value (this storage slot has not been changed by the current execution context):
 //     2.1.1. If original value is 0, SSTORE_SET_GAS (20K) gas is deducted.
 //     2.1.2. Otherwise, SSTORE_RESET_GAS gas is deducted. If new value is 0, add SSTORE_CLEARS_SCHEDULE to refund counter.
-//   2.2. If original value does not equal current value (this storage slot is dirty), SLOAD_GAS gas is deducted. Apply both of the following clauses:
+//     2.2. If original value does not equal current value (this storage slot is dirty), SLOAD_GAS gas is deducted. Apply both of the following clauses:
 //     2.2.1. If original value is not 0:
-//       2.2.1.1. If current value is 0 (also means that new value is not 0), subtract SSTORE_CLEARS_SCHEDULE gas from refund counter.
-//       2.2.1.2. If new value is 0 (also means that current value is not 0), add SSTORE_CLEARS_SCHEDULE gas to refund counter.
+//     2.2.1.1. If current value is 0 (also means that new value is not 0), subtract SSTORE_CLEARS_SCHEDULE gas from refund counter.
+//     2.2.1.2. If new value is 0 (also means that current value is not 0), add SSTORE_CLEARS_SCHEDULE gas to refund counter.
 //     2.2.2. If original value equals new value (this storage slot is reset):
-//       2.2.2.1. If original value is 0, add SSTORE_SET_GAS - SLOAD_GAS to refund counter.
-//       2.2.2.2. Otherwise, add SSTORE_RESET_GAS - SLOAD_GAS gas to refund counter.
+//     2.2.2.1. If original value is 0, add SSTORE_SET_GAS - SLOAD_GAS to refund counter.
+//     2.2.2.2. Otherwise, add SSTORE_RESET_GAS - SLOAD_GAS gas to refund counter.
 func gasSStoreEIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	return 0, nil
 }
@@ -173,6 +173,7 @@ var (
 	gasMStore8 = pureMemoryGascost
 	gasMStore  = pureMemoryGascost
 	gasCreate  = pureMemoryGascost
+	gasAuth    = pureMemoryGascost
 )
 
 func gasCreate2(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
@@ -225,16 +226,6 @@ func gasCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize
 		transfersValue = !stack.Back(2).IsZero()
 		address        = common.Address(stack.Back(1).Bytes20())
 	)
-	/*todo
-	origin:
-	if evm.chainRules.IsEIP158 {
-		if transfersValue && evm.StateDB.Empty(address) {
-			gas += CallNewAccountGas
-		}
-	} else if !evm.StateDB.Exist(address) {
-		gas += CallNewAccountGas
-	}
-	*/
 	if transfersValue && evm.StateDB.Empty(address) {
 		gas += CallNewAccountGas
 	}
@@ -320,25 +311,10 @@ func gasStaticCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memo
 
 func gasSelfdestruct(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
 	var gas uint64
-	/*todo
-	origin:	if evm.chainRules.IsEIP150
-	*/
-	// EIP150 homestead gas reprice fork:
 	if true {
 		gas = SelfdestructGasEIP150
 		var address = common.Address(stack.Back(0).Bytes20())
 
-		/*todo
-		origin:
-		if evm.chainRules.IsEIP158 {
-			// if empty and transfers value
-			if evm.StateDB.Empty(address) && evm.StateDB.GetBalance(contract.Address()).Sign() != 0 {
-				gas += CreateBySelfdestructGas
-			}
-		} else if !evm.StateDB.Exist(address) {
-			gas += CreateBySelfdestructGas
-		}
-		*/
 		// if empty and transfers value
 		if evm.StateDB.Empty(address) && evm.StateDB.GetBalance(contract.Address()).Sign() != 0 {
 			gas += CreateBySelfdestructGas
@@ -349,4 +325,47 @@ func gasSelfdestruct(evm *EVM, contract *Contract, stack *Stack, mem *Memory, me
 		evm.StateDB.AddRefund(SelfdestructRefundGas)
 	}
 	return gas, nil
+}
+
+func gasAuthCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
+	var (
+		dynamicGas     uint64
+		transfersValue = !stack.Back(3).IsZero()
+		address        = common.Address(stack.Back(2).Bytes20())
+	)
+
+	//memory_expansion_fee
+	memoryGas, err := memoryGasCost(mem, memorySize)
+	logger.Debugf("[gasAuthCall]memoryGas:%d", memoryGas)
+	if err != nil {
+		return 0, err
+	}
+	var overflow bool
+	if dynamicGas, overflow = utility.SafeAdd(dynamicGas, memoryGas); overflow {
+		return 0, ErrGasUintOverflow
+	}
+	logger.Debugf("[gasAuthCall]memoryGas:%d", memoryGas)
+
+	if !evm.StateDB.AddressInAccessList(address) {
+		evm.StateDB.AddAddressToAccessList(address)
+		dynamicGas += ColdAccountAccessCostEIP2929 - WarmStorageReadCostEIP2929
+	}
+	logger.Debugf("[gasAuthCall]memoryGas:%d", memoryGas)
+
+	if transfersValue {
+		dynamicGas += AuthCallValueTransferGas
+		if evm.StateDB.Empty(address) {
+			dynamicGas += CallNewAccountGas
+		}
+	}
+	logger.Debugf("[gasAuthCall]memoryGas:%d", memoryGas)
+
+	evm.callGasTemp, err = authCallGas(contract.Gas, dynamicGas, stack.Back(1))
+	if err != nil {
+		return 0, err
+	}
+	if dynamicGas, overflow = utility.SafeAdd(dynamicGas, evm.callGasTemp); overflow {
+		return 0, ErrGasUintOverflow
+	}
+	return dynamicGas, nil
 }

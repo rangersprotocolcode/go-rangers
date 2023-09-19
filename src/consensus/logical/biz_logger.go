@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -46,7 +46,6 @@ func (bl *bizLog) debug(format string, p ...interface{}) {
 	stdLogger.Debugf("%v:%v", bl.biz, fmt.Sprintf(format, p...))
 }
 
-//接口rt日志
 type rtLog struct {
 	start time.Time
 	key   string
@@ -70,11 +69,10 @@ func (r *rtLog) end() {
 	stdLogger.Debugf(fmt.Sprintf("%v:%v cost ", utility.GetTime().Format(TIMESTAMP_LAYOUT), r.key))
 }
 
-//消息追踪日志，记录到文件
 type msgTraceLog struct {
-	mtype  string //消息类型
-	key    string //关键字
-	sender string //消息发送者
+	mtype  string
+	key    string
+	sender string
 }
 
 func newMsgTraceLog(mtype string, key string, sender string) *msgTraceLog {

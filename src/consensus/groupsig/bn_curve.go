@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -49,7 +49,6 @@ func (bi *BnInt) setHexString(s string) error {
 	return nil
 }
 
-//BlsInt导出为big.Int
 func (bi *BnInt) getBigInt() *big.Int {
 	return new(big.Int).Set(&bi.v)
 }
@@ -91,59 +90,3 @@ func (bi *BnInt) mod() error {
 	bi.v.Mod(&bi.v, bn_curve.Order)
 	return nil
 }
-
-// SetDecString --
-//func (bi *BnInt) SetDecString(s string) error {
-//	bi.v.SetString(s, 10)
-//	return nil
-//}
-
-//func (bi *BnInt) SetString(s string) error {
-//	bi.v.SetString(s, 10)
-//	return nil
-//}
-
-//func (bi *BnInt) GetString() string {
-//	b := bi.GetBigInt().Bytes()
-//	return string(b)
-//}
-
-//type bnG2 struct {
-//	v bn_curve.G2
-//}
-
-//func (bg *bnG2) Serialize() []byte {
-//	return bg.v.Marshal()
-//}
-//
-//func (bg *bnG2) Deserialize(b []byte) error {
-//	bg.v.Unmarshal(b)
-//	return nil
-//}
-
-//func (bg *bnG2) Add(bh *bnG2) error {
-//	bg.v.Add(&bg.v, &bh.v)
-//	return nil
-//}
-
-//// GetMasterSecretKey --
-//func (sec *Seckey) GetMasterSecretKey(k int) (msk []Seckey) {
-//	msk = make([]Seckey, k)
-//	msk[0] = *sec
-//
-//	r := base.NewRand() //生成随机数
-//	for i := 1; i < k; i++ {
-//		msk[i] = *NewSeckeyFromRand(r.Deri(1))
-//	}
-//	return msk
-//}
-//
-//// GetMasterPublicKey --
-//func GetMasterPublicKey(msk []Seckey) (mpk []Pubkey) {
-//	n := len(msk)
-//	mpk = make([]Pubkey, n)
-//	for i := 0; i < n; i++ {
-//		mpk[i] = *NewPubkeyFromSeckey(msk[i])
-//	}
-//	return mpk
-//}

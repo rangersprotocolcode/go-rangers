@@ -1,18 +1,18 @@
-// Copyright 2020 The RocketProtocol Authors
-// This file is part of the RocketProtocol library.
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RangersProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package vm
 
@@ -254,11 +254,6 @@ func opSha3(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	interpreter.hasher.Write(data)
 	interpreter.hasher.Read(interpreter.hasherBuf[:])
 
-	//evm := interpreter.evm
-	//if evm.vmConfig.EnablePreimageRecording {
-	//	evm.StateDB.AddPreimage(interpreter.hasherBuf, data)
-	//}
-
 	size.SetBytes(interpreter.hasherBuf[:])
 	return nil, nil
 }
@@ -402,16 +397,21 @@ func opExtCodeCopy(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx
 // opExtCodeHash returns the code hash of a specified account.
 // There are several cases when the function is called, while we can relay everything
 // to `state.GetCodeHash` function to ensure the correctness.
-//   (1) Caller tries to get the code hash of a normal contract account, state
+//
+//	(1) Caller tries to get the code hash of a normal contract account, state
+//
 // should return the relative code hash and set it as the result.
 //
-//   (2) Caller tries to get the code hash of a non-existent account, state should
+//	(2) Caller tries to get the code hash of a non-existent account, state should
+//
 // return common.Hash{} and zero will be set as the result.
 //
-//   (3) Caller tries to get the code hash for an account without contract code,
+//	(3) Caller tries to get the code hash for an account without contract code,
+//
 // state should return emptyCodeHash(0xc5d246...) as the result.
 //
-//   (4) Caller tries to get the code hash of a precompiled account, the result
+//	(4) Caller tries to get the code hash of a precompiled account, the result
+//
 // should be zero or emptyCodeHash.
 //
 // It is worth noting that in order to avoid unnecessary create and clean,
@@ -420,10 +420,12 @@ func opExtCodeCopy(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx
 // If the precompile account is not transferred any amount on a private or
 // customized chain, the return value will be zero.
 //
-//   (5) Caller tries to get the code hash for an account which is marked as suicided
+//	(5) Caller tries to get the code hash for an account which is marked as suicided
+//
 // in the current transaction, the code hash of this account should be returned.
 //
-//   (6) Caller tries to get the code hash for an account which is marked as deleted,
+//	(6) Caller tries to get the code hash for an account which is marked as deleted,
+//
 // this account should be regarded as a non-existent account and zero should be returned.
 func opExtCodeHash(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
 	slot := callContext.stack.peek()
@@ -613,12 +615,6 @@ func opCreate(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]
 		input        = callContext.memory.GetCopy(int64(offset.Uint64()), int64(size.Uint64()))
 		gas          = callContext.contract.Gas
 	)
-	/**todo
-	origin:
-	if interpreter.evm.chainRules.IsEIP150 {
-		gas -= gas / 64
-	}
-	*/
 	gas -= gas / 64
 
 	// reuse size int for stackvalue
@@ -639,9 +635,6 @@ func opCreate(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]
 	// homestead we must check for CodeStoreOutOfGasError (homestead only
 	// rule) and treat as an error, if the ruleset is frontier we must
 	// ignore this error and pretend the operation was successful.
-	/*todo
-	origin: interpreter.evm.chainRules.IsHomestead && suberr == ErrCodeStoreOutOfGas
-	*/
 	if suberr == ErrCodeStoreOutOfGas {
 		stackvalue.Clear()
 	} else if suberr != nil && suberr != ErrCodeStoreOutOfGas {
@@ -974,7 +967,7 @@ func printLog(log types.Log) {
 	fmt.Println(buffer.String())
 }
 
-//-----------------rocket protocol defined execute function------------------------------------------------------------------------------
+//-----------------rangers protocol defined execute function------------------------------------------------------------------------------
 
 func popUint256(callContext *callCtx) uint256.Int {
 	return callContext.stack.pop()
@@ -985,7 +978,7 @@ func popAddress(callContext *callCtx) common.Address {
 	data := u256.Bytes()
 	length := len(data)
 	for i := 0; i < 20-length; i++ {
-		data = append([]byte{0},data...)
+		data = append([]byte{0}, data...)
 	}
 	return common.BytesToAddress(data)
 }
@@ -1089,7 +1082,7 @@ func opUnStake(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 		} else {
 			refundInfo := types.RefundInfoList{}
 
-			// 退的太多，直接退出了矿工身份
+			// refund too much,do not a miner anymore
 			if realMoney.Cmp(money) > 0 {
 				remain := big.NewInt(0)
 				remain.Sub(realMoney, money)
@@ -1194,11 +1187,26 @@ func opStakeNum(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 
 func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
 	ret := false
-	commit := popBytes32(callContext)
-	v := popUint256(callContext)
-	s := popUint256(callContext)
-	r := popUint256(callContext)
+
 	authorityAddr := popAddress(callContext)
+	offset := popUint256(callContext)
+	length := popUint256(callContext)
+
+	if length.Uint64() < 128 {
+		pushBool(callContext, ret)
+		return nil, nil
+	}
+
+	v := uint256.NewInt()
+	v.SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()), 32))
+	r := uint256.NewInt()
+	r.SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()+32), 32))
+	s := uint256.NewInt()
+	s.SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()+64), 32))
+	c := uint256.NewInt()
+	c.SetBytes(callContext.memory.GetPtr(int64(offset.Uint64()+96), 32))
+	commit := c.Bytes32()
+
 	callContext.authorized = nil
 	logger.Debugf("[opAuth]authority:%s,commit:%s,r:%s,s:%s,v:%s", authorityAddr.String(), common.ToHex(commit[:]), r.ToBig().String(), s.ToBig().String(), v.ToBig().String())
 
@@ -1219,7 +1227,7 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	s.WriteToSlice(sig[32:64])
 	sig[64] = vAdapt
 
-	logger.Debugf("hash:%s,sig:%v", common.ToHex(hash[:]), sig)
+	logger.Debugf("hash:%s,sig:%v", common.ToHex(hash[:]), common.ToHex(sig[:]))
 	pub, err := crypto.Ecrecover(hash[:], sig)
 	if err != nil {
 		logger.Debugf("[opAuth]ecrecover error:%s", err.Error())
@@ -1241,19 +1249,44 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 }
 
 func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
-	//retSize :=
-	popUint256(callContext)
-	retOffset := popUint256(callContext)
-	data, _ := popBytes(callContext)
-	value := popUint256(callContext)
+	authorizedNonce := popUint256(callContext)
+	gas := popUint256(callContext)
 	addr := popAddress(callContext)
-	//gas but not used
-	popUint256(callContext)
-	gas := interpreter.evm.callGasTemp
+	value := popUint256(callContext)
+	valueExt := popUint256(callContext)
+	argsOffset := popUint256(callContext)
+	argsLength := popUint256(callContext)
+	retOffset := popUint256(callContext)
+	retLength := popUint256(callContext)
+	logger.Debugf("[opAuthCall]authorizedNonce:%d,gas:%d,addr:%s,value:%d,valueExt:%d,", authorizedNonce.Uint64(), gas.Uint64(), addr, value.Uint64(), valueExt.Uint64())
+
+	callgas := interpreter.evm.callGasTemp
+
+	data := callContext.memory.GetPtr(int64(argsOffset.Uint64()), int64(argsLength.Uint64()))
+
+	if !valueExt.IsZero() {
+		logger.Debugf("valueExt in the input stack is not zero")
+		pushBool(callContext, false)
+		return nil, nil
+	}
 
 	if callContext.authorized == nil {
 		logger.Debugf("authcall failed:authorized address is nil")
 		pushBool(callContext, false)
+		return nil, nil
+	}
+
+	// Make sure authorized address's nonce is correct.
+	expectedAuthorizedNonce := interpreter.evm.StateDB.GetNonce(*callContext.authorized)
+	if expectedAuthorizedNonce < authorizedNonce.Uint64() {
+		pushBool(callContext, false)
+		callContext.memory.Set(retOffset.Uint64(), retLength.Uint64(), []byte(ErrNonceTooHigh.Error()))
+		logger.Debugf("[opAuthCall]nonce too high,except:%d,but:%d", expectedAuthorizedNonce, authorizedNonce.Uint64())
+		return nil, nil
+	} else if expectedAuthorizedNonce > authorizedNonce.Uint64() {
+		pushBool(callContext, false)
+		callContext.memory.Set(retOffset.Uint64(), retLength.Uint64(), []byte(ErrNonceTooLow.Error()))
+		logger.Debugf("[opAuthCall]nonce too low,except:%d,but:%d", expectedAuthorizedNonce, authorizedNonce.Uint64())
 		return nil, nil
 	}
 
@@ -1267,25 +1300,26 @@ func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 
 	sponsor := interpreter.evm.Origin
 	caller := AccountRef(*callContext.authorized)
-	logger.Debugf("[authcall] sponsor:%s,from:%s,to:%s,value:%v,gas:%v,data:%s", sponsor.String(), caller.Address().String(), addr.String(), bigVal.String(), gas, common.ToHex(data))
-	ret, returnGas, logs, err := interpreter.evm.AuthCall(sponsor, caller, addr, data, gas, bigVal)
+	logger.Debugf("[authcall] sponsor:%s,from:%s,to:%s,value:%v,gas:%d,data:%s", sponsor.String(), caller.Address().String(), addr.String(), bigVal.String(), callgas, common.ToHex(data))
+	ret, returnGas, logs, err := interpreter.evm.AuthCall(sponsor, caller, addr, data, callgas, bigVal)
 	for _, log := range logs {
 		callContext.logs = append(callContext.logs, log)
 	}
+	logger.Debugf("[authcall]ret:%v,err:%v,gasleft:%d", ret, err, returnGas)
 	if err != nil {
 		pushBool(callContext, false)
 	} else {
 		pushBool(callContext, true)
 	}
 	if err == nil || err == ErrExecutionReverted {
-		pushBytes(callContext, retOffset.Uint64(), ret)
+		callContext.memory.Set(retOffset.Uint64(), retLength.Uint64(), ret)
 	}
 	callContext.contract.Gas += returnGas
-	return nil, nil
+	return ret, nil
 }
 
-//EIP-3074 cal hash
-//keccak256(MAGIC || chainId || paddedInvokerAddress || commit)
+// EIP-3074 cal hash
+// keccak256(MAGIC || chainId || paddedInvokerAddress || commit)
 func calAuthHash(chainId *big.Int, contractAddress common.Address, commit [32]byte) []byte {
 	chainIdBytes := utility.LeftPadBytes(chainId.Bytes(), 32)
 	paddedContractAddress := utility.LeftPadBytes(contractAddress.Bytes(), 32)

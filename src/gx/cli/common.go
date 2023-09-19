@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -28,7 +28,6 @@ import (
 	"net/http"
 )
 
-// 获取rpc接口的message,如果发生错误，error返回result中的错误提示
 func getMessage(addr string, port uint, method string, params ...interface{}) (string, error) {
 	res, err := rpcPost(addr, port, method, params...)
 	if err != nil {
@@ -40,7 +39,6 @@ func getMessage(addr string, port uint, method string, params ...interface{}) (s
 	return res.Result.Message, nil
 }
 
-// 通用的rpc的请求方法。
 func rpcPost(addr string, port uint, method string, params ...interface{}) (*RPCResObj, error) {
 	obj := RPCReqObj{
 		Method:  method,
@@ -76,7 +74,6 @@ func genHash(hash string) []byte {
 	bytes3 := []byte(hash)
 	return common.Sha256(bytes3)
 }
-
 
 func getRandomString(l int) string {
 	str := "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"

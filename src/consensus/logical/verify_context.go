@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -30,101 +30,101 @@ import (
 )
 
 const (
-	CBCS_IDLE      int32 = iota //非当前组
-	CBCS_CASTING                //正在铸块
-	CBCS_BLOCKED                //组内已有铸块完成
-	CBCS_BROADCAST              //块已广播
-	CBCS_TIMEOUT                //组铸块超时
+	CBCS_IDLE int32 = iota
+	CBCS_CASTING
+	CBCS_BLOCKED
+	CBCS_BROADCAST
+	CBCS_TIMEOUT
 )
 
-type CAST_BLOCK_MESSAGE_RESULT int8 //出块和验证消息处理结果枚举
+type CAST_BLOCK_MESSAGE_RESULT int8
 
 const (
-	CBMR_PIECE_NORMAL      CAST_BLOCK_MESSAGE_RESULT = iota //收到一个分片，接收正常
-	CBMR_PIECE_LOSINGTRANS                                  //收到一个分片, 缺失交易
-	CBMR_THRESHOLD_SUCCESS                                  //收到一个分片且达到阈值，组签名成功
-	CBMR_THRESHOLD_FAILED                                   //收到一个分片且达到阈值，组签名失败
-	CBMR_IGNORE_REPEAT                                      //丢弃：重复收到该消息
-	CBMR_IGNORE_KING_ERROR                                  //丢弃：king错误
-	CBMR_STATUS_FAIL                                        //已经失败的
-	CBMR_ERROR_UNKNOWN                                      //异常：未知异常
-	CBMR_CAST_SUCCESS                                       //铸块成功
-	CBMR_BH_HASH_DIFF                                       //slot已经被替换过了
-	CBMR_VERIFY_TIMEOUT                                     //已超时
-	CBMR_SLOT_INIT_FAIL                                     //slot初始化失败
-	CBMR_SLOT_REPLACE_FAIL                                  //slot初始化失败
-	CBMR_SIGNED_MAX_QN                                      //签过更高的qn
-	CBMR_SIGN_VERIFY_FAIL                                   //签名错误
+	CBMR_PIECE_NORMAL CAST_BLOCK_MESSAGE_RESULT = iota
+	CBMR_PIECE_LOSINGTRANS
+	CBMR_THRESHOLD_SUCCESS
+	CBMR_THRESHOLD_FAILED
+	CBMR_IGNORE_REPEAT
+	CBMR_IGNORE_KING_ERROR
+	CBMR_STATUS_FAIL
+	CBMR_ERROR_UNKNOWN
+	CBMR_CAST_SUCCESS
+	CBMR_BH_HASH_DIFF
+	CBMR_VERIFY_TIMEOUT
+	CBMR_SLOT_INIT_FAIL
+	CBMR_SLOT_REPLACE_FAIL
+	CBMR_SIGNED_MAX_QN
+	CBMR_SIGN_VERIFY_FAIL
 )
 
 func CBMR_RESULT_DESC(ret CAST_BLOCK_MESSAGE_RESULT) string {
 	switch ret {
 	case CBMR_PIECE_NORMAL:
-		return "正常分片"
+		return "CBMR_PIECE_NORMAL"
 	case CBMR_PIECE_LOSINGTRANS:
-		return "交易缺失"
+		return "CBMR_PIECE_LOSINGTRANS"
 	case CBMR_THRESHOLD_SUCCESS:
-		return "达到门限值组签名成功"
+		return "CBMR_THRESHOLD_SUCCESS"
 	case CBMR_THRESHOLD_FAILED:
-		return "达到门限值但组签名失败"
+		return "CBMR_THRESHOLD_FAILED"
 	case CBMR_IGNORE_KING_ERROR:
-		return "king错误"
+		return "CBMR_IGNORE_KING_ERROR"
 	case CBMR_STATUS_FAIL:
-		return "失败状态"
+		return "CBMR_STATUS_FAIL"
 	case CBMR_IGNORE_REPEAT:
-		return "重复消息"
+		return "CBMR_IGNORE_REPEAT"
 	case CBMR_CAST_SUCCESS:
-		return "已铸块成功"
+		return "CBMR_CAST_SUCCESS"
 	case CBMR_BH_HASH_DIFF:
-		return "hash不一致，slot已无效"
+		return "CBMR_BH_HASH_DIFF"
 	case CBMR_VERIFY_TIMEOUT:
-		return "验证超时"
+		return "CBMR_VERIFY_TIMEOUT"
 	case CBMR_SLOT_INIT_FAIL:
-		return "slot初始化失败"
+		return "CBMR_SLOT_INIT_FAIL"
 	case CBMR_SLOT_REPLACE_FAIL:
-		return "slot替换失败"
+		return "CBMR_SLOT_REPLACE_FAIL"
 	case CBMR_SIGNED_MAX_QN:
-		return "签过更高qn"
+		return "CBMR_SIGNED_MAX_QN"
 
 	}
 	return strconv.FormatInt(int64(ret), 10)
 }
 
 const (
-	TRANS_INVALID_SLOT          int8 = iota //无效验证槽
-	TRANS_DENY                              //拒绝该交易
-	TRANS_ACCEPT_NOT_FULL                   //接受交易, 但仍缺失交易
-	TRANS_ACCEPT_FULL_THRESHOLD             //接受交易, 无缺失, 验证已达到门限
-	TRANS_ACCEPT_FULL_PIECE                 //接受交易, 无缺失, 未达到门限
+	TRANS_INVALID_SLOT int8 = iota
+	TRANS_DENY
+	TRANS_ACCEPT_NOT_FULL
+	TRANS_ACCEPT_FULL_THRESHOLD
+	TRANS_ACCEPT_FULL_PIECE
 )
 
 func TRANS_ACCEPT_RESULT_DESC(ret int8) string {
 	switch ret {
 	case TRANS_INVALID_SLOT:
-		return "验证槽无效"
+		return "TRANS_INVALID_SLOT"
 	case TRANS_DENY:
-		return "不接收该批交易"
+		return "TRANS_DENY"
 	case TRANS_ACCEPT_NOT_FULL:
-		return "接收交易,但仍缺失"
+		return "TRANS_ACCEPT_NOT_FULL"
 	case TRANS_ACCEPT_FULL_PIECE:
-		return "交易收齐,等待分片"
+		return "TRANS_ACCEPT_FULL_PIECE"
 	case TRANS_ACCEPT_FULL_THRESHOLD:
-		return "交易收齐,分片已到门限"
+		return "TRANS_ACCEPT_FULL_THRESHOLD"
 	}
 	return strconv.FormatInt(int64(ret), 10)
 }
 
-type QN_QUERY_SLOT_RESULT int //根据QN查找插槽结果枚举
+type QN_QUERY_SLOT_RESULT int
 
 type VerifyContext struct {
 	prevBH          *types.BlockHeader
 	blockHash       common.Hash
 	createTime      time.Time
-	expireTime      time.Time //铸块超时时间
-	consensusStatus int32     //铸块状态
+	expireTime      time.Time
+	consensusStatus int32
 	slot            *SlotContext
 	broadcastSlot   *SlotContext
-	//castedQNs []int64 //自己铸过的qn
+
 	blockCtx  *BlockContext
 	signedNum int32
 	lock      sync.RWMutex
@@ -172,30 +172,29 @@ func (vc *VerifyContext) markBroadcast() bool {
 	return atomic.CompareAndSwapInt32(&vc.consensusStatus, CBCS_BLOCKED, CBCS_BROADCAST)
 }
 
-//铸块是否过期
+// 铸块是否过期
 func (vc *VerifyContext) castExpire() bool {
-	//return utility.GetTime().After(vc.expireTime)
 	return false
 }
 
 func (vc *VerifyContext) baseCheck(bh *types.BlockHeader, sender groupsig.ID) (slot *SlotContext, err error) {
 	if vc.castSuccess() || vc.broadCasted() {
-		err = fmt.Errorf("已出块")
+		err = fmt.Errorf("already casted")
 		return
 	}
 	if vc.castExpire() {
 		vc.markTimeout()
-		err = fmt.Errorf("已超时" + vc.expireTime.String())
+		err = fmt.Errorf("timeout: " + vc.expireTime.String())
 		return
 	}
 	slot = vc.slot
 	if slot != nil {
 		if slot.GetSlotStatus() >= SS_RECOVERD {
-			err = fmt.Errorf("slot不接受piece，状态%v", slot.slotStatus)
+			err = fmt.Errorf("slot cannot accept piece，status: %v", slot.slotStatus)
 			return
 		}
 		if _, ok := slot.gSignGenerator.GetWitnessSign(sender); ok {
-			err = fmt.Errorf("重复消息%v", sender.ShortS())
+			err = fmt.Errorf("duplicated: %v", sender.ShortS())
 			return
 		}
 	}
@@ -218,7 +217,6 @@ func (vc *VerifyContext) prepareSlot(bh *types.BlockHeader, blog *bizLog) (*Slot
 	}
 }
 
-//收到某个验证人的验证完成消息（可能会比铸块完成消息先收到）
 func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.SignInfo, pk groupsig.Pubkey, slog *slowLog) (ret CAST_BLOCK_MESSAGE_RESULT, err error) {
 	blog := newBizLog("UserVerified")
 
@@ -234,7 +232,6 @@ func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.Sig
 	slot.initIfNeeded()
 	slog.endStage()
 
-	//警惕并发
 	if slot.IsFailed() {
 		return CBMR_STATUS_FAIL, fmt.Errorf("slot fail")
 	}
@@ -244,7 +241,7 @@ func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.Sig
 	}
 	isProposal := slot.castor.IsEqual(signData.GetSignerID())
 
-	if isProposal { //提案者 // 不可能是提案者了
+	if isProposal {
 		slog.addStage("vCastorSign")
 		b := signData.VerifySign(pk)
 		slog.endStage()
@@ -277,15 +274,13 @@ func (vc *VerifyContext) UserVerified(bh *types.BlockHeader, signData *model.Sig
 			return
 		}
 	}
-	//如果是提案者，因为提案者没有对块进行签名，则直接返回
+
 	if isProposal {
 		return CBMR_PIECE_NORMAL, nil
 	}
 	return slot.AcceptVerifyPiece(bh, signData)
 }
 
-//（网络接收）新到交易集通知
-//返回不再缺失交易的QN槽列表
 func (vc *VerifyContext) AcceptTrans(slot *SlotContext, ths []common.Hashes) int8 {
 
 	if !slot.IsValid() {
@@ -315,9 +310,7 @@ func (vc *VerifyContext) Clear() {
 	vc.broadcastSlot = nil
 }
 
-//判断该context是否可以删除
 func (vc *VerifyContext) shouldRemove(topHeight uint64) bool {
-	//未出过块, 但高度已经低于200块, 可以删除
 	return vc.prevBH == nil || vc.prevBH.Height+10 < topHeight
 }
 
@@ -334,33 +327,4 @@ func (vc *VerifyContext) checkBroadcast() *SlotContext {
 	}
 
 	return vc.slot
-	//var maxQNSlot *SlotContext
-	//
-	//vc.lock.RLock()
-	//defer vc.lock.RUnlock()
-	//qns := make([]uint64, 0)
-	//
-	//slot := vc.slot
-	//if !slot.IsRecovered() {
-	//	continue
-	//}
-	//qns = append(qns, slot.BH.TotalQN)
-	//if maxQNSlot == nil {
-	//	maxQNSlot = slot
-	//} else {
-	//	if maxQNSlot.BH.TotalQN < slot.BH.TotalQN {
-	//		maxQNSlot = slot
-	//	} else if maxQNSlot.BH.TotalQN == slot.BH.TotalQN {
-	//		v1 := vrf.VRFProof2Hash(maxQNSlot.BH.ProveValue.Bytes()).Big()
-	//		v2 := vrf.VRFProof2Hash(slot.BH.ProveValue.Bytes()).Big()
-	//		if v1.Cmp(v2) < 0 {
-	//			maxQNSlot = slot
-	//		}
-	//	}
-	//}
-	//
-	//if maxQNSlot != nil {
-	//	blog.log("select max qn=%v, hash=%v, height=%v, hash=%v, all qn=%v", maxQNSlot.BH.TotalQN, maxQNSlot.BH.Hash.ShortS(), maxQNSlot.BH.Height, maxQNSlot.BH.Hash.ShortS(), qns)
-	//}
-	//return maxQNSlot
 }

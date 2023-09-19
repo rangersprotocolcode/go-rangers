@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -32,56 +32,51 @@ const (
 	TransactionTypeMinerChangeAccount = 6
 	TransactionTypeOperatorNode       = 7 // 成为矿主
 
-	//以下交易类型会被外部使用 禁止更改
 	TransactionTypeOperatorBalance = 99
-	TransactionTypeOperatorEvent   = 100 // 调用状态机/转账
+	TransactionTypeOperatorEvent   = 100
 
-	TransactionTypeETHTX = 188 //以太坊的交易改造而成的交易
+	TransactionTypeETHTX = 188
 
-	//合约交易
 	TransactionTypeContract = 200
 
-	//查询接口
-	TransactionTypeGetNetworkId       = 600 //查询Network ID
-	TransactionTypeGetChainId         = 601 //查询CHAIN ID
-	TransactionTypeGetBlockNumber     = 602 //查询块高
-	TransactionTypeGetBlock           = 603 //根据高度或者hash查询块
-	TransactionTypeGetNonce           = 604 //查询NONCE
-	TransactionTypeGetTx              = 605 //查询交易
-	TransactionTypeGetReceipt         = 606 //查询收据
-	TransactionTypeGetTxCount         = 607 //查询交易数量
-	TransactionTypeGetTxFromBlock     = 608 //根据索引查询块中交易
-	TransactionTypeGetContractStorage = 609 //查询合约存储信息
-	TransactionTypeGetCode            = 610 //查询CODE
+	TransactionTypeGetNetworkId       = 600
+	TransactionTypeGetChainId         = 601
+	TransactionTypeGetBlockNumber     = 602
+	TransactionTypeGetBlock           = 603
+	TransactionTypeGetNonce           = 604
+	TransactionTypeGetTx              = 605
+	TransactionTypeGetReceipt         = 606
+	TransactionTypeGetTxCount         = 607
+	TransactionTypeGetTxFromBlock     = 608
+	TransactionTypeGetContractStorage = 609
+	TransactionTypeGetCode            = 610
 
 	TransactionTypeGetPastLogs = 611
 	TransactionTypeCallVM      = 612
 )
 
 type Transaction struct {
-	Source string // 用户id
-	Target string // 游戏id
-	Type   int32  // 场景id
+	Source string
+	Target string
+	Type   int32
 	Time   string
 
-	Data            string // 状态机入参
-	ExtraData       string // 在rocketProtocol里，用于转账。包括余额转账、FT转账、NFT转账
+	Data            string
+	ExtraData       string
 	ExtraDataType   int32
-	SubTransactions []UserData // 用于存储状态机rpc调用的交易数据
+	SubTransactions []UserData
 	SubHash         common.Hash
 
 	Hash common.Hash
 	Sign *common.Sign
 
-	Nonce           uint64 // 用户级别nonce
-	RequestId       uint64 // 消息编号 由网关添加
-	SocketRequestId string // websocket id，用于客户端标示请求id，方便回调处理
+	Nonce           uint64
+	RequestId       uint64
+	SocketRequestId string
 
-	ChainId string //用于区分不同的链
+	ChainId string
 }
 
-// source 在hash计算范围内
-// RequestId 不列入hash计算范围
 func (tx *Transaction) GenHash() common.Hash {
 	if nil == tx {
 		return common.Hash{}
@@ -126,7 +121,6 @@ func (c Transactions) Less(i, j int) bool {
 		num2 := new(big.Int).SetBytes(c[j].Hash.Bytes())
 		return num1.Cmp(num2) > 0
 	}
-
 	return c[i].RequestId < c[j].RequestId
 }
 

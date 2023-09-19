@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -19,7 +19,6 @@ package account
 import (
 	"bytes"
 	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/storage/trie"
 	"fmt"
 	"golang.org/x/crypto/sha3"
@@ -334,20 +333,6 @@ func (ao *accountObject) Nonce() uint64 {
 
 func (ao *accountObject) IsNFT() bool {
 	return ao.data.kind == NFT_TYPE
-}
-
-func (ao *accountObject) getOrCreateLockResource(result map[string]*types.LockResource, key string) *types.LockResource {
-	lockResource := result[key]
-	if nil == lockResource {
-		lockResource = &types.LockResource{
-			Coin: make(map[string]string),
-			FT:   make(map[string]string),
-			NFT:  make([]types.NFTID, 0),
-		}
-		result[key] = lockResource
-	}
-
-	return lockResource
 }
 
 func (ao *accountObject) SetCode(codeHash common.Hash, code []byte) {

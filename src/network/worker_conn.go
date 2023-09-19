@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -48,7 +48,6 @@ type WorkerConn struct {
 }
 
 func (workerConn *WorkerConn) Init(ipPort string, selfId []byte, consensusHandler MsgHandler, logger log.Logger) {
-	// worker 链接加大发送队列长度
 	workerConn.sendSize = 1000
 	workerConn.consensusHandler = consensusHandler
 	workerConn.joinedGroup = make(map[string]byte)
@@ -172,7 +171,6 @@ func (workerConn *WorkerConn) sendMessage(method []byte, target uint64, message 
 	workerConn.send(method, target, msg, nonce)
 }
 
-// 单发
 func (workerConn *WorkerConn) SendToOne(id string, message Message) {
 	target, err := workerConn.generateTarget(id)
 	if err != nil {
@@ -182,18 +180,15 @@ func (workerConn *WorkerConn) SendToOne(id string, message Message) {
 	workerConn.sendMessage(methodCodeSend, target, message, 0)
 }
 
-// 组播
 func (workerConn *WorkerConn) SendToGroup(groupId string, msg Message) {
 	target := workerConn.generateTargetForGroup(groupId)
 	workerConn.sendMessage(methodCodeSendToGroup, target, msg, 0)
 }
 
-// 广播
 func (workerConn *WorkerConn) SendToEveryone(msg Message) {
 	workerConn.sendMessage(methodCodeBroadcast, 0, msg, 0)
 }
 
-// 加入组网络
 func (workerConn *WorkerConn) JoinGroupNet(groupId string) {
 	workerConn.joinedGroupLock.Lock()
 	defer workerConn.joinedGroupLock.Unlock()
@@ -208,7 +203,6 @@ func (workerConn *WorkerConn) joinGroupNet(groupId string) {
 	workerConn.logger.Debugf("Join group: %v,targetId:%v,hex:%v", groupId, header.targetId, strconv.FormatUint(header.targetId, 16))
 }
 
-// 退出组网络
 func (workerConn *WorkerConn) QuitGroupNet(groupId string) {
 	workerConn.joinedGroupLock.Lock()
 	defer workerConn.joinedGroupLock.Unlock()

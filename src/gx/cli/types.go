@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -23,7 +23,6 @@ import (
 	"math/big"
 )
 
-// Result rpc请求成功返回的可变参数部分
 type Result struct {
 	Message string      `json:"message"`
 	Status  int         `json:"status"`
@@ -34,13 +33,11 @@ func (r *Result) IsSuccess() bool {
 	return r.Status == 0
 }
 
-// ErrorResult rpc请求错误返回的可变参数部分
 type ErrorResult struct {
 	Message string `json:"message"`
 	Code    int    `json:"code"`
 }
 
-// RPCReqObj 完整的rpc请求体
 type RPCReqObj struct {
 	Method  string        `json:"method"`
 	Params  []interface{} `json:"params"`
@@ -48,7 +45,6 @@ type RPCReqObj struct {
 	ID      uint          `json:"id"`
 }
 
-// RPCResObj 完整的rpc返回体
 type RPCResObj struct {
 	Jsonrpc string       `json:"jsonrpc"`
 	ID      uint         `json:"id"`
@@ -56,7 +52,6 @@ type RPCResObj struct {
 	Error   *ErrorResult `json:"error,omitempty"`
 }
 
-// 缓冲池交易列表中的transactions
 type Transactions struct {
 	Hash      string `json:"hash"`
 	Source    string `json:"source"`
@@ -101,9 +96,9 @@ type MortGage struct {
 }
 
 func NewMortGageFromMiner(miner *types.Miner) *MortGage {
-	t := "提案节点"
+	t := "proposal"
 	if miner.Type == common.MinerTypeValidator {
-		t = "验证节点"
+		t = "validator"
 	}
 	mg := &MortGage{
 		Stake:       miner.Stake,
@@ -204,39 +199,6 @@ type Dashboard struct {
 	Miner       string     `json:"miner"`
 	Addr        string     `json:"addr"`
 }
-
-//
-//type BonusInfo struct {
-//	BlockHeight uint64      `json:"block_height"`
-//	BlockHash   common.Hash `json:"block_hash"`
-//	BonusTxHash common.Hash `json:"bonus_tx_hash"`
-//	GroupId     string      `json:"group_id"`
-//	CasterId    string      `json:"caster_id"`
-//	GroupIdW     string      `json:"group_id_w"`
-//	CasterIdW    string      `json:"caster_id_W"`
-//	MemberIds   []string    `json:"members"`
-//	BonusValue  uint64      `json:"bonus_value"`
-//}
-//
-//type BonusStatInfo struct {
-//	MemberId        string `json:"member_id"`
-//	MemberIdW        string `json:"member_id_w"`
-//	BonusNum        uint64 `json:"bonus_num"`
-//	TotalBonusValue uint64 `json:"total_bonus_value"`
-//}
-//
-//type CastBlockStatInfo struct {
-//	CasterId     string `json:"caster_id"`
-//	CasterIdW     string `json:"caster_id_w"`
-//	Stake        uint64 `json:"stake"`
-//	CastBlockNum uint64 `json:"cast_block_num"`
-//}
-//
-//type CastBlockAndBonusResult struct {
-//	BonusInfoAtHeight  BonusInfo           `json:"bonus_info_at_height"`
-//	BonusStatInfos     []BonusStatInfo     `json:"bonuses"`
-//	CastBlockStatInfos []CastBlockStatInfo `json:"cast_blocks"`
-//}
 
 type ExplorerAccount struct {
 	Balance   *big.Int               `json:"balance"`

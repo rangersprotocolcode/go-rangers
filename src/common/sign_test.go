@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -89,16 +89,16 @@ func TestSignBytes(test *testing.T) {
 	fmt.Printf("hash:%s\n", s)
 
 	pri_k := GenerateKey("")
-	sign := pri_k.Sign(sha3_hash[:]) //私钥签名
+	sign := pri_k.Sign(sha3_hash[:])
 
 	address := pri_k.GetPubKey().GetAddress()
 	fmt.Printf("Address:%s\n", address.GetHexString())
 	//测试签名十六进制转换
-	h := sign.GetHexString() //签名十六进制表示
+	h := sign.GetHexString()
 	fmt.Println(h)
 
-	si := HexStringToSign(h) //从十六进制恢复出签名
-	fmt.Println(si.Bytes())  //签名打印
+	si := HexStringToSign(h)
+	fmt.Println(si.Bytes())
 	fmt.Println(sign.Bytes())
 
 	sign_bytes := sign.Bytes()
@@ -137,7 +137,7 @@ func BenchmarkSign(b *testing.B) {
 	sha3_hash := sha256.Sum256(msg)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		sk.Sign(sha3_hash[:]) //私钥签名
+		sk.Sign(sha3_hash[:])
 	}
 }
 

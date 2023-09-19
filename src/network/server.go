@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -16,13 +16,13 @@
 
 package network
 
+import "com.tuntun.rocket/node/src/common"
+
 var instance server
 
 type server struct {
-	// 节点间消息传递
 	worker WorkerConn
 
-	// 客户端消息
 	reader ClientConn
 
 	// tx
@@ -33,6 +33,10 @@ type server struct {
 
 func (s *server) Init(gateAddr, outerGateAddr string, selfMinerId []byte, consensusHandler MsgHandler, isSending bool) {
 	s.worker.Init(gateAddr, selfMinerId, consensusHandler, bizLogger)
+	if common.IsSub() {
+		isSending = true
+	}
+
 	s.isSending = isSending
 	if s.isSending {
 		s.reader.Init(outerGateAddr, "/srv/node", bizLogger)

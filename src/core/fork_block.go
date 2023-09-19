@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -29,8 +29,10 @@ import (
 	"github.com/oleiade/lane"
 )
 
-var verifyGroupNotOnChainErr = errors.New("Verify group not on group chain")
-var verifyBlockErr = errors.New("verify block error")
+var (
+	verifyGroupNotOnChainErr = errors.New("Verify group not on group chain")
+	verifyBlockErr           = errors.New("verify block error")
+)
 
 type blockChainFork struct {
 	rcvLastBlock bool
@@ -369,18 +371,6 @@ func refreshBlockForkDB(commonAncestor types.Block) db.Database {
 		db.Delete(generateHeightKey(i))
 	}
 
-	//use for clean dirty data
-	//iterator := db.NewIterator()
-	//for iterator.Next() {
-	//	key := iterator.Key()
-	//	realKey := key[9:]
-	//	if len(realKey) == 8 {
-	//		syncLogger.Debugf("key height:%d", utility.ByteToUInt64(realKey))
-	//	} else {
-	//		syncLogger.Debugf("key hash:%s", common.ToHex(realKey))
-	//	}
-	//	db.Delete(realKey)
-	//}
 	db.Put([]byte(blockCommonAncestorHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
 	db.Put([]byte(latestBlockHeightKey), utility.UInt64ToByte(commonAncestor.Header.Height))
 	return db
@@ -404,4 +394,12 @@ func tryAddBlockOnChain(chain *blockChain, forkBlock *types.Block) (success bool
 	}
 	syncLogger.Debugf("add block on chain failed.%s,%d-%d", forkBlock.Header.Hash.String(), forkBlock.Header.Height, forkBlock.Header.TotalQN)
 	return false, false
+}
+
+func (p *syncProcessor) GetBlockHash(height uint64) common.Hash {
+	header := p.GetBlockHeader(height)
+	if header != nil {
+		return header.Hash
+	}
+	return common.Hash{}
 }

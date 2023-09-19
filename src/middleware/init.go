@@ -1,12 +1,12 @@
-// Copyright 2020 The RocketProtocol Authors
+// Copyright 2020 The RangersProtocol Authors
 // This file is part of the RocketProtocol library.
 //
-// The RocketProtocol library is free software: you can redistribute it and/or modify
+// The RangersProtocol library is free software: you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The RocketProtocol library is distributed in the hope that it will be useful,
+// The RangersProtocol library is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 // GNU Lesser General Public License for more details.
@@ -22,22 +22,29 @@ import (
 	"com.tuntun.rocket/node/src/middleware/mysql"
 	"com.tuntun.rocket/node/src/middleware/notify"
 	"com.tuntun.rocket/node/src/middleware/types"
-	"fmt"
 	"strconv"
 	"time"
 )
 
-var PerfLogger log.Logger
-var MonitorLogger log.Logger
+var (
+	PerfLogger log.Logger
+
+	MonitorLogger log.Logger
+)
 
 func InitMiddleware() error {
-	types.InitSerialzation()
+	start := time.Now()
+	common.DefaultLogger.Infof("start InitMiddleware")
+	defer func() {
+		common.DefaultLogger.Infof("end InitMiddleware, cost: %s", time.Now().Sub(start).String())
+	}()
+
 	PerfLogger = log.GetLoggerByIndex(log.PerformanceLogConfig, strconv.Itoa(common.InstanceIndex))
 	MonitorLogger = log.GetLoggerByIndex(log.MonitorLogConfig, strconv.Itoa(common.InstanceIndex))
+
+	types.InitSerialzation()
 	notify.BUS = notify.NewBus()
-	fmt.Println(time.Now().String() + " before init mysql")
 	mysql.InitMySql()
-	fmt.Println(time.Now().String() + " after init mysql")
 
 	InitLock()
 	InitDataChannel()
