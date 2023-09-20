@@ -136,7 +136,7 @@ func StartJSONRPCHttp(port uint) error {
 func StartJSONRPCWS(port uint) error {
 	endpoint := fmt.Sprintf("0.0.0.0:%d", port)
 
-	ethAPIService := eth_rpc.EthAPIService{}
+	ethAPIService := &eth_rpc.EthAPIService{}
 	apis := []rpc.API{
 		{Namespace: "eth", Version: "1", Service: ethAPIService, Public: true},
 	}
