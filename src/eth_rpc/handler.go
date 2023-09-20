@@ -56,7 +56,7 @@ type ethMsgHandler struct {
 func InitEthMsgHandler() {
 	logger = log.GetLoggerByIndex(log.ETHRPCLogConfig, strconv.Itoa(common.InstanceIndex))
 	handler = ethMsgHandler{}
-	handler.registerAPI(&ethAPIService{})
+	handler.registerAPI(&EthAPIService{})
 	notify.BUS.Subscribe(notify.ClientETHRPC, handler.process)
 }
 
