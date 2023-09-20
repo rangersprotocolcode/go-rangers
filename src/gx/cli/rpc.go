@@ -17,6 +17,7 @@
 package cli
 
 import (
+	"com.tuntun.rocket/node/src/eth_rpc"
 	"com.tuntun.rocket/node/src/gx/rpc"
 	"net"
 	"net/http"
@@ -129,5 +130,37 @@ func StartJSONRPCHttp(port uint) error {
 	server := &http.Server{Handler: NewETHServer()}
 	go server.Serve(listener)
 	common.DefaultLogger.Infof("JSONRPC http serving on %s \n", endpoint)
+	return nil
+}
+
+func StartJSONRPCWS(port uint) error {
+	endpoint := fmt.Sprintf("0.0.0.0:%d", port)
+
+	ethAPIService := &eth_rpc.EthAPIService{}
+	apis := []rpc.API{
+		{Namespace: "eth", Version: "1", Service: ethAPIService, Public: true},
+	}
+
+	// Register all the APIs exposed by the services
+	handler := rpc.NewServer()
+	for _, api := range apis {
+		if api.Public {
+			if err := handler.RegisterName(api.Namespace, api.Service); err != nil {
+				return err
+			}
+		}
+	}
+
+	// All APIs registered, start the HTTP listener
+	var (
+		listener net.Listener
+		err      error
+	)
+	if listener, err = net.Listen("tcp", endpoint); err != nil {
+		return err
+	}
+	allowOrigins := []string{"*"}
+	go rpc.NewWSServer(allowOrigins, handler).Serve(listener)
+	common.DefaultLogger.Infof("JSONRPC ws serving on %s \n", endpoint)
 	return nil
 }
