@@ -17,6 +17,7 @@
 package rpc
 
 import (
+	"com.tuntun.rocket/node/src/middleware/types"
 	"context"
 	"fmt"
 	"reflect"
@@ -287,6 +288,12 @@ func (s *Server) handle(ctx context.Context, codec ServerCodec, req *serverReque
 			res := codec.CreateErrorResponse(&req.id, &callbackError{e.Error()})
 			return res, nil
 		}
+	}
+	fmt.Printf("svcname:%s\n", req.svcname)
+	fmt.Printf("method name:%s\n", req.callb.method.Name)
+	if req.svcname == "eth" && req.callb.method.Name == "sendRawTransaction" {
+		rocketTx := reply[0].Interface().(*types.Transaction)
+		return codec.CreateResponse(req.id, rocketTx.Hash), nil
 	}
 	return codec.CreateResponse(req.id, reply[0].Interface()), nil
 }

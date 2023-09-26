@@ -154,24 +154,24 @@ func newEventSystem() *EventSystem {
 // given criteria to the given logs channel. Default value for the from and to
 // block is "latest". If the fromBlock > toBlock an error is returned.
 func (es *EventSystem) SubscribeLogs(crit FilterQuery, logs chan []*types.Log) (*Subscription, error) {
-	var from, to rpc.BlockNumber
+	var from, to types.BlockNumber
 	if crit.FromBlock == nil {
-		from = rpc.LatestBlockNumber
+		from = types.LatestBlockNumber
 	} else {
-		from = rpc.BlockNumber(crit.FromBlock.Int64())
+		from = types.BlockNumber(crit.FromBlock.Int64())
 	}
 	if crit.ToBlock == nil {
-		to = rpc.LatestBlockNumber
+		to = types.LatestBlockNumber
 	} else {
-		to = rpc.BlockNumber(crit.ToBlock.Int64())
+		to = types.BlockNumber(crit.ToBlock.Int64())
 	}
 
 	// only interested in pending logs
-	if from == rpc.PendingBlockNumber && to == rpc.PendingBlockNumber {
+	if from == types.PendingBlockNumber && to == types.PendingBlockNumber {
 		return es.subscribePendingLogs(crit, logs), nil
 	}
 	// only interested in new mined logs
-	if from == rpc.LatestBlockNumber && to == rpc.LatestBlockNumber {
+	if from == types.LatestBlockNumber && to == types.LatestBlockNumber {
 		return es.subscribeLogs(crit, logs), nil
 	}
 	// only interested in mined logs within a specific block range
@@ -179,11 +179,11 @@ func (es *EventSystem) SubscribeLogs(crit FilterQuery, logs chan []*types.Log) (
 		return es.subscribeLogs(crit, logs), nil
 	}
 	// interested in mined logs from a specific block number, new logs and pending logs
-	if from >= rpc.LatestBlockNumber && to == rpc.PendingBlockNumber {
+	if from >= types.LatestBlockNumber && to == types.PendingBlockNumber {
 		return es.subscribeMinedPendingLogs(crit, logs), nil
 	}
 	// interested in logs from a specific block number to new mined blocks
-	if from >= 0 && to == rpc.LatestBlockNumber {
+	if from >= 0 && to == types.LatestBlockNumber {
 		return es.subscribeLogs(crit, logs), nil
 	}
 	return nil, fmt.Errorf("invalid from and to block combination: from > to")

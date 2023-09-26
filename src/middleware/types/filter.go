@@ -18,13 +18,56 @@ package types
 
 import (
 	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/gx/rpc"
 	"com.tuntun.rocket/node/src/utility"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"math/big"
+	"strings"
 )
+
+type BlockNumber int64
+
+const (
+	PendingBlockNumber  = BlockNumber(-2)
+	LatestBlockNumber   = BlockNumber(-1)
+	EarliestBlockNumber = BlockNumber(0)
+)
+
+func (bn *BlockNumber) UnmarshalJSON(data []byte) error {
+	input := strings.TrimSpace(string(data))
+	if len(input) >= 2 && input[0] == '"' && input[len(input)-1] == '"' {
+		input = input[1 : len(input)-1]
+	}
+
+	switch input {
+	case "earliest":
+		*bn = EarliestBlockNumber
+		return nil
+	case "latest":
+		*bn = LatestBlockNumber
+		return nil
+	case "pending":
+		*bn = PendingBlockNumber
+		return nil
+	}
+
+	blckNum, err := utility.DecodeUint64(input)
+	if err != nil {
+		return err
+	}
+	if blckNum > math.MaxInt64 {
+		return fmt.Errorf("Blocknumber too high")
+	}
+
+	*bn = BlockNumber(blckNum)
+	return nil
+}
+
+func (bn BlockNumber) Int64() int64 {
+	return (int64)(bn)
+}
 
 type FilterCriteria struct {
 	BlockHash *common.Hash // used by eth_getLogs, return logs only from block with this hash
@@ -37,11 +80,11 @@ type FilterCriteria struct {
 // UnmarshalJSON sets *args fields with given data.
 func (args *FilterCriteria) UnmarshalJSON(data []byte) error {
 	type input struct {
-		BlockHash *common.Hash     `json:"blockHash"`
-		FromBlock *rpc.BlockNumber `json:"fromBlock"`
-		ToBlock   *rpc.BlockNumber `json:"toBlock"`
-		Addresses interface{}      `json:"address"`
-		Topics    []interface{}    `json:"topics"`
+		BlockHash *common.Hash  `json:"blockHash"`
+		FromBlock *BlockNumber  `json:"fromBlock"`
+		ToBlock   *BlockNumber  `json:"toBlock"`
+		Addresses interface{}   `json:"address"`
+		Topics    []interface{} `json:"topics"`
 	}
 
 	var raw input
