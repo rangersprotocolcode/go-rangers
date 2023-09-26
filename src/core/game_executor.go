@@ -128,7 +128,7 @@ func (executor *GameExecutor) read(msg notify.Message) {
 	case types.TransactionTypeGetReceipt:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
-		result = service.GetReceipt(common.HexToHash(param["txHash"]))
+		result = service.GetMarshalReceipt(common.HexToHash(param["txHash"]))
 		break
 	case types.TransactionTypeGetTxCount:
 		param := make(map[string]string, 0)

@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rocket/node/src/gx/rpc"
 	"net"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"com.tuntun.rocket/node/src/common"
@@ -136,9 +137,14 @@ func StartJSONRPCHttp(port uint) error {
 func StartJSONRPCWS(port uint) error {
 	endpoint := fmt.Sprintf("0.0.0.0:%d", port)
 
-	ethAPIService := &eth_rpc.EthAPIService{}
+	subscribeAPI := &SubscribeAPI{}
+	subscribeAPI.events = newEventSystem()
+	subscribeAPI.logger = log.GetLoggerByIndex(log.ETHRPCLogConfig, strconv.Itoa(common.InstanceIndex))
 	apis := []rpc.API{
-		{Namespace: "eth", Version: "1", Service: ethAPIService, Public: true},
+		{Namespace: "eth", Version: "1", Service: &eth_rpc.EthAPIService{}, Public: true},
+		{Namespace: "eth", Version: "1", Service: subscribeAPI, Public: true},
+		{Namespace: "net", Version: "1", Service: &NetAPI{}, Public: true},
+		{Namespace: "web3", Version: "1", Service: &Web3API{}, Public: true},
 	}
 
 	// Register all the APIs exposed by the services

@@ -265,6 +265,10 @@ func (chain *blockChain) updateVerifyHash(block *types.Block) {
 }
 
 func (chain *blockChain) updateTxPool(block *types.Block, receipts types.Receipts) {
+	if common.IsFullNode() {
+		go chain.notifyLogs(block.Header.Hash, receipts)
+		go chain.notifyBlockHeader(block.Header)
+	}
 	chain.transactionPool.MarkExecuted(block.Header, receipts, block.Transactions, block.Header.EvictedTxs)
 }
 
