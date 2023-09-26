@@ -291,7 +291,7 @@ func (s *Server) handle(ctx context.Context, codec ServerCodec, req *serverReque
 	}
 	fmt.Printf("svcname:%s\n", req.svcname)
 	fmt.Printf("method name:%s\n", req.callb.method.Name)
-	if req.svcname == "eth" && req.callb.method.Name == "sendRawTransaction" {
+	if req.svcname == "eth" && req.callb.method.Name == "SendRawTransaction" {
 		rocketTx := reply[0].Interface().(*types.Transaction)
 		return codec.CreateResponse(req.id, rocketTx.Hash), nil
 	}
