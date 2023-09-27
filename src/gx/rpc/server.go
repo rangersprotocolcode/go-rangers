@@ -40,6 +40,11 @@ const (
 	OptionSubscriptions = 1 << iota // support pub sub
 )
 
+const (
+	ethServiceName               = "eth"
+	sendRawTransactionMethodName = "SendRawTransaction"
+)
+
 func NewServer() *Server {
 	server := &Server{
 		services: make(serviceRegistry),
@@ -289,9 +294,8 @@ func (s *Server) handle(ctx context.Context, codec ServerCodec, req *serverReque
 			return res, nil
 		}
 	}
-	fmt.Printf("svcname:%s\n", req.svcname)
-	fmt.Printf("method name:%s\n", req.callb.method.Name)
-	if req.svcname == "eth" && req.callb.method.Name == "SendRawTransaction" {
+
+	if req.svcname == ethServiceName && req.callb.method.Name == sendRawTransactionMethodName {
 		rocketTx := reply[0].Interface().(*types.Transaction)
 		return codec.CreateResponse(req.id, rocketTx.Hash), nil
 	}
