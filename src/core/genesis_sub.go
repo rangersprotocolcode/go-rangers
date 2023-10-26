@@ -274,12 +274,6 @@ func createSubCrossContract(header *types.BlockHeader, statedb *account.AccountD
 	}
 	fmt.Println("After call tssValidatorProxyAddr contract. result: " + common.ToHex(ret))
 
-	ret, _, _, err = vmInstance.Call(caller, tssValidatorProxyAddr, common.FromHex(code), vmCtx.GasLimit, big.NewInt(0))
-	if err != nil {
-		panic("Genesis call AddCheckGroup contract error:" + err.Error())
-	}
-	fmt.Println("After call AddCheckGroup contract. result: " + common.ToHex(ret))
-
 	// 2. crossChain
 	contractCodeBytes = common.FromHex(crossContract)
 	_, cross, _, _, err := vmInstance.Create(caller, contractCodeBytes, vmCtx.GasLimit, big.NewInt(0))
