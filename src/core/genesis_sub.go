@@ -92,8 +92,18 @@ func genSubGenesisBlock(stateDB *account.AccountDB, triedb *trie.NodeDatabase, g
 	proxy, rpg := createSubCrossContract(block.Header, stateDB, common.Genesis)
 	ten, _ := utility.StrToBigInt("10")
 	stateDB.SetBalance(proxy, ten)
-	stateDB.SetBalance(common.HexToAddress("0xf58e5Fab29788F914a38Ac710a36C950B7EBC9F3"), ten)
-	stateDB.SetBalance(common.HexToAddress("0xF44Ce46191380AFB962460D3db9417d7d70E0Dd6"), ten)
+
+	if 0 == common.Genesis.Dev {
+		// 跨链账号
+		stateDB.SetBalance(common.HexToAddress("0xf58e5Fab29788F914a38Ac710a36C950B7EBC9F3"), ten)
+		// 更新cm groupId 用
+		stateDB.SetBalance(common.HexToAddress("0xf89EEBcC07E820F5A8330f52111fA51Dd9dFB925"), ten)
+	} else {
+		// 跨链账号
+		stateDB.SetBalance(common.HexToAddress("0xF44Ce46191380AFB962460D3db9417d7d70E0Dd6"), ten)
+		// 更新cm groupId 用
+		stateDB.SetBalance(common.HexToAddress("0xB32389669170462dEafcdd4808d66F85a088EB7E"), ten)
+	}
 
 	amount, err := utility.StrToBigInt(common.Genesis.Stake)
 	if err != nil {
