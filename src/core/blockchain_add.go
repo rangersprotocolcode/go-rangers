@@ -173,20 +173,20 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 		return types.AddBlockFailed, nil
 	}
 
-	if !chain.updateLastBlock(accountDB, remoteBlock, headerByte) {
-		return types.AddBlockFailed, headerByte
-	}
-
 	chain.updateVerifyHash(remoteBlock)
 
 	chain.updateTxPool(remoteBlock, receipts)
 	chain.topBlocks.Add(remoteBlock.Header.Height, remoteBlock.Header)
 
-	chain.eraseAddBlockMark()
-	chain.successOnChainCallBack(remoteBlock)
+	if !chain.updateLastBlock(accountDB, remoteBlock, headerByte) {
+		return types.AddBlockFailed, headerByte
+	}
 	if chain.latestBlock != nil {
 		common.SetBlockHeight(chain.latestBlock.Height)
 	}
+	chain.eraseAddBlockMark()
+	chain.successOnChainCallBack(remoteBlock)
+
 	return types.AddBlockSucc, headerByte
 }
 

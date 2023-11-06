@@ -104,12 +104,13 @@ type RPCBlock struct {
 }
 
 var (
-	gasPrice               = big.NewInt(1)
-	gasLimit        uint64 = 2000000
-	callLock               = sync.Mutex{}
-	nonce                  = []byte{1, 2, 3, 4, 5, 6, 7, 8}
-	difficulty             = utility.Big(*big.NewInt(32))
-	totalDifficulty        = utility.Big(*big.NewInt(180))
+	gasPrice                 = big.NewInt(1)
+	gasLimit          uint64 = 6000000
+	callLock                 = sync.Mutex{}
+	nonce                    = []byte{1, 2, 3, 4, 5, 6, 7, 8}
+	difficulty               = utility.Big(*big.NewInt(32))
+	totalDifficulty          = utility.Big(*big.NewInt(180))
+	confirmBlockCount uint64 = 6
 )
 
 // SendRawTransaction will add the signed transaction to the transaction pool.
@@ -144,13 +145,22 @@ func (api *EthAPIService) SendRawTransaction(encodedTx utility.Bytes) (*types.Tr
 // Note, this function doesn't make and changes in the state/blockchain and is
 // useful to execute and retrieve values.
 func (s *EthAPIService) Call(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error) {
+	data, err, _ := doCall(args, blockNrOrHash)
+	return data, err
+}
 
+func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Uint64, error) {
+	_, err, gasUsed := doCall(args, blockNrOrHash)
+	return utility.Uint64(gasUsed), err
+}
+
+func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error, uint64) {
 	number, _ := blockNrOrHash.Number()
 	logger.Debugf("call:%v,%v", args, number)
 	accountdb := getAccountDBByHashOrHeight(blockNrOrHash)
 	block := getBlockByHashOrHeight(blockNrOrHash)
 	if accountdb == nil || block == nil {
-		return nil, errors.New("param invalid")
+		return nil, errors.New("param invalid"), 0
 	}
 
 	vmCtx := vm.Context{}
@@ -197,15 +207,16 @@ func (s *EthAPIService) Call(args CallArgs, blockNrOrHash BlockNumberOrHash) (ut
 		logger.Debugf("[eth_call]After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
 	}
 
+	gasUsed := gasLimit - leftOverGas
 	// If the result contains a revert reason, try to unpack and return it.
 	if err == vm.ErrExecutionReverted && len(result) > 0 {
 		err := adaptErrorOutput(err, result)
-		return nil, &revertError{err, common.ToHex(result)}
+		return nil, &revertError{err, common.ToHex(result)}, gasUsed
 	}
 	if err != nil {
-		return nil, err
+		return nil, err, gasUsed
 	}
-	return result, nil
+	return result, nil, gasUsed
 }
 
 // ChainId returns the chainID value for transaction replay protection.
@@ -228,10 +239,6 @@ func (api *EthAPIService) BlockNumber() utility.Uint64 {
 func (s *EthAPIService) GasPrice() (*utility.Big, error) {
 	gasPrice := utility.Big(*big.NewInt(1))
 	return &gasPrice, nil
-}
-
-func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash *BlockNumberOrHash) (utility.Uint64, error) {
-	return utility.Uint64(21000), nil
 }
 
 // GetBalance returns the amount of wei for the given address in the state of the
@@ -318,6 +325,15 @@ func (s *EthAPIService) GetTransactionReceipt(hash common.Hash) (map[string]inte
 
 	tx, err := types.UnMarshalTransaction(executedTx.Transaction)
 	if err != nil {
+		return nil, nil
+	}
+
+	topBlock := core.GetBlockChain().TopBlock()
+	if topBlock == nil {
+		return nil, nil
+	}
+	//do not return during confirm block
+	if executedTx.Receipt.Height+confirmBlockCount > topBlock.Height {
 		return nil, nil
 	}
 
