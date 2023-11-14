@@ -149,8 +149,12 @@ func (s *EthAPIService) Call(args CallArgs, blockNrOrHash BlockNumberOrHash) (ut
 	return data, err
 }
 
-func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Uint64, error) {
-	_, err, gasUsed := doCall(args, blockNrOrHash)
+func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash *BlockNumberOrHash) (utility.Uint64, error) {
+	bNrOrHash := BlockNumberOrHashWithNumber(LatestBlockNumber)
+	if blockNrOrHash != nil {
+		bNrOrHash = *blockNrOrHash
+	}
+	_, err, gasUsed := doCall(args, bNrOrHash)
 	return utility.Uint64(gasUsed), err
 }
 
