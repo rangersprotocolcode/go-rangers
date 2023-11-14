@@ -111,6 +111,7 @@ var (
 	difficulty               = utility.Big(*big.NewInt(32))
 	totalDifficulty          = utility.Big(*big.NewInt(180))
 	confirmBlockCount uint64 = 6
+	txGas             uint64 = 21000 // Per transaction not creating a contract. NOTE: Not payable on data of calls between transactions.
 )
 
 // SendRawTransaction will add the signed transaction to the transaction pool.
@@ -212,6 +213,9 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 	}
 
 	gasUsed := gasLimit - leftOverGas
+	if gasUsed < txGas {
+		gasUsed = txGas
+	}
 	// If the result contains a revert reason, try to unpack and return it.
 	if err == vm.ErrExecutionReverted && len(result) > 0 {
 		err := adaptErrorOutput(err, result)
