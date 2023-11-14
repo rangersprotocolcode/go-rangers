@@ -44,7 +44,7 @@ import (
 )
 
 const (
-	GXVersion = "1.0.16"
+	GXVersion = "1.0.17"
 	// Section 默认section配置
 	Section = "gx"
 )
@@ -96,7 +96,8 @@ func (gx *GX) Run() {
 
 	//fullnode
 	fullNodeCmd := app.Command("fullnode", "sync data full node")
-	fullNodeJSONPRCPort := fullNodeCmd.Flag("httpport", "jsonrpc port").Short('p').Default("7988").Uint()
+	fullNodeJSONPRCHttpPort := fullNodeCmd.Flag("httpport", "jsonrpc http port").Short('p').Default("7988").Uint()
+	fullNodeJSONPRCWSPort := fullNodeCmd.Flag("wsport", "jsonrpc ws port").Short('w').Default("7989").Uint()
 	fullNodeEnv := fullNodeCmd.Flag("env", "the environment application run in").String()
 
 	command, err := app.Parse(os.Args[1:])
@@ -141,7 +142,7 @@ func (gx *GX) Run() {
 			}
 		}
 	case fullNodeCmd.FullCommand():
-		gx.initFullNode(*fullNodeEnv, *configFile, *fullNodeJSONPRCPort)
+		gx.initFullNode(*fullNodeEnv, *configFile, *fullNodeJSONPRCHttpPort, *fullNodeJSONPRCWSPort)
 		break
 	}
 	<-quitChan
@@ -328,7 +329,7 @@ func (gx *GX) handleExit(ctrlC <-chan bool, quit chan<- bool) {
 	}
 }
 
-func (gx *GX) initFullNode(env string, configFile string, jsonRPCPort uint) {
+func (gx *GX) initFullNode(env string, configFile string, jsonRPCHttpPort uint, jsonRPCWSPort uint) {
 	common.Init(0, configFile, env)
 	common.SetFullNode(true)
 	fmt.Printf("Start full node mode.\n")
@@ -340,7 +341,12 @@ func (gx *GX) initFullNode(env string, configFile string, jsonRPCPort uint) {
 	gateAddr := common.LocalChainConfig.PHub
 	gx.initMiner(env, gateAddr, outerGateAddr, tx)
 
-	err := StartJSONRPCHttp(jsonRPCPort)
+	err := StartJSONRPCHttp(jsonRPCHttpPort)
+	if err != nil {
+		panic(err)
+	}
+
+	err = StartJSONRPCWS(jsonRPCWSPort)
 	if err != nil {
 		panic(err)
 	}

@@ -171,8 +171,8 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		GroupId:   groupid,
 		TotalQN:   latestBlock.TotalQN + qn,
 		StateTree: common.BytesToHash(latestBlock.StateTree.Bytes()),
-		PreHash: latestBlock.Hash,
-		PreTime: latestBlock.CurTime,
+		PreHash:   latestBlock.Hash,
+		PreTime:   latestBlock.CurTime,
 	}
 	block.Header.RequestIds = getRequestIdFromTransactions(block.Transactions, latestBlock.RequestIds)
 
@@ -374,6 +374,10 @@ func (chain *blockChain) remove(block *types.Block) bool {
 	height := block.Header.Height
 	logger.Debugf("remove hash:%s height:%d ", hash.Hex(), height)
 
+	var receipts types.Receipts
+	if common.IsFullNode() {
+		receipts = chain.getReceipts(*block)
+	}
 	chain.markRemoveBlock(block)
 
 	chain.hashDB.Delete(hash.Bytes())
@@ -398,6 +402,10 @@ func (chain *blockChain) remove(block *types.Block) bool {
 	chain.eraseRemoveBlockMark()
 	if chain.latestBlock != nil {
 		common.SetBlockHeight(chain.latestBlock.Height)
+	}
+
+	if common.IsFullNode() {
+		go chain.notifyRemovedLogs(receipts)
 	}
 	return true
 }
@@ -509,4 +517,19 @@ func generateHeightKey(height uint64) []byte {
 	h := make([]byte, 8)
 	binary.BigEndian.PutUint64(h, height)
 	return h
+}
+
+func (chain *blockChain) getReceipts(b types.Block) types.Receipts {
+	if value, exit := chain.verifiedBlocks.Get(b.Header.Hash); exit {
+		bb := value.(*castingBlock)
+		return bb.receipts
+	}
+	var result types.Receipts
+	for _, tx := range b.Transactions {
+		receipt := service.GetReceipt(tx.Hash)
+		if receipt != nil {
+			result = append(result, receipt)
+		}
+	}
+	return result
 }

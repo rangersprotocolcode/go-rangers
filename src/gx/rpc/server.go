@@ -17,6 +17,7 @@
 package rpc
 
 import (
+	"com.tuntun.rocket/node/src/middleware/types"
 	"context"
 	"fmt"
 	"reflect"
@@ -37,6 +38,11 @@ const (
 	OptionMethodInvocation CodecOption = 1 << iota
 
 	OptionSubscriptions = 1 << iota // support pub sub
+)
+
+const (
+	ethServiceName               = "eth"
+	sendRawTransactionMethodName = "SendRawTransaction"
 )
 
 func NewServer() *Server {
@@ -287,6 +293,11 @@ func (s *Server) handle(ctx context.Context, codec ServerCodec, req *serverReque
 			res := codec.CreateErrorResponse(&req.id, &callbackError{e.Error()})
 			return res, nil
 		}
+	}
+
+	if req.svcname == ethServiceName && req.callb.method.Name == sendRawTransactionMethodName {
+		rocketTx := reply[0].Interface().(*types.Transaction)
+		return codec.CreateResponse(req.id, rocketTx.Hash), nil
 	}
 	return codec.CreateResponse(req.id, reply[0].Interface()), nil
 }

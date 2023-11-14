@@ -55,13 +55,39 @@ func GetNonce(address common.Address, accountDB *account.AccountDB) string {
 	return strconv.FormatUint(nonce, 10)
 }
 
-func GetReceipt(txHash common.Hash) string {
+func GetMarshalReceipt(txHash common.Hash) string {
 	transaction := GetTransactionPool().GetExecuted(txHash)
 	if transaction == nil {
 		return ""
 	}
+	if transaction.Receipt.Logs != nil && len(transaction.Receipt.Logs) != 0 {
+		logs := make([]*types.Log, 0)
+		for _, log := range transaction.Receipt.Logs {
+			log.BlockHash = transaction.Receipt.BlockHash
+			log.TxHash = transaction.Receipt.TxHash
+			logs = append(logs, log)
+		}
+		transaction.Receipt.Logs = logs
+	}
 	result, _ := json.Marshal(transaction.Receipt)
 	return string(result)
+}
+
+func GetReceipt(txHash common.Hash) *types.Receipt {
+	transaction := GetTransactionPool().GetExecuted(txHash)
+	if transaction == nil {
+		return nil
+	}
+	if transaction.Receipt.Logs != nil && len(transaction.Receipt.Logs) != 0 {
+		logs := make([]*types.Log, 0)
+		for _, log := range transaction.Receipt.Logs {
+			log.BlockHash = transaction.Receipt.BlockHash
+			log.TxHash = transaction.Receipt.TxHash
+			logs = append(logs, log)
+		}
+		transaction.Receipt.Logs = logs
+	}
+	return &transaction.Receipt.Receipt
 }
 
 func GetContractStorageAt(address string, key string, accountDB *account.AccountDB) string {

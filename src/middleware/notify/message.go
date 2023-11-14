@@ -300,3 +300,40 @@ type ETHRPCPiece struct {
 
 	Nonce uint64 `json:"nonce"`
 }
+
+//------------------------------------------notify message----------------------------------------------------------------------
+type VMEventNotifyMessage struct {
+	Logs []*types.Log
+}
+
+func (m *VMEventNotifyMessage) GetRaw() []byte {
+	// never use it
+	return nil
+}
+func (m *VMEventNotifyMessage) GetData() interface{} {
+	return m.Logs
+}
+
+type BlockHeaderNotifyMessage struct {
+	BlockHeader *types.BlockHeader
+}
+
+func (m *BlockHeaderNotifyMessage) GetRaw() []byte {
+	// never use it
+	return nil
+}
+func (m *BlockHeaderNotifyMessage) GetData() interface{} {
+	return m.BlockHeader
+}
+
+type VMRemovedEventNotifyMessage struct {
+	Logs []*types.Log
+}
+
+func (m *VMRemovedEventNotifyMessage) GetRaw() []byte {
+	// never use it
+	return nil
+}
+func (m *VMRemovedEventNotifyMessage) GetData() interface{} {
+	return m.Logs
+}

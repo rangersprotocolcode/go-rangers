@@ -173,20 +173,20 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 		return types.AddBlockFailed, nil
 	}
 
-	if !chain.updateLastBlock(accountDB, remoteBlock, headerByte) {
-		return types.AddBlockFailed, headerByte
-	}
-
 	chain.updateVerifyHash(remoteBlock)
 
 	chain.updateTxPool(remoteBlock, receipts)
 	chain.topBlocks.Add(remoteBlock.Header.Height, remoteBlock.Header)
 
-	chain.eraseAddBlockMark()
-	chain.successOnChainCallBack(remoteBlock)
+	if !chain.updateLastBlock(accountDB, remoteBlock, headerByte) {
+		return types.AddBlockFailed, headerByte
+	}
 	if chain.latestBlock != nil {
 		common.SetBlockHeight(chain.latestBlock.Height)
 	}
+	chain.eraseAddBlockMark()
+	chain.successOnChainCallBack(remoteBlock)
+
 	return types.AddBlockSucc, headerByte
 }
 
@@ -265,6 +265,10 @@ func (chain *blockChain) updateVerifyHash(block *types.Block) {
 }
 
 func (chain *blockChain) updateTxPool(block *types.Block, receipts types.Receipts) {
+	if common.IsFullNode() {
+		go chain.notifyLogs(block.Header.Hash, receipts)
+		go chain.notifyBlockHeader(block.Header)
+	}
 	chain.transactionPool.MarkExecuted(block.Header, receipts, block.Transactions, block.Header.EvictedTxs)
 }
 

@@ -36,7 +36,7 @@ import (
 	"sync"
 )
 
-type ethAPIService struct{}
+type EthAPIService struct{}
 
 // CallArgs represents the arguments for a call.
 type CallArgs struct {
@@ -104,17 +104,18 @@ type RPCBlock struct {
 }
 
 var (
-	gasPrice               = big.NewInt(1)
-	gasLimit        uint64 = 2000000
-	callLock               = sync.Mutex{}
-	nonce                  = []byte{1, 2, 3, 4, 5, 6, 7, 8}
-	difficulty             = utility.Big(*big.NewInt(32))
-	totalDifficulty        = utility.Big(*big.NewInt(180))
+	gasPrice                 = big.NewInt(1)
+	gasLimit          uint64 = 6000000
+	callLock                 = sync.Mutex{}
+	nonce                    = []byte{1, 2, 3, 4, 5, 6, 7, 8}
+	difficulty               = utility.Big(*big.NewInt(32))
+	totalDifficulty          = utility.Big(*big.NewInt(180))
+	confirmBlockCount uint64 = 6
 )
 
 // SendRawTransaction will add the signed transaction to the transaction pool.
 // The sender is responsible for signing the transaction and using the correct nonce.
-func (api *ethAPIService) SendRawTransaction(encodedTx utility.Bytes) (*types.Transaction, error) {
+func (api *EthAPIService) SendRawTransaction(encodedTx utility.Bytes) (*types.Transaction, error) {
 	tx := new(eth_tx.Transaction)
 	if err := rlp.DecodeBytes(encodedTx, tx); err != nil {
 		return nil, err
@@ -143,14 +144,23 @@ func (api *ethAPIService) SendRawTransaction(encodedTx utility.Bytes) (*types.Tr
 
 // Note, this function doesn't make and changes in the state/blockchain and is
 // useful to execute and retrieve values.
-func (s *ethAPIService) Call(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error) {
+func (s *EthAPIService) Call(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error) {
+	data, err, _ := doCall(args, blockNrOrHash)
+	return data, err
+}
 
+func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Uint64, error) {
+	_, err, gasUsed := doCall(args, blockNrOrHash)
+	return utility.Uint64(gasUsed), err
+}
+
+func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error, uint64) {
 	number, _ := blockNrOrHash.Number()
 	logger.Debugf("call:%v,%v", args, number)
 	accountdb := getAccountDBByHashOrHeight(blockNrOrHash)
 	block := getBlockByHashOrHeight(blockNrOrHash)
 	if accountdb == nil || block == nil {
-		return nil, errors.New("param invalid")
+		return nil, errors.New("param invalid"), 0
 	}
 
 	vmCtx := vm.Context{}
@@ -197,47 +207,44 @@ func (s *ethAPIService) Call(args CallArgs, blockNrOrHash BlockNumberOrHash) (ut
 		logger.Debugf("[eth_call]After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
 	}
 
+	gasUsed := gasLimit - leftOverGas
 	// If the result contains a revert reason, try to unpack and return it.
 	if err == vm.ErrExecutionReverted && len(result) > 0 {
 		err := adaptErrorOutput(err, result)
-		return nil, &revertError{err, common.ToHex(result)}
+		return nil, &revertError{err, common.ToHex(result)}, gasUsed
 	}
 	if err != nil {
-		return nil, err
+		return nil, err, gasUsed
 	}
-	return result, nil
+	return result, nil, gasUsed
 }
 
 // ChainId returns the chainID value for transaction replay protection.
-func (api *ethAPIService) ChainId() *utility.Big {
+func (api *EthAPIService) ChainId() *utility.Big {
 	return (*utility.Big)(common.GetChainId(utility.MaxUint64))
 }
 
 // ProtocolVersion returns the current Ethereum protocol version this node supports
-func (s *ethAPIService) ProtocolVersion() utility.Uint {
+func (s *EthAPIService) ProtocolVersion() utility.Uint {
 	return utility.Uint(common.ProtocolVersion)
 }
 
 // BlockNumber returns the block number of the chain head.
-func (api *ethAPIService) BlockNumber() utility.Uint64 {
+func (api *EthAPIService) BlockNumber() utility.Uint64 {
 	blockNumber := core.GetBlockChain().Height()
 	return utility.Uint64(blockNumber)
 }
 
 // GasPrice returns a suggestion for a gas price.
-func (s *ethAPIService) GasPrice() (*utility.Big, error) {
+func (s *EthAPIService) GasPrice() (*utility.Big, error) {
 	gasPrice := utility.Big(*big.NewInt(1))
 	return &gasPrice, nil
-}
-
-func (s *ethAPIService) EstimateGas(args CallArgs, blockNrOrHash *BlockNumberOrHash) (utility.Uint64, error) {
-	return utility.Uint64(21000), nil
 }
 
 // GetBalance returns the amount of wei for the given address in the state of the
 // given block number. The rpc.LatestBlockNumber and rpc.PendingBlockNumber meta
 // block numbers are also allowed.
-func (api *ethAPIService) GetBalance(address common.Address, blockNrOrHash BlockNumberOrHash) (*utility.Big, error) {
+func (api *EthAPIService) GetBalance(address common.Address, blockNrOrHash BlockNumberOrHash) (*utility.Big, error) {
 	accountDB := getAccountDBByHashOrHeight(blockNrOrHash)
 	if accountDB == nil {
 		return nil, errors.New("param invalid")
@@ -250,7 +257,7 @@ func (api *ethAPIService) GetBalance(address common.Address, blockNrOrHash Block
 }
 
 // GetCode returns the code stored at the given address in the state for the given block number.
-func (s *ethAPIService) GetCode(address common.Address, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error) {
+func (s *EthAPIService) GetCode(address common.Address, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error) {
 	accountDB := getAccountDBByHashOrHeight(blockNrOrHash)
 	if accountDB == nil {
 		return nil, errors.New("param invalid")
@@ -265,7 +272,7 @@ func (s *ethAPIService) GetCode(address common.Address, blockNrOrHash BlockNumbe
 // GetStorageAt returns the storage from the state at the given address, key and
 // block number. The rpc.LatestBlockNumber and rpc.PendingBlockNumber meta block
 // numbers are also allowed.
-func (s *ethAPIService) GetStorageAt(address common.Address, key string, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error) {
+func (s *EthAPIService) GetStorageAt(address common.Address, key string, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error) {
 	accountDB := getAccountDBByHashOrHeight(blockNrOrHash)
 	if accountDB == nil {
 		return nil, errors.New("param invalid")
@@ -278,7 +285,7 @@ func (s *ethAPIService) GetStorageAt(address common.Address, key string, blockNr
 }
 
 // GetBlockTransactionCountByNumber returns the number of transactions in the block with the given block number.
-func (s *ethAPIService) GetBlockTransactionCountByNumber(blockNr BlockNumber) *utility.Uint {
+func (s *EthAPIService) GetBlockTransactionCountByNumber(blockNr BlockNumber) *utility.Uint {
 	block := getBlockByHashOrHeight(BlockNumberOrHash{BlockNumber: &blockNr})
 	if block == nil {
 		zero := utility.Uint(0)
@@ -289,7 +296,7 @@ func (s *ethAPIService) GetBlockTransactionCountByNumber(blockNr BlockNumber) *u
 }
 
 // GetBlockTransactionCountByHash returns the number of transactions in the block with the given hash.
-func (s *ethAPIService) GetBlockTransactionCountByHash(blockHash common.Hash) *utility.Uint {
+func (s *EthAPIService) GetBlockTransactionCountByHash(blockHash common.Hash) *utility.Uint {
 	block := getBlockByHashOrHeight(BlockNumberOrHash{BlockHash: &blockHash})
 	if block == nil {
 		zero := utility.Uint(0)
@@ -300,7 +307,7 @@ func (s *ethAPIService) GetBlockTransactionCountByHash(blockHash common.Hash) *u
 }
 
 // GetTransactionCount returns the number of transactions the given address has sent for the given block number
-func (s *ethAPIService) GetTransactionCount(address common.Address, blockNrOrHash BlockNumberOrHash) (*utility.Uint64, error) {
+func (s *EthAPIService) GetTransactionCount(address common.Address, blockNrOrHash BlockNumberOrHash) (*utility.Uint64, error) {
 	accountDB := getAccountDBByHashOrHeight(blockNrOrHash)
 	if accountDB == nil {
 		return nil, errors.New("param invalid")
@@ -310,7 +317,7 @@ func (s *ethAPIService) GetTransactionCount(address common.Address, blockNrOrHas
 }
 
 // GetTransactionReceipt returns the transaction receipt for the given transaction hash.
-func (s *ethAPIService) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
+func (s *EthAPIService) GetTransactionReceipt(hash common.Hash) (map[string]interface{}, error) {
 	executedTx := service.GetTransactionPool().GetExecuted(hash)
 	if executedTx == nil {
 		return nil, nil
@@ -318,6 +325,15 @@ func (s *ethAPIService) GetTransactionReceipt(hash common.Hash) (map[string]inte
 
 	tx, err := types.UnMarshalTransaction(executedTx.Transaction)
 	if err != nil {
+		return nil, nil
+	}
+
+	topBlock := core.GetBlockChain().TopBlock()
+	if topBlock == nil {
+		return nil, nil
+	}
+	//do not return during confirm block
+	if executedTx.Receipt.Height+confirmBlockCount > topBlock.Height {
 		return nil, nil
 	}
 
@@ -361,7 +377,7 @@ func (s *ethAPIService) GetTransactionReceipt(hash common.Hash) (map[string]inte
 
 // GetBlockByHash returns the requested block. When fullTx is true all transactions in the block are returned in full
 // detail, otherwise only the transaction hash is returned.
-func (s *ethAPIService) GetBlockByHash(hash common.Hash, fullTx bool) (*RPCBlock, error) {
+func (s *EthAPIService) GetBlockByHash(hash common.Hash, fullTx bool) (*RPCBlock, error) {
 	block := core.GetBlockChain().QueryBlockByHash(hash)
 	if block == nil {
 		return nil, errors.New("param invalid")
@@ -374,7 +390,7 @@ func (s *ethAPIService) GetBlockByHash(hash common.Hash, fullTx bool) (*RPCBlock
 //   - When blockNr is -2 the pending chain head is returned.
 //   - When fullTx is true all transactions in the block are returned, otherwise
 //     only the transaction hash is returned.
-func (s *ethAPIService) GetBlockByNumber(number BlockNumber, fullTx bool) (*RPCBlock, error) {
+func (s *EthAPIService) GetBlockByNumber(number BlockNumber, fullTx bool) (*RPCBlock, error) {
 	var block *types.Block
 	if number == PendingBlockNumber || number == LatestBlockNumber || number == EarliestBlockNumber {
 		height := core.GetBlockChain().Height()
@@ -389,7 +405,7 @@ func (s *ethAPIService) GetBlockByNumber(number BlockNumber, fullTx bool) (*RPCB
 }
 
 // GetTransactionByHash returns the transaction for the given hash
-func (s *ethAPIService) GetTransactionByHash(hash common.Hash) (*RPCTransaction, error) {
+func (s *EthAPIService) GetTransactionByHash(hash common.Hash) (*RPCTransaction, error) {
 	executedTx := service.GetTransactionPool().GetExecuted(hash)
 	if executedTx != nil {
 		tx, err := types.UnMarshalTransaction(executedTx.Transaction)
@@ -411,7 +427,7 @@ func (s *ethAPIService) GetTransactionByHash(hash common.Hash) (*RPCTransaction,
 // // GetLogs returns logs matching the given argument that are stored within the state.
 //
 // https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getlogs
-func (s *ethAPIService) GetLogs(crit types.FilterCriteria) ([]*types.Log, error) {
+func (s *EthAPIService) GetLogs(crit types.FilterCriteria) ([]*types.Log, error) {
 	result, err := core.GetLogs(crit)
 	if err != nil {
 		return nil, err
@@ -420,7 +436,7 @@ func (s *ethAPIService) GetLogs(crit types.FilterCriteria) ([]*types.Log, error)
 }
 
 // GetTransactionByBlockNumberAndIndex returns the transaction for the given block number and index.
-func (s *ethAPIService) GetTransactionByBlockNumberAndIndex(blockNr BlockNumber, index utility.Uint) *RPCTransaction {
+func (s *EthAPIService) GetTransactionByBlockNumberAndIndex(blockNr BlockNumber, index utility.Uint) *RPCTransaction {
 	var block *types.Block
 	if blockNr == PendingBlockNumber || blockNr == LatestBlockNumber || blockNr == EarliestBlockNumber {
 		height := core.GetBlockChain().Height()
@@ -436,7 +452,7 @@ func (s *ethAPIService) GetTransactionByBlockNumberAndIndex(blockNr BlockNumber,
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction for the given block hash and index.
-func (s *ethAPIService) GetTransactionByBlockHashAndIndex(blockHash common.Hash, index utility.Uint) *RPCTransaction {
+func (s *EthAPIService) GetTransactionByBlockHashAndIndex(blockHash common.Hash, index utility.Uint) *RPCTransaction {
 	block := core.GetBlockChain().QueryBlockByHash(blockHash)
 	if block == nil || uint64(index) >= uint64(len(block.Transactions)) {
 		return nil
@@ -446,19 +462,19 @@ func (s *ethAPIService) GetTransactionByBlockHashAndIndex(blockHash common.Hash,
 
 // Version returns the current ethereum protocol version.
 // net_version
-func (s *ethAPIService) Version() string {
+func (s *EthAPIService) Version() string {
 	return common.NetworkId()
 }
 
 // Listening Returns true if client is actively listening for network connections.
 // net_listening
-func (s *ethAPIService) Listening() bool {
+func (s *EthAPIService) Listening() bool {
 	return true
 }
 
 // ClientVersion returns the current client version.
 // web3_clientVersion
-func (api *ethAPIService) ClientVersion() string {
+func (api *EthAPIService) ClientVersion() string {
 	return "Rangers/" + common.Version + "/centos-amd64/go1.17.3"
 }
 

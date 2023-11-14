@@ -17,11 +17,7 @@
 package rpc
 
 import (
-	"com.tuntun.rocket/node/src/utility"
-	"fmt"
-	"math"
 	"reflect"
-	"strings"
 	"sync"
 
 	"gopkg.in/fatih/set.v0"
@@ -105,46 +101,4 @@ type ServerCodec interface {
 	Close()
 	// Closed when underlying connection is closed
 	Closed() <-chan interface{}
-}
-
-type BlockNumber int64
-
-const (
-	PendingBlockNumber  = BlockNumber(-2)
-	LatestBlockNumber   = BlockNumber(-1)
-	EarliestBlockNumber = BlockNumber(0)
-)
-
-func (bn *BlockNumber) UnmarshalJSON(data []byte) error {
-	input := strings.TrimSpace(string(data))
-	if len(input) >= 2 && input[0] == '"' && input[len(input)-1] == '"' {
-		input = input[1 : len(input)-1]
-	}
-
-	switch input {
-	case "earliest":
-		*bn = EarliestBlockNumber
-		return nil
-	case "latest":
-		*bn = LatestBlockNumber
-		return nil
-	case "pending":
-		*bn = PendingBlockNumber
-		return nil
-	}
-
-	blckNum, err := utility.DecodeUint64(input)
-	if err != nil {
-		return err
-	}
-	if blckNum > math.MaxInt64 {
-		return fmt.Errorf("Blocknumber too high")
-	}
-
-	*bn = BlockNumber(blckNum)
-	return nil
-}
-
-func (bn BlockNumber) Int64() int64 {
-	return (int64)(bn)
 }
