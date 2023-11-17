@@ -184,7 +184,8 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 	if args.From != nil {
 		vmCtx.Origin = *args.From
 	}
-	vmCtx.GasLimit = uint64(*args.Gas)
+	initialGas := uint64(*args.Gas)
+	vmCtx.GasLimit = initialGas
 	vmCtx.Coinbase = common.BytesToAddress(block.Header.Castor)
 	vmCtx.BlockNumber = new(big.Int).SetUint64(block.Header.Height)
 	vmCtx.Time = new(big.Int).SetUint64(uint64(block.Header.CurTime.Unix()))
@@ -221,7 +222,7 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 		logger.Debugf("[eth_call]After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
 	}
 
-	gasUsed := gasLimit - leftOverGas
+	gasUsed := initialGas - leftOverGas
 	if gasUsed < txGas {
 		gasUsed = txGas
 	}
