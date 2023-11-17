@@ -146,6 +146,10 @@ func (api *EthAPIService) SendRawTransaction(encodedTx utility.Bytes) (*types.Tr
 // Note, this function doesn't make and changes in the state/blockchain and is
 // useful to execute and retrieve values.
 func (s *EthAPIService) Call(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error) {
+	if args.Gas == nil || uint64(*args.Gas) > gasLimit {
+		defaultGasLimit := utility.Uint64(gasLimit)
+		args.Gas = &defaultGasLimit
+	}
 	data, err, _ := doCall(args, blockNrOrHash)
 	return data, err
 }
@@ -155,13 +159,18 @@ func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash *BlockNumberOrH
 	if blockNrOrHash != nil {
 		bNrOrHash = *blockNrOrHash
 	}
+
+	if args.Gas == nil || uint64(*args.Gas) < txGas || uint64(*args.Gas) > gasLimit {
+		defaultGasLimit := utility.Uint64(gasLimit)
+		args.Gas = &defaultGasLimit
+	}
 	_, err, gasUsed := doCall(args, bNrOrHash)
 	return utility.Uint64(gasUsed), err
 }
 
 func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error, uint64) {
 	number, _ := blockNrOrHash.Number()
-	logger.Debugf("call:%v,%v", args, number)
+	logger.Debugf("doCall:%v,%v", args, number)
 	accountdb := getAccountDBByHashOrHeight(blockNrOrHash)
 	block := getBlockByHashOrHeight(blockNrOrHash)
 	if accountdb == nil || block == nil {
@@ -175,13 +184,13 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 	if args.From != nil {
 		vmCtx.Origin = *args.From
 	}
+	vmCtx.GasLimit = uint64(*args.Gas)
 	vmCtx.Coinbase = common.BytesToAddress(block.Header.Castor)
 	vmCtx.BlockNumber = new(big.Int).SetUint64(block.Header.Height)
 	vmCtx.Time = new(big.Int).SetUint64(uint64(block.Header.CurTime.Unix()))
 	//set constant value
 	vmCtx.Difficulty = new(big.Int).SetUint64(123)
 	vmCtx.GasPrice = gasPrice
-	vmCtx.GasLimit = gasLimit
 
 	var transferValue *big.Int
 	if args.Value != nil {
