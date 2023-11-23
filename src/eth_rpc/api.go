@@ -111,6 +111,7 @@ var (
 	difficulty               = utility.Big(*big.NewInt(32))
 	totalDifficulty          = utility.Big(*big.NewInt(180))
 	confirmBlockCount uint64 = 6
+	txGas             uint64 = 21000 // Per transaction not creating a contract. NOTE: Not payable on data of calls between transactions.
 )
 
 // SendRawTransaction will add the signed transaction to the transaction pool.
@@ -145,18 +146,31 @@ func (api *EthAPIService) SendRawTransaction(encodedTx utility.Bytes) (*types.Tr
 // Note, this function doesn't make and changes in the state/blockchain and is
 // useful to execute and retrieve values.
 func (s *EthAPIService) Call(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error) {
+	if args.Gas == nil || uint64(*args.Gas) > gasLimit {
+		defaultGasLimit := utility.Uint64(gasLimit)
+		args.Gas = &defaultGasLimit
+	}
 	data, err, _ := doCall(args, blockNrOrHash)
 	return data, err
 }
 
-func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Uint64, error) {
-	_, err, gasUsed := doCall(args, blockNrOrHash)
+func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash *BlockNumberOrHash) (utility.Uint64, error) {
+	bNrOrHash := BlockNumberOrHashWithNumber(LatestBlockNumber)
+	if blockNrOrHash != nil {
+		bNrOrHash = *blockNrOrHash
+	}
+
+	if args.Gas == nil || uint64(*args.Gas) < txGas || uint64(*args.Gas) > gasLimit {
+		defaultGasLimit := utility.Uint64(gasLimit)
+		args.Gas = &defaultGasLimit
+	}
+	_, err, gasUsed := doCall(args, bNrOrHash)
 	return utility.Uint64(gasUsed), err
 }
 
 func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error, uint64) {
 	number, _ := blockNrOrHash.Number()
-	logger.Debugf("call:%v,%v", args, number)
+	logger.Debugf("doCall:%v,%v", args, number)
 	accountdb := getAccountDBByHashOrHeight(blockNrOrHash)
 	block := getBlockByHashOrHeight(blockNrOrHash)
 	if accountdb == nil || block == nil {
@@ -170,13 +184,14 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 	if args.From != nil {
 		vmCtx.Origin = *args.From
 	}
+	initialGas := uint64(*args.Gas)
+	vmCtx.GasLimit = initialGas
 	vmCtx.Coinbase = common.BytesToAddress(block.Header.Castor)
 	vmCtx.BlockNumber = new(big.Int).SetUint64(block.Header.Height)
 	vmCtx.Time = new(big.Int).SetUint64(uint64(block.Header.CurTime.Unix()))
 	//set constant value
 	vmCtx.Difficulty = new(big.Int).SetUint64(123)
 	vmCtx.GasPrice = gasPrice
-	vmCtx.GasLimit = gasLimit
 
 	var transferValue *big.Int
 	if args.Value != nil {
@@ -207,7 +222,10 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 		logger.Debugf("[eth_call]After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
 	}
 
-	gasUsed := gasLimit - leftOverGas
+	gasUsed := initialGas - leftOverGas
+	if gasUsed < txGas {
+		gasUsed = txGas
+	}
 	// If the result contains a revert reason, try to unpack and return it.
 	if err == vm.ErrExecutionReverted && len(result) > 0 {
 		err := adaptErrorOutput(err, result)
