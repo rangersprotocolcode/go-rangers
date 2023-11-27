@@ -176,7 +176,6 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 	if accountdb == nil || block == nil {
 		return nil, errors.New("param invalid"), 0
 	}
-	logger.Debugf("from balance:%s,block height:%d", accountdb.GetBalance(*args.From).String(), block.Header.Height)
 
 	vmCtx := vm.Context{}
 	vmCtx.CanTransfer = vm.CanTransfer
