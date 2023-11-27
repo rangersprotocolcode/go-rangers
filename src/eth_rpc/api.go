@@ -212,9 +212,6 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 		contractAddress common.Address
 		err             error
 	)
-	if args.From != nil {
-		logger.Debugf("before balance:%s", accountdb.GetBalance(*args.From).String())
-	}
 	logger.Debugf("before vm instance")
 	if args.To == nil {
 		result, contractAddress, leftOverGas, _, err = vmInstance.Create(caller, data, vmCtx.GasLimit, transferValue)
@@ -224,9 +221,6 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 		logger.Debugf("[eth_call]After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
 	}
 
-	if args.From != nil {
-		logger.Debugf("after balance:%s", accountdb.GetBalance(*args.From).String())
-	}
 	gasUsed := initialGas - leftOverGas
 	if gasUsed < txGas {
 		gasUsed = txGas
