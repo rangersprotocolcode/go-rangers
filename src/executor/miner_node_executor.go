@@ -73,8 +73,8 @@ func (this *minerNodeExecutor) Execute(transaction *types.Transaction, header *t
 	vmCtx.BlockNumber = new(big.Int).SetUint64(header.Height)
 	vmCtx.Time = new(big.Int).SetUint64(uint64(header.CurTime.Unix()))
 	vmCtx.Difficulty = new(big.Int).SetUint64(123)
-	vmCtx.GasPrice = gasPrice
-	vmCtx.GasLimit = gasLimit
+	vmCtx.GasPrice = defaultGasPrice
+	vmCtx.GasLimit = defaultGasLimit
 
 	contractAddress, logs := this.generateContractAddress(vmCtx, accountdb)
 	if nil == contractAddress {

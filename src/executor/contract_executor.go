@@ -25,8 +25,11 @@ import (
 	"com.tuntun.rocket/node/src/utility"
 	"com.tuntun.rocket/node/src/vm"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"math"
 	"math/big"
+	"strconv"
 )
 
 type contractExecutor struct {
@@ -34,9 +37,12 @@ type contractExecutor struct {
 	logger log.Logger
 }
 
+const defaultGasLimit uint64 = 6000000
+
 var (
-	gasPrice        = big.NewInt(1)
-	gasLimit uint64 = 6000000
+	defaultGasPrice      = big.NewInt(1)
+	ErrInsufficientFunds = errors.New("insufficient funds for gas * price + value")
+	ErrIntrinsicGas      = errors.New("intrinsic gas too low")
 )
 
 type executeResultData struct {
@@ -45,6 +51,12 @@ type executeResultData struct {
 	ExecuteResult string `json:"result,omitempty"`
 
 	Logs []*types.Log `json:"logs,omitempty"`
+}
+
+type ContractRawData struct {
+	GasLimit      uint64
+	TransferValue *big.Int
+	AbiData       []byte
 }
 
 func getBlockHashFn(chain ChainContext) func(n uint64) common.Hash {
@@ -62,12 +74,58 @@ func toHex(b []byte) string {
 	return "0x" + hex
 }
 
+func (this *contractExecutor) BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountDB *account.AccountDB, context map[string]interface{}) (bool, string) {
+	err := service.GetTransactionPool().ProcessFee(*tx, accountDB)
+	if err != nil {
+		return false, err.Error()
+	}
+
+	raw, errMessage := this.decodeContractData(tx.Data)
+	if errMessage != "" {
+		return false, errMessage
+	}
+	context["contractData"] = raw
+	//check if balance > (gasLimit * gasPrice) + transfer value
+	if common.IsProposal015() {
+		balance := accountDB.GetBalance(common.HexToAddress(tx.Source))
+		gasFee := new(big.Int).Mul(new(big.Int).SetUint64(raw.GasLimit), defaultGasPrice)
+		if balance.Cmp(new(big.Int).Add(gasFee, raw.TransferValue)) < 0 {
+			this.logger.Errorf("[ContractExecutor]insufficient funds:%s,balance:%s,gasFess:%s,transferValue:%s,", tx.Hash.String(), balance.String(), gasFee.String(), raw.TransferValue.String())
+			return false, ErrInsufficientFunds.Error()
+		}
+		this.logger.Tracef("[ContractExecutor]pre check passed:%s,balance:%s,gasFess:%s,transferValue:%s,", tx.Hash.String(), balance.String(), gasFee.String(), raw.TransferValue.String())
+	}
+	return true, ""
+}
+
 func (this *contractExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
 	// check chain status if it is subChain
 	if common.IsSub() && transaction.Target == common.WhitelistForCreate {
 		status := service.GetSubChainStatus(accountdb)
 		if 2 != status {
 			return false, fmt.Sprintf("cannot call contract , status: %d", status)
+		}
+	}
+
+	var contractCreation = false
+	if transaction.Target == "" {
+		contractCreation = true
+	}
+	contractRawData := context["contractData"].(ContractRawData)
+	gasLimit := contractRawData.GasLimit
+	transferValue := contractRawData.TransferValue
+	input := contractRawData.AbiData
+	var err error
+	var intrinsicGas uint64
+	if common.IsProposal015() {
+		intrinsicGas, err = IntrinsicGas(input, contractCreation)
+		if err != nil {
+			this.logger.Errorf("[ContractExecutor]IntrinsicGas error:%s", err.Error())
+			return false, err.Error()
+		}
+		if contractRawData.GasLimit < intrinsicGas {
+			this.logger.Errorf("[ContractExecutor]gas limit too low,gas limit:%d,intrinsic gas:%d", contractRawData.GasLimit, intrinsicGas)
+			return false, ErrIntrinsicGas.Error()
 		}
 	}
 
@@ -83,28 +141,10 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 	vmCtx.Time = new(big.Int).SetUint64(uint64(header.CurTime.Unix()))
 	//set constant value
 	vmCtx.Difficulty = new(big.Int).SetUint64(123)
-	vmCtx.GasPrice = gasPrice
-	vmCtx.GasLimit = gasLimit
-
-	var data types.ContractData
-	err := json.Unmarshal([]byte(transaction.Data), &data)
-	if err != nil {
-		this.logger.Errorf("Contract data unmarshal error:%s", err.Error())
-		return false, fmt.Sprintf("Contract data error, data: %s", transaction.Data)
-	}
-
-	transferValue, err := utility.StrToBigInt(data.TransferValue)
-	if err != nil {
-		this.logger.Errorf("Contract TransferValue convert error:%s", err.Error())
-		return false, fmt.Sprintf("Contract data TransferValue eror, data: %s", data.TransferValue)
-	}
-	this.logger.Tracef("Execute contract! data: %v,target address:%s", data, transaction.Target)
-
-	var input []byte
-	if common.IsProposal005() && (data.AbiData == "" || data.AbiData == "0x0") {
-		input = []byte{}
-	} else {
-		input = common.FromHex(data.AbiData)
+	vmCtx.GasPrice = defaultGasPrice
+	vmCtx.GasLimit = defaultGasLimit
+	if common.IsProposal015() {
+		vmCtx.GasLimit = gasLimit - intrinsicGas
 	}
 
 	vmInstance := vm.NewEVMWithNFT(vmCtx, accountdb, accountdb)
@@ -132,6 +172,13 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 	}
 
 	context["logs"] = logs
+	if common.IsProposal015() {
+		gasUsed := gasLimit - leftOverGas
+		gasFeeUsed := new(big.Int).Mul(new(big.Int).SetUint64(gasUsed), defaultGasPrice)
+		accountdb.SubBalance(common.HexToAddress(transaction.Source), gasFeeUsed)
+		accountdb.AddBalance(common.FeeAccount, gasFeeUsed)
+		context["gasUsed"] = gasUsed
+	}
 	if err != nil {
 		return false, err.Error()
 	}
@@ -139,4 +186,74 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 	returnData := executeResultData{contractAddress.GetHexString(), toHex(result), logs}
 	json, _ := json.Marshal(returnData)
 	return true, string(json)
+}
+
+// IntrinsicGas computes the 'intrinsic gas' for a message with the given data.
+func IntrinsicGas(data []byte, contractCreation bool) (uint64, error) {
+	// Set the starting gas for the raw transaction
+	var gas uint64
+	if contractCreation {
+		gas = vm.TxGasContractCreation
+	} else {
+		gas = vm.TxGas
+	}
+	// Bump the required gas by the amount of transactional data
+	if len(data) > 0 {
+		// Zero and non-zero bytes are priced differently
+		var nz uint64
+		for _, byt := range data {
+			if byt != 0 {
+				nz++
+			}
+		}
+		// Make sure we don't exceed uint64 for all data combinations
+		nonZeroGas := vm.TxDataNonZeroGasEIP2028
+
+		if (math.MaxUint64-gas)/nonZeroGas < nz {
+			return 0, vm.ErrGasUintOverflow
+		}
+		gas += nz * nonZeroGas
+
+		z := uint64(len(data)) - nz
+		if (math.MaxUint64-gas)/vm.TxDataZeroGas < z {
+			return 0, vm.ErrGasUintOverflow
+		}
+		gas += z * vm.TxDataZeroGas
+	}
+	return gas, nil
+}
+
+func (this *contractExecutor) decodeContractData(txData string) (*ContractRawData, string) {
+	var data types.ContractData
+	err := json.Unmarshal([]byte(txData), &data)
+	if err != nil {
+		this.logger.Errorf("Contract data unmarshal error:%s", err.Error())
+		return nil, fmt.Sprintf("Contract data error, data: %s", txData)
+	}
+
+	var rawGasLimit uint64
+	if data.GasLimit == "" || data.GasLimit == "0" {
+		rawGasLimit = defaultGasLimit
+	} else {
+		rawGasLimit, err = strconv.ParseUint(data.GasLimit, 10, 64)
+		if err != nil {
+			this.logger.Errorf("Contract gasLimit convert error:%s", err.Error())
+			return nil, fmt.Sprintf("Contract data gasLimit eror, data: %s", data.GasLimit)
+		}
+	}
+
+	transferValue, err := utility.StrToBigInt(data.TransferValue)
+	if err != nil {
+		this.logger.Errorf("Contract TransferValue convert error:%s", err.Error())
+		return nil, fmt.Sprintf("Contract data TransferValue eror, data: %s", data.TransferValue)
+	}
+
+	var input []byte
+	if common.IsProposal005() && (data.AbiData == "" || data.AbiData == "0x0") {
+		input = []byte{}
+	} else {
+		input = common.FromHex(data.AbiData)
+	}
+	raw := &ContractRawData{rawGasLimit, transferValue, input}
+	return raw, ""
 }

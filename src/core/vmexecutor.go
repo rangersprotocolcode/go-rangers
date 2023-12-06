@@ -132,10 +132,16 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		if this.context["logs"] != nil {
 			delete(this.context, "logs")
 		}
+
 		contractAddress := this.context["contractAddress"]
 		if contractAddress != nil {
 			delete(this.context, "contractAddress")
 			receipt.ContractAddress = contractAddress.(common.Address)
+		}
+
+		gasUsed := this.context["gasUsed"]
+		if gasUsed != nil && common.IsProposal015() {
+			receipt.GasUsed = gasUsed.(uint64)
 		}
 		receipt.TxHash = transaction.Hash
 		receipts = append(receipts, receipt)

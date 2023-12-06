@@ -48,6 +48,7 @@ type Receipt struct {
 	ContractAddress   common.Address `json:"contractAddress"`
 	Logs              []*Log         `json:"logs" gencodec:"required"`
 	Result            string         `json:"result,omitempty"`
+	GasUsed           uint64         `json:"gasUsed,omitempty"`
 }
 
 func NewReceipt(root []byte, failed bool, cumulativeGasUsed uint64, height uint64, msg, source, result string) *Receipt {

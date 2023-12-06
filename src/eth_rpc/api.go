@@ -20,6 +20,7 @@ import (
 	"com.tuntun.rocket/node/src/common"
 	"com.tuntun.rocket/node/src/core"
 	"com.tuntun.rocket/node/src/eth_tx"
+	"com.tuntun.rocket/node/src/executor"
 	"com.tuntun.rocket/node/src/middleware"
 	"com.tuntun.rocket/node/src/middleware/types"
 	"com.tuntun.rocket/node/src/network"
@@ -177,6 +178,28 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 		return nil, errors.New("param invalid"), 0
 	}
 
+	initialGas := uint64(*args.Gas)
+	var contractCreation = false
+	if args.To == nil {
+		contractCreation = true
+	}
+	var data []byte
+	if args.Data != nil {
+		data = *args.Data
+	}
+
+	var gasErr error
+	var intrinsicGas uint64
+	intrinsicGas, gasErr = executor.IntrinsicGas(data, contractCreation)
+	if gasErr != nil {
+		logger.Errorf("IntrinsicGas error:%s", gasErr.Error())
+		return nil, gasErr, 0
+	}
+	if initialGas < intrinsicGas {
+		logger.Errorf("gas limit too low,gas limit:%d,intrinsic gas:%d", initialGas, intrinsicGas)
+		return nil, errors.New("intrinsic gas too low"), 0
+	}
+
 	vmCtx := vm.Context{}
 	vmCtx.CanTransfer = vm.CanTransfer
 	vmCtx.Transfer = vm.Transfer
@@ -184,8 +207,7 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 	if args.From != nil {
 		vmCtx.Origin = *args.From
 	}
-	initialGas := uint64(*args.Gas)
-	vmCtx.GasLimit = initialGas
+	vmCtx.GasLimit = initialGas - intrinsicGas
 	vmCtx.Coinbase = common.BytesToAddress(block.Header.Castor)
 	vmCtx.BlockNumber = new(big.Int).SetUint64(block.Header.Height)
 	vmCtx.Time = new(big.Int).SetUint64(uint64(block.Header.CurTime.Unix()))
@@ -200,10 +222,6 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 		transferValue = big.NewInt(0)
 	}
 
-	var data []byte
-	if args.Data != nil {
-		data = *args.Data
-	}
 	vmInstance := vm.NewEVMWithNFT(vmCtx, accountdb, accountdb)
 	caller := vm.AccountRef(vmCtx.Origin)
 	var (
@@ -213,7 +231,7 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 		err             error
 	)
 	logger.Debugf("before vm instance")
-	if args.To == nil {
+	if contractCreation {
 		result, contractAddress, leftOverGas, _, err = vmInstance.Create(caller, data, vmCtx.GasLimit, transferValue)
 		logger.Debugf("[eth_call]After execute contract create!Contract address:%s, leftOverGas: %d,error:%v", contractAddress.GetHexString(), leftOverGas, err)
 	} else {
