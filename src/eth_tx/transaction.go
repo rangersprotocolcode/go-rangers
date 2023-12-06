@@ -27,6 +27,7 @@ import (
 	"golang.org/x/crypto/sha3"
 	"io"
 	"math/big"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -262,6 +263,9 @@ func ConvertTx(txRaw *Transaction, sender common.Address, encodedTx utility.Byte
 	if transferValue != nil {
 		data.TransferValue = utility.BigIntToStr(transferValue)
 	}
+	data.GasPrice = txRaw.GasPrice().String()
+	data.GasLimit = strconv.FormatUint(txRaw.Gas(), 10)
+
 	dataByes, _ := json.Marshal(data)
 	result.Data = string(dataByes)
 	result.Hash = txRaw.Hash()
