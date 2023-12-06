@@ -156,6 +156,7 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 		contractAddress = common.HexToAddress(transaction.Target)
 	)
 
+	this.logger.Debugf("before vm instance,intrinsicGas:%d,gasLimit:%d", intrinsicGas, vmCtx.GasLimit)
 	if transaction.Target == "" {
 		result, contractAddress, leftOverGas, logs, err = vmInstance.Create(caller, input, vmCtx.GasLimit, transferValue)
 		context["contractAddress"] = contractAddress

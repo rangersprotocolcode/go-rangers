@@ -230,7 +230,7 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 		contractAddress common.Address
 		err             error
 	)
-	logger.Debugf("before vm instance")
+	logger.Debugf("before vm instance,intrinsicGas:%d,gasLimit:%d", intrinsicGas, vmCtx.GasLimit)
 	if contractCreation {
 		result, contractAddress, leftOverGas, _, err = vmInstance.Create(caller, data, vmCtx.GasLimit, transferValue)
 		logger.Debugf("[eth_call]After execute contract create!Contract address:%s, leftOverGas: %d,error:%v", contractAddress.GetHexString(), leftOverGas, err)
