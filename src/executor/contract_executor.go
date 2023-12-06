@@ -111,7 +111,7 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 	if transaction.Target == "" {
 		contractCreation = true
 	}
-	contractRawData := context["contractData"].(ContractRawData)
+	contractRawData := context["contractData"].(*ContractRawData)
 	gasLimit := contractRawData.GasLimit
 	transferValue := contractRawData.TransferValue
 	input := contractRawData.AbiData
