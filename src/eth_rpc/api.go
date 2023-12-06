@@ -272,7 +272,7 @@ func (api *EthAPIService) BlockNumber() utility.Uint64 {
 
 // GasPrice returns a suggestion for a gas price.
 func (s *EthAPIService) GasPrice() (*utility.Big, error) {
-	gasPrice := utility.Big(*big.NewInt(1))
+	gasPrice := utility.Big(*gasPrice)
 	return &gasPrice, nil
 }
 
@@ -378,7 +378,7 @@ func (s *EthAPIService) GetTransactionReceipt(hash common.Hash) (map[string]inte
 		"blockNumber":       (*utility.Big)(new(big.Int).SetUint64(executedTx.Receipt.Height)),
 		"transactionHash":   executedTx.Receipt.TxHash,
 		"from":              tx.Source,
-		"gasUsed":           utility.Uint64(0),
+		"gasUsed":           executedTx.Receipt.GasUsed,
 		"cumulativeGasUsed": utility.Uint64(0),
 		"contractAddress":   nil,
 		"logs":              executedTx.Receipt.Logs,

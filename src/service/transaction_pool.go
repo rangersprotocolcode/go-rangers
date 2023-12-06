@@ -185,6 +185,7 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 		er.Status = receipt.Status
 		er.Logs = receipt.Logs
 		er.ContractAddress = receipt.ContractAddress
+		er.GasUsed = receipt.GasUsed
 		if 0 != len(receipt.Result) {
 			er.Result = receipt.Result
 		}
