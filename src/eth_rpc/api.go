@@ -105,7 +105,7 @@ type RPCBlock struct {
 }
 
 var (
-	gasPrice                 = big.NewInt(1000000000)
+	gasPrice                 = big.NewInt(1)
 	gasLimit          uint64 = 6000000
 	callLock                 = sync.Mutex{}
 	nonce                    = []byte{1, 2, 3, 4, 5, 6, 7, 8}
