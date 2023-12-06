@@ -40,7 +40,7 @@ type contractExecutor struct {
 const defaultGasLimit uint64 = 6000000
 
 var (
-	defaultGasPrice      = big.NewInt(1)
+	defaultGasPrice      = big.NewInt(1000000000)
 	ErrInsufficientFunds = errors.New("insufficient funds for gas * price + value")
 	ErrIntrinsicGas      = errors.New("intrinsic gas too low")
 )
