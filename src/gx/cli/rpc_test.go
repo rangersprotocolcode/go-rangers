@@ -12,16 +12,16 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package cli
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/base"
-	"com.tuntun.rocket/node/src/consensus/vrf"
-	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/base"
+	"com.tuntun.rangers/node/src/consensus/vrf"
+	"com.tuntun.rangers/node/src/middleware/types"
 	"crypto/md5"
 	"encoding/binary"
 	"encoding/json"
@@ -116,7 +116,6 @@ func TestJSONString(t *testing.T) {
 
 func TestSlice(t *testing.T) {
 	a := []int{0, 1, 2, 3, 4}
-	//删除第i个元素
 	i := 4
 	a = append(a[:i], a[i+1:]...)
 	fmt.Println(a)
@@ -147,10 +146,6 @@ func TestGtasAPI_NewWallet(t *testing.T) {
 
 	fmt.Println(privKeyStr)
 	fmt.Println(walletAddress)
-
-	// 加入本地钱包
-	//*ws = append(*ws, wallet{privKeyStr, walletAddress})
-	//ws.store()
 
 	var miner types.Miner
 	miner.Id = address.Bytes()

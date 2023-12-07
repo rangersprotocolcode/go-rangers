@@ -17,16 +17,17 @@
 package eth_tx
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	crypto "com.tuntun.rocket/node/src/eth_crypto"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/storage/rlp"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	crypto "com.tuntun.rangers/node/src/eth_crypto"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/storage/rlp"
+	"com.tuntun.rangers/node/src/utility"
 	"encoding/json"
 	"errors"
 	"golang.org/x/crypto/sha3"
 	"io"
 	"math/big"
+	"strconv"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -262,89 +263,12 @@ func ConvertTx(txRaw *Transaction, sender common.Address, encodedTx utility.Byte
 	if transferValue != nil {
 		data.TransferValue = utility.BigIntToStr(transferValue)
 	}
+	data.GasPrice = txRaw.GasPrice().String()
+	data.GasLimit = strconv.FormatUint(txRaw.Gas(), 10)
+
 	dataByes, _ := json.Marshal(data)
 	result.Data = string(dataByes)
 	result.Hash = txRaw.Hash()
 	result.ExtraData = common.ToHex(encodedTx)
 	return result
 }
-
-//
-//// AsMessage returns the transaction as a core.Message.
-////
-//// AsMessage requires a signer to derive the sender.
-////
-//// XXX Rename message to something less arbitrary?
-//func (tx *Transaction) AsMessage(s Signer) (Message, error) {
-//	msg := Message{
-//		nonce:      tx.data.AccountNonce,
-//		gasLimit:   tx.data.GasLimit,
-//		gasPrice:   new(big.Int).Set(tx.data.Price),
-//		to:         tx.data.Recipient,
-//		amount:     tx.data.Amount,
-//		data:       tx.data.Payload,
-//		checkNonce: true,
-//	}
-//
-//	var err error
-//	msg.from, err = Sender(s, tx)
-//	return msg, err
-//}
-
-// Size returns the true RLP encoded storage size of the transaction, either by
-// encoding and returning it, or returning a previsouly cached value.
-//func (tx *Transaction) Size() common.StorageSize {
-//	if size := tx.size.Load(); size != nil {
-//		return size.(common.StorageSize)
-//	}
-//	c := writeCounter(0)
-//	rlp.Encode(&c, &tx.data)
-//	tx.size.Store(common.StorageSize(c))
-//	return common.StorageSize(c)
-//}
-
-//type txdataMarshaling struct {
-//	AccountNonce hexutil.Uint64
-//	Price        *hexutil.Big
-//	GasLimit     hexutil.Uint64
-//	Amount       *hexutil.Big
-//	Payload      hexutil.Bytes
-//	V            *hexutil.Big
-//	R            *hexutil.Big
-//	S            *hexutil.Big
-//}
-//
-//
-//// MarshalJSON encodes the web3 RPC transaction format.
-//func (tx *Transaction) MarshalJSON() ([]byte, error) {
-//	hash := tx.Hash()
-//	data := tx.data
-//	data.Hash = &hash
-//	return data.MarshalJSON()
-//}
-//
-//// UnmarshalJSON decodes the web3 RPC transaction format.
-//func (tx *Transaction) UnmarshalJSON(input []byte) error {
-//	var dec txdata
-//	if err := dec.UnmarshalJSON(input); err != nil {
-//		return err
-//	}
-//	withSignature := dec.V.Sign() != 0 || dec.R.Sign() != 0 || dec.S.Sign() != 0
-//	if withSignature {
-//		var V byte
-//		if isProtectedV(dec.V) {
-//			chainID := deriveChainId(dec.V).Uint64()
-//			V = byte(dec.V.Uint64() - 35 - 2*chainID)
-//		} else {
-//			V = byte(dec.V.Uint64() - 27)
-//		}
-//		if !crypto.ValidateSignatureValues(V, dec.R, dec.S, false) {
-//			return ErrInvalidSig
-//		}
-//	}
-//	*tx = Transaction{
-//		data: dec,
-//		time: time.Now(),
-//	}
-//	return nil
-//}

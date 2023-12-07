@@ -12,16 +12,16 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package service
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/storage/account"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/log"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/storage/account"
+	"com.tuntun.rangers/node/src/utility"
 	"math"
 	"math/big"
 )
@@ -67,7 +67,6 @@ func (reward *RewardCalculator) CalculateReward(height uint64, accountDB *accoun
 	return data
 }
 
-// 计算某一块的奖励
 func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, accountDB *account.AccountDB, situation string) map[common.Address]*big.Int {
 	result := make(map[common.Address]*big.Int)
 
@@ -77,14 +76,12 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, a
 	reward.logger.Debugf("start to calculate, height: %d, hash: %s, proposer: %s, groupId: %s, totalReward %f", height, hashString, common.ToHex(bh.Castor), common.ToHex(bh.GroupId), total)
 	defer reward.logger.Warnf("end to calculate, height %d, hash: %s, result: %v", height, hashString, result)
 
-	// 提案者奖励
 	rewardProposer := utility.Float64ToBigInt(total * common.ProposerReward)
 	proposerAddr := common.BytesToAddress(MinerManagerImpl.getMinerAccount(bh.Castor, common.MinerTypeProposer, accountDB))
 	addReward(result, proposerAddr, rewardProposer)
 	proposerResult := result[proposerAddr].String()
 	reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, account: %s, reward: %d, result: %s", height, hashString, common.ToHex(bh.Castor), proposerAddr.String(), rewardProposer, proposerResult)
 
-	// 其他提案者奖励
 	otherRewardProposer := total * common.AllProposerReward
 	totalProposerStake, proposersStake := reward.minerManager.GetProposerTotalStakeWithDetail(height, accountDB)
 	if totalProposerStake != 0 {
@@ -96,7 +93,6 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, a
 		}
 	}
 
-	// 验证者奖励
 	if nil == bh.GroupId {
 		return nil
 	}

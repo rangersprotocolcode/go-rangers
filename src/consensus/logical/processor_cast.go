@@ -12,26 +12,26 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package logical
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/base"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/consensus/model"
-	"com.tuntun.rocket/node/src/consensus/net"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/base"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/consensus/model"
+	"com.tuntun.rangers/node/src/consensus/net"
+	"com.tuntun.rangers/node/src/utility"
 	"math/big"
 
-	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/middleware/types"
 	"runtime/debug"
 	"sync"
 	"time"
 
-	"com.tuntun.rocket/node/src/middleware"
+	"com.tuntun.rangers/node/src/middleware"
 )
 
 type CastBlockContexts struct {
@@ -171,7 +171,7 @@ func (p *Processor) tryBroadcastBlock(vctx *VerifyContext) bool {
 	if sc := vctx.checkBroadcast(); sc != nil {
 		bh := sc.BH
 		tlog := newHashTraceLog("tryBroadcastBlock", bh.Hash, p.GetMinerID())
-		tlog.log("try broadcast, height=%v, totalQN=%v, 耗时%v", bh.Height, bh.TotalQN, utility.GetTime().Sub(bh.CurTime))
+		tlog.log("try broadcast, height= %v, totalQN= %v, cost: %v", bh.Height, bh.TotalQN, utility.GetTime().Sub(bh.CurTime))
 
 		go p.successNewBlock(vctx, sc)
 

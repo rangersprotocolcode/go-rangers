@@ -12,7 +12,7 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package utility
 
@@ -63,7 +63,6 @@ func StrToBigInt(s string) (*big.Int, error) {
 
 // "11.22"->11220000000
 func strToBigInt(s string, decimal int64) (*big.Int, error) {
-	// 空字符串，默认返回0
 	if 0 == len(s) {
 		return big.NewInt(0), nil
 	}
@@ -91,7 +90,6 @@ func BigIntToStr(number *big.Int) string {
 		return zeroString
 	}
 
-	// 默认保留小数点9位
 	return bigIntToStr(number, defaultDecimal)
 }
 
@@ -110,9 +108,7 @@ func bigIntToStr(n *big.Int, precision int) string {
 		return zeroString
 	}
 
-	// 绝对值字符串
 	var starter, first, last string
-	// 负数
 	if n.Sign() < 0 {
 		starter = "-"
 	}
@@ -121,7 +117,6 @@ func bigIntToStr(n *big.Int, precision int) string {
 	number := numCopied.Abs(numCopied).String()
 	length := len(number)
 
-	// 小于1的数
 	if length <= precision {
 		first = zeroString
 		last = fmt.Sprintf("%s%s", strings.Repeat(zeroString, precision-length), number)
@@ -161,8 +156,6 @@ func Uint64ToBigInt(number uint64) *big.Int {
 	return result
 }
 
-// FormatDecimalForERC20 火箭协议默认18位decimal，
-// 而ERC20通常会自己定义decimal，需要转换
 func FormatDecimalForERC20(number *big.Int, decimal int64) *big.Int {
 	if nil == number || 0 == number.Sign() {
 		return big.NewInt(0)
@@ -173,8 +166,6 @@ func FormatDecimalForERC20(number *big.Int, decimal int64) *big.Int {
 	return result
 }
 
-// FormatDecimalForRocket 火箭协议默认18位decimal，
-// 而ERC20通常会自己定义decimal，需要转换
 func FormatDecimalForRocket(number *big.Int, decimal int64) *big.Int {
 	if nil == number || 0 == number.Sign() {
 		return big.NewInt(0)
@@ -186,13 +177,11 @@ func FormatDecimalForRocket(number *big.Int, decimal int64) *big.Int {
 }
 
 func BigIntBase10toN(bigInt *big.Int, base int) string {
-	// 进制转换所需要的除数
 	bigInt64 := big.NewInt(int64(base))
 	mod := big.NewInt(0)
 	finalRes := ""
 
 	for bigInt.Sign() != 0 {
-		// 取余
 		bigInt.DivMod(bigInt, bigInt64, mod)
 		finalRes = tenToAny[mod.Int64()] + finalRes
 	}

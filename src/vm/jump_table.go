@@ -16,7 +16,7 @@
 
 package vm
 
-import "com.tuntun.rocket/node/src/common"
+import "com.tuntun.rangers/node/src/common"
 
 type (
 	executionFunc func(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error)

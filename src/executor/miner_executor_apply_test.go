@@ -12,15 +12,15 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package executor
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/service"
+	"com.tuntun.rangers/node/src/utility"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -28,8 +28,6 @@ import (
 	"testing"
 )
 
-// 异常流程
-// 账户钱不够
 func testMinerExecutorApply(t *testing.T) {
 	accountDB := getTestAccountDB()
 
@@ -57,7 +55,6 @@ func testMinerExecutorApply(t *testing.T) {
 	}
 }
 
-// 正常流程
 func testMinerExecutorApply1(t *testing.T) {
 	accountDB := getTestAccountDB()
 	balance, _ := utility.StrToBigInt("10000")
@@ -99,8 +96,6 @@ func testMinerExecutorApply1(t *testing.T) {
 	}
 }
 
-// 异常流程
-// 质押钱不够
 func testMinerExecutorApply2(t *testing.T) {
 	accountDB := getTestAccountDB()
 	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(1000000000000000))
@@ -126,8 +121,6 @@ func testMinerExecutorApply2(t *testing.T) {
 	}
 }
 
-// 异常流程
-// 重复申请
 func testMinerExecutorApply3(t *testing.T) {
 	accountDB := getTestAccountDB()
 	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(1000000000000000))
@@ -174,10 +167,6 @@ func testMinerExecutorApply3(t *testing.T) {
 	}
 }
 
-// 以下提案节点
-
-// 异常流程
-// 账户钱不够
 func testMinerExecutorApply4(t *testing.T) {
 	accountDB := getTestAccountDB()
 
@@ -203,7 +192,6 @@ func testMinerExecutorApply4(t *testing.T) {
 	}
 }
 
-// 正常流程
 func testMinerExecutorApply5(t *testing.T) {
 	accountDB := getTestAccountDB()
 	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(100000000000000000))
@@ -237,8 +225,6 @@ func testMinerExecutorApply5(t *testing.T) {
 	}
 }
 
-// 异常流程
-// 质押钱不够
 func testMinerExecutorApply6(t *testing.T) {
 	accountDB := getTestAccountDB()
 	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(1000000000000000))
@@ -264,8 +250,6 @@ func testMinerExecutorApply6(t *testing.T) {
 	}
 }
 
-// 异常流程
-// 重复申请
 func testMinerExecutorApply7(t *testing.T) {
 	accountDB := getTestAccountDB()
 	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(100000000000000000))
@@ -312,8 +296,6 @@ func testMinerExecutorApply7(t *testing.T) {
 	}
 }
 
-// 异常流程
-// 重复申请
 func testMinerExecutorApply8(t *testing.T) {
 	accountDB := getTestAccountDB()
 	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(100000000000000000))
@@ -372,8 +354,6 @@ func testMinerExecutorApply8(t *testing.T) {
 	}
 }
 
-// 正常流程
-// 默认账户
 func testMinerExecutorApply9(t *testing.T) {
 	accountDB := getTestAccountDB()
 	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(1000000000000000))

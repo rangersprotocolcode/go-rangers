@@ -12,15 +12,14 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package vrf
 
 import (
+	"com.tuntun.rangers/node/src/consensus/base"
 	"fmt"
 	"testing"
-
-	"com.tuntun.rocket/node/src/consensus/base"
 )
 
 func TestVRF_prove(t *testing.T) {

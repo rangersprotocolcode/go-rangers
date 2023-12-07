@@ -12,27 +12,27 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package cli
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus"
-	"com.tuntun.rocket/node/src/consensus/logical/group_create"
-	"com.tuntun.rocket/node/src/consensus/model"
-	cnet "com.tuntun.rocket/node/src/consensus/net"
-	"com.tuntun.rocket/node/src/core"
-	"com.tuntun.rocket/node/src/eth_rpc"
-	"com.tuntun.rocket/node/src/middleware"
-	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/middleware/mysql"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/network"
-	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/storage/account"
-	"com.tuntun.rocket/node/src/utility"
-	"com.tuntun.rocket/node/src/vm"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus"
+	"com.tuntun.rangers/node/src/consensus/logical/group_create"
+	"com.tuntun.rangers/node/src/consensus/model"
+	cnet "com.tuntun.rangers/node/src/consensus/net"
+	"com.tuntun.rangers/node/src/core"
+	"com.tuntun.rangers/node/src/eth_rpc"
+	"com.tuntun.rangers/node/src/middleware"
+	"com.tuntun.rangers/node/src/middleware/log"
+	"com.tuntun.rangers/node/src/middleware/mysql"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/network"
+	"com.tuntun.rangers/node/src/service"
+	"com.tuntun.rangers/node/src/storage/account"
+	"com.tuntun.rangers/node/src/utility"
+	"com.tuntun.rangers/node/src/vm"
 	"encoding/json"
 	"fmt"
 	"gopkg.in/alecthomas/kingpin.v2"
@@ -59,7 +59,6 @@ func NewGX() *GX {
 }
 
 func (gx *GX) Run() {
-	// control+c 信号
 	ctrlC := signals()
 	quitChan := make(chan bool)
 	go gx.handleExit(ctrlC, quitChan)
@@ -73,17 +72,16 @@ func (gx *GX) Run() {
 	_ = app.Flag("dashboard", "enable metrics dashboard").Bool()
 	pprofPort := app.Flag("pprof", "enable pprof").Default("23333").Uint()
 
-	//控制台
 	consoleCmd := app.Command("console", "start RangersProtocol console")
 	showRequest := consoleCmd.Flag("show", "show the request json").Short('v').Bool()
 	remoteHost := consoleCmd.Flag("host", "the node host address to connect").Short('i').String()
 	remotePort := consoleCmd.Flag("port", "the node host port to connect").Short('p').Default("8101").Int()
 	rpcPort := consoleCmd.Flag("rpcport", "RangersProtocol console will listen at the port for wallet service").Short('r').Default("0").Int()
-	//版本号
+
 	versionCmd := app.Command("version", "show RangersProtocol version")
-	// mine
+
 	mineCmd := app.Command("miner", "miner start")
-	// rpc解析
+
 	rpc := mineCmd.Flag("rpc", "start rpc server").Default("true").Bool()
 	addrRpc := mineCmd.Flag("rpcaddr", "rpc host").Short('r').Default("0.0.0.0").IP()
 	portRpc := mineCmd.Flag("rpcport", "rpc port").Short('p').Default("8088").Uint()
@@ -172,7 +170,6 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 
 	vm.InitVM()
 
-	// 启动链，包括创始块构建
 	err := core.InitCore(consensus.NewConsensusHelper(minerInfo.ID), *sk, minerInfo.ID.GetHexString())
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
@@ -194,7 +191,6 @@ func (gx *GX) initMiner(env, gateAddr, outerGateAddr, tx string) {
 		network.GetNetInstance().InitTx(tx)
 	}
 
-	// 共识部分启动
 	ok := consensus.InitConsensus(minerInfo, common.GlobalConf)
 	if !ok {
 		panic("Init miner consensus init error!")

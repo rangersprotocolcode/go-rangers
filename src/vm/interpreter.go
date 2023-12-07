@@ -17,9 +17,9 @@
 package vm
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/utility"
 	"hash"
 	"sync/atomic"
 )
@@ -189,7 +189,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 			return nil, nil, &ErrStackOverflow{stackLen: sLen, limit: operation.maxStack}
 		}
 		// If the operation is valid, enforce and write restrictions
-		/*todo
+		/*
 		origin:if in.readOnly && in.evm.chainRules.IsByzantium
 		*/
 		if in.readOnly {

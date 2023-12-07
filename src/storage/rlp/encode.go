@@ -12,7 +12,7 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package rlp
 
@@ -191,7 +191,6 @@ func (w *encbuf) encodeStringHeader(size int) {
 	if size < 56 {
 		w.str = append(w.str, 0x80+byte(size))
 	} else {
-		// TODO: encode to w.str directly
 		sizesize := putint(w.sizebuf[1:], uint64(size))
 		w.sizebuf[0] = 0xB7 + byte(sizesize)
 		w.str = append(w.str, w.sizebuf[:sizesize+1]...)
@@ -395,7 +394,6 @@ func writeUint(val reflect.Value, w *encbuf) error {
 		// fits single byte
 		w.str = append(w.str, byte(i))
 	} else {
-		// TODO: encode int to w.str directly
 		s := putint(w.sizebuf[1:], i)
 		w.sizebuf[0] = 0x80 + byte(s)
 		w.str = append(w.str, w.sizebuf[:s+1]...)

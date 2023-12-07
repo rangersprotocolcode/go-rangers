@@ -12,18 +12,18 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package core
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/executor"
-	"com.tuntun.rocket/node/src/middleware"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/storage/account"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/executor"
+	"com.tuntun.rangers/node/src/middleware"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/service"
+	"com.tuntun.rangers/node/src/storage/account"
+	"com.tuntun.rangers/node/src/utility"
 	"sort"
 	"strings"
 	"time"
@@ -132,10 +132,16 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		if this.context["logs"] != nil {
 			delete(this.context, "logs")
 		}
+
 		contractAddress := this.context["contractAddress"]
 		if contractAddress != nil {
 			delete(this.context, "contractAddress")
 			receipt.ContractAddress = contractAddress.(common.Address)
+		}
+
+		gasUsed := this.context["gasUsed"]
+		if gasUsed != nil && common.IsProposal015() {
+			receipt.GasUsed = gasUsed.(uint64)
 		}
 		receipt.TxHash = transaction.Hash
 		receipts = append(receipts, receipt)

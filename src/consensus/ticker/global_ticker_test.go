@@ -12,7 +12,7 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package ticker
 
@@ -44,7 +44,6 @@ func TestGlobalTicker_RegisterRoutine(t *testing.T) {
 	ticker.RegisterRoutine("name3", handler("name3 exec1"), uint32(4))
 
 	ticker.StopTickerRoutine("name1")
-
 
 	time.Sleep(time.Second * 5)
 	ticker.StopTickerRoutine("name3")

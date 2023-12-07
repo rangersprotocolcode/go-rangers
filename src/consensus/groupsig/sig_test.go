@@ -12,15 +12,15 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package groupsig
 
 import (
 	"testing"
 
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/base"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/base"
 	"encoding/hex"
 	"fmt"
 	"strconv"
@@ -38,8 +38,8 @@ func TestSign(t *testing.T) {
 	secKey.SetHexString("0x14262cc0dc2954d7283bb990e6eb4c075eab67356c3c83c6406f5019e4c1ce80")
 	fmt.Printf("secKey key:%s\n", secKey.GetHexString())
 
-	msg,_:= hex.DecodeString("4e976a0d30a783c9ad0dfcefb35e0d6c5a98bc35eb41639c696498917e6c23c6")
-	sign := Sign(*secKey,msg)
+	msg, _ := hex.DecodeString("4e976a0d30a783c9ad0dfcefb35e0d6c5a98bc35eb41639c696498917e6c23c6")
+	sign := Sign(*secKey, msg)
 	fmt.Printf("Sign:%s\n", sign.GetHexString())
 }
 
@@ -106,7 +106,7 @@ func TestRecoverGroupSignature(t *testing.T) {
 	m[seckey8] = sign8
 
 	groupSign := RecoverGroupSignature(m, 8)
-	fmt.Printf("group sign:%s\n",groupSign.GetHexString())
+	fmt.Printf("group sign:%s\n", groupSign.GetHexString())
 }
 
 func BenchmarkSign(b *testing.B) {
@@ -143,7 +143,7 @@ func BenchmarkVerifySign(b *testing.B) {
 
 func BenchmarkVerifySign2(b *testing.B) {
 	b.StopTimer()
-	r := base.NewRand() //生成随机数
+	r := base.NewRand()
 	for n := 0; n < b.N; n++ {
 		sec := NewSeckeyFromRand(r.Deri(1))
 		pub := GeneratePubkey(*sec)

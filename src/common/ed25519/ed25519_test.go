@@ -12,14 +12,14 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package ed25519
 
 import (
 	"bufio"
 	"bytes"
-	"com.tuntun.rocket/node/src/common/ed25519/edwards25519"
+	"com.tuntun.rangers/node/src/common/ed25519/edwards25519"
 	"compress/gzip"
 	"crypto"
 	"crypto/rand"

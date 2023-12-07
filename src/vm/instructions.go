@@ -18,17 +18,17 @@ package vm
 
 import (
 	"bytes"
-	crypto "com.tuntun.rocket/node/src/eth_crypto"
+	crypto "com.tuntun.rangers/node/src/eth_crypto"
 	"fmt"
 	"math"
 	"math/big"
 	"strconv"
 
-	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/service"
+	"com.tuntun.rangers/node/src/utility"
 
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/types"
 	"github.com/holiman/uint256"
 	"golang.org/x/crypto/sha3"
 )
@@ -621,7 +621,7 @@ func opCreate(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]
 	stackvalue := size
 
 	callContext.contract.UseGas(gas)
-	//TODO: use uint256.Int instead of converting with toBig()
+	// use uint256.Int instead of converting with toBig()
 	var bigVal = big0
 	if !value.IsZero() {
 		bigVal = value.ToBig()
@@ -665,7 +665,7 @@ func opCreate2(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([
 	callContext.contract.UseGas(gas)
 	// reuse size int for stackvalue
 	stackvalue := size
-	//TODO: use uint256.Int instead of converting with toBig()
+	// use uint256.Int instead of converting with toBig()
 	bigEndowment := big0
 	if !endowment.IsZero() {
 		bigEndowment = endowment.ToBig()
@@ -704,7 +704,7 @@ func opCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	args := callContext.memory.GetPtr(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
 	var bigVal = big0
-	//TODO: use uint256.Int instead of converting with toBig()
+	// use uint256.Int instead of converting with toBig()
 	// By using big0 here, we save an alloc for the most common case (non-ether-transferring contract calls),
 	// but it would make more sense to extend the usage of uint256.Int
 	if !value.IsZero() {
@@ -742,7 +742,7 @@ func opCallCode(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 	// Get arguments from the memory.
 	args := callContext.memory.GetPtr(int64(inOffset.Uint64()), int64(inSize.Uint64()))
 
-	//TODO: use uint256.Int instead of converting with toBig()
+	// use uint256.Int instead of converting with toBig()
 	var bigVal = big0
 	if !value.IsZero() {
 		gas += CallStipend
@@ -1291,7 +1291,7 @@ func opAuthCall(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) (
 	}
 
 	var bigVal = big0
-	//TODO: use uint256.Int instead of converting with toBig()
+	// use uint256.Int instead of converting with toBig()
 	// By using big0 here, we save an alloc for the most common case (non-ether-transferring contract calls),
 	// but it would make more sense to extend the usage of uint256.Int
 	if !value.IsZero() {

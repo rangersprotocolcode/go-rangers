@@ -12,15 +12,15 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package service
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/storage/account"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/storage/account"
+	"com.tuntun.rangers/node/src/utility"
 	"encoding/base64"
 	"encoding/json"
 	"math/big"
@@ -115,7 +115,6 @@ func ChangeAssets(source string, targets map[string]types.TransferData, accountd
 	responseBalance := ""
 	responseCoin := types.NewJSONObject()
 	responseFT := types.NewJSONObject()
-	responseNFT := make([]types.NFTID, 0)
 
 	for address, transferData := range targets {
 		targetAddr := common.HexToAddress(address)
@@ -141,9 +140,7 @@ func ChangeAssets(source string, targets map[string]types.TransferData, accountd
 	if !responseFT.IsEmpty() {
 		response.Put("ft", responseFT.GetData())
 	}
-	if 0 != len(responseNFT) {
-		response.Put("nft", responseNFT)
-	}
+
 	return response.TOJSONString(), true
 }
 

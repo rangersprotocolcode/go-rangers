@@ -1,11 +1,27 @@
+// Copyright 2020 The RangersProtocol Authors
+// This file is part of the RocketProtocol library.
+//
+// The RangersProtocol library is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// The RangersProtocol library is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public License
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
+
 package cli
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/gx/rpc"
-	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/gx/rpc"
+	"com.tuntun.rangers/node/src/middleware/log"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/utility"
 	"context"
 	"math/big"
 	"sync"
@@ -98,7 +114,7 @@ func (api *SubscribeAPI) NewHeads(ctx context.Context) (*rpc.Subscription, error
 	return rpcSub, nil
 }
 
-//adapt ws net_* api
+// adapt ws net_* api
 type NetAPI struct {
 }
 
@@ -114,7 +130,7 @@ func (s *NetAPI) Listening() bool {
 	return true
 }
 
-//adapt ws web3_* api
+// adapt ws web3_* api
 type Web3API struct {
 }
 

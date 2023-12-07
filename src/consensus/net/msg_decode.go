@@ -12,21 +12,20 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package net
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/consensus/model"
-	"com.tuntun.rocket/node/src/middleware/pb"
-	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/consensus/model"
+	middleware_pb "com.tuntun.rangers/node/src/middleware/pb"
+	"com.tuntun.rangers/node/src/middleware/types"
 	"github.com/gogo/protobuf/proto"
 	"time"
 )
 
-//todo
 func baseMessage(sign *middleware_pb.SignData) *model.SignInfo {
 	return pbToSignData(sign)
 }
@@ -43,14 +42,6 @@ func pbToGroupInfo(gi *middleware_pb.ConsensusGroupInitInfo) *model.GroupInitInf
 		GroupMembers:    mems,
 	}
 }
-
-//func pbToConsensusGroupInitSummary(m *middleware_pb.ConsensusGroupInitSummary) *model.ConsensusGroupInitSummary {
-//	gh := types.PbToGroupHeader(m.Header)
-//	return &model.ConsensusGroupInitSummary{
-//		GHeader:   gh,
-//		Signature: *groupsig.DeserializeSign(m.Signature),
-//	}
-//}
 
 func unMarshalConsensusGroupRawMessage(b []byte) (*model.GroupInitMessage, error) {
 	message := new(middleware_pb.ConsensusGroupRawMessage)
@@ -155,7 +146,6 @@ func unMarshalConsensusSignPKReqMessage(b []byte) (*model.SignPubkeyReqMessage, 
 	return message, nil
 }
 
-//--------------------------------------------组铸币--------------------------------------------------------------------
 func unMarshalConsensusCurrentMessage(b []byte) (*model.ConsensusCurrentMessage, error) {
 	m := new(middleware_pb.ConsensusCurrentMessage)
 	e := proto.Unmarshal(b, m)
@@ -268,40 +258,6 @@ func pbToSharePiece(s *middleware_pb.SharePiece) *model.SharePiece {
 	sp := model.SharePiece{Share: share, Pub: pub}
 	return &sp
 }
-
-//
-//func pbToStaticGroup(s *middleware_pb.StaticGroupSummary) *model.StaticGroupSummary {
-//	var groupId groupsig.ID
-//	groupId.Deserialize(s.GroupID)
-//
-//	var groupPk groupsig.Pubkey
-//	groupPk.Deserialize(s.GroupPK)
-//
-//	gis := pbToConsensusGroupInitSummary(s.Gis)
-//
-//	groupInfo := model.StaticGroupSummary{GroupID: groupId, GroupPK: groupPk, GIS: *gis}
-//	return &groupInfo
-//}
-//
-//func pbToPubKeyInfo(p *middleware_pb.PubKeyInfo) *model.PubKeyInfo {
-//	var id groupsig.ID
-//	var pk groupsig.Pubkey
-//
-//	e1 := id.Deserialize(p.ID)
-//	if e1 != nil {
-//		logger.Errorf("[handler]groupsig.ID Deserialize error:%s", e1.Error())
-//		return nil
-//	}
-//
-//	e2 := pk.Deserialize(p.PublicKey)
-//	if e2 != nil {
-//		logger.Errorf("[handler]groupsig.Pubkey Deserialize error:%s", e2.Error())
-//		return nil
-//	}
-//
-//	pkInfo := model.NewPubKeyInfo(id, pk)
-//	return &pkInfo
-//}
 
 func unMarshalConsensusCreateGroupRawMessage(b []byte) (*model.ParentGroupConsensusMessage, error) {
 	message := new(middleware_pb.ConsensusCreateGroupRawMessage)

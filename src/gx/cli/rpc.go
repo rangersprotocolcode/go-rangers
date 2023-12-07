@@ -12,21 +12,20 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package cli
 
 import (
-	"com.tuntun.rocket/node/src/eth_rpc"
-	"com.tuntun.rocket/node/src/gx/rpc"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/eth_rpc"
+	"com.tuntun.rangers/node/src/gx/rpc"
+	"com.tuntun.rangers/node/src/middleware/log"
+	"fmt"
 	"net"
 	"net/http"
 	"strconv"
 	"strings"
-
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/log"
-	"fmt"
 	"sync"
 )
 
@@ -82,7 +81,6 @@ func startHttps(httpPort uint, privateKey string) error {
 
 var GtasAPIImpl *GtasAPI
 
-// StartRPC RPC 功能
 func StartRPC(host string, port uint, privateKey string) error {
 	var err error
 	GtasAPIImpl = &GtasAPI{}

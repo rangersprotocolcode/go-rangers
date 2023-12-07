@@ -12,16 +12,16 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package middleware
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/db"
-	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/storage/account"
-	"com.tuntun.rocket/node/src/storage/trie"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/db"
+	"com.tuntun.rangers/node/src/middleware/log"
+	"com.tuntun.rangers/node/src/storage/account"
+	"com.tuntun.rangers/node/src/storage/trie"
 	"strconv"
 )
 
@@ -57,7 +57,6 @@ func initAccountDBManager() {
 }
 
 func (manager *AccountDBManager) GetAccountDBByHash(hash common.Hash) (*account.AccountDB, error) {
-	//todo: cache
 	return account.NewAccountDB(hash, manager.stateDB)
 }
 
@@ -70,7 +69,6 @@ func (manager *AccountDBManager) GetTrieDB() *trie.NodeDatabase {
 }
 
 func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.AccountDB, nonces map[string]uint64, height uint64) {
-	// 这里无需加锁，因为外面加过了
 	key := "fixed"
 	nonce := nonces[key]
 

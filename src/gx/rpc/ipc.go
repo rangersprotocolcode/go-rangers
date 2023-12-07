@@ -12,16 +12,15 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package rpc
 
 import (
+	"com.tuntun.rangers/node/src/common"
 	"context"
 	"fmt"
 	"net"
-
-	"com.tuntun.rocket/node/src/common"
 )
 
 // CreateIPCListener creates an listener, on Unix platforms this is a unix socket, on

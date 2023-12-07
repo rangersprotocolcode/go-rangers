@@ -12,7 +12,7 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package common
 
@@ -28,7 +28,6 @@ var hasherPool = sync.Pool{
 	},
 }
 
-// 计算sha256
 func Sha256(blockByte []byte) []byte {
 	hasher := hasherPool.Get().(hash.Hash)
 	hasher.Reset()

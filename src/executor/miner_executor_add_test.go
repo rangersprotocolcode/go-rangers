@@ -12,15 +12,15 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package executor
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/service"
+	"com.tuntun.rangers/node/src/utility"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -28,8 +28,6 @@ import (
 	"testing"
 )
 
-// 异常流程
-// 矿工不存在
 func testMinerExecutorAdd(t *testing.T) {
 	accountDB := getTestAccountDB()
 	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(10000000000000000))
@@ -57,7 +55,6 @@ func testMinerExecutorAdd(t *testing.T) {
 	}
 }
 
-// 正常流程
 func testMinerExecutorAdd1(t *testing.T) {
 	accountDB := getTestAccountDB()
 	balance, _ := utility.StrToBigInt("10000")
@@ -94,8 +91,6 @@ func testMinerExecutorAdd1(t *testing.T) {
 	}
 }
 
-// 正常流程
-// 代质押
 func testMinerExecutorAdd2(t *testing.T) {
 	accountDB := getTestAccountDB()
 	money, _ := utility.StrToBigInt("7000")
@@ -132,8 +127,6 @@ func testMinerExecutorAdd2(t *testing.T) {
 	}
 }
 
-// 异常流程
-// 账户钱不够
 func testMinerExecutorAdd4(t *testing.T) {
 	accountDB := getTestAccountDB()
 	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(1))

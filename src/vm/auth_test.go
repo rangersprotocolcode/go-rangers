@@ -17,9 +17,9 @@
 package vm
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/common/sha3"
-	crypto "com.tuntun.rocket/node/src/eth_crypto"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/common/sha3"
+	crypto "com.tuntun.rangers/node/src/eth_crypto"
 	"fmt"
 	"math/big"
 	"testing"
@@ -47,7 +47,6 @@ func TestAuth(t *testing.T) {
 	fmt.Printf("hash:%s\n", common.ToHex(hash))
 
 	hash = common.FromHex("0x957bf39fd2c8ffe4a6a2d4b6389e8eae5b48ae6be727c6046cf310ccf1c2bb22")
-	//todo
 	privateKeyStr := ""
 	var privateKey = common.HexStringToSecKey(privateKeyStr)
 	sign := privateKey.Sign(hash)
@@ -74,72 +73,3 @@ func TestAuth1(t *testing.T) {
 	hash2 := crypto.Keccak256(msg2)
 	fmt.Printf("hash2:%s\n", common.ToHex(hash2))
 }
-
-//func TestABI(t *testing.T) {
-//	uintTyp, err := abi.NewType("uint256")
-//	if err != nil {
-//		panic(err)
-//	}
-//	uintEncoded, err := uintTyp.Encode(1000)
-//	if err != nil {
-//		panic(err)
-//	}
-//	fmt.Printf("uint256:%s\n",common.ToHex(uintEncoded))
-//
-//	address := common.HexToAddress("0x454dfd1a16d1c6dc33fd4f045a4b7a2b2898d384")
-//	addressTyp, err := abi.NewType("address")
-//	if err != nil {
-//		panic(err)
-//	}
-//	addressEncoded, err := addressTyp.Encode(address)
-//	if err != nil {
-//		panic(err)
-//	}
-//	fmt.Printf("address:%s\n",common.ToHex(addressEncoded))
-//
-//	bytesInfo := common.FromHex("0x6057361d0000000000000000000000000000000000000000000000000000000000000002")
-//	bytesTyp, err := abi.NewType("bytes")
-//	if err != nil {
-//		panic(err)
-//	}
-//	bytesEncoded, err := bytesTyp.Encode(bytesInfo)
-//	if err != nil {
-//		panic(err)
-//	}
-//	fmt.Printf("bytes:%s\n",common.ToHex(bytesEncoded))
-//
-//	strInfo := "0x6057361d0000000000000000000000000000000000000000000000000000000000000002"
-//	strTyp, err := abi.NewType("string")
-//	if err != nil {
-//		panic(err)
-//	}
-//	strEncoded, err := strTyp.Encode(strInfo)
-//	if err != nil {
-//		panic(err)
-//	}
-//	fmt.Printf("string:%s\n",common.ToHex(strEncoded))
-//
-//	typ,_:= abi.NewType("tuple(address to, uint256 value, uint256 gaslimit, uint256 nonce,bytes data)")
-//
-//	type Tx struct {
-//		To common.Address
-//		Value *big.Int
-//		Gaslimit *big.Int
-//		Nonce *big.Int
-//		Data []byte
-//	}
-//	obj := &Tx{
-//		To:common.HexToAddress("0x454dfd1a16d1c6dc33fd4f045a4b7a2b2898d384"),
-//		Value: big.NewInt(1),
-//		Gaslimit: big.NewInt(100),
-//		Nonce: big.NewInt(2),
-//		Data: common.FromHex("0x6057361d0000000000000000000000000000000000000000000000000000000000000002"),
-//	}
-//
-//	// Encode
-//	encodedTx, err := typ.Encode(obj)
-//	if err != nil {
-//		panic(err)
-//	}
-//	fmt.Printf("tx:%s\n",common.ToHex(encodedTx))
-//}

@@ -12,7 +12,7 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package types
 
@@ -21,7 +21,7 @@ import (
 	"fmt"
 	"unsafe"
 
-	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rangers/node/src/common"
 )
 
 //go:generate gencodec -type Receipt -field-override receiptMarshaling -out gen_receipt_json.go
@@ -48,6 +48,7 @@ type Receipt struct {
 	ContractAddress   common.Address `json:"contractAddress"`
 	Logs              []*Log         `json:"logs" gencodec:"required"`
 	Result            string         `json:"result,omitempty"`
+	GasUsed           uint64         `json:"gasUsed,omitempty"`
 }
 
 func NewReceipt(root []byte, failed bool, cumulativeGasUsed uint64, height uint64, msg, source, result string) *Receipt {

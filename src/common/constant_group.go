@@ -12,17 +12,17 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package common
 
 const (
 	EPOCH            int = 5
 	Group_Create_Gap     = 50
-	GROUP_Work_GAP       = Group_Create_Gap + EPOCH*8 //组准备就绪后, 等待可以铸块的间隔为4个epoch
+	GROUP_Work_GAP       = Group_Create_Gap + EPOCH*8
 )
 
-var groupWorkDuration = 2 * 60 * 60 * 1000 / GetCastingInterval() //组铸块的周期为100个epoch
+var groupWorkDuration = 2 * 60 * 60 * 1000 / GetCastingInterval()
 
 func GetGroupWorkDuration() uint64 {
 	if IsSub() && 0 != Genesis.GroupLife {

@@ -12,25 +12,25 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package logical
 
 import (
-	"com.tuntun.rocket/node/src/common/ed25519"
+	"com.tuntun.rangers/node/src/common/ed25519"
 	"errors"
 	"fmt"
 	"math"
 	"math/big"
 
-	"com.tuntun.rocket/node/src/consensus/base"
-	"com.tuntun.rocket/node/src/consensus/model"
-	"com.tuntun.rocket/node/src/consensus/vrf"
-	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/consensus/base"
+	"com.tuntun.rangers/node/src/consensus/model"
+	"com.tuntun.rangers/node/src/consensus/vrf"
+	"com.tuntun.rangers/node/src/middleware/types"
 )
 
 var (
-	rat1 *big.Rat
+	rat1   *big.Rat
 	max256 *big.Rat
 )
 

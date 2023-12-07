@@ -12,18 +12,18 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package executor
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/storage/account"
-	"com.tuntun.rocket/node/src/utility"
-	"com.tuntun.rocket/node/src/vm"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/log"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/service"
+	"com.tuntun.rangers/node/src/storage/account"
+	"com.tuntun.rangers/node/src/utility"
+	"com.tuntun.rangers/node/src/vm"
 	"fmt"
 	"math/big"
 )
@@ -73,8 +73,8 @@ func (this *minerNodeExecutor) Execute(transaction *types.Transaction, header *t
 	vmCtx.BlockNumber = new(big.Int).SetUint64(header.Height)
 	vmCtx.Time = new(big.Int).SetUint64(uint64(header.CurTime.Unix()))
 	vmCtx.Difficulty = new(big.Int).SetUint64(123)
-	vmCtx.GasPrice = gasPrice
-	vmCtx.GasLimit = gasLimit
+	vmCtx.GasPrice = defaultGasPrice
+	vmCtx.GasLimit = defaultGasLimit
 
 	contractAddress, logs := this.generateContractAddress(vmCtx, accountdb)
 	if nil == contractAddress {

@@ -12,22 +12,23 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package eth_rpc
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/core"
-	"com.tuntun.rocket/node/src/eth_tx"
-	"com.tuntun.rocket/node/src/middleware"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/network"
-	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/storage/account"
-	"com.tuntun.rocket/node/src/storage/rlp"
-	"com.tuntun.rocket/node/src/utility"
-	"com.tuntun.rocket/node/src/vm"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/core"
+	"com.tuntun.rangers/node/src/eth_tx"
+	"com.tuntun.rangers/node/src/executor"
+	"com.tuntun.rangers/node/src/middleware"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/network"
+	"com.tuntun.rangers/node/src/service"
+	"com.tuntun.rangers/node/src/storage/account"
+	"com.tuntun.rangers/node/src/storage/rlp"
+	"com.tuntun.rangers/node/src/utility"
+	"com.tuntun.rangers/node/src/vm"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -46,6 +47,18 @@ type CallArgs struct {
 	GasPrice *utility.Big    `json:"gasPrice"`
 	Value    *utility.Big    `json:"value"`
 	Data     *utility.Bytes  `json:"data"`
+	Input    *utility.Bytes  `json:"input"`
+}
+
+// data retrieves the transaction calldata. Input field is preferred.
+func (args *CallArgs) data() []byte {
+	if args.Input != nil {
+		return *args.Input
+	}
+	if args.Data != nil {
+		return *args.Data
+	}
+	return nil
 }
 
 // SendTxArgs represents the arguments to sumbit a new transaction into the transaction pool.
@@ -104,7 +117,7 @@ type RPCBlock struct {
 }
 
 var (
-	gasPrice                 = big.NewInt(1)
+	gasPrice                 = big.NewInt(1000000000)
 	gasLimit          uint64 = 6000000
 	callLock                 = sync.Mutex{}
 	nonce                    = []byte{1, 2, 3, 4, 5, 6, 7, 8}
@@ -177,6 +190,25 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 		return nil, errors.New("param invalid"), 0
 	}
 
+	initialGas := uint64(*args.Gas)
+	var contractCreation = false
+	if args.To == nil {
+		contractCreation = true
+	}
+	data := args.data()
+
+	var gasErr error
+	var intrinsicGas uint64
+	intrinsicGas, gasErr = executor.IntrinsicGas(data, contractCreation)
+	if gasErr != nil {
+		logger.Errorf("IntrinsicGas error:%s", gasErr.Error())
+		return nil, gasErr, 0
+	}
+	if initialGas < intrinsicGas {
+		logger.Errorf("gas limit too low,gas limit:%d,intrinsic gas:%d", initialGas, intrinsicGas)
+		return nil, errors.New("intrinsic gas too low"), 0
+	}
+
 	vmCtx := vm.Context{}
 	vmCtx.CanTransfer = vm.CanTransfer
 	vmCtx.Transfer = vm.Transfer
@@ -184,8 +216,7 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 	if args.From != nil {
 		vmCtx.Origin = *args.From
 	}
-	initialGas := uint64(*args.Gas)
-	vmCtx.GasLimit = initialGas
+	vmCtx.GasLimit = initialGas - intrinsicGas
 	vmCtx.Coinbase = common.BytesToAddress(block.Header.Castor)
 	vmCtx.BlockNumber = new(big.Int).SetUint64(block.Header.Height)
 	vmCtx.Time = new(big.Int).SetUint64(uint64(block.Header.CurTime.Unix()))
@@ -195,16 +226,11 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 
 	var transferValue *big.Int
 	if args.Value != nil {
-		value := args.Value.ToInt()
-		transferValue = big.NewInt(0).Mod(value, big.NewInt(1000000000000000000))
+		transferValue = args.Value.ToInt()
 	} else {
 		transferValue = big.NewInt(0)
 	}
 
-	var data []byte
-	if args.Data != nil {
-		data = *args.Data
-	}
 	vmInstance := vm.NewEVMWithNFT(vmCtx, accountdb, accountdb)
 	caller := vm.AccountRef(vmCtx.Origin)
 	var (
@@ -213,8 +239,8 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 		contractAddress common.Address
 		err             error
 	)
-	logger.Debugf("before vm instance")
-	if args.To == nil {
+	logger.Debugf("before vm instance,intrinsicGas:%d,gasLimit:%d", intrinsicGas, vmCtx.GasLimit)
+	if contractCreation {
 		result, contractAddress, leftOverGas, _, err = vmInstance.Create(caller, data, vmCtx.GasLimit, transferValue)
 		logger.Debugf("[eth_call]After execute contract create!Contract address:%s, leftOverGas: %d,error:%v", contractAddress.GetHexString(), leftOverGas, err)
 	} else {
@@ -255,7 +281,7 @@ func (api *EthAPIService) BlockNumber() utility.Uint64 {
 
 // GasPrice returns a suggestion for a gas price.
 func (s *EthAPIService) GasPrice() (*utility.Big, error) {
-	gasPrice := utility.Big(*big.NewInt(1))
+	gasPrice := utility.Big(*gasPrice)
 	return &gasPrice, nil
 }
 
@@ -361,7 +387,7 @@ func (s *EthAPIService) GetTransactionReceipt(hash common.Hash) (map[string]inte
 		"blockNumber":       (*utility.Big)(new(big.Int).SetUint64(executedTx.Receipt.Height)),
 		"transactionHash":   executedTx.Receipt.TxHash,
 		"from":              tx.Source,
-		"gasUsed":           utility.Uint64(0),
+		"gasUsed":           utility.Uint64(executedTx.Receipt.GasUsed),
 		"cumulativeGasUsed": utility.Uint64(0),
 		"contractAddress":   nil,
 		"logs":              executedTx.Receipt.Logs,

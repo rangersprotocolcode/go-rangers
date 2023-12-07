@@ -12,7 +12,7 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package cli
 
@@ -311,14 +311,14 @@ func (c *sendTxCmd) parse(args []string) bool {
 		return false
 	}
 
-	if c.txType == 1 { //发布合约预处理
-		if strings.TrimSpace(c.contractName) == "" { //合约名字非空
+	if c.txType == 1 {
+		if strings.TrimSpace(c.contractName) == "" {
 			fmt.Println("please input the contractName")
 			c.fs.PrintDefaults()
 			return false
 		}
 
-		if strings.TrimSpace(c.contractPath) == "" { //合约文件路径非空
+		if strings.TrimSpace(c.contractPath) == "" {
 			fmt.Println("please input the contractPath")
 			c.fs.PrintDefaults()
 			return false
@@ -340,14 +340,14 @@ func (c *sendTxCmd) parse(args []string) bool {
 		//}
 		//c.data = string(jsonBytes)
 
-	} else if c.txType == 2 { //调用合约预处理
-		if strings.TrimSpace(c.contractPath) == "" { //合约文件路径非空
+	} else if c.txType == 2 {
+		if strings.TrimSpace(c.contractPath) == "" {
 			fmt.Println("please input the contractPath")
 			c.fs.PrintDefaults()
 			return false
 		}
 
-		f, err := ioutil.ReadFile(c.contractPath) //读取文件
+		f, err := ioutil.ReadFile(c.contractPath)
 		if err != nil {
 			fmt.Println("read the "+c.contractPath+"file failed ", err)
 			c.fs.PrintDefaults()
@@ -383,73 +383,20 @@ func (c *exportAbiCmd) parse(args []string) bool {
 		return false
 	}
 
-	if strings.TrimSpace(c.contractName) == "" { //合约名字非空
+	if strings.TrimSpace(c.contractName) == "" {
 		fmt.Println("please input the contractName")
 		c.fs.PrintDefaults()
 		return false
 	}
 
-	if strings.TrimSpace(c.contractPath) == "" { //合约文件路径非空
+	if strings.TrimSpace(c.contractPath) == "" {
 		fmt.Println("please input the contractPath")
 		c.fs.PrintDefaults()
 		return false
 	}
 
-	//f, err := ioutil.ReadFile(c.contractPath) //读取文件
-	//if err != nil {
-	//	fmt.Println("read the "+c.contractPath+"file failed ", err)
-	//	c.fs.PrintDefaults()
-	//	return false
-	//}
-	//c.contract = tvm.Contract{string(f), c.contractName, nil}
-
 	return true
 }
-
-//func (c *exportAbiCmd) export() {
-//	vm := tvm.NewTvm(nil, &c.contract, common.GlobalConf.GetString("tvm", "pylib", "py"))
-//	defer func() {
-//		vm.DelTvm()
-//	}()
-//	str := `
-//class Register(object):
-//    def __init__(self):
-//        self.funcinfo = {}
-//        self.abiinfo = []
-//
-//    def public(self , *dargs):
-//        def wrapper(func):
-//            paranametuple = func.__para__
-//            paraname = list(paranametuple)
-//            paraname.remove("self")
-//            paratype = []
-//            for i in range(len(paraname)):
-//                paratype.append(dargs[i])
-//            self.funcinfo[func.__name__] = [paraname,paratype]
-//            tmp = {}
-//            tmp["FuncName"] = func.__name__
-//            tmp["Args"] = paratype
-//            self.abiinfo.append(tmp)
-//            abiexport(str(self.abiinfo))
-//
-//            def _wrapper(*args , **kargs):
-//                return func(*args, **kargs)
-//            return _wrapper
-//        return wrapper
-//
-//import builtins
-//builtins.register = Register()
-//`
-//	//fmt.Println(str)
-//	errorCode, errorMsg := vm.ExecutedScriptVmSucceed(str)
-//	if errorCode == types.SUCCESS {
-//		result := vm.ExecutedScriptKindFile(c.contract.Code)
-//		fmt.Println(result.Abi)
-//	} else {
-//		fmt.Println(errorMsg)
-//	}
-//
-//}
 
 type minerApplyCmd struct {
 	gasBaseCmd

@@ -12,7 +12,7 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package trie
 
@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 
+	"com.tuntun.rangers/node/src/common"
 	"io/ioutil"
 	"math/rand"
 	"os"
@@ -29,9 +30,7 @@ import (
 	"testing"
 	"testing/quick"
 
-	"com.tuntun.rocket/node/src/common"
-
-	"com.tuntun.rocket/node/src/middleware/db"
+	"com.tuntun.rangers/node/src/middleware/db"
 )
 
 // Used for testing

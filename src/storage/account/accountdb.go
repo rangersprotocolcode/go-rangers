@@ -12,25 +12,25 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package account
 
 import (
-	crypto "com.tuntun.rocket/node/src/eth_crypto"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/utility"
+	crypto "com.tuntun.rangers/node/src/eth_crypto"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/utility"
 	"fmt"
 	"math/big"
 	"sort"
 	"sync"
 
-	"com.tuntun.rocket/node/src/storage/trie"
+	"com.tuntun.rangers/node/src/storage/trie"
 
-	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rangers/node/src/common"
 	"golang.org/x/crypto/sha3"
 
-	"com.tuntun.rocket/node/src/storage/rlp"
+	"com.tuntun.rangers/node/src/storage/rlp"
 )
 
 type revision struct {
@@ -408,40 +408,6 @@ func (adb *AccountDB) DataIterator(addr common.Address, prefix []byte) *trie.Ite
 	}
 	return nil
 }
-
-////DataNext returns next key-value data from iterator
-//func (adb *AccountDB) DataNext(iterator uintptr) []byte {
-//	iter := (*trie.Iterator)(unsafe.Pointer(iterator))
-//	if iter == nil {
-//		return `{"key":"","value":"","hasValue":0}`
-//	}
-//	hasValue := 1
-//	var key string
-//	var value string
-//	if len(iter.Key) != 0 {
-//		key = string(iter.Key)
-//		value = string(iter.Value)
-//	}
-//
-//	// Means no data
-//	if !iter.Next() {
-//		hasValue = 0
-//	}
-//	if key == "" {
-//		return fmt.Sprintf(`{"key":"","value":"","hasValue":%d}`, hasValue)
-//	}
-//	if len(value) > 0 {
-//		valueType := value[0:1]
-//		if valueType == "0" { // This is map node
-//			hasValue = 2
-//		} else {
-//			value = value[1:]
-//		}
-//	} else {
-//		return `{"key":"","value":"","hasValue":0}`
-//	}
-//	return fmt.Sprintf(`{"key":"%s","value":%s,"hasValue":%d}`, key, value, hasValue)
-//}
 
 // // Snapshot returns an identifier for the current revision of the account.
 func (adb *AccountDB) Snapshot() int {

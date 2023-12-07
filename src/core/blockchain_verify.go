@@ -12,16 +12,16 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package core
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/utility"
 	"encoding/json"
 )
 
@@ -137,7 +137,6 @@ func calcTxTree(txs []*types.Transaction) common.Hash {
 	return common.BytesToHash(common.Sha256(buf.Bytes()))
 }
 
-// todo: performance. this function costs too much
 func calcReceiptsTree(receipts types.Receipts) common.Hash {
 	if nil == receipts || 0 == len(receipts) {
 		return emptyHash

@@ -12,13 +12,13 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package core
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/types"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -102,25 +102,4 @@ func TestJSONTransferData(t *testing.T) {
 
 	fmt.Printf("length: %d\n", len(mm))
 	fmt.Printf("length: %s", mm)
-}
-
-func TestJSONNFTID(t *testing.T) {
-	a := []types.NFTID{}
-	id1 := types.NFTID{Id: "1", SetId: "s1"}
-	//id2 := types.NFTID{Id: "2", SetId: "s2"}
-	a = append(a, id1)
-	//a = append(a, id2)
-
-	transferData := types.TransferData{NFT: a}
-	mm := make(map[string]types.TransferData, 0)
-	mm["address1"] = transferData
-	data, _ := json.Marshal(mm)
-	fmt.Printf("data:%s\n", data)
-
-	m2 := make(map[string]types.TransferData, 0)
-	err := json.Unmarshal([]byte(data), &m2)
-	if err != nil {
-		fmt.Printf("Unmarshal error:%s\n", err.Error())
-	}
-	fmt.Printf("m2:%v\n", m2)
 }

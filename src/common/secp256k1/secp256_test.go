@@ -12,7 +12,7 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package secp256k1
 
@@ -167,7 +167,7 @@ func signAndRecoverWithRandomMessages(t *testing.T, keys func() ([]byte, []byte)
 		}
 		compactSigCheck(t, sig)
 
-		// TODO: why do we flip around the recovery id?
+		// why do we flip around the recovery id?
 		sig[len(sig)-1] %= 4
 
 		pubkey2, err := RecoverPubkey(msg, sig)

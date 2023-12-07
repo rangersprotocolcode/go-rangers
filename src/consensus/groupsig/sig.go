@@ -12,7 +12,7 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package groupsig
 
@@ -22,9 +22,9 @@ import (
 	"math/big"
 	"sort"
 
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/base"
-	bn_curve "com.tuntun.rocket/node/src/consensus/groupsig/bn256"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/base"
+	bn_curve "com.tuntun.rangers/node/src/consensus/groupsig/bn256"
 )
 
 type Signature struct {
@@ -168,8 +168,8 @@ func recoverSignature(sigs []Signature, ids []ID) *Signature {
 	new_sig := &Signature{}
 	for i := 0; i < k; i++ {
 		var delta, num, den, diff *big.Int = big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(0)
-		for j := 0; j < k; j++ { //ID遍历
-			if j != i { //不是自己
+		for j := 0; j < k; j++ {
+			if j != i {
 				num.Mul(num, xs[j])
 				num.Mod(num, curveOrder)
 				diff.Sub(xs[j], xs[i])

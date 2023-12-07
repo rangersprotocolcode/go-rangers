@@ -12,21 +12,18 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package base
 
 import (
 	"hash"
 
-	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rangers/node/src/common"
 
 	"golang.org/x/crypto/sha3"
 )
 
-// Hash helpers
-
-// 生成多维字节数组的SHA3_256位哈希
 func HashBytes(b ...[]byte) hash.Hash {
 	d := sha3.New256()
 	for _, bi := range b {
@@ -35,7 +32,6 @@ func HashBytes(b ...[]byte) hash.Hash {
 	return d
 }
 
-// 生成数据的256位common.Hash
 func Data2CommonHash(data []byte) common.Hash {
 	var h common.Hash
 	sha3_hash := sha3.Sum256(data)

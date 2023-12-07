@@ -12,21 +12,21 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package cli
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus"
-	"com.tuntun.rocket/node/src/consensus/logical/group_create"
-	"com.tuntun.rocket/node/src/consensus/model"
-	"com.tuntun.rocket/node/src/core"
-	"com.tuntun.rocket/node/src/middleware"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/storage/account"
-	"com.tuntun.rocket/node/src/vm"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus"
+	"com.tuntun.rangers/node/src/consensus/logical/group_create"
+	"com.tuntun.rangers/node/src/consensus/model"
+	"com.tuntun.rangers/node/src/core"
+	"com.tuntun.rangers/node/src/middleware"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/service"
+	"com.tuntun.rangers/node/src/storage/account"
+	"com.tuntun.rangers/node/src/vm"
 	"fmt"
 	"math/big"
 	"os"
@@ -125,8 +125,6 @@ func TestMinerEcomony(t *testing.T) {
 func generateCode(header *types.BlockHeader, accountdb *account.AccountDB) string {
 	proposals, validators := service.MinerManagerImpl.GetAllMinerIdAndAccount(header.Height, accountdb)
 
-	//"0x7822b9ac"+出块人奖励地址+padding+common.GenerateCallDataUint((4+len(proposes))*32)
-	//		+common.GenerateCallDataUint(len(proposes))+所有的提案组成员地址+common.GenerateCallDataUint(len(验证组成员))+验证组成员地址
 	code := "0x7822b9ac" + common.GenerateCallDataAddress(proposals[common.ToHex(header.Castor)]) + padding + common.GenerateCallDataUint(uint64(4+len(proposals))*32)
 	code += common.GenerateCallDataUint(uint64(len(proposals)))
 	for _, addr := range proposals {
@@ -175,13 +173,11 @@ func initTestingEnv() {
 	service.InitService()
 	vm.InitVM()
 
-	// 启动链，包括创始块构建
 	err := core.InitCore(consensus.NewConsensusHelper(minerInfo.ID), *sk, minerInfo.ID.GetHexString())
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
 	}
 
-	// 共识部分启动
 	ok := consensus.InitConsensus(minerInfo, common.GlobalConf)
 	if !ok {
 		panic("Init miner consensus init error!")

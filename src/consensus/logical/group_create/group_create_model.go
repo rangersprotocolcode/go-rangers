@@ -12,20 +12,19 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package group_create
 
 import (
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/consensus/model"
+	"com.tuntun.rangers/node/src/utility"
+	lru "github.com/hashicorp/golang-lru"
 	"sync"
 	"sync/atomic"
 	"time"
-
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/consensus/model"
-	"github.com/hashicorp/golang-lru"
 )
 
 const (
@@ -175,8 +174,6 @@ func (groupInitContextCache *groupInitContextCache) GetContext(groupHash common.
 	return nil
 }
 
-// Clean
-// todo  rename
 func (groupInitContextCache *groupInitContextCache) Clean(groupHash common.Hash) {
 	gc := groupInitContextCache.GetContext(groupHash)
 	if gc != nil && gc.TransformStatus(GisSendInited, GisGroupInitDone) {
@@ -258,8 +255,7 @@ func (collector *groupPubkeyCollector) hasReceived(id groupsig.ID) bool {
 	return ok
 }
 
-// convergence
-// convergence find out the most received values
+// find out the most received values
 func (collector *groupPubkeyCollector) tryGenGroupPubkey() {
 	groupCreateLogger.Debugf("GroupPubkeyCollector try gen grouo pubkey, threshold=%v\n", collector.threshold)
 

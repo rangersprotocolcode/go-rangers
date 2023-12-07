@@ -12,19 +12,19 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package net
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/model"
-	"com.tuntun.rocket/node/src/consensus/ticker"
-	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/network"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/model"
+	"com.tuntun.rangers/node/src/consensus/ticker"
+	"com.tuntun.rangers/node/src/middleware/log"
+	"com.tuntun.rangers/node/src/network"
+	"com.tuntun.rangers/node/src/utility"
 	"fmt"
-	"github.com/hashicorp/golang-lru"
+	lru "github.com/hashicorp/golang-lru"
 	"sync"
 	"time"
 )
@@ -297,17 +297,6 @@ type StateMachineGenerator interface {
 
 type groupInsideMachineGenerator struct{}
 type groupOutsideMachineGenerator struct{}
-
-//func (m *groupOutsideMachineGenerator) Generate(id string) *StateMachine {
-//	machine := newStateMachine(id)
-//	machine.appendNode(newStateNode(network.GroupInitMsg, 1, func(msg interface{}) {
-//		MessageHandler.processor.OnMessageGroupInit(msg.(*model.ConsensusGroupRawMessage))
-//	}))
-//	machine.appendNode(newStateNode(network.GroupInitDoneMsg, model.Param.GetThreshold(), func(msg interface{}) {
-//		MessageHandler.processor.OnMessageGroupInited(msg.(*model.ConsensusGroupInitedMessage))
-//	}))
-//	return machine
-//}
 
 func (m *groupInsideMachineGenerator) Generate(id string, cnt int) *StateMachine {
 	machine := newStateMachine(id)

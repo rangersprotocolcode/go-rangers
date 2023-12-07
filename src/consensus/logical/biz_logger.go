@@ -12,24 +12,23 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package logical
 
 import (
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/utility"
 	"fmt"
 	"time"
 
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
 )
 
 type bLog interface {
 	log(format string, params ...interface{})
 }
 
-//业务标准输出日志
 type bizLog struct {
 	biz string
 }
@@ -97,15 +96,15 @@ func _doLog(t string, k string, sender string, format string, params ...interfac
 	consensusLogger.Infof("%v,#%v#,%v,%v", t, k, sender, s)
 }
 
-func (mtl *msgTraceLog) log(format string, params ... interface{}) {
+func (mtl *msgTraceLog) log(format string, params ...interface{}) {
 	_doLog(mtl.mtype, mtl.key, mtl.sender, format, params...)
 }
 
-func (mtl *msgTraceLog) logStart(format string, params ... interface{}) {
+func (mtl *msgTraceLog) logStart(format string, params ...interface{}) {
 	_doLog(mtl.mtype+"-begin", mtl.key, mtl.sender, format, params...)
 }
 
-func (mtl *msgTraceLog) logEnd(format string, params ... interface{}) {
+func (mtl *msgTraceLog) logEnd(format string, params ...interface{}) {
 	_doLog(mtl.mtype+"-end", mtl.key, mtl.sender, format, params...)
 }
 
@@ -146,7 +145,7 @@ func (log *slowLog) endStage() {
 	}
 }
 
-func (log *slowLog) log(format string, params ... interface{}) {
+func (log *slowLog) log(format string, params ...interface{}) {
 	c := utility.GetTime().Sub(log.begin)
 	if c.Seconds() < log.threshold {
 		return

@@ -12,16 +12,16 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package group_create
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/consensus/access"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/consensus/model"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/consensus/access"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/consensus/model"
+	"com.tuntun.rangers/node/src/utility"
 	"fmt"
 )
 
@@ -181,7 +181,7 @@ func (p *groupCreateProcessor) tryStartParentConsensus(topHeight uint64) bool {
 	return true
 }
 
-// OnMessageCreateGroupRaw triggered when receives raw group-create message from other nodes of the parent group
+// OnMessageParentGroupConsensus triggered when receives raw group-create message from other nodes of the parent group
 // It check and sign the group-create message for the requester
 // Before the formation of the new group, the parent group needs to reach a consensus on the information of the new group
 // which transited by ConsensusCreateGroupRawMessage.
@@ -256,7 +256,7 @@ func (p *groupCreateProcessor) validateCreateGroupInfo(msg *model.ParentGroupCon
 	return true, nil
 }
 
-// OnMessageCreateGroupSign receives sign message from other members after ConsensusCreateGroupRawMessage was sent
+// OnMessageParentGroupConsensusSign receives sign message from other members after ConsensusCreateGroupRawMessage was sent
 // during the new-group-info consensus process
 // OnMessageCreateGroupSign
 func (p *groupCreateProcessor) OnMessageParentGroupConsensusSign(msg *model.ParentGroupConsensusSignMessage) {

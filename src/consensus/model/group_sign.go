@@ -12,21 +12,21 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package model
 
 import (
-	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
 	"fmt"
 	"sync"
 )
 
 type GroupSignGenerator struct {
-	threshold      int                           //阈值
-	witnessSignMap map[string]groupsig.Signature //见证人列表
+	threshold      int
+	witnessSignMap map[string]groupsig.Signature
 
-	groupSign groupsig.Signature //输出的组签名
+	groupSign groupsig.Signature
 	lock      sync.RWMutex
 }
 
@@ -81,10 +81,9 @@ func (gs *GroupSignGenerator) VerifyGroupSign(gpk groupsig.Pubkey, data []byte) 
 	return groupsig.VerifySig(gpk, data, gs.GetGroupSign())
 }
 func (gs *GroupSignGenerator) String() string {
-	return fmt.Sprintf("当前分片数%v，需分片数%v", gs.WitnessCount(), gs.threshold)
+	return fmt.Sprintf("pieces: %v，still need: %v", gs.WitnessCount(), gs.threshold)
 }
 
-//不检查是否已经recover，只是把分片加入
 func (gs *GroupSignGenerator) addWitnessForce(id groupsig.ID, signature groupsig.Signature) (add bool, generated bool) {
 	gs.lock.Lock()
 	defer gs.lock.Unlock()

@@ -12,17 +12,16 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package groupsig
 
 import (
 	"bytes"
+	"com.tuntun.rangers/node/src/common"
+	bn_curve "com.tuntun.rangers/node/src/consensus/groupsig/bn256"
 	"fmt"
 	"log"
-
-	"com.tuntun.rocket/node/src/common"
-	bn_curve "com.tuntun.rocket/node/src/consensus/groupsig/bn256"
 
 	"golang.org/x/crypto/sha3"
 )

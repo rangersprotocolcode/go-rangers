@@ -12,61 +12,44 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package common
 
-// 时间
 const (
-	// 检查出块间隔，单位ms
 	CastingCheckInterval = 50
 
-	// 出块间隔，单位ms
 	castingInterval = 1000
 
-	// 10个小时，单位ms
-	// 计算一次奖励的时间间隔
 	rewardTime = 10 * 60 * 60 * 1000
-	//10 * 60 * 60 * 1000
 
 	RefundTime = 50 * 1000
 
-	// 一天，单位ms
 	oneDay = 24 * 3600 * 1000
 
-	// 释放周期
 	epoch = 180 * oneDay
 )
 
 var (
-
-	// 按照出块速度，计算奖励所需要的块数目
 	RewardBlocks = rewardTime / GetCastingInterval()
 
 	RefundBlocks = RefundTime / GetCastingInterval()
 
-	// 一个epoch内，出块总量
 	BlocksPerEpoch = epoch / GetCastingInterval()
 )
 
-// 奖励
 const (
-	// 矿工总奖励
 	TotalRPGSupply = 2100 * 10000 * 0.35
 
 	ReleaseRate = 0.08
 
-	// 验证组比例
 	ValidatorsReward = float64(2) / 7
 
-	// 所有提案者比例
 	AllProposerReward = float64(1) / 2
 
-	// 出块的提案者比例
 	ProposerReward = float64(3) / 14
 )
 
-// 最小质押量
 const (
 	ValidatorStake   = uint64(400)
 	ProposerStake    = uint64(2000)

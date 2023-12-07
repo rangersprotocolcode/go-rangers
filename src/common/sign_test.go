@@ -12,13 +12,13 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package common
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/common/secp256k1"
+	"com.tuntun.rangers/node/src/common/secp256k1"
 	"fmt"
 	"testing"
 
@@ -67,7 +67,7 @@ func TestSign(test *testing.T) {
 	pri_k := GenerateKey("")
 	pub_k := pri_k.GetPubKey()
 
-	pub_buf := pub_k.ToBytes() //测试公钥到字节切片的转换
+	pub_buf := pub_k.ToBytes()
 	pub_k = *BytesToPublicKey(pub_buf)
 
 	sha3_si := pri_k.Sign(sha3_hash[:])
@@ -93,7 +93,7 @@ func TestSignBytes(test *testing.T) {
 
 	address := pri_k.GetPubKey().GetAddress()
 	fmt.Printf("Address:%s\n", address.GetHexString())
-	//测试签名十六进制转换
+
 	h := sign.GetHexString()
 	fmt.Println(h)
 

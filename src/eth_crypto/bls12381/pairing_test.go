@@ -1,7 +1,7 @@
 package bls12381
 
 import (
-	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rangers/node/src/common"
 	"math/big"
 	"testing"
 )

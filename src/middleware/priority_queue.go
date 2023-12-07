@@ -12,20 +12,20 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package middleware
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/notify"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/notify"
 	"container/heap"
 )
 
 type Item struct {
 	Value *notify.ClientTransactionMessage
 
-	index int // 元素在堆中的索引。
+	index int
 }
 
 type PriorityQueue struct {
@@ -65,7 +65,7 @@ func (pq *PriorityQueue) Pop() interface{} {
 	old := pq.data
 	n := len(old)
 	item := old[n-1]
-	item.index = -1 // 为了安全性考虑而做的设置
+	item.index = -1
 	pq.data = old[0 : n-1]
 	return item
 }

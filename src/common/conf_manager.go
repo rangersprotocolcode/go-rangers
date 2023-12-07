@@ -12,7 +12,7 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package common
 
@@ -25,8 +25,7 @@ import (
 )
 
 type ConfManager interface {
-	//read basic conf from tas.conf file
-	//返回section组下的key的值, 若未配置, 则返回默认值defv
+	// GetString read basic conf from tas.conf file
 	GetString(section string, key string, defaultValue string) string
 	GetBool(section string, key string, defaultValue bool) bool
 	GetDouble(section string, key string, defaultValue float64) float64
@@ -41,13 +40,11 @@ type ConfManager interface {
 	//delete basic conf
 	Del(section string, key string)
 
-	//获取一个section的配置管理
 	GetSectionManager(section string) SectionConfManager
 }
 
 type SectionConfManager interface {
 	//read basic conf from tas.conf file
-	//返回section组下的key的值, 若未配置, 则返回默认值defv
 	GetString(key string, defaultValue string) string
 	GetBool(key string, defaultValue bool) bool
 	GetDouble(key string, defaultValue float64) float64
@@ -92,11 +89,9 @@ func newConfINIManager(path string) ConfManager {
 	if err != nil && os.IsNotExist(err) {
 		_, err = os.Create(path)
 		if err != nil {
-			//TODO: 记日志
 			panic(err)
 		}
 	} else if err != nil {
-		//TODO: 记日志
 		panic(err)
 	}
 	cs.dict = ini.MustLoad(path)

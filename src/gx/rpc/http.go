@@ -12,7 +12,7 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package rpc
 
@@ -30,7 +30,7 @@ import (
 	"sync"
 	"time"
 
-	"com.tuntun.rocket/node/src/asset"
+	"com.tuntun.rangers/node/src/asset"
 	"github.com/rs/cors"
 	"strings"
 )
@@ -199,7 +199,6 @@ func (srv *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	//url:=r.URL.String()
 	//fmt.Println("host: "+r.Host)
 	//fmt.Println("url: "+ url)
-
 
 	if code, err := validateRequest(r); err != nil {
 		http.Error(w, err.Error(), code)

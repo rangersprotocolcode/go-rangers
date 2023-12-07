@@ -12,14 +12,14 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package core
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/storage/account"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/storage/account"
 	"math/big"
 	"time"
 )
@@ -45,9 +45,6 @@ type BlockChain interface {
 
 	GenerateBlock(bh types.BlockHeader) *types.Block
 
-	//验证一个铸块（如本地缺少交易，则异步网络请求该交易）
-	//返回:=0, 验证通过；=-1，验证失败；=1，缺少交易，已异步向网络模块请求
-	//返回缺失交易列表
 	VerifyBlock(bh types.BlockHeader) ([]common.Hashes, int8)
 
 	AddBlockOnChain(b *types.Block) types.AddBlockResult

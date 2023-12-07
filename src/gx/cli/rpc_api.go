@@ -12,19 +12,19 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package cli
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/core"
-	"com.tuntun.rocket/node/src/middleware"
-	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/core"
+	"com.tuntun.rangers/node/src/middleware"
+	"com.tuntun.rangers/node/src/middleware/log"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/service"
 	"encoding/hex"
 	"fmt"
 	"math"
@@ -54,7 +54,6 @@ type GtasAPI struct {
 
 var gxLock *sync.RWMutex
 
-// NewWallet 新建账户接口
 func (api *GtasAPI) NewWallet() (*Result, error) {
 	privKey, addr, miner := walletManager.newWallet()
 	data := make(map[string]string)
@@ -65,30 +64,25 @@ func (api *GtasAPI) NewWallet() (*Result, error) {
 	return successResult(data)
 }
 
-// GetWallets 获取当前节点的wallets
 func (api *GtasAPI) GetWallets() (*Result, error) {
 	return successResult(walletManager)
 }
 
-// DeleteWallet 删除本地节点指定序号的地址
 func (api *GtasAPI) DeleteWallet(key string) (*Result, error) {
 	walletManager.deleteWallet(key)
 	return successResult(walletManager)
 }
 
-// BlockHeight 块高查询
 func (api *GtasAPI) BlockHeight() (*Result, error) {
 	height := core.GetBlockChain().TopBlock().Height
 	return successResult(height)
 }
 
-// GroupHeight 组块高查询
 func (api *GtasAPI) GroupHeight() (*Result, error) {
 	height := core.GetGroupChain().Count()
 	return successResult(height)
 }
 
-// TransPool 查询缓冲区的交易信息。
 func (api *GtasAPI) TransPool() (*Result, error) {
 	transactions := service.GetTransactionPool().GetReceived()
 	transList := make([]Transactions, 0, len(transactions))
@@ -128,35 +122,6 @@ func (api *GtasAPI) GetExecutedTransaction(hash string) (*Result, error) {
 	result["receipt"] = executed.Receipt
 	return successResult(result)
 }
-
-//
-//func convertBlock(bh *types.BlockHeader) interface{} {
-//	blockDetail := make(map[string]interface{})
-//	blockDetail["hash"] = bh.Hash.Hex()
-//	blockDetail["height"] = bh.Height
-//	blockDetail["pre_hash"] = bh.PreHash.Hex()
-//	blockDetail["pre_time"] = bh.PreTime.Format("2006-01-02 15:04:05")
-//	blockDetail["queue_number"] = bh.ProveValue
-//	blockDetail["cur_time"] = bh.CurTime.Format("2006-01-02 15:04:05")
-//	var castorId groupsig.ID
-//	castorId.Deserialize(bh.Castor)
-//	blockDetail["castor"] = castorId.String()
-//	//blockDetail["castor"] = hex.EncodeToString(bh.Castor)
-//	var gid groupsig.ID
-//	gid.Deserialize(bh.GroupId)
-//	blockDetail["group_id"] = gid.GetHexString()
-//	blockDetail["signature"] = hex.EncodeToString(bh.Signature)
-//	trans := make([]string, len(bh.Transactions))
-//	for i := range bh.Transactions {
-//		trans[i] = bh.Transactions[i].String()
-//	}
-//	blockDetail["transactions"] = trans
-//	blockDetail["txs"] = len(bh.Transactions)
-//	blockDetail["total_qn"] = bh.TotalQN
-//	blockDetail["qn"] = mediator.Proc.CalcBlockHeaderQN(bh)
-//	blockDetail["tps"] = math.Round(float64(len(bh.Transactions)) / bh.CurTime.Sub(bh.PreTime).Seconds())
-//	return blockDetail
-//}
 
 func (api *GtasAPI) GetBlockByHeight(height uint64) (*Result, error) {
 	b := core.GetBlockChain().QueryBlock(height)
@@ -248,7 +213,7 @@ func (api *GtasAPI) BlockDetail(h string) (*Result, error) {
 	return successResult(bd)
 }
 
-//deprecated
+// deprecated
 func (api *GtasAPI) GetTopBlock() (*Result, error) {
 	bh := core.GetBlockChain().TopBlock()
 	blockDetail := make(map[string]interface{})
@@ -270,7 +235,6 @@ func (api *GtasAPI) GetTopBlock() (*Result, error) {
 	return successResult(blockDetail)
 }
 
-//铸块统计
 func (api *GtasAPI) CastStat(begin uint64, end uint64) (*Result, error) {
 	proposerStat := make(map[string]int32)
 	groupStat := make(map[string]int32)
@@ -339,23 +303,23 @@ func (api *GtasAPI) NodeInfo() (*Result, error) {
 	ni.ID = common.ToHex(miner.Account)
 
 	if !p.Ready() {
-		ni.Status = "节点未准备就绪"
+		ni.Status = "not ready"
 	} else {
-		ni.Status = "运行中"
+		ni.Status = "running"
 		morts := make([]MortGage, 0)
 		t := ""
 		balance := ""
 		heavyInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeProposer, middleware.AccountDBManagerInstance.GetLatestStateDB())
 		if heavyInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(heavyInfo))
-			t = "提案节点"
+			t = "proposal"
 			balance = walletManager.getBalance(heavyInfo.Account)
 		}
 
 		lightInfo := service.MinerManagerImpl.GetMinerById(p.GetMinerID().Serialize(), common.MinerTypeValidator, middleware.AccountDBManagerInstance.GetLatestStateDB())
 		if lightInfo != nil {
 			morts = append(morts, *NewMortGageFromMiner(lightInfo))
-			t = " 验证节点"
+			t = "validator"
 			balance = walletManager.getBalance(lightInfo.Account)
 		}
 

@@ -12,12 +12,12 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package base
 
 import (
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/utility"
 	"fmt"
 	"regexp"
 	"strings"
@@ -25,7 +25,7 @@ import (
 	"testing"
 	"time"
 
-	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rangers/node/src/common"
 )
 
 type something struct {
@@ -63,11 +63,8 @@ func TestRegex(t *testing.T) {
 	data := prefix + "()"
 	re2, _ := regexp.Compile(prefix + "\\((.*?)\\)")
 
-	//FindSubmatch查找子匹配项
 	sub := re2.FindSubmatch([]byte(data))
-	//第一个匹配的是全部元素
 	fmt.Println(string(sub[0]))
-	//第二个匹配的是第一个()里面的
 	fmt.Println(string(sub[1]))
 
 	s := strings.Replace(data, data, string(sub[1])+".ShortS()", 1)

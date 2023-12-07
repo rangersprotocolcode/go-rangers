@@ -12,13 +12,13 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package rpc
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/utility"
 	"container/list"
 	"context"
 	"encoding/json"
@@ -33,7 +33,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rangers/node/src/common"
 )
 
 var (
@@ -426,7 +426,6 @@ func (c *Client) dispatch(conn net.Conn) {
 				case msg.isResponse():
 					c.handleResponse(msg)
 				default:
-					// TODO: maybe close
 				}
 			}
 
@@ -658,7 +657,7 @@ func (sub *ClientSubscription) forward() (err error, unsubscribeServer bool) {
 				return ErrSubscriptionQueueOverflow, true
 			}
 			buffer.PushBack(val)
-		case 2:                             // sub.channel<-
+		case 2: // sub.channel<-
 			cases[2].Send = reflect.Value{} // Don't hold onto the value.
 			buffer.Remove(buffer.Front())
 		}

@@ -12,15 +12,15 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package net
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware"
-	"com.tuntun.rocket/node/src/network"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware"
+	"com.tuntun.rangers/node/src/network"
+	"com.tuntun.rangers/node/src/utility"
 	"fmt"
 	"log"
 	"runtime/debug"
@@ -38,10 +38,6 @@ func (c *ConsensusHandler) Init(groupCreateMessageProcessor GroupCreateMessagePr
 	c.miningMessageProcessor = miningMessageProcessor
 	InitStateMachines()
 }
-
-//func (c *ConsensusHandler) Processor() MessageProcessor {
-//	return c.processor
-//}
 
 func (c *ConsensusHandler) ready() bool {
 	return c.groupCreateMessageProcessor != nil && c.miningMessageProcessor != nil && c.miningMessageProcessor.Ready()
