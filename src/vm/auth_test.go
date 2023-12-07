@@ -47,7 +47,6 @@ func TestAuth(t *testing.T) {
 	fmt.Printf("hash:%s\n", common.ToHex(hash))
 
 	hash = common.FromHex("0x957bf39fd2c8ffe4a6a2d4b6389e8eae5b48ae6be727c6046cf310ccf1c2bb22")
-	//todo
 	privateKeyStr := ""
 	var privateKey = common.HexStringToSecKey(privateKeyStr)
 	sign := privateKey.Sign(hash)

@@ -117,7 +117,6 @@ func NewFromSeed(seed []byte) *big.Int {
 func mapHexToBytes(x []string) [][]byte {
 	y := make([][]byte, len(x))
 	for k, xi := range x {
-		// TODO handle errors
 		y[k], _ = hex.DecodeString(xi)
 	}
 	return y

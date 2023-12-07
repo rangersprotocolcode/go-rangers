@@ -189,7 +189,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 			return nil, nil, &ErrStackOverflow{stackLen: sLen, limit: operation.maxStack}
 		}
 		// If the operation is valid, enforce and write restrictions
-		/*todo
+		/*
 		origin:if in.readOnly && in.evm.chainRules.IsByzantium
 		*/
 		if in.readOnly {

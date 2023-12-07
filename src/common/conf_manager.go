@@ -89,11 +89,9 @@ func newConfINIManager(path string) ConfManager {
 	if err != nil && os.IsNotExist(err) {
 		_, err = os.Create(path)
 		if err != nil {
-			//TODO: 记日志
 			panic(err)
 		}
 	} else if err != nil {
-		//TODO: 记日志
 		panic(err)
 	}
 	cs.dict = ini.MustLoad(path)
