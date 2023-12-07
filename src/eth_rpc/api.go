@@ -378,7 +378,7 @@ func (s *EthAPIService) GetTransactionReceipt(hash common.Hash) (map[string]inte
 		"blockNumber":       (*utility.Big)(new(big.Int).SetUint64(executedTx.Receipt.Height)),
 		"transactionHash":   executedTx.Receipt.TxHash,
 		"from":              tx.Source,
-		"gasUsed":           executedTx.Receipt.GasUsed,
+		"gasUsed":           utility.Uint64(executedTx.Receipt.GasUsed),
 		"cumulativeGasUsed": utility.Uint64(0),
 		"contractAddress":   nil,
 		"logs":              executedTx.Receipt.Logs,
