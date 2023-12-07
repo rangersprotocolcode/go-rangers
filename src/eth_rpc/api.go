@@ -47,6 +47,18 @@ type CallArgs struct {
 	GasPrice *utility.Big    `json:"gasPrice"`
 	Value    *utility.Big    `json:"value"`
 	Data     *utility.Bytes  `json:"data"`
+	Input    *utility.Bytes  `json:"input"`
+}
+
+// data retrieves the transaction calldata. Input field is preferred.
+func (args *CallArgs) data() []byte {
+	if args.Input != nil {
+		return *args.Input
+	}
+	if args.Data != nil {
+		return *args.Data
+	}
+	return nil
 }
 
 // SendTxArgs represents the arguments to sumbit a new transaction into the transaction pool.
@@ -183,10 +195,7 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 	if args.To == nil {
 		contractCreation = true
 	}
-	var data []byte
-	if args.Data != nil {
-		data = *args.Data
-	}
+	data := args.data()
 
 	var gasErr error
 	var intrinsicGas uint64
