@@ -24,7 +24,7 @@ git clone git@git.tuntunhz.com:tequila/jojo.git
 
 make sure you have the right account/password
 
-### 1.3 build & clean
+### 1.3 build & c
 
 To build this project:
 
