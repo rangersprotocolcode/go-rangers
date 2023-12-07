@@ -22,7 +22,6 @@ For more details about RocketProtocol please refer to the lightpaper: [lightpape
 git clone git@git.tuntunhz.com:tequila/jojo.git
 ```
 
-make sure you have the right account/password
 
 ### 1.3 build & c
 
