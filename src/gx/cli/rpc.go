@@ -81,7 +81,6 @@ func startHttps(httpPort uint, privateKey string) error {
 
 var GtasAPIImpl *GtasAPI
 
-// StartRPC RPC 功能
 func StartRPC(host string, port uint, privateKey string) error {
 	var err error
 	GtasAPIImpl = &GtasAPI{}

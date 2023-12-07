@@ -39,10 +39,6 @@ func (c *ConsensusHandler) Init(groupCreateMessageProcessor GroupCreateMessagePr
 	InitStateMachines()
 }
 
-//func (c *ConsensusHandler) Processor() MessageProcessor {
-//	return c.processor
-//}
-
 func (c *ConsensusHandler) ready() bool {
 	return c.groupCreateMessageProcessor != nil && c.miningMessageProcessor != nil && c.miningMessageProcessor.Ready()
 }

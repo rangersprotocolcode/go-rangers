@@ -40,7 +40,6 @@ type GenesisConf struct {
 	ProposalToken  int    `json:"ptoken"`
 	ValidatorToken int    `json:"vtoken"`
 
-	// 生成的创始组与创始矿工
 	Group        string   `json:"group"`
 	JoinedGroup  string   `json:"joined"`
 	ProposerInfo []string `json:"proposers"`

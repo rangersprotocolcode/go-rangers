@@ -26,14 +26,11 @@ import (
 )
 
 func (p *Processor) Start() bool {
-	// 检查是否要出块
 	p.Ticker.RegisterRoutine(p.getCastCheckRoutineName(), p.checkSelfCastRoutine, common.CastingCheckInterval)
 
-	// 出块后的广播
 	p.Ticker.RegisterRoutine(p.getBroadcastRoutineName(), p.broadcastRoutine, 300)
 	p.Ticker.StartTickerRoutine(p.getBroadcastRoutineName(), false)
 
-	// 组解散
 	p.Ticker.RegisterRoutine(p.getReleaseRoutineName(), p.releaseRoutine, 600)
 	p.Ticker.StartTickerRoutine(p.getReleaseRoutineName(), false)
 
@@ -46,7 +43,6 @@ func (p *Processor) Start() bool {
 	return true
 }
 
-// 预留接口
 func (p *Processor) Stop() {
 	return
 }
@@ -151,16 +147,6 @@ func (p *Processor) GetJoinedWorkGroupNums() (work, avail int) {
 	return
 }
 
-//func marshalBlock(b types.Block) ([]byte, error) {
-//	if b.Transactions != nil && len(b.Transactions) == 0 {
-//		b.Transactions = nil
-//	}
-//	if b.Header.Transactions != nil && len(b.Header.Transactions) == 0 {
-//		b.Header.Transactions = nil
-//	}
-//	return msgpack.Marshal(&b)
-//}
-
 func (p *Processor) GenVerifyHash(b *types.Block, id groupsig.ID) common.Hash {
 	buf, err := types.MarshalBlock(b)
 	if err != nil {
@@ -188,17 +174,6 @@ func (p *Processor) GetJoinGroupInfo(gid string) *model.JoinedGroupInfo {
 	jg := p.belongGroups.GetJoinedGroupInfo(id)
 	return jg
 }
-
-//func (p *Processor) GetAllMinerDOs() ([]*model.MinerDO) {
-//	h := p.MainChain.Height()
-//	dos := make([]*model.MinerDO, 0)
-//	miners := p.minerReader.getAllMinerDOByType(common.MinerTypeProposer, h)
-//	dos = append(dos, miners...)
-//
-//	miners = p.minerReader.getAllMinerDOByType(common.MinerTypeValidator, h)
-//	dos = append(dos, miners...)
-//	return dos
-//}
 
 func (p *Processor) GetCastQualifiedGroupsFromChain(height uint64) []*types.Group {
 	return p.globalGroups.GetCastQualifiedGroupFromChains(height)

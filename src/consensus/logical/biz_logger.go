@@ -29,7 +29,6 @@ type bLog interface {
 	log(format string, params ...interface{})
 }
 
-// 业务标准输出日志
 type bizLog struct {
 	biz string
 }

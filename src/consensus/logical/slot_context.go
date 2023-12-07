@@ -41,7 +41,6 @@ const (
 )
 
 type SlotContext struct {
-	//验证相关
 	BH *types.BlockHeader
 
 	vrfValue       *big.Int

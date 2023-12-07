@@ -67,7 +67,7 @@ func TestSign(test *testing.T) {
 	pri_k := GenerateKey("")
 	pub_k := pri_k.GetPubKey()
 
-	pub_buf := pub_k.ToBytes() //测试公钥到字节切片的转换
+	pub_buf := pub_k.ToBytes()
 	pub_k = *BytesToPublicKey(pub_buf)
 
 	sha3_si := pri_k.Sign(sha3_hash[:])
@@ -93,7 +93,7 @@ func TestSignBytes(test *testing.T) {
 
 	address := pri_k.GetPubKey().GetAddress()
 	fmt.Printf("Address:%s\n", address.GetHexString())
-	//测试签名十六进制转换
+
 	h := sign.GetHexString()
 	fmt.Println(h)
 

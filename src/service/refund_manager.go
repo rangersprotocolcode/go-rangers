@@ -122,7 +122,6 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId, account []byte, m
 		money = miner.Stake
 	}
 
-	// 超出了质押量，不能提
 	if miner.Stake < money {
 		this.logger.Errorf("getRefund error, minerId:%s, height: %d, money: %d, not enough stake. stake: %d", common.ToHex(minerId), now, money, miner.Stake)
 		return 0, nil, nil, errors.New("not enough stake")
@@ -130,7 +129,6 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId, account []byte, m
 
 	refund := money
 	left := miner.Stake - money
-	// 验证小于最小质押量，则退出矿工
 	if miner.Type == common.MinerTypeProposer && left < common.ProposerStake ||
 		miner.Type == common.MinerTypeValidator && left < common.ValidatorStake {
 		MinerManagerImpl.RemoveMiner(minerId, account, miner.Type, accountdb, left)
@@ -146,26 +144,23 @@ func (this *RefundManager) GetRefundStake(now uint64, minerId, account []byte, m
 	return height, utility.Uint64ToBigInt(refund), miner.Account, nil
 }
 
-// 计算解锁高度
 func (this *RefundManager) getRefundHeight(now, left uint64, minerType byte, minerId []byte, situation string) uint64 {
 	height := uint64(0)
 	if common.IsProposal012() {
 		return now + refundHeight
 	}
-	// 验证节点，计算最多能加入的组数，来确定解锁块高
+
 	if minerType == common.MinerTypeValidator {
-		// 检查当前加入了多少组
 		var groups []*types.Group
 		if situation != "fork" {
 			groups = this.groupChainHelper.GetAvailableGroupsByMinerId(now, minerId)
 		} else {
 			groups = this.forkHelper.GetAvailableGroupsByMinerId(now, minerId)
 		}
-		// 扣完质押之后，还能加入多少组
+
 		leftGroups := int(left / common.ValidatorStake)
 		delta := len(groups) - leftGroups
 
-		// 按照退组的信息决定解冻信息
 		if delta > 0 {
 			dismissHeightList := DismissHeightList{}
 			for _, group := range groups {

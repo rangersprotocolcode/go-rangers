@@ -116,7 +116,6 @@ func TestJSONString(t *testing.T) {
 
 func TestSlice(t *testing.T) {
 	a := []int{0, 1, 2, 3, 4}
-	//删除第i个元素
 	i := 4
 	a = append(a[:i], a[i+1:]...)
 	fmt.Println(a)
@@ -147,10 +146,6 @@ func TestGtasAPI_NewWallet(t *testing.T) {
 
 	fmt.Println(privKeyStr)
 	fmt.Println(walletAddress)
-
-	// 加入本地钱包
-	//*ws = append(*ws, wallet{privKeyStr, walletAddress})
-	//ws.store()
 
 	var miner types.Miner
 	miner.Id = address.Bytes()

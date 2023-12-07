@@ -409,40 +409,6 @@ func (adb *AccountDB) DataIterator(addr common.Address, prefix []byte) *trie.Ite
 	return nil
 }
 
-////DataNext returns next key-value data from iterator
-//func (adb *AccountDB) DataNext(iterator uintptr) []byte {
-//	iter := (*trie.Iterator)(unsafe.Pointer(iterator))
-//	if iter == nil {
-//		return `{"key":"","value":"","hasValue":0}`
-//	}
-//	hasValue := 1
-//	var key string
-//	var value string
-//	if len(iter.Key) != 0 {
-//		key = string(iter.Key)
-//		value = string(iter.Value)
-//	}
-//
-//	// Means no data
-//	if !iter.Next() {
-//		hasValue = 0
-//	}
-//	if key == "" {
-//		return fmt.Sprintf(`{"key":"","value":"","hasValue":%d}`, hasValue)
-//	}
-//	if len(value) > 0 {
-//		valueType := value[0:1]
-//		if valueType == "0" { // This is map node
-//			hasValue = 2
-//		} else {
-//			value = value[1:]
-//		}
-//	} else {
-//		return `{"key":"","value":"","hasValue":0}`
-//	}
-//	return fmt.Sprintf(`{"key":"%s","value":%s,"hasValue":%d}`, key, value, hasValue)
-//}
-
 // // Snapshot returns an identifier for the current revision of the account.
 func (adb *AccountDB) Snapshot() int {
 	id := adb.nextRevisionID

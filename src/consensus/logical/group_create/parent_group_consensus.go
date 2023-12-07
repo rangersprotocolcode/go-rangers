@@ -181,7 +181,7 @@ func (p *groupCreateProcessor) tryStartParentConsensus(topHeight uint64) bool {
 	return true
 }
 
-// OnMessageCreateGroupRaw triggered when receives raw group-create message from other nodes of the parent group
+// OnMessageParentGroupConsensus triggered when receives raw group-create message from other nodes of the parent group
 // It check and sign the group-create message for the requester
 // Before the formation of the new group, the parent group needs to reach a consensus on the information of the new group
 // which transited by ConsensusCreateGroupRawMessage.
@@ -256,7 +256,7 @@ func (p *groupCreateProcessor) validateCreateGroupInfo(msg *model.ParentGroupCon
 	return true, nil
 }
 
-// OnMessageCreateGroupSign receives sign message from other members after ConsensusCreateGroupRawMessage was sent
+// OnMessageParentGroupConsensusSign receives sign message from other members after ConsensusCreateGroupRawMessage was sent
 // during the new-group-info consensus process
 // OnMessageCreateGroupSign
 func (p *groupCreateProcessor) OnMessageParentGroupConsensusSign(msg *model.ParentGroupConsensusSignMessage) {

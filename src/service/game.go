@@ -115,7 +115,6 @@ func ChangeAssets(source string, targets map[string]types.TransferData, accountd
 	responseBalance := ""
 	responseCoin := types.NewJSONObject()
 	responseFT := types.NewJSONObject()
-	responseNFT := make([]types.NFTID, 0)
 
 	for address, transferData := range targets {
 		targetAddr := common.HexToAddress(address)
@@ -141,9 +140,7 @@ func ChangeAssets(source string, targets map[string]types.TransferData, accountd
 	if !responseFT.IsEmpty() {
 		response.Put("ft", responseFT.GetData())
 	}
-	if 0 != len(responseNFT) {
-		response.Put("nft", responseNFT)
-	}
+
 	return response.TOJSONString(), true
 }
 

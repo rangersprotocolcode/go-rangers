@@ -194,7 +194,7 @@ func (bc *BlockContext) AddCastedHeight(hash, pre common.Hash) {
 
 func (bc *BlockContext) CheckQN(bh *types.BlockHeader) error {
 	if bc.hasSignedBiggerQN(bh.TotalQN) {
-		return fmt.Errorf("已签过更高qn块%v,本块qn%v", bc.getSignedMaxQN(), bh.TotalQN)
+		return fmt.Errorf("signed bigger qn%v, current qn%v", bc.getSignedMaxQN(), bh.TotalQN)
 	}
 
 	return nil

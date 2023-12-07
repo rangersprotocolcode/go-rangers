@@ -55,7 +55,6 @@ func testMinerExecutorAdd(t *testing.T) {
 	}
 }
 
-// 正常流程
 func testMinerExecutorAdd1(t *testing.T) {
 	accountDB := getTestAccountDB()
 	balance, _ := utility.StrToBigInt("10000")
@@ -92,8 +91,6 @@ func testMinerExecutorAdd1(t *testing.T) {
 	}
 }
 
-// 正常流程
-// 代质押
 func testMinerExecutorAdd2(t *testing.T) {
 	accountDB := getTestAccountDB()
 	money, _ := utility.StrToBigInt("7000")
@@ -130,8 +127,6 @@ func testMinerExecutorAdd2(t *testing.T) {
 	}
 }
 
-// 异常流程
-// 账户钱不够
 func testMinerExecutorAdd4(t *testing.T) {
 	accountDB := getTestAccountDB()
 	accountDB.SetBalance(common.HexToAddress("0x0003"), big.NewInt(1))

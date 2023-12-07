@@ -143,7 +143,7 @@ func BenchmarkVerifySign(b *testing.B) {
 
 func BenchmarkVerifySign2(b *testing.B) {
 	b.StopTimer()
-	r := base.NewRand() //生成随机数
+	r := base.NewRand()
 	for n := 0; n < b.N; n++ {
 		sec := NewSeckeyFromRand(r.Deri(1))
 		pub := GeneratePubkey(*sec)

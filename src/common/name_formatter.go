@@ -19,16 +19,11 @@ package common
 import (
 	"com.tuntun.rangers/node/src/utility"
 	"fmt"
-	"strings"
 )
 
-// AccountObject data 用到的key
 const (
-	FTPrefix     = "f:"
-	NFTPrefix    = "n:"
-	NFTSetPrefix = "ns:"
-	FTSetPrefix  = "fs:"
-	LockPrefix   = "l:"
+	FTPrefix    = "f:"
+	FTSetPrefix = "fs:"
 )
 
 const (
@@ -48,32 +43,6 @@ func FormatBNTName(bntName string) string {
 	return bntName[len(BNTPrefix):]
 }
 
-func GenerateNFTAddress(setId, id string) Address {
-	return BytesToAddress(Sha256(utility.StrToBytes(GenerateNFTKey(setId, id))))
-}
-
-func GenerateNFTKey(setId, id string) string {
-	return fmt.Sprintf("%s%s:%s", NFTPrefix, setId, id)
-}
-
-func SplitNFTKey(key string) (string, string) {
-	if !strings.HasPrefix(key, NFTPrefix) {
-		return "", ""
-	}
-
-	idList := strings.Split(key, ":")
-	if 3 != len(idList) {
-		return "", ""
-	}
-
-	return idList[1], idList[2]
-}
-
-func GenerateNFTSetAddress(setId string) Address {
-	addr := fmt.Sprintf("%s%s", NFTSetPrefix, setId)
-	return BytesToAddress(Sha256(utility.StrToBytes(addr)))
-}
-
 func GenerateFTSetAddress(ftSetId string) Address {
 	addr := fmt.Sprintf("%s%s", FTSetPrefix, ftSetId)
 	return BytesToAddress(Sha256(utility.StrToBytes(addr)))
@@ -81,24 +50,6 @@ func GenerateFTSetAddress(ftSetId string) Address {
 
 func GenerateFTKey(name string) string {
 	return fmt.Sprintf("%s%s", FTPrefix, name)
-}
-
-func GenerateAppIdProperty(appId, property string) string {
-	return fmt.Sprintf("%s:%s", appId, property)
-}
-
-func FormatHexString(s string) string {
-	s = strings.ToLower(s)
-	if len(s) > 1 {
-		if s[0:2] == "0x" || s[0:2] == "0X" {
-			return s[2:]
-		}
-		if len(s)%2 == 1 {
-			return "0" + s
-		}
-	}
-
-	return ""
 }
 
 func GenerateERC20Binding(name string) Address {

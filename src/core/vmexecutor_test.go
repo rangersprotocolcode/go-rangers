@@ -150,7 +150,6 @@ func testFee(kind int32, t *testing.T) {
 	}
 }
 
-// 手续费不够测试
 func testVMExecutorFeeFail(t *testing.T) {
 	kinds := []int32{types.TransactionTypeOperatorEvent, types.TransactionTypeMinerApply,
 		types.TransactionTypeMinerAdd, types.TransactionTypeMinerRefund,

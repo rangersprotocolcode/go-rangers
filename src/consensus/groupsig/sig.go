@@ -168,8 +168,8 @@ func recoverSignature(sigs []Signature, ids []ID) *Signature {
 	new_sig := &Signature{}
 	for i := 0; i < k; i++ {
 		var delta, num, den, diff *big.Int = big.NewInt(1), big.NewInt(1), big.NewInt(1), big.NewInt(0)
-		for j := 0; j < k; j++ { //ID遍历
-			if j != i { //不是自己
+		for j := 0; j < k; j++ {
+			if j != i {
 				num.Mul(num, xs[j])
 				num.Mod(num, curveOrder)
 				diff.Sub(xs[j], xs[i])

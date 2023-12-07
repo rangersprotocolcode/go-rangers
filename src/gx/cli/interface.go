@@ -57,31 +57,6 @@ type MinerInfo struct {
 	AbortHeight uint64
 }
 
-//func txRawToTransaction(tx *txRawData) *types.Transaction {
-//	var target *common.Address
-//	if tx.Target != "" {
-//		t := common.HexToAddress(tx.Target)
-//		target = &t
-//	}
-//	var sign *common.Sign
-//	if tx.Sign != "" {
-//		sign = common.HexStringToSign(tx.Sign)
-//	}
-//
-//	return &types.Transaction{
-//		Data: []byte(tx.Data),
-//		Value: tx.Value,
-//		Nonce: tx.Nonce,
-//		//Source: &source,
-//		Target: target,
-//		Type: int32(tx.TxType),
-//		GasLimit: tx.Gas,
-//		GasPrice: tx.Gasprice,
-//		Sign: sign,
-//		ExtraData: []byte(tx.ExtraData),
-//	}
-//}
-
 type accountOp interface {
 	NewAccount(password string, miner bool) *Result
 

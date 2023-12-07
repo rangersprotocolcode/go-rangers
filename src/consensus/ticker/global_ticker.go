@@ -36,12 +36,12 @@ type RoutineFunc func() bool
 
 type TickerRoutine struct {
 	id              string
-	handler         RoutineFunc //执行函数
-	interval        uint32      //触发的心跳间隔
-	lastTicker      uint64      //最后一次执行的心跳
-	triggerCh       chan int32  //触发信号
-	status          int32       //当前状态 STOPPED, RUNNING
-	triggerNextTick int32       //下次心跳触发
+	handler         RoutineFunc
+	interval        uint32
+	lastTicker      uint64
+	triggerCh       chan int32
+	status          int32
+	triggerNextTick int32
 }
 
 type GlobalTicker struct {
@@ -167,11 +167,6 @@ func (gt *GlobalTicker) getRoutine(name string) *TickerRoutine {
 	return nil
 }
 
-/**
-* @Description: 触发一次执行
-* @Param: chanVal, 1 表示定时器定时触发, 若本次ticker已执行过,则忽略; 2表示需要立即执行, 若本次ticker已执行过, 则延迟到下一次ticker执行
-* @return: bool
- */
 func (gt *GlobalTicker) trigger(routine *TickerRoutine, chanVal int32) bool {
 	defer func() {
 		if r := recover(); r != nil {

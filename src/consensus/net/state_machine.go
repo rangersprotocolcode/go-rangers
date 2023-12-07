@@ -298,17 +298,6 @@ type StateMachineGenerator interface {
 type groupInsideMachineGenerator struct{}
 type groupOutsideMachineGenerator struct{}
 
-//func (m *groupOutsideMachineGenerator) Generate(id string) *StateMachine {
-//	machine := newStateMachine(id)
-//	machine.appendNode(newStateNode(network.GroupInitMsg, 1, func(msg interface{}) {
-//		MessageHandler.processor.OnMessageGroupInit(msg.(*model.ConsensusGroupRawMessage))
-//	}))
-//	machine.appendNode(newStateNode(network.GroupInitDoneMsg, model.Param.GetThreshold(), func(msg interface{}) {
-//		MessageHandler.processor.OnMessageGroupInited(msg.(*model.ConsensusGroupInitedMessage))
-//	}))
-//	return machine
-//}
-
 func (m *groupInsideMachineGenerator) Generate(id string, cnt int) *StateMachine {
 	machine := newStateMachine(id)
 	memNum := cnt

@@ -37,9 +37,9 @@ type Sign struct {
 }
 
 type SignData struct {
-	DataHash Hash   //哈希值
-	DataSign Sign   //签名
-	Id       string //用户ID
+	DataHash Hash
+	DataSign Sign
+	Id       string
 }
 
 func NewSignData(privateKey PrivateKey, id string, hasher Hasher) SignData {

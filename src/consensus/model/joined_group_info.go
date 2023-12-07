@@ -22,10 +22,8 @@ import (
 	"sync"
 )
 
-// JoinedGroup
 // JoinedGroup stores group-related infos the current node joins in.
 // Note that, nodes outside the group don't care the infos
-// 加入的组的信息和自身在组内的信息
 type JoinedGroupInfo struct {
 	GroupHash common.Hash
 	GroupID   groupsig.ID     // Group ID

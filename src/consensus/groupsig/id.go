@@ -32,7 +32,7 @@ type ID struct {
 }
 
 func NewIDFromPubkey(pk Pubkey) *ID {
-	h := sha3.Sum256(pk.Serialize()) //取得公钥的SHA3 256位哈希
+	h := sha3.Sum256(pk.Serialize())
 	bi := new(big.Int).SetBytes(h[:])
 	return newIDFromBigInt(bi)
 }
@@ -103,7 +103,7 @@ func (id ID) ToAddress() common.Address {
 
 func newIDFromBigInt(b *big.Int) *ID {
 	id := new(ID)
-	err := id.value.setBigInt(b) //bn_curve C库函数
+	err := id.value.setBigInt(b)
 	if err != nil {
 		log.Printf("NewIDFromBigInt %s\n", err)
 		return nil

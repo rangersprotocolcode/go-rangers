@@ -57,7 +57,6 @@ func initAccountDBManager() {
 }
 
 func (manager *AccountDBManager) GetAccountDBByHash(hash common.Hash) (*account.AccountDB, error) {
-	//todo: cache
 	return account.NewAccountDB(hash, manager.stateDB)
 }
 
@@ -70,7 +69,6 @@ func (manager *AccountDBManager) GetTrieDB() *trie.NodeDatabase {
 }
 
 func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.AccountDB, nonces map[string]uint64, height uint64) {
-	// 这里无需加锁，因为外面加过了
 	key := "fixed"
 	nonce := nonces[key]
 

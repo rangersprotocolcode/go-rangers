@@ -351,7 +351,6 @@ func (mm *MinerManager) UpdateMiner(miner *types.Miner, accountdb *account.Accou
 
 }
 
-// 创世矿工用
 func (mm *MinerManager) InsertMiner(miner *types.Miner, accountdb *account.AccountDB) int {
 	mm.logger.Debugf("Miner manager add miner, %v", miner)
 
@@ -372,7 +371,6 @@ func (mm *MinerManager) RemoveMiner(id, account []byte, ttype byte, accountdb *a
 
 	db := mm.getMinerDatabaseAddress(ttype)
 
-	// 普通账户，删除掉
 	if left == 0 && !accountdb.IsContract(common.BytesToAddress(account)) {
 		accountdb.SetData(db, id, emptyValue[:])
 		key := common.Sha256(id)

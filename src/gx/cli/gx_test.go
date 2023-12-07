@@ -125,8 +125,6 @@ func TestMinerEcomony(t *testing.T) {
 func generateCode(header *types.BlockHeader, accountdb *account.AccountDB) string {
 	proposals, validators := service.MinerManagerImpl.GetAllMinerIdAndAccount(header.Height, accountdb)
 
-	//"0x7822b9ac"+出块人奖励地址+padding+common.GenerateCallDataUint((4+len(proposes))*32)
-	//		+common.GenerateCallDataUint(len(proposes))+所有的提案组成员地址+common.GenerateCallDataUint(len(验证组成员))+验证组成员地址
 	code := "0x7822b9ac" + common.GenerateCallDataAddress(proposals[common.ToHex(header.Castor)]) + padding + common.GenerateCallDataUint(uint64(4+len(proposals))*32)
 	code += common.GenerateCallDataUint(uint64(len(proposals)))
 	for _, addr := range proposals {
@@ -175,13 +173,11 @@ func initTestingEnv() {
 	service.InitService()
 	vm.InitVM()
 
-	// 启动链，包括创始块构建
 	err := core.InitCore(consensus.NewConsensusHelper(minerInfo.ID), *sk, minerInfo.ID.GetHexString())
 	if err != nil {
 		panic("Init miner core init error:" + err.Error())
 	}
 
-	// 共识部分启动
 	ok := consensus.InitConsensus(minerInfo, common.GlobalConf)
 	if !ok {
 		panic("Init miner consensus init error!")

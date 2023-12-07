@@ -171,7 +171,7 @@ func (p *Processor) tryBroadcastBlock(vctx *VerifyContext) bool {
 	if sc := vctx.checkBroadcast(); sc != nil {
 		bh := sc.BH
 		tlog := newHashTraceLog("tryBroadcastBlock", bh.Hash, p.GetMinerID())
-		tlog.log("try broadcast, height=%v, totalQN=%v, 耗时%v", bh.Height, bh.TotalQN, utility.GetTime().Sub(bh.CurTime))
+		tlog.log("try broadcast, height= %v, totalQN= %v, cost: %v", bh.Height, bh.TotalQN, utility.GetTime().Sub(bh.CurTime))
 
 		go p.successNewBlock(vctx, sc)
 

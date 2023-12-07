@@ -45,9 +45,6 @@ type BlockChain interface {
 
 	GenerateBlock(bh types.BlockHeader) *types.Block
 
-	//验证一个铸块（如本地缺少交易，则异步网络请求该交易）
-	//返回:=0, 验证通过；=-1，验证失败；=1，缺少交易，已异步向网络模块请求
-	//返回缺失交易列表
 	VerifyBlock(bh types.BlockHeader) ([]common.Hashes, int8)
 
 	AddBlockOnChain(b *types.Block) types.AddBlockResult

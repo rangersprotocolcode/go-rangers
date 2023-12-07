@@ -48,8 +48,6 @@ func getTestAccountDB() *account.AccountDB {
 	return accountdb
 }
 
-// 正常流程
-// 没加入组，退款不影响建组
 func testMinerRefundExecutor(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
@@ -94,8 +92,6 @@ func testMinerRefundExecutor(t *testing.T) {
 	}
 }
 
-// 异常流程
-// 金额不够
 func testMinerRefundExecutor1(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
@@ -132,9 +128,6 @@ func testMinerRefundExecutor1(t *testing.T) {
 	}
 }
 
-// 正常流程
-// 已经加入了两个组
-// 退款不影响两个组
 func testMinerRefundExecutor2(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
@@ -202,9 +195,6 @@ func testMinerRefundExecutor2(t *testing.T) {
 	}
 }
 
-// 正常流程
-// 已经加入了两个组
-// 退款后只够一个组
 func testMinerRefundExecutor3(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
@@ -272,9 +262,6 @@ func testMinerRefundExecutor3(t *testing.T) {
 	}
 }
 
-// 正常流程
-// 已经加入了两个组
-// 退款后不够一个组，全额退款，矿工删除
 func testMinerRefundExecutor4(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
@@ -342,9 +329,6 @@ func testMinerRefundExecutor4(t *testing.T) {
 	}
 }
 
-// 正常流程
-// 已经加入了三个组
-// 退款后不够一个组，全额退款，矿工删除
 func testMinerRefundExecutor5(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
@@ -422,9 +406,6 @@ func testMinerRefundExecutor5(t *testing.T) {
 	}
 }
 
-// 正常流程
-// 已经加入了三个组
-// 退款后只够一个组
 func testMinerRefundExecutor6(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
@@ -502,9 +483,6 @@ func testMinerRefundExecutor6(t *testing.T) {
 	}
 }
 
-// 提案节点
-// 正常流程
-// 没加入组，退款不影响建组
 func testMinerRefundExecutor7(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
@@ -554,9 +532,6 @@ func testMinerRefundExecutor7(t *testing.T) {
 	}
 }
 
-// 提案节点
-// 正常流程
-// 退款后不够
 func testMinerRefundExecutor8(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()
@@ -606,9 +581,6 @@ func testMinerRefundExecutor8(t *testing.T) {
 	}
 }
 
-// 提案节点
-// 异常流程
-// 金额不够
 func testMinerRefundExecutor9(t *testing.T) {
 	// prepare data
 	accountDB := getTestAccountDB()

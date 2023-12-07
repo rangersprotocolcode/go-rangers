@@ -41,7 +41,6 @@ func TestNodeExecutorAddAll(t *testing.T) {
 	}
 }
 
-// 正常流程
 func testMinerExecutorNode1(t *testing.T) {
 	accountDB := getTestAccountDB()
 	balance, _ := utility.StrToBigInt("10000")

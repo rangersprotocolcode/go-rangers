@@ -102,44 +102,7 @@ func (ca *RemoteChainOpImpl) Endpoint() string {
 }
 
 func (ca *RemoteChainOpImpl) SendRaw(tx *txRawData) *Result {
-	//r := ca.aop.AccountInfo()
-	//if !r.IsSuccess() {
-	//	return r
-	//}
-	//aci := r.Data.(*Account)
-	//privateKey := common.HexStringToSecKey(aci.Sk)
-	//pubkey := common.HexStringToPubKey(aci.Pk)
-	//if privateKey.GetPubKey().GetHexString() != pubkey.GetHexString() {
-	//	return opError(fmt.Errorf("privatekey or pubkey error"))
-	//}
-	//source := pubkey.GetAddress()
-	//if source.GetHexString() != aci.Address {
-	//	return opError(fmt.Errorf("address error"))
-	//}
-	//
-	//if nonce, err := ca.nonce(aci.Address); err != nil {
-	//	return opError(err)
-	//} else {
-	//	tranx := txRawToTransaction(tx)
-	//	tranx.Nonce = nonce + 1
-	//	tx.Nonce = nonce + 1
-	//	tranx.Hash = tranx.GenHash()
-	//	sign := privateKey.Sign(tranx.Hash.Bytes())
-	//	tranx.Sign = &sign
-	//	tx.Sign = tranx.Sign.GetHexString()
-	//	//fmt.Println("info:", aci.Address, aci.Pk, tx.Sign, tranx.Hash.String())
-	//	//fmt.Printf("%+v\n", tranx)
-	//
-	//	jsonByte, err := json.Marshal(tx)
-	//	if err != nil {
-	//		return opError(err)
-	//	}
-	//
-	//	ca.aop.(*AccountManager).resetExpireTime(aci.Address)
-	//	//此处要签名
-	//	return ca.request("tx", string(jsonByte))
-	//
-	//}
+
 	return nil
 }
 

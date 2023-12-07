@@ -36,14 +36,6 @@ func marshalGroupInfo(gInfo *model.GroupInitInfo) *middleware_pb.ConsensusGroupI
 	}
 }
 
-//func consensusGroupInitSummaryToPb(m *model.ConsensusGroupInitSummary) *middleware_pb.ConsensusGroupInitSummary {
-//	message := middleware_pb.ConsensusGroupInitSummary{
-//		Header: 		types.GroupToPbHeader(m.GHeader),
-//		Signature:       m.Signature.Serialize(),
-//	}
-//	return &message
-//}
-
 func marshalConsensusGroupRawMessage(m *model.GroupInitMessage) ([]byte, error) {
 	gi := marshalGroupInfo(&m.GroupInitInfo)
 
@@ -107,8 +99,6 @@ func marshalConsensusSignPubKeyReqMessage(m *model.SignPubkeyReqMessage) ([]byte
 	return proto.Marshal(&message)
 }
 
-//--------------------------------------------组铸币--------------------------------------------------------------------
-
 func marshalConsensusCastMessage(m *model.ConsensusCastMessage) ([]byte, error) {
 	bh := types.BlockHeaderToPb(&m.BH)
 	//groupId := m.GroupID.Serialize()
@@ -141,8 +131,6 @@ func marshalConsensusBlockMessage(m *model.ConsensusBlockMessage) ([]byte, error
 	return proto.Marshal(&message)
 }
 
-//----------------------------------------------------------------------------------------------------------------------
-
 func signDataToPb(s *model.SignInfo) *middleware_pb.SignData {
 	version := s.GetVersion()
 	sign := middleware_pb.SignData{DataHash: s.GetDataHash().Bytes(), DataSign: s.GetSignature().Serialize(), SignMember: s.GetSignerID().Serialize(), Version: &version}
@@ -153,24 +141,6 @@ func sharePieceToPb(s *model.SharePiece) *middleware_pb.SharePiece {
 	share := middleware_pb.SharePiece{Seckey: s.Share.Serialize(), Pubkey: s.Pub.Serialize()}
 	return &share
 }
-
-//func staticGroupInfoToPb(s *model.StaticGroupSummary) *middleware_pb.StaticGroupSummary {
-//	groupId := s.GroupID.Serialize()
-//	groupPk := s.GroupPK.Serialize()
-//
-//	gis := consensusGroupInitSummaryToPb(&s.GIS)
-//
-//	groupInfo := middleware_pb.StaticGroupSummary{GroupID: groupId, GroupPK: groupPk, Gis: gis}
-//	return &groupInfo
-//}
-//
-//func pubKeyInfoToPb(p *model.PubKeyInfo) *middleware_pb.PubKeyInfo {
-//	id := p.ID.Serialize()
-//	pk := p.PK.Serialize()
-//
-//	pkInfo := middleware_pb.PubKeyInfo{ID: id, PublicKey: pk}
-//	return &pkInfo
-//}
 
 func marshalConsensusCreateGroupRawMessage(msg *model.ParentGroupConsensusMessage) ([]byte, error) {
 	gi := marshalGroupInfo(&msg.GroupInitInfo)

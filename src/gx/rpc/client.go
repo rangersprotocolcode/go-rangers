@@ -426,7 +426,6 @@ func (c *Client) dispatch(conn net.Conn) {
 				case msg.isResponse():
 					c.handleResponse(msg)
 				default:
-					// TODO: maybe close
 				}
 			}
 

@@ -28,7 +28,6 @@ var hasherPool = sync.Pool{
 	},
 }
 
-// 计算sha256
 func Sha256(blockByte []byte) []byte {
 	hasher := hasherPool.Get().(hash.Hash)
 	hasher.Reset()

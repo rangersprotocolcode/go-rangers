@@ -44,7 +44,6 @@ type GroupAccessor struct {
 	lock  sync.RWMutex
 }
 
-// newGlobalGroups
 func NewGroupAccessor(chain core.GroupChain) *GroupAccessor {
 	if groupAccessorInstance == nil {
 		groupAccessorInstance = &GroupAccessor{
@@ -57,8 +56,7 @@ func NewGroupAccessor(chain core.GroupChain) *GroupAccessor {
 	return groupAccessorInstance
 }
 
-// AddStaticGroup
-// AddStaticGroup adda a legal effective group to the cache, which may be a work group currently or in the near future
+// AddGroupInfo adda a legal effective group to the cache, which may be a work group currently or in the near future
 //
 // Consider the group synchronization process, the method may be called concurrently,
 // resulting in the order of the groups being out of order
@@ -184,8 +182,7 @@ func (groupAccessor *GroupAccessor) SelectVerifyGroupFromCache(hash common.Hash,
 	return ga, fmt.Errorf("SelectVerifyGroupFromCache failed, hash %v, qualified groups %v", hash.ShortS(), gids)
 }
 
-// SelectNextGroupFromChain
-// SelectNextGroupFromChain determines the next verification group through the chained work-groups according to the previous random number.
+// SelectVerifyGroupFromChain determines the next verification group through the chained work-groups according to the previous random number.
 // The result is random and certain, and mostly should be the same as method SelectNextGroupFromCache
 //
 // This method can be used to compensate when the result of the calculation through the cache(method SelectNextGroupFromCache)
@@ -207,8 +204,7 @@ func (groupAccessor *GroupAccessor) SelectVerifyGroupFromChain(hash common.Hash,
 	return ga, fmt.Errorf("SelectVerifyGroupFromChain failed, arg error")
 }
 
-// GetCastQualifiedGroups
-// GetCastQualifiedGroups gets all work-groups at the specified height
+// GetEffectiveGroups gets all work-groups at the specified height
 func (groupAccessor *GroupAccessor) GetEffectiveGroups(height uint64) []*model.GroupInfo {
 	groupAccessor.lock.RLock()
 	defer groupAccessor.lock.RUnlock()

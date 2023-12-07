@@ -321,7 +321,6 @@ func (p *TxPool) TxNum() int {
 func (pool *TxPool) PackForCast(height uint64) []*types.Transaction {
 	packedTxs := make([]*types.Transaction, 0)
 
-	// transactions 已经根据RequestId排序
 	txs := pool.received.asSlice()
 	if 0 == len(txs) {
 		txPoolLogger.Debugf("packed no tx. height: %d", height)

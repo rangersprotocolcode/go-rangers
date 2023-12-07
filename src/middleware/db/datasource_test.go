@@ -73,7 +73,6 @@ func TestCreateLDB(t *testing.T) {
 }
 
 func TestLDBScan(t *testing.T) {
-	//ldb, _ := NewLDBDatabase("/Users/Kaede/TasProject/test1",1,1)
 	ldb, _ := NewDatabase("testldb")
 	key1 := []byte{0, 1, 1}
 	key2 := []byte{0, 1, 2}
@@ -112,7 +111,6 @@ func TestLRUMemDatabase(t *testing.T) {
 }
 
 func TestClearLDB(t *testing.T) {
-	// 创建ldb实例
 	ldb, err := NewDatabase("testldb")
 	if err != nil {
 		t.Fatalf("error to create ldb : %s\n", "testldb")

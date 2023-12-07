@@ -24,8 +24,7 @@ import (
 	"fmt"
 )
 
-// SelectVerifyGroupFromFork SelectNextGroupFromChain
-// SelectNextGroupFromChain determines the next verification group through the chained work-groups according to the previous random number.
+// SelectVerifyGroupFromFork determines the next verification group through the chained work-groups according to the previous random number.
 // The result is random and certain, and mostly should be the same as method SelectNextGroupFromCache
 //
 // This method can be used to compensate when the result of the calculation through the cache(method SelectNextGroupFromCache)

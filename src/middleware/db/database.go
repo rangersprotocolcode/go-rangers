@@ -160,7 +160,6 @@ func (b *prefixBatch) Reset() {
 	b.size = 0
 }
 
-// 加入前缀的key
 func generateKey(raw []byte, prefix string) []byte {
 	bytesBuffer := bytes.NewBuffer([]byte(prefix))
 	bytesBuffer.Write(raw)

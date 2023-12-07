@@ -99,7 +99,6 @@ func newWallets() wallets {
 	}
 	err := json.Unmarshal([]byte(s), &ws)
 	if err != nil {
-		// TODO 输出log
 		log.Println(err)
 	}
 	return ws

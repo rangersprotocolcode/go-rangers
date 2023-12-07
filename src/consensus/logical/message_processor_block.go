@@ -217,7 +217,7 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 		p.normalPieceVerify(gid, vctx, traceLog)
 		slog.endStage()
 
-	case CBMR_PIECE_LOSINGTRANS: //交易缺失
+	case CBMR_PIECE_LOSINGTRANS:
 	}
 	return
 }

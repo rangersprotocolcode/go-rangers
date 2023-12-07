@@ -29,7 +29,6 @@ import (
 	"testing"
 )
 
-// 正常validator流程
 func testMinerExecutorChangeAccount1(t *testing.T) {
 	accountDB := getTestAccountDB()
 	minerId := common.FromHex("0x0003")
@@ -61,7 +60,6 @@ func testMinerExecutorChangeAccount1(t *testing.T) {
 	}
 }
 
-// 正常proposer流程
 func testMinerExecutorChangeAccount2(t *testing.T) {
 	accountDB := getTestAccountDB()
 	minerId := common.FromHex("0x0003")

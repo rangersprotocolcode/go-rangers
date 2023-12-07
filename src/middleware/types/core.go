@@ -232,14 +232,6 @@ type TransferData struct {
 	Balance string            `json:"balance,omitempty"`
 	Coin    map[string]string `json:"coin,omitempty"`
 	FT      map[string]string `json:"ft,omitempty"`
-	NFT     []NFTID           `json:"nft,omitempty"`
-}
-
-type NFTID struct {
-	SetId    string `json:"setId,omitempty"`
-	Id       string `json:"id,omitempty"`
-	Data     string `json:"data,omitempty"`
-	Property string `json:"property,omitempty"`
 }
 
 type FTID struct {

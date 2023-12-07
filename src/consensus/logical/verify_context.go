@@ -172,7 +172,6 @@ func (vc *VerifyContext) markBroadcast() bool {
 	return atomic.CompareAndSwapInt32(&vc.consensusStatus, CBCS_BLOCKED, CBCS_BROADCAST)
 }
 
-// 铸块是否过期
 func (vc *VerifyContext) castExpire() bool {
 	return false
 }

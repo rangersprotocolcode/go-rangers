@@ -25,7 +25,7 @@ import (
 )
 
 // Curve and Field order
-var curveOrder = bn_curve.Order //曲线整数域
+var curveOrder = bn_curve.Order
 var fieldOrder = bn_curve.P
 var bitLength = curveOrder.BitLen()
 

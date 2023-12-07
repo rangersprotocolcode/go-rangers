@@ -50,7 +50,7 @@ func (p *groupCreateProcessor) VerifyGroupForFork(g *types.Group, preGroup *type
 	if !model.Param.IsGroupMemberCountLegal(len(gInfo.GroupMembers)) {
 		return false, fmt.Errorf("group member size error %v(%v-%v)", len(gInfo.GroupMembers), model.Param.GroupMemberMin, model.Param.GroupMemberMax)
 	}
-	// check if the create height is legal
+	// check if the height is legal
 	if !validateHeight(groupHeader.CreateHeight) {
 		return false, fmt.Errorf("cannot create at the height %v", groupHeader.CreateHeight)
 	}
@@ -111,7 +111,6 @@ func (p *groupCreateProcessor) VerifyGroupForFork(g *types.Group, preGroup *type
 }
 
 // selectParentGroup determine the parent group randomly and the result is deterministic because of the base BlockHeader
-// 获取父亲组
 func (p *groupCreateProcessor) selectParentGroupForFork(baseBH *types.BlockHeader, preGroupID []byte) (*types.Group, error) {
 	//return p.groupAccessor.GetGenesisGroup(), nil
 	rand := baseBH.Random
@@ -124,7 +123,6 @@ func (p *groupCreateProcessor) selectParentGroupForFork(baseBH *types.BlockHeade
 	return group, nil
 }
 
-// 选取候选人
 // selectCandidates randomly select a sufficient number of miners from the miners' pool as new group candidates
 func (p *groupCreateProcessor) selectCandidatesForForkGroup(theBH *types.BlockHeader) (enough bool, cands []groupsig.ID) {
 	min := model.Param.CreateGroupMinCandidates()

@@ -25,8 +25,7 @@ import (
 )
 
 type ConfManager interface {
-	//read basic conf from tas.conf file
-	//返回section组下的key的值, 若未配置, 则返回默认值defv
+	// GetString read basic conf from tas.conf file
 	GetString(section string, key string, defaultValue string) string
 	GetBool(section string, key string, defaultValue bool) bool
 	GetDouble(section string, key string, defaultValue float64) float64
@@ -41,13 +40,11 @@ type ConfManager interface {
 	//delete basic conf
 	Del(section string, key string)
 
-	//获取一个section的配置管理
 	GetSectionManager(section string) SectionConfManager
 }
 
 type SectionConfManager interface {
 	//read basic conf from tas.conf file
-	//返回section组下的key的值, 若未配置, 则返回默认值defv
 	GetString(key string, defaultValue string) string
 	GetBool(key string, defaultValue bool) bool
 	GetDouble(key string, defaultValue float64) float64
