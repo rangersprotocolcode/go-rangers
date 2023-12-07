@@ -17,8 +17,8 @@
 package vm
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/utility"
 )
 
 // memoryGasCost calculates the quadratic gas for memory expansion. It does so

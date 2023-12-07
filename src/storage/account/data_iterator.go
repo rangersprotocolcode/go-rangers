@@ -12,12 +12,12 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package account
 
 import (
-	"com.tuntun.rocket/node/src/storage/trie"
+	"com.tuntun.rangers/node/src/storage/trie"
 	"strings"
 )
 

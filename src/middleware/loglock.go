@@ -12,21 +12,20 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 // log before/after lock
 
 package middleware
 
 import (
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/log"
+	"com.tuntun.rangers/node/src/utility"
 	"fmt"
 	"strconv"
 	"sync"
 	"time"
-
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/log"
 )
 
 type Loglock struct {

@@ -12,11 +12,11 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package core
 
-import "com.tuntun.rocket/node/src/middleware/types"
+import "com.tuntun.rangers/node/src/middleware/types"
 
 func (chain *groupChain) height() uint64 {
 	count := chain.count

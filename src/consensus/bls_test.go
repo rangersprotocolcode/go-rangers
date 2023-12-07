@@ -12,16 +12,16 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package consensus
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/base"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/base"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/consensus/model"
 	"encoding/hex"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -33,7 +33,7 @@ import (
 	"time"
 )
 
-//---------------------------------------Function Test-----------------------------------------------------------------
+// ---------------------------------------Function Test-----------------------------------------------------------------
 func TestKeyLength(test *testing.T) {
 	secKey := groupsig.NewSeckeyFromRand(base.NewRand())
 	publicKey := groupsig.GeneratePubkey(*secKey)
@@ -233,7 +233,7 @@ func mockGotAllSharePiece(groupMemberList []*testMinerInfo) groupsig.Pubkey {
 	return *groupPublicKey
 }
 
-//---------------------------------------Benchmark Test-----------------------------------------------------------------
+// ---------------------------------------Benchmark Test-----------------------------------------------------------------
 var testCount = 100
 var privateKeyList = make([]groupsig.Seckey, testCount)
 var publicKeyList = make([]groupsig.Pubkey, testCount)
@@ -299,7 +299,7 @@ func prepareData() {
 	}
 }
 
-//---------------------------------------Comparison  Test---------------------------------------------------------------
+// ---------------------------------------Comparison  Test---------------------------------------------------------------
 const prefix = "0x"
 
 func TestGenComparisonData(test *testing.T) {

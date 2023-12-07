@@ -12,14 +12,13 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package network
 
 import (
-	"com.tuntun.rocket/node/src/middleware/pb"
-
-	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rangers/node/src/common"
+	middleware_pb "com.tuntun.rangers/node/src/middleware/pb"
 	"github.com/golang/protobuf/proto"
 	"golang.org/x/crypto/sha3"
 )

@@ -1,4 +1,4 @@
-module com.tuntun.rocket/node
+module com.tuntun.rangers/node
 
 go 1.13
 

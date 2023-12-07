@@ -17,9 +17,9 @@
 package vm
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/common/sha3"
-	crypto "com.tuntun.rocket/node/src/eth_crypto"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/common/sha3"
+	crypto "com.tuntun.rangers/node/src/eth_crypto"
 	"fmt"
 	"math/big"
 	"testing"

@@ -12,22 +12,22 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package model
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/base"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/base"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/utility"
 	"strconv"
 	"time"
 )
 
-//数据签名结构
+// 数据签名结构
 type SignInfo struct {
 	dataHash  common.Hash        //哈希值
 	signature groupsig.Signature //对HASH的签名
@@ -59,7 +59,7 @@ func MakeSignInfo(dataHash common.Hash, signature groupsig.Signature, signerID g
 	return result
 }
 
-//用pk验证签名，验证通过返回true，否则false。
+// 用pk验证签名，验证通过返回true，否则false。
 func (si SignInfo) VerifySign(pk groupsig.Pubkey) bool {
 	if !si.signerID.IsValid() {
 		return false
@@ -71,7 +71,7 @@ func (si SignInfo) IsEqual(rhs SignInfo) bool {
 	return si.dataHash.Str() == rhs.dataHash.Str() && si.signerID.IsEqual(rhs.signerID) && si.signature.IsEqual(rhs.signature)
 }
 
-//GetID
+// GetID
 func (si SignInfo) GetSignerID() groupsig.ID {
 	return si.signerID
 }
@@ -88,7 +88,7 @@ func (si SignInfo) GetVersion() int32 {
 	return si.version
 }
 
-//====================================父组建组共识消息================================
+// ====================================父组建组共识消息================================
 type CreateGroupPingMessage struct {
 	FromGroupID groupsig.ID
 	PingID      string
@@ -118,7 +118,7 @@ func (msg *CreateGroupPongMessage) GenHash() common.Hash {
 	return base.Data2CommonHash(tb)
 }
 
-//ConsensusCreateGroupRawMessage
+// ConsensusCreateGroupRawMessage
 type ParentGroupConsensusMessage struct {
 	GroupInitInfo GroupInitInfo //组初始化共识
 	SignInfo
@@ -128,7 +128,7 @@ func (msg *ParentGroupConsensusMessage) GenHash() common.Hash {
 	return msg.GroupInitInfo.GroupHash()
 }
 
-//ConsensusCreateGroupSignMessage
+// ConsensusCreateGroupSignMessage
 type ParentGroupConsensusSignMessage struct {
 	GroupHash common.Hash
 	Launcher  groupsig.ID
@@ -140,10 +140,10 @@ func (msg *ParentGroupConsensusSignMessage) GenHash() common.Hash {
 	return msg.GroupHash
 }
 
-//-----------------------------------------------------组创建消息-------------------------------
-//收到父亲组的启动组初始化消息
-//to do : 组成员ID列表在哪里提供
-//ConsensusGroupRawMessage
+// -----------------------------------------------------组创建消息-------------------------------
+// 收到父亲组的启动组初始化消息
+// to do : 组成员ID列表在哪里提供
+// ConsensusGroupRawMessage
 type GroupInitMessage struct {
 	GroupInitInfo GroupInitInfo //组初始化共识
 	SignInfo
@@ -157,7 +157,7 @@ func (msg *GroupInitMessage) MemberExist(id groupsig.ID) bool {
 	return msg.GroupInitInfo.MemberExists(id)
 }
 
-//向所有组内成员发送秘密片段消息（不同成员不同）
+// 向所有组内成员发送秘密片段消息（不同成员不同）
 type SharePieceMessage struct {
 	GroupHash      common.Hash //组初始化共识（ConsensusGroupInitSummary）的哈希
 	GroupMemberNum int32
@@ -176,7 +176,7 @@ func (msg *SharePieceMessage) GenHash() common.Hash {
 	return base.Data2CommonHash(buf)
 }
 
-//向组内成员发送签名公钥消息（所有成员相同）
+// 向组内成员发送签名公钥消息（所有成员相同）
 type SignPubKeyMessage struct {
 	GroupHash      common.Hash
 	GroupID        groupsig.ID     //组id
@@ -193,7 +193,7 @@ func (msg *SignPubKeyMessage) GenHash() common.Hash {
 	return base.Data2CommonHash(buf)
 }
 
-//向组外广播该组已经初始化完成(组外节点要收到门限个消息相同，才进行上链)
+// 向组外广播该组已经初始化完成(组外节点要收到门限个消息相同，才进行上链)
 type GroupInitedMessage struct {
 	GroupHash common.Hash
 	GroupID   groupsig.ID     //组ID(可以由组公钥生成)
@@ -230,7 +230,7 @@ func (msg *ReqSharePieceMessage) GenHash() common.Hash {
 	return msg.GroupHash
 }
 
-//向所有组内成员发送秘密片段消息（不同成员不同）
+// 向所有组内成员发送秘密片段消息（不同成员不同）
 type ResponseSharePieceMessage struct {
 	GroupHash common.Hash //组初始化共识（ConsensusGroupInitSummary）的哈希 就是group hash
 	Share     SharePiece  //消息明文（由传输层用接收者公钥对消息进行加密和解密）
@@ -246,7 +246,7 @@ func (msg *ResponseSharePieceMessage) GenHash() common.Hash {
 	return base.Data2CommonHash(buf)
 }
 
-//请求签名公钥
+// 请求签名公钥
 type SignPubkeyReqMessage struct {
 	GroupID groupsig.ID
 	SignInfo
@@ -259,7 +259,7 @@ func (m *SignPubkeyReqMessage) GenHash() common.Hash {
 //---------------------------------------------------------铸块消息族--------------------------
 //铸块消息族的SI用组成员签名公钥验签
 
-//成为当前处理组消息 - 由第一个发现当前组成为铸块组的成员发出
+// 成为当前处理组消息 - 由第一个发现当前组成为铸块组的成员发出
 type ConsensusCurrentMessage struct {
 	GroupID     []byte      //铸块组
 	PreHash     common.Hash //上一块哈希
@@ -312,7 +312,7 @@ func (msg *ConsensusCastMessage) VerifyRandomSign(pkey groupsig.Pubkey, preRando
 //	ConsensusBlockMessageBase
 //}
 
-//验证消息 - 由组内的验证人发出（对KING的出块进行验证）
+// 验证消息 - 由组内的验证人发出（对KING的出块进行验证）
 type ConsensusVerifyMessage struct {
 	BlockHash  common.Hash
 	RandomSign groupsig.Signature
@@ -343,7 +343,7 @@ func (msg *ConsensusVerifyMessage) GenRandomSign(skey groupsig.Seckey, preRandom
 //	return groupsig.VerifySig(pkey, preRandom, sig)
 //}
 
-//铸块成功消息 - 该组成功完成了一个铸块，由组内任意一个收集到k个签名的成员发出
+// 铸块成功消息 - 该组成功完成了一个铸块，由组内任意一个收集到k个签名的成员发出
 type ConsensusBlockMessage struct {
 	Block types.Block
 }
@@ -370,7 +370,7 @@ func (msg *ConsensusBlockMessage) VerifySig(gpk groupsig.Pubkey, preRandom []byt
 	return groupsig.VerifySig(gpk, preRandom, *rsig)
 }
 
-//==============================奖励交易==============================
+// ==============================奖励交易==============================
 type CastRewardTransSignMessage struct {
 	ReqHash   common.Hash
 	BlockHash common.Hash

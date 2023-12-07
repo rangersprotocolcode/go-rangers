@@ -12,19 +12,19 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package cli
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/core"
-	"com.tuntun.rocket/node/src/middleware"
-	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/core"
+	"com.tuntun.rangers/node/src/middleware"
+	"com.tuntun.rangers/node/src/middleware/log"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/service"
 	"encoding/hex"
 	"fmt"
 	"math"
@@ -248,7 +248,7 @@ func (api *GtasAPI) BlockDetail(h string) (*Result, error) {
 	return successResult(bd)
 }
 
-//deprecated
+// deprecated
 func (api *GtasAPI) GetTopBlock() (*Result, error) {
 	bh := core.GetBlockChain().TopBlock()
 	blockDetail := make(map[string]interface{})
@@ -270,7 +270,7 @@ func (api *GtasAPI) GetTopBlock() (*Result, error) {
 	return successResult(blockDetail)
 }
 
-//铸块统计
+// 铸块统计
 func (api *GtasAPI) CastStat(begin uint64, end uint64) (*Result, error) {
 	proposerStat := make(map[string]int32)
 	groupStat := make(map[string]int32)

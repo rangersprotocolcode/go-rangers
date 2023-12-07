@@ -12,12 +12,12 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package notify
 
 import (
-	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/middleware/types"
 	"encoding/json"
 	"strconv"
 )
@@ -301,7 +301,7 @@ type ETHRPCPiece struct {
 	Nonce uint64 `json:"nonce"`
 }
 
-//------------------------------------------notify message----------------------------------------------------------------------
+// ------------------------------------------notify message----------------------------------------------------------------------
 type VMEventNotifyMessage struct {
 	Logs []*types.Log
 }

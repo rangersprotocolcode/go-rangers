@@ -12,13 +12,13 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package ticker
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/utility"
 	"runtime/debug"
 	"sync"
 	"sync/atomic"
@@ -171,7 +171,7 @@ func (gt *GlobalTicker) getRoutine(name string) *TickerRoutine {
 * @Description: 触发一次执行
 * @Param: chanVal, 1 表示定时器定时触发, 若本次ticker已执行过,则忽略; 2表示需要立即执行, 若本次ticker已执行过, 则延迟到下一次ticker执行
 * @return: bool
-*/
+ */
 func (gt *GlobalTicker) trigger(routine *TickerRoutine, chanVal int32) bool {
 	defer func() {
 		if r := recover(); r != nil {

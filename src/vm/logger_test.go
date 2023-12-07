@@ -17,9 +17,9 @@
 package vm
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/log"
-	"com.tuntun.rocket/node/src/storage/account"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/log"
+	"com.tuntun.rangers/node/src/storage/account"
 	"github.com/holiman/uint256"
 	"math/big"
 	"testing"

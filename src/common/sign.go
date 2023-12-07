@@ -12,18 +12,18 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package common
 
 import (
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/utility"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"math/big"
 
-	"com.tuntun.rocket/node/src/common/secp256k1"
+	"com.tuntun.rangers/node/src/common/secp256k1"
 )
 
 type Hasher interface {

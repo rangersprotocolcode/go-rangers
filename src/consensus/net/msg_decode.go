@@ -12,21 +12,21 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package net
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/consensus/model"
-	"com.tuntun.rocket/node/src/middleware/pb"
-	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/consensus/model"
+	middleware_pb "com.tuntun.rangers/node/src/middleware/pb"
+	"com.tuntun.rangers/node/src/middleware/types"
 	"github.com/gogo/protobuf/proto"
 	"time"
 )
 
-//todo
+// todo
 func baseMessage(sign *middleware_pb.SignData) *model.SignInfo {
 	return pbToSignData(sign)
 }
@@ -155,7 +155,7 @@ func unMarshalConsensusSignPKReqMessage(b []byte) (*model.SignPubkeyReqMessage, 
 	return message, nil
 }
 
-//--------------------------------------------组铸币--------------------------------------------------------------------
+// --------------------------------------------组铸币--------------------------------------------------------------------
 func unMarshalConsensusCurrentMessage(b []byte) (*model.ConsensusCurrentMessage, error) {
 	m := new(middleware_pb.ConsensusCurrentMessage)
 	e := proto.Unmarshal(b, m)

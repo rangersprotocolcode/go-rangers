@@ -17,8 +17,8 @@
 package vm
 
 import (
-	crypto "com.tuntun.rocket/node/src/eth_crypto"
-	"testing"
+	crypto "com.tuntun.rangers/node/src/eth_crypto"
+"testing"
 )
 
 func TestJumpDestAnalysis(t *testing.T) {

@@ -12,21 +12,21 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package model
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/base"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/base"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/middleware/types"
 	"time"
 )
 
-//ConsensusGroupInitInfo
-//组初始化信息
+// ConsensusGroupInitInfo
+// 组初始化信息
 type GroupInitInfo struct {
 	GroupHeader     *types.GroupHeader
 	ParentGroupSign groupsig.Signature //父亲组签名
@@ -41,7 +41,7 @@ func (gi *GroupInitInfo) GroupHash() common.Hash {
 	return gi.GroupHeader.Hash
 }
 
-//ParentID
+// ParentID
 func (gi *GroupInitInfo) ParentGroupID() groupsig.ID {
 	return groupsig.DeserializeID(gi.GroupHeader.Parent)
 }
@@ -54,7 +54,7 @@ func (gi *GroupInitInfo) CreateHeight() uint64 {
 	return gi.GroupHeader.CreateHeight
 }
 
-//GenMemberRootByIds
+// GenMemberRootByIds
 func GenGroupMemberRoot(ids []groupsig.ID) common.Hash {
 	data := bytes.Buffer{}
 	for _, m := range ids {
@@ -75,7 +75,7 @@ func (gi *GroupInitInfo) MemberExists(id groupsig.ID) bool {
 	return false
 }
 
-//组内秘密分享消息结构
+// 组内秘密分享消息结构
 type SharePiece struct {
 	Share groupsig.Seckey //秘密共享
 	Pub   groupsig.Pubkey //矿工（组私密）公钥
@@ -89,7 +89,7 @@ func (piece SharePiece) IsEqual(rhs SharePiece) bool {
 	return piece.Share.IsEqual(rhs.Share) && piece.Pub.IsEqual(rhs.Pub)
 }
 
-//矿工ID信息
+// 矿工ID信息
 type GroupMinerID struct {
 	Gid groupsig.ID //组ID
 	Uid groupsig.ID //成员ID
@@ -106,7 +106,7 @@ func (id GroupMinerID) IsValid() bool {
 	return id.Gid.IsValid() && id.Uid.IsValid()
 }
 
-//成为当前铸块组共识摘要
+// 成为当前铸块组共识摘要
 type CastGroupSummary struct {
 	PreHash     common.Hash //上一块哈希
 	PreTime     time.Time   //上一块完成时间

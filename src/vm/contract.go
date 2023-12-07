@@ -17,7 +17,7 @@
 package vm
 
 import (
-	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rangers/node/src/common"
 	"math/big"
 
 	"github.com/holiman/uint256"

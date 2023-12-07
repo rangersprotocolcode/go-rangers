@@ -2,7 +2,7 @@ package bls12381
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rangers/node/src/common"
 	"crypto/rand"
 	"math/big"
 	"testing"

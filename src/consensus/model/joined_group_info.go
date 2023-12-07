@@ -12,20 +12,20 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package model
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
 	"sync"
 )
 
-//JoinedGroup
+// JoinedGroup
 // JoinedGroup stores group-related infos the current node joins in.
 // Note that, nodes outside the group don't care the infos
-//加入的组的信息和自身在组内的信息
+// 加入的组的信息和自身在组内的信息
 type JoinedGroupInfo struct {
 	GroupHash common.Hash
 	GroupID   groupsig.ID     // Group ID
@@ -55,18 +55,17 @@ func (joinedGroupInfo *JoinedGroupInfo) MemberSignPKNum() int {
 	return len(joinedGroupInfo.MemberSignPubkeyMap)
 }
 
-//getMemberMap
+// getMemberMap
 func (joinedGroupInfo *JoinedGroupInfo) GetMemberPKs() map[string]groupsig.Pubkey {
 	joinedGroupInfo.lock.RLock()
 	defer joinedGroupInfo.lock.RUnlock()
 
-	m := make(map[string]groupsig.Pubkey , 0)
+	m := make(map[string]groupsig.Pubkey, 0)
 	for key, pk := range joinedGroupInfo.MemberSignPubkeyMap {
 		m[key] = pk
 	}
 	return m
 }
-
 
 func (joinedGroupInfo *JoinedGroupInfo) AddMemberSignPK(memberId groupsig.ID, signPK groupsig.Pubkey) {
 	joinedGroupInfo.lock.Lock()
@@ -74,8 +73,6 @@ func (joinedGroupInfo *JoinedGroupInfo) AddMemberSignPK(memberId groupsig.ID, si
 
 	joinedGroupInfo.MemberSignPubkeyMap[memberId.GetHexString()] = signPK
 }
-
-
 
 // getMemSignPK get the signature public key of a member of the group
 func (joinedGroupInfo *JoinedGroupInfo) GetMemberSignPK(memberId groupsig.ID) (pk groupsig.Pubkey, ok bool) {

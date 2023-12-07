@@ -12,17 +12,17 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package core
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware"
-	"com.tuntun.rocket/node/src/middleware/notify"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/storage/account"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware"
+	"com.tuntun.rangers/node/src/middleware/notify"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/storage/account"
+	"com.tuntun.rangers/node/src/utility"
 	"errors"
 )
 

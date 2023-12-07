@@ -12,12 +12,11 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package common
 
 import (
-	"encoding/hex"
 	"fmt"
 	"golang.org/x/crypto/sha3"
 	"math/big"
@@ -31,20 +30,4 @@ func TestSha256(t *testing.T) {
 	var h Hash
 	h = sha3.Sum256(addr[:])
 	fmt.Println(h.String())
-}
-
-func TestID(t *testing.T) {
-	privateKeyStr := "0x99a01aedffd712ca2471e99fbc95008e873ee8d93d0ee9b5dd90cb1d9547ddb1"
-	privateKeyBuf, _ := hex.DecodeString(privateKeyStr[len(PREFIX):])
-	fmt.Printf("privateKeyBuf len:%d\n", len(privateKeyBuf))
-	var privateKey PrivateKey
-	privateKey.PrivKey.PublicKey.Curve = getDefaultCurve()
-	privateKey.PrivKey.D = new(big.Int).SetBytes(privateKeyBuf)
-	privateKey.PrivKey.PublicKey.X, privateKey.PrivKey.PublicKey.Y = getDefaultCurve().ScalarBaseMult(privateKey.PrivKey.D.Bytes())
-
-	pubkey := privateKey.GetPubKey()
-	address := pubkey.GetAddress()
-	fmt.Printf("SK:%v\n", privateKey.GetHexString())
-	fmt.Printf("pubkey:%v\n", pubkey.GetHexString())
-	fmt.Printf("address:%v\n", address.GetHexString())
 }

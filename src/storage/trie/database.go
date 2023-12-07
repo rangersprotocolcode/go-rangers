@@ -12,15 +12,15 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package trie
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	xdb "com.tuntun.rocket/node/src/middleware/db"
-	"com.tuntun.rocket/node/src/storage/rlp"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	xdb "com.tuntun.rangers/node/src/middleware/db"
+	"com.tuntun.rangers/node/src/storage/rlp"
+	"com.tuntun.rangers/node/src/utility"
 	"fmt"
 	"io"
 	"sync"

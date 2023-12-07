@@ -12,18 +12,18 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package group_create
 
 import (
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/utility"
 	"sync"
 	"time"
 
-	"com.tuntun.rocket/node/src/consensus/access"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rangers/node/src/consensus/access"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/consensus/model"
 	"fmt"
 )
 
@@ -116,7 +116,7 @@ func (p *groupCreateProcessor) OnMessageSignPKReq(msg *model.SignPubkeyReqMessag
 	}
 	if signInfo, ok := model.NewSignInfo(p.minerInfo.SecKey, p.minerInfo.ID, msg); ok {
 		resp.SignInfo = signInfo
-		groupCreateLogger.Debugf("answer signPKReq Message, receiver %v, groupId:%v,groupHash:%v,signPK:%s,msg hash:%s", sender.ShortS(), msg.GroupID.GetHexString(),)
+		groupCreateLogger.Debugf("answer signPKReq Message, receiver %v, groupId:%v,groupHash:%v,signPK:%s,msg hash:%s", sender.ShortS(), msg.GroupID.GetHexString())
 		p.NetServer.AnswerSignPkMessage(resp, sender)
 	} else {
 		err = fmt.Errorf("gen Sign fail, ski=%v,%v", p.minerInfo.ID.ShortS(), p.minerInfo.SecKey.GetHexString())
@@ -132,7 +132,7 @@ func (r *signPKReqRecord) reqTimeout() bool {
 	return utility.GetTime().After(r.reqTime.Add(60 * time.Second))
 }
 
-//recordMap mapping idHex to signPKReqRecord
+// recordMap mapping idHex to signPKReqRecord
 var recordMap sync.Map
 
 func addSignPkReq(id groupsig.ID) bool {

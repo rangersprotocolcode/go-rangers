@@ -12,16 +12,16 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package group_create
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/consensus/access"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/consensus/model"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/consensus/access"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/consensus/model"
+	"com.tuntun.rangers/node/src/utility"
 	"fmt"
 )
 

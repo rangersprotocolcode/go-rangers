@@ -17,8 +17,8 @@
 package vm
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/types"
 	"math/big"
 )
 

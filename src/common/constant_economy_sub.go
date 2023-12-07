@@ -1,6 +1,6 @@
 package common
 
-import "com.tuntun.rocket/node/src/utility"
+import "com.tuntun.rangers/node/src/utility"
 
 var (
 	EconomyContract = HexToAddress("0x71d9cfd1b7adb1e8eb4c193ce6ffbe19b4aee0db")

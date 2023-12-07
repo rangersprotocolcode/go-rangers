@@ -12,21 +12,21 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package group_create
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/base"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/consensus/model"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/base"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/consensus/model"
 	"sync"
 )
 
 type groupNodeInfo struct {
 	secretSeed         base.Rand
-	groupMemberNum     int       // Number of group members
+	groupMemberNum     int // Number of group members
 	receivedSharePiece map[string]model.SharePiece
 
 	minerSignSeckey groupsig.Seckey // Output: miner signature private key (aggregated by secret shared receiving pool)

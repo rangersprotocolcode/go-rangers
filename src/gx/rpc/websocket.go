@@ -12,24 +12,23 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package rpc
 
 import (
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/utility"
 	"context"
 	"crypto/tls"
 	"fmt"
+	"golang.org/x/net/websocket"
+	"gopkg.in/fatih/set.v0"
 	"net"
 	"net/http"
 	"net/url"
 	"os"
 	"strings"
-
-	"com.tuntun.rocket/node/src/common"
-	"golang.org/x/net/websocket"
-	"gopkg.in/fatih/set.v0"
 )
 
 func (srv *Server) WebsocketHandler(allowedOrigins []string) http.Handler {

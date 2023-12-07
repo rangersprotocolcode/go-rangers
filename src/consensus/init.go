@@ -12,17 +12,17 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package consensus
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/access"
-	"com.tuntun.rocket/node/src/consensus/logical"
-	"com.tuntun.rocket/node/src/consensus/logical/group_create"
-	"com.tuntun.rocket/node/src/consensus/model"
-	"com.tuntun.rocket/node/src/consensus/net"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/access"
+	"com.tuntun.rangers/node/src/consensus/logical"
+	"com.tuntun.rangers/node/src/consensus/logical/group_create"
+	"com.tuntun.rangers/node/src/consensus/model"
+	"com.tuntun.rangers/node/src/consensus/net"
 	"time"
 )
 

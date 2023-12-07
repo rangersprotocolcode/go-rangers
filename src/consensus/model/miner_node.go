@@ -12,30 +12,29 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package model
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/consensus/base"
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/consensus/vrf"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/consensus/base"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/consensus/vrf"
 )
 
 const minerStake = 1
 
-//矿工信息
+// 矿工信息
 type MinerInfo struct {
 	// 矿工签名公钥，用于建组、出块等消息的签名及验证
 	PubKey groupsig.Pubkey
 
 	// 矿工ID
-	ID     groupsig.ID
+	ID groupsig.ID
 
 	// VRF公钥，用于验证VRFProve
 	VrfPK vrf.VRFPublicKey
-
 
 	Stake     uint64
 	MinerType byte
@@ -86,12 +85,12 @@ func (md *MinerInfo) IsWeight() bool {
 	return md.MinerType == common.MinerTypeProposer
 }
 
-//在该高度是否可以铸块
+// 在该高度是否可以铸块
 func (md *MinerInfo) CanCastAt(h uint64) bool {
 	return md.IsWeight() && h > md.ApplyHeight
 }
 
-//在该高度是否可以加入组
+// 在该高度是否可以加入组
 func (md *MinerInfo) CanJoinGroupAt(h uint64) bool {
 	return md.IsLight() && h > md.ApplyHeight
 }

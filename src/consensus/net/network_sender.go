@@ -12,16 +12,16 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package net
 
 import (
-	"com.tuntun.rocket/node/src/consensus/groupsig"
-	"com.tuntun.rocket/node/src/consensus/model"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/network"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/consensus/model"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/network"
+	"com.tuntun.rangers/node/src/utility"
 )
 
 type NetworkServerImpl struct {
@@ -34,7 +34,6 @@ func NewNetworkServer() NetworkServer {
 	}
 }
 
-//====================================建组前共识=======================
 func (ns *NetworkServerImpl) SendGroupPingMessage(msg *model.CreateGroupPingMessage, receiver groupsig.ID) {
 	body, e := marshalCreateGroupPingMessage(msg)
 	if e != nil {
@@ -71,7 +70,7 @@ func (ns *NetworkServerImpl) SendCreateGroupSignMessage(msg *model.ParentGroupCo
 	go ns.net.SendToStranger(msg.Launcher.Serialize(), m)
 }
 
-//开始建组
+// 开始建组
 func (ns *NetworkServerImpl) SendCreateGroupRawMessage(msg *model.ParentGroupConsensusMessage, belongGroup bool) {
 	body, e := marshalConsensusCreateGroupRawMessage(msg)
 	if e != nil {
@@ -87,8 +86,8 @@ func (ns *NetworkServerImpl) SendCreateGroupRawMessage(msg *model.ParentGroupCon
 	}
 }
 
-//----------------------------------------------------组初始化-----------------------------------------------------------
-//广播 组初始化消息  全网广播
+// ----------------------------------------------------组初始化-----------------------------------------------------------
+// 广播 组初始化消息  全网广播
 func (ns *NetworkServerImpl) SendGroupInitMessage(grm *model.GroupInitMessage) {
 	body, e := marshalConsensusGroupRawMessage(grm)
 	if e != nil {
@@ -122,7 +121,7 @@ func (ns *NetworkServerImpl) SendKeySharePiece(spm *model.SharePieceMessage) {
 	logger.Debugf("SendKeySharePiece to id:%s,hash:%s, gHash:%v", spm.ReceiverId.GetHexString(), m.Hash(), spm.GroupHash.Hex())
 }
 
-//组内广播签名公钥
+// 组内广播签名公钥
 func (ns *NetworkServerImpl) SendSignPubKey(spkm *model.SignPubKeyMessage) {
 	body, e := marshalConsensusSignPubKeyMessage(spkm)
 	if e != nil {
@@ -138,7 +137,7 @@ func (ns *NetworkServerImpl) SendSignPubKey(spkm *model.SignPubKeyMessage) {
 	logger.Debugf("SendSignPubKey hash:%s, dummyId:%v", m.Hash(), spkm.GroupHash.Hex())
 }
 
-//组初始化完成 广播组信息 全网广播
+// 组初始化完成 广播组信息 全网广播
 func (ns *NetworkServerImpl) BroadcastGroupInfo(cgm *model.GroupInitedMessage) {
 	body, e := marshalConsensusGroupInitedMessage(cgm)
 	if e != nil {
@@ -198,7 +197,7 @@ func (ns *NetworkServerImpl) SendVerifiedCast(cvm *model.ConsensusVerifyMessage,
 	//	utility.GetTime().UnixNano(), "", "", common.InstanceIndex, cvm.BH.CurTime.UnixNano())
 }
 
-//对外广播经过组签名的block 全网广播
+// 对外广播经过组签名的block 全网广播
 func (ns *NetworkServerImpl) BroadcastNewBlock(cbm *model.ConsensusBlockMessage) {
 	//timeFromCast := time.Since(cbm.Block.Header.CurTime)
 	body, e := types.MarshalBlock(&cbm.Block)
@@ -215,7 +214,7 @@ func (ns *NetworkServerImpl) BroadcastNewBlock(cbm *model.ConsensusBlockMessage)
 	//	utility.GetTime().UnixNano(), "", "", common.InstanceIndex, cbm.Block.Header.CurTime.UnixNano())
 }
 
-//-----------------------------------------------------------------密钥请求----------------------------------------------
+// -----------------------------------------------------------------密钥请求----------------------------------------------
 func (ns *NetworkServerImpl) AskSignPkMessage(msg *model.SignPubkeyReqMessage, receiver groupsig.ID) {
 	body, e := marshalConsensusSignPubKeyReqMessage(msg)
 	if e != nil {
