@@ -12,15 +12,15 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package executor
 
 import (
-	"com.tuntun.rocket/node/src/common"
-	"com.tuntun.rocket/node/src/middleware/types"
-	"com.tuntun.rocket/node/src/service"
-	"com.tuntun.rocket/node/src/utility"
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/service"
+	"com.tuntun.rangers/node/src/utility"
 	"encoding/json"
 	"fmt"
 	"math/big"
@@ -28,8 +28,6 @@ import (
 	"testing"
 )
 
-// 异常流程
-// 账户钱不够
 func testMinerExecutorApply(t *testing.T) {
 	accountDB := getTestAccountDB()
 

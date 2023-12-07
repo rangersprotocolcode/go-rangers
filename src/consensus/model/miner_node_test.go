@@ -1,7 +1,7 @@
 package model
 
 import (
-	"com.tuntun.rocket/node/src/common"
+	"com.tuntun.rangers/node/src/common"
 	"fmt"
 	"testing"
 )

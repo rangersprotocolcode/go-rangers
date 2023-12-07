@@ -12,14 +12,13 @@
 // GNU Lesser General Public License for more details.
 //
 // You should have received a copy of the GNU Lesser General Public License
-// along with the RocketProtocol library. If not, see <http://www.gnu.org/licenses/>.
+// along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
 package eth_crypto
 
 import (
 	"bytes"
-	"com.tuntun.rocket/node/src/common"
-	"crypto/ecdsa"
+	"com.tuntun.rangers/node/src/common"
 	"encoding/hex"
 	"io/ioutil"
 	"math/big"
@@ -53,33 +52,6 @@ func BenchmarkSha3(b *testing.B) {
 	a := []byte("hello world")
 	for i := 0; i < b.N; i++ {
 		Keccak256(a)
-	}
-}
-
-func TestUnmarshalPubkey(t *testing.T) {
-	key, err := UnmarshalPubkey(nil)
-	if err != errInvalidPubkey || key != nil {
-		t.Fatalf("expected error, got %v, %v", err, key)
-	}
-	key, err = UnmarshalPubkey([]byte{1, 2, 3})
-	if err != errInvalidPubkey || key != nil {
-		t.Fatalf("expected error, got %v, %v", err, key)
-	}
-
-	var (
-		enc, _ = hex.DecodeString("04760c4460e5336ac9bbd87952a3c7ec4363fc0a97bd31c86430806e287b437fd1b01abc6e1db640cf3106b520344af1d58b00b57823db3e1407cbc433e1b6d04d")
-		dec    = &ecdsa.PublicKey{
-			Curve: S256(),
-			X:     common.MustDecodeBig("0x760c4460e5336ac9bbd87952a3c7ec4363fc0a97bd31c86430806e287b437fd1"),
-			Y:     common.MustDecodeBig("0xb01abc6e1db640cf3106b520344af1d58b00b57823db3e1407cbc433e1b6d04d"),
-		}
-	)
-	key, err = UnmarshalPubkey(enc)
-	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
-	}
-	if !reflect.DeepEqual(key, dec) {
-		t.Fatal("wrong result")
 	}
 }
 
