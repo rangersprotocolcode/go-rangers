@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rangers/node/src/middleware/log"
 	"database/sql"
 	"fmt"
+	_ "github.com/mattn/go-sqlite3"
 	"os"
 	"strconv"
 	"time"
