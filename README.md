@@ -38,7 +38,7 @@ To clean build:
 make clean
 ```
 
-Check if you have the binary file: rocket-node
+Check if you have the binary file: rangers_node
 
 ### 1.4 package management
 
