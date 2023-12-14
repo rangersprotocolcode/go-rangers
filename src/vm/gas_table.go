@@ -91,11 +91,17 @@ var (
 )
 
 func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	return SstoreSetGas, nil
+	if common.IsProposal015() {
+		return SstoreSetGas, nil
+	}
+	return 0, nil
 }
 
 func gasSStoreEIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	return SstoreSetGasEIP2200, nil // dirty update (2.2)
+	if common.IsProposal015() {
+		return SstoreSetGasEIP2200, nil // dirty update (2.2)
+	}
+	return 0, nil
 }
 
 func makeGasLog(n uint64) gasFunc {
