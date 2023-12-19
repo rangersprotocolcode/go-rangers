@@ -116,7 +116,7 @@ func (c Transactions) Swap(i, j int) {
 }
 func (c Transactions) Less(i, j int) bool {
 	if c[i].RequestId == 0 && c[j].RequestId == 0 {
-		if c[i].Source == c[j].Source {
+		if common.IsProposal016() && c[i].Source == c[j].Source {
 			return c[i].Nonce < c[j].Nonce
 		}
 

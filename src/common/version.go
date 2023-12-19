@@ -83,6 +83,7 @@ var (
 		Proposal013Block: 29063000,
 		Proposal014Block: 0,
 		Proposal015Block: 61205000,
+		Proposal016Block: 62320000,
 
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 
@@ -113,6 +114,7 @@ var (
 		Proposal013Block: 0,
 		Proposal014Block: 0,
 		Proposal015Block: 0,
+		Proposal016Block: 0,
 	}
 
 	subNetChainConfig = ChainConfig{
@@ -137,6 +139,7 @@ var (
 		Proposal013Block: 0,
 		Proposal014Block: 0,
 		Proposal015Block: 0,
+		Proposal016Block: 0,
 	}
 
 	LocalChainConfig ChainConfig
@@ -168,6 +171,7 @@ type ChainConfig struct {
 	Proposal013Block uint64
 	Proposal014Block uint64
 	Proposal015Block uint64
+	Proposal016Block uint64
 
 	mainNodeContract Address
 
@@ -316,6 +320,10 @@ func IsProposal014() bool {
 
 func IsProposal015() bool {
 	return isForked(LocalChainConfig.Proposal015Block, GetBlockHeight())
+}
+
+func IsProposal016() bool {
+	return isForked(LocalChainConfig.Proposal016Block, GetBlockHeight())
 }
 
 func isForked(base uint64, height uint64) bool {
