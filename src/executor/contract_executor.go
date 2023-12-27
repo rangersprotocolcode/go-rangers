@@ -37,7 +37,10 @@ type contractExecutor struct {
 	logger log.Logger
 }
 
-const defaultGasLimit uint64 = 6000000
+const (
+	defaultGasLimit     uint64 = 6000000
+	p017defaultGasLimit uint64 = 30000000
+)
 
 var (
 	defaultGasPrice      = big.NewInt(1000000000)
@@ -144,6 +147,9 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 	vmCtx.GasPrice = defaultGasPrice
 	vmCtx.GasLimit = defaultGasLimit
 	if common.IsProposal015() {
+		if common.IsProposal017() && gasLimit > p017defaultGasLimit {
+			gasLimit = p017defaultGasLimit
+		}
 		vmCtx.GasLimit = gasLimit - intrinsicGas
 	}
 
@@ -235,6 +241,9 @@ func (this *contractExecutor) decodeContractData(txData string) (*ContractRawDat
 	var rawGasLimit uint64
 	if data.GasLimit == "" || data.GasLimit == "0" {
 		rawGasLimit = defaultGasLimit
+		if common.IsProposal017() {
+			rawGasLimit = p017defaultGasLimit
+		}
 	} else {
 		rawGasLimit, err = strconv.ParseUint(data.GasLimit, 10, 64)
 		if err != nil {

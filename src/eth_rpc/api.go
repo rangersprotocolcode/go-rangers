@@ -118,7 +118,7 @@ type RPCBlock struct {
 
 var (
 	gasPrice                         = big.NewInt(1000000000)
-	gasLimit                  uint64 = 6000000
+	gasLimit                  uint64 = 30000000
 	callLock                         = sync.Mutex{}
 	nonce                            = []byte{1, 2, 3, 4, 5, 6, 7, 8}
 	difficulty                       = utility.Big(*big.NewInt(32))
@@ -184,6 +184,9 @@ func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash *BlockNumberOrH
 	estimateGas := uint64(float64(gasUsed) * estimateExpandCoefficient)
 	if gasUsed != txGas && estimateGas < generalEstimateGas {
 		estimateGas = generalEstimateGas
+	}
+	if estimateGas > gasLimit {
+		estimateGas = gasLimit
 	}
 	return utility.Uint64(estimateGas), err
 }
