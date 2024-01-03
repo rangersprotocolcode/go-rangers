@@ -116,6 +116,10 @@ func (c Transactions) Swap(i, j int) {
 }
 func (c Transactions) Less(i, j int) bool {
 	if c[i].RequestId == 0 && c[j].RequestId == 0 {
+		if common.IsProposal016() && c[i].Source == c[j].Source {
+			return c[i].Nonce < c[j].Nonce
+		}
+
 		num1 := new(big.Int).SetBytes(c[i].Hash.Bytes())
 		num2 := new(big.Int).SetBytes(c[j].Hash.Bytes())
 		return num1.Cmp(num2) > 0

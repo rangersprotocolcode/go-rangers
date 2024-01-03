@@ -117,15 +117,16 @@ type RPCBlock struct {
 }
 
 var (
-	gasPrice                          = big.NewInt(1000000000)
-	gasLimit                  uint64  = 6000000
-	callLock                          = sync.Mutex{}
-	nonce                             = []byte{1, 2, 3, 4, 5, 6, 7, 8}
-	difficulty                        = utility.Big(*big.NewInt(32))
-	totalDifficulty                   = utility.Big(*big.NewInt(180))
-	confirmBlockCount         uint64  = 6
-	txGas                     uint64  = 21000 // Per transaction not creating a contract. NOTE: Not payable on data of calls between transactions.
-	estimateExpandCoefficient float64 = 1.25
+	gasPrice                         = big.NewInt(1000000000)
+	gasLimit                  uint64 = 30000000
+	callLock                         = sync.Mutex{}
+	nonce                            = []byte{1, 2, 3, 4, 5, 6, 7, 8}
+	difficulty                       = utility.Big(*big.NewInt(32))
+	totalDifficulty                  = utility.Big(*big.NewInt(180))
+	confirmBlockCount         uint64 = 6
+	txGas                     uint64 = 21000 // Per transaction not creating a contract. NOTE: Not payable on data of calls between transactions.
+	estimateExpandCoefficient        = 2.5
+	generalEstimateGas        uint64 = 500000
 )
 
 // SendRawTransaction will add the signed transaction to the transaction pool.
@@ -179,8 +180,15 @@ func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash *BlockNumberOrH
 		args.Gas = &defaultGasLimit
 	}
 	_, err, gasUsed := doCall(args, bNrOrHash)
-	estimateGas := float64(gasUsed) * estimateExpandCoefficient
-	return utility.Uint64(uint64(estimateGas)), err
+
+	estimateGas := uint64(float64(gasUsed) * estimateExpandCoefficient)
+	if gasUsed != txGas && estimateGas < generalEstimateGas {
+		estimateGas = generalEstimateGas
+	}
+	if estimateGas > gasLimit {
+		estimateGas = gasLimit
+	}
+	return utility.Uint64(estimateGas), err
 }
 
 func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error, uint64) {
