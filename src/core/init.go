@@ -74,8 +74,8 @@ func InitCore(helper types.ConsensusHelper, privateKey common.PrivateKey, id str
 	initChainHandler()
 
 	initGameExecutor(blockChainImpl)
-
 	m := &transactionRequestMessage{BlockHeight: 10000, BlockPv: big.NewInt(0)}
 	go requestTransaction(*m, "111111")
+
 	return nil
 }
