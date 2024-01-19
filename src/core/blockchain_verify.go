@@ -104,8 +104,15 @@ func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Tran
 			logger.Debugf("miss tx:%s", tx.ShortS())
 		}
 
-		m := &transactionRequestMessage{TransactionHashes: missing, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue}
-		go requestTransaction(*m, castorId.GetHexString())
+		hashList := make([]common.Hashes, 0)
+		for _, item := range missing {
+			hashList = append(hashList, item)
+			if len(hashList) > 100 {
+				m := &transactionRequestMessage{TransactionHashes: hashList, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue}
+				go requestTransaction(*m, castorId.GetHexString())
+				hashList = make([]common.Hashes, 0)
+			}
+		}
 		return true, missing, transactions
 	}
 
