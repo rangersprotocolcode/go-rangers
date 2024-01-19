@@ -18,6 +18,8 @@ package service
 
 import (
 	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/types"
+	"encoding/json"
 	"fmt"
 	"github.com/gogf/gf/container/gmap"
 	"testing"
@@ -51,4 +53,11 @@ func TestGMap(t *testing.T) {
 	fmt.Println(listMap.Size())
 	fmt.Println(listMap.Keys())
 	fmt.Println(listMap.Values())
+}
+
+func TestTxUnmarshal(t *testing.T) {
+	missingTx1 := `{"source":"0x18cd99cdc57f5f21442baf5d06bcf5176e463e91","target":"","type":2,"time":"2024-01-19 17:47:34.334308011 +0800 CST m=+707184.175867286","data":"{\"id\":\"0x7a0b65d8e9fd5420a80f2c41cbd7ec20a2298f756e4259da0e4a9c08e8f224a2\",\"publicKey\":\"0x1b33e4f89a3ddf3712e2061c813b93324c46b8715e945b23068a5a03fa06bc597d217d165a3792397f5b0bf4aa584d8c0c5edeb32e8a4b4ede313593ef8653f6375c44896bd6d3d01d379fc06d0ac3b9dd790879b9afa0de47e115bc84b8936665e920fb837d5d978a131c63ee0cde38f67c60ed94c9045f9424195c4f6c69eb\",\"vrfPublicKey\":\"eDkuGhv7pG7Utlw/GAkZk/KacSjPj2R20UBwoisqKzI=\",\"ApplyHeight\":0,\"Status\":0,\"stake\":400,\"account\":\"0x18cd99cdc57f5f21442baf5d06bcf5176e463e91\"}","hash":"0x8ae1c35d909cf45ae136dd8f683a88d5cea87b1ef187f716ad90d29abd540159","RequestId":0,"chainId":"2025","sign":"0xe8fb3f557341a7c1e37c197d7dc2fdb8a9a56b50679ca12d33774010ea6e47cd3e60e383d78698132a3fc1d0152c6d74f692f53edd5bae5d6fb7cc57aa2ae8851c"}`
+	var tx types.Transaction
+	json.Unmarshal([]byte(missingTx1), &tx)
+	return
 }
