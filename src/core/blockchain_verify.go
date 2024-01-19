@@ -113,6 +113,9 @@ func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Tran
 				hashList = make([]common.Hashes, 0)
 			}
 		}
+
+		m := &transactionRequestMessage{TransactionHashes: hashList, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue}
+		go requestTransaction(*m, castorId.GetHexString())
 		return true, missing, transactions
 	}
 
