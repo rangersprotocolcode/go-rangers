@@ -57,17 +57,6 @@ func (ch ChainHandler) transactionReqHandler(msg notify.Message) {
 
 	source := trm.Peer
 	logger.Debugf("receive transaction req from %s,block height:%d,block hash:%s,tx_len:%d,height:%v", source, m.BlockHeight, m.CurrentBlockHash.String(), len(m.TransactionHashes), m.BlockHeight)
-	if m.BlockHeight == 10000 {
-		txList := service.GetTransactionPool().GetReceived()
-		txSlice := make([]*types.Transaction, 0)
-		for _, item := range txList {
-			txSlice = append(txSlice, item)
-			if len(txSlice) >= 100 {
-				sendTransactions(txSlice, source)
-				txSlice = make([]*types.Transaction, 0)
-			}
-		}
-	}
 
 	if nil == blockChainImpl {
 		logger.Errorf("no blockChainImpl, cannot find txs")
