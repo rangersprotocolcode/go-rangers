@@ -78,6 +78,8 @@ func (pq *PriorityQueue) heapPush(value *notify.ClientTransactionMessage) {
 	LockBlockchain("HeapPush")
 	defer UnLockBlockchain("HeapPush")
 
+	common.DefaultLogger.Debugf("new item. nonce: %d, current: %d", value.Nonce, pq.threshold)
+
 	if 0 != value.Nonce && value.Nonce <= pq.threshold {
 		return
 	}
