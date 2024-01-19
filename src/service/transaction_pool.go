@@ -174,10 +174,10 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 
 	mysql.InsertLogs(header.Height, receipts, header.Hash)
 
-	txHashList := make([]interface{}, len(receipts))
+	txHashList := make([]interface{}, 0)
 	for i, receipt := range receipts {
 		hash := receipt.TxHash
-		txHashList[i] = hash
+		txHashList = append(txHashList, hash)
 		var er ExecutedReceipt
 		er.BlockHash = header.Hash
 		er.Height = receipt.Height
@@ -215,6 +215,7 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 	if evictedTxs != nil {
 		for _, hash := range evictedTxs {
 			pool.evictedTxs.Add(hash, 0)
+			txHashList = append(txHashList, hash)
 		}
 	}
 	pool.remove(txHashList)
@@ -500,4 +501,30 @@ func compareTx(tx *types.Transaction, expectedTx *types.Transaction) bool {
 		return false
 	}
 	return true
+}
+
+func (pool *TxPool) checkNonce(txList []*types.Transaction) []*types.Transaction {
+	packedTxs := make([]*types.Transaction, 0)
+	stateDB := middleware.AccountDBManagerInstance.GetLatestStateDB()
+	nonceMap := make(map[string]uint64, 0)
+
+	for _, tx := range txList {
+		expectedNonce, exist := nonceMap[tx.Source]
+		if !exist {
+			expectedNonce = stateDB.GetNonce(common.StringToAddress(tx.Source))
+		}
+
+		//nonce too low tx and repeat nonce tx will be packed into block and execute failed
+		if expectedNonce > tx.Nonce {
+			logger.Debugf("nonce too high tx,skip pack.tx:%s,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
+			nonceMap[tx.Source] = expectedNonce
+			continue
+		}
+		nonceMap[tx.Source] = expectedNonce + 1
+		packedTxs = append(packedTxs, tx)
+		if len(packedTxs) >= txCountPerBlock {
+			break
+		}
+	}
+	return packedTxs
 }

@@ -17,23 +17,47 @@
 package executor
 
 import (
+	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"com.tuntun.rangers/node/src/service"
 	"com.tuntun.rangers/node/src/storage/account"
+	"errors"
+)
+
+var (
+	ErrNonceTooLow  = errors.New("nonce too low")
+	ErrNonceTooHigh = errors.New("nonce too high")
 )
 
 type executor interface {
-	BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountDB *account.AccountDB, context map[string]interface{}) (bool, string)
+	BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountDB *account.AccountDB, context map[string]interface{}) (bool, bool, string)
 	Execute(tx *types.Transaction, header *types.BlockHeader, accountDB *account.AccountDB, context map[string]interface{}) (bool, string)
 }
 
 type baseFeeExecutor struct {
 }
 
-func (this *baseFeeExecutor) BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountDB *account.AccountDB, context map[string]interface{}) (bool, string) {
-	err := service.GetTransactionPool().ProcessFee(*tx, accountDB)
-	if err == nil {
-		return true, ""
+func (this *baseFeeExecutor) BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountDB *account.AccountDB, context map[string]interface{}) (bool, bool, string) {
+	if err := validateNonce(tx, accountDB); err != nil {
+		return false, true, err.Error()
 	}
-	return false, err.Error()
+
+	if err := service.GetTransactionPool().ProcessFee(*tx, accountDB); err != nil {
+		return false, true, err.Error()
+	}
+	return true, true, ""
+}
+
+func validateNonce(tx *types.Transaction, accountDB *account.AccountDB) error {
+	if common.IsProposal018() {
+		expectedNonce := accountDB.GetNonce(common.StringToAddress(tx.Source))
+		if expectedNonce > tx.Nonce {
+			logger.Debugf("Tx nonce too low.tx:%d,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
+			return ErrNonceTooLow
+		} else if expectedNonce < tx.Nonce {
+			logger.Debugf("Tx nonce too high.tx:%d,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
+			return ErrNonceTooHigh
+		}
+	}
+	return nil
 }

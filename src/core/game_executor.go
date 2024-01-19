@@ -260,7 +260,7 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 		executor.logger.Debugf("finish tx. result: %t, message: %s, cost time : %v, txhash: %s, requestId: %d", result, message, time.Since(start), txhash, txRaw.RequestId)
 	}()
 
-	result, message = processor.BeforeExecute(&txRaw, nil, accountDB, context)
+	result, _, message = processor.BeforeExecute(&txRaw, nil, accountDB, context)
 	if !result {
 		executor.logger.Errorf("finish tx. hash: %s, failed. not enough max", txhash)
 	} else {

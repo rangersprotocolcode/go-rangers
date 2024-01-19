@@ -28,13 +28,14 @@ type txExecutors struct {
 }
 
 var txExecutorsImpl *txExecutors
+var logger log.Logger
 
 func GetTxExecutor(txType int32) executor {
 	return txExecutorsImpl.executors[txType]
 }
 
 func InitExecutors() {
-	logger := log.GetLoggerByIndex(log.TxLogConfig, strconv.Itoa(common.InstanceIndex))
+	logger = log.GetLoggerByIndex(log.TxLogConfig, strconv.Itoa(common.InstanceIndex))
 
 	executors := make(map[int32]executor)
 
@@ -47,7 +48,7 @@ func InitExecutors() {
 	executors[types.TransactionTypeOperatorNode] = &minerNodeExecutor{logger: logger}
 
 	executors[types.TransactionTypeContract] = &contractExecutor{logger: logger}
-	executors[types.TransactionTypeETHTX] = &contractExecutor{logger: logger}
+	executors[types.TransactionTypeETHTX] = &jsonrpcExecutor{logger: logger}
 
 	txExecutorsImpl = &txExecutors{executors: executors}
 }

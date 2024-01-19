@@ -178,6 +178,7 @@ type ChainConfig struct {
 	Proposal015Block uint64
 	Proposal016Block uint64
 	Proposal017Block uint64
+	Proposal018Block uint64
 
 	mainNodeContract Address
 
@@ -334,6 +335,10 @@ func IsProposal016() bool {
 
 func IsProposal017() bool {
 	return isForked(LocalChainConfig.Proposal017Block, GetBlockHeight())
+}
+
+func IsProposal018() bool {
+	return isForked(LocalChainConfig.Proposal018Block, GetBlockHeight())
 }
 
 func isForked(base uint64, height uint64) bool {

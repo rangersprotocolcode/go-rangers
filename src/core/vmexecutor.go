@@ -88,17 +88,25 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 
 		txExecutor := executor.GetTxExecutor(transaction.Type)
 		success := false
+		addAble := true
 		msg := ""
 
 		if txExecutor != nil {
-			success, msg = txExecutor.BeforeExecute(transaction, this.block.Header, this.accountdb, this.context)
+			success, addAble, msg = txExecutor.BeforeExecute(transaction, this.block.Header, this.accountdb, this.context)
+			if common.IsProposal018() && !addAble {
+				evictedTxs = append(evictedTxs, transaction.Hash)
+				continue
+			}
+
 			if success {
 				snapshot := this.accountdb.Snapshot()
 				success, msg = txExecutor.Execute(transaction, this.block.Header, this.accountdb, this.context)
 
 				if !success {
 					logger.Debugf("Execute failed tx: %s, type: %d, msg: %s", transaction.Hash.String(), transaction.Type, msg)
-					evictedTxs = append(evictedTxs, transaction.Hash)
+					if !common.IsProposal018() {
+						evictedTxs = append(evictedTxs, transaction.Hash)
+					}
 					this.accountdb.RevertToSnapshot(snapshot)
 				} else {
 					if transaction.Source != "" {
