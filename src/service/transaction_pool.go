@@ -237,12 +237,16 @@ func (pool *TxPool) UnMarkExecuted(block *types.Block) {
 
 	for _, tx := range txs {
 		pool.executed.Delete(tx.Hash.Bytes())
-		var msg notify.ClientTransactionMessage
-		msg.Tx = *tx
-		msg.Nonce = tx.RequestId
-		msg.UserId = ""
-		msg.GateNonce = 0
-		middleware.DataChannel.GetRcvedTx() <- &msg
+		pool.add(tx)
+
+		if 0 != tx.RequestId {
+			var msg notify.ClientTransactionMessage
+			msg.Tx = *tx
+			msg.Nonce = tx.RequestId
+			msg.UserId = ""
+			msg.GateNonce = 0
+			middleware.DataChannel.GetRcvedTx() <- &msg
+		}
 	}
 }
 
@@ -432,7 +436,7 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 		return false, ErrExist
 	}
 	pool.received.push(tx)
-	txPoolLogger.Debugf("[pool]Add tx:%s. nonce: %d, After add,received size:%d", tx.Hash.String(), tx.RequestId, pool.received.Len())
+	txPoolLogger.Debugf("[pool]Add tx:%s. nonce: %d, After add, received size:%d", tx.Hash.String(), tx.RequestId, pool.received.Len())
 	return true, nil
 }
 

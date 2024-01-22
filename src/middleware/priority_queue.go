@@ -42,13 +42,13 @@ func NewPriorityQueue() *PriorityQueue {
 	return pq
 }
 
-func (pq PriorityQueue) Len() int { return len(pq.data) }
+func (pq *PriorityQueue) Len() int { return len(pq.data) }
 
-func (pq PriorityQueue) Less(i, j int) bool {
+func (pq *PriorityQueue) Less(i, j int) bool {
 	return pq.data[i].Value.Nonce < pq.data[j].Value.Nonce
 }
 
-func (pq PriorityQueue) Swap(i, j int) {
+func (pq *PriorityQueue) Swap(i, j int) {
 	pq.data[i], pq.data[j] = pq.data[j], pq.data[i]
 	pq.data[i].index = i
 	pq.data[j].index = j
@@ -115,8 +115,13 @@ func (pq *PriorityQueue) tryPop() {
 }
 
 func (pq *PriorityQueue) SetThreshold(value uint64) {
-	common.DefaultLogger.Debugf("setThreshold: %d", value)
-	pq.threshold = value
+	common.DefaultLogger.Debugf("setThreshold: %d, current: %d", value, pq.threshold)
+	if value >= pq.threshold {
+		pq.threshold = value
+	} else {
+		common.DefaultLogger.Error("setThreshold failed: %d, current: %d", value, pq.threshold)
+	}
+
 	pq.tryPop()
 }
 

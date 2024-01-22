@@ -17,24 +17,29 @@
 package middleware
 
 import (
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/log"
 	"com.tuntun.rangers/node/src/middleware/notify"
 	"fmt"
 	"testing"
 )
 
 func TestPriorityQueue_Swap(t *testing.T) {
+	common.DefaultLogger = log.GetLoggerByIndex(log.DefaultConfig, "0")
 	InitLock()
 
 	pq := NewPriorityQueue()
 	pq.SetThreshold(3)
 	pq.SetHandle(printItem)
 
+	// 0 for magic number
 	x0 := notify.ClientTransactionMessage{Nonce: 0, UserId: "0"}
 	pq.heapPush(&x0)
 
 	x := notify.ClientTransactionMessage{Nonce: 5, UserId: "a"}
 	pq.heapPush(&x)
 
+	// drop 3
 	x1 := notify.ClientTransactionMessage{Nonce: 3, UserId: "b"}
 	pq.heapPush(&x1)
 
@@ -56,6 +61,7 @@ func TestPriorityQueue_Swap(t *testing.T) {
 	x4 := notify.ClientTransactionMessage{Nonce: 100, UserId: "c"}
 	pq.heapPush(&x4)
 
+	fmt.Println(pq.Len())
 }
 
 func printItem(item *Item) {
