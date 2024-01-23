@@ -22,7 +22,6 @@ import (
 	"com.tuntun.rangers/node/src/middleware"
 	"com.tuntun.rangers/node/src/middleware/db"
 	"com.tuntun.rangers/node/src/middleware/mysql"
-	"com.tuntun.rangers/node/src/middleware/notify"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"com.tuntun.rangers/node/src/storage/account"
 	"com.tuntun.rangers/node/src/storage/rlp"
@@ -238,15 +237,6 @@ func (pool *TxPool) UnMarkExecuted(block *types.Block) {
 	for _, tx := range txs {
 		pool.executed.Delete(tx.Hash.Bytes())
 		pool.add(tx)
-
-		if 0 != tx.RequestId {
-			var msg notify.ClientTransactionMessage
-			msg.Tx = *tx
-			msg.Nonce = tx.RequestId
-			msg.UserId = ""
-			msg.GateNonce = 0
-			middleware.DataChannel.GetRcvedTx() <- &msg
-		}
 	}
 }
 
