@@ -41,7 +41,9 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 		logger.Debugf("Validate block hash error!")
 		return nil, -1
 	}
-	if !chain.hasPreBlock(bh) {
+
+	pre := chain.queryBlockHeaderByHash(bh.PreHash)
+	if nil == pre {
 		if txs != nil {
 			chain.futureBlocks.Add(bh.PreHash, &types.Block{Header: &bh, Transactions: txs})
 		}
@@ -60,6 +62,11 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 	miss, missingTx, transactions := chain.missTransaction(bh, txs)
 	if miss {
 		return missingTx, 1
+	}
+
+	requestIds := getRequestIdFromTransactions(txs, pre.RequestIds)
+	if requestIds["fixed"] != bh.RequestIds["fixed"] {
+		return nil, -1
 	}
 
 	logger.Debugf("validateTxRoot,tx tree root:%v,len txs:%d,miss len:%d", bh.TxTree.Hex(), len(transactions), len(missingTx))
