@@ -100,11 +100,19 @@ func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Tran
 		if error != nil {
 			panic("Groupsig id deserialize error:" + error.Error())
 		}
+
+		hashList := make([]common.Hashes, 0)
 		for _, tx := range missing {
 			logger.Debugf("miss tx:%s", tx.ShortS())
+			hashList = append(hashList, tx)
+			if len(hashList) > 100 {
+				m := &transactionRequestMessage{TransactionHashes: hashList, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue}
+				go requestTransaction(*m, castorId.GetHexString())
+				hashList = make([]common.Hashes, 0)
+			}
 		}
 
-		m := &transactionRequestMessage{TransactionHashes: missing, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue}
+		m := &transactionRequestMessage{TransactionHashes: hashList, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue}
 		go requestTransaction(*m, castorId.GetHexString())
 		return true, missing, transactions
 	}
