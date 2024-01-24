@@ -37,7 +37,7 @@ const (
 	rcvTxPoolSize    = 50000
 	txCacheSize      = 1000
 
-	txCountPerBlock = 3000
+	txCountPerBlock = 199
 )
 
 var (
