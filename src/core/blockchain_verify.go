@@ -67,7 +67,6 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 	requestIds := getRequestIdFromTransactions(txs, pre.RequestIds)
 	if requestIds["fixed"] != bh.RequestIds["fixed"] {
 		logger.Debugf("request id diff:%v,%v", requestIds["fixed"], bh.RequestIds["fixed"])
-		return nil, -1
 	}
 
 	logger.Debugf("validateTxRoot,tx tree root:%v,len txs:%d,miss len:%d", bh.TxTree.Hex(), len(transactions), len(missingTx))
