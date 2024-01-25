@@ -64,10 +64,10 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 		return missingTx, 1
 	}
 
-	requestIds := getRequestIdFromTransactions(txs, pre.RequestIds)
+	requestIds := getRequestIdFromTransactions(transactions, pre.RequestIds)
 	if requestIds["fixed"] != bh.RequestIds["fixed"] {
 		logger.Debugf("request id diff:%v,%v, localPre: %v", requestIds["fixed"], bh.RequestIds["fixed"], pre.RequestIds)
-		for _, tx := range txs {
+		for _, tx := range transactions {
 			logger.Debugf("request id diff, tx: %v", tx)
 		}
 
