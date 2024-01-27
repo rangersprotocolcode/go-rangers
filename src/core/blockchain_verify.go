@@ -41,7 +41,9 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 		logger.Debugf("Validate block hash error!")
 		return nil, -1
 	}
-	if !chain.hasPreBlock(bh) {
+
+	pre := chain.queryBlockHeaderByHash(bh.PreHash)
+	if nil == pre {
 		if txs != nil {
 			chain.futureBlocks.Add(bh.PreHash, &types.Block{Header: &bh, Transactions: txs})
 		}
@@ -60,6 +62,15 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 	miss, missingTx, transactions := chain.missTransaction(bh, txs)
 	if miss {
 		return missingTx, 1
+	}
+
+	requestIds := getRequestIdFromTransactions(transactions, pre.RequestIds)
+	if requestIds["fixed"] != bh.RequestIds["fixed"] {
+		logger.Debugf("request id diff, %v, %v, localPre: %v", requestIds["fixed"], bh.RequestIds["fixed"], pre.RequestIds)
+		for _, tx := range transactions {
+			logger.Debugf("request id diff, tx: %v", tx)
+		}
+		return nil, -1
 	}
 
 	logger.Debugf("validateTxRoot,tx tree root:%v,len txs:%d,miss len:%d", bh.TxTree.Hex(), len(transactions), len(missingTx))
@@ -100,11 +111,19 @@ func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Tran
 		if error != nil {
 			panic("Groupsig id deserialize error:" + error.Error())
 		}
+
+		hashList := make([]common.Hashes, 0)
 		for _, tx := range missing {
 			logger.Debugf("miss tx:%s", tx.ShortS())
+			hashList = append(hashList, tx)
+			if len(hashList) > 100 {
+				m := &transactionRequestMessage{TransactionHashes: hashList, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue}
+				go requestTransaction(*m, castorId.GetHexString())
+				hashList = make([]common.Hashes, 0)
+			}
 		}
 
-		m := &transactionRequestMessage{TransactionHashes: missing, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue}
+		m := &transactionRequestMessage{TransactionHashes: hashList, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue}
 		go requestTransaction(*m, castorId.GetHexString())
 		return true, missing, transactions
 	}

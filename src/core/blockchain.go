@@ -233,7 +233,7 @@ func getRequestIdFromTransactions(transactions []*types.Transaction, lastOne map
 			}
 		}
 
-		if 0 != maxRequestId {
+		if 0 != maxRequestId && maxRequestId > result["fixed"] {
 			result["fixed"] = maxRequestId
 		}
 	}

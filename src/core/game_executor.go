@@ -189,7 +189,13 @@ func (executor *GameExecutor) runWrite(item *middleware.Item) {
 	data := types.UserData{Address: message.GateNonce}
 	txRaw.SubTransactions[0] = data
 
+	height := middleware.AccountDBManagerInstance.Height
 	if txRaw.Type == 0 || 0 == txRaw.RequestId {
+		if err := service.GetTransactionPool().VerifyTransaction(&txRaw, height); err != nil {
+			executor.logger.Errorf("rcv tx with nonce: %d, txhash: %s, type: %d, gateNonce: %d, verified error", txRaw.RequestId, txRaw.Hash.String(), txRaw.Type, txRaw.SubTransactions[0].Address)
+			return
+		}
+
 		executor.logger.Infof("rcv tx with nonce: %d, txhash: %s, type: %d, gateNonce: %d, send to transaction pool", txRaw.RequestId, txRaw.Hash.String(), txRaw.Type, txRaw.SubTransactions[0].Address)
 		executor.sendTransaction(&txRaw)
 		return
@@ -197,7 +203,7 @@ func (executor *GameExecutor) runWrite(item *middleware.Item) {
 
 	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s", txRaw.RequestId, txRaw.Hash.String())
 
-	accountDB, height := middleware.AccountDBManagerInstance.LatestStateDB, middleware.AccountDBManagerInstance.Height
+	accountDB := middleware.AccountDBManagerInstance.LatestStateDB
 	if err := service.GetTransactionPool().VerifyTransaction(&txRaw, height); err != nil {
 		executor.logger.Errorf("fail to verify tx, txhash: %s, err: %v", txRaw.Hash.String(), err.Error())
 		if 0 != len(message.UserId) {

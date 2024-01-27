@@ -22,7 +22,6 @@ import (
 	"com.tuntun.rangers/node/src/middleware"
 	"com.tuntun.rangers/node/src/middleware/db"
 	"com.tuntun.rangers/node/src/middleware/mysql"
-	"com.tuntun.rangers/node/src/middleware/notify"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"com.tuntun.rangers/node/src/storage/account"
 	"com.tuntun.rangers/node/src/storage/rlp"
@@ -38,7 +37,7 @@ const (
 	rcvTxPoolSize    = 50000
 	txCacheSize      = 1000
 
-	txCountPerBlock = 3000
+	txCountPerBlock = 199
 )
 
 var (
@@ -238,12 +237,7 @@ func (pool *TxPool) UnMarkExecuted(block *types.Block) {
 
 	for _, tx := range txs {
 		pool.executed.Delete(tx.Hash.Bytes())
-		var msg notify.ClientTransactionMessage
-		msg.Tx = *tx
-		msg.Nonce = tx.RequestId
-		msg.UserId = ""
-		msg.GateNonce = 0
-		middleware.DataChannel.GetRcvedTx() <- &msg
+		pool.add(tx)
 	}
 }
 

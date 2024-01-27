@@ -18,10 +18,11 @@ package network
 
 import (
 	"bytes"
-	"com.tuntun.rangers/node/src/middleware"
+	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/middleware/log"
 	"com.tuntun.rangers/node/src/middleware/notify"
 	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/service"
 	"encoding/hex"
 	"hash/fnv"
 	"strconv"
@@ -117,15 +118,10 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 				continue
 			}
 
-			var msg notify.ClientTransactionMessage
-			msg.Tx = *tx
-			msg.Nonce = tx.RequestId
-			msg.UserId = ""
-			if 1 == len(tx.SubTransactions) && 0 != tx.SubTransactions[0].Address {
-				msg.GateNonce = tx.SubTransactions[0].Address
+			if err := service.GetTransactionPool().VerifyTransaction(tx, common.GetBlockHeight()); nil == err {
+				service.GetTransactionPool().AddTransaction(tx)
 			}
 
-			middleware.DataChannel.GetRcvedTx() <- &msg
 		}
 
 		m := notify.TransactionGotAddSuccMessage{Transactions: txs, Peer: from}
