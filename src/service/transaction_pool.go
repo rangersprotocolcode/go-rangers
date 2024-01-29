@@ -507,7 +507,7 @@ func (pool *TxPool) checkNonce(txList []*types.Transaction) []*types.Transaction
 	for _, tx := range txList {
 		expectedNonce, exist := nonceMap[tx.Source]
 		if !exist {
-			expectedNonce = stateDB.GetNonce(common.StringToAddress(tx.Source))
+			expectedNonce = stateDB.GetNonce(common.HexToAddress(tx.Source))
 		}
 
 		//nonce too low tx and repeat nonce tx will be packed into block and execute failed

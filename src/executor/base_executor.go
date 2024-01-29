@@ -50,7 +50,7 @@ func (this *baseFeeExecutor) BeforeExecute(tx *types.Transaction, header *types.
 
 func validateNonce(tx *types.Transaction, accountDB *account.AccountDB) error {
 	if common.IsProposal018() {
-		expectedNonce := accountDB.GetNonce(common.StringToAddress(tx.Source))
+		expectedNonce := accountDB.GetNonce(common.HexToAddress(tx.Source))
 		if expectedNonce > tx.Nonce {
 			logger.Debugf("Tx nonce too low.tx:%d,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
 			return ErrNonceTooLow
