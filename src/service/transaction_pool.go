@@ -37,7 +37,7 @@ const (
 	rcvTxPoolSize    = 50000
 	txCacheSize      = 1000
 
-	txCountPerBlock = 199
+	txCountPerBlock = 200
 )
 
 var (
@@ -322,13 +322,15 @@ func (pool *TxPool) PackForCast(height uint64) []*types.Transaction {
 		return packedTxs
 	}
 
-	for i, tx := range txs {
+	for _, tx := range txs {
 		packedTxs = append(packedTxs, tx.(*types.Transaction))
-		if i >= txCountPerBlock {
-			break
-		}
 	}
-
+	if common.IsProposal018() {
+		packedTxs = pool.checkNonce(packedTxs)
+	}
+	if len(packedTxs) > txCountPerBlock {
+		packedTxs = packedTxs[:txCountPerBlock]
+	}
 	txPoolLogger.Debugf("packed tx. height: %d. nonce from %d to %d. size: %d", height, packedTxs[0].RequestId, packedTxs[len(packedTxs)-1].RequestId, len(packedTxs))
 	return packedTxs
 }

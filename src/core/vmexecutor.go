@@ -95,6 +95,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 			success, addAble, msg = txExecutor.BeforeExecute(transaction, this.block.Header, this.accountdb, this.context)
 			if common.IsProposal018() && !addAble {
 				evictedTxs = append(evictedTxs, transaction.Hash)
+				logger.Infof("Tx not addAble,skip.Hash:%s ", transaction.Hash.String())
 				continue
 			}
 

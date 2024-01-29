@@ -60,6 +60,7 @@ var (
 		Proposal015Block: 53015000,
 		Proposal016Block: 54038500,
 		Proposal017Block: 54038500,
+		//Proposal018Block: , todo
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
 		JsonRPCUrl:       "https://mainnet.rangersprotocol.com/api/jsonrpc",
@@ -87,6 +88,7 @@ var (
 		Proposal015Block: 61205000,
 		Proposal016Block: 62320000,
 		Proposal017Block: 62997000,
+		Proposal018Block: 65795000,
 
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 
@@ -119,6 +121,7 @@ var (
 		Proposal015Block: 0,
 		Proposal016Block: 0,
 		Proposal017Block: 0,
+		Proposal018Block: 0,
 	}
 
 	subNetChainConfig = ChainConfig{
@@ -145,6 +148,7 @@ var (
 		Proposal015Block: 0,
 		Proposal016Block: 0,
 		Proposal017Block: 0,
+		Proposal018Block: 0,
 	}
 
 	LocalChainConfig ChainConfig
