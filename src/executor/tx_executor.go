@@ -47,8 +47,9 @@ func InitExecutors() {
 	executors[types.TransactionTypeMinerChangeAccount] = &minerChangeAccountExecutor{logger: logger}
 	executors[types.TransactionTypeOperatorNode] = &minerNodeExecutor{logger: logger}
 
-	executors[types.TransactionTypeContract] = &contractExecutor{logger: logger}
-	executors[types.TransactionTypeETHTX] = &jsonrpcExecutor{logger: logger}
+	contractExecutorInstance := &contractExecutor{logger: logger}
+	executors[types.TransactionTypeContract] = contractExecutorInstance
+	executors[types.TransactionTypeETHTX] = &jsonrpcExecutor{logger: logger, contractExecutor: *contractExecutorInstance}
 
 	txExecutorsImpl = &txExecutors{executors: executors}
 }
