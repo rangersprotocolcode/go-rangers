@@ -24,7 +24,6 @@ import (
 	"com.tuntun.rangers/node/src/service"
 	"com.tuntun.rangers/node/src/storage/account"
 	"com.tuntun.rangers/node/src/utility"
-	"encoding/json"
 	"sort"
 	"strings"
 	"time"
@@ -167,11 +166,6 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 
 	state := this.accountdb.IntermediateRoot(true)
 
-	logger.Infof("height: %d, receipts ", this.block.Header.Height)
-	for _, receipt := range receipts {
-		data, _ := json.Marshal(receipt)
-		logger.Infof("receipt: %s", string(data))
-	}
 	middleware.PerfLogger.Debugf("VMExecutor End. %s height: %d, cost: %v, txs: %d", this.situation, this.block.Header.Height, utility.GetTime().Sub(beginTime), len(this.block.Transactions))
 	return state, evictedTxs, transactions, receipts
 }
