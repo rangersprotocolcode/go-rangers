@@ -164,6 +164,10 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 
 	state := this.accountdb.IntermediateRoot(true)
 
+	logger.Infof("height: %d, receipts ", this.block.Header.Height)
+	for _, receipt := range receipts {
+		logger.Infof("receipt: %v", receipt)
+	}
 	middleware.PerfLogger.Debugf("VMExecutor End. %s height: %d, cost: %v, txs: %d", this.situation, this.block.Header.Height, utility.GetTime().Sub(beginTime), len(this.block.Transactions))
 	return state, evictedTxs, transactions, receipts
 }
