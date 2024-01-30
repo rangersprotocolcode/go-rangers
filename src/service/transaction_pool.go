@@ -389,7 +389,10 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 
 func (pool *TxPool) remove(txHashList []interface{}) {
 	pool.received.remove(txHashList)
-	txPoolLogger.Debugf("[pool]removed tx, %d After remove,received size:%d", len(txHashList), pool.received.Len())
+	for _, txHash := range txHashList {
+		txPoolLogger.Debugf("[pool]removed tx:%s", txHash.(common.Hash).String())
+	}
+	txPoolLogger.Debugf("[pool]removed tx, %d. After remove,received size:%d", len(txHashList), pool.received.Len())
 
 }
 
