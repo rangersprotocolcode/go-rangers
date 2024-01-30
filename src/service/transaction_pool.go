@@ -515,8 +515,8 @@ func (pool *TxPool) checkNonce(txList []*types.Transaction) []*types.Transaction
 		}
 
 		//nonce too low tx and repeat nonce tx will be packed into block and execute failed
-		if expectedNonce > tx.Nonce {
-			logger.Debugf("nonce too high tx,skip pack.tx:%s,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
+		if expectedNonce < tx.Nonce {
+			txPoolLogger.Debugf("nonce too high tx,skip pack.tx:%s,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
 			nonceMap[tx.Source] = expectedNonce
 			continue
 		}
