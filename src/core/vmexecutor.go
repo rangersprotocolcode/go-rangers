@@ -68,7 +68,8 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		sort.Sort(txs)
 	}
 
-	for i, transaction := range txs {
+	i := 0
+	for _, transaction := range txs {
 		if 0 == transaction.Type {
 			continue
 		}
@@ -155,6 +156,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		}
 		receipt.TxHash = transaction.Hash
 		receipts = append(receipts, receipt)
+		i++
 	}
 
 	//only for robin
