@@ -52,10 +52,10 @@ func validateNonce(tx *types.Transaction, accountDB *account.AccountDB) error {
 	if common.IsProposal018() {
 		expectedNonce := accountDB.GetNonce(common.HexToAddress(tx.Source))
 		if expectedNonce > tx.Nonce {
-			logger.Debugf("Tx nonce too low.tx:%d,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
+			logger.Debugf("Tx nonce too low.tx:%s,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
 			return ErrNonceTooLow
 		} else if expectedNonce < tx.Nonce {
-			logger.Debugf("Tx nonce too high.tx:%d,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
+			logger.Debugf("Tx nonce too high.tx:%s,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
 			return ErrNonceTooHigh
 		}
 	}

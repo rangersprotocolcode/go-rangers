@@ -331,7 +331,11 @@ func (pool *TxPool) PackForCast(height uint64) []*types.Transaction {
 	if len(packedTxs) > txCountPerBlock {
 		packedTxs = packedTxs[:txCountPerBlock]
 	}
-	txPoolLogger.Debugf("packed tx. height: %d. nonce from %d to %d. size: %d", height, packedTxs[0].RequestId, packedTxs[len(packedTxs)-1].RequestId, len(packedTxs))
+	if 0 == len(packedTxs) {
+		txPoolLogger.Debugf("after check nonce ,packed no tx. height: %d", height)
+	} else {
+		txPoolLogger.Debugf("packed tx. height: %d. nonce from %d to %d. size: %d", height, packedTxs[0].RequestId, packedTxs[len(packedTxs)-1].RequestId, len(packedTxs))
+	}
 	return packedTxs
 }
 
