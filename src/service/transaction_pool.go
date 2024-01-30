@@ -167,48 +167,47 @@ func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 }
 
 func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash) {
-	if nil == receipts || 0 == len(receipts) {
-		return
-	}
-
-	mysql.InsertLogs(header.Height, receipts, header.Hash)
-
 	txHashList := make([]interface{}, 0)
-	for i, receipt := range receipts {
-		hash := receipt.TxHash
-		txHashList = append(txHashList, hash)
-		var er ExecutedReceipt
-		er.BlockHash = header.Hash
-		er.Height = receipt.Height
-		er.TxHash = receipt.TxHash
-		er.Status = receipt.Status
-		er.Logs = receipt.Logs
-		er.ContractAddress = receipt.ContractAddress
-		er.GasUsed = receipt.GasUsed
-		if 0 != len(receipt.Result) {
-			er.Result = receipt.Result
-		}
-		executedTx := &ExecutedTransaction{
-			Receipt: er,
-		}
 
-		tx := findTxInList(txs, hash, i)
-		txData, _ := types.MarshalTransaction(tx)
-		executedTx.Transaction = txData
-		executedTxBytes, err := json.Marshal(executedTx)
-		if nil != err {
-			continue
+	if receipts != nil && len(receipts) != 0 {
+		mysql.InsertLogs(header.Height, receipts, header.Hash)
+
+		for i, receipt := range receipts {
+			hash := receipt.TxHash
+			txHashList = append(txHashList, hash)
+			var er ExecutedReceipt
+			er.BlockHash = header.Hash
+			er.Height = receipt.Height
+			er.TxHash = receipt.TxHash
+			er.Status = receipt.Status
+			er.Logs = receipt.Logs
+			er.ContractAddress = receipt.ContractAddress
+			er.GasUsed = receipt.GasUsed
+			if 0 != len(receipt.Result) {
+				er.Result = receipt.Result
+			}
+			executedTx := &ExecutedTransaction{
+				Receipt: er,
+			}
+
+			tx := findTxInList(txs, hash, i)
+			txData, _ := types.MarshalTransaction(tx)
+			executedTx.Transaction = txData
+			executedTxBytes, err := json.Marshal(executedTx)
+			if nil != err {
+				continue
+			}
+			pool.batch.Put(hash.Bytes(), executedTxBytes)
+			if pool.batch.ValueSize() > 100*1024 {
+				pool.batch.Write()
+				pool.batch.Reset()
+			}
+			pool.refreshGateNonce(tx)
 		}
-		pool.batch.Put(hash.Bytes(), executedTxBytes)
-		if pool.batch.ValueSize() > 100*1024 {
+		if pool.batch.ValueSize() > 0 {
 			pool.batch.Write()
 			pool.batch.Reset()
 		}
-		pool.refreshGateNonce(tx)
-	}
-	if pool.batch.ValueSize() > 0 {
-		pool.batch.Write()
-		pool.batch.Reset()
 	}
 
 	if evictedTxs != nil {
@@ -217,7 +216,10 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 			txHashList = append(txHashList, hash)
 		}
 	}
-	pool.remove(txHashList)
+
+	if len(txHashList) > 0 {
+		pool.remove(txHashList)
+	}
 }
 
 func (pool *TxPool) UnMarkExecuted(block *types.Block) {
