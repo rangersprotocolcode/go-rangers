@@ -31,6 +31,6 @@ func InitDataChannel() {
 	DataChannel.rcvedTx = make(chan *notify.ClientTransactionMessage, maxWriteSize)
 }
 
-func (channel dataChannel) GetRcvedTx() chan *notify.ClientTransactionMessage {
+func (channel *dataChannel) GetRcvedTx() chan *notify.ClientTransactionMessage {
 	return channel.rcvedTx
 }
