@@ -73,6 +73,9 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 			continue
 		}
 
+		if common.IsProposal013() {
+			this.accountdb.Prepare(transaction.Hash, common.Hash{}, i)
+		}
 		executeTime := utility.GetTime()
 		if this.situation == "casting" && executeTime.Sub(beginTime) > MaxCastBlockTime {
 			logger.Infof("Cast block execute tx time out! Tx hash:%s ", transaction.Hash.String())
@@ -95,10 +98,6 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 				evictedTxs = append(evictedTxs, transaction.Hash)
 				logger.Infof("Tx not addAble,skip.Hash:%s ", transaction.Hash.String())
 				continue
-			}
-
-			if common.IsProposal013() {
-				this.accountdb.Prepare(transaction.Hash, common.Hash{}, i)
 			}
 
 			if success {

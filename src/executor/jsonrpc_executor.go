@@ -28,7 +28,7 @@ func (this *jsonrpcExecutor) BeforeExecute(tx *types.Transaction, header *types.
 	context["contractData"] = raw
 
 	if err := preCheckContractFee(tx, accountDB, *raw); err != nil {
-		return false, false, err.Error()
+		return false, true, err.Error()
 	}
 	return true, true, ""
 }
