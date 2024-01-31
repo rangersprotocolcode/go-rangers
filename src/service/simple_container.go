@@ -64,6 +64,12 @@ func newSimpleContainer(l int) *simpleContainer {
 	return c
 }
 
+func (c *simpleContainer) Close() {
+	if c.db != nil {
+		c.db.Close()
+	}
+}
+
 func (c *simpleContainer) Len() int {
 	return c.data.Size()
 }

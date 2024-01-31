@@ -52,6 +52,11 @@ func InitMiddleware() error {
 	return nil
 }
 
+func Close() {
+	AccountDBManagerInstance.Close()
+	mysql.CloseMysql()
+}
+
 func InitLock() {
 	lock = NewLoglock("blockchain")
 }

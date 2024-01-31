@@ -18,8 +18,11 @@ package service
 
 import (
 	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware"
+	"com.tuntun.rangers/node/src/middleware/log"
 	"fmt"
 	"github.com/gogf/gf/container/gmap"
+	"os"
 	"testing"
 )
 
@@ -51,4 +54,33 @@ func TestGMap(t *testing.T) {
 	fmt.Println(listMap.Size())
 	fmt.Println(listMap.Keys())
 	fmt.Println(listMap.Values())
+}
+
+func TestTxPool_PackForCast(t *testing.T) {
+	defer func() {
+		Close()
+		middleware.Close()
+		log.Close()
+
+		os.RemoveAll("0.ini")
+		os.RemoveAll("logs")
+
+		err := os.RemoveAll("storage0")
+		if nil != err {
+			t.Fatal(err)
+		}
+	}()
+
+	common.Init(0, "0.ini", "dev")
+	middleware.InitMiddleware()
+	InitService()
+
+	height := uint64(10000)
+	common.SetBlockHeight(height)
+
+	txs := txpoolInstance.PackForCast(height)
+	if 0 != len(txs) {
+		t.Fatal("no txs error")
+	}
+
 }

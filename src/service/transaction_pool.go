@@ -95,6 +95,8 @@ type TransactionPool interface {
 	ProcessFee(tx types.Transaction, accountDB *account.AccountDB) error
 
 	GetGateNonce() uint64
+
+	Close()
 }
 
 type TxPool struct {
@@ -134,6 +136,17 @@ func newTransactionPool() TransactionPool {
 	pool.batch = pool.executed.NewBatch()
 
 	return pool
+}
+
+func (pool *TxPool) Close() {
+	if nil != pool.executed {
+		pool.executed.Close()
+	}
+
+	if nil != pool.received {
+		pool.received.Close()
+	}
+
 }
 
 func (pool *TxPool) refreshGateNonce(tx *types.Transaction) {

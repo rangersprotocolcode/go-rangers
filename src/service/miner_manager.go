@@ -400,6 +400,12 @@ func (mm *MinerManager) minerIterator(minerType byte, accountdb *account.Account
 	return iterator
 }
 
+func (mm *MinerManager) Close() {
+	if nil != mm.pkCache {
+		mm.pkCache.Close()
+	}
+}
+
 type MinerIterator struct {
 	db        common.Address
 	iterator  *trie.Iterator
