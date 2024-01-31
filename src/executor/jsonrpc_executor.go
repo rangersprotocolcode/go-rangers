@@ -23,7 +23,7 @@ func (this *jsonrpcExecutor) BeforeExecute(tx *types.Transaction, header *types.
 
 	raw, errMessage := this.decodeContractData(tx.Data)
 	if errMessage != "" {
-		return false, false, errMessage
+		return false, true, errMessage
 	}
 	context["contractData"] = raw
 

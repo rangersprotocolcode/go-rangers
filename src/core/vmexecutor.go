@@ -55,7 +55,10 @@ func newVMExecutor(accountdb *account.AccountDB, block *types.Block, situation s
 }
 
 func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transaction, []*types.Receipt) {
-	beginTime := utility.GetTime()
+	var beginTime time.Time
+	if this.situation == "casting" {
+		beginTime = utility.GetTime()
+	}
 
 	receipts := make([]*types.Receipt, 0)
 	transactions := make([]*types.Transaction, 0)
@@ -76,8 +79,8 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		if common.IsProposal013() {
 			this.accountdb.Prepare(transaction.Hash, common.Hash{}, i)
 		}
-		executeTime := utility.GetTime()
-		if this.situation == "casting" && executeTime.Sub(beginTime) > MaxCastBlockTime {
+
+		if this.situation == "casting" && utility.GetTime().Sub(beginTime) > MaxCastBlockTime {
 			logger.Infof("Cast block execute tx time out! Tx hash:%s ", transaction.Hash.String())
 			break
 		}
@@ -168,10 +171,6 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 
 	middleware.PerfLogger.Debugf("VMExecutor End. %s height: %d, cost: %v, txs: %d", this.situation, this.block.Header.Height, utility.GetTime().Sub(beginTime), len(this.block.Transactions))
 	return state, evictedTxs, transactions, receipts
-}
-
-func (executor *VMExecutor) validateNonce(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	return true
 }
 
 func (executor *VMExecutor) prepare() {
