@@ -92,6 +92,38 @@ func TestTxPool_PackForCast(t *testing.T) {
 	}
 }
 
+// empty pack
+// wrong nonce
+func TestTxPool_PackForCast0(t *testing.T) {
+	defer func() {
+		Close()
+		middleware.Close()
+		log.Close()
+
+		os.RemoveAll("0.ini")
+		os.RemoveAll("logs")
+
+		err := os.RemoveAll("storage0")
+		if nil != err {
+			t.Fatal(err)
+		}
+	}()
+
+	preTest()
+
+	tx := &types.Transaction{
+		Source: "0x0001",
+		Hash:   common.HexToHash("0xaa"),
+		Nonce:  10,
+	}
+
+	txpoolInstance.AddTransaction(tx)
+	txs := txpoolInstance.PackForCast(10000)
+	if 0 != len(txs) {
+		t.Fatal("no txs error")
+	}
+}
+
 // same address for 2 txs
 func TestTxPool_PackForCast1(t *testing.T) {
 	defer func() {
