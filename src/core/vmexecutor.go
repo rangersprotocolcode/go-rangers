@@ -165,6 +165,9 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 	if this.block.Header.Height == common.LocalChainConfig.Proposal010Block {
 		removeUnusedValidator(this.accountdb)
 	}
+	if this.block.Header.Height == common.LocalChainConfig.Proposal019Block {
+		removeUnusedValidator1(this.accountdb)
+	}
 	this.after()
 
 	state := this.accountdb.IntermediateRoot(true)
@@ -221,4 +224,17 @@ func removeUnusedValidator(accountdb *account.AccountDB) {
 		}
 		service.MinerManagerImpl.RemoveMiner(minerId, miner.Account[:], miner.Type, accountdb, 0)
 	}
+}
+
+func removeUnusedValidator1(accountdb *account.AccountDB) {
+	var whileList = make(map[string]byte, 0)
+	whileList["0x5437f9dd7171db9d04a8347dca5bf2b7789081631d79d2d7882c1774d2f4d123"] = 0
+	whileList["0x2a17671c5a32175335fa098951ba50a9b4730aea7ecee86df6536297900f5b77"] = 0
+	whileList["0xb1979dd362353f0b59dff76cb223d5660a024db628257693f5470dec18c93160"] = 0
+	whileList["0x7f88b4f2d36a83640ce5d782a0a20cc2b233de3df2d8a358bf0e7b29e9586a12"] = 0
+	whileList["0xb715ee4bab1d5b63dc94bdd4841fce7b37310b3514c46357ca83475a248ec9b5"] = 0
+	whileList["0xca5503987bf640e724a3b5f1cb00fd76138aa872ba1a0b339d83c0aa078a92f3"] = 0
+	whileList["0xd6b97afd9fee6e22d37b7c0946bb6ed509b048a98c26d0611e7d4fa014f96c01"] = 0
+
+	service.MinerManagerImpl.RemoveUnusedValidator(accountdb, whileList)
 }
