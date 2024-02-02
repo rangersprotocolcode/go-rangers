@@ -18,6 +18,7 @@ package vm
 
 import (
 	"com.tuntun.rangers/node/src/common"
+	crypto "com.tuntun.rangers/node/src/eth_crypto"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"encoding/json"
 	"fmt"
@@ -573,4 +574,43 @@ func BenchmarkOpSHA3(bench *testing.B) {
 		stack.pushN(*uint256.NewInt().SetUint64(32), *start)
 		opSha3(&pc, evmInterpreter, &callCtx{mem, stack, rstack, nil, nil, make([]*types.Log, 0)})
 	}
+}
+
+func TestEIP191(t *testing.T) {
+	/**
+	0x61cb5560d81c8a2c65e952b3a0b5ab03e13e92ba714849b8300d7dbb97d3a2a2
+	0x94e04374d31d04a43f660804010f98e8bf94925287059943a33c36018bbd41911fda36aa0ef3d7398d7a159eca39132f923154782d3b8ea90b705d68a690cb0d1b
+	0x25716527aaD0aE1DD24Bd247aF9232DaE78595b0
+
+	0xd6748bd23c86d87c9f7147aa908f3b5bb2e5c94f0039148433436821e1989838
+	0x671e4ae71e63b603c1ea25e4a03ff2c2520100bc1483d1465e607591bf13a72b4c76a415a323f86f6d3cdeee4b51edec8b9dfc25eef2998910f724759c1b8e771c
+	0x25716527aaD0aE1DD24Bd247aF9232DaE78595b0
+
+	0x5f89899999d5f8b2ec456502b0468bb259c8e5b953e26eee8dfec079666200d1
+	0x1b4468a5957b57dbc7fa79e95fab89cfda019c5b63918a1a6e875933dac7e5e71ea06b406fde122890787c23f8739e11ef765d5bceab44d09a61aabaf1fb17871c
+	0x25716527aaD0aE1DD24Bd247aF9232DaE78595b0
+
+	0x61cb5560d81c8a2c65e952b3a0b5ab03e13e92ba714849b8300d7dbb97d3a2a2
+	0xc14e94bf848dea1ae66d3d3e11ff26ee2747936e73fedb0d3e9fed061266ad717c423755e87ab21a5cb18d9f8919f6ccc86dd0a0dd05aa5e6a15c00c913a8fd11c
+	0xF95Daa12EEB97dD0D6B29C51fdae8c43cB5B21F1
+
+	0x61cb5560d81c8a2c65e952b3a0b5ab03e13e92ba714849b8300d7dbb97d3a2a2
+	0x81b38aafc354b34eca37f09c10827902b0dba61ed04a2a0f1b8c13c3002729d03e1db6a1e8e2d3e670ad2e6d9ea75435b4c2ab9a43d9e6b7298eb10a90550b821c
+	0x989383893a682b644fE2c1dD1Cb3066B3376eF6a
+	*/
+	prefix := "\u0019Ethereum Signed Message:\n32"
+	message := common.FromHex("0x61cb5560d81c8a2c65e952b3a0b5ab03e13e92ba714849b8300d7dbb97d3a2a2")
+	sig := common.HexStringToSign("0x81b38aafc354b34eca37f09c10827902b0dba61ed04a2a0f1b8c13c3002729d03e1db6a1e8e2d3e670ad2e6d9ea75435b4c2ab9a43d9e6b7298eb10a90550b821c")
+	sigBytes := sig.Bytes()
+	if sigBytes[64] > 26 {
+		sigBytes[64] -= 27
+	}
+	prefixedHash := crypto.Keccak256([]byte(prefix), message[:])
+	pub, err := crypto.Ecrecover(prefixedHash[:], sigBytes)
+	if err != nil {
+		panic(err)
+	}
+	var recoveredAddr common.Address
+	copy(recoveredAddr[:], crypto.Keccak256(pub[1:])[12:])
+	fmt.Printf("%s\n", recoveredAddr.String())
 }

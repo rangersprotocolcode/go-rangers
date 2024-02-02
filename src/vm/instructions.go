@@ -33,7 +33,10 @@ import (
 	"golang.org/x/crypto/sha3"
 )
 
-const AUTHMAGIC = 0x03
+const (
+	AUTHMAGIC    = 0x03
+	eip191Prefix = "\u0019Ethereum Signed Message:\n32"
+)
 
 func opAdd(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]byte, error) {
 	x, y := callContext.stack.pop(), callContext.stack.peek()
@@ -1228,21 +1231,15 @@ func opAuth(pc *uint64, interpreter *EVMInterpreter, callContext *callCtx) ([]by
 	sig[64] = vAdapt
 
 	logger.Debugf("hash:%s,sig:%v", common.ToHex(hash[:]), common.ToHex(sig[:]))
-	pub, err := crypto.Ecrecover(hash[:], sig)
+	validateResult, err := validateAuthAddr(hash, sig, authorityAddr)
 	if err != nil {
-		logger.Debugf("[opAuth]ecrecover error:%s", err.Error())
 		pushBool(callContext, ret)
 		return nil, nil
 	}
-
-	var recoveredAddr common.Address
-	copy(recoveredAddr[:], crypto.Keccak256(pub[1:])[12:])
-	if recoveredAddr == authorityAddr {
+	if validateResult {
 		callContext.authorized = &authorityAddr
 		ret = true
 		logger.Debugf("[opAuth]set authorized address:%s", callContext.authorized.String())
-	} else {
-		logger.Debugf("[opAuth]address diff.authority:%s,recovered:%s", authorityAddr.String(), recoveredAddr.String())
 	}
 	pushBool(callContext, ret)
 	return nil, nil
@@ -1331,4 +1328,35 @@ func calAuthHash(chainId *big.Int, contractAddress common.Address, commit [32]by
 	copy(msg[65:], commit[:])
 	hash := crypto.Keccak256(msg)
 	return hash
+}
+
+func validateAuthAddr(hash []byte, sig []byte, authorityAddr common.Address) (bool, error) {
+	eip191Result, _ := eip191ValidateAuthAddr(hash, sig, authorityAddr)
+	if eip191Result {
+		logger.Debugf("ecp191 validate pass")
+		return true, nil
+	}
+	return originValidateAuthAddr(hash, sig, authorityAddr)
+}
+
+func eip191ValidateAuthAddr(hash []byte, sig []byte, authorityAddr common.Address) (bool, error) {
+	prefixedHash := crypto.Keccak256([]byte(eip191Prefix), hash[:])
+	return originValidateAuthAddr(prefixedHash, sig, authorityAddr)
+}
+
+func originValidateAuthAddr(hash []byte, sig []byte, authorityAddr common.Address) (bool, error) {
+	pub, err := crypto.Ecrecover(hash[:], sig)
+	if err != nil {
+		logger.Debugf("[opAuth]ecrecover error:%s", err.Error())
+		return false, err
+	}
+
+	var recoveredAddr common.Address
+	copy(recoveredAddr[:], crypto.Keccak256(pub[1:])[12:])
+	if recoveredAddr == authorityAddr {
+		return true, nil
+	} else {
+		logger.Debugf("[opAuth]address diff.authority:%s,recovered:%s", authorityAddr.String(), recoveredAddr.String())
+		return false, nil
+	}
 }
