@@ -1333,7 +1333,7 @@ func calAuthHash(chainId *big.Int, contractAddress common.Address, commit [32]by
 func validateAuthAddr(hash []byte, sig []byte, authorityAddr common.Address) (bool, error) {
 	eip191Result, _ := eip191ValidateAuthAddr(hash, sig, authorityAddr)
 	if eip191Result {
-		logger.Debugf("ecp191 validate pass")
+		logger.Debugf("eip191 validate pass")
 		return true, nil
 	}
 	return originValidateAuthAddr(hash, sig, authorityAddr)
