@@ -366,6 +366,30 @@ func (mm *MinerManager) InsertMiner(miner *types.Miner, accountdb *account.Accou
 	}
 }
 
+func (mm *MinerManager) RemoveUnusedValidator(accountDB *account.AccountDB, whitelist map[string]byte) {
+	unusedList := make([]*types.Miner, 0)
+	iter := mm.minerIterator(common.MinerTypeValidator, accountDB)
+	for iter.Next() {
+		miner, _ := iter.Current()
+		if nil == miner || common.MinerStatusNormal != miner.Status {
+			continue
+		}
+
+		id := common.ToHex(miner.Id)
+		_, ok := whitelist[id]
+		if ok {
+			continue
+		}
+
+		unusedList = append(unusedList, miner)
+		mm.logger.Debugf("add unused, id: %s", id)
+	}
+
+	for _, unused := range unusedList {
+		mm.RemoveMiner(unused.Id, unused.Account, common.MinerTypeValidator, accountDB, 0)
+	}
+}
+
 func (mm *MinerManager) RemoveMiner(id, account []byte, ttype byte, accountdb *account.AccountDB, left uint64) {
 	mm.logger.Debugf("Miner manager remove miner %d", ttype)
 
