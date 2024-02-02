@@ -385,9 +385,12 @@ func (mm *MinerManager) RemoveUnusedValidator(accountDB *account.AccountDB, whit
 		mm.logger.Debugf("add unused, id: %s", id)
 	}
 
-	//for _, unused := range unusedList {
-	//	mm.RemoveMiner(unused.Id, unused.Account, common.MinerTypeValidator, accountDB, 0)
-	//}
+	for _, unused := range unusedList {
+		if nil == unused {
+			continue
+		}
+		mm.RemoveMiner(unused.Id, unused.Account, common.MinerTypeValidator, accountDB, 0)
+	}
 }
 
 func (mm *MinerManager) RemoveMiner(id, account []byte, ttype byte, accountdb *account.AccountDB, left uint64) {
