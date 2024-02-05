@@ -30,6 +30,7 @@ import (
 	"errors"
 	"fmt"
 	lru "github.com/hashicorp/golang-lru"
+	"sort"
 )
 
 const (
@@ -522,11 +523,14 @@ func compareTx(tx *types.Transaction, expectedTx *types.Transaction) bool {
 }
 
 func (pool *TxPool) checkNonce(txList []*types.Transaction) []*types.Transaction {
+	txs := types.Transactions(txList)
+	sort.Sort(txs)
+
 	packedTxs := make([]*types.Transaction, 0)
 	stateDB := middleware.AccountDBManagerInstance.GetLatestStateDB()
 	nonceMap := make(map[string]uint64, 0)
 
-	for _, tx := range txList {
+	for _, tx := range txs {
 		expectedNonce, exist := nonceMap[tx.Source]
 		if !exist {
 			expectedNonce = stateDB.GetNonce(common.HexToAddress(tx.Source))
