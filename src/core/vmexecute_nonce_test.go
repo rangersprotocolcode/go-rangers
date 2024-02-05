@@ -134,7 +134,7 @@ func TestVMExecutor_Execute3(t *testing.T) {
 	block.Transactions = []*types.Transaction{tx, tx1}
 	accountdb, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	accountdb.SetBalance(richAddr, money)
-	vm := newVMExecutor(accountdb, block, "verifying")
+	vm := newVMExecutor(accountdb, block, "casting")
 	state, _, txs, receipts := vm.Execute()
 	if 2 != len(txs) || 2 != len(receipts) {
 		t.Fatalf("fail to execute")
@@ -196,7 +196,7 @@ func TestVMExecutor_Execute4(t *testing.T) {
 	block.Transactions = []*types.Transaction{tx, tx1}
 	accountdb, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	accountdb.SetBalance(richAddr, money)
-	vm := newVMExecutor(accountdb, block, "verifying")
+	vm := newVMExecutor(accountdb, block, "casting")
 	state, _, txs, receipts := vm.Execute()
 	if 2 != len(txs) || 2 != len(receipts) {
 		t.Fatalf("fail to execute")
@@ -260,7 +260,7 @@ func TestVMExecutor_Execute5(t *testing.T) {
 	block.Transactions = []*types.Transaction{tx, tx1}
 	accountdb, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	accountdb.SetBalance(richAddr, money)
-	vm := newVMExecutor(accountdb, block, "verifying")
+	vm := newVMExecutor(accountdb, block, "casting")
 	state, _, txs, receipts := vm.Execute()
 	if 2 != len(txs) || 2 != len(receipts) {
 		t.Fatalf("fail to execute")
@@ -323,7 +323,7 @@ func TestVMExecutor_Execute6(t *testing.T) {
 	block.Transactions = []*types.Transaction{tx, tx1}
 	accountdb, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	accountdb.SetBalance(richAddr, money)
-	vm := newVMExecutor(accountdb, block, "verifying")
+	vm := newVMExecutor(accountdb, block, "casting")
 	state, _, txs, receipts := vm.Execute()
 	if 1 != len(txs) || 1 != len(receipts) {
 		t.Fatalf("fail to execute")
@@ -383,7 +383,7 @@ func TestVMExecutor_Execute7(t *testing.T) {
 	block.Transactions = []*types.Transaction{tx, tx1}
 	accountdb, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	accountdb.SetBalance(richAddr, money)
-	vm := newVMExecutor(accountdb, block, "verifying")
+	vm := newVMExecutor(accountdb, block, "casting")
 	state, _, txs, receipts := vm.Execute()
 	if 2 != len(txs) || 2 != len(receipts) {
 		t.Fatalf("fail to execute")
@@ -445,7 +445,7 @@ func TestVMExecutor_Execute8(t *testing.T) {
 	block.Transactions = []*types.Transaction{tx, tx1}
 	accountdb, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	accountdb.SetBalance(richAddr, money)
-	vm := newVMExecutor(accountdb, block, "verifying")
+	vm := newVMExecutor(accountdb, block, "casting")
 	state, _, txs, receipts := vm.Execute()
 	if 2 != len(txs) || 2 != len(receipts) {
 		t.Fatalf("fail to execute")
@@ -519,7 +519,7 @@ func TestVMExecutor_Execute9(t *testing.T) {
 	block.Transactions = []*types.Transaction{tx, tx1, tx2}
 	accountdb, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	accountdb.SetBalance(richAddr, money)
-	vm := newVMExecutor(accountdb, block, "verifying")
+	vm := newVMExecutor(accountdb, block, "casting")
 	state, _, txs, receipts := vm.Execute()
 	if 3 != len(txs) || 3 != len(receipts) {
 		t.Fatalf("fail to execute")
@@ -601,7 +601,7 @@ func TestVMExecutor_Execute10(t *testing.T) {
 	block.Transactions = []*types.Transaction{tx, tx1, tx2, tx3}
 	accountdb, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	accountdb.SetBalance(richAddr, money)
-	vm := newVMExecutor(accountdb, block, "verifying")
+	vm := newVMExecutor(accountdb, block, "casting")
 	state, _, txs, receipts := vm.Execute()
 	if 4 != len(txs) || 4 != len(receipts) {
 		t.Fatalf("fail to execute")
@@ -682,7 +682,7 @@ func TestVMExecutor_Execute11(t *testing.T) {
 	block.Transactions = []*types.Transaction{tx, tx1, tx2, tx3}
 	accountdb, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	accountdb.SetBalance(richAddr, money)
-	vm := newVMExecutor(accountdb, block, "verifying")
+	vm := newVMExecutor(accountdb, block, "casting")
 	state, evicted, txs, receipts := vm.Execute()
 	if 3 != len(txs) || 3 != len(receipts) || 1 != len(evicted) {
 		t.Fatalf("fail to execute")
@@ -764,7 +764,7 @@ func TestVMExecutor_Execute12(t *testing.T) {
 	block.Transactions = []*types.Transaction{tx, tx1, tx2, tx3}
 	accountdb, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	accountdb.SetBalance(richAddr, money)
-	vm := newVMExecutor(accountdb, block, "verifying")
+	vm := newVMExecutor(accountdb, block, "casting")
 	state, evicted, txs, receipts := vm.Execute()
 	if 3 != len(txs) || 3 != len(receipts) || 1 != len(evicted) {
 		t.Fatalf("fail to execute")
@@ -844,7 +844,7 @@ func TestVMExecutor_Execute13(t *testing.T) {
 	block.Transactions = []*types.Transaction{tx, tx1, tx2, tx3}
 	accountdb, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	accountdb.SetBalance(richAddr, money)
-	vm := newVMExecutor(accountdb, block, "verifying")
+	vm := newVMExecutor(accountdb, block, "casting")
 	state, evicted, txs, receipts := vm.Execute()
 	if 3 != len(txs) || 3 != len(receipts) || 1 != len(evicted) {
 		t.Fatalf("fail to execute")
@@ -944,7 +944,7 @@ func TestVMExecutor_Execute14(t *testing.T) {
 	block.Transactions = []*types.Transaction{tx, tx1, tx2, tx3, tx4}
 	accountdb, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	accountdb.SetBalance(richAddr, money)
-	vm := newVMExecutor(accountdb, block, "verifying")
+	vm := newVMExecutor(accountdb, block, "casting")
 	state, _, txs, receipts := vm.Execute()
 	if 5 != len(txs) || 5 != len(receipts) {
 		t.Fatalf("fail to execute")
@@ -1041,7 +1041,7 @@ func TestVMExecutor_Execute15(t *testing.T) {
 	block.Transactions = []*types.Transaction{tx, tx1, tx2, tx3, tx4}
 	accountdb, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	accountdb.SetBalance(richAddr, money)
-	vm := newVMExecutor(accountdb, block, "verifying")
+	vm := newVMExecutor(accountdb, block, "casting")
 	state, evicted, txs, receipts := vm.Execute()
 	if 4 != len(txs) || 4 != len(receipts) {
 		t.Fatalf("fail to execute")
@@ -1151,7 +1151,7 @@ func TestVMExecutor_Execute16(t *testing.T) {
 	block.Transactions = []*types.Transaction{tx, tx1, tx2, tx3, tx4, tx5}
 	accountdb, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 	accountdb.SetBalance(richAddr, money)
-	vm := newVMExecutor(accountdb, block, "verifying")
+	vm := newVMExecutor(accountdb, block, "casting")
 	state, evicted, txs, receipts := vm.Execute()
 	if 5 != len(txs) || 5 != len(receipts) {
 		t.Fatalf("fail to execute")

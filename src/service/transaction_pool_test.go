@@ -23,6 +23,7 @@ import (
 	"com.tuntun.rangers/node/src/middleware/types"
 	"fmt"
 	"github.com/gogf/gf/container/gmap"
+	"github.com/stretchr/testify/assert"
 	"math/big"
 	"os"
 	"testing"
@@ -364,4 +365,100 @@ func TestTxPool_PackForCast5(t *testing.T) {
 	if txCountPerBlock != int64(len(txs)) {
 		t.Fatal("oversize")
 	}
+}
+
+// 2 addresses
+// A has 3 tx nonce 0,1,2
+// B has 6 tx nonce 0,1,1,3,4,5
+// pack 6 txs
+func TestTxPool_PackForCast6(t *testing.T) {
+	defer func() {
+		Close()
+		middleware.Close()
+		log.Close()
+
+		os.RemoveAll("0.ini")
+		os.RemoveAll("logs")
+
+		err := os.RemoveAll("storage0")
+		if nil != err {
+			t.Fatal(err)
+		}
+	}()
+
+	preTest()
+
+	tx0 := &types.Transaction{
+		Source: "0x0001",
+		Hash:   common.HexToHash("0xaa0"),
+		Nonce:  0,
+	}
+	txpoolInstance.AddTransaction(tx0)
+
+	tx1 := &types.Transaction{
+		Source: "0x0001",
+		Hash:   common.HexToHash("0xaa1"),
+		Nonce:  1,
+	}
+	txpoolInstance.AddTransaction(tx1)
+
+	tx2 := &types.Transaction{
+		Source: "0x0001",
+		Hash:   common.HexToHash("0xaa2"),
+		Nonce:  2,
+	}
+	txpoolInstance.AddTransaction(tx2)
+
+	tx10 := &types.Transaction{
+		Source: "0x0002",
+		Hash:   common.HexToHash("0xbb00"),
+		Nonce:  0,
+	}
+	txpoolInstance.AddTransaction(tx10)
+
+	tx11 := &types.Transaction{
+		Source: "0x0002",
+		Hash:   common.HexToHash("0xbb11"),
+		Nonce:  1,
+	}
+	txpoolInstance.AddTransaction(tx11)
+
+	tx12 := &types.Transaction{
+		Source: "0x0002",
+		Hash:   common.HexToHash("0xbb10"),
+		Nonce:  1,
+	}
+	txpoolInstance.AddTransaction(tx12)
+
+	tx13 := &types.Transaction{
+		Source: "0x0002",
+		Hash:   common.HexToHash("0xbb30"),
+		Nonce:  3,
+	}
+	txpoolInstance.AddTransaction(tx13)
+
+	tx14 := &types.Transaction{
+		Source: "0x0002",
+		Hash:   common.HexToHash("0xbb40"),
+		Nonce:  4,
+	}
+	txpoolInstance.AddTransaction(tx14)
+
+	tx15 := &types.Transaction{
+		Source: "0x0002",
+		Hash:   common.HexToHash("0xbb50"),
+		Nonce:  5,
+	}
+	txpoolInstance.AddTransaction(tx15)
+
+	txList := txpoolInstance.PackForCast(10000)
+	if 6 != len(txList) {
+		t.Fatal("packed tx count error")
+	}
+	assert.Equal(t, txList[0].Hash.String(), tx0.Hash.String())
+	assert.Equal(t, txList[1].Hash.String(), tx1.Hash.String())
+	assert.Equal(t, txList[2].Hash.String(), tx2.Hash.String())
+	assert.Equal(t, txList[3].Hash.String(), tx10.Hash.String())
+	assert.Equal(t, txList[4].Hash.String(), tx11.Hash.String())
+	assert.Equal(t, txList[5].Hash.String(), tx12.Hash.String())
 }
