@@ -168,10 +168,10 @@ func (pool *TxPool) GetGateNonce() uint64 {
 }
 
 func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
-	if pool.evictedTxs.Contains(tx.Hash) {
-		txPoolLogger.Infof("Tx is marked evicted tx,do not add pool. Hash:%s", tx.Hash.String())
-		return false, ErrEvicted
-	}
+	//if pool.evictedTxs.Contains(tx.Hash) {
+	//	txPoolLogger.Infof("Tx is marked evicted tx,do not add pool. Hash:%s", tx.Hash.String())
+	//	return false, ErrEvicted
+	//}
 
 	b, err := pool.add(tx)
 	if nil == err {
