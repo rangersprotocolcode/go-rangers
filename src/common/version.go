@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	Version           = "1.0.22"
+	Version           = "1.0.23"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -60,7 +60,7 @@ var (
 		Proposal015Block: 53015000,
 		Proposal016Block: 54038500,
 		Proposal017Block: 54038500,
-		//Proposal018Block: , todo
+		Proposal018Block: 55959500,
 		Proposal019Block: math.MaxUint64, //mainnet never use proporal010
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
