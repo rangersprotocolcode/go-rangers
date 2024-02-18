@@ -30,6 +30,7 @@ const stateDBPrefix = "state"
 type AccountDBManager struct {
 	stateDB       account.AccountDatabase
 	LatestStateDB *account.AccountDB
+	db            *db.LDBDatabase
 
 	Height uint64
 	logger log.Logger
@@ -49,11 +50,18 @@ func initAccountDBManager() {
 		AccountDBManagerInstance.logger.Errorf("Init accountDB error! Error:%s", err.Error())
 		panic(err)
 	}
+	AccountDBManagerInstance.db = db
 	AccountDBManagerInstance.stateDB = account.NewDatabase(db)
 
 	AccountDBManagerInstance.waitingTxs = NewPriorityQueue()
 
 	AccountDBManagerInstance.loop()
+}
+
+func (manager *AccountDBManager) Close() {
+	if nil != manager.db {
+		manager.db.Close()
+	}
 }
 
 func (manager *AccountDBManager) GetAccountDBByHash(hash common.Hash) (*account.AccountDB, error) {

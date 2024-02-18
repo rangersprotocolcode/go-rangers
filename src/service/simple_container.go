@@ -18,22 +18,56 @@ package service
 
 import (
 	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/db"
 	"com.tuntun.rangers/node/src/middleware/types"
+	"encoding/json"
 	"github.com/gogf/gf/container/gmap"
+	"sync"
+	"time"
+)
+
+const (
+	expiredRing     = 6
+	txCycleInterval = time.Minute * 12
+)
+
+var (
+	pendingTxListKey    = []byte("pending")
+	pendingTxListPrefix = "tx_list_"
 )
 
 type simpleContainer struct {
 	limit int
 	data  *gmap.ListMap
+	db    db.Database
+
+	txAnnualRingMap sync.Map
+	txCycleTicker   *time.Ticker
 }
 
 func newSimpleContainer(l int) *simpleContainer {
+	db, err := db.NewDatabase(pendingTxListPrefix)
+	if err != nil {
+		txPoolLogger.Error("init simple container db error:%s", err.Error())
+	}
+
 	c := &simpleContainer{
 		data:  gmap.NewListMap(true),
 		limit: l,
-	}
+		db:    db,
 
+		txAnnualRingMap: sync.Map{},
+		txCycleTicker:   time.NewTicker(txCycleInterval),
+	}
+	c.loadPendingTxList()
+	go c.loop()
 	return c
+}
+
+func (c *simpleContainer) Close() {
+	if c.db != nil {
+		c.db.Close()
+	}
 }
 
 func (c *simpleContainer) Len() int {
@@ -60,9 +94,76 @@ func (c *simpleContainer) asSlice() []interface{} {
 func (c *simpleContainer) push(tx *types.Transaction) {
 	if c.data.Size() < c.limit {
 		c.data.Set(tx.Hash, tx)
+		c.txAnnualRingMap.Store(tx.Hash, uint64(0))
+		c.flush()
 	}
 }
 
 func (c *simpleContainer) remove(txHashList []interface{}) {
 	c.data.Removes(txHashList)
+	for _, item := range txHashList {
+		c.txAnnualRingMap.Delete(item)
+	}
+	c.flush()
+}
+
+func (c *simpleContainer) flush() {
+	txList := c.asSlice()
+	data, err := json.Marshal(txList)
+	if err != nil {
+		txPoolLogger.Error("json marshal pending tx list error:%s", err.Error())
+		return
+	}
+	err = c.db.Put(pendingTxListKey, data)
+	if err != nil {
+		txPoolLogger.Error("pending tx list db put error:%s", err.Error())
+	}
+}
+
+func (c *simpleContainer) loadPendingTxList() {
+	data, _ := c.db.Get(pendingTxListKey)
+	if data == nil {
+		return
+	}
+
+	var pendingTxList []*types.Transaction
+	err := json.Unmarshal(data, &pendingTxList)
+	if err != nil {
+		txPoolLogger.Error("json unmarshal pending tx list error:%s", err.Error())
+		return
+	}
+	for _, item := range pendingTxList {
+		c.data.Set(item.Hash, item)
+		c.txAnnualRingMap.Store(item.Hash, uint64(0))
+		txPoolLogger.Debugf("load pending tx:%s", item.Hash.String())
+	}
+}
+
+func (c *simpleContainer) loop() {
+	for {
+		select {
+		case <-c.txCycleTicker.C:
+			go c.growRing()
+		}
+	}
+}
+
+func (c *simpleContainer) growRing() {
+	expiredTxHashList := make([]interface{}, 0)
+
+	c.txAnnualRingMap.Range(func(key, value interface{}) bool {
+		txHash := key.(common.Hash)
+		txRing := value.(uint64)
+		txRing = txRing + 1
+		c.txAnnualRingMap.Store(txHash, txRing)
+		if txRing >= expiredRing {
+			expiredTxHashList = append(expiredTxHashList, txHash)
+			txPoolLogger.Debugf("pending tx expired,drop it. hash:%s", txHash.String())
+		}
+		return true
+	})
+
+	if len(expiredTxHashList) > 0 {
+		c.remove(expiredTxHashList)
+	}
 }

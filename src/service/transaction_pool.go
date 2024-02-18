@@ -22,7 +22,6 @@ import (
 	"com.tuntun.rangers/node/src/middleware"
 	"com.tuntun.rangers/node/src/middleware/db"
 	"com.tuntun.rangers/node/src/middleware/mysql"
-	"com.tuntun.rangers/node/src/middleware/notify"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"com.tuntun.rangers/node/src/storage/account"
 	"com.tuntun.rangers/node/src/storage/rlp"
@@ -31,6 +30,7 @@ import (
 	"errors"
 	"fmt"
 	lru "github.com/hashicorp/golang-lru"
+	"sort"
 )
 
 const (
@@ -38,7 +38,7 @@ const (
 	rcvTxPoolSize    = 50000
 	txCacheSize      = 1000
 
-	txCountPerBlock = 3000
+	txCountPerBlock = 200
 )
 
 var (
@@ -96,6 +96,8 @@ type TransactionPool interface {
 	ProcessFee(tx types.Transaction, accountDB *account.AccountDB) error
 
 	GetGateNonce() uint64
+
+	Close()
 }
 
 type TxPool struct {
@@ -137,6 +139,17 @@ func newTransactionPool() TransactionPool {
 	return pool
 }
 
+func (pool *TxPool) Close() {
+	if nil != pool.executed {
+		pool.executed.Close()
+	}
+
+	if nil != pool.received {
+		pool.received.Close()
+	}
+
+}
+
 func (pool *TxPool) refreshGateNonce(tx *types.Transaction) {
 	sub := tx.SubTransactions
 	if 1 == len(sub) && 0 != sub[0].Address {
@@ -155,10 +168,10 @@ func (pool *TxPool) GetGateNonce() uint64 {
 }
 
 func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
-	if pool.evictedTxs.Contains(tx.Hash) {
-		txPoolLogger.Infof("Tx is marked evicted tx,do not add pool. Hash:%s", tx.Hash.String())
-		return false, ErrEvicted
-	}
+	//if pool.evictedTxs.Contains(tx.Hash) {
+	//	txPoolLogger.Infof("Tx is marked evicted tx,do not add pool. Hash:%s", tx.Hash.String())
+	//	return false, ErrEvicted
+	//}
 
 	b, err := pool.add(tx)
 	if nil == err {
@@ -168,56 +181,59 @@ func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 }
 
 func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash) {
-	if nil == receipts || 0 == len(receipts) {
-		return
-	}
+	txHashList := make([]interface{}, 0)
 
-	mysql.InsertLogs(header.Height, receipts, header.Hash)
+	if receipts != nil && len(receipts) != 0 {
+		mysql.InsertLogs(header.Height, receipts, header.Hash)
 
-	txHashList := make([]interface{}, len(receipts))
-	for i, receipt := range receipts {
-		hash := receipt.TxHash
-		txHashList[i] = hash
-		var er ExecutedReceipt
-		er.BlockHash = header.Hash
-		er.Height = receipt.Height
-		er.TxHash = receipt.TxHash
-		er.Status = receipt.Status
-		er.Logs = receipt.Logs
-		er.ContractAddress = receipt.ContractAddress
-		er.GasUsed = receipt.GasUsed
-		if 0 != len(receipt.Result) {
-			er.Result = receipt.Result
-		}
-		executedTx := &ExecutedTransaction{
-			Receipt: er,
-		}
+		for i, receipt := range receipts {
+			hash := receipt.TxHash
+			txHashList = append(txHashList, hash)
+			var er ExecutedReceipt
+			er.BlockHash = header.Hash
+			er.Height = receipt.Height
+			er.TxHash = receipt.TxHash
+			er.Status = receipt.Status
+			er.Logs = receipt.Logs
+			er.ContractAddress = receipt.ContractAddress
+			er.GasUsed = receipt.GasUsed
+			if 0 != len(receipt.Result) {
+				er.Result = receipt.Result
+			}
+			executedTx := &ExecutedTransaction{
+				Receipt: er,
+			}
 
-		tx := findTxInList(txs, hash, i)
-		txData, _ := types.MarshalTransaction(tx)
-		executedTx.Transaction = txData
-		executedTxBytes, err := json.Marshal(executedTx)
-		if nil != err {
-			continue
+			tx := findTxInList(txs, hash, i)
+			txData, _ := types.MarshalTransaction(tx)
+			executedTx.Transaction = txData
+			executedTxBytes, err := json.Marshal(executedTx)
+			if nil != err {
+				continue
+			}
+			pool.batch.Put(hash.Bytes(), executedTxBytes)
+			if pool.batch.ValueSize() > 100*1024 {
+				pool.batch.Write()
+				pool.batch.Reset()
+			}
+			pool.refreshGateNonce(tx)
 		}
-		pool.batch.Put(hash.Bytes(), executedTxBytes)
-		if pool.batch.ValueSize() > 100*1024 {
+		if pool.batch.ValueSize() > 0 {
 			pool.batch.Write()
 			pool.batch.Reset()
 		}
-		pool.refreshGateNonce(tx)
-	}
-	if pool.batch.ValueSize() > 0 {
-		pool.batch.Write()
-		pool.batch.Reset()
 	}
 
 	if evictedTxs != nil {
 		for _, hash := range evictedTxs {
 			pool.evictedTxs.Add(hash, 0)
+			txHashList = append(txHashList, hash)
 		}
 	}
-	pool.remove(txHashList)
+
+	if len(txHashList) > 0 {
+		pool.remove(txHashList)
+	}
 }
 
 func (pool *TxPool) UnMarkExecuted(block *types.Block) {
@@ -237,12 +253,7 @@ func (pool *TxPool) UnMarkExecuted(block *types.Block) {
 
 	for _, tx := range txs {
 		pool.executed.Delete(tx.Hash.Bytes())
-		var msg notify.ClientTransactionMessage
-		msg.Tx = *tx
-		msg.Nonce = tx.RequestId
-		msg.UserId = ""
-		msg.GateNonce = 0
-		middleware.DataChannel.GetRcvedTx() <- &msg
+		pool.add(tx)
 	}
 }
 
@@ -327,14 +338,20 @@ func (pool *TxPool) PackForCast(height uint64) []*types.Transaction {
 		return packedTxs
 	}
 
-	for i, tx := range txs {
+	for _, tx := range txs {
 		packedTxs = append(packedTxs, tx.(*types.Transaction))
-		if i >= txCountPerBlock {
-			break
-		}
 	}
-
-	txPoolLogger.Debugf("packed tx. height: %d. nonce from %d to %d. size: %d", height, packedTxs[0].RequestId, packedTxs[len(packedTxs)-1].RequestId, len(packedTxs))
+	if common.IsProposal018() {
+		packedTxs = pool.checkNonce(packedTxs)
+	}
+	if len(packedTxs) > txCountPerBlock {
+		packedTxs = packedTxs[:txCountPerBlock]
+	}
+	if 0 == len(packedTxs) {
+		txPoolLogger.Debugf("after check nonce ,packed no tx. height: %d", height)
+	} else {
+		txPoolLogger.Debugf("packed tx. height: %d. nonce from %d to %d. size: %d", height, packedTxs[0].RequestId, packedTxs[len(packedTxs)-1].RequestId, len(packedTxs))
+	}
 	return packedTxs
 }
 
@@ -388,7 +405,10 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 
 func (pool *TxPool) remove(txHashList []interface{}) {
 	pool.received.remove(txHashList)
-	txPoolLogger.Debugf("[pool]removed tx, %d After remove,received size:%d", len(txHashList), pool.received.Len())
+	for _, txHash := range txHashList {
+		txPoolLogger.Debugf("[pool]removed tx:%s", txHash.(common.Hash).String())
+	}
+	txPoolLogger.Debugf("[pool]removed tx, %d. After remove,received size:%d", len(txHashList), pool.received.Len())
 
 }
 
@@ -500,4 +520,35 @@ func compareTx(tx *types.Transaction, expectedTx *types.Transaction) bool {
 		return false
 	}
 	return true
+}
+
+func (pool *TxPool) checkNonce(txList []*types.Transaction) []*types.Transaction {
+	txs := types.Transactions(txList)
+	sort.Sort(txs)
+
+	packedTxs := make([]*types.Transaction, 0)
+	stateDB := middleware.AccountDBManagerInstance.GetLatestStateDB()
+	nonceMap := make(map[string]uint64, 0)
+
+	for _, tx := range txs {
+		expectedNonce, exist := nonceMap[tx.Source]
+		if !exist {
+			expectedNonce = stateDB.GetNonce(common.HexToAddress(tx.Source))
+			nonceMap[tx.Source] = expectedNonce
+		}
+
+		//nonce too low tx and repeat nonce tx will be packed into block and execute failed
+		if expectedNonce < tx.Nonce {
+			txPoolLogger.Debugf("nonce too high tx,skip pack.tx:%s,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
+			continue
+		}
+		if expectedNonce == tx.Nonce {
+			nonceMap[tx.Source] = expectedNonce + 1
+		}
+		packedTxs = append(packedTxs, tx)
+		if len(packedTxs) >= txCountPerBlock {
+			break
+		}
+	}
+	return packedTxs
 }

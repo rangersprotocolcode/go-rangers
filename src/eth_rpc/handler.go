@@ -133,6 +133,7 @@ func (handler ethMsgHandler) ProcessSingleRequest(ethRpcMessage notify.ETHRPCPie
 				msg.GateNonce = gateNonce
 				msg.Nonce = 0
 				middleware.DataChannel.GetRcvedTx() <- &msg
+				logger.Debugf("put tx to channel, %v", rocketTx)
 
 				response = makeResponse(rocketTx.Hash, err, ethRpcMessage.Id)
 			}

@@ -26,7 +26,6 @@ import (
 	"com.tuntun.rangers/node/src/eth_rpc"
 	"com.tuntun.rangers/node/src/middleware"
 	"com.tuntun.rangers/node/src/middleware/log"
-	"com.tuntun.rangers/node/src/middleware/mysql"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"com.tuntun.rangers/node/src/network"
 	"com.tuntun.rangers/node/src/service"
@@ -44,7 +43,7 @@ import (
 )
 
 const (
-	GXVersion = "1.0.20"
+	GXVersion = "1.0.23"
 	// Section 默认section配置
 	Section = "gx"
 )
@@ -275,12 +274,14 @@ func checkStatus() {
 			if 3 == service.GetSubChainStatus(accountDB) {
 				fmt.Println("subChain ended")
 
-				mysql.CloseMysql()
+				consensus.StopMiner()
 				if core.GetBlockChain() != nil {
 					core.GetBlockChain().Close()
 				}
+				service.Close()
+				middleware.Close()
 				log.Close()
-				consensus.StopMiner()
+
 				os.Exit(0)
 				return
 			}
@@ -309,15 +310,16 @@ func (gx *GX) dumpAccountInfo(minerDO model.SelfMinerInfo) {
 
 func (gx *GX) handleExit(ctrlC <-chan bool, quit chan<- bool) {
 	<-ctrlC
-	mysql.CloseMysql()
-
-	if core.GetBlockChain() == nil {
-		return
-	}
 	fmt.Println("exiting...")
-	core.GetBlockChain().Close()
-	log.Close()
 	consensus.StopMiner()
+
+	if core.GetBlockChain() != nil {
+		core.GetBlockChain().Close()
+	}
+
+	service.Close()
+	middleware.Close()
+	log.Close()
 	if gx.init {
 		quit <- true
 	} else {

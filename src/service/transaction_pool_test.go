@@ -18,8 +18,14 @@ package service
 
 import (
 	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware"
+	"com.tuntun.rangers/node/src/middleware/log"
+	"com.tuntun.rangers/node/src/middleware/types"
 	"fmt"
 	"github.com/gogf/gf/container/gmap"
+	"github.com/stretchr/testify/assert"
+	"math/big"
+	"os"
 	"testing"
 )
 
@@ -51,4 +57,408 @@ func TestGMap(t *testing.T) {
 	fmt.Println(listMap.Size())
 	fmt.Println(listMap.Keys())
 	fmt.Println(listMap.Values())
+}
+
+func preTest() {
+	common.Init(0, "0.ini", "dev")
+	middleware.InitMiddleware()
+	InitService()
+
+	common.SetBlockHeight(10000)
+	state, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
+	middleware.AccountDBManagerInstance.SetLatestStateDB(state, make(map[string]uint64), 10000)
+}
+
+// empty pack
+func TestTxPool_PackForCast(t *testing.T) {
+	defer func() {
+		Close()
+		middleware.Close()
+		log.Close()
+
+		os.RemoveAll("0.ini")
+		os.RemoveAll("logs")
+
+		err := os.RemoveAll("storage0")
+		if nil != err {
+			t.Fatal(err)
+		}
+	}()
+
+	preTest()
+
+	txs := txpoolInstance.PackForCast(10000)
+	if 0 != len(txs) {
+		t.Fatal("no txs error")
+	}
+}
+
+// empty pack
+// wrong nonce
+func TestTxPool_PackForCast0(t *testing.T) {
+	defer func() {
+		Close()
+		middleware.Close()
+		log.Close()
+
+		os.RemoveAll("0.ini")
+		os.RemoveAll("logs")
+
+		err := os.RemoveAll("storage0")
+		if nil != err {
+			t.Fatal(err)
+		}
+	}()
+
+	preTest()
+
+	tx := &types.Transaction{
+		Source: "0x0001",
+		Hash:   common.HexToHash("0xaa"),
+		Nonce:  10,
+	}
+
+	txpoolInstance.AddTransaction(tx)
+	txs := txpoolInstance.PackForCast(10000)
+	if 0 != len(txs) {
+		t.Fatal("no txs error")
+	}
+}
+
+// same address for 2 txs
+func TestTxPool_PackForCast1(t *testing.T) {
+	defer func() {
+		Close()
+		middleware.Close()
+		log.Close()
+
+		os.RemoveAll("0.ini")
+		os.RemoveAll("logs")
+
+		err := os.RemoveAll("storage0")
+		if nil != err {
+			t.Fatal(err)
+		}
+	}()
+
+	preTest()
+
+	tx := &types.Transaction{
+		Source: "0x0001",
+		Hash:   common.HexToHash("0xaa"),
+		Nonce:  0,
+	}
+
+	txpoolInstance.AddTransaction(tx)
+	txs := txpoolInstance.PackForCast(10000)
+	if 1 != len(txs) {
+		t.Fatal("no txs error")
+	}
+
+	tx1 := &types.Transaction{
+		Source: "0x0001",
+		Hash:   common.HexToHash("0xbb"),
+		Nonce:  1,
+	}
+	txpoolInstance.AddTransaction(tx1)
+	txs1 := txpoolInstance.PackForCast(10000)
+	if 2 != len(txs1) {
+		t.Fatal("no txs error")
+	}
+}
+
+// same address for 2 txs with same nonce
+// still pack 2 txs
+func TestTxPool_PackForCast2(t *testing.T) {
+	defer func() {
+		Close()
+		middleware.Close()
+		log.Close()
+
+		os.RemoveAll("0.ini")
+		os.RemoveAll("logs")
+
+		err := os.RemoveAll("storage0")
+		if nil != err {
+			t.Fatal(err)
+		}
+	}()
+
+	preTest()
+
+	tx := &types.Transaction{
+		Source: "0x0001",
+		Hash:   common.HexToHash("0xaa"),
+		Nonce:  0,
+	}
+
+	txpoolInstance.AddTransaction(tx)
+	txs := txpoolInstance.PackForCast(10000)
+	if 1 != len(txs) {
+		t.Fatal("no txs error")
+	}
+
+	tx1 := &types.Transaction{
+		Source: "0x0001",
+		Hash:   common.HexToHash("0xbb"),
+		Nonce:  0,
+	}
+	txpoolInstance.AddTransaction(tx1)
+	txs1 := txpoolInstance.PackForCast(10000)
+	if 2 != len(txs1) {
+		t.Fatal("no txs error")
+	}
+}
+
+// same address for 2 txs with same nonce
+// but different type
+// still pack 2 txs
+func TestTxPool_PackForCast3(t *testing.T) {
+	defer func() {
+		Close()
+		middleware.Close()
+		log.Close()
+
+		os.RemoveAll("0.ini")
+		os.RemoveAll("logs")
+
+		err := os.RemoveAll("storage0")
+		if nil != err {
+			t.Fatal(err)
+		}
+	}()
+
+	preTest()
+
+	tx := &types.Transaction{
+		Source: "0x0001",
+		Hash:   common.HexToHash("0xaa"),
+		Nonce:  0,
+	}
+
+	txpoolInstance.AddTransaction(tx)
+	txs := txpoolInstance.PackForCast(10000)
+	if 1 != len(txs) {
+		t.Fatal("no txs error")
+	}
+
+	tx1 := &types.Transaction{
+		Source: "0x0001",
+		Hash:   common.HexToHash("0xbb"),
+		Nonce:  0,
+		Type:   1,
+	}
+	txpoolInstance.AddTransaction(tx1)
+	txs1 := txpoolInstance.PackForCast(10000)
+	if 2 != len(txs1) {
+		t.Fatal("no txs error")
+	}
+}
+
+// 2 addresses
+// A has 2 tx
+// B has 1 tx
+// pack 3 txs
+func TestTxPool_PackForCast4(t *testing.T) {
+	defer func() {
+		Close()
+		middleware.Close()
+		log.Close()
+
+		os.RemoveAll("0.ini")
+		os.RemoveAll("logs")
+
+		err := os.RemoveAll("storage0")
+		if nil != err {
+			t.Fatal(err)
+		}
+	}()
+
+	preTest()
+
+	tx := &types.Transaction{
+		Source: "0x0001",
+		Hash:   common.HexToHash("0xaa"),
+		Nonce:  0,
+	}
+	txpoolInstance.AddTransaction(tx)
+	txs := txpoolInstance.PackForCast(10000)
+	if 1 != len(txs) {
+		t.Fatal("no txs error")
+	}
+
+	tx1 := &types.Transaction{
+		Source: "0x0002",
+		Hash:   common.HexToHash("0xbb"),
+		Nonce:  0,
+	}
+	txpoolInstance.AddTransaction(tx1)
+	txs1 := txpoolInstance.PackForCast(10000)
+	if 2 != len(txs1) {
+		t.Fatal("no txs error")
+	}
+
+	tx2 := &types.Transaction{
+		Source: "0x0001",
+		Hash:   common.HexToHash("0xcc"),
+		Nonce:  0,
+		Type:   1,
+	}
+	txpoolInstance.AddTransaction(tx2)
+	txs2 := txpoolInstance.PackForCast(10000)
+	if 3 != len(txs2) {
+		t.Fatal("no txs error")
+	}
+}
+
+// different addr with 0 nonce
+// pack txCountPerBlock txs
+func TestTxPool_PackForCast5(t *testing.T) {
+	defer func() {
+		Close()
+		middleware.Close()
+		log.Close()
+
+		os.RemoveAll("0.ini")
+		os.RemoveAll("logs")
+
+		err := os.RemoveAll("storage0")
+		if nil != err {
+			t.Fatal(err)
+		}
+	}()
+	preTest()
+
+	// normal add
+	i := int64(1)
+	for ; i < txCountPerBlock+1; i++ {
+		str := big.NewInt(i + 100).String()
+		tx := &types.Transaction{
+			Source: str,
+			Hash:   common.HexToHash(str),
+			Nonce:  0,
+		}
+		flag, _ := txpoolInstance.AddTransaction(tx)
+
+		if !flag {
+			t.Fatalf("fail to add tx, i: %s, hash: %s", str, tx.Hash.String())
+		}
+		txs := txpoolInstance.PackForCast(10000)
+		if i != int64(len(txs)) {
+			t.Fatalf("txsize errof, i: %d", i)
+		}
+	}
+
+	// oversize
+	str := big.NewInt(i + 100).String()
+	tx := &types.Transaction{
+		Source: str,
+		Hash:   common.HexToHash(str),
+		Nonce:  0,
+	}
+	flag, _ := txpoolInstance.AddTransaction(tx)
+
+	if !flag {
+		t.Fatalf("fail to add tx, i: %s, hash: %s", str, tx.Hash.String())
+	}
+	txs := txpoolInstance.PackForCast(10000)
+	if txCountPerBlock != int64(len(txs)) {
+		t.Fatal("oversize")
+	}
+}
+
+// 2 addresses
+// A has 3 tx nonce 0,1,2
+// B has 6 tx nonce 0,1,1,3,4,5
+// pack 6 txs
+func TestTxPool_PackForCast6(t *testing.T) {
+	defer func() {
+		Close()
+		middleware.Close()
+		log.Close()
+
+		os.RemoveAll("0.ini")
+		os.RemoveAll("logs")
+
+		err := os.RemoveAll("storage0")
+		if nil != err {
+			t.Fatal(err)
+		}
+	}()
+
+	preTest()
+
+	tx0 := &types.Transaction{
+		Source: "0x0001",
+		Hash:   common.HexToHash("0xaa0"),
+		Nonce:  0,
+	}
+	txpoolInstance.AddTransaction(tx0)
+
+	tx1 := &types.Transaction{
+		Source: "0x0001",
+		Hash:   common.HexToHash("0xaa1"),
+		Nonce:  1,
+	}
+	txpoolInstance.AddTransaction(tx1)
+
+	tx2 := &types.Transaction{
+		Source: "0x0001",
+		Hash:   common.HexToHash("0xaa2"),
+		Nonce:  2,
+	}
+	txpoolInstance.AddTransaction(tx2)
+
+	tx10 := &types.Transaction{
+		Source: "0x0002",
+		Hash:   common.HexToHash("0xbb00"),
+		Nonce:  0,
+	}
+	txpoolInstance.AddTransaction(tx10)
+
+	tx11 := &types.Transaction{
+		Source: "0x0002",
+		Hash:   common.HexToHash("0xbb11"),
+		Nonce:  1,
+	}
+	txpoolInstance.AddTransaction(tx11)
+
+	tx12 := &types.Transaction{
+		Source: "0x0002",
+		Hash:   common.HexToHash("0xbb10"),
+		Nonce:  1,
+	}
+	txpoolInstance.AddTransaction(tx12)
+
+	tx13 := &types.Transaction{
+		Source: "0x0002",
+		Hash:   common.HexToHash("0xbb30"),
+		Nonce:  3,
+	}
+	txpoolInstance.AddTransaction(tx13)
+
+	tx14 := &types.Transaction{
+		Source: "0x0002",
+		Hash:   common.HexToHash("0xbb40"),
+		Nonce:  4,
+	}
+	txpoolInstance.AddTransaction(tx14)
+
+	tx15 := &types.Transaction{
+		Source: "0x0002",
+		Hash:   common.HexToHash("0xbb50"),
+		Nonce:  5,
+	}
+	txpoolInstance.AddTransaction(tx15)
+
+	txList := txpoolInstance.PackForCast(10000)
+	if 6 != len(txList) {
+		t.Fatal("packed tx count error")
+	}
+	assert.Equal(t, txList[0].Hash.String(), tx0.Hash.String())
+	assert.Equal(t, txList[1].Hash.String(), tx1.Hash.String())
+	assert.Equal(t, txList[2].Hash.String(), tx2.Hash.String())
+	assert.Equal(t, txList[3].Hash.String(), tx10.Hash.String())
+	assert.Equal(t, txList[4].Hash.String(), tx11.Hash.String())
+	assert.Equal(t, txList[5].Hash.String(), tx12.Hash.String())
 }

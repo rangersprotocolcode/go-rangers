@@ -55,7 +55,10 @@ func newVMExecutor(accountdb *account.AccountDB, block *types.Block, situation s
 }
 
 func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transaction, []*types.Receipt) {
-	beginTime := utility.GetTime()
+	var beginTime time.Time
+	if this.situation == "casting" {
+		beginTime = utility.GetTime()
+	}
 
 	receipts := make([]*types.Receipt, 0)
 	transactions := make([]*types.Transaction, 0)
@@ -63,11 +66,12 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 
 	this.prepare()
 	txs := types.Transactions(this.block.Transactions)
-	if 0 != len(txs) {
+	if 0 != len(txs) && this.situation == "casting" {
 		sort.Sort(txs)
 	}
 
-	for i, transaction := range txs {
+	i := 0
+	for _, transaction := range txs {
 		if 0 == transaction.Type {
 			continue
 		}
@@ -75,8 +79,8 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		if common.IsProposal013() {
 			this.accountdb.Prepare(transaction.Hash, common.Hash{}, i)
 		}
-		executeTime := utility.GetTime()
-		if this.situation == "casting" && executeTime.Sub(beginTime) > MaxCastBlockTime {
+
+		if this.situation == "casting" && utility.GetTime().Sub(beginTime) > MaxCastBlockTime {
 			logger.Infof("Cast block execute tx time out! Tx hash:%s ", transaction.Hash.String())
 			break
 		}
@@ -88,17 +92,26 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 
 		txExecutor := executor.GetTxExecutor(transaction.Type)
 		success := false
+		addAble := true
 		msg := ""
 
 		if txExecutor != nil {
-			success, msg = txExecutor.BeforeExecute(transaction, this.block.Header, this.accountdb, this.context)
+			success, addAble, msg = txExecutor.BeforeExecute(transaction, this.block.Header, this.accountdb, this.context)
+			if common.IsProposal018() && !addAble {
+				evictedTxs = append(evictedTxs, transaction.Hash)
+				logger.Infof("Tx not addAble,skip.Hash:%s,msg:%s", transaction.Hash.String(), msg)
+				continue
+			}
+
 			if success {
 				snapshot := this.accountdb.Snapshot()
 				success, msg = txExecutor.Execute(transaction, this.block.Header, this.accountdb, this.context)
 
 				if !success {
 					logger.Debugf("Execute failed tx: %s, type: %d, msg: %s", transaction.Hash.String(), transaction.Type, msg)
-					evictedTxs = append(evictedTxs, transaction.Hash)
+					if !common.IsProposal018() {
+						evictedTxs = append(evictedTxs, transaction.Hash)
+					}
 					this.accountdb.RevertToSnapshot(snapshot)
 				} else {
 					if transaction.Source != "" {
@@ -145,11 +158,15 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		}
 		receipt.TxHash = transaction.Hash
 		receipts = append(receipts, receipt)
+		i++
 	}
 
 	//only for robin
 	if this.block.Header.Height == common.LocalChainConfig.Proposal010Block {
 		removeUnusedValidator(this.accountdb)
+	}
+	if this.block.Header.Height == common.LocalChainConfig.Proposal019Block {
+		removeUnusedValidator1(this.accountdb)
 	}
 	this.after()
 
@@ -157,10 +174,6 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 
 	middleware.PerfLogger.Debugf("VMExecutor End. %s height: %d, cost: %v, txs: %d", this.situation, this.block.Header.Height, utility.GetTime().Sub(beginTime), len(this.block.Transactions))
 	return state, evictedTxs, transactions, receipts
-}
-
-func (executor *VMExecutor) validateNonce(accountdb *account.AccountDB, transaction *types.Transaction) bool {
-	return true
 }
 
 func (executor *VMExecutor) prepare() {
@@ -211,4 +224,17 @@ func removeUnusedValidator(accountdb *account.AccountDB) {
 		}
 		service.MinerManagerImpl.RemoveMiner(minerId, miner.Account[:], miner.Type, accountdb, 0)
 	}
+}
+
+func removeUnusedValidator1(accountdb *account.AccountDB) {
+	var whileList = make(map[string]byte, 0)
+	whileList["0x5437f9dd7171db9d04a8347dca5bf2b7789081631d79d2d7882c1774d2f4d123"] = 0
+	whileList["0x2a17671c5a32175335fa098951ba50a9b4730aea7ecee86df6536297900f5b77"] = 0
+	whileList["0xb1979dd362353f0b59dff76cb223d5660a024db628257693f5470dec18c93160"] = 0
+	whileList["0x7f88b4f2d36a83640ce5d782a0a20cc2b233de3df2d8a358bf0e7b29e9586a12"] = 0
+	whileList["0xb715ee4bab1d5b63dc94bdd4841fce7b37310b3514c46357ca83475a248ec9b5"] = 0
+	whileList["0xca5503987bf640e724a3b5f1cb00fd76138aa872ba1a0b339d83c0aa078a92f3"] = 0
+	whileList["0xd6b97afd9fee6e22d37b7c0946bb6ed509b048a98c26d0611e7d4fa014f96c01"] = 0
+
+	service.MinerManagerImpl.RemoveUnusedValidator(accountdb, whileList)
 }

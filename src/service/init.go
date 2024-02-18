@@ -43,3 +43,13 @@ func InitService() {
 	InitMinerManager()
 	initTransactionPool()
 }
+
+func Close() {
+	if nil != MinerManagerImpl {
+		MinerManagerImpl.Close()
+	}
+
+	if nil != txpoolInstance {
+		txpoolInstance.Close()
+	}
+}

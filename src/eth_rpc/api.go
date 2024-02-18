@@ -34,6 +34,7 @@ import (
 	"fmt"
 	"github.com/boolw/go-web3/abi"
 	"math/big"
+	"strconv"
 	"sync"
 )
 
@@ -123,7 +124,7 @@ var (
 	nonce                            = []byte{1, 2, 3, 4, 5, 6, 7, 8}
 	difficulty                       = utility.Big(*big.NewInt(32))
 	totalDifficulty                  = utility.Big(*big.NewInt(180))
-	confirmBlockCount         uint64 = 6
+	confirmBlockCount         uint64 = 3
 	txGas                     uint64 = 21000 // Per transaction not creating a contract. NOTE: Not payable on data of calls between transactions.
 	estimateExpandCoefficient        = 2.5
 	generalEstimateGas        uint64 = 500000
@@ -558,6 +559,11 @@ func newRPCTransaction(tx *types.Transaction, blockHash common.Hash, blockNumber
 		transferValue, err := utility.StrToBigInt(data.TransferValue)
 		if err == nil {
 			result.Value = (*utility.Big)(transferValue)
+		}
+
+		gasLimit, err := strconv.ParseUint(data.GasLimit, 10, 64)
+		if err == nil {
+			result.Gas = utility.Uint64(gasLimit)
 		}
 	}
 

@@ -77,28 +77,25 @@ func toHex(b []byte) string {
 	return "0x" + hex
 }
 
-func (this *contractExecutor) BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountDB *account.AccountDB, context map[string]interface{}) (bool, string) {
-	err := service.GetTransactionPool().ProcessFee(*tx, accountDB)
-	if err != nil {
-		return false, err.Error()
+func (this *contractExecutor) BeforeExecute(tx *types.Transaction, header *types.BlockHeader, accountDB *account.AccountDB, context map[string]interface{}) (bool, bool, string) {
+	if err := validateNonce(tx, accountDB); err != nil {
+		return false, true, err.Error()
+	}
+
+	if err := service.GetTransactionPool().ProcessFee(*tx, accountDB); err != nil {
+		return false, true, err.Error()
 	}
 
 	raw, errMessage := this.decodeContractData(tx.Data)
 	if errMessage != "" {
-		return false, errMessage
+		return false, true, errMessage
 	}
 	context["contractData"] = raw
-	//check if balance > (gasLimit * gasPrice) + transfer value
-	if common.IsProposal015() {
-		balance := accountDB.GetBalance(common.HexToAddress(tx.Source))
-		gasFee := new(big.Int).Mul(new(big.Int).SetUint64(raw.GasLimit), defaultGasPrice)
-		if balance.Cmp(new(big.Int).Add(gasFee, raw.TransferValue)) < 0 {
-			this.logger.Errorf("[ContractExecutor]insufficient funds:%s,balance:%s,gasFess:%s,transferValue:%s,", tx.Hash.String(), balance.String(), gasFee.String(), raw.TransferValue.String())
-			return false, ErrInsufficientFunds.Error()
-		}
-		this.logger.Tracef("[ContractExecutor]pre check passed:%s,balance:%s,gasFess:%s,transferValue:%s,", tx.Hash.String(), balance.String(), gasFee.String(), raw.TransferValue.String())
+
+	if err := preCheckContractFee(tx, accountDB, *raw); err != nil {
+		return false, true, err.Error()
 	}
-	return true, ""
+	return true, true, ""
 }
 
 func (this *contractExecutor) Execute(transaction *types.Transaction, header *types.BlockHeader, accountdb *account.AccountDB, context map[string]interface{}) (bool, string) {
@@ -266,4 +263,18 @@ func (this *contractExecutor) decodeContractData(txData string) (*ContractRawDat
 	}
 	raw := &ContractRawData{rawGasLimit, transferValue, input}
 	return raw, ""
+}
+
+//check if balance > (gasLimit * gasPrice) + transfer value
+func preCheckContractFee(tx *types.Transaction, accountDB *account.AccountDB, raw ContractRawData) error {
+	if common.IsProposal015() {
+		balance := accountDB.GetBalance(common.HexToAddress(tx.Source))
+		gasFee := new(big.Int).Mul(new(big.Int).SetUint64(raw.GasLimit), defaultGasPrice)
+		if balance.Cmp(new(big.Int).Add(gasFee, raw.TransferValue)) < 0 {
+			logger.Errorf("[ContractExecutor]insufficient funds:%s,balance:%s,gasFess:%s,transferValue:%s,", tx.Hash.String(), balance.String(), gasFee.String(), raw.TransferValue.String())
+			return ErrInsufficientFunds
+		}
+		logger.Tracef("[ContractExecutor]pre check passed:%s,balance:%s,gasFess:%s,transferValue:%s,", tx.Hash.String(), balance.String(), gasFee.String(), raw.TransferValue.String())
+	}
+	return nil
 }
