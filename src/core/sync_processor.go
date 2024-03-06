@@ -149,6 +149,7 @@ func (p *syncProcessor) broadcastChainInfo(bh *types.BlockHeader) {
 	p.logger.Tracef("Send local total qn %d to neighbor!", topBlockInfo.TotalQn)
 	message := network.Message{Code: network.TopBlockInfoMsg, Body: body}
 	network.GetNetInstance().Broadcast(message)
+	p.broadcastTimer.Stop()
 	p.broadcastTimer.Reset(broadcastBlockInfoInterval)
 }
 
@@ -220,6 +221,7 @@ func (p *syncProcessor) trySync() {
 		return
 	}
 	p.logger.Debugf("Try sync!")
+	p.syncTimer.Stop()
 	p.syncTimer.Reset(blockSyncInterval)
 
 	topBlock := blockChainImpl.TopBlock()

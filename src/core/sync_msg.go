@@ -81,6 +81,7 @@ func (p *syncProcessor) requestBlockChainPiece(targetNode string, reqHeight uint
 	}
 	message := network.Message{Code: network.BlockChainPieceReqMsg, Body: body}
 	network.GetNetInstance().SendToStranger(common.FromHex(targetNode), message)
+	p.blockReqTimer.Stop()
 	p.blockReqTimer.Reset(syncReqTimeout)
 	p.logger.Debugf("req block chain piece from %s,height:%d", targetNode, reqHeight)
 }
@@ -199,6 +200,11 @@ func verifyBlockChainPiece(chainPiece []*types.BlockHeader, topHeader *types.Blo
 		return false
 	}
 
+	signVerifyResult, _ := consensusHelper.VerifyBlockHeader(topHeader)
+	if !signVerifyResult {
+		return false
+	}
+
 	for i := 0; i < len(chainPiece)-1; i++ {
 		bh := chainPiece[i]
 		if bh == nil {
@@ -250,6 +256,7 @@ func (p *syncProcessor) syncBlock(id string, commonAncestor types.BlockHeader) {
 	}
 	message := network.Message{Code: network.ReqBlockMsg, Body: body}
 	go network.GetNetInstance().SendToStranger(common.FromHex(id), message)
+	p.blockReqTimer.Stop()
 	p.blockReqTimer.Reset(syncReqTimeout)
 }
 
@@ -353,6 +360,7 @@ func (p *syncProcessor) syncGroup(id string, commonAncestor *types.Group) {
 	}
 	message := network.Message{Code: network.ReqGroupMsg, Body: body}
 	go network.GetNetInstance().SendToStranger(common.FromHex(id), message)
+	p.groupReqTimer.Stop()
 	p.groupReqTimer.Reset(syncReqTimeout)
 }
 

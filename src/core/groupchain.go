@@ -150,6 +150,7 @@ func (chain *groupChain) Count() uint64 {
 
 func (chain *groupChain) Close() {
 	chain.groups.Close()
+	chain.joinedGroups.Close()
 }
 
 func (chain *groupChain) Iterator() *GroupIterator {

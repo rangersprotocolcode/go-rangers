@@ -482,8 +482,9 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 
 		if tx == nil {
 			need = append(need, hash)
+		} else {
+			txs = append(txs, tx)
 		}
-		txs = append(txs, tx)
 	}
 	return txs, need, err
 }

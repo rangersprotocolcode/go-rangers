@@ -316,6 +316,9 @@ func (gx *GX) handleExit(ctrlC <-chan bool, quit chan<- bool) {
 	if core.GetBlockChain() != nil {
 		core.GetBlockChain().Close()
 	}
+	if core.GetGroupChain() != nil {
+		core.GetGroupChain().Close()
+	}
 
 	service.Close()
 	middleware.Close()

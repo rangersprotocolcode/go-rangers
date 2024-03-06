@@ -591,6 +591,7 @@ func (db *NodeDatabase) Commit(node common.Hash, report bool) error {
 		}
 		if batch.ValueSize() > xdb.IdealBatchSize {
 			if err := batch.Write(); err != nil {
+				db.lock.RUnlock()
 				return err
 			}
 			batch.Reset()

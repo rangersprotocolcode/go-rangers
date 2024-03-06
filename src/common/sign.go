@@ -61,8 +61,8 @@ func (signData SignData) ValidateSign(hasher Hasher) error {
 		return err
 	}
 
-	if !pubkey.Verify(signData.DataHash.Bytes(), &signData.DataSign) {
-		return errors.New("sign verify failed")
+	if ToHex(pubkey.GetID()) != signData.Id {
+		return errors.New(fmt.Sprintf("id illegal.expect:%s,actual:%s", ToHex(pubkey.GetID()), signData.Id))
 	}
 	return nil
 }
