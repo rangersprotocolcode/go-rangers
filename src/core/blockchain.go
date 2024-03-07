@@ -174,7 +174,6 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		PreHash:   latestBlock.Hash,
 		PreTime:   latestBlock.CurTime,
 	}
-	block.Header.RequestIds = getRequestIdFromTransactions(block.Transactions, latestBlock.RequestIds)
 
 	middleware.PerfLogger.Infof("fin cast object. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
 
@@ -202,6 +201,8 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	block.Header.TxTree = calcTxTree(block.Transactions)
 	block.Header.EvictedTxs = evictedTxs
 	middleware.PerfLogger.Infof("fin calcTxTree. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
+
+	block.Header.RequestIds = getRequestIdFromTransactions(block.Transactions, latestBlock.RequestIds)
 
 	block.Header.StateTree = common.BytesToHash(stateRoot.Bytes())
 	block.Header.ReceiptTree = calcReceiptsTree(receipts)
