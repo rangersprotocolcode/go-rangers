@@ -207,8 +207,14 @@ func (executor *GameExecutor) read(msg notify.Message) {
 
 	responseId := txRaw.SocketRequestId
 
-	//reply to the client
-	go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
+	if 0 == len(result) {
+		//reply to the client
+		go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeFailedResponse(result, responseId), message.Nonce)
+	} else {
+		//reply to the client
+		go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
+	}
+
 }
 
 func (executor *GameExecutor) runWrite(item *middleware.Item) {
