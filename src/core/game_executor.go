@@ -97,61 +97,93 @@ func (executor *GameExecutor) read(msg notify.Message) {
 	case types.TransactionTypeOperatorBalance:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
-		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
-		result = service.GetRawBalance(source, accountDB)
-		break
+		height, ok := param["height"]
+		hash, ok2 := param["hash"]
+		if ok && ok2 {
+			accountDB := getAccountDBByHashOrHeight(height, hash)
+			result = service.GetRawBalance(source, accountDB)
+		}
+
 	case types.TransactionTypeGetNetworkId:
 		result = service.GetNetWorkId()
-		break
 	case types.TransactionTypeGetChainId:
 		result = service.GetChainId()
-		break
 	case types.TransactionTypeGetBlockNumber:
 		result = getBlockNumber()
-		break
 	case types.TransactionTypeGetBlock:
 		query := queryBlockData{}
-		json.Unmarshal([]byte(txRaw.Data), &query)
-		result = getBlock(query.Height, query.Hash, query.ReturnTransactionObjects)
-		break
+		err := json.Unmarshal([]byte(txRaw.Data), &query)
+		if nil == err {
+			result = getBlock(query.Height, query.Hash, query.ReturnTransactionObjects)
+		}
+
 	case types.TransactionTypeGetNonce:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
-		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
-		result = service.GetNonce(source, accountDB)
-		break
+		height, ok := param["height"]
+		hash, ok2 := param["hash"]
+		if ok && ok2 {
+			accountDB := getAccountDBByHashOrHeight(height, hash)
+			result = service.GetNonce(source, accountDB)
+		}
+
 	case types.TransactionTypeGetTx:
-		param := make(map[string]string, 0)
+		param := make(map[string]string)
 		json.Unmarshal([]byte(txRaw.Data), &param)
-		result = getTransaction(common.HexToHash(param["txHash"]))
-		break
+		txHash, ok := param["txHash"]
+		if ok {
+			result = getTransaction(common.HexToHash(txHash))
+		}
+
 	case types.TransactionTypeGetReceipt:
-		param := make(map[string]string, 0)
+		param := make(map[string]string)
 		json.Unmarshal([]byte(txRaw.Data), &param)
-		result = service.GetMarshalReceipt(common.HexToHash(param["txHash"]))
-		break
+		txHash, ok := param["txHash"]
+		if ok {
+			result = service.GetMarshalReceipt(common.HexToHash(txHash))
+		}
+
 	case types.TransactionTypeGetTxCount:
-		param := make(map[string]string, 0)
+		param := make(map[string]string)
 		json.Unmarshal([]byte(txRaw.Data), &param)
-		result = getTransactionCount(param["height"], param["hash"])
-		break
+		height, ok := param["height"]
+		hash, ok2 := param["hash"]
+		if ok && ok2 {
+			result = getTransactionCount(height, hash)
+		}
+
 	case types.TransactionTypeGetTxFromBlock:
-		param := make(map[string]string, 0)
+		param := make(map[string]string)
 		json.Unmarshal([]byte(txRaw.Data), &param)
-		result = getTransactionFromBlock(param["height"], param["hash"], param["index"])
-		break
+		height, ok := param["height"]
+		hash, ok2 := param["hash"]
+		index, ok3 := param["index"]
+		if ok && ok2 && ok3 {
+			result = getTransactionFromBlock(height, hash, index)
+		}
+
 	case types.TransactionTypeGetContractStorage:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
-		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
-		result = service.GetContractStorageAt(param["address"], param["key"], accountDB)
-		break
+		height, ok := param["height"]
+		hash, ok2 := param["hash"]
+		address, ok3 := param["address"]
+		key, ok4 := param["key"]
+		if ok && ok2 && ok3 && ok4 {
+			accountDB := getAccountDBByHashOrHeight(height, hash)
+			result = service.GetContractStorageAt(address, key, accountDB)
+		}
+
 	case types.TransactionTypeGetCode:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
-		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
-		result = service.GetCode(param["address"], accountDB)
-		break
+		height, ok := param["height"]
+		hash, ok2 := param["hash"]
+		address, ok3 := param["address"]
+		if ok && ok2 && ok3 {
+			accountDB := getAccountDBByHashOrHeight(height, hash)
+			result = service.GetCode(address, accountDB)
+		}
 
 	case types.TransactionTypeGetPastLogs:
 		query := types.FilterCriteria{}
@@ -162,7 +194,6 @@ func (executor *GameExecutor) read(msg notify.Message) {
 		}
 		executor.logger.Debugf("rcv TransactionTypeGetPastLogs:%d,%d,%v,%v", query.FromBlock, query.ToBlock, query.Addresses, query.Topics)
 		result = getPastLogs(query)
-		break
 	case types.TransactionTypeCallVM:
 		data := callVMData{}
 		err := json.Unmarshal([]byte(txRaw.Data), &data)
@@ -172,13 +203,18 @@ func (executor *GameExecutor) read(msg notify.Message) {
 		}
 		executor.logger.Debugf("rcv TransactionTypeCallVM:%s,%s,%s,%s,%v,%s,%v,%v", data.Height, data.Hash, data.From, data.To, data.Value, data.Data, data.Gas, data.GasPrice)
 		result = executor.callVM(data)
-		break
 	}
 
 	responseId := txRaw.SocketRequestId
 
-	//reply to the client
-	go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
+	if 0 == len(result) {
+		//reply to the client
+		go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeFailedResponse(result, responseId), message.Nonce)
+	} else {
+		//reply to the client
+		go network.GetNetInstance().SendToClientReader(message.UserId, executor.makeSuccessResponse(result, responseId), message.Nonce)
+	}
+
 }
 
 func (executor *GameExecutor) runWrite(item *middleware.Item) {
@@ -275,11 +311,10 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 		result, message = processor.Execute(&txRaw, &types.BlockHeader{Height: height, CurTime: utility.GetTime()}, accountDB, context)
 		if !result {
 			accountDB.RevertToSnapshot(snapshot)
-		} else if txRaw.Source != "" {
-			if !common.IsProposal006() {
-				accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
-			}
+		} else if !common.IsProposal006() {
+			accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
 		}
+
 	}
 
 	if common.IsProposal007() {
