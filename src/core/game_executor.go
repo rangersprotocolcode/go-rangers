@@ -99,59 +99,47 @@ func (executor *GameExecutor) read(msg notify.Message) {
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
 		result = service.GetRawBalance(source, accountDB)
-		break
 	case types.TransactionTypeGetNetworkId:
 		result = service.GetNetWorkId()
-		break
 	case types.TransactionTypeGetChainId:
 		result = service.GetChainId()
-		break
 	case types.TransactionTypeGetBlockNumber:
 		result = getBlockNumber()
-		break
 	case types.TransactionTypeGetBlock:
 		query := queryBlockData{}
 		json.Unmarshal([]byte(txRaw.Data), &query)
 		result = getBlock(query.Height, query.Hash, query.ReturnTransactionObjects)
-		break
 	case types.TransactionTypeGetNonce:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
 		result = service.GetNonce(source, accountDB)
-		break
 	case types.TransactionTypeGetTx:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		result = getTransaction(common.HexToHash(param["txHash"]))
-		break
 	case types.TransactionTypeGetReceipt:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		result = service.GetMarshalReceipt(common.HexToHash(param["txHash"]))
-		break
 	case types.TransactionTypeGetTxCount:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		result = getTransactionCount(param["height"], param["hash"])
-		break
 	case types.TransactionTypeGetTxFromBlock:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		result = getTransactionFromBlock(param["height"], param["hash"], param["index"])
-		break
 	case types.TransactionTypeGetContractStorage:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
 		result = service.GetContractStorageAt(param["address"], param["key"], accountDB)
-		break
 	case types.TransactionTypeGetCode:
 		param := make(map[string]string, 0)
 		json.Unmarshal([]byte(txRaw.Data), &param)
 		accountDB := getAccountDBByHashOrHeight(param["height"], param["hash"])
 		result = service.GetCode(param["address"], accountDB)
-		break
 
 	case types.TransactionTypeGetPastLogs:
 		query := types.FilterCriteria{}
@@ -162,7 +150,6 @@ func (executor *GameExecutor) read(msg notify.Message) {
 		}
 		executor.logger.Debugf("rcv TransactionTypeGetPastLogs:%d,%d,%v,%v", query.FromBlock, query.ToBlock, query.Addresses, query.Topics)
 		result = getPastLogs(query)
-		break
 	case types.TransactionTypeCallVM:
 		data := callVMData{}
 		err := json.Unmarshal([]byte(txRaw.Data), &data)
@@ -172,7 +159,6 @@ func (executor *GameExecutor) read(msg notify.Message) {
 		}
 		executor.logger.Debugf("rcv TransactionTypeCallVM:%s,%s,%s,%s,%v,%s,%v,%v", data.Height, data.Hash, data.From, data.To, data.Value, data.Data, data.Gas, data.GasPrice)
 		result = executor.callVM(data)
-		break
 	}
 
 	responseId := txRaw.SocketRequestId
