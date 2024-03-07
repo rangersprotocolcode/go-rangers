@@ -311,11 +311,10 @@ func (executor *GameExecutor) runTransaction(accountDB *account.AccountDB, heigh
 		result, message = processor.Execute(&txRaw, &types.BlockHeader{Height: height, CurTime: utility.GetTime()}, accountDB, context)
 		if !result {
 			accountDB.RevertToSnapshot(snapshot)
-		} else if txRaw.Source != "" {
-			if !common.IsProposal006() {
-				accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
-			}
+		} else if !common.IsProposal006() {
+			accountDB.IncreaseNonce(common.HexToAddress(txRaw.Source))
 		}
+
 	}
 
 	if common.IsProposal007() {
