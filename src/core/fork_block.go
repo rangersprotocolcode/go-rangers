@@ -190,9 +190,12 @@ func (fork *blockChainFork) addBlockOnFork(coming *types.Block, groupFork *group
 	if !verifyResult {
 		return verifyBlockErr
 	}
-	fork.saveState(state)
-
-	fork.insertBlock(coming)
+	if err := fork.saveState(state); err != nil {
+		return err
+	}
+	if err := fork.insertBlock(coming); err != nil {
+		return err
+	}
 	fork.latestBlock = coming.Header
 	return nil
 }

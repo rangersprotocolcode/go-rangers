@@ -64,12 +64,21 @@ func initGroupChain() {
 		panic("newLDBDatabase fail, file=" + "" + "err=" + err.Error())
 	}
 
-	lastGroupId, _ := chain.groups.Get([]byte(lastGroupKey))
-	count, _ := chain.groups.Get([]byte(groupCountKey))
+	lastGroupId, err := chain.groups.Get([]byte(lastGroupKey))
+	if err != nil {
+		panic("Group chain get last group id failed:" + err.Error())
+	}
+	count, err := chain.groups.Get([]byte(groupCountKey))
+	if err != nil {
+		panic("Group chain get group count failed:" + err.Error())
+	}
 	var lastGroup *types.Group
 	if lastGroupId != nil {
-		data, _ := chain.groups.Get(lastGroupId)
-		err := json.Unmarshal(data, &lastGroup)
+		data, err := chain.groups.Get(lastGroupId)
+		if err != nil {
+			panic("Group chain get last group failed:" + err.Error())
+		}
+		err = json.Unmarshal(data, &lastGroup)
 		if err != nil {
 			panic("Unmarshal last group failed:" + err.Error())
 		}

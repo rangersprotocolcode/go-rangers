@@ -18,36 +18,36 @@ package core
 
 import "com.tuntun.rangers/node/src/middleware/types"
 
-func (chain *blockChain) markAddBlock(blockByte []byte) bool {
+func (chain *blockChain) markAddBlock(blockByte []byte) error {
 	err := chain.hashDB.Put([]byte(addBlockMark), blockByte)
 	if err != nil {
 		logger.Errorf("Block chain put addBlockMark error:%s", err.Error())
-		return false
 	}
-	return true
+	return err
 }
 
-func (chain *blockChain) eraseAddBlockMark() {
-	chain.hashDB.Delete([]byte(addBlockMark))
-}
-
-func (chain *blockChain) markRemoveBlock(block *types.Block) bool {
-	blockByte, err := types.MarshalBlock(block)
+func (chain *blockChain) eraseAddBlockMark() error {
+	err := chain.hashDB.Delete([]byte(addBlockMark))
 	if err != nil {
-		logger.Errorf("Fail to marshal block, error:%s", err.Error())
-		return false
+		logger.Errorf("Block chain remove addBlockMark error:%s", err.Error())
 	}
+	return err
+}
 
-	err = chain.hashDB.Put([]byte(removeBlockMark), blockByte)
+func (chain *blockChain) markRemoveBlock(blockByte []byte) error {
+	err := chain.hashDB.Put([]byte(removeBlockMark), blockByte)
 	if err != nil {
 		logger.Errorf("Block chain put removeBlockMark error:%s", err.Error())
-		return false
 	}
-	return true
+	return err
 }
 
-func (chain *blockChain) eraseRemoveBlockMark() {
-	chain.hashDB.Delete([]byte(removeBlockMark))
+func (chain *blockChain) eraseRemoveBlockMark() error {
+	err := chain.hashDB.Delete([]byte(removeBlockMark))
+	if err != nil {
+		logger.Errorf("Block chain remove removeBlockMark error:%s", err.Error())
+	}
+	return err
 }
 
 func (chain *blockChain) ensureChainConsistency() {

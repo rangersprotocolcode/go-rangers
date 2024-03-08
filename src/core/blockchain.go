@@ -376,7 +376,12 @@ func (chain *blockChain) remove(block *types.Block) bool {
 	if common.IsFullNode() {
 		receipts = chain.getReceipts(*block)
 	}
-	chain.markRemoveBlock(block)
+	blockByte, err := types.MarshalBlock(block)
+	if err != nil {
+		logger.Errorf("Fail to marshal block, error:%s", err.Error())
+		return false
+	}
+	chain.markRemoveBlock(blockByte)
 
 	chain.hashDB.Delete(hash.Bytes())
 	chain.heightDB.Delete(generateHeightKey(height))
@@ -384,6 +389,7 @@ func (chain *blockChain) remove(block *types.Block) bool {
 
 	chain.topBlocks.Remove(height)
 	chain.verifiedBlocks.Remove(hash)
+	chain.verifiedBodyCache.Remove(hash)
 
 	preBlock := chain.queryBlockByHash(block.Header.PreHash)
 	if preBlock == nil {
