@@ -32,6 +32,11 @@ import (
 	"time"
 )
 
+var (
+	successStatus string = "0"
+	failedStatus  string = "1"
+)
+
 type response struct {
 	Id      string `json:"id"`
 	Status  string `json:"status"`
@@ -43,7 +48,7 @@ func (executor *GameExecutor) makeSuccessResponse(data string, id string) []byte
 	res := response{
 		Data:   data,
 		Id:     id,
-		Status: "0",
+		Status: successStatus,
 	}
 
 	result, err := json.Marshal(res)
@@ -57,7 +62,7 @@ func (executor *GameExecutor) makeFailedResponse(message string, id string) []by
 	res := response{
 		Message: message,
 		Id:      id,
-		Status:  "1",
+		Status:  failedStatus,
 	}
 
 	result, err := json.Marshal(res)

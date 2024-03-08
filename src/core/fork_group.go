@@ -27,7 +27,6 @@ import (
 )
 
 var (
-	verifyGroupErr    = errors.New("verify group error")
 	preGroupNilErr    = errors.New("pre group is nil")
 	parentGroupNilErr = errors.New("parent group is nil")
 )
@@ -116,11 +115,12 @@ func (fork *groupChainFork) destroy() {
 	}
 	fork.db.Delete([]byte(groupCommonAncestorHeightKey))
 	fork.db.Delete([]byte(latestGroupHeightKey))
+	fork.db.Close()
 }
 
 func (fork *groupChainFork) getGroupById(id []byte) *types.Group {
 	bytes, _ := fork.db.Get(id)
-	if bytes == nil || len(bytes) == 0 {
+	if len(bytes) == 0 {
 		return nil
 	}
 	group, err := types.UnMarshalGroup(bytes)
@@ -170,7 +170,7 @@ func (fork *groupChainFork) insertGroup(group *types.Group) error {
 
 func (fork *groupChainFork) getGroup(height uint64) *types.Group {
 	bytes, _ := fork.db.Get(generateHeightKey(height))
-	if bytes == nil || len(bytes) == 0 {
+	if len(bytes) == 0 {
 		return nil
 	}
 	group, err := types.UnMarshalGroup(bytes)

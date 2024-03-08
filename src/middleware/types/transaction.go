@@ -24,6 +24,7 @@ import (
 )
 
 const (
+	TransactionTypeAbandoned          = 0
 	TransactionTypeMinerApply         = 2
 	TransactionTypeMinerAbort         = 3
 	TransactionTypeMinerRefund        = 4

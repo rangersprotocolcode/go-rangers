@@ -25,6 +25,15 @@ import (
 	"encoding/json"
 )
 
+var (
+	verifyBlockSuccessFlag int8 = 0
+	verifyBlockFailedFlag  int8 = -1
+	verifyBlockMissTxFlag  int8 = 1
+	verifyBlockNoPreFlag   int8 = 2
+
+	requestTxCountThreshold = 100
+)
+
 func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transaction) ([]common.Hashes, int8) {
 	start := utility.GetTime()
 	logger.Infof("verifyBlock. hash:%v,height:%d,preHash:%v,len header tx:%d,len tx:%d", bh.Hash.String(), bh.Height, bh.PreHash.String(), len(bh.Transactions), len(txs))
@@ -34,12 +43,12 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 
 	// use cache before verify
 	if chain.verifiedBlocks.Contains(bh.Hash) {
-		return nil, 0
+		return nil, verifyBlockSuccessFlag
 	}
 
 	if bh.Hash != bh.GenHash() {
 		logger.Debugf("Validate block hash error!")
-		return nil, -1
+		return nil, verifyBlockFailedFlag
 	}
 
 	pre := chain.queryBlockHeaderByHash(bh.PreHash)
@@ -47,21 +56,21 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 		if txs != nil {
 			chain.futureBlocks.Add(bh.PreHash, &types.Block{Header: &bh, Transactions: txs})
 		}
-		return nil, 2
+		return nil, verifyBlockNoPreFlag
 	}
 
 	if common.IsProposal008() {
 		for _, tx := range txs {
 			if chain.transactionPool.GetExecuted(tx.Hash) != nil {
 				logger.Debugf("tx has already on chain:%s", tx.Hash.String())
-				return nil, -1
+				return nil, verifyBlockFailedFlag
 			}
 		}
 	}
 
 	miss, missingTx, transactions := chain.missTransaction(bh, txs)
 	if miss {
-		return missingTx, 1
+		return missingTx, verifyBlockMissTxFlag
 	}
 
 	requestIds := getRequestIdFromTransactions(transactions, pre.RequestIds)
@@ -70,23 +79,23 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 		for _, tx := range transactions {
 			logger.Debugf("request id diff, tx: %v", tx)
 		}
-		return nil, -1
+		return nil, verifyBlockFailedFlag
 	}
 
 	logger.Debugf("validateTxRoot,tx tree root:%v,len txs:%d,miss len:%d", bh.TxTree.Hex(), len(transactions), len(missingTx))
 	if !chain.validateTxRoot(bh.TxTree, transactions) {
-		return nil, -1
+		return nil, verifyBlockFailedFlag
 	}
 
 	block := types.Block{Header: &bh, Transactions: transactions}
 	executeTxResult, _, _ := chain.executeTransaction(&block)
 	if !executeTxResult {
-		return nil, -1
+		return nil, verifyBlockFailedFlag
 	}
 	if len(block.Transactions) != 0 {
 		chain.verifiedBodyCache.Add(block.Header.Hash, block.Transactions)
 	}
-	return nil, 0
+	return nil, verifyBlockSuccessFlag
 }
 
 func (chain *blockChain) hasPreBlock(bh types.BlockHeader) bool {
@@ -109,14 +118,15 @@ func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Tran
 		var castorId groupsig.ID
 		error := castorId.Deserialize(bh.Castor)
 		if error != nil {
-			panic("Groupsig id deserialize error:" + error.Error())
+			logger.Errorf("Groupsig id deserialize error:%s" + error.Error())
+			return false, missing, transactions
 		}
 
 		hashList := make([]common.Hashes, 0)
 		for _, tx := range missing {
 			logger.Debugf("miss tx:%s", tx.ShortS())
 			hashList = append(hashList, tx)
-			if len(hashList) > 100 {
+			if len(hashList) > requestTxCountThreshold {
 				m := &transactionRequestMessage{TransactionHashes: hashList, CurrentBlockHash: bh.Hash, BlockHeight: bh.Height, BlockPv: bh.ProveValue}
 				go requestTransaction(*m, castorId.GetHexString())
 				hashList = make([]common.Hashes, 0)
@@ -148,7 +158,7 @@ func calcTxTree(txs []*types.Transaction) common.Hash {
 
 	buf := new(bytes.Buffer)
 	for _, tx := range txs {
-		if 0 == tx.Type {
+		if types.TransactionTypeAbandoned == tx.Type {
 			continue
 		}
 		buf.Write(tx.Hash.Bytes())

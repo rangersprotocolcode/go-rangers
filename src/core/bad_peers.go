@@ -67,22 +67,19 @@ func (manager *peerManager) isEvil(id string) bool {
 }
 
 func (manager *peerManager) loop() {
-	for {
-		select {
-		case <-manager.cleaner.C:
-			manager.lock.Lock()
-			manager.logger.Debugf("Bad peers cleaner time up!")
-			cleanIds := make([]string, 0, len(manager.badPeers))
-			for id, markTime := range manager.badPeers {
-				if utility.GetTime().Sub(markTime) >= badPeersCleanInterval {
-					cleanIds = append(cleanIds, id)
-				}
+	for t := range manager.cleaner.C {
+		manager.lock.Lock()
+		manager.logger.Debugf("Bad peers cleaner time up:%s", t.String())
+		cleanIds := make([]string, 0, len(manager.badPeers))
+		for id, markTime := range manager.badPeers {
+			if utility.GetTime().Sub(markTime) >= badPeersCleanInterval {
+				cleanIds = append(cleanIds, id)
 			}
-			for _, id := range cleanIds {
-				delete(manager.badPeers, id)
-				manager.logger.Debugf("[PeerManager]Release id:%s", id)
-			}
-			manager.lock.Unlock()
 		}
+		for _, id := range cleanIds {
+			delete(manager.badPeers, id)
+			manager.logger.Debugf("[PeerManager]Release id:%s", id)
+		}
+		manager.lock.Unlock()
 	}
 }

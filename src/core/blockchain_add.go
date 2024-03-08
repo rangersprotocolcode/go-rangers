@@ -70,7 +70,7 @@ func (chain *blockChain) addBlockOnChain(coming *types.Block) types.AddBlockResu
 
 	if _, verifyResult := chain.verifyBlock(*comingHeader, coming.Transactions); verifyResult != 0 {
 		logger.Errorf("Fail to VerifyCastingBlock, reason code:%d \n", verifyResult)
-		if verifyResult == 2 {
+		if verifyResult == verifyBlockNoPreFlag {
 			logger.Warnf("coming block has no pre on local chain.Forking...")
 		}
 		return types.AddBlockFailed
@@ -117,7 +117,8 @@ func (chain *blockChain) addBlockOnChain(coming *types.Block) types.AddBlockResu
 func (chain *blockChain) executeTransaction(block *types.Block) (bool, *account.AccountDB, types.Receipts) {
 	preBlock := chain.queryBlockHeaderByHash(block.Header.PreHash)
 	if preBlock == nil {
-		panic("Pre block nil !!")
+		logger.Errorf("Pre block is nil:%s", block.Header.PreHash.String())
+		return false, nil, nil
 	}
 	preRoot := common.BytesToHash(preBlock.StateTree.Bytes())
 	if len(block.Transactions) > 0 {
@@ -317,17 +318,6 @@ func (chain *blockChain) removeFromCommonAncestor(commonAncestor *types.BlockHea
 		}
 		chain.remove(block)
 		logger.Debugf("Remove local block hash:%s, height %d", header.Hash.String(), header.Height)
-	}
-}
-
-func dumpTxs(txs []*types.Transaction, blockHeight uint64) {
-	if txs == nil || len(txs) == 0 {
-		return
-	}
-
-	txLogger.Tracef("Tx on chain dump! Block height:%d", blockHeight)
-	for _, tx := range txs {
-		txLogger.Tracef("Tx info;%s", tx.ToTxJson().ToString())
 	}
 }
 

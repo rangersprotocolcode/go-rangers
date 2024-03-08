@@ -46,13 +46,12 @@ const (
 	verifyHashDBPrefix = "verifyHash"
 
 	topBlocksCacheSize = 100
+	verifiedCacheSize  = 10
 )
 
 var blockChainImpl *blockChain
 
 type blockChain struct {
-	init bool
-
 	latestBlock *types.BlockHeader
 	requestIds  map[string]uint64
 
@@ -78,7 +77,7 @@ func initBlockChain() error {
 	chain.transactionPool = service.GetTransactionPool()
 
 	var err error
-	chain.topBlocks, err = lru.New(100)
+	chain.topBlocks, err = lru.New(topBlocksCacheSize)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
@@ -90,13 +89,13 @@ func initBlockChain() error {
 		return err
 	}
 
-	chain.verifiedBlocks, err = lru.New(10)
+	chain.verifiedBlocks, err = lru.New(verifiedCacheSize)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
 	}
 
-	chain.verifiedBodyCache, err = lru.New(10)
+	chain.verifiedBodyCache, err = lru.New(verifiedCacheSize)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
@@ -138,7 +137,6 @@ func initBlockChain() error {
 		chain.buildCache(topBlocksCacheSize)
 		common.SetBlockHeight(chain.latestBlock.Height)
 	}
-	chain.init = true
 	blockChainImpl = chain
 
 	return nil
@@ -168,11 +166,10 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		CurTime:    timestamp,
 		Height:     height,
 		ProveValue: proveValue, Castor: castor,
-		GroupId:   groupid,
-		TotalQN:   latestBlock.TotalQN + qn,
-		StateTree: common.BytesToHash(latestBlock.StateTree.Bytes()),
-		PreHash:   latestBlock.Hash,
-		PreTime:   latestBlock.CurTime,
+		GroupId: groupid,
+		TotalQN: latestBlock.TotalQN + qn,
+		PreHash: latestBlock.Hash,
+		PreTime: latestBlock.CurTime,
 	}
 
 	middleware.PerfLogger.Infof("fin cast object. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
@@ -434,7 +431,7 @@ func (chain *blockChain) queryBlockByHash(hash common.Hash) *types.Block {
 	if result != nil {
 		var block *types.Block
 		block, err = types.UnMarshalBlock(result)
-		if err != nil || &block == nil {
+		if err != nil || block == nil {
 			return nil
 		}
 		return block
@@ -470,7 +467,7 @@ func (chain *blockChain) queryTxsByBlockHash(blockHash common.Hash, txHashList [
 		var tx *types.Transaction
 		if verifiedTxs != nil {
 			for _, verifiedTx := range verifiedTxs {
-				if verifiedTx.Hash == hash[0] {
+				if verifiedTx != nil && verifiedTx.Hash == hash[0] {
 					tx = verifiedTx
 					break
 				}
@@ -510,7 +507,7 @@ func (chain *blockChain) buildCache(size uint64) {
 		start = chain.latestBlock.Height - (size - 1)
 	}
 
-	for i := start; i < chain.latestBlock.Height; i++ {
+	for i := start; i <= chain.latestBlock.Height; i++ {
 		chain.topBlocks.Add(i, chain.QueryBlockHeaderByHeight(i, false))
 	}
 }

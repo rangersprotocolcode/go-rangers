@@ -93,9 +93,7 @@ func (chain *groupChain) AddGroup(group *types.Group) error {
 		return fmt.Errorf("nil group")
 	}
 
-	if logger != nil {
-		logger.Debugf("Group chain add group %+v", common.Bytes2Hex(group.Id))
-	}
+	logger.Debugf("Group chain add group %+v", common.Bytes2Hex(group.Id))
 	if exist, _ := chain.groups.Has(group.Id); exist {
 		notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group})
 		return common.ErrGroupAlreadyExist

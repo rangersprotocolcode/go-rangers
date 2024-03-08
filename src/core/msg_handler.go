@@ -22,7 +22,6 @@ import (
 	"com.tuntun.rangers/node/src/middleware/notify"
 	middleware_pb "com.tuntun.rangers/node/src/middleware/pb"
 	"com.tuntun.rangers/node/src/middleware/types"
-	"com.tuntun.rangers/node/src/network"
 	"com.tuntun.rangers/node/src/service"
 	"com.tuntun.rangers/node/src/utility"
 	"github.com/golang/protobuf/proto"
@@ -36,10 +35,6 @@ func initChainHandler() {
 
 	notify.BUS.Subscribe(notify.NewBlock, handler.newBlockHandler)
 	notify.BUS.Subscribe(notify.TransactionReq, handler.transactionReqHandler)
-}
-
-func (c *ChainHandler) Handle(sourceId string, msg network.Message) error {
-	return nil
 }
 
 func (ch ChainHandler) transactionReqHandler(msg notify.Message) {

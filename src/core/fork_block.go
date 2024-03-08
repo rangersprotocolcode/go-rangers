@@ -146,11 +146,12 @@ func (fork *blockChainFork) destroy() {
 	}
 	fork.db.Delete([]byte(blockCommonAncestorHeightKey))
 	fork.db.Delete([]byte(latestBlockHeightKey))
+	fork.db.Close()
 }
 
 func (fork *blockChainFork) getBlockByHash(hash common.Hash) *types.Block {
 	bytes, _ := fork.db.Get(hash.Bytes())
-	if bytes == nil || len(bytes) == 0 {
+	if len(bytes) == 0 {
 		return nil
 	}
 	block, err := types.UnMarshalBlock(bytes)
@@ -224,7 +225,7 @@ func (fork *blockChainFork) insertBlock(block *types.Block) error {
 
 func (fork *blockChainFork) getBlock(height uint64) *types.Block {
 	bytes, _ := fork.db.Get(generateHeightKey(height))
-	if bytes == nil || len(bytes) == 0 {
+	if len(bytes) == 0 {
 		return nil
 	}
 	block, err := types.UnMarshalBlock(bytes)
