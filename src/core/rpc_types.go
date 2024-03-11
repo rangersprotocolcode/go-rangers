@@ -140,12 +140,22 @@ func ConvertBlockByHeader(bh *types.BlockHeader) *RPCBlock {
 	totalReward := service.GetTotalReward(bh.Height)
 	block.TotalReward = strconv.FormatFloat(totalReward, 'f', -1, 64)
 
-	//adapt eth rpc,return []common.Hash while fullTx is false,[]RPCTransaction while fullTx is true
-	block.Txs = make([]interface{}, 0)
 	//uncle has to be this value(rlpHash([]*Header(nil))) for pass go ethereum client verify because tx uncles is empty
 	block.UncleHash = common.HexToHash("0x1dcc4de8dec75d7aab85b567b6ccd41ad312451b948a7413f0a142fd40d49347")
-	//transactionsRoot  has to be this value(EmptyRootHash) for pass go ethereum client verify because tx uncles is empty
-	block.TransactionsRoot = common.HexToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
+
+	if len(bh.Transactions) == 0 {
+		//adapt eth rpc,return []common.Hash while fullTx is false,[]RPCTransaction while fullTx is true
+		block.Txs = make([]interface{}, 0)
+		//transactionsRoot  has to be this value(EmptyRootHash) for pass go ethereum client verify because tx uncles is empty
+		block.TransactionsRoot = common.HexToHash("0x56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421")
+	} else {
+		transactions := make([]interface{}, 0)
+		for _, hash := range bh.Transactions {
+			transactions = append(transactions, hash)
+		}
+		block.Txs = transactions
+		block.TransactionsRoot = bh.StateTree
+	}
 
 	preBlock := GetBlockChain().QueryBlockByHash(bh.PreHash)
 	if preBlock != nil {

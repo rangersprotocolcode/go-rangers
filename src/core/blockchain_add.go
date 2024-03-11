@@ -154,62 +154,66 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 		return types.AddBlockFailed, nil
 	}
 
-	chain.markAddBlock(blockByte)
-	if !chain.saveBlockByHash(remoteBlock.Header.Hash, blockByte) {
-		return types.AddBlockFailed, nil
-	}
-
 	headerByte, err := types.MarshalBlockHeader(remoteBlock.Header)
 	if err != nil {
 		logger.Errorf("Fail to json Marshal header, error:%s", err.Error())
 		return types.AddBlockFailed, nil
 	}
-	if !chain.saveBlockByHeight(remoteBlock.Header.Height, headerByte) {
-		return types.AddBlockFailed, nil
+
+	if dbErr := chain.markAddBlock(blockByte); dbErr != nil {
+		panic(dbErr)
 	}
-
-	saveStateResult, accountDB, receipts := chain.saveBlockState(remoteBlock)
-
+	if dbErr := chain.saveBlockByHash(remoteBlock.Header.Hash, blockByte); dbErr != nil {
+		panic(dbErr)
+	}
+	if dbErr := chain.saveBlockByHeight(remoteBlock.Header.Height, headerByte); dbErr != nil {
+		panic(dbErr)
+	}
+	saveStateResult, accountDB, receipts, dbErr := chain.saveBlockState(remoteBlock)
+	if dbErr != nil {
+		panic(dbErr)
+	}
 	if !saveStateResult {
 		return types.AddBlockFailed, nil
 	}
-
-	chain.updateVerifyHash(remoteBlock)
+	if dbErr := chain.updateVerifyHash(remoteBlock); dbErr != nil {
+		panic(dbErr)
+	}
 
 	chain.updateTxPool(remoteBlock, receipts)
 	chain.topBlocks.Add(remoteBlock.Header.Height, remoteBlock.Header)
 
-	if !chain.updateLastBlock(accountDB, remoteBlock, headerByte) {
-		return types.AddBlockFailed, headerByte
+	if dbErr := chain.updateLastBlock(accountDB, remoteBlock, headerByte); dbErr != nil {
+		panic(dbErr)
 	}
 	if chain.latestBlock != nil {
 		common.SetBlockHeight(chain.latestBlock.Height)
 	}
-	chain.eraseAddBlockMark()
+	if dbErr := chain.eraseAddBlockMark(); dbErr != nil {
+		panic(dbErr)
+	}
 	chain.successOnChainCallBack(remoteBlock)
 
 	return types.AddBlockSucc, headerByte
 }
 
-func (chain *blockChain) saveBlockByHash(hash common.Hash, blockByte []byte) bool {
+func (chain *blockChain) saveBlockByHash(hash common.Hash, blockByte []byte) error {
 	err := chain.hashDB.Put(hash.Bytes(), blockByte)
 	if err != nil {
 		logger.Errorf("Fail to put block hash %s  error:%s", hash.String(), err.Error())
-		return false
 	}
-	return true
+	return err
 }
 
-func (chain *blockChain) saveBlockByHeight(height uint64, headerByte []byte) bool {
+func (chain *blockChain) saveBlockByHeight(height uint64, headerByte []byte) error {
 	err := chain.heightDB.Put(generateHeightKey(height), headerByte)
 	if err != nil {
 		logger.Errorf("Fail to put block height:%d  error:%s", height, err.Error())
-		return false
 	}
-	return true
+	return err
 }
 
-func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountDB, types.Receipts) {
+func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountDB, types.Receipts, error) {
 	var state *account.AccountDB
 	var receipts types.Receipts
 	if value, exit := chain.verifiedBlocks.Get(b.Header.Hash); exit {
@@ -223,31 +227,31 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 		executeTxResult, state, receipts = chain.executeTransaction(b)
 		if !executeTxResult {
 			logger.Errorf("Fail to execute txs!")
-			return false, state, receipts
+			return false, state, receipts, nil
 		}
 	}
 
 	root, err := state.Commit(true)
 	if err != nil {
 		logger.Errorf("State commit error:%s", err.Error())
-		return false, state, receipts
+		return false, state, receipts, err
 	}
 
 	trieDB := middleware.AccountDBManagerInstance.GetTrieDB()
 	err = trieDB.Commit(root, false)
 	if err != nil {
 		logger.Errorf("Trie commit error:%s", err.Error())
-		return false, state, receipts
+		return false, state, receipts, err
 	}
-	return true, state, receipts
+	return true, state, receipts, nil
 }
 
-func (chain *blockChain) updateLastBlock(state *account.AccountDB, block *types.Block, headerJson []byte) bool {
+func (chain *blockChain) updateLastBlock(state *account.AccountDB, block *types.Block, headerJson []byte) error {
 	header := block.Header
 	err := chain.heightDB.Put([]byte(latestBlockKey), headerJson)
 	if err != nil {
 		logger.Errorf("Fail to put %s, error:%s", latestBlockKey, err.Error())
-		return false
+		return err
 	}
 
 	chain.latestBlock = header
@@ -255,14 +259,18 @@ func (chain *blockChain) updateLastBlock(state *account.AccountDB, block *types.
 
 	middleware.AccountDBManagerInstance.SetLatestStateDB(state, block.Header.RequestIds, block.Header.Height)
 	logger.Debugf("Update latestStateDB:%s height:%d", header.StateTree.Hex(), header.Height)
-
-	return true
+	return nil
 }
 
-func (chain *blockChain) updateVerifyHash(block *types.Block) {
+func (chain *blockChain) updateVerifyHash(block *types.Block) error {
 	verifyHash := consensusHelper.VerifyHash(block)
-	chain.verifyHashDB.Put(utility.UInt64ToByte(block.Header.Height), verifyHash.Bytes())
-	logger.Debugf("Update verify hash.Height:%d,verifyHash:%s", utility.UInt64ToByte(block.Header.Height), verifyHash.String())
+	err := chain.verifyHashDB.Put(utility.UInt64ToByte(block.Header.Height), verifyHash.Bytes())
+	if err != nil {
+		logger.Errorf("Fail to put verify hash:%d,error:%s", block.Header.Height, err.Error())
+	} else {
+		logger.Debugf("Update verify hash.Height:%d,verifyHash:%s", utility.UInt64ToByte(block.Header.Height), verifyHash.String())
+	}
+	return err
 }
 
 func (chain *blockChain) updateTxPool(block *types.Block, receipts types.Receipts) {

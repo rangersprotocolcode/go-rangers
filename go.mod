@@ -1,6 +1,6 @@
 module com.tuntun.rangers/node
 
-go 1.19
+go 1.17
 
 require (
 	github.com/VictoriaMetrics/fastcache v1.5.7

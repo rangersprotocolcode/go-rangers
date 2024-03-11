@@ -213,13 +213,17 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 			}
 			pool.batch.Put(hash.Bytes(), executedTxBytes)
 			if pool.batch.ValueSize() > 100*1024 {
-				pool.batch.Write()
+				if dbErr := pool.batch.Write(); dbErr != nil {
+					panic(dbErr)
+				}
 				pool.batch.Reset()
 			}
 			pool.refreshGateNonce(tx)
 		}
 		if pool.batch.ValueSize() > 0 {
-			pool.batch.Write()
+			if dbErr := pool.batch.Write(); dbErr != nil {
+				panic(dbErr)
+			}
 			pool.batch.Reset()
 		}
 	}
