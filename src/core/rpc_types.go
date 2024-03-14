@@ -154,7 +154,7 @@ func ConvertBlockByHeader(bh *types.BlockHeader) *RPCBlock {
 			transactions = append(transactions, hash)
 		}
 		block.Txs = transactions
-		block.TransactionsRoot = bh.StateTree
+		block.TransactionsRoot = bh.TxTree
 	}
 
 	preBlock := GetBlockChain().QueryBlockByHash(bh.PreHash)
