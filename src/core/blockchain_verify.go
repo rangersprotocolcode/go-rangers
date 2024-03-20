@@ -119,7 +119,7 @@ func (chain *blockChain) missTransaction(bh types.BlockHeader, txs []*types.Tran
 		error := castorId.Deserialize(bh.Castor)
 		if error != nil {
 			logger.Errorf("Groupsig id deserialize error:%s" + error.Error())
-			return false, missing, transactions
+			return true, missing, transactions
 		}
 
 		hashList := make([]common.Hashes, 0, requestTxCountThreshold)
