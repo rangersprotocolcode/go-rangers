@@ -38,9 +38,9 @@ func (s *server) Init(gateAddr, outerGateAddr string, selfMinerId []byte, consen
 	}
 
 	s.isSending = isSending
-	if s.isSending {
-		s.reader.Init(outerGateAddr, "/srv/node", bizLogger)
-	}
+	//if s.isSending {
+	s.reader.Init(outerGateAddr, "/srv/node", bizLogger)
+	//}
 }
 
 func (s *server) InitTx(tx string) {
