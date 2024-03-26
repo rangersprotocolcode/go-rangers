@@ -27,8 +27,8 @@ import (
 )
 
 const (
-	expiredRing     = 6
-	txCycleInterval = time.Minute * 12
+	expiredRing     = 2
+	txCycleInterval = time.Minute * 1
 )
 
 var (
