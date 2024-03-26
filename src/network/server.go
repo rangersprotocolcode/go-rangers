@@ -52,9 +52,9 @@ func (s *server) InitTx(tx string) {
 }
 
 func (s *server) SendToJSONRPC(msg []byte, sessionId string, requestId uint64) {
-	if s.isSending {
-		s.reader.Send(sessionId, methodClientJSONRpc, msg, requestId)
-	}
+	//if s.isSending {
+	s.reader.Send(sessionId, methodClientJSONRpc, msg, requestId)
+	//}
 }
 
 func (s *server) SendToClientReader(id string, msg []byte, nonce uint64) {
