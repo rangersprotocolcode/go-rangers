@@ -20,7 +20,6 @@ import (
 	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/middleware/db"
 	"com.tuntun.rangers/node/src/middleware/types"
-	"encoding/json"
 	"github.com/gogf/gf/container/gmap"
 	"sync"
 	"time"
@@ -59,7 +58,7 @@ func newSimpleContainer(l int) *simpleContainer {
 		txAnnualRingMap: sync.Map{},
 		txCycleTicker:   time.NewTicker(txCycleInterval),
 	}
-	c.loadPendingTxList()
+	//c.loadPendingTxList()
 	go c.loop()
 	return c
 }
@@ -107,37 +106,38 @@ func (c *simpleContainer) remove(txHashList []interface{}) {
 	//c.flush()
 }
 
-func (c *simpleContainer) flush() {
-	txList := c.asSlice()
-	data, err := json.Marshal(txList)
-	if err != nil {
-		txPoolLogger.Error("json marshal pending tx list error:%s", err.Error())
-		return
-	}
-	err = c.db.Put(pendingTxListKey, data)
-	if err != nil {
-		txPoolLogger.Error("pending tx list db put error:%s", err.Error())
-	}
-}
+//
+//func (c *simpleContainer) flush() {
+//	txList := c.asSlice()
+//	data, err := json.Marshal(txList)
+//	if err != nil {
+//		txPoolLogger.Error("json marshal pending tx list error:%s", err.Error())
+//		return
+//	}
+//	err = c.db.Put(pendingTxListKey, data)
+//	if err != nil {
+//		txPoolLogger.Error("pending tx list db put error:%s", err.Error())
+//	}
+//}
 
-func (c *simpleContainer) loadPendingTxList() {
-	data, _ := c.db.Get(pendingTxListKey)
-	if data == nil {
-		return
-	}
-
-	var pendingTxList []*types.Transaction
-	err := json.Unmarshal(data, &pendingTxList)
-	if err != nil {
-		txPoolLogger.Error("json unmarshal pending tx list error:%s", err.Error())
-		return
-	}
-	for _, item := range pendingTxList {
-		c.data.Set(item.Hash, item)
-		c.txAnnualRingMap.Store(item.Hash, uint64(0))
-		txPoolLogger.Debugf("load pending tx:%s", item.Hash.String())
-	}
-}
+//func (c *simpleContainer) loadPendingTxList() {
+//	data, _ := c.db.Get(pendingTxListKey)
+//	if data == nil {
+//		return
+//	}
+//
+//	var pendingTxList []*types.Transaction
+//	err := json.Unmarshal(data, &pendingTxList)
+//	if err != nil {
+//		txPoolLogger.Error("json unmarshal pending tx list error:%s", err.Error())
+//		return
+//	}
+//	for _, item := range pendingTxList {
+//		c.data.Set(item.Hash, item)
+//		c.txAnnualRingMap.Store(item.Hash, uint64(0))
+//		txPoolLogger.Debugf("load pending tx:%s", item.Hash.String())
+//	}
+//}
 
 func (c *simpleContainer) loop() {
 	for {
