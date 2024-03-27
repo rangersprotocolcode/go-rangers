@@ -27,7 +27,7 @@ import (
 )
 
 const (
-	expiredRing     = 2
+	expiredRing     = 5
 	txCycleInterval = time.Minute * 1
 )
 
@@ -95,7 +95,7 @@ func (c *simpleContainer) push(tx *types.Transaction) {
 	if c.data.Size() < c.limit {
 		c.data.Set(tx.Hash, tx)
 		c.txAnnualRingMap.Store(tx.Hash, uint64(0))
-		c.flush()
+		//c.flush()
 	}
 }
 
@@ -104,7 +104,7 @@ func (c *simpleContainer) remove(txHashList []interface{}) {
 	for _, item := range txHashList {
 		c.txAnnualRingMap.Delete(item)
 	}
-	c.flush()
+	//c.flush()
 }
 
 func (c *simpleContainer) flush() {
