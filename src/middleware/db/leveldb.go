@@ -55,7 +55,7 @@ func NewLDBDatabase(file string, cache int, handles int) (*LDBDatabase, error) {
 	}
 
 	path := "storage" + strconv.Itoa(common.InstanceIndex) + "/" + file
-	db, err := newLevelDBInstance(path, cache, handles)
+	db, err := newLevelDBInstance(path, 8, 8)
 	if err != nil {
 		return nil, err
 	}
