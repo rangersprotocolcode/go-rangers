@@ -68,6 +68,8 @@ func (p *Processor) prepareMiner() {
 		groups = append(groups, sgi)
 		stdLogger.Infof("load group=%v, beginHeight=%v, topHeight=%v\n", sgi.GroupID.ShortS(), sgi.GetGroupHeader().WorkHeight, topHeight)
 		if sgi.MemExist(p.GetMinerID()) {
+			go p.NetServer.JoinGroupNet(sgi.GroupID.GetHexString())
+
 			jg := p.belongGroups.GetJoinedGroupInfo(sgi.GroupID)
 			if jg == nil {
 				stdLogger.Infof("prepareMiner get join group fail, gid=%v\n", sgi.GroupID.ShortS())
@@ -77,7 +79,7 @@ func (p *Processor) prepareMiner() {
 		}
 	}
 	for i := len(groups) - 1; i >= 0; i-- {
-		p.acceptGroup(groups[i])
+		p.acceptGroup(groups[i], false)
 	}
 	stdLogger.Infof("prepare finished")
 }

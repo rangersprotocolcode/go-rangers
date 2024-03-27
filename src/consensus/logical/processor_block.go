@@ -140,17 +140,6 @@ func (p *Processor) blockPreview(bh *types.BlockHeader) string {
 	return fmt.Sprintf("hash=%v, height=%v, curTime=%v, preHash=%v, preTime=%v", bh.Hash.ShortS(), bh.Height, bh.CurTime, bh.PreHash.ShortS(), bh.PreTime)
 }
 
-func (p *Processor) prepareForCast(sgi *model.GroupInfo) {
-	p.NetServer.JoinGroupNet(sgi.GroupID.GetHexString())
-
-	bc := NewBlockContext(p, sgi)
-
-	stdLogger.Debugf("prepareForCast current ID %v.\n", p.GetMinerID().ShortS())
-
-	b := p.AddBlockContext(bc)
-	stdLogger.Infof("(proc:%v) prepareForCast Add BlockContext result = %v, bc_size=%v.\n", p.getPrefix(), b, p.blockContexts.blockContextSize())
-}
-
 func (p *Processor) getNearestBlockByHeight(h uint64) *types.Block {
 	for {
 		b := p.MainChain.QueryBlock(h)
