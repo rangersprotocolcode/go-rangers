@@ -144,7 +144,7 @@ func (p *Processor) updateGlobalGroups() bool {
 		}
 		sgi := model.ConvertToGroupInfo(g)
 		stdLogger.Debugf("updateGlobalGroups:gid=%v, workHeight=%v, topHeight=%v", gid.ShortS(), g.Header.WorkHeight, top)
-		p.acceptGroup(sgi, true)
+		p.acceptGroup(sgi)
 	}
 	return true
 }

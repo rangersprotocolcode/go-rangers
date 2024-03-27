@@ -99,7 +99,7 @@ func (p *Processor) onGroupAddSuccess(message notify.Message) {
 		return
 	}
 	sgi := model.ConvertToGroupInfo(&group)
-	p.acceptGroup(sgi, true)
+	p.acceptGroup(sgi)
 
 	group_create.GroupCreateProcessor.OnGroupAddSuccess(sgi)
 }
@@ -132,22 +132,20 @@ func (p *Processor) onGroupAccept(message notify.Message) {
 		return
 	}
 	sgi := model.ConvertToGroupInfo(&group)
-	p.acceptGroup(sgi, true)
+	p.acceptGroup(sgi)
 }
 
-func (p *Processor) acceptGroup(staticGroup *model.GroupInfo, connect bool) {
+func (p *Processor) acceptGroup(staticGroup *model.GroupInfo) {
 	add := p.globalGroups.AddGroupInfo(staticGroup)
 	blog := newBizLog("acceptGroup")
 	blog.debug("Add to Global static groups, result=%v, groups=%v.", add, p.globalGroups.GroupSize())
 	if staticGroup.MemExist(p.GetMinerID()) {
-		p.prepareForCast(staticGroup, connect)
+		p.prepareForCast(staticGroup)
 	}
 }
 
-func (p *Processor) prepareForCast(sgi *model.GroupInfo, connect bool) {
-	if connect {
-		p.NetServer.JoinGroupNet(sgi.GroupID.GetHexString())
-	}
+func (p *Processor) prepareForCast(sgi *model.GroupInfo) {
+	p.NetServer.JoinGroupNet(sgi.GroupID.GetHexString())
 
 	bc := NewBlockContext(p, sgi)
 
