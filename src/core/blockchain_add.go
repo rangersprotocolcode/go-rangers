@@ -218,10 +218,11 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 
 	} else {
 		var executeTxResult bool
+		logger.Errorf("fail to get verifiedBlock from cache, %s", b.Header.Hash.String())
 
 		executeTxResult, state, receipts = chain.executeTransaction(b)
 		if !executeTxResult {
-			logger.Errorf("Fail to execute txs!")
+			logger.Errorf("fail to execute txs!")
 			return false, state, receipts
 		}
 	}

@@ -90,7 +90,7 @@ func initBlockChain() error {
 		return err
 	}
 
-	chain.verifiedBlocks, err = lru.New(10)
+	chain.verifiedBlocks, err = lru.New(20)
 	if err != nil {
 		logger.Errorf("Init cache error:%s", err.Error())
 		return err
