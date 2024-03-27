@@ -32,7 +32,7 @@ func main() {
 }
 
 func initSysParam() {
-	runtime.GOMAXPROCS(128)
+	runtime.GOMAXPROCS(8)
 	debug.SetGCPercent(30)
 	debug.SetMaxStack(1 * 1000 * 1000 * 1000)
 
