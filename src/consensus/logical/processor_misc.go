@@ -59,16 +59,12 @@ func (p *Processor) prepareMiner() {
 		if coreGroup.Id == nil || len(coreGroup.Id) == 0 {
 			continue
 		}
-		needBreak := false
+
 		sgi := model.ConvertToGroupInfo(coreGroup)
-		//if sgi.Dismissed(topHeight) {
-		//	needBreak = true
-		//	genesis := p.GroupChain.GetGroupByHeight(0)
-		//	if coreGroup == nil {
-		//		panic("get genesis group nil")
-		//	}
-		//	sgi = NewSGIFromCoreGroup(genesis)
-		//}
+		if sgi.NeedDismiss(topHeight) {
+			continue
+		}
+
 		groups = append(groups, sgi)
 		stdLogger.Infof("load group=%v, beginHeight=%v, topHeight=%v\n", sgi.GroupID.ShortS(), sgi.GetGroupHeader().WorkHeight, topHeight)
 		if sgi.MemExist(p.GetMinerID()) {
@@ -78,9 +74,6 @@ func (p *Processor) prepareMiner() {
 			} else {
 				p.belongGroups.JoinGroup(jg, p.mi.ID)
 			}
-		}
-		if needBreak {
-			break
 		}
 	}
 	for i := len(groups) - 1; i >= 0; i-- {
