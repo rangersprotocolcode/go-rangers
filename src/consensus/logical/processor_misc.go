@@ -76,6 +76,8 @@ func (p *Processor) prepareMiner() {
 			}
 		}
 	}
+
+	stdLogger.Infof("prepare %d groups", len(groups))
 	for i := len(groups) - 1; i >= 0; i-- {
 		p.acceptGroup(groups[i])
 	}

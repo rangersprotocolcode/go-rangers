@@ -325,20 +325,3 @@ func (chain *groupChain) DeleteJoinedGroup(id []byte) bool {
 	err := chain.joinedGroups.Delete(id)
 	return err == nil
 }
-
-func dumpGroup(group *types.Group) {
-	fmt.Printf("dump group:\n")
-	fmt.Printf("group id:%s\n", common.ToHex(group.Id))
-	fmt.Printf("group pubkey:%s\n", common.ToHex(group.PubKey))
-	fmt.Printf("group sig:%s\n", common.ToHex(group.Signature))
-
-	fmt.Printf("group members:\n")
-	for index, member := range group.Members {
-		fmt.Printf("index:%v,member:%s\n", index, common.ToHex(member))
-	}
-
-	fmt.Printf("group hash:%s:\n", group.Header.Hash.String())
-	fmt.Printf("group parent:%s:\n", common.ToHex(group.Header.Parent))
-	fmt.Printf("group pre:%s:\n", common.ToHex(group.Header.PreGroup))
-
-}
