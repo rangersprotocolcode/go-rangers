@@ -215,7 +215,7 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 		bb := value.(*castingBlock)
 		state = bb.state
 		receipts = bb.receipts
-
+		logger.Errorf("get verifiedBlock from cache, %s", b.Header.Hash.String())
 	} else {
 		var executeTxResult bool
 		logger.Errorf("fail to get verifiedBlock from cache, %s", b.Header.Hash.String())
