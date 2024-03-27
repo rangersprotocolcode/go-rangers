@@ -388,3 +388,10 @@ func (p *syncProcessor) finishCurrentSync(syncResult bool) {
 	p.syncing = false
 	p.logger.Debugf("finish current sync:%v", syncResult)
 }
+
+func GetCandidateHeight() uint64 {
+	if SyncProcessor != nil {
+		return SyncProcessor.candidateInfo.Height
+	}
+	return 0
+}

@@ -238,11 +238,7 @@ func syncChainInfo() {
 		for {
 			<-timer.C
 
-			var candidateHeight uint64
-			if core.SyncProcessor != nil {
-				candidate := core.SyncProcessor.GetCandidateInfo()
-				candidateHeight = candidate.Height
-			}
+			var candidateHeight = core.GetCandidateHeight()
 			topBlock := core.GetBlockChain().TopBlock()
 			jsonObject := types.NewJSONObject()
 			jsonObject.Put("chainId", common.ChainId(utility.MaxUint64))
