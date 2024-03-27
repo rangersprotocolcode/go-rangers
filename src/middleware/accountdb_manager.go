@@ -100,6 +100,16 @@ func (manager *AccountDBManager) loop() {
 			case message := <-DataChannel.GetRcvedTx():
 				manager.logger.Debugf("write rcv message. hash: %s, nonce: %d", message.Tx.Hash.String(), message.Nonce)
 				manager.waitingTxs.heapPush(message)
+
+				//txRaw := message.Tx
+				//txRaw.RequestId = message.Nonce
+				//if txRaw.Type == 0 || 0 == txRaw.RequestId {
+				//	msg := notify.ClientTransactionMessage{Tx: txRaw}
+				//	notify.BUS.Publish(notify.ClientTransactionWrite, &msg)
+				//} else {
+				//	manager.waitingTxs.heapPush(message)
+				//}
+
 			}
 		}
 	}()
