@@ -79,7 +79,7 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 	}
 
 	block := types.Block{Header: &bh, Transactions: transactions}
-	executeTxResult, state, receipts := chain.executeTransaction(&block)
+	executeTxResult, _, _ := chain.executeTransaction(&block)
 	if !executeTxResult {
 		return nil, -1
 	}
@@ -87,7 +87,6 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 		chain.verifiedBodyCache.Add(block.Header.Hash, block.Transactions)
 	}
 
-	chain.verifiedBlocks.Add(block.Header.Hash, &castingBlock{state: state, receipts: receipts})
 	return nil, 0
 }
 
