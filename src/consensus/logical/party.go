@@ -13,6 +13,8 @@ type Party interface {
 	Update(msg model.ConsensusMessage)
 
 	StoreMessage(msg model.ConsensusMessage)
+	StoreMessages(msg []model.ConsensusMessage)
+	GetFutureMessage() []model.ConsensusMessage
 
 	FirstRound() Round
 
@@ -108,8 +110,19 @@ func (p *baseParty) StoreMessage(msg model.ConsensusMessage) {
 	p.futureMessages = append(p.futureMessages, msg)
 }
 
+func (p *baseParty) StoreMessages(msgs []model.ConsensusMessage) {
+	for _, msg := range msgs {
+		p.StoreMessage(msg)
+	}
+}
+
+func (p *baseParty) GetFutureMessage() []model.ConsensusMessage {
+	return p.futureMessages
+}
+
 type SignParty struct {
 	baseParty
+	ChangedId chan []byte
 }
 
 func (p *SignParty) Start() *Error {
