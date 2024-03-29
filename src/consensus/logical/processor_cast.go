@@ -323,7 +323,7 @@ func (p *Processor) blockProposal() {
 	//proveHash, root := p.GenProveHashs(height, worker.getBaseBH().Random, gb.MemIds)
 
 	middleware.PerfLogger.Infof("start cast block, last: %v, height: %v", utility.GetTime().Sub(start), height)
-	block := p.MainChain.CastBlock(start, uint64(height), pi.Big(), common.Hash{}, qn, p.GetMinerID().Serialize(), gid.Serialize())
+	block := p.MainChain.CastBlock(start, height, pi.Big(), common.Hash{}, qn, p.GetMinerID().Serialize(), gid.Serialize())
 	if block == nil {
 		blog.log("MainChain::CastingBlock failed, height=%v", height)
 		return

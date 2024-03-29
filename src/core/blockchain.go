@@ -24,6 +24,7 @@ import (
 	lru "github.com/hashicorp/golang-lru"
 	"math/big"
 	"os"
+	"sort"
 	"strconv"
 
 	"com.tuntun.rangers/node/src/middleware"
@@ -158,7 +159,11 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		middleware.RUnLockBlockchain("castblock")
 		return nil
 	}
-	txs := chain.transactionPool.PackForCast(height)
+
+	txs := types.Transactions(chain.transactionPool.PackForCast(height))
+	if 0 != len(txs) {
+		sort.Sort(txs)
+	}
 	middleware.RUnLockBlockchain("castblock")
 
 	block := new(types.Block)
@@ -178,28 +183,52 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 
 	middleware.PerfLogger.Infof("fin cast object. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
 
+	if common.IsProposal020() {
+		transactionHashes := make([]common.Hashes, len(txs))
+		for i, transaction := range txs {
+			hashes := common.Hashes{}
+			hashes[0] = transaction.Hash
+			hashes[1] = transaction.SubHash
+			transactionHashes[i] = hashes
+
+		}
+		block.Header.Transactions = transactionHashes
+		block.Header.TxTree = calcTxTree(block.Transactions)
+
+		go chain.runTransactions(block, latestBlock, height, timestamp)
+	} else {
+		chain.runTransactions(block, latestBlock, height, timestamp)
+	}
+
+	return block
+}
+
+func (chain *blockChain) runTransactions(block *types.Block, latestBlock *types.BlockHeader, height uint64, timestamp time.Time) {
 	preStateRoot := common.BytesToHash(latestBlock.StateTree.Bytes())
 	state, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(preStateRoot)
 	if err != nil {
 		logger.Errorf("Fail to new account db while casting block!Latest block height:%d,error:%s", latestBlock.Height, err.Error())
-		return nil
+		return
 	}
 
 	executor := newVMExecutor(state, block, "casting")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 	middleware.PerfLogger.Infof("fin execute txs. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
 
-	transactionHashes := make([]common.Hashes, len(transactions))
-	block.Transactions = transactions
-	for i, transaction := range transactions {
-		hashes := common.Hashes{}
-		hashes[0] = transaction.Hash
-		hashes[1] = transaction.SubHash
-		transactionHashes[i] = hashes
+	if !common.IsProposal020() {
+		transactionHashes := make([]common.Hashes, len(transactions))
+		block.Transactions = transactions
+		for i, transaction := range transactions {
+			hashes := common.Hashes{}
+			hashes[0] = transaction.Hash
+			hashes[1] = transaction.SubHash
+			transactionHashes[i] = hashes
 
+		}
+		block.Header.Transactions = transactionHashes
+		block.Header.TxTree = calcTxTree(block.Transactions)
 	}
-	block.Header.Transactions = transactionHashes
-	block.Header.TxTree = calcTxTree(block.Transactions)
+
 	block.Header.EvictedTxs = evictedTxs
 	middleware.PerfLogger.Infof("fin calcTxTree. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
 
@@ -216,7 +245,6 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	logger.Debugf("Casting block %d,hash:%v,qn:%d,tx:%d,tx tree root:%v,prove value:%v,state tree root:%s,pre state tree:%s",
 		height, block.Header.Hash.String(), block.Header.TotalQN, len(block.Transactions), block.Header.TxTree.Hex(),
 		consensusHelper.VRFProve2Value(block.Header.ProveValue), block.Header.StateTree.String(), preStateRoot.String())
-	return block
 }
 
 func getRequestIdFromTransactions(transactions []*types.Transaction, lastOne map[string]uint64) map[string]uint64 {
