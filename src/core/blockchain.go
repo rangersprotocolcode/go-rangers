@@ -194,7 +194,7 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		}
 		block.Header.Transactions = transactionHashes
 		block.Header.TxTree = calcTxTree(block.Transactions)
-
+		block.Header.Hash = block.Header.GenHash()
 		go chain.runTransactions(block, latestBlock, height, timestamp)
 	} else {
 		chain.runTransactions(block, latestBlock, height, timestamp)
