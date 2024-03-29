@@ -85,6 +85,10 @@ func (si SignInfo) GetVersion() int32 {
 	return si.version
 }
 
+type ConsensusMessage interface {
+	GenHash() common.Hash
+}
+
 type CreateGroupPingMessage struct {
 	FromGroupID groupsig.ID
 	PingID      string

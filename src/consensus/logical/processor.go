@@ -57,15 +57,19 @@ type Processor struct {
 	NetServer  net.NetworkServer
 
 	lock sync.Mutex
+
+	partyManager sync.Map
 }
 
-func (p Processor) getPrefix() string {
+func (p *Processor) getPrefix() string {
 	return p.GetMinerID().ShortS()
 }
 
 func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joinedGroupStorage *access.JoinedGroupStorage) bool {
 	p.ready = false
 	p.lock = sync.Mutex{}
+	p.partyManager = sync.Map{}
+
 	p.conf = conf
 	p.futureVerifyMsgs = NewFutureMessageHolder()
 
@@ -100,11 +104,11 @@ func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joined
 	return true
 }
 
-func (p Processor) GetMinerID() groupsig.ID {
+func (p *Processor) GetMinerID() groupsig.ID {
 	return p.mi.GetMinerID()
 }
 
-func (p Processor) GetMinerInfo() *model.MinerInfo {
+func (p *Processor) GetMinerInfo() *model.MinerInfo {
 	return &p.mi.MinerInfo
 }
 
@@ -171,7 +175,7 @@ func (p *Processor) getMinerPos(gid groupsig.ID, uid groupsig.ID) int32 {
 	return int32(sgi.GetMemberPosition(uid))
 }
 
-func (p Processor) GetGroup(gid groupsig.ID) *model.GroupInfo {
+func (p *Processor) GetGroup(gid groupsig.ID) *model.GroupInfo {
 	if g, err := p.globalGroups.GetGroupByID(gid); err != nil {
 		panic("GetSelfGroup failed.")
 	} else {
@@ -179,7 +183,7 @@ func (p Processor) GetGroup(gid groupsig.ID) *model.GroupInfo {
 	}
 }
 
-func (p Processor) getGroupPubKey(gid groupsig.ID) groupsig.Pubkey {
+func (p *Processor) getGroupPubKey(gid groupsig.ID) groupsig.Pubkey {
 	if g, err := p.globalGroups.GetGroupByID(gid); err != nil {
 		panic("GetSelfGroup failed.")
 	} else {
@@ -189,7 +193,7 @@ func (p Processor) getGroupPubKey(gid groupsig.ID) groupsig.Pubkey {
 }
 
 // getSignKey get the signature private key of the miner in a certain group
-func (p Processor) getSignKey(gid groupsig.ID) groupsig.Seckey {
+func (p *Processor) getSignKey(gid groupsig.ID) groupsig.Seckey {
 	if jg := p.belongGroups.GetJoinedGroupInfo(gid); jg != nil {
 		return jg.SignSecKey
 	}

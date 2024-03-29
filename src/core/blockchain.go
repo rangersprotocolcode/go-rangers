@@ -172,12 +172,13 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	block.Header = &types.BlockHeader{
 		CurTime:    timestamp,
 		Height:     height,
-		ProveValue: proveValue, Castor: castor,
-		GroupId:   groupid,
-		TotalQN:   latestBlock.TotalQN + qn,
-		StateTree: common.BytesToHash(latestBlock.StateTree.Bytes()),
-		PreHash:   latestBlock.Hash,
-		PreTime:   latestBlock.CurTime,
+		ProveValue: proveValue,
+		Castor:     castor,
+		GroupId:    groupid,
+		TotalQN:    latestBlock.TotalQN + qn,
+		StateTree:  common.BytesToHash(latestBlock.StateTree.Bytes()),
+		PreHash:    latestBlock.Hash,
+		PreTime:    latestBlock.CurTime,
 	}
 	block.Header.RequestIds = getRequestIdFromTransactions(block.Transactions, latestBlock.RequestIds)
 
