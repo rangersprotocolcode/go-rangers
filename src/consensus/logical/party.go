@@ -122,7 +122,7 @@ func (p *baseParty) GetFutureMessage() []model.ConsensusMessage {
 
 type SignParty struct {
 	baseParty
-	ChangedId chan []byte
+	ChangedId chan string
 }
 
 func (p *SignParty) Start() *Error {

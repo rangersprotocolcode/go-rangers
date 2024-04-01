@@ -1,6 +1,7 @@
 package logical
 
 import (
+	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/consensus/model"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"com.tuntun.rangers/node/src/utility"
@@ -20,63 +21,61 @@ func (p *Processor) OnMessageVerifyV2(cvm *model.ConsensusVerifyMessage) {
 	party.Update(cvm)
 }
 
-func (p *Processor) loadOrNewSignParty(key []byte) SignParty {
-	p.lock.Lock()
-	defer p.lock.Unlock()
+func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
+	p.partyLock.Lock()
+	defer p.partyLock.Unlock()
 
-	item, ok := p.partyManager.Load(key)
+	key := common.ToHex(keyBytes)
+	item, ok := p.partyManager[key]
 	if ok {
-		party := item.(SignParty)
-		return party
+		return item
 	}
 
 	party := SignParty{}
 	if nil != party.Start() {
-		p.partyManager.Store(key, party)
+		p.partyManager[key] = &party
 
 		// wait until finish
 		go func() {
-			var realKey []byte
+			var realKey string
 			for {
 				select {
 				// timeout
 				case <-time.After(10 * time.Second):
-					p.partyManager.Delete(key)
-					p.partyManager.Delete(realKey)
+					delete(p.partyManager, key)
+					delete(p.partyManager, realKey)
 					return
 				// finish signing
 				case <-party.Done:
-					p.partyManager.Delete(realKey)
+					delete(p.partyManager, realKey)
 					return
 				case realKey = <-party.ChangedId:
 					func() {
-						p.lock.Lock()
-						defer p.lock.Unlock()
+						p.partyLock.Lock()
+						defer p.partyLock.Unlock()
 
-						item, ok := p.partyManager.LoadAndDelete(key)
+						item, ok := p.partyManager[key]
 						if !ok {
+							// error
 							return
 						}
 
 						// check if already has some messages
-						item2, ok2 := p.partyManager.Load(realKey)
+						item2, ok2 := p.partyManager[realKey]
 						if ok2 {
 							// merging future messages
-							party := item.(Party)
-							part2 := item2.(Party)
-							party.StoreMessages(part2.GetFutureMessage())
-							p.partyManager.Store(realKey, party)
-						} else {
-							p.partyManager.Store(realKey, item)
+							item.StoreMessages(item2.GetFutureMessage())
 						}
 
+						p.partyManager[realKey] = item
+						delete(p.partyManager, key)
 					}()
 				}
 			}
 		}()
 	}
 
-	return party
+	return &party
 }
 
 func (p *Processor) generatePartyKey(bh types.BlockHeader) []byte {

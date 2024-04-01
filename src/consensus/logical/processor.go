@@ -58,7 +58,8 @@ type Processor struct {
 
 	lock sync.Mutex
 
-	partyManager sync.Map
+	partyLock    sync.RWMutex
+	partyManager map[string]Party
 }
 
 func (p *Processor) getPrefix() string {
@@ -68,7 +69,9 @@ func (p *Processor) getPrefix() string {
 func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joinedGroupStorage *access.JoinedGroupStorage) bool {
 	p.ready = false
 	p.lock = sync.Mutex{}
-	p.partyManager = sync.Map{}
+
+	p.partyManager = make(map[string]Party, 10)
+	p.partyLock = sync.RWMutex{}
 
 	p.conf = conf
 	p.futureVerifyMsgs = NewFutureMessageHolder()
