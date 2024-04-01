@@ -285,12 +285,12 @@ func (chain *blockChain) GenerateBlock(bh types.BlockHeader) *types.Block {
 	return block
 }
 
-func (chain *blockChain) VerifyBlock(bh types.BlockHeader) ([]common.Hashes, int8) {
+func (chain *blockChain) VerifyBlock(bh *types.BlockHeader) ([]common.Hashes, int8) {
 	msg := "VerifyCastingBlock: " + strconv.FormatUint(bh.Height, 10)
 	middleware.LockBlockchain(msg)
 	defer middleware.UnLockBlockchain(msg)
 
-	return chain.verifyBlock(bh, nil)
+	return chain.verifyBlock(bh, nil, true)
 }
 
 func (chain *blockChain) Height() uint64 {

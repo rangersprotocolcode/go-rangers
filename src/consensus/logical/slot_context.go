@@ -75,7 +75,7 @@ func (sc *SlotContext) initIfNeeded() bool {
 	if sc.slotStatus == SS_INITING {
 		slog := newSlowLog("InitSlot", 0.1)
 		slog.addStage("VerifyBlock")
-		lostTxs, ccr := core.GetBlockChain().VerifyBlock(*bh)
+		lostTxs, ccr := core.GetBlockChain().VerifyBlock(bh)
 		slog.endStage()
 		slog.log("height=%v, hash=%v, lost trans size %v , ret %v", bh.Height, bh.Hash.ShortS(), len(lostTxs), ccr)
 

@@ -1,7 +1,11 @@
 package logical
 
 import (
+	"com.tuntun.rangers/node/src/consensus/access"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
 	"com.tuntun.rangers/node/src/consensus/model"
+	"com.tuntun.rangers/node/src/consensus/net"
+	"com.tuntun.rangers/node/src/core"
 	"com.tuntun.rangers/node/src/middleware/log"
 	"errors"
 	"fmt"
@@ -13,8 +17,8 @@ type Party interface {
 	Update(msg model.ConsensusMessage)
 
 	StoreMessage(msg model.ConsensusMessage)
-	StoreMessages(msg []model.ConsensusMessage)
-	GetFutureMessage() []model.ConsensusMessage
+	StoreMessages(msg map[string]model.ConsensusMessage)
+	GetFutureMessage() map[string]model.ConsensusMessage
 
 	FirstRound() Round
 
@@ -29,13 +33,14 @@ type Party interface {
 
 type baseParty struct {
 	Done    chan byte
+	Err     chan error
 	started bool
 
 	mtx sync.Mutex
 	rnd Round
 
 	logger         log.Logger
-	futureMessages []model.ConsensusMessage
+	futureMessages map[string]model.ConsensusMessage
 }
 
 func (p *baseParty) String() string {
@@ -78,7 +83,7 @@ func (p *baseParty) Update(msg model.ConsensusMessage) {
 	switch p.round().CanAccept(msg) {
 	case 0:
 		if err := p.round().Update(msg); err != nil {
-			p.unlock()
+			p.Err <- err
 			return
 		}
 	case 1:
@@ -107,22 +112,28 @@ func (p *baseParty) Update(msg model.ConsensusMessage) {
 }
 
 func (p *baseParty) StoreMessage(msg model.ConsensusMessage) {
-	p.futureMessages = append(p.futureMessages, msg)
+	p.futureMessages[msg.GetMessageID()] = msg
 }
 
-func (p *baseParty) StoreMessages(msgs []model.ConsensusMessage) {
+func (p *baseParty) StoreMessages(msgs map[string]model.ConsensusMessage) {
 	for _, msg := range msgs {
 		p.StoreMessage(msg)
 	}
 }
 
-func (p *baseParty) GetFutureMessage() []model.ConsensusMessage {
+func (p *baseParty) GetFutureMessage() map[string]model.ConsensusMessage {
 	return p.futureMessages
 }
 
 type SignParty struct {
 	baseParty
-	ChangedId chan string
+	blockchain   core.BlockChain
+	minerReader  *access.MinerPoolReader
+	globalGroups *access.GroupAccessor
+	belongGroups *access.JoinedGroupStorage
+	ChangedId    chan string
+	mi           groupsig.ID
+	netServer    net.NetworkServer
 }
 
 func (p *SignParty) Start() *Error {
@@ -134,11 +145,15 @@ func (p *SignParty) Start() *Error {
 	}
 
 	p.started = true
+	p.ChangedId = make(chan string)
 	p.setRound(p.FirstRound())
 
 	return p.rnd.Start()
 }
 
 func (p *SignParty) FirstRound() Round {
-	return &round1{&baseRound{futureMessages: &p.futureMessages}}
+	return &round1{baseRound: &baseRound{futureMessages: p.futureMessages},
+		belongGroups: p.belongGroups, blockchain: p.blockchain,
+		minerReader: p.minerReader, globalGroups: p.globalGroups,
+		changedId: p.ChangedId, mi: p.mi, netServer: p.netServer}
 }

@@ -25,7 +25,7 @@ import (
 	"encoding/json"
 )
 
-func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transaction) ([]common.Hashes, int8) {
+func (chain *blockChain) verifyBlock(bh *types.BlockHeader, txs []*types.Transaction, setHash bool) ([]common.Hashes, int8) {
 	start := utility.GetTime()
 	logger.Infof("verifyBlock. hash:%v,height:%d,preHash:%v,len header tx:%d,len tx:%d", bh.Hash.String(), bh.Height, bh.PreHash.String(), len(bh.Transactions), len(txs))
 	defer func() {
@@ -45,7 +45,7 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 	pre := chain.queryBlockHeaderByHash(bh.PreHash)
 	if nil == pre {
 		if txs != nil {
-			chain.futureBlocks.Add(bh.PreHash, &types.Block{Header: &bh, Transactions: txs})
+			chain.futureBlocks.Add(bh.PreHash, &types.Block{Header: bh, Transactions: txs})
 		}
 		return nil, 2
 	}
@@ -59,7 +59,7 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 		}
 	}
 
-	miss, missingTx, transactions := chain.missTransaction(bh, txs)
+	miss, missingTx, transactions := chain.missTransaction(*bh, txs)
 	if miss {
 		return missingTx, 1
 	}
@@ -74,12 +74,12 @@ func (chain *blockChain) verifyBlock(bh types.BlockHeader, txs []*types.Transact
 	}
 
 	logger.Debugf("validateTxRoot,tx tree root:%v,len txs:%d,miss len:%d", bh.TxTree.Hex(), len(transactions), len(missingTx))
-	if !chain.validateTxRoot(bh.TxTree, transactions) {
+	if !common.IsProposal020() && !chain.validateTxRoot(bh.TxTree, transactions) {
 		return nil, -1
 	}
 
-	block := types.Block{Header: &bh, Transactions: transactions}
-	executeTxResult, _, _ := chain.executeTransaction(&block)
+	block := types.Block{Header: bh, Transactions: transactions}
+	executeTxResult, _, _ := chain.executeTransaction(&block, setHash)
 	if !executeTxResult {
 		return nil, -1
 	}

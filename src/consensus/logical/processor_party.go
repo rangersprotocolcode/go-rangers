@@ -5,6 +5,7 @@ import (
 	"com.tuntun.rangers/node/src/consensus/model"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"com.tuntun.rangers/node/src/utility"
+	"sync"
 	"time"
 )
 
@@ -31,7 +32,17 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 		return item
 	}
 
-	party := SignParty{}
+	party := SignParty{belongGroups: p.belongGroups, blockchain: p.MainChain,
+		minerReader: p.minerReader, globalGroups: p.globalGroups,
+		mi: p.mi.ID, netServer: p.NetServer,
+		baseParty: baseParty{
+			logger:         p.logger,
+			mtx:            sync.Mutex{},
+			futureMessages: make(map[string]model.ConsensusMessage),
+			Done:           make(chan byte, 1),
+			Err:            make(chan error, 1),
+		},
+	}
 	if nil != party.Start() {
 		p.partyManager[key] = &party
 
@@ -44,6 +55,11 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 				case <-time.After(10 * time.Second):
 					delete(p.partyManager, key)
 					delete(p.partyManager, realKey)
+					return
+				case err := <-party.Err:
+					delete(p.partyManager, key)
+					delete(p.partyManager, realKey)
+					p.logger.Errorf("error: %s", err)
 					return
 				// finish signing
 				case <-party.Done:

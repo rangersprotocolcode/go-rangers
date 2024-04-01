@@ -17,6 +17,7 @@
 package core
 
 import (
+	"bytes"
 	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/middleware"
 	"com.tuntun.rangers/node/src/middleware/notify"
@@ -68,7 +69,7 @@ func (chain *blockChain) addBlockOnChain(coming *types.Block) types.AddBlockResu
 		return types.BlockExisted
 	}
 
-	if _, verifyResult := chain.verifyBlock(*comingHeader, coming.Transactions); verifyResult != 0 {
+	if _, verifyResult := chain.verifyBlock(comingHeader, coming.Transactions, false); verifyResult != 0 {
 		logger.Errorf("Fail to VerifyCastingBlock, reason code:%d \n", verifyResult)
 		if verifyResult == 2 {
 			logger.Warnf("coming block has no pre on local chain.Forking...")
@@ -114,7 +115,7 @@ func (chain *blockChain) addBlockOnChain(coming *types.Block) types.AddBlockResu
 	return chain.addBlockOnChain(coming)
 }
 
-func (chain *blockChain) executeTransaction(block *types.Block) (bool, *account.AccountDB, types.Receipts) {
+func (chain *blockChain) executeTransaction(block *types.Block, setHash bool) (bool, *account.AccountDB, types.Receipts) {
 	preBlock := chain.queryBlockHeaderByHash(block.Header.PreHash)
 	if preBlock == nil {
 		panic("Pre block nil !!")
@@ -130,15 +131,39 @@ func (chain *blockChain) executeTransaction(block *types.Block) (bool, *account.
 	}
 
 	vmExecutor := newVMExecutor(state, block, "fullverify")
-	stateRoot, _, _, receipts := vmExecutor.Execute()
-	if common.ToHex(stateRoot.Bytes()) != common.ToHex(block.Header.StateTree.Bytes()) {
+	stateRoot, evictedTxs, transactions, receipts := vmExecutor.Execute()
+	if setHash {
+		block.Header.StateTree = stateRoot
+	} else if common.ToHex(stateRoot.Bytes()) != common.ToHex(block.Header.StateTree.Bytes()) {
 		logger.Errorf("Fail to verify state tree, hash1:%x hash2:%x", stateRoot.Bytes(), block.Header.StateTree.Bytes())
 		return false, state, receipts
 	}
-	receiptsTree := calcReceiptsTree(receipts).Bytes()
-	if common.ToHex(receiptsTree) != common.ToHex(block.Header.ReceiptTree.Bytes()) {
-		logger.Errorf("fail to verify receipt, hash1:%s hash2:%s", common.ToHex(receiptsTree), common.ToHex(block.Header.ReceiptTree.Bytes()))
+
+	receiptsTree := calcReceiptsTree(receipts)
+	if setHash {
+		block.Header.ReceiptTree = receiptsTree
+	} else if 0 == bytes.Compare(receiptsTree.Bytes(), block.Header.ReceiptTree.Bytes()) {
+		logger.Errorf("fail to verify receipt, hash1:%s hash2:%s", receiptsTree.String(), block.Header.ReceiptTree.String())
 		return false, state, receipts
+	}
+
+	if setHash {
+		block.Header.EvictedTxs = evictedTxs
+		if !common.IsProposal020() {
+			transactionHashes := make([]common.Hashes, len(transactions))
+			block.Transactions = transactions
+			for i, transaction := range transactions {
+				hashes := common.Hashes{}
+				hashes[0] = transaction.Hash
+				hashes[1] = transaction.SubHash
+				transactionHashes[i] = hashes
+
+			}
+			block.Header.Transactions = transactionHashes
+			block.Header.TxTree = calcTxTree(block.Transactions)
+		}
+
+		block.Header.Hash = block.Header.GenHash()
 	}
 
 	chain.verifiedBlocks.Add(block.Header.Hash, &castingBlock{state: state, receipts: receipts})
@@ -220,7 +245,7 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 		var executeTxResult bool
 		logger.Errorf("fail to get verifiedBlock from cache, %s", b.Header.Hash.String())
 
-		executeTxResult, state, receipts = chain.executeTransaction(b)
+		executeTxResult, state, receipts = chain.executeTransaction(b, false)
 		if !executeTxResult {
 			logger.Errorf("fail to execute txs!")
 			return false, state, receipts
@@ -333,5 +358,5 @@ func dumpTxs(txs []*types.Transaction, blockHeight uint64) {
 }
 
 func (chain *blockChain) ExecuteTransaction(block *types.Block) (bool, *account.AccountDB, types.Receipts) {
-	return chain.executeTransaction(block)
+	return chain.executeTransaction(block, false)
 }

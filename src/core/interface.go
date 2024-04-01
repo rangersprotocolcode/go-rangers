@@ -45,7 +45,7 @@ type BlockChain interface {
 
 	GenerateBlock(bh types.BlockHeader) *types.Block
 
-	VerifyBlock(bh types.BlockHeader) ([]common.Hashes, int8)
+	VerifyBlock(bh *types.BlockHeader) ([]common.Hashes, int8)
 
 	AddBlockOnChain(b *types.Block) types.AddBlockResult
 

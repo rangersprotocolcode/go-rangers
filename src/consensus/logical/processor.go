@@ -24,11 +24,13 @@ import (
 	"com.tuntun.rangers/node/src/consensus/net"
 	"com.tuntun.rangers/node/src/consensus/ticker"
 	"com.tuntun.rangers/node/src/core"
+	"com.tuntun.rangers/node/src/middleware/log"
 	"com.tuntun.rangers/node/src/middleware/notify"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"encoding/hex"
 	"fmt"
 	lru "github.com/hashicorp/golang-lru"
+	"strconv"
 	"sync"
 	"sync/atomic"
 )
@@ -60,6 +62,7 @@ type Processor struct {
 
 	partyLock    sync.RWMutex
 	partyManager map[string]Party
+	logger       log.Logger
 }
 
 func (p *Processor) getPrefix() string {
@@ -72,6 +75,7 @@ func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joined
 
 	p.partyManager = make(map[string]Party, 10)
 	p.partyLock = sync.RWMutex{}
+	p.logger = log.GetLoggerByIndex(log.CLogConfig, strconv.Itoa(common.InstanceIndex))
 
 	p.conf = conf
 	p.futureVerifyMsgs = NewFutureMessageHolder()

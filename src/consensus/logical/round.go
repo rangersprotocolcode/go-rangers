@@ -1,7 +1,11 @@
 package logical
 
 import (
+	"com.tuntun.rangers/node/src/consensus/access"
+	"com.tuntun.rangers/node/src/consensus/groupsig"
 	"com.tuntun.rangers/node/src/consensus/model"
+	"com.tuntun.rangers/node/src/consensus/net"
+	"com.tuntun.rangers/node/src/core"
 	"com.tuntun.rangers/node/src/middleware/log"
 	"fmt"
 )
@@ -46,7 +50,8 @@ type Round interface {
 type (
 	baseRound struct {
 		ok             []bool // `ok` tracks parties which have been verified by Update()
-		futureMessages *[]model.ConsensusMessage
+		processed      map[string]byte
+		futureMessages map[string]model.ConsensusMessage
 		started        bool
 		number         int
 		logger         log.Logger
@@ -54,6 +59,14 @@ type (
 
 	round1 struct {
 		*baseRound
+		belongGroups *access.JoinedGroupStorage
+		globalGroups *access.GroupAccessor
+		minerReader  *access.MinerPoolReader
+		blockchain   core.BlockChain
+		changedId    chan string
+		canProcessed bool
+		mi           groupsig.ID
+		netServer    net.NetworkServer
 	}
 	round2 struct {
 		*round1
@@ -65,6 +78,10 @@ type (
 
 func (round *baseRound) RoundNumber() int {
 	return round.number
+}
+
+func (round *baseRound) check() {
+
 }
 
 //type finalization struct {

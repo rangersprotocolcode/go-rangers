@@ -186,6 +186,7 @@ func unMarshalConsensusCastMessage(b []byte) (*model.ConsensusCastMessage, error
 		BH:        *bh,
 		ProveHash: hashs,
 		SignInfo:  *baseMessage(m.Sign),
+		Id:        common.ToHex(common.Sha256(b)),
 	}, nil
 }
 
@@ -200,6 +201,7 @@ func unMarshalConsensusVerifyMessage(b []byte) (*model.ConsensusVerifyMessage, e
 		BlockHash:  common.BytesToHash(m.BlockHash),
 		RandomSign: *groupsig.DeserializeSign(m.RandomSign),
 		SignInfo:   *baseMessage(m.Sign),
+		Id:         common.ToHex(common.Sha256(b)),
 	}, nil
 }
 
