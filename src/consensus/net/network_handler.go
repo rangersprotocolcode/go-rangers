@@ -132,7 +132,7 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 		}
 
 		id := utility.GetGoroutineId()
-		middleware.PerfLogger.Debugf("VerifiedCastMsg, %s, %s", m.BlockHash.String(), common.ToHex(body))
+		middleware.PerfLogger.Infof("VerifiedCastMsg, %s, %s", m.BlockHash.String(), common.ToHex(body))
 		middleware.PerfLogger.Infof("start Verified msg, id: %d, hash: %v, msg size: %d", id, m.BlockHash.String(), len(body))
 		c.miningMessageProcessor.OnMessageVerify(m)
 		middleware.PerfLogger.Infof("fin Verified msg, id: %d, hash: %v, msg size: %d", id, m.BlockHash.String(), len(body))

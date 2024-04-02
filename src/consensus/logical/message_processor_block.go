@@ -166,6 +166,7 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 
 	} else {
 		memPK, ok := group_create.GroupCreateProcessor.GetMemberSignPubKey(gid, si.GetSignerID())
+		middleware.PerfLogger.Infof("%s, %s, memPK: %s, gid: %s", mtype, bh.Hash.String(), memPK.GetHexString(), gid.GetHexString())
 		if !ok {
 			blog.log("GetMemberSignPubKey not ok, ask id %v", si.GetSignerID().ShortS())
 			return
