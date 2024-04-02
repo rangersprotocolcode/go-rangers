@@ -97,7 +97,7 @@ func (r *round1) afterPreArrived() *Error {
 		return NewError(fmt.Errorf("miner can't cast at height, height: %d, preHash: %s", bh.Height, bh.PreHash.String()), "ccm", r.RoundNumber(), "", nil)
 	}
 	totalStake := r.minerReader.GetTotalStake(preBH.Height, preBH.StateTree)
-	if ok2, err := verifyBlockVRF(&bh, preBH, castorDO, totalStake); !ok2 {
+	if ok2, err := verifyBlockVRF(bh, preBH, castorDO, totalStake); !ok2 {
 		r.logger.Errorf("fail to verifyVRF. err: %s", err)
 		return NewError(fmt.Errorf("vrf verify block fail, height: %d, preHash: %s", bh.Height, bh.PreHash.String()), "ccm", r.RoundNumber(), "", nil)
 	}
@@ -137,7 +137,7 @@ func (r *round1) checkBlock() *Error {
 	preBH := r.preBH
 	groupId := groupsig.DeserializeID(bh.GroupId)
 
-	lostTxs, ccr := core.GetBlockChain().VerifyBlock(&bh)
+	lostTxs, ccr := core.GetBlockChain().VerifyBlock(bh)
 	if -1 == ccr {
 		return NewError(fmt.Errorf("blockheader error, height: %d, preHash: %s", bh.Height, bh.PreHash.String()), "ccm", r.RoundNumber(), "", nil)
 	}
@@ -148,7 +148,7 @@ func (r *round1) checkBlock() *Error {
 
 	//normalPieceVerify
 	if 0 == len(lostTxs) {
-		r.normalPieceVerify(bh, *preBH, groupId)
+		r.normalPieceVerify(*bh, *preBH, groupId)
 		r.changedId <- bh.Hash.String()
 		r.canProcessed = true
 	} else {
@@ -233,7 +233,7 @@ func (r *round1) CanAccept(msg model.ConsensusMessage) int {
 func (r *round1) NextRound() Round {
 	r.canProcessed = false
 	r.number = 1
-	return &round2{r}
+	return &round2{round1: r}
 }
 
 func (r *round1) getBlockHeaderByHash(hash common.Hash) *types.BlockHeader {

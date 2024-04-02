@@ -81,6 +81,9 @@ type (
 	}
 	round2 struct {
 		*round1
+
+		gSignGenerator *model.GroupSignGenerator
+		rSignGenerator *model.GroupSignGenerator
 	}
 	round3 struct {
 		*round2

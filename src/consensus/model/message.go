@@ -266,7 +266,7 @@ func (msg *ConsensusCurrentMessage) GenHash() common.Hash {
 
 // ConsensusCastMessage OnMessageCast
 type ConsensusCastMessage struct {
-	BH        types.BlockHeader
+	BH        *types.BlockHeader
 	ProveHash []common.Hash
 	Id        string
 
