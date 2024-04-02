@@ -87,7 +87,7 @@ func (p *Processor) normalPieceVerify(gid groupsig.ID, vctx *VerifyContext, trac
 }
 
 func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, traceLog *msgTraceLog, blog *bizLog, slog *slowLog) (err error) {
-	bh := &msg.BH
+	bh := msg.BH
 	bh.CurTime = utility.FormatTime(bh.CurTime)
 	si := &msg.SignInfo
 
@@ -223,7 +223,7 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 }
 
 func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMessage) {
-	bh := &msg.BH
+	bh := msg.BH
 	si := &msg.SignInfo
 	blog := newBizLog(mtype)
 	traceLog := newHashTraceLog(mtype, bh.Hash, si.GetSignerID())
@@ -295,7 +295,7 @@ func (p *Processor) verifyWithCache(cache *verifyMsgCache, vmsg *model.Consensus
 
 func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 	slog := newSlowLog("OnMessageCast", 0.5)
-	bh := &ccm.BH
+	bh := ccm.BH
 	defer func() {
 		slog.log("hash=%v, sender=%v, height=%v, preHash=%v", bh.Hash.ShortS(), ccm.SignInfo.GetSignerID().ShortS(), bh.Height, bh.PreHash.ShortS())
 	}()

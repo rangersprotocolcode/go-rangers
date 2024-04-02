@@ -155,7 +155,7 @@ func (p *SignParty) Start() *Error {
 }
 
 func (p *SignParty) FirstRound() Round {
-	return &round1{baseRound: &baseRound{futureMessages: p.futureMessages, errChan: p.Err},
+	return &round1{baseRound: &baseRound{futureMessages: p.futureMessages, errChan: p.Err, logger: p.logger},
 		belongGroups: p.belongGroups, blockchain: p.blockchain,
 		minerReader: p.minerReader, globalGroups: p.globalGroups,
 		changedId: p.ChangedId, mi: p.mi, netServer: p.netServer}

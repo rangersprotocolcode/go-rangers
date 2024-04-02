@@ -112,7 +112,7 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 	case network.CurrentGroupCastMsg:
 
 	case network.CastVerifyMsg:
-		m, e := unMarshalConsensusCastMessage(body)
+		m, e := UnMarshalConsensusCastMessage(body)
 		if e != nil {
 			logger.Errorf("[handler]Discard ConsensusCastMessage because of unmarshal error%s", e.Error())
 			return e

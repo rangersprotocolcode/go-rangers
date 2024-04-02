@@ -13,12 +13,17 @@ func (p *Processor) OnMessageCastV2(ccm *model.ConsensusCastMessage) {
 	key := p.generatePartyKey(ccm.BH)
 	party := p.loadOrNewSignParty(key)
 
+	if nil == party {
+		return
+	}
 	party.Update(ccm)
 }
 
 func (p *Processor) OnMessageVerifyV2(cvm *model.ConsensusVerifyMessage) {
 	party := p.loadOrNewSignParty(cvm.BlockHash.Bytes())
-
+	if nil == party {
+		return
+	}
 	party.Update(cvm)
 }
 
@@ -43,7 +48,7 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 			Err:            make(chan error, 1),
 		},
 	}
-	if nil != party.Start() {
+	if nil == party.Start() {
 		p.partyManager[key] = &party
 
 		// wait until finish
@@ -52,9 +57,15 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 			for {
 				select {
 				// timeout
-				case <-time.After(10 * time.Second):
+				case <-time.After(10 * time.Hour):
 					delete(p.partyManager, key)
 					delete(p.partyManager, realKey)
+					if 0 == len(realKey) {
+						p.logger.Errorf("timeout, id: %s", key)
+					} else {
+						p.logger.Errorf("timeout, id: %s", realKey)
+					}
+
 					return
 				case err := <-party.Err:
 					delete(p.partyManager, key)
@@ -89,12 +100,14 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 				}
 			}
 		}()
+
+		return &party
 	}
 
-	return &party
+	return nil
 }
 
-func (p *Processor) generatePartyKey(bh types.BlockHeader) []byte {
+func (p *Processor) generatePartyKey(bh *types.BlockHeader) []byte {
 	result := make([]byte, 0)
 	result = append(result, utility.UInt64ToByte(bh.Height)...)
 	result = append(result, bh.PreHash.Bytes()...)
