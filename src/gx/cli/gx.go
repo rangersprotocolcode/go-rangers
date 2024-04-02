@@ -35,10 +35,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"gopkg.in/alecthomas/kingpin.v2"
-	"net/http"
-	_ "net/http/pprof"
 	"os"
-	"runtime"
 	"time"
 )
 
@@ -69,7 +66,7 @@ func (gx *GX) Run() {
 
 	_ = app.Flag("metrics", "enable metrics").Bool()
 	_ = app.Flag("dashboard", "enable metrics dashboard").Bool()
-	pprofPort := app.Flag("pprof", "enable pprof").Default("23333").Uint()
+	//pprofPort := app.Flag("pprof", "enable pprof").Default("23333").Uint()
 
 	consoleCmd := app.Command("console", "start RangersProtocol console")
 	showRequest := consoleCmd.Flag("show", "show the request json").Short('v').Bool()
@@ -124,11 +121,11 @@ func (gx *GX) Run() {
 		walletManager = newWallets()
 		fmt.Println("Use config file: " + *configFile)
 		fmt.Printf("Env:%s, Chain ID:%s, Network ID:%s, Tx: %s\n", *env, common.ChainId(utility.MaxUint64), common.NetworkId(), txAddr)
-		go func() {
-			http.ListenAndServe(fmt.Sprintf(":%d", *pprofPort), nil)
-			runtime.SetBlockProfileRate(1)
-			runtime.SetMutexProfileFraction(1)
-		}()
+		//go func() {
+		//	http.ListenAndServe(fmt.Sprintf(":%d", *pprofPort), nil)
+		//	runtime.SetBlockProfileRate(1)
+		//	runtime.SetMutexProfileFraction(1)
+		//}()
 		gx.initMiner(*env, gateAddr, outerGateAddr, txAddr)
 
 		if *rpc {
