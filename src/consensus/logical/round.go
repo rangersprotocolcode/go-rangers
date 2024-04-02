@@ -1,13 +1,16 @@
 package logical
 
 import (
+	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/consensus/access"
 	"com.tuntun.rangers/node/src/consensus/groupsig"
 	"com.tuntun.rangers/node/src/consensus/model"
 	"com.tuntun.rangers/node/src/consensus/net"
 	"com.tuntun.rangers/node/src/core"
 	"com.tuntun.rangers/node/src/middleware/log"
+	"com.tuntun.rangers/node/src/middleware/types"
 	"fmt"
+	"sync"
 )
 
 type Error struct {
@@ -49,24 +52,33 @@ type Round interface {
 
 type (
 	baseRound struct {
-		ok             []bool // `ok` tracks parties which have been verified by Update()
 		processed      map[string]byte
 		futureMessages map[string]model.ConsensusMessage
-		started        bool
-		number         int
-		logger         log.Logger
+
+		number int
+
+		errChan chan error
+		lock    sync.Mutex
+
+		logger log.Logger
 	}
 
 	round1 struct {
 		*baseRound
+		mi           groupsig.ID
 		belongGroups *access.JoinedGroupStorage
 		globalGroups *access.GroupAccessor
 		minerReader  *access.MinerPoolReader
 		blockchain   core.BlockChain
-		changedId    chan string
-		canProcessed bool
-		mi           groupsig.ID
 		netServer    net.NetworkServer
+
+		changedId chan string
+
+		canProcessed bool
+
+		ccm     *model.ConsensusCastMessage
+		lostTxs map[common.Hashes]byte
+		preBH   *types.BlockHeader
 	}
 	round2 struct {
 		*round1
