@@ -55,7 +55,8 @@ type (
 		processed      map[string]byte
 		futureMessages map[string]model.ConsensusMessage
 
-		number int
+		number       int
+		canProcessed bool
 
 		errChan chan error
 		lock    sync.Mutex
@@ -74,8 +75,6 @@ type (
 
 		changedId chan string
 
-		canProcessed bool
-
 		ccm     *model.ConsensusCastMessage
 		lostTxs map[common.Hashes]byte
 		preBH   *types.BlockHeader
@@ -92,29 +91,6 @@ func (round *baseRound) RoundNumber() int {
 	return round.number
 }
 
-func (round *baseRound) check() {
-
+func (round *baseRound) CanProceed() bool {
+	return round.canProcessed
 }
-
-//type finalization struct {
-//}
-//
-//func (round *finalization) Start() *Error {
-//	return nil
-//}
-//func (round *finalization) Update(msg model.ConsensusMessage) *Error {
-//	return nil
-//}
-//func (round *finalization) RoundNumber() int {
-//	return -1
-//}
-//
-//func (round *finalization) CanAccept(msg model.ConsensusMessage) int {
-//	return -1
-//}
-//func (round *finalization) CanProceed() bool {
-//	return true
-//}
-//func (round *finalization) NextRound() Round {
-//	return nil
-//}

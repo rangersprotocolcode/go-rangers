@@ -142,6 +142,10 @@ func (r *round1) checkBlock() *Error {
 		return NewError(fmt.Errorf("blockheader error, height: %d, preHash: %s", bh.Height, bh.PreHash.String()), "ccm", r.RoundNumber(), "", nil)
 	}
 
+	if r.blockchain.HasBlockByHash(bh.Hash) {
+		return NewError(fmt.Errorf("blockheader already existed, height: %d, preHash: %s", bh.Height, bh.PreHash.String()), "ccm", r.RoundNumber(), "", nil)
+	}
+
 	//normalPieceVerify
 	if 0 == len(lostTxs) {
 		r.normalPieceVerify(bh, *preBH, groupId)
@@ -225,9 +229,7 @@ func (r *round1) CanAccept(msg model.ConsensusMessage) int {
 
 	return -1
 }
-func (r *round1) CanProceed() bool {
-	return r.canProcessed
-}
+
 func (r *round1) NextRound() Round {
 	r.canProcessed = false
 	r.number = 1

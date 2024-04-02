@@ -102,7 +102,10 @@ func (p *baseParty) Update(msg model.ConsensusMessage) {
 		// go to next round
 		p.advance()
 		if p.round() != nil {
-			p.round().Start()
+			if err := p.round().Start(); err != nil {
+				p.Err <- err
+				return
+			}
 		} else {
 			// no more round, end this party
 			p.Done <- 1
