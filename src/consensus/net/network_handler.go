@@ -119,6 +119,7 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 		}
 
 		id := utility.GetGoroutineId()
+		middleware.PerfLogger.Debugf("CastVerifyMsg, %s, %s", m.BH.Hash.String(), common.ToHex(body))
 		middleware.PerfLogger.Infof("start Verify msg, id: %d, cost: %v, height: %v, hash: %v, msg size: %d", id, utility.GetTime().Sub(m.BH.CurTime), m.BH.Height, m.BH.Hash.String(), len(body))
 		c.miningMessageProcessor.OnMessageCast(m)
 		middleware.PerfLogger.Infof("fin Verify msg, id: %d, cost: %v, height: %v, hash: %v, msg size: %d", id, utility.GetTime().Sub(m.BH.CurTime), m.BH.Height, m.BH.Hash.String(), len(body))
@@ -131,6 +132,7 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 		}
 
 		id := utility.GetGoroutineId()
+		middleware.PerfLogger.Debugf("VerifiedCastMsg, %s, %s", m.BlockHash.String(), common.ToHex(body))
 		middleware.PerfLogger.Infof("start Verified msg, id: %d, hash: %v, msg size: %d", id, m.BlockHash.String(), len(body))
 		c.miningMessageProcessor.OnMessageVerify(m)
 		middleware.PerfLogger.Infof("fin Verified msg, id: %d, hash: %v, msg size: %d", id, m.BlockHash.String(), len(body))
