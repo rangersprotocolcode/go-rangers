@@ -142,7 +142,7 @@ func (chain *blockChain) executeTransaction(block *types.Block, setHash bool) (b
 	receiptsTree := calcReceiptsTree(receipts)
 	if setHash {
 		block.Header.ReceiptTree = receiptsTree
-	} else if 0 == bytes.Compare(receiptsTree.Bytes(), block.Header.ReceiptTree.Bytes()) {
+	} else if 0 != bytes.Compare(receiptsTree.Bytes(), block.Header.ReceiptTree.Bytes()) {
 		logger.Errorf("fail to verify receipt, hash1:%s hash2:%s", receiptsTree.String(), block.Header.ReceiptTree.String())
 		return false, state, receipts
 	}
