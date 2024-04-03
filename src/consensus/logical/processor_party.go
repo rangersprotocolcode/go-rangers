@@ -9,7 +9,7 @@ import (
 	"time"
 )
 
-func (p *Processor) OnMessageCastV2(ccm *model.ConsensusCastMessage) {
+func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 	key := p.generatePartyKey(ccm.BH)
 	party := p.loadOrNewSignParty(key)
 
@@ -19,7 +19,7 @@ func (p *Processor) OnMessageCastV2(ccm *model.ConsensusCastMessage) {
 	party.Update(ccm)
 }
 
-func (p *Processor) OnMessageVerifyV2(cvm *model.ConsensusVerifyMessage) {
+func (p *Processor) OnMessageVerify(cvm *model.ConsensusVerifyMessage) {
 	party := p.loadOrNewSignParty(cvm.BlockHash.Bytes())
 	if nil == party {
 		return
@@ -58,7 +58,7 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 			for {
 				select {
 				// timeout
-				case <-time.After(10 * time.Hour):
+				case <-time.After(10 * time.Second):
 					delete(p.partyManager, party.id)
 					p.logger.Errorf("timeout, id: %s", party.id)
 

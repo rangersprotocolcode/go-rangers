@@ -293,7 +293,7 @@ func (p *Processor) verifyWithCache(cache *verifyMsgCache, vmsg *model.Consensus
 	p.verifyCastMessage("OMV", msg)
 }
 
-func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
+func (p *Processor) OnMessageCastV2(ccm *model.ConsensusCastMessage) {
 	slog := newSlowLog("OnMessageCast", 0.5)
 	bh := ccm.BH
 	defer func() {
@@ -323,7 +323,7 @@ func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 
 }
 
-func (p *Processor) OnMessageVerify(cvm *model.ConsensusVerifyMessage) {
+func (p *Processor) OnMessageVerifyV2(cvm *model.ConsensusVerifyMessage) {
 	if p.blockOnChain(cvm.BlockHash) {
 		return
 	}
