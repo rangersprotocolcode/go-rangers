@@ -27,6 +27,11 @@ func (r *round1) Start() *Error {
 	return nil
 }
 
+func (r *round1) Close() {
+	notify.BUS.UnSubscribe(notify.BlockAddSucc, r.onBlockAddSuccess)
+	notify.BUS.UnSubscribe(notify.TransactionGotAddSucc, r.onMissTxAddSucc)
+}
+
 func (r *round1) Update(msg model.ConsensusMessage) *Error {
 	r.processed[msg.GetMessageID()] = 1
 	ccm, _ := msg.(*model.ConsensusCastMessage)

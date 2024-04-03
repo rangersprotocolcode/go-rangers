@@ -8,6 +8,10 @@ import (
 	"fmt"
 )
 
+func (r *round3) Close() {
+
+}
+
 func (r *round3) Update(msg model.ConsensusMessage) *Error {
 	return nil
 }
@@ -42,7 +46,7 @@ func (r *round3) Start() *Error {
 	}
 	result := r.blockchain.AddBlockOnChain(block)
 	if types.AddBlockSucc != result {
-		return NewError(fmt.Errorf("fail to add block, height: %d, hash: %s, group: %s", bh.Height, bh.Hash.String(), common.ToHex(bh.GroupId)), "finalizer", r.RoundNumber(), "", nil)
+		return NewError(fmt.Errorf("fail to add block, height: %d, hash: %s, group: %s, result: %d", bh.Height, bh.Hash.String(), common.ToHex(bh.GroupId), result), "finalizer", r.RoundNumber(), "", nil)
 	}
 	r.logger.Infof("round3 add block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 

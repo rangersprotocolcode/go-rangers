@@ -46,6 +46,10 @@ func (r *round2) Start() *Error {
 	return nil
 }
 
+func (r *round2) Close() {
+
+}
+
 func (r *round2) Update(msg model.ConsensusMessage) *Error {
 	bh := r.bh
 

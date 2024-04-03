@@ -14,6 +14,7 @@ import (
 
 type Party interface {
 	Start() *Error
+	Close()
 	Cancel()
 	Update(msg model.ConsensusMessage)
 
@@ -53,6 +54,14 @@ func (p *baseParty) String() string {
 
 func (p *baseParty) SetId(key string) {
 	p.id = key
+}
+
+func (p *baseParty) Close() {
+	if p.round() == nil {
+		return
+	}
+
+	p.round().Close()
 }
 
 func (p *baseParty) Cancel() {

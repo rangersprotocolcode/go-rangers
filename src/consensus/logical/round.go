@@ -43,6 +43,7 @@ func (err *Error) Cause() error { return err.cause }
 
 type Round interface {
 	Start() *Error
+	Close()
 	Update(msg model.ConsensusMessage) *Error
 	RoundNumber() int
 	CanAccept(msg model.ConsensusMessage) int
