@@ -136,8 +136,6 @@ func (r *round1) checkBlock() *Error {
 	bh := r.bh
 	oldHash := bh.Hash.String()
 
-	preBH := r.preBH
-
 	// may change blockHash due to transactions execution
 	lostTxs, ccr := core.GetBlockChain().VerifyBlock(bh)
 	if -1 == ccr {
@@ -150,8 +148,7 @@ func (r *round1) checkBlock() *Error {
 
 	//normalPieceVerify
 	if 0 == len(lostTxs) {
-		groupId := groupsig.DeserializeID(bh.GroupId)
-		r.normalPieceVerify(*bh, *preBH, groupId)
+		r.normalPieceVerify()
 
 		hashString := bh.Hash.String()
 		r.logger.Infof("round1 changeId, from %s to %s", oldHash, hashString)
@@ -195,15 +192,16 @@ func (r *round1) onMissTxAddSucc(message notify.Message) {
 	}
 }
 
-func (r *round1) normalPieceVerify(bh, prevBH types.BlockHeader, gid groupsig.ID) {
+func (r *round1) normalPieceVerify() {
+	gid := groupsig.DeserializeID(r.bh.GroupId)
 	var cvm model.ConsensusVerifyMessage
-	cvm.BlockHash = bh.Hash
+	cvm.BlockHash = r.bh.Hash
 	skey := r.getSignKey(gid)
 
 	if signInfo, ok := model.NewSignInfo(skey, r.mi, &cvm); ok {
 		cvm.SignInfo = signInfo
 		r.logger.Debugf("round1 sendVerifiedCast, hash: %s, group: %s, sign: %s", cvm.BlockHash.String(), gid.GetHexString(), cvm.SignInfo.GetSignature().GetHexString())
-		cvm.GenRandomSign(skey, prevBH.Random)
+		cvm.GenRandomSign(skey, r.preBH.Random)
 		r.netServer.SendVerifiedCast(&cvm, gid)
 	} else {
 		r.logger.Errorf("genSign fail, sk=%v %v", skey.ShortS(), r.belongGroups.BelongGroup(gid))
