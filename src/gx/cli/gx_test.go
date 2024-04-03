@@ -190,13 +190,12 @@ func initTestingEnv() {
 
 func TestNewGX(t *testing.T) {
 	os.RemoveAll("logs")
-	os.RemoveAll("logs-0.db")
-	os.RemoveAll("logs-0.db-shm")
-	os.RemoveAll("logs-0.db-wal")
+	os.RemoveAll("storage0")
+	os.RemoveAll("1.ini")
 	gx := NewGX()
 
-	common.Init(0, "1.ini", "robin")
-	gx.initMiner("robin", "ws://49.0.249.103:1017", "", "")
+	common.Init(0, "1.ini", "dev")
+	gx.initMiner("dev", "ws://192.168.2.15:1017", "ws://192.168.2.19/pubhub", "ws://192.168.2.14:8888")
 
 	time.Sleep(10 * time.Hour)
 }
