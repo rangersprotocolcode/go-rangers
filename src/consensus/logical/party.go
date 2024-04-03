@@ -14,10 +14,10 @@ import (
 
 type Party interface {
 	Start() *Error
+	Cancel()
 	Update(msg model.ConsensusMessage)
 
 	StoreMessage(msg model.ConsensusMessage)
-	StoreMessages(msg map[string]model.ConsensusMessage)
 	GetFutureMessage() map[string]model.ConsensusMessage
 
 	FirstRound() Round
@@ -29,11 +29,15 @@ type Party interface {
 	unlock()
 
 	String() string
+
+	SetId(key string)
 }
 
 type baseParty struct {
-	Done    chan byte
-	Err     chan error
+	Done, CancelChan chan byte
+	Err              chan error
+
+	id      string
 	started bool
 
 	mtx sync.Mutex
@@ -45,6 +49,16 @@ type baseParty struct {
 
 func (p *baseParty) String() string {
 	return fmt.Sprintf("round: %d", p.round().RoundNumber())
+}
+
+func (p *baseParty) SetId(key string) {
+	p.id = key
+}
+
+func (p *baseParty) Cancel() {
+	go func() {
+		p.CancelChan <- 0
+	}()
 }
 
 func (p *baseParty) setRound(round Round) *Error {
@@ -76,7 +90,7 @@ func (p *baseParty) Update(msg model.ConsensusMessage) {
 	defer p.unlock()
 
 	if nil == p.round() {
-		p.logger.Errorf("finishied party, reject msg")
+		p.logger.Warnf("finished party: %s, reject msg: %s", p.id, msg.GetMessageID())
 		return
 	}
 
@@ -115,16 +129,14 @@ func (p *baseParty) Update(msg model.ConsensusMessage) {
 }
 
 func (p *baseParty) StoreMessage(msg model.ConsensusMessage) {
+	p.logger.Debugf("party: %s, store future message: %s", p.id, msg.GetMessageID())
 	p.futureMessages[msg.GetMessageID()] = msg
 }
 
-func (p *baseParty) StoreMessages(msgs map[string]model.ConsensusMessage) {
-	for _, msg := range msgs {
-		p.StoreMessage(msg)
-	}
-}
-
 func (p *baseParty) GetFutureMessage() map[string]model.ConsensusMessage {
+	p.lock()
+	defer p.unlock()
+
 	return p.futureMessages
 }
 

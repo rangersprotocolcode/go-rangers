@@ -9,7 +9,7 @@ import (
 )
 
 func (r *round2) Start() *Error {
-	r.logger.Infof("round2 start. hash: %s, height: %d", r.ccm.BH.Hash.String(), r.ccm.BH.Height)
+	r.logger.Debugf("round2 start. hash: %s, height: %d", r.ccm.BH.Hash.String(), r.ccm.BH.Height)
 
 	gid := groupsig.DeserializeID(r.ccm.BH.GroupId)
 	group, err := r.globalGroups.GetGroupByID(gid)
@@ -44,7 +44,7 @@ func (r *round2) Update(msg model.ConsensusMessage) *Error {
 	if !ok {
 		return NewError(fmt.Errorf("cannot update for wrong msg"), "omv", r.RoundNumber(), "", nil)
 	}
-	r.logger.Infof("round2 update, from: %s, hash: %s, height: %d", cvm.SignInfo.GetSignerID().GetHexString(), cvm.BlockHash.String(), r.ccm.BH.Height)
+	r.logger.Debugf("round2 update, from: %s, hash: %s, height: %d", cvm.SignInfo.GetSignerID().GetHexString(), cvm.BlockHash.String(), r.ccm.BH.Height)
 
 	if r.blockchain.HasBlockByHash(cvm.BlockHash) {
 		return NewError(fmt.Errorf("already existed. hash: %s, height: %d", cvm.BlockHash.String(), r.ccm.BH.Height), "omv", r.RoundNumber(), "", nil)
@@ -82,7 +82,7 @@ func (r *round2) Update(msg model.ConsensusMessage) *Error {
 		r.logger.Warnf("already had the piece, from: %s, hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), r.ccm.BH.Height)
 		return nil
 	}
-	r.logger.Infof("round2 add piece, from: %s, hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), r.ccm.BH.Height)
+	r.logger.Debugf("round2 add piece, from: %s, hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), r.ccm.BH.Height)
 
 	radd, rgen := r.rSignGenerator.AddWitnessSign(si.GetSignerID(), *sig)
 	if radd && generate && rgen {

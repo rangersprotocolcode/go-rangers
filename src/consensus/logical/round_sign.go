@@ -128,7 +128,7 @@ func (r *round1) afterPreArrived() *Error {
 		return NewError(fmt.Errorf("time error, height: %d, preHash: %s", bh.Height, bh.PreHash.String()), "ccm", r.RoundNumber(), "", nil)
 	}
 
-	r.logger.Infof("round1 finish base check, height: %d, preHash: %s", bh.Height, bh.PreHash.String())
+	r.logger.Debugf("round1 finish base check, height: %d, preHash: %s", bh.Height, bh.PreHash.String())
 	return r.checkBlock()
 }
 
@@ -202,7 +202,7 @@ func (r *round1) normalPieceVerify(bh, prevBH types.BlockHeader, gid groupsig.ID
 
 	if signInfo, ok := model.NewSignInfo(skey, r.mi, &cvm); ok {
 		cvm.SignInfo = signInfo
-		r.logger.Debug("SendVerifiedCast seckey=%v, miner id=%v,data hash:%v,sig:%v", skey.GetHexString(), r.mi.GetHexString(), cvm.SignInfo.GetDataHash().String(), cvm.SignInfo.GetSignature().GetHexString())
+		r.logger.Debugf("round1 sendVerifiedCast, hash: %s, group: %s, sign: %s", cvm.BlockHash.String(), gid.GetHexString(), cvm.SignInfo.GetSignature().GetHexString())
 		cvm.GenRandomSign(skey, prevBH.Random)
 		r.netServer.SendVerifiedCast(&cvm, gid)
 	} else {

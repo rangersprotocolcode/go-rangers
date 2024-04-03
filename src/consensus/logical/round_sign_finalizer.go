@@ -23,7 +23,7 @@ func (r *round3) NextRound() Round {
 
 func (r *round3) Start() *Error {
 	bh := r.ccm.BH
-	r.logger.Infof("round3 start, hash: %s, height: %d", bh.Hash.String(), bh.Height)
+	r.logger.Debugf("round3 start, hash: %s, height: %d", bh.Hash.String(), bh.Height)
 
 	if r.blockchain.HasBlockByHash(bh.Hash) {
 		return NewError(fmt.Errorf("blockheader already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "finalizer", r.RoundNumber(), "", nil)

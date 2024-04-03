@@ -23,6 +23,32 @@ const (
 )
 
 func TestProcessor_OnMessageCastV2(t *testing.T) {
+	preTest()
+
+	go func() {
+		cvm2, _ := net.UnMarshalConsensusVerifyMessage(common.FromHex(ConsensusVerifyMessage2))
+		Proc.OnMessageVerifyV2(cvm2)
+	}()
+
+	go func() {
+		ccm, _ := net.UnMarshalConsensusCastMessage(common.FromHex(CastVerifyMsg))
+		Proc.OnMessageCastV2(ccm)
+	}()
+
+	go func() {
+		cvm1, _ := net.UnMarshalConsensusVerifyMessage(common.FromHex(ConsensusVerifyMessage1))
+		Proc.OnMessageVerifyV2(cvm1)
+	}()
+
+	go func() {
+		cvm3, _ := net.UnMarshalConsensusVerifyMessage(common.FromHex(ConsensusVerifyMessage3))
+		Proc.OnMessageVerifyV2(cvm3)
+	}()
+
+	time.Sleep(19 * time.Hour)
+}
+
+func preTest() {
 	func() {
 		os.RemoveAll("0.ini")
 		os.RemoveAll("storage0")
@@ -45,17 +71,4 @@ func TestProcessor_OnMessageCastV2(t *testing.T) {
 	InitConsensus(minerInfo, common.GlobalConf)
 	group_create.GroupCreateProcessor.BeginGenesisGroupMember()
 	Proc.Start()
-
-	ccm, _ := net.UnMarshalConsensusCastMessage(common.FromHex(CastVerifyMsg))
-	Proc.OnMessageCastV2(ccm)
-
-	//cvm1, _ := net.UnMarshalConsensusVerifyMessage(common.FromHex(ConsensusVerifyMessage1))
-	//Proc.OnMessageVerifyV2(cvm1)
-
-	cvm2, _ := net.UnMarshalConsensusVerifyMessage(common.FromHex(ConsensusVerifyMessage2))
-	Proc.OnMessageVerifyV2(cvm2)
-
-	cvm3, _ := net.UnMarshalConsensusVerifyMessage(common.FromHex(ConsensusVerifyMessage3))
-	Proc.OnMessageVerifyV2(cvm3)
-	time.Sleep(19 * time.Hour)
 }

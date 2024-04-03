@@ -45,7 +45,9 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 			mtx:            sync.Mutex{},
 			futureMessages: make(map[string]model.ConsensusMessage),
 			Done:           make(chan byte, 1),
+			CancelChan:     make(chan byte, 1),
 			Err:            make(chan error, 1),
+			id:             key,
 		},
 	}
 	if nil == party.Start() {
@@ -53,30 +55,26 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 
 		// wait until finish
 		go func() {
-			var realKey string
 			for {
 				select {
 				// timeout
 				case <-time.After(10 * time.Hour):
-					delete(p.partyManager, key)
-					delete(p.partyManager, realKey)
-					if 0 == len(realKey) {
-						p.logger.Errorf("timeout, id: %s", key)
-					} else {
-						p.logger.Errorf("timeout, id: %s", realKey)
-					}
+					delete(p.partyManager, party.id)
+					p.logger.Errorf("timeout, id: %s", party.id)
 
 					return
 				case err := <-party.Err:
 					delete(p.partyManager, key)
-					delete(p.partyManager, realKey)
-					p.logger.Errorf("error: %s", err)
+					delete(p.partyManager, party.id)
+					p.logger.Errorf("error: %s, id: %s", err, party.id)
 					return
-				// finish signing
 				case <-party.Done:
-					delete(p.partyManager, realKey)
+					delete(p.partyManager, party.id)
+					p.logger.Infof("done, id: %s", party.id)
 					return
-				case realKey = <-party.ChangedId:
+				case <-party.CancelChan:
+					return
+				case realKey := <-party.ChangedId:
 					func() {
 						p.partyLock.Lock()
 						defer p.partyLock.Unlock()
@@ -86,16 +84,21 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 							// error
 							return
 						}
+						item.SetId(realKey)
 
 						// check if already has some messages
 						item2, ok2 := p.partyManager[realKey]
 						if ok2 {
+							delete(p.partyManager, key)
+
 							// merging future messages
-							item.StoreMessages(item2.GetFutureMessage())
+							for _, msg := range item2.GetFutureMessage() {
+								item.Update(msg)
+							}
+							item2.Cancel()
 						}
 
 						p.partyManager[realKey] = item
-						delete(p.partyManager, key)
 					}()
 				}
 			}
