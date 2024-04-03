@@ -63,6 +63,12 @@ func (r *round1) onBlockAddSuccess(message notify.Message) {
 
 	block := message.GetData().(types.Block)
 	bh := block.Header
+
+	if bh.Height > r.bh.Height {
+		r.errChan <- NewError(fmt.Errorf("higher block on the chain, %d > %d", bh.Height, r.bh.Height), "ccm", r.RoundNumber(), "", nil)
+		return
+	}
+
 	if 0 != bytes.Compare(bh.Hash.Bytes(), r.bh.PreHash.Bytes()) {
 		return
 	}
@@ -71,8 +77,7 @@ func (r *round1) onBlockAddSuccess(message notify.Message) {
 	r.logger.Infof("received preBH: %s", bh.Hash.String())
 
 	r.preBH = bh
-	err := r.afterPreArrived()
-	if nil != err {
+	if err := r.afterPreArrived(); nil != err {
 		r.errChan <- err
 	}
 }

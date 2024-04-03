@@ -82,6 +82,7 @@ func (p *Processor) waitUntilDone(party SignParty, key string) {
 			delete(p.partyManager, key)
 			delete(p.partyManager, party.id)
 			p.logger.Errorf("error: %s, id: %s", err, party.id)
+			party.Close()
 			return
 		case <-party.Done:
 			delete(p.partyManager, party.id)
