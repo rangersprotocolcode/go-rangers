@@ -124,7 +124,7 @@ func (c *ConsensusHandler) Handle(sourceId string, msg network.Message) error {
 		middleware.PerfLogger.Infof("fin Verify msg, id: %d, cost: %v, height: %v, hash: %v, msg size: %d", id, utility.GetTime().Sub(m.BH.CurTime), m.BH.Height, m.BH.Hash.String(), len(body))
 
 	case network.VerifiedCastMsg:
-		m, e := unMarshalConsensusVerifyMessage(body)
+		m, e := UnMarshalConsensusVerifyMessage(body)
 		if e != nil {
 			logger.Errorf("[handler]Discard ConsensusVerifyMessage because of unmarshal error%s", e.Error())
 			return e

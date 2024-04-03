@@ -37,11 +37,6 @@ func (chain *blockChain) verifyBlock(bh *types.BlockHeader, txs []*types.Transac
 		return nil, 0
 	}
 
-	if bh.Hash != bh.GenHash() {
-		logger.Debugf("Validate block hash error!")
-		return nil, -1
-	}
-
 	pre := chain.queryBlockHeaderByHash(bh.PreHash)
 	if nil == pre {
 		if txs != nil {

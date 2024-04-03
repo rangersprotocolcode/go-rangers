@@ -9,6 +9,8 @@ import (
 )
 
 func (r *round2) Start() *Error {
+	r.logger.Infof("round2 start. hash: %s, height: %d", r.ccm.BH.Hash.String(), r.ccm.BH.Hash)
+
 	gid := groupsig.DeserializeID(r.ccm.BH.GroupId)
 	group, err := r.globalGroups.GetGroupByID(gid)
 	if err != nil || nil == group {
@@ -93,7 +95,11 @@ func (r *round2) Update(msg model.ConsensusMessage) *Error {
 }
 
 func (r *round2) CanAccept(msg model.ConsensusMessage) int {
-	if _, ok := r.processed[msg.GetMessageID()]; ok {
+	msgId := msg.GetMessageID()
+	if _, ok := r.processed[msgId]; ok {
+		return -1
+	}
+	if _, ok := r.futureMessages[msgId]; ok {
 		return -1
 	}
 
@@ -111,5 +117,7 @@ func (r *round2) CanAccept(msg model.ConsensusMessage) int {
 }
 
 func (r *round2) NextRound() Round {
-	return nil
+	r.canProcessed = true
+	r.number = 2
+	return &round3{round2: r}
 }

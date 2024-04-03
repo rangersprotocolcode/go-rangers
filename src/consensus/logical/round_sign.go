@@ -134,22 +134,28 @@ func (r *round1) afterPreArrived() *Error {
 
 func (r *round1) checkBlock() *Error {
 	bh := r.ccm.BH
-	preBH := r.preBH
-	groupId := groupsig.DeserializeID(bh.GroupId)
+	oldHash := bh.Hash.String()
 
+	preBH := r.preBH
+
+	// may change blockHash due to transactions execution
 	lostTxs, ccr := core.GetBlockChain().VerifyBlock(bh)
 	if -1 == ccr {
 		return NewError(fmt.Errorf("blockheader error, height: %d, preHash: %s", bh.Height, bh.PreHash.String()), "ccm", r.RoundNumber(), "", nil)
 	}
 
 	if r.blockchain.HasBlockByHash(bh.Hash) {
-		return NewError(fmt.Errorf("blockheader already existed, height: %d, preHash: %s", bh.Height, bh.PreHash.String()), "ccm", r.RoundNumber(), "", nil)
+		return NewError(fmt.Errorf("blockheader already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "ccm", r.RoundNumber(), "", nil)
 	}
 
 	//normalPieceVerify
 	if 0 == len(lostTxs) {
+		groupId := groupsig.DeserializeID(bh.GroupId)
 		r.normalPieceVerify(*bh, *preBH, groupId)
-		r.changedId <- bh.Hash.String()
+
+		hashString := bh.Hash.String()
+		r.logger.Infof("round1 changeId, from %s to %s", oldHash, hashString)
+		r.changedId <- hashString
 		r.canProcessed = true
 	} else {
 		r.lostTxs = make(map[common.Hashes]byte)
@@ -213,7 +219,11 @@ func (r *round1) getSignKey(gid groupsig.ID) groupsig.Seckey {
 }
 
 func (r *round1) CanAccept(msg model.ConsensusMessage) int {
-	if _, ok := r.processed[msg.GetMessageID()]; ok {
+	msgId := msg.GetMessageID()
+	if _, ok := r.processed[msgId]; ok {
+		return -1
+	}
+	if _, ok := r.futureMessages[msgId]; ok {
 		return -1
 	}
 

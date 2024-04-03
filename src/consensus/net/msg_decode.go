@@ -190,7 +190,7 @@ func UnMarshalConsensusCastMessage(b []byte) (*model.ConsensusCastMessage, error
 	}, nil
 }
 
-func unMarshalConsensusVerifyMessage(b []byte) (*model.ConsensusVerifyMessage, error) {
+func UnMarshalConsensusVerifyMessage(b []byte) (*model.ConsensusVerifyMessage, error) {
 	m := new(middleware_pb.ConsensusVerifyMessage)
 	e := proto.Unmarshal(b, m)
 	if e != nil {
