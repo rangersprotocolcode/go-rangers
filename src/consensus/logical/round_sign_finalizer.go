@@ -45,7 +45,7 @@ func (r *round3) Start() *Error {
 	if types.AddBlockSucc != result {
 		return NewError(fmt.Errorf("fail to add block, height: %d, hash: %s, group: %s", bh.Height, bh.Hash.String(), common.ToHex(bh.GroupId)), "finalizer", r.RoundNumber(), "", nil)
 	}
-	r.logger.Infof("add block, height: %d, hash: %s", bh.Height, bh.Hash.String())
+	r.logger.Infof("round3 add block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 
 	// send block if nesscessary
 	r.broadcastNewBlock(group, *block)
@@ -62,7 +62,7 @@ func (r *round3) broadcastNewBlock(group *model.GroupInfo, block types.Block) {
 			Block: block,
 		}
 		r.netServer.BroadcastNewBlock(cbm)
-		r.logger.Infof("broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
+		r.logger.Infof("round3 broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 	}
 }
 

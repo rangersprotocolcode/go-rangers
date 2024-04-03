@@ -1,15 +1,15 @@
 package logical
 
 import (
+	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/consensus/groupsig"
 	"com.tuntun.rangers/node/src/consensus/logical/group_create"
 	"com.tuntun.rangers/node/src/consensus/model"
-	"encoding/hex"
 	"fmt"
 )
 
 func (r *round2) Start() *Error {
-	r.logger.Infof("round2 start. hash: %s, height: %d", r.ccm.BH.Hash.String(), r.ccm.BH.Hash)
+	r.logger.Infof("round2 start. hash: %s, height: %d", r.ccm.BH.Hash.String(), r.ccm.BH.Height)
 
 	gid := groupsig.DeserializeID(r.ccm.BH.GroupId)
 	group, err := r.globalGroups.GetGroupByID(gid)
@@ -44,6 +44,7 @@ func (r *round2) Update(msg model.ConsensusMessage) *Error {
 	if !ok {
 		return NewError(fmt.Errorf("cannot update for wrong msg"), "omv", r.RoundNumber(), "", nil)
 	}
+	r.logger.Infof("round2 update, from: %s, hash: %s, height: %d", cvm.SignInfo.GetSignerID().GetHexString(), cvm.BlockHash.String(), r.ccm.BH.Height)
 
 	if r.blockchain.HasBlockByHash(cvm.BlockHash) {
 		return NewError(fmt.Errorf("already existed. hash: %s, height: %d", cvm.BlockHash.String(), r.ccm.BH.Height), "omv", r.RoundNumber(), "", nil)
@@ -78,17 +79,17 @@ func (r *round2) Update(msg model.ConsensusMessage) *Error {
 
 	add, generate := r.gSignGenerator.AddWitnessSign(si.GetSignerID(), si.GetSignature())
 	if !add {
-		r.logger.Warnf("already had the piece, id: %s. hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), r.ccm.BH.Height)
+		r.logger.Warnf("already had the piece, from: %s, hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), r.ccm.BH.Height)
 		return nil
 	}
+	r.logger.Infof("round2 add piece, from: %s, hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), r.ccm.BH.Height)
 
 	radd, rgen := r.rSignGenerator.AddWitnessSign(si.GetSignerID(), *sig)
 	if radd && generate && rgen {
 		r.ccm.BH.Signature = r.gSignGenerator.GetGroupSign().Serialize()
 		r.ccm.BH.Random = r.rSignGenerator.GetGroupSign().Serialize()
-		r.logger.Debugf("Recovered group sign.Block hash:%v,group sign:%v", r.ccm.BH.Hash.String(), hex.EncodeToString(r.ccm.BH.Signature))
-
 		r.canProcessed = true
+		r.logger.Infof("round2 recovered group sign. hash: %s, height: %d, group sign: %s", r.ccm.BH.Hash.String(), r.ccm.BH.Height, common.ToHex(r.ccm.BH.Signature))
 	}
 
 	return nil

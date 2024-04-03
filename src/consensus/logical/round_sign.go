@@ -25,15 +25,14 @@ func (r *round1) Start() *Error {
 func (r *round1) Update(msg model.ConsensusMessage) *Error {
 	r.processed[msg.GetMessageID()] = 1
 	ccm, _ := msg.(*model.ConsensusCastMessage)
-	r.logger.Debugf("update message, %v", ccm)
 	r.ccm = ccm
-
 	bh := ccm.BH
+	r.logger.Infof("round1 update message, height: %d, castor: %s", bh.Height, common.ToHex(bh.Castor))
 
 	// check qn
 	totalQN := r.blockchain.TotalQN()
 	if totalQN > bh.TotalQN {
-		return NewError(fmt.Errorf("qn error, height: %d, preHash: %s, signed: %d, current: %d", bh.Height, bh.PreHash.String(), totalQN, bh.TotalQN), "ccm", r.RoundNumber(), "", nil)
+		return NewError(fmt.Errorf("qn error, height: %d, preHash: %s, signedQN: %d, current: %d", bh.Height, bh.PreHash.String(), totalQN, bh.TotalQN), "ccm", r.RoundNumber(), "", nil)
 	}
 
 	// check pre
@@ -129,6 +128,7 @@ func (r *round1) afterPreArrived() *Error {
 		return NewError(fmt.Errorf("time error, height: %d, preHash: %s", bh.Height, bh.PreHash.String()), "ccm", r.RoundNumber(), "", nil)
 	}
 
+	r.logger.Infof("round1 finish base check, height: %d, preHash: %s", bh.Height, bh.PreHash.String())
 	return r.checkBlock()
 }
 
