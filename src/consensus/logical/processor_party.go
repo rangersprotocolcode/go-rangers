@@ -127,5 +127,5 @@ func (p *Processor) generatePartyKey(bh *types.BlockHeader) []byte {
 	result = append(result, bh.ProveValue.Bytes()...)
 	result = append(result, bh.TxTree.Bytes()...)
 	result = append(result, bh.GroupId...)
-	return result
+	return common.Sha256(result)
 }

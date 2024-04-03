@@ -85,7 +85,7 @@ func (r *round1) afterPreArrived() *Error {
 	// check message sign
 	si := r.ccm.SignInfo
 	if r.ccm.GenHash() != si.GetDataHash() {
-		return NewError(fmt.Errorf("msg error, height: %d, preHash: %s", bh.Height, bh.PreHash.String()), "ccm", r.RoundNumber(), "", nil)
+		return NewError(fmt.Errorf("msg error, %s - %s, height: %d, preHash: %s", r.ccm.GenHash().String(), si.GetDataHash().String(), bh.Height, bh.PreHash.String()), "ccm", r.RoundNumber(), "", nil)
 	}
 	if !si.VerifySign(pk) {
 		return NewError(fmt.Errorf("sign check error, height: %d, preHash: %s", bh.Height, bh.PreHash.String()), "ccm", r.RoundNumber(), "", nil)
