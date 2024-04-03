@@ -75,9 +75,9 @@ type (
 
 		changedId chan string
 
-		ccm     *model.ConsensusCastMessage
-		lostTxs map[common.Hashes]byte
-		preBH   *types.BlockHeader
+		lostTxs   map[common.Hashes]byte
+		preBH, bh *types.BlockHeader
+		ccm       *model.ConsensusCastMessage
 	}
 	round2 struct {
 		*round1

@@ -9,12 +9,13 @@ import (
 )
 
 func (r *round2) Start() *Error {
-	r.logger.Debugf("round2 start. hash: %s, height: %d", r.ccm.BH.Hash.String(), r.ccm.BH.Height)
+	bh := r.bh
+	r.logger.Debugf("round2 start. hash: %s, height: %d", bh.Hash.String(), bh.Height)
 
-	gid := groupsig.DeserializeID(r.ccm.BH.GroupId)
+	gid := groupsig.DeserializeID(bh.GroupId)
 	group, err := r.globalGroups.GetGroupByID(gid)
 	if err != nil || nil == group {
-		return NewError(fmt.Errorf("cannot get group: %s, hash: %s, height: %d", gid.GetHexString(), r.ccm.BH.Hash.String(), r.ccm.BH.Height), "omv-start", r.RoundNumber(), "", nil)
+		return NewError(fmt.Errorf("cannot get group: %s, hash: %s, height: %d", gid.GetHexString(), bh.Hash.String(), bh.Height), "omv-start", r.RoundNumber(), "", nil)
 	}
 	threshold := model.Param.GetGroupK(group.GetMemberCount())
 	r.gSignGenerator = model.NewGroupSignGenerator(threshold)
@@ -40,56 +41,58 @@ func (r *round2) Start() *Error {
 }
 
 func (r *round2) Update(msg model.ConsensusMessage) *Error {
+	bh := r.bh
+
 	cvm, ok := msg.(*model.ConsensusVerifyMessage)
 	if !ok {
 		return NewError(fmt.Errorf("cannot update for wrong msg"), "omv", r.RoundNumber(), "", nil)
 	}
-	r.logger.Debugf("round2 update, from: %s, hash: %s, height: %d", cvm.SignInfo.GetSignerID().GetHexString(), cvm.BlockHash.String(), r.ccm.BH.Height)
+	r.logger.Debugf("round2 update, from: %s, hash: %s, height: %d", cvm.SignInfo.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height)
 
 	if r.blockchain.HasBlockByHash(cvm.BlockHash) {
-		return NewError(fmt.Errorf("already existed. hash: %s, height: %d", cvm.BlockHash.String(), r.ccm.BH.Height), "omv", r.RoundNumber(), "", nil)
+		return NewError(fmt.Errorf("already existed. hash: %s, height: %d", cvm.BlockHash.String(), bh.Height), "omv", r.RoundNumber(), "", nil)
 	}
 
-	gid := groupsig.DeserializeID(r.ccm.BH.GroupId)
+	gid := groupsig.DeserializeID(bh.GroupId)
 	si := cvm.SignInfo
 
 	// get pubKey
 	pk, ok := group_create.GroupCreateProcessor.GetMemberSignPubKey(gid, si.GetSignerID())
 	if !ok {
-		r.logger.Errorf("GetMemberSignPubKey not ok, id: %s. hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), r.ccm.BH.Height)
+		r.logger.Errorf("GetMemberSignPubKey not ok, id: %s. hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height)
 		return nil
 	}
 
 	// check data
 	if !si.VerifySign(pk) {
-		r.logger.Errorf("fail to verify sign, id: %s. hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), r.ccm.BH.Height)
+		r.logger.Errorf("fail to verify sign, id: %s. hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height)
 		return nil
 	}
 
 	// check signature
 	sig := groupsig.DeserializeSign(cvm.RandomSign.Serialize())
 	if sig == nil || sig.IsNil() {
-		r.logger.Errorf("fail to deserialize bh random, id: %s. hash: %s, height: %d, random: %s", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), r.ccm.BH.Height, cvm.RandomSign.GetHexString())
+		r.logger.Errorf("fail to deserialize bh random, id: %s. hash: %s, height: %d, random: %s", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height, cvm.RandomSign.GetHexString())
 		return nil
 	}
 	if !groupsig.VerifySig(pk, r.preBH.Random, *sig) {
-		r.logger.Errorf("fail to verify random sign, id: %s. hash: %s, height: %d, random: %s", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), r.ccm.BH.Height, cvm.RandomSign.GetHexString())
+		r.logger.Errorf("fail to verify random sign, id: %s. hash: %s, height: %d, random: %s", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height, cvm.RandomSign.GetHexString())
 		return nil
 	}
 
 	add, generate := r.gSignGenerator.AddWitnessSign(si.GetSignerID(), si.GetSignature())
 	if !add {
-		r.logger.Warnf("already had the piece, from: %s, hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), r.ccm.BH.Height)
+		r.logger.Warnf("already had the piece, from: %s, hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height)
 		return nil
 	}
-	r.logger.Debugf("round2 add piece, from: %s, hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), r.ccm.BH.Height)
+	r.logger.Debugf("round2 add piece, from: %s, hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height)
 
 	radd, rgen := r.rSignGenerator.AddWitnessSign(si.GetSignerID(), *sig)
 	if radd && generate && rgen {
-		r.ccm.BH.Signature = r.gSignGenerator.GetGroupSign().Serialize()
-		r.ccm.BH.Random = r.rSignGenerator.GetGroupSign().Serialize()
+		bh.Signature = r.gSignGenerator.GetGroupSign().Serialize()
+		bh.Random = r.rSignGenerator.GetGroupSign().Serialize()
 		r.canProcessed = true
-		r.logger.Infof("round2 recovered group sign. hash: %s, height: %d, group sign: %s", r.ccm.BH.Hash.String(), r.ccm.BH.Height, common.ToHex(r.ccm.BH.Signature))
+		r.logger.Infof("round2 recovered group sign. hash: %s, height: %d, group sign: %s", bh.Hash.String(), bh.Height, common.ToHex(bh.Signature))
 	}
 
 	return nil

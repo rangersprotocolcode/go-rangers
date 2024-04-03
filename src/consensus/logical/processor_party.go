@@ -119,7 +119,7 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 	return nil
 }
 
-func (p *Processor) generatePartyKey(bh *types.BlockHeader) []byte {
+func (p *Processor) generatePartyKey(bh types.BlockHeader) []byte {
 	result := make([]byte, 0)
 	result = append(result, utility.UInt64ToByte(bh.Height)...)
 	result = append(result, bh.PreHash.Bytes()...)

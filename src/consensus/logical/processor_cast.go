@@ -339,7 +339,7 @@ func (p *Processor) blockProposal() {
 		skey := p.mi.SecKey
 
 		var ccm model.ConsensusCastMessage
-		ccm.BH = bh
+		ccm.BH = *bh
 		ccm.ProveHash = []common.Hash{}
 
 		if signInfo, ok := model.NewSignInfo(p.mi.SecKey, p.mi.ID, &ccm); !ok {

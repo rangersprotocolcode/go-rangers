@@ -26,20 +26,20 @@ func (r *round1) Update(msg model.ConsensusMessage) *Error {
 	r.processed[msg.GetMessageID()] = 1
 	ccm, _ := msg.(*model.ConsensusCastMessage)
 	r.ccm = ccm
-	bh := ccm.BH
-	r.logger.Infof("round1 update message, height: %d, castor: %s", bh.Height, common.ToHex(bh.Castor))
+	r.bh = &ccm.BH
+	r.logger.Infof("round1 update message, height: %d, castor: %s", r.bh.Height, common.ToHex(r.bh.Castor))
 
 	// check qn
 	totalQN := r.blockchain.TotalQN()
-	if totalQN > bh.TotalQN {
-		return NewError(fmt.Errorf("qn error, height: %d, preHash: %s, signedQN: %d, current: %d", bh.Height, bh.PreHash.String(), totalQN, bh.TotalQN), "ccm", r.RoundNumber(), "", nil)
+	if totalQN > r.bh.TotalQN {
+		return NewError(fmt.Errorf("qn error, height: %d, preHash: %s, signedQN: %d, current: %d", r.bh.Height, r.bh.PreHash.String(), totalQN, r.bh.TotalQN), "ccm", r.RoundNumber(), "", nil)
 	}
 
 	// check pre
-	preBH := r.getBlockHeaderByHash(bh.PreHash)
+	preBH := r.getBlockHeaderByHash(r.bh.PreHash)
 	if nil == preBH {
 		notify.BUS.Subscribe(notify.BlockAddSucc, r.onBlockAddSuccess)
-		r.logger.Warnf("no such preHash: %s, height: %d, waiting", bh.PreHash.String(), bh.Height)
+		r.logger.Warnf("no such preHash: %s, height: %d, waiting", r.bh.PreHash.String(), r.bh.Height)
 		return nil
 	}
 
@@ -53,7 +53,7 @@ func (r *round1) onBlockAddSuccess(message notify.Message) {
 
 	block := message.GetData().(types.Block)
 	bh := block.Header
-	if 0 != bytes.Compare(bh.Hash.Bytes(), r.ccm.BH.PreHash.Bytes()) {
+	if 0 != bytes.Compare(bh.Hash.Bytes(), r.bh.PreHash.Bytes()) {
 		return
 	}
 
@@ -68,7 +68,7 @@ func (r *round1) onBlockAddSuccess(message notify.Message) {
 }
 
 func (r *round1) afterPreArrived() *Error {
-	bh := r.ccm.BH
+	bh := r.bh
 	preBH := r.preBH
 
 	// get castor publicKey
@@ -133,7 +133,7 @@ func (r *round1) afterPreArrived() *Error {
 }
 
 func (r *round1) checkBlock() *Error {
-	bh := r.ccm.BH
+	bh := r.bh
 	oldHash := bh.Hash.String()
 
 	preBH := r.preBH

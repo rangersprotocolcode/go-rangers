@@ -183,7 +183,7 @@ func UnMarshalConsensusCastMessage(b []byte) (*model.ConsensusCastMessage, error
 	}
 
 	return &model.ConsensusCastMessage{
-		BH:        bh,
+		BH:        *bh,
 		ProveHash: hashs,
 		SignInfo:  *baseMessage(m.Sign),
 		Id:        common.ToHex(common.Sha256(b)),

@@ -100,7 +100,7 @@ func marshalConsensusSignPubKeyReqMessage(m *model.SignPubkeyReqMessage) ([]byte
 }
 
 func marshalConsensusCastMessage(m *model.ConsensusCastMessage) ([]byte, error) {
-	bh := types.BlockHeaderToPb(m.BH)
+	bh := types.BlockHeaderToPb(&m.BH)
 	//groupId := m.GroupID.Serialize()
 	si := signDataToPb(&m.SignInfo)
 

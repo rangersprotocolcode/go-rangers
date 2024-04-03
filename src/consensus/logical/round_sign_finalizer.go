@@ -22,7 +22,7 @@ func (r *round3) NextRound() Round {
 }
 
 func (r *round3) Start() *Error {
-	bh := r.ccm.BH
+	bh := r.bh
 	r.logger.Debugf("round3 start, hash: %s, height: %d", bh.Hash.String(), bh.Height)
 
 	if r.blockchain.HasBlockByHash(bh.Hash) {
@@ -67,7 +67,7 @@ func (r *round3) broadcastNewBlock(group *model.GroupInfo, block types.Block) {
 }
 
 func (r *round3) checkSignature(group *model.GroupInfo) *Error {
-	bh := r.ccm.BH
+	bh := r.bh
 	gpk := group.GetGroupPubKey()
 	if !groupsig.VerifySig(gpk, bh.Hash.Bytes(), *groupsig.DeserializeSign(bh.Signature)) {
 		return NewError(fmt.Errorf("fail to verify group sign, height: %d, hash: %s, group: %s", bh.Height, bh.Hash.String(), common.ToHex(bh.GroupId)), "finalizer", r.RoundNumber(), "", nil)

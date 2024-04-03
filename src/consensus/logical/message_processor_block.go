@@ -136,17 +136,17 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 		return
 	}
 
-	if err = bc.CheckQN(bh); err != nil {
+	if err = bc.CheckQN(&bh); err != nil {
 		return err
 	}
 
-	vctx := bc.GetOrNewVerifyContext(bh, preBH)
+	vctx := bc.GetOrNewVerifyContext(&bh, preBH)
 	if vctx == nil {
 		err = fmt.Errorf("no vctx，preBH may be deleted")
 		return
 	}
 	var slot *SlotContext
-	slot, err = vctx.baseCheck(bh, si.GetSignerID())
+	slot, err = vctx.baseCheck(&bh, si.GetSignerID())
 	if err != nil {
 		return
 	}
@@ -180,7 +180,7 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 
 	if slot == nil || slot.IsWaiting() {
 		slog.addStage("checkLegal")
-		ok, _, err2 := p.isCastLegal(bh, preBH)
+		ok, _, err2 := p.isCastLegal(&bh, preBH)
 		slog.endStage()
 		if !ok {
 			err = err2
@@ -196,7 +196,7 @@ func (p *Processor) doVerify(mtype string, msg *model.ConsensusCastMessage, trac
 	id := utility.GetGoroutineId()
 	middleware.PerfLogger.Infof("verify before UserVerified %s, id: %d, cost: %v, height: %v, hash: %v", mtype, id, utility.GetTime().Sub(bh.CurTime), bh.Height, bh.Hash.String())
 
-	verifyResult, err := vctx.UserVerified(bh, si, pk, slog)
+	verifyResult, err := vctx.UserVerified(&bh, si, pk, slog)
 	slog.endStage()
 	blog.log("proc(%v) UserVerified height=%v, hash=%v, result=%v.%v", p.getPrefix(), bh.Height, bh.Hash.ShortS(), CBMR_RESULT_DESC(verifyResult), err)
 	if err != nil {
@@ -266,7 +266,7 @@ func (p *Processor) verifyCastMessage(mtype string, msg *model.ConsensusCastMess
 	}
 	vctx := bc.GetVerifyContextByHash(bh.Hash)
 	if vctx != nil {
-		_, err := vctx.baseCheck(bh, si.GetSignerID())
+		_, err := vctx.baseCheck(&bh, si.GetSignerID())
 		if err != nil {
 			result = err.Error()
 			return
