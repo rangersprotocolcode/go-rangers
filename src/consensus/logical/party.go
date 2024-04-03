@@ -103,7 +103,7 @@ func (p *baseParty) Update(msg model.ConsensusMessage) {
 	case 1:
 		p.StoreMessage(msg)
 	default:
-		p.logger.Warnf("")
+		p.logger.Warnf("working party: %s, reject msg: %s", p.id, msg.GetMessageID())
 	}
 
 	for {

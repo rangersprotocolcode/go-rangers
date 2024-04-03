@@ -27,22 +27,27 @@ func TestProcessor_OnMessageCastV2(t *testing.T) {
 
 	go func() {
 		cvm2, _ := net.UnMarshalConsensusVerifyMessage(common.FromHex(ConsensusVerifyMessage2))
-		Proc.OnMessageVerifyV2(cvm2)
+		Proc.OnMessageVerify(cvm2)
 	}()
 
 	go func() {
 		ccm, _ := net.UnMarshalConsensusCastMessage(common.FromHex(CastVerifyMsg))
-		Proc.OnMessageCastV2(ccm)
+		Proc.OnMessageCast(ccm)
+	}()
+
+	go func() {
+		ccm, _ := net.UnMarshalConsensusCastMessage(common.FromHex(CastVerifyMsg))
+		Proc.OnMessageCast(ccm)
 	}()
 
 	go func() {
 		cvm1, _ := net.UnMarshalConsensusVerifyMessage(common.FromHex(ConsensusVerifyMessage1))
-		Proc.OnMessageVerifyV2(cvm1)
+		Proc.OnMessageVerify(cvm1)
 	}()
 
 	go func() {
 		cvm3, _ := net.UnMarshalConsensusVerifyMessage(common.FromHex(ConsensusVerifyMessage3))
-		Proc.OnMessageVerifyV2(cvm3)
+		Proc.OnMessageVerify(cvm3)
 	}()
 
 	time.Sleep(19 * time.Hour)

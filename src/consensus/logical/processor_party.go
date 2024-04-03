@@ -34,7 +34,13 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 	key := common.ToHex(keyBytes)
 	item, ok := p.partyManager[key]
 	if ok {
+		p.logger.Debugf("get party: %s", key)
 		return item
+	}
+
+	if p.finishedParty.Contains(key) {
+		p.logger.Infof("party: %s already done", key)
+		return nil
 	}
 
 	party := SignParty{belongGroups: p.belongGroups, blockchain: p.MainChain,
@@ -52,6 +58,7 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 	}
 	if nil == party.Start() {
 		p.partyManager[key] = &party
+		p.logger.Debugf("new party: %s", key)
 
 		// wait until finish
 		go func() {
@@ -70,7 +77,8 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 					return
 				case <-party.Done:
 					delete(p.partyManager, party.id)
-					p.logger.Infof("done, id: %s", party.id)
+					p.finishedParty.Add(party.id, 0)
+					p.logger.Infof("done, party: %s", party.id)
 					return
 				case <-party.CancelChan:
 					return
@@ -84,6 +92,7 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 							// error
 							return
 						}
+						p.finishedParty.Add(key, 0)
 						item.SetId(realKey)
 
 						// check if already has some messages
