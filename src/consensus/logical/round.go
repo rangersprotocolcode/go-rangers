@@ -60,6 +60,7 @@ type (
 
 		errChan chan error
 		lock    sync.Mutex
+		started bool
 
 		logger log.Logger
 	}

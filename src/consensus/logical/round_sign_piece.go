@@ -9,6 +9,10 @@ import (
 )
 
 func (r *round2) Start() *Error {
+	if r.started {
+		return nil
+	}
+
 	bh := r.bh
 	r.logger.Debugf("round2 start. hash: %s, height: %d", bh.Hash.String(), bh.Height)
 
@@ -37,6 +41,8 @@ func (r *round2) Start() *Error {
 		r.processed[id] = 1
 		delete(r.futureMessages, id)
 	}
+
+	r.started = true
 	return nil
 }
 

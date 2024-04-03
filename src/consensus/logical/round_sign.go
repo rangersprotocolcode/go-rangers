@@ -15,9 +15,14 @@ import (
 )
 
 func (r *round1) Start() *Error {
+	if r.started {
+		return nil
+	}
+
 	r.number = 0
 	r.processed = make(map[string]byte)
 	r.lock = sync.Mutex{}
+	r.started = true
 
 	return nil
 }
@@ -241,6 +246,7 @@ func (r *round1) CanAccept(msg model.ConsensusMessage) int {
 func (r *round1) NextRound() Round {
 	r.canProcessed = false
 	r.number = 1
+	r.started = false
 	return &round2{round1: r}
 }
 
