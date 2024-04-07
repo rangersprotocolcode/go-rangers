@@ -51,7 +51,7 @@ func (topic *Topic) Subscribe(h Handler) {
 
 	topic.handlers = append(topic.handlers, h)
 	if topic.Id == TransactionGotAddSucc {
-		fmt.Printf("sub, %v, %d", reflect.ValueOf(h), len(topic.handlers))
+		fmt.Printf("sub, %v, %d\n", reflect.ValueOf(h), len(topic.handlers))
 	}
 }
 
@@ -62,12 +62,15 @@ func (topic *Topic) UnSubscribe(h Handler) {
 	for i, handler := range topic.handlers {
 		if reflect.ValueOf(handler) == reflect.ValueOf(h) {
 			topic.handlers = append(topic.handlers[:i], topic.handlers[i+1:]...)
+			if topic.Id == TransactionGotAddSucc {
+				fmt.Printf("unsub1, %v, %d\n", reflect.ValueOf(h), len(topic.handlers))
+			}
 			return
 		}
 	}
 
 	if topic.Id == TransactionGotAddSucc {
-		fmt.Printf("unsub, %v, %d", reflect.ValueOf(h), len(topic.handlers))
+		fmt.Printf("unsub, %v, %d\n", reflect.ValueOf(h), len(topic.handlers))
 	}
 }
 
@@ -79,6 +82,9 @@ func (topic *Topic) Handle(message Message) {
 		return
 	}
 	for _, h := range topic.handlers {
+		if topic.Id == TransactionGotAddSucc {
+			fmt.Printf("handle, %v, %d\n", reflect.ValueOf(h), len(topic.handlers))
+		}
 		go h(message)
 	}
 }
