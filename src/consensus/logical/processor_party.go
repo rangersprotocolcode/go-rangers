@@ -43,7 +43,7 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 		return nil
 	}
 
-	party := SignParty{belongGroups: p.belongGroups, blockchain: p.MainChain,
+	party := &SignParty{belongGroups: p.belongGroups, blockchain: p.MainChain,
 		minerReader: p.minerReader, globalGroups: p.globalGroups,
 		mi: p.mi.ID, netServer: p.NetServer,
 		baseParty: baseParty{
@@ -57,19 +57,19 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 		},
 	}
 	if nil == party.Start() {
-		p.partyManager[key] = &party
+		p.partyManager[key] = party
 		p.logger.Debugf("new party: %s", key)
 
 		// wait until finish
 		go p.waitUntilDone(party)
 
-		return &party
+		return party
 	}
 
 	return nil
 }
 
-func (p *Processor) waitUntilDone(party SignParty) {
+func (p *Processor) waitUntilDone(party *SignParty) {
 	key := party.id
 
 	for {
