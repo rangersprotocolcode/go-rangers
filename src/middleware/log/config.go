@@ -319,7 +319,7 @@ const (
 						</formats>
 					</seelog>`
 
-	CLogConfig = `<seelog minlevel="info">
+	CLogConfig = `<seelog minlevel="debug">
 						<outputs formatid="default">
 							<rollingfile type="size" filename="./logs/cLOG_INDEX.log" maxsize="200000000" maxrolls="1"/>
 						</outputs>

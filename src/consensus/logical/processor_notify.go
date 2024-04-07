@@ -36,20 +36,6 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	gid := groupsig.DeserializeID(bh.GroupId)
-	if p.belongGroups.BelongGroup(gid) {
-		bc := p.GetBlockContext(gid)
-		if bc != nil {
-			bc.AddCastedHeight(bh.Hash, bh.PreHash)
-			bc.updateSignedMaxQN(bh.TotalQN)
-			vctx := bc.GetVerifyContextByHash(bh.Hash)
-			if vctx != nil && vctx.prevBH.Hash == bh.PreHash {
-				vctx.markBroadcast()
-			}
-		}
-		p.removeVerifyMsgCache(bh.Hash)
-	}
-
 	worker := p.GetVrfWorker()
 	if nil != worker && worker.castHeight <= bh.Height {
 		p.setVrfWorker(nil)
