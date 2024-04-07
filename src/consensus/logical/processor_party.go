@@ -61,7 +61,7 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 		p.logger.Debugf("new party: %s", key)
 
 		// wait until finish
-		go p.waitUntilDone(party, key)
+		go p.waitUntilDone(party)
 
 		return &party
 	}
@@ -69,40 +69,60 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 	return nil
 }
 
-func (p *Processor) waitUntilDone(party SignParty, key string) {
+func (p *Processor) waitUntilDone(party SignParty) {
+	key := party.id
+
 	for {
 		select {
 		// timeout
 		case <-time.After(10 * time.Second):
-			delete(p.partyManager, party.id)
-			p.logger.Errorf("timeout, id: %s, original: %s", party.id, key)
-			party.Close()
+			func() {
+				p.partyLock.Lock()
+				defer p.partyLock.Unlock()
+
+				delete(p.partyManager, party.id)
+				p.logger.Errorf("timeout, id: %s, original: %s", party.id, key)
+				party.Close()
+
+			}()
 			return
 		case err := <-party.Err:
-			delete(p.partyManager, key)
-			delete(p.partyManager, party.id)
-			p.logger.Errorf("error: %s, id: %s", err, party.id)
-			party.Close()
+			func() {
+				p.partyLock.Lock()
+				defer p.partyLock.Unlock()
+
+				delete(p.partyManager, party.id)
+				p.logger.Errorf("error: %s, id: %s", err, party.id)
+				party.Close()
+			}()
+
 			return
 		case <-party.Done:
-			delete(p.partyManager, party.id)
-			p.finishedParty.Add(party.id, 0)
-			p.logger.Infof("done, party: %s", party.id)
+			func() {
+				p.partyLock.Lock()
+				defer p.partyLock.Unlock()
+
+				delete(p.partyManager, party.id)
+				p.finishedParty.Add(party.id, 0)
+				p.logger.Infof("done, party: %s", party.id)
+			}()
+
 			return
 		case <-party.CancelChan:
+			p.logger.Debugf("cancel old one, %s", party.id)
 			return
 		case realKey := <-party.ChangedId:
 			func() {
 				p.partyLock.Lock()
 				defer p.partyLock.Unlock()
 
+				key := party.id
 				p.finishedParty.Add(key, 0)
 				item := p.partyManager[key]
 				delete(p.partyManager, key)
 
 				// check if already has some messages
-				party2, ok2 := p.partyManager[realKey]
-				if ok2 {
+				if party2, ok := p.partyManager[realKey]; ok {
 					// merging future messages
 					for _, msg := range party2.GetFutureMessage() {
 						item.Update(msg)
@@ -112,7 +132,7 @@ func (p *Processor) waitUntilDone(party SignParty, key string) {
 
 				item.SetId(realKey)
 				p.partyManager[realKey] = item
-				p.logger.Infof("changeId, %s->%s", key, realKey)
+				p.logger.Infof("changeId, from %s to %s", key, realKey)
 			}()
 		}
 	}
