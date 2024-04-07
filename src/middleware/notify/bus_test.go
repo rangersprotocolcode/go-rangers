@@ -56,9 +56,9 @@ func consumer2(ch <-chan int) {
 
 func TestBus(t *testing.T) {
 	bus := NewBus()
-	bus.Subscribe("topic1", handler1)
-	bus.Subscribe("topic2", handler2)
-	bus.Subscribe("topic3", handler3)
+	bus.Subscribe("topic1", handlerStruct{})
+	bus.Subscribe("topic2", handlerStruct{})
+	bus.Subscribe("topic3", handlerStruct{})
 
 	bus.Publish("topic1", &DummyMessage{})
 	bus.Publish("topic2", &DummyMessage{})

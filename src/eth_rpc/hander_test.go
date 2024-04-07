@@ -54,7 +54,7 @@ func TestSendRawTransaction(t *testing.T) {
 	b, _ := json.Marshal(p)
 	piece := notify.ETHRPCPiece{Id: 1, Method: "eth_sendRawTransaction", Params: b}
 	msg := notify.ETHRPCMessage{GateNonce: 100, Message: piece}
-	handler.process(&msg)
+	handler.HandleNetMessage("11", &msg)
 }
 
 func TestRevertError(t *testing.T) {

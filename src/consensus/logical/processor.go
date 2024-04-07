@@ -105,11 +105,22 @@ func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joined
 	}
 	p.verifyMsgCaches = cache
 
-	notify.BUS.Subscribe(notify.BlockAddSucc, p.onBlockAddSuccess)
-	notify.BUS.Subscribe(notify.GroupAddSucc, p.onGroupAddSuccess)
-	notify.BUS.Subscribe(notify.AcceptGroup, p.onGroupAccept)
+	notify.BUS.Subscribe(notify.BlockAddSucc, p)
+	notify.BUS.Subscribe(notify.GroupAddSucc, p)
+	notify.BUS.Subscribe(notify.AcceptGroup, p)
 
 	return true
+}
+
+func (p *Processor) HandleNetMessage(topic string, msg notify.Message) {
+	switch topic {
+	case notify.BlockAddSucc:
+		p.onBlockAddSuccess(msg)
+	case notify.GroupAddSucc:
+		p.onGroupAddSuccess(msg)
+	case notify.AcceptGroup:
+		p.onGroupAccept(msg)
+	}
 }
 
 func (p *Processor) GetMinerID() groupsig.ID {

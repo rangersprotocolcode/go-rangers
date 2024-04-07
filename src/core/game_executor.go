@@ -76,8 +76,17 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor := GameExecutor{chain: blockChainImpl}
 	gameExecutor.logger = log.GetLoggerByIndex(log.GameExecutorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	middleware.AccountDBManagerInstance.SetHandler(gameExecutor.runWrite)
-	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
-	notify.BUS.Subscribe(notify.ClientTransactionWrite, gameExecutor.write)
+	notify.BUS.Subscribe(notify.ClientTransactionRead, &gameExecutor)
+	notify.BUS.Subscribe(notify.ClientTransactionWrite, &gameExecutor)
+}
+
+func (executor *GameExecutor) HandleNetMessage(topic string, msg notify.Message) {
+	switch topic {
+	case notify.ClientTransactionRead:
+		executor.read(msg)
+	case notify.ClientTransactionWrite:
+		executor.write(msg)
+	}
 }
 
 func (executor *GameExecutor) write(msg notify.Message) {

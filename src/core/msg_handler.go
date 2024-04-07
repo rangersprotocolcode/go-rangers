@@ -34,15 +34,24 @@ type ChainHandler struct{}
 func initChainHandler() {
 	handler := ChainHandler{}
 
-	notify.BUS.Subscribe(notify.NewBlock, handler.newBlockHandler)
-	notify.BUS.Subscribe(notify.TransactionReq, handler.transactionReqHandler)
+	notify.BUS.Subscribe(notify.NewBlock, handler)
+	notify.BUS.Subscribe(notify.TransactionReq, handler)
 }
 
-func (c *ChainHandler) Handle(sourceId string, msg network.Message) error {
+func (c ChainHandler) HandleNetMessage(topic string, msg notify.Message) {
+	switch topic {
+	case notify.NewBlock:
+		c.newBlockHandler(msg)
+	case notify.TransactionReq:
+		c.transactionReqHandler(msg)
+	}
+}
+
+func (c ChainHandler) Handle(sourceId string, msg network.Message) error {
 	return nil
 }
 
-func (ch ChainHandler) transactionReqHandler(msg notify.Message) {
+func (c ChainHandler) transactionReqHandler(msg notify.Message) {
 	trm, ok := msg.(*notify.TransactionReqMessage)
 	if !ok {
 		logger.Debugf("transactionReqHandler:Message assert not ok!")
@@ -73,7 +82,7 @@ func (ch ChainHandler) transactionReqHandler(msg notify.Message) {
 	}
 }
 
-func (ch ChainHandler) newBlockHandler(msg notify.Message) {
+func (c ChainHandler) newBlockHandler(msg notify.Message) {
 	m, ok := msg.(*notify.NewBlockMessage)
 	if !ok {
 		return

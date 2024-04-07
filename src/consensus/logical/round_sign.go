@@ -28,8 +28,8 @@ func (r *round1) Start() *Error {
 }
 
 func (r *round1) Close() {
-	notify.BUS.UnSubscribe(notify.BlockAddSucc, r.onBlockAddSuccess)
-	notify.BUS.UnSubscribe(notify.TransactionGotAddSucc, r.onMissTxAddSucc)
+	notify.BUS.UnSubscribe(notify.BlockAddSucc, r)
+	notify.BUS.UnSubscribe(notify.TransactionGotAddSucc, r)
 }
 
 func (r *round1) Update(msg model.ConsensusMessage) *Error {
@@ -48,7 +48,7 @@ func (r *round1) Update(msg model.ConsensusMessage) *Error {
 	// check pre
 	preBH := r.getBlockHeaderByHash(r.bh.PreHash)
 	if nil == preBH {
-		notify.BUS.Subscribe(notify.BlockAddSucc, r.onBlockAddSuccess)
+		notify.BUS.Subscribe(notify.BlockAddSucc, r)
 		r.logger.Warnf("no such preHash: %s, height: %d, waiting", r.bh.PreHash.String(), r.bh.Height)
 		return nil
 	}
@@ -61,7 +61,7 @@ func (r *round1) onBlockAddSuccess(message notify.Message) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	notify.BUS.UnSubscribe(notify.BlockAddSucc, r.onBlockAddSuccess)
+	notify.BUS.UnSubscribe(notify.BlockAddSucc, r)
 
 	block := message.GetData().(types.Block)
 	bh := block.Header
@@ -175,7 +175,7 @@ func (r *round1) checkBlock() *Error {
 			r.lostTxs[hash] = 0
 		}
 		r.logger.Warnf("lostTxs waiting, height: %d, preHash: %s, len: %d", bh.Height, bh.PreHash.String(), len(lostTxs))
-		notify.BUS.Subscribe(notify.TransactionGotAddSucc, r.onMissTxAddSucc)
+		notify.BUS.Subscribe(notify.TransactionGotAddSucc, r)
 	}
 
 	return nil
@@ -185,7 +185,7 @@ func (r *round1) onMissTxAddSucc(message notify.Message) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	notify.BUS.UnSubscribe(notify.TransactionGotAddSucc, r.onMissTxAddSucc)
+	notify.BUS.UnSubscribe(notify.TransactionGotAddSucc, r)
 
 	tgam, _ := message.(*notify.TransactionGotAddSuccMessage)
 
@@ -270,4 +270,13 @@ func (r *round1) getBlockHeaderByHash(hash common.Hash) *types.BlockHeader {
 		return b.Header
 	}
 	return nil
+}
+
+func (r *round1) HandleNetMessage(topic string, message notify.Message) {
+	switch topic {
+	case notify.BlockAddSucc:
+		r.onBlockAddSuccess(message)
+	case notify.TransactionGotAddSucc:
+		r.onMissTxAddSucc(message)
+	}
 }
