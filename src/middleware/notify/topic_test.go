@@ -19,6 +19,7 @@ package notify
 import (
 	"fmt"
 	"testing"
+	"time"
 )
 
 // hello world2
@@ -61,19 +62,29 @@ func TestTopic_UnSubscribe1(t *testing.T) {
 	topic.Handle(&DummyMessage{})
 }
 
-// hello world
-// hello world2
 func TestTopic_UnSubscribe2(t *testing.T) {
 	topic := &Topic{
 		Id: "test",
 	}
 
-	topic.Subscribe(handler1)
-	topic.Subscribe(handler2)
-	topic.Subscribe(handler3)
-
-	topic.UnSubscribe(handler3)
+	h := handlerStruct{id: "1"}
+	h1 := handlerStruct{id: "2"}
+	topic.Subscribe(h.handler1)
+	topic.Subscribe(h1.handler1)
 	topic.Handle(&DummyMessage{})
+
+	topic.UnSubscribe(h.handler1)
+	topic.Handle(&DummyMessage{})
+
+	time.Sleep(2 * time.Second)
+}
+
+type handlerStruct struct {
+	id string
+}
+
+func (h handlerStruct) handler1(message Message) {
+	fmt.Println("hello world: " + h.id)
 }
 
 func handler1(message Message) {

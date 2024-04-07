@@ -61,6 +61,8 @@ func (r *round1) onBlockAddSuccess(message notify.Message) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
+	notify.BUS.UnSubscribe(notify.BlockAddSucc, r.onBlockAddSuccess)
+
 	block := message.GetData().(types.Block)
 	bh := block.Header
 
@@ -73,9 +75,7 @@ func (r *round1) onBlockAddSuccess(message notify.Message) {
 		return
 	}
 
-	notify.BUS.UnSubscribe(notify.BlockAddSucc, r.onBlockAddSuccess)
-	r.logger.Infof("received preBH: %s", bh.Hash.String())
-
+	r.logger.Warnf("preHash waiting successfully, %s, height: %d", bh.Hash.String(), r.bh.Height)
 	r.preBH = bh
 	if err := r.afterPreArrived(); nil != err {
 		r.errChan <- err
