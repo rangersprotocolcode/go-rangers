@@ -17,7 +17,6 @@
 package logical
 
 import (
-	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/consensus/groupsig"
 	"com.tuntun.rangers/node/src/consensus/logical/group_create"
 	"com.tuntun.rangers/node/src/consensus/model"
@@ -26,25 +25,6 @@ import (
 	"com.tuntun.rangers/node/src/middleware/types"
 	"com.tuntun.rangers/node/src/utility"
 )
-
-func (p *Processor) triggerFutureVerifyMsg(hash common.Hash) {
-	futures := p.getFutureVerifyMsgs(hash)
-	if futures == nil || len(futures) == 0 {
-		return
-	}
-	p.removeFutureVerifyMsgs(hash)
-	mtype := "FUTURE_VERIFY"
-	for _, msg := range futures {
-		tlog := newHashTraceLog(mtype, msg.BH.Hash, msg.SignInfo.GetSignerID())
-		tlog.logStart("size %v", len(futures))
-		slog := newSlowLog(mtype, 0.5)
-		err := p.doVerify(mtype, msg, tlog, newBizLog(mtype), slog)
-		if err != nil {
-			tlog.logEnd("result=%v", err.Error())
-		}
-	}
-
-}
 
 func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	if !p.Ready() {
@@ -75,11 +55,7 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 		p.setVrfWorker(nil)
 	}
 
-	p.triggerFutureVerifyMsg(bh.Hash)
-
 	group_create.GroupCreateProcessor.StartCreateGroupPolling()
-
-	p.cleanVerifyContext(bh.Height)
 
 	middleware.PerfLogger.Infof("OnBlockAddSuccess. cost: %v, Hash: %v, height: %v", utility.GetTime().Sub(bh.CurTime), bh.Hash.String(), bh.Height)
 	if p.isTriggerCastImmediately() {
@@ -102,27 +78,6 @@ func (p *Processor) onGroupAddSuccess(message notify.Message) {
 	p.acceptGroup(sgi)
 
 	group_create.GroupCreateProcessor.OnGroupAddSuccess(sgi)
-}
-
-func (p *Processor) onMissTxAddSucc(message notify.Message) {
-	if !p.Ready() {
-		return
-	}
-	tgam, ok := message.(*notify.TransactionGotAddSuccMessage)
-	if !ok {
-		stdLogger.Infof("minerTransactionHandler Message assert not ok!")
-		return
-	}
-	transactions := tgam.Transactions
-	var txHashes []common.Hashes
-	for _, tx := range transactions {
-		hashes := common.Hashes{}
-		hashes[0] = tx.Hash
-		hashes[1] = tx.SubHash
-		txHashes = append(txHashes, hashes)
-
-	}
-	p.OnMessageNewTransactions(txHashes)
 }
 
 func (p *Processor) onGroupAccept(message notify.Message) {

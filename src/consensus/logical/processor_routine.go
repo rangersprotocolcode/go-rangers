@@ -98,7 +98,6 @@ func (p *Processor) releaseRoutine() bool {
 		return true
 	}
 
-	p.cleanVerifyContext(topHeight)
 	blog := newBizLog("releaseRoutine")
 
 	ids := group_create.GroupCreateProcessor.ReleaseGroups(topHeight)
