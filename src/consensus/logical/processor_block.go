@@ -114,24 +114,6 @@ func (p *Processor) getBlockHeaderByHash(hash common.Hash) *types.BlockHeader {
 	return nil
 }
 
-func (p *Processor) addFutureVerifyMsg(msg *model.ConsensusCastMessage) {
-	b := msg.BH
-	stdLogger.Debugf("future verifyMsg receive cached! h=%v, hash=%v, preHash=%v\n", b.Height, b.Hash.ShortS(), b.PreHash.ShortS())
-
-	p.futureVerifyMsgs.addMessage(b.PreHash, msg)
-}
-
-func (p *Processor) getFutureVerifyMsgs(hash common.Hash) []*model.ConsensusCastMessage {
-	if vs := p.futureVerifyMsgs.getMessages(hash); vs != nil {
-		ret := make([]*model.ConsensusCastMessage, len(vs))
-		for idx, m := range vs {
-			ret[idx] = m.(*model.ConsensusCastMessage)
-		}
-		return ret
-	}
-	return nil
-}
-
 func (p *Processor) removeFutureVerifyMsgs(hash common.Hash) {
 	p.futureVerifyMsgs.remove(hash)
 }

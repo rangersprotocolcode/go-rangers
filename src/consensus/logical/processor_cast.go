@@ -151,22 +151,6 @@ func (p *Processor) spreadGroupBrief(bh *types.BlockHeader, castTime time.Time, 
 	}
 	return g
 }
-
-func (p *Processor) reserveBlock(vctx *VerifyContext) {
-	slot := vctx.slot
-	bh := slot.BH
-	blog := newBizLog("reserveBLock")
-	blog.log("height=%v, totalQN=%v, hash=%v, slotStatus=%v", bh.Height, bh.TotalQN, bh.Hash.ShortS(), slot.GetSlotStatus())
-	if slot.IsRecovered() {
-		vctx.markCastSuccess()
-		p.blockContexts.addReservedVctx(vctx)
-		if !p.tryBroadcastBlock(vctx) {
-			blog.log("reserved, hash=%v", vctx.blockHash)
-		}
-
-	}
-}
-
 func (p *Processor) tryBroadcastBlock(vctx *VerifyContext) bool {
 	if sc := vctx.checkBroadcast(); sc != nil {
 		bh := sc.BH
