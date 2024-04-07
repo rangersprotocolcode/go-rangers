@@ -149,7 +149,6 @@ func (r *round1) afterPreArrived() *Error {
 
 func (r *round1) checkBlock() *Error {
 	bh := r.bh
-	oldHash := bh.Hash.String()
 
 	// may change blockHash due to transactions execution
 	lostTxs, ccr := core.GetBlockChain().VerifyBlock(bh)
@@ -166,8 +165,9 @@ func (r *round1) checkBlock() *Error {
 		r.normalPieceVerify()
 
 		hashString := bh.Hash.String()
-		r.logger.Infof("round1 changeId, from %s to %s", oldHash, hashString)
 		r.changedId <- hashString
+		r.logger.Infof("round1 changeId, from %s to %s", r.partyId, hashString)
+		r.partyId = hashString
 		r.canProcessed = true
 	} else {
 		r.lostTxs = make(map[common.Hashes]byte)

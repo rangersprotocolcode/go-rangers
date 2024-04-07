@@ -64,6 +64,8 @@ type (
 		started bool
 
 		logger log.Logger
+
+		partyId string
 	}
 
 	round1 struct {
