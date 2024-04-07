@@ -17,7 +17,6 @@
 package notify
 
 import (
-	"fmt"
 	"sync"
 )
 
@@ -48,9 +47,6 @@ func (bus *Bus) Subscribe(id string, handler Handler) {
 	}
 
 	topic.Subscribe(handler)
-	if id == TransactionGotAddSucc {
-		fmt.Printf("sub, len: %d\n", len(topic.handlers))
-	}
 }
 
 func (bus *Bus) UnSubscribe(id string, handler Handler) {
@@ -63,9 +59,6 @@ func (bus *Bus) UnSubscribe(id string, handler Handler) {
 	}
 
 	topic.UnSubscribe(handler)
-	if id == TransactionGotAddSucc {
-		fmt.Printf("unsub, len: %d\n", len(topic.handlers))
-	}
 }
 
 func (bus *Bus) Publish(id string, message Message) {

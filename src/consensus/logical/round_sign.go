@@ -185,6 +185,8 @@ func (r *round1) onMissTxAddSucc(message notify.Message) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
+	notify.BUS.UnSubscribe(notify.TransactionGotAddSucc, r.onMissTxAddSucc)
+
 	tgam, _ := message.(*notify.TransactionGotAddSuccMessage)
 
 	transactions := tgam.Transactions
@@ -203,7 +205,6 @@ func (r *round1) onMissTxAddSucc(message notify.Message) {
 		r.logger.Warnf("lostTxs waiting successfully, height: %d, preHash: %s", r.bh.Height, r.bh.PreHash.String())
 	}
 
-	notify.BUS.UnSubscribe(notify.TransactionGotAddSucc, r.onMissTxAddSucc)
 	err := r.checkBlock()
 	if nil != err {
 		r.errChan <- err

@@ -17,6 +17,7 @@
 package notify
 
 import (
+	"fmt"
 	"reflect"
 	"sync"
 )
@@ -49,6 +50,9 @@ func (topic *Topic) Subscribe(h Handler) {
 	defer topic.lock.Unlock()
 
 	topic.handlers = append(topic.handlers, h)
+	if topic.Id == TransactionGotAddSucc {
+		fmt.Printf("sub, %v, %d", reflect.ValueOf(h), len(topic.handlers))
+	}
 }
 
 func (topic *Topic) UnSubscribe(h Handler) {
@@ -61,15 +65,19 @@ func (topic *Topic) UnSubscribe(h Handler) {
 			return
 		}
 	}
+
+	if topic.Id == TransactionGotAddSucc {
+		fmt.Printf("unsub, %v, %d", reflect.ValueOf(h), len(topic.handlers))
+	}
 }
 
 func (topic *Topic) Handle(message Message) {
+	topic.lock.RLock()
+	defer topic.lock.RUnlock()
+
 	if 0 == len(topic.handlers) {
 		return
 	}
-
-	topic.lock.RLock()
-	defer topic.lock.RUnlock()
 	for _, h := range topic.handlers {
 		go h(message)
 	}
