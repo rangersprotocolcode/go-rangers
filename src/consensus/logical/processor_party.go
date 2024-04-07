@@ -75,7 +75,7 @@ func (p *Processor) waitUntilDone(party SignParty, key string) {
 		// timeout
 		case <-time.After(10 * time.Second):
 			delete(p.partyManager, party.id)
-			p.logger.Errorf("timeout, id: %s", party.id)
+			p.logger.Errorf("timeout, id: %s, original: %s", party.id, key)
 			party.Close()
 			return
 		case err := <-party.Err:
@@ -96,19 +96,13 @@ func (p *Processor) waitUntilDone(party SignParty, key string) {
 				p.partyLock.Lock()
 				defer p.partyLock.Unlock()
 
-				item, ok := p.partyManager[key]
-				if !ok {
-					// error
-					return
-				}
 				p.finishedParty.Add(key, 0)
-				item.SetId(realKey)
+				item := p.partyManager[key]
+				delete(p.partyManager, key)
 
 				// check if already has some messages
 				party2, ok2 := p.partyManager[realKey]
 				if ok2 {
-					delete(p.partyManager, key)
-
 					// merging future messages
 					for _, msg := range party2.GetFutureMessage() {
 						item.Update(msg)
@@ -116,7 +110,9 @@ func (p *Processor) waitUntilDone(party SignParty, key string) {
 					party2.Cancel()
 				}
 
+				item.SetId(realKey)
 				p.partyManager[realKey] = item
+				p.logger.Infof("changeId, %s->%s", key, realKey)
 			}()
 		}
 	}
