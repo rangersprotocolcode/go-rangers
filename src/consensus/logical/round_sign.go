@@ -197,7 +197,10 @@ func (r *round1) onMissTxAddSucc(message notify.Message) {
 	}
 
 	if 0 != len(r.lostTxs) {
+		r.logger.Warnf("lostTxs waiting again, height: %d, preHash: %s, len: %d", r.bh.Height, r.bh.PreHash.String(), len(r.lostTxs))
 		return
+	} else {
+		r.logger.Warnf("lostTxs waiting successfully, height: %d, preHash: %s", r.bh.Height, r.bh.PreHash.String())
 	}
 
 	notify.BUS.UnSubscribe(notify.TransactionGotAddSucc, r.onMissTxAddSucc)
