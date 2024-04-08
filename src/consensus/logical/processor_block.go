@@ -23,27 +23,8 @@ import (
 	"com.tuntun.rangers/node/src/consensus/logical/group_create"
 	"com.tuntun.rangers/node/src/consensus/model"
 	"com.tuntun.rangers/node/src/middleware/types"
-	"com.tuntun.rangers/node/src/utility"
 	"fmt"
 )
-
-func (p *Processor) blockOnChain(h common.Hash) bool {
-	return p.MainChain.HasBlockByHash(h)
-}
-
-func (p *Processor) getBlockHeaderByHash(hash common.Hash) *types.BlockHeader {
-	begin := utility.GetTime()
-	defer func() {
-		if utility.GetTime().Sub(begin).Seconds() > 0.5 {
-			slowLogger.Warnf("slowQueryBlockHeaderByHash: cost %v, hash=%v", utility.GetTime().Sub(begin), hash.ShortS())
-		}
-	}()
-	b := p.MainChain.QueryBlockByHash(hash)
-	if b != nil {
-		return b.Header
-	}
-	return nil
-}
 
 func (p *Processor) getNearestBlockByHeight(h uint64) *types.Block {
 	for {
