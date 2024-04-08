@@ -55,7 +55,7 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 	}
 
 	if p.finishedParty.Contains(key) {
-		p.logger.Infof("party: %s already done", key)
+		p.logger.Warnf("party: %s already done", key)
 		return nil
 	}
 
@@ -108,6 +108,7 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 				defer p.partyLock.Unlock()
 
 				delete(p.partyManager, party.id)
+				p.finishedParty.Add(party.id, 0)
 				p.logger.Errorf("error: %s, id: %s", err, party.id)
 				party.Close()
 			}()
@@ -148,9 +149,12 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 
 					item.SetId(realKey)
 					p.partyManager[realKey] = item
+
+					p.logger.Infof("changeId, from %s to %s", key, realKey)
+				} else {
+					p.logger.Errorf("changeId error, from %s to %s", key, realKey)
 				}
 
-				p.logger.Infof("changeId, from %s to %s", key, realKey)
 			}()
 		}
 	}

@@ -61,20 +61,22 @@ func (r *round3) Start() *Error {
 	if block == nil {
 		return NewError(fmt.Errorf("fail to generate block, height: %d, hash: %s", bh.Height, bh.Hash.String()), "finalizer", r.RoundNumber(), "", nil)
 	}
+
 	result := r.blockchain.AddBlockOnChain(block)
 	if types.AddBlockSucc != result {
-		return NewError(fmt.Errorf("fail to add block, height: %d, hash: %s, group: %s, result: %d", bh.Height, bh.Hash.String(), common.ToHex(bh.GroupId), result), "finalizer", r.RoundNumber(), "", nil)
-	}
-	r.logger.Infof("round3 add block, height: %d, hash: %s", bh.Height, bh.Hash.String())
+		r.logger.Warnf("round3 not add block, height: %d, hash: %s, result: %d", bh.Height, bh.Hash.String(), result)
+	} else {
+		r.logger.Infof("round3 add block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 
-	// send block if nesscessary
-	r.broadcastNewBlock(group, *block)
+		// send block if nesscessary
+		r.broadcastNewBlock(group, *block)
+	}
+
 	return nil
 }
 
 func (r *round3) broadcastNewBlock(group *model.GroupInfo, block types.Block) {
 	bh := block.Header
-
 	seed := big.NewInt(0).SetBytes(bh.Hash.Bytes()).Uint64()
 	index := seed % uint64(group.GetMemberCount())
 	id := group.GetMemberID(int(index)).GetBigInt()
@@ -87,6 +89,12 @@ func (r *round3) broadcastNewBlock(group *model.GroupInfo, block types.Block) {
 	} else {
 		r.logger.Infof("round3 not broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 	}
+
+	//cbm := &model.ConsensusBlockMessage{
+	//	Block: block,
+	//}
+	//r.netServer.BroadcastNewBlock(cbm)
+	//r.logger.Infof("round3 broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 }
 
 func (r *round3) checkSignature(group *model.GroupInfo) *Error {
