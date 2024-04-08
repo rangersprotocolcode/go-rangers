@@ -53,7 +53,7 @@ func (r *round1) Update(msg model.ConsensusMessage) *Error {
 	ccm, _ := msg.(*model.ConsensusCastMessage)
 	r.ccm = ccm
 	r.bh = &ccm.BH
-	r.logger.Infof("round1 update message, height: %d, castor: %s", r.bh.Height, common.ToHex(r.bh.Castor))
+	r.logger.Infof("round1 update message, height: %d, castor: %s, hash: %s", r.bh.Height, common.ToHex(r.bh.Castor), r.bh.Hash.String())
 
 	// check qn
 	totalQN := r.blockchain.TotalQN()
