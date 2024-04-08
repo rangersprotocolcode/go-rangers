@@ -132,22 +132,24 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 				p.partyLock.Lock()
 				defer p.partyLock.Unlock()
 
-				key := party.id
 				p.finishedParty.Add(key, 0)
-				item := p.partyManager[key]
-				delete(p.partyManager, key)
 
-				// check if already has some messages
-				if party2, ok := p.partyManager[realKey]; ok {
-					// merging future messages
-					for _, msg := range party2.GetFutureMessage() {
-						item.Update(msg)
+				if item, ok := p.partyManager[key]; ok {
+					delete(p.partyManager, key)
+
+					// check if already has some messages
+					if party2, ok := p.partyManager[realKey]; ok {
+						// merging future messages
+						for _, msg := range party2.GetFutureMessage() {
+							item.Update(msg)
+						}
+						party2.Cancel()
 					}
-					party2.Cancel()
+
+					item.SetId(realKey)
+					p.partyManager[realKey] = item
 				}
 
-				item.SetId(realKey)
-				p.partyManager[realKey] = item
 				p.logger.Infof("changeId, from %s to %s", key, realKey)
 			}()
 		}

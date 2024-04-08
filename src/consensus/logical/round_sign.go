@@ -53,7 +53,7 @@ func (r *round1) Update(msg model.ConsensusMessage) *Error {
 	ccm, _ := msg.(*model.ConsensusCastMessage)
 	r.ccm = ccm
 	r.bh = &ccm.BH
-	r.logger.Infof("round1 update message, height: %d, castor: %s, hash: %s", r.bh.Height, common.ToHex(r.bh.Castor), r.bh.Hash.String())
+	r.logger.Infof("round1 update message, height: %d, castor: %s, hash: %s, partyId: %s", r.bh.Height, common.ToHex(r.bh.Castor), r.bh.Hash.String(), r.partyId)
 
 	// check qn
 	totalQN := r.blockchain.TotalQN()
@@ -154,11 +154,10 @@ func (r *round1) checkBlock() *Error {
 	//normalPieceVerify
 	if 0 == len(lostTxs) {
 		r.normalPieceVerify()
-
 		hashString := bh.Hash.String()
-		go func() {
-			r.changedId <- hashString
-		}()
+
+		r.changedId <- hashString
+
 		r.logger.Infof("round1 changeId, from %s to %s", r.partyId, hashString)
 		r.partyId = hashString
 		r.canProcessed = true
