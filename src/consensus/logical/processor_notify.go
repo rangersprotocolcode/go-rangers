@@ -81,17 +81,6 @@ func (p *Processor) acceptGroup(staticGroup *model.GroupInfo) {
 	blog := newBizLog("acceptGroup")
 	blog.debug("Add to Global static groups, result=%v, groups=%v.", add, p.globalGroups.GroupSize())
 	if staticGroup.MemExist(p.GetMinerID()) {
-		p.prepareForCast(staticGroup)
+		p.NetServer.JoinGroupNet(staticGroup.GroupID.GetHexString())
 	}
-}
-
-func (p *Processor) prepareForCast(sgi *model.GroupInfo) {
-	p.NetServer.JoinGroupNet(sgi.GroupID.GetHexString())
-
-	bc := NewBlockContext(p, sgi)
-
-	stdLogger.Debugf("prepareForCast current ID %v", p.GetMinerID().ShortS())
-
-	b := p.AddBlockContext(bc)
-	stdLogger.Infof("(proc:%v) prepareForCast Add BlockContext result = %v, bc_size=%v", p.getPrefix(), b, p.blockContexts.blockContextSize())
 }

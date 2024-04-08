@@ -40,11 +40,6 @@ type Processor struct {
 	conf  common.ConfManager
 	mi    *model.SelfMinerInfo
 
-	blockContexts    *CastBlockContexts
-	futureVerifyMsgs *FutureMessageHolder
-
-	verifyMsgCaches *lru.Cache
-
 	belongGroups *access.JoinedGroupStorage
 	globalGroups *access.GroupAccessor
 
@@ -80,14 +75,12 @@ func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joined
 	p.finishedParty = common.CreateLRUCache(100)
 
 	p.conf = conf
-	p.futureVerifyMsgs = NewFutureMessageHolder()
 
 	p.MainChain = core.GetBlockChain()
 	p.GroupChain = core.GetGroupChain()
 	p.mi = &mi
 	p.globalGroups = access.NewGroupAccessor(p.GroupChain)
 	p.belongGroups = joinedGroupStorage
-	p.blockContexts = NewCastBlockContexts()
 	p.NetServer = net.NewNetworkServer()
 
 	p.minerReader = access.NewMinerPoolReader()
@@ -98,12 +91,6 @@ func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joined
 		stdLogger.Debugf("proc(%v) inited 2.\n", p.getPrefix())
 		consensusLogger.Infof("ProcessorId:%v", p.getPrefix())
 	}
-
-	cache, err := lru.New(300)
-	if err != nil {
-		panic(err)
-	}
-	p.verifyMsgCaches = cache
 
 	notify.BUS.Subscribe(notify.BlockAddSucc, p)
 	notify.BUS.Subscribe(notify.GroupAddSucc, p)

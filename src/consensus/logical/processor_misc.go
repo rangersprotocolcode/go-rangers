@@ -28,12 +28,6 @@ import (
 func (p *Processor) Start() bool {
 	p.Ticker.RegisterRoutine(p.getCastCheckRoutineName(), p.checkSelfCastRoutine, common.CastingCheckInterval)
 
-	p.Ticker.RegisterRoutine(p.getBroadcastRoutineName(), p.broadcastRoutine, 300)
-	p.Ticker.StartTickerRoutine(p.getBroadcastRoutineName(), false)
-
-	p.Ticker.RegisterRoutine(p.getReleaseRoutineName(), p.releaseRoutine, 600)
-	p.Ticker.StartTickerRoutine(p.getReleaseRoutineName(), false)
-
 	p.Ticker.RegisterRoutine(p.getUpdateGlobalGroupsRoutineName(), p.updateGlobalGroups, 60*1000)
 	p.Ticker.StartTickerRoutine(p.getUpdateGlobalGroupsRoutineName(), false)
 
@@ -48,7 +42,6 @@ func (p *Processor) Stop() {
 }
 
 func (p *Processor) prepareMiner() {
-
 	topHeight := p.MainChain.TopBlock().Height
 
 	stdLogger.Infof("prepareMiner get groups from groupchain")

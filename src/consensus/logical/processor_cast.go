@@ -23,95 +23,12 @@ import (
 	"com.tuntun.rangers/node/src/consensus/groupsig"
 	"com.tuntun.rangers/node/src/consensus/model"
 	"com.tuntun.rangers/node/src/consensus/net"
-	"com.tuntun.rangers/node/src/utility"
-	"math/big"
-
 	"com.tuntun.rangers/node/src/middleware/types"
-	"runtime/debug"
-	"sync"
+	"com.tuntun.rangers/node/src/utility"
 	"time"
 
 	"com.tuntun.rangers/node/src/middleware"
 )
-
-type CastBlockContexts struct {
-	blockCtxs    sync.Map //string -> *BlockContext
-	reservedVctx sync.Map //blockHash -> *VerifyContext
-}
-
-func NewCastBlockContexts() *CastBlockContexts {
-	return &CastBlockContexts{
-		blockCtxs: sync.Map{},
-	}
-}
-
-func (bctx *CastBlockContexts) addBlockContext(bc *BlockContext) (add bool) {
-	_, load := bctx.blockCtxs.LoadOrStore(bc.MinerID.Gid.GetHexString(), bc)
-	return !load
-}
-
-func (bctx *CastBlockContexts) getBlockContext(gid groupsig.ID) *BlockContext {
-	if v, ok := bctx.blockCtxs.Load(gid.GetHexString()); ok {
-		return v.(*BlockContext)
-	}
-	return nil
-}
-
-func (bctx *CastBlockContexts) blockContextSize() int32 {
-	size := int32(0)
-	bctx.blockCtxs.Range(func(key, value interface{}) bool {
-		size++
-		return true
-	})
-	return size
-}
-
-func (bctx *CastBlockContexts) removeBlockContexts(gids []groupsig.ID) {
-	for _, id := range gids {
-		stdLogger.Infof("removeBlockContexts %v", id.ShortS())
-		bc := bctx.getBlockContext(id)
-		if bc != nil {
-			//bc.removeTicker()
-			for _, vctx := range bc.SafeGetVerifyContexts() {
-				bctx.removeReservedVctx(vctx.blockHash)
-			}
-			bctx.blockCtxs.Delete(id.GetHexString())
-		}
-	}
-}
-
-func (bctx *CastBlockContexts) forEachBlockContext(f func(bc *BlockContext) bool) {
-	bctx.blockCtxs.Range(func(key, value interface{}) bool {
-		v := value.(*BlockContext)
-		return f(v)
-	})
-}
-
-func (bctx *CastBlockContexts) removeReservedVctx(hash common.Hash) {
-	bctx.reservedVctx.Delete(hash)
-}
-
-func (bctx *CastBlockContexts) addReservedVctx(vctx *VerifyContext) bool {
-	_, load := bctx.reservedVctx.LoadOrStore(vctx.blockHash, vctx)
-	return !load
-}
-
-func (bctx *CastBlockContexts) forEachReservedVctx(f func(vctx *VerifyContext) bool) {
-	bctx.reservedVctx.Range(func(key, value interface{}) bool {
-		v := value.(*VerifyContext)
-		return f(v)
-	})
-}
-
-func (p *Processor) AddBlockContext(bc *BlockContext) bool {
-	var add = p.blockContexts.addBlockContext(bc)
-	newBizLog("AddBlockContext").log("gid=%v, result=%v\n.", bc.MinerID.Gid.ShortS(), add)
-	return add
-}
-
-func (p *Processor) GetBlockContext(gid groupsig.ID) *BlockContext {
-	return p.blockContexts.getBlockContext(gid)
-}
 
 func (p *Processor) triggerCastCheck() {
 	p.Ticker.StartAndTriggerRoutine(p.getCastCheckRoutineName())
@@ -150,88 +67,6 @@ func (p *Processor) spreadGroupBrief(bh *types.BlockHeader, castTime time.Time, 
 		MemIds: group.GetGroupMembers(),
 	}
 	return g
-}
-func (p *Processor) tryBroadcastBlock(vctx *VerifyContext) bool {
-	if sc := vctx.checkBroadcast(); sc != nil {
-		bh := sc.BH
-		tlog := newHashTraceLog("tryBroadcastBlock", bh.Hash, p.GetMinerID())
-		tlog.log("try broadcast, height= %v, totalQN= %v, cost: %v", bh.Height, bh.TotalQN, utility.GetTime().Sub(bh.CurTime))
-
-		go p.successNewBlock(vctx, sc)
-
-		p.blockContexts.removeReservedVctx(vctx.blockHash)
-		return true
-	}
-	return false
-}
-
-func (p *Processor) successNewBlock(vctx *VerifyContext, slot *SlotContext) {
-	defer func() {
-		if r := recover(); r != nil {
-			common.DefaultLogger.Errorf("error：%v\n", r)
-			s := debug.Stack()
-			common.DefaultLogger.Errorf(string(s))
-		}
-	}()
-
-	bh := slot.BH
-
-	blog := newBizLog("successNewBlock")
-
-	if slot.IsFailed() {
-		blog.log("slot is failed")
-		return
-	}
-	if vctx.broadCasted() {
-		blog.log("block broadCasted!")
-		return
-	}
-
-	if p.blockOnChain(bh.Hash) {
-		blog.log("block already onchain!")
-		return
-	}
-
-	block := p.MainChain.GenerateBlock(*bh)
-	if block == nil {
-		blog.log("core.GenerateBlock is nil! won't broadcast block!")
-		return
-	}
-
-	group := p.GetGroup(groupsig.DeserializeID(bh.GroupId))
-	gpk := group.GetGroupPubKey()
-	if !slot.VerifyGroupSigns(gpk, vctx.prevBH.Random) {
-		blog.log("group pub key local check failed, gpk=%v, hash in slot=%v, hash in bh=%v status=%v.",
-			gpk.ShortS(), slot.BH.Hash.ShortS(), bh.Hash.ShortS(), slot.GetSlotStatus())
-		return
-	}
-
-	r := p.doAddOnChain(block)
-	if r != int8(types.AddBlockSucc) {
-		slot.setSlotStatus(SS_FAILED)
-		return
-	}
-
-	tlog := newHashTraceLog("successNewBlock", bh.Hash, p.GetMinerID())
-	tlog.log("height=%v, status=%v", bh.Height, vctx.consensusStatus)
-
-	seed := big.NewInt(0).SetBytes(bh.Hash.Bytes()).Uint64()
-	index := seed % uint64(group.GetMemberCount())
-	id := group.GetMemberID(int(index)).GetBigInt()
-	if id.Cmp(p.mi.ID.GetBigInt()) == 0 {
-		cbm := &model.ConsensusBlockMessage{
-			Block: *block,
-		}
-		p.NetServer.BroadcastNewBlock(cbm)
-		tlog.log("broadcasted height=%v, cost: %v, seed: %d, index: %d", bh.Height, utility.GetTime().Sub(bh.CurTime), seed, index)
-	}
-
-	vctx.broadcastSlot = slot
-	vctx.markBroadcast()
-	slot.setSlotStatus(SS_SUCCESS)
-
-	blog.log("After BroadcastNewBlock hash=%v:%v", bh.Hash.ShortS(), utility.GetTime().Format(TIMESTAMP_LAYOUT))
-	return
 }
 
 func (p *Processor) sampleBlockHeight(heightLimit uint64, rand []byte, id groupsig.ID) uint64 {

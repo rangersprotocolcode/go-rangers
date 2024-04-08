@@ -19,7 +19,6 @@ package logical
 import (
 	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/consensus/groupsig"
-	"com.tuntun.rangers/node/src/consensus/logical/group_create"
 	"com.tuntun.rangers/node/src/consensus/model"
 	"com.tuntun.rangers/node/src/utility"
 	"time"
@@ -81,51 +80,6 @@ func (p *Processor) checkSelfCastRoutine() bool {
 	worker = newVRFWorker(p.GetSelfMinerDO(top), top, castHeight, expireTime)
 	p.setVrfWorker(worker)
 	p.blockProposal()
-	return true
-}
-
-func (p *Processor) broadcastRoutine() bool {
-	p.blockContexts.forEachReservedVctx(func(vctx *VerifyContext) bool {
-		p.tryBroadcastBlock(vctx)
-		return true
-	})
-	return true
-}
-
-func (p *Processor) releaseRoutine() bool {
-	topHeight := p.MainChain.TopBlock().Height
-	if topHeight <= model.Param.CreateGroupInterval {
-		return true
-	}
-
-	blog := newBizLog("releaseRoutine")
-
-	ids := group_create.GroupCreateProcessor.ReleaseGroups(topHeight)
-	if len(ids) > 0 {
-		p.blockContexts.removeBlockContexts(ids)
-	}
-
-	p.futureVerifyMsgs.forEach(func(key common.Hash, arr []interface{}) bool {
-		for _, msg := range arr {
-			b := msg.(*model.ConsensusCastMessage)
-			if b.BH.Height+200 < topHeight {
-				blog.debug("remove future verify msg, hash=%v", key.String())
-				p.removeFutureVerifyMsgs(key)
-				break
-			}
-		}
-		return true
-	})
-
-	for _, h := range p.verifyMsgCaches.Keys() {
-		hash := h.(common.Hash)
-		cache := p.getVerifyMsgCache(hash)
-		if cache != nil && cache.expired() {
-			blog.debug("remove verify cache msg, hash=%v", hash.ShortS())
-			p.removeVerifyMsgCache(hash)
-		}
-	}
-
 	return true
 }
 

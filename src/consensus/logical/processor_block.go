@@ -25,76 +25,7 @@ import (
 	"com.tuntun.rangers/node/src/middleware/types"
 	"com.tuntun.rangers/node/src/utility"
 	"fmt"
-	"sync"
 )
-
-type FutureMessageHolder struct {
-	messages sync.Map
-}
-
-func NewFutureMessageHolder() *FutureMessageHolder {
-	return &FutureMessageHolder{
-		messages: sync.Map{},
-	}
-}
-func (holder *FutureMessageHolder) addMessage(hash common.Hash, msg interface{}) {
-	if vs, ok := holder.messages.Load(hash); ok {
-		vsSlice := vs.([]interface{})
-		vsSlice = append(vsSlice, msg)
-		holder.messages.Store(hash, vsSlice)
-	} else {
-		slice := make([]interface{}, 0)
-		slice = append(slice, msg)
-		holder.messages.Store(hash, slice)
-	}
-}
-
-func (holder *FutureMessageHolder) getMessages(hash common.Hash) []interface{} {
-	if vs, ok := holder.messages.Load(hash); ok {
-		return vs.([]interface{})
-	}
-	return nil
-}
-
-func (holder *FutureMessageHolder) remove(hash common.Hash) {
-	holder.messages.Delete(hash)
-}
-
-func (holder *FutureMessageHolder) forEach(f func(key common.Hash, arr []interface{}) bool) {
-	holder.messages.Range(func(key, value interface{}) bool {
-		arr := value.([]interface{})
-		return f(key.(common.Hash), arr)
-	})
-}
-
-func (holder *FutureMessageHolder) size() int {
-	cnt := 0
-	holder.forEach(func(key common.Hash, value []interface{}) bool {
-		cnt += len(value)
-		return true
-	})
-	return cnt
-}
-
-func (p *Processor) doAddOnChain(block *types.Block) (result int8) {
-	bh := block.Header
-
-	rlog := newRtLog("doAddOnChain")
-	rlog.log("start, height=%v, hash=%v", bh.Height, bh.Hash.ShortS())
-	result = int8(p.MainChain.AddBlockOnChain(block))
-	rlog.log("height=%v, hash=%v, result=%v.", bh.Height, bh.Hash.ShortS(), result)
-	castor := groupsig.DeserializeID(bh.Castor)
-	tlog := newHashTraceLog("doAddOnChain", bh.Hash, castor)
-	tlog.log("result=%v,castor=%v", result, castor.ShortS())
-
-	if result == -1 {
-		p.removeFutureVerifyMsgs(block.Header.Hash)
-
-	}
-
-	return result
-
-}
 
 func (p *Processor) blockOnChain(h common.Hash) bool {
 	return p.MainChain.HasBlockByHash(h)
@@ -112,14 +43,6 @@ func (p *Processor) getBlockHeaderByHash(hash common.Hash) *types.BlockHeader {
 		return b.Header
 	}
 	return nil
-}
-
-func (p *Processor) removeFutureVerifyMsgs(hash common.Hash) {
-	p.futureVerifyMsgs.remove(hash)
-}
-
-func (p *Processor) blockPreview(bh *types.BlockHeader) string {
-	return fmt.Sprintf("hash=%v, height=%v, curTime=%v, preHash=%v, preTime=%v", bh.Hash.ShortS(), bh.Height, bh.CurTime, bh.PreHash.ShortS(), bh.PreTime)
 }
 
 func (p *Processor) getNearestBlockByHeight(h uint64) *types.Block {
