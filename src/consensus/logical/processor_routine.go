@@ -19,6 +19,7 @@ package logical
 import (
 	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/consensus/groupsig"
+	"com.tuntun.rangers/node/src/consensus/logical/group_create"
 	"com.tuntun.rangers/node/src/consensus/model"
 	"com.tuntun.rangers/node/src/utility"
 	"time"
@@ -26,10 +27,6 @@ import (
 
 func (p *Processor) getCastCheckRoutineName() string {
 	return "self_cast_check_" + p.getPrefix()
-}
-
-func (p *Processor) getBroadcastRoutineName() string {
-	return "broadcast_" + p.getPrefix()
 }
 
 func (p *Processor) getReleaseRoutineName() string {
@@ -99,5 +96,16 @@ func (p *Processor) updateGlobalGroups() bool {
 		stdLogger.Debugf("updateGlobalGroups:gid=%v, workHeight=%v, topHeight=%v", gid.ShortS(), g.Header.WorkHeight, top)
 		p.acceptGroup(sgi)
 	}
+	return true
+}
+
+func (p *Processor) releaseRoutine() bool {
+	topHeight := p.MainChain.TopBlock().Height
+	if topHeight <= model.Param.CreateGroupInterval {
+		return true
+	}
+
+	group_create.GroupCreateProcessor.ReleaseGroups(topHeight)
+
 	return true
 }
