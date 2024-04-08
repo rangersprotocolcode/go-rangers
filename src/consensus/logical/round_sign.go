@@ -73,31 +73,6 @@ func (r *round1) Update(msg model.ConsensusMessage) *Error {
 	return r.afterPreArrived()
 }
 
-func (r *round1) onBlockAddSuccess(message notify.Message) {
-	r.lock.Lock()
-	defer r.lock.Unlock()
-
-	notify.BUS.UnSubscribe(notify.BlockAddSucc, r)
-
-	block := message.GetData().(types.Block)
-	bh := block.Header
-
-	if bh.Height > r.bh.Height {
-		r.errChan <- NewError(fmt.Errorf("higher block on the chain, %d > %d", bh.Height, r.bh.Height), "ccm", r.RoundNumber(), "", nil)
-		return
-	}
-
-	if 0 != bytes.Compare(bh.Hash.Bytes(), r.bh.PreHash.Bytes()) {
-		return
-	}
-
-	r.logger.Warnf("preHash waiting successfully, %s, height: %d", bh.Hash.String(), r.bh.Height)
-	r.preBH = bh
-	if err := r.afterPreArrived(); nil != err {
-		r.errChan <- err
-	}
-}
-
 func (r *round1) afterPreArrived() *Error {
 	bh := r.bh
 	preBH := r.preBH
@@ -159,7 +134,7 @@ func (r *round1) afterPreArrived() *Error {
 		return NewError(fmt.Errorf("time error, height: %d, preHash: %s", bh.Height, bh.PreHash.String()), "ccm", r.RoundNumber(), "", nil)
 	}
 
-	r.logger.Debugf("round1 finish base check, height: %d, preHash: %s", bh.Height, bh.PreHash.String())
+	r.logger.Debugf("round1 finish base check, height: %d, hash: %s, preHash: %s", bh.Height, bh.Hash.String(), bh.PreHash.String())
 	return r.checkBlock()
 }
 
@@ -181,7 +156,9 @@ func (r *round1) checkBlock() *Error {
 		r.normalPieceVerify()
 
 		hashString := bh.Hash.String()
-		r.changedId <- hashString
+		go func() {
+			r.changedId <- hashString
+		}()
 		r.logger.Infof("round1 changeId, from %s to %s", r.partyId, hashString)
 		r.partyId = hashString
 		r.canProcessed = true
@@ -195,36 +172,6 @@ func (r *round1) checkBlock() *Error {
 	}
 
 	return nil
-}
-
-func (r *round1) onMissTxAddSucc(message notify.Message) {
-	r.lock.Lock()
-	defer r.lock.Unlock()
-
-	notify.BUS.UnSubscribe(notify.TransactionGotAddSucc, r)
-
-	tgam, _ := message.(*notify.TransactionGotAddSuccMessage)
-
-	transactions := tgam.Transactions
-	for _, tx := range transactions {
-		hashes := common.Hashes{}
-		hashes[0] = tx.Hash
-		hashes[1] = tx.SubHash
-
-		delete(r.lostTxs, hashes)
-	}
-
-	if 0 != len(r.lostTxs) {
-		r.logger.Warnf("lostTxs waiting again, height: %d, preHash: %s, len: %d", r.bh.Height, r.bh.PreHash.String(), len(r.lostTxs))
-		return
-	} else {
-		r.logger.Warnf("lostTxs waiting successfully, height: %d, preHash: %s", r.bh.Height, r.bh.PreHash.String())
-	}
-
-	err := r.checkBlock()
-	if nil != err {
-		r.errChan <- err
-	}
 }
 
 func (r *round1) normalPieceVerify() {
@@ -294,5 +241,60 @@ func (r *round1) HandleNetMessage(topic string, message notify.Message) {
 		r.onBlockAddSuccess(message)
 	case notify.TransactionGotAddSucc:
 		r.onMissTxAddSucc(message)
+	}
+}
+
+func (r *round1) onBlockAddSuccess(message notify.Message) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	notify.BUS.UnSubscribe(notify.BlockAddSucc, r)
+
+	block := message.GetData().(types.Block)
+	bh := block.Header
+
+	if bh.Height > r.bh.Height {
+		r.errChan <- NewError(fmt.Errorf("higher block on the chain, %d > %d", bh.Height, r.bh.Height), "ccm", r.RoundNumber(), "", nil)
+		return
+	}
+
+	if 0 != bytes.Compare(bh.Hash.Bytes(), r.bh.PreHash.Bytes()) {
+		return
+	}
+
+	r.logger.Warnf("preHash waiting successfully, %s, height: %d", bh.Hash.String(), r.bh.Height)
+	r.preBH = bh
+	if err := r.afterPreArrived(); nil != err {
+		r.errChan <- err
+	}
+}
+
+func (r *round1) onMissTxAddSucc(message notify.Message) {
+	r.lock.Lock()
+	defer r.lock.Unlock()
+
+	notify.BUS.UnSubscribe(notify.TransactionGotAddSucc, r)
+
+	tgam, _ := message.(*notify.TransactionGotAddSuccMessage)
+
+	transactions := tgam.Transactions
+	for _, tx := range transactions {
+		hashes := common.Hashes{}
+		hashes[0] = tx.Hash
+		hashes[1] = tx.SubHash
+
+		delete(r.lostTxs, hashes)
+	}
+
+	if 0 != len(r.lostTxs) {
+		r.logger.Warnf("lostTxs waiting again, height: %d, preHash: %s, len: %d", r.bh.Height, r.bh.PreHash.String(), len(r.lostTxs))
+		return
+	} else {
+		r.logger.Warnf("lostTxs waiting successfully, height: %d, preHash: %s", r.bh.Height, r.bh.PreHash.String())
+	}
+
+	err := r.checkBlock()
+	if nil != err {
+		r.errChan <- err
 	}
 }
