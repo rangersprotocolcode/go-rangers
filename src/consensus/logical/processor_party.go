@@ -154,18 +154,16 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 				msgs := p.futureMessages[realKey]
 				delete(p.futureMessages, realKey)
 				p.logger.Infof("changeId, get future messages, from %s to %s. len: %d", key, realKey, len(msgs))
-				if 0 != len(msgs) {
-					for _, msg := range msgs {
-						if nil == msg {
-							p.logger.Infof("changeId and update future messages, from %s to %s, nil msg", key, realKey)
-							continue
-						}
-						p.logger.Infof("changeId and update future messages, from %s to %s, msg: %s", key, realKey, msg.GetMessageID())
-						party.Update(msg)
+				for _, msg := range msgs {
+					if nil == msg {
+						p.logger.Infof("changeId and update future messages, from %s to %s, nil msg", key, realKey)
+						continue
 					}
-				} else {
-					p.logger.Infof("changeId, from %s to %s", key, realKey)
+					p.logger.Infof("changeId and update future messages, from %s to %s, msg: %s", key, realKey, msg.GetMessageID())
+					party.Update(msg)
 				}
+
+				p.logger.Infof("fin changeId, from %s to %s", key, realKey)
 
 			}()
 		}
