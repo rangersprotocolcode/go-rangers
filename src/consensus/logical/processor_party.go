@@ -27,7 +27,7 @@ import (
 
 func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 	key := p.generatePartyKey(ccm.BH)
-	party := p.loadOrNewSignParty(key)
+	party := p.loadOrNewSignParty(key, ccm, true)
 
 	if nil == party {
 		return
@@ -36,14 +36,14 @@ func (p *Processor) OnMessageCast(ccm *model.ConsensusCastMessage) {
 }
 
 func (p *Processor) OnMessageVerify(cvm *model.ConsensusVerifyMessage) {
-	party := p.loadOrNewSignParty(cvm.BlockHash.Bytes())
+	party := p.loadOrNewSignParty(cvm.BlockHash.Bytes(), cvm, false)
 	if nil == party {
 		return
 	}
 	party.Update(cvm)
 }
 
-func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
+func (p *Processor) loadOrNewSignParty(keyBytes []byte, msg model.ConsensusMessage, isNew bool) Party {
 	p.partyLock.Lock()
 	defer p.partyLock.Unlock()
 
@@ -59,6 +59,16 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 		return nil
 	}
 
+	if !isNew {
+		msgs, ok := p.futureMessages[key]
+		if !ok {
+			msgs = make([]model.ConsensusMessage, 1)
+			p.futureMessages[key] = msgs
+		}
+		msgs = append(msgs, msg)
+		return nil
+	}
+
 	party := &SignParty{belongGroups: p.belongGroups, blockchain: p.MainChain,
 		minerReader: p.minerReader, globalGroups: p.globalGroups,
 		mi: p.mi.ID, netServer: p.NetServer,
@@ -67,7 +77,6 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 			mtx:            sync.Mutex{},
 			futureMessages: make(map[string]model.ConsensusMessage),
 			Done:           make(chan byte, 1),
-			CancelChan:     make(chan byte, 1),
 			Err:            make(chan error, 1),
 			id:             key,
 		},
@@ -123,34 +132,26 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 			}()
 
 			return
-		case <-party.CancelChan:
-			p.logger.Debugf("cancel old one, %s", party.id)
-			return
 		case realKey := <-party.ChangedId:
 			func() {
 				p.partyLock.Lock()
 				defer p.partyLock.Unlock()
 
 				p.finishedParty.Add(key, 0)
+				delete(p.partyManager, key)
 
-				if item, ok := p.partyManager[key]; ok {
-					delete(p.partyManager, key)
+				party.SetId(realKey)
+				p.partyManager[realKey] = party
 
-					// check if already has some messages
-					if party2, ok := p.partyManager[realKey]; ok {
-						// merging future messages
-						for _, msg := range party2.GetFutureMessage() {
-							item.Update(msg)
-						}
-						party2.Cancel()
+				msgs := p.futureMessages[realKey]
+				delete(p.futureMessages, realKey)
+				if 0 != len(msgs) {
+					for _, msg := range msgs {
+						party.Update(msg)
 					}
-
-					item.SetId(realKey)
-					p.partyManager[realKey] = item
-
-					p.logger.Infof("changeId, from %s to %s", key, realKey)
+					p.logger.Infof("changeId and update future messages, from %s to %s", key, realKey)
 				} else {
-					p.logger.Errorf("changeId error, from %s to %s", key, realKey)
+					p.logger.Infof("changeId, from %s to %s", key, realKey)
 				}
 
 			}()

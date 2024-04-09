@@ -15,7 +15,6 @@ import (
 type Party interface {
 	Start() *Error
 	Close()
-	Cancel()
 	Update(msg model.ConsensusMessage)
 
 	StoreMessage(msg model.ConsensusMessage)
@@ -35,8 +34,8 @@ type Party interface {
 }
 
 type baseParty struct {
-	Done, CancelChan chan byte
-	Err              chan error
+	Done chan byte
+	Err  chan error
 
 	id      string
 	started bool
@@ -57,20 +56,10 @@ func (p *baseParty) SetId(key string) {
 }
 
 func (p *baseParty) Close() {
-	//close(p.Err)
-	//close(p.Done)
-	//close(p.CancelChan)
-
 	if p.round() == nil {
 		return
 	}
 	p.round().Close()
-}
-
-func (p *baseParty) Cancel() {
-	go func() {
-		p.CancelChan <- 0
-	}()
 }
 
 func (p *baseParty) setRound(round Round) *Error {
@@ -162,13 +151,6 @@ type SignParty struct {
 	mi           groupsig.ID
 	netServer    net.NetworkServer
 }
-
-//func (p *SignParty) Close() {
-//	if p.started {
-//		close(p.ChangedId)
-//	}
-//	p.baseParty.Close()
-//}
 
 func (p *SignParty) Start() *Error {
 	p.lock()

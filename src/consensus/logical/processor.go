@@ -55,10 +55,11 @@ type Processor struct {
 
 	lock sync.Mutex
 
-	partyLock     sync.RWMutex
-	partyManager  map[string]Party
-	logger        log.Logger
-	finishedParty *lru.Cache
+	partyLock      sync.RWMutex
+	partyManager   map[string]Party
+	logger         log.Logger
+	finishedParty  *lru.Cache
+	futureMessages map[string][]model.ConsensusMessage
 }
 
 func (p *Processor) getPrefix() string {
@@ -73,6 +74,7 @@ func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joined
 	p.partyLock = sync.RWMutex{}
 	p.logger = log.GetLoggerByIndex(log.CLogConfig, strconv.Itoa(common.InstanceIndex))
 	p.finishedParty = common.CreateLRUCache(100)
+	p.futureMessages = make(map[string][]model.ConsensusMessage)
 
 	p.conf = conf
 
