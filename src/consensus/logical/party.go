@@ -57,9 +57,9 @@ func (p *baseParty) SetId(key string) {
 }
 
 func (p *baseParty) Close() {
-	close(p.Err)
-	close(p.Done)
-	close(p.CancelChan)
+	//close(p.Err)
+	//close(p.Done)
+	//close(p.CancelChan)
 
 	if p.round() == nil {
 		return
@@ -163,12 +163,12 @@ type SignParty struct {
 	netServer    net.NetworkServer
 }
 
-func (p *SignParty) Close() {
-	if p.started {
-		close(p.ChangedId)
-	}
-	p.baseParty.Close()
-}
+//func (p *SignParty) Close() {
+//	if p.started {
+//		close(p.ChangedId)
+//	}
+//	p.baseParty.Close()
+//}
 
 func (p *SignParty) Start() *Error {
 	p.lock()
@@ -179,7 +179,7 @@ func (p *SignParty) Start() *Error {
 	}
 
 	p.started = true
-	p.ChangedId = make(chan string)
+	p.ChangedId = make(chan string, 1)
 	p.setRound(p.FirstRound())
 
 	return p.rnd.Start()
