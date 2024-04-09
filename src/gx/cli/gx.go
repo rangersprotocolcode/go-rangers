@@ -38,7 +38,6 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"runtime"
 	"time"
 )
 
@@ -116,8 +115,9 @@ func (gx *GX) Run() {
 		fmt.Printf("pprof: %d\n", pprof)
 		if pprof != 0 {
 			go func() {
-				runtime.SetBlockProfileRate(1)
-				runtime.SetMutexProfileFraction(1)
+				//runtime.SetBlockProfileRate(1)
+				//runtime.SetMutexProfileFraction(1)
+				fmt.Println("start pprof")
 				err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", pprof), nil)
 				if err != nil {
 					fmt.Println(err)
