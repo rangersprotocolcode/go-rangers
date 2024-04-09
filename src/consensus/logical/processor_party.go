@@ -62,13 +62,13 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte, msg model.ConsensusMessa
 	if !isNew {
 		msgs, ok := p.futureMessages[key]
 		if !ok {
-			msgs = make([]model.ConsensusMessage, 1)
-			p.futureMessages[key] = msgs
+			p.futureMessages[key] = make([]model.ConsensusMessage, 1)
 		}
-		msgs = append(msgs, msg)
-
 		msgs = p.futureMessages[key]
-		p.logger.Infof("save futuremessage for: %s, after length: %d", key, len(msgs))
+		msgs = append(msgs, msg)
+		p.futureMessages[key] = msgs
+
+		p.logger.Infof("save futuremessage for: %s, after length: %d", key, len(p.futureMessages[key]))
 		return nil
 	}
 
