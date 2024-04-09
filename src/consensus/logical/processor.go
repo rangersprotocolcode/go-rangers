@@ -55,7 +55,7 @@ type Processor struct {
 
 	lock sync.Mutex
 
-	partyLock      sync.RWMutex
+	partyLock      sync.Mutex
 	partyManager   map[string]Party
 	logger         log.Logger
 	finishedParty  *lru.Cache
@@ -71,7 +71,7 @@ func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joined
 	p.lock = sync.Mutex{}
 
 	p.partyManager = make(map[string]Party, 10)
-	p.partyLock = sync.RWMutex{}
+	p.partyLock = sync.Mutex{}
 	p.logger = log.GetLoggerByIndex(log.CLogConfig, strconv.Itoa(common.InstanceIndex))
 	p.finishedParty = common.CreateLRUCache(100)
 	p.futureMessages = make(map[string][]model.ConsensusMessage)

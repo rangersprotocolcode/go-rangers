@@ -121,6 +121,7 @@ func (r *round2) Update(msg model.ConsensusMessage) *Error {
 		r.logger.Infof("round2 recovered group sign. hash: %s, height: %d, group sign: %s", bh.Hash.String(), bh.Height, common.ToHex(bh.Signature))
 	}
 
+	r.logger.Debugf("round2 add random piece, from: %s, hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height)
 	return nil
 }
 
