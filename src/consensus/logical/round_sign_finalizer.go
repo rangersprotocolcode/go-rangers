@@ -22,7 +22,6 @@ import (
 	"com.tuntun.rangers/node/src/consensus/model"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"fmt"
-	"math/big"
 )
 
 func (r *round3) Close() {
@@ -77,24 +76,12 @@ func (r *round3) Start() *Error {
 
 func (r *round3) broadcastNewBlock(group *model.GroupInfo, block types.Block) {
 	bh := block.Header
-	seed := big.NewInt(0).SetBytes(bh.Hash.Bytes()).Uint64()
-	index := seed % uint64(group.GetMemberCount())
-	id := group.GetMemberID(int(index)).GetBigInt()
-	if id.Cmp(r.mi.GetBigInt()) == 0 {
-		cbm := &model.ConsensusBlockMessage{
-			Block: block,
-		}
-		r.netServer.BroadcastNewBlock(cbm)
-		r.logger.Infof("round3 broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
-	} else {
-		r.logger.Infof("round3 not broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
-	}
 
-	//cbm := &model.ConsensusBlockMessage{
-	//	Block: block,
-	//}
-	//r.netServer.BroadcastNewBlock(cbm)
-	//r.logger.Infof("round3 broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
+	cbm := &model.ConsensusBlockMessage{
+		Block: block,
+	}
+	r.netServer.BroadcastNewBlock(cbm)
+	r.logger.Infof("round3 broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 }
 
 func (r *round3) checkSignature(group *model.GroupInfo) *Error {
