@@ -62,9 +62,8 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte, msg model.ConsensusMessa
 	if !isNew {
 		msgs, ok := p.futureMessages[key]
 		if !ok {
-			p.futureMessages[key] = make([]model.ConsensusMessage, 1)
+			msgs = make([]model.ConsensusMessage, 0)
 		}
-		msgs = p.futureMessages[key]
 		msgs = append(msgs, msg)
 		p.futureMessages[key] = msgs
 
