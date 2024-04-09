@@ -147,9 +147,12 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 				delete(p.futureMessages, realKey)
 				if 0 != len(msgs) {
 					for _, msg := range msgs {
+						if nil == msg {
+							continue
+						}
 						party.Update(msg)
 					}
-					p.logger.Infof("changeId and update future messages, from %s to %s", key, realKey)
+					p.logger.Infof("changeId and update future messages, from %s to %s, %d", key, realKey, len(msgs))
 				} else {
 					p.logger.Infof("changeId, from %s to %s", key, realKey)
 				}
