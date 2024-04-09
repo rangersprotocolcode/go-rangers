@@ -80,14 +80,18 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 		go p.waitUntilDone(party)
 
 		return party
+	} else {
+		p.finishedParty.Add(key, 0)
+		party.Close()
 	}
 
 	return nil
 }
 
 func (p *Processor) waitUntilDone(party *SignParty) {
-	key := party.id
+	defer party.Close()
 
+	key := party.id
 	for {
 		select {
 		// timeout
@@ -98,8 +102,6 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 
 				delete(p.partyManager, party.id)
 				p.logger.Errorf("timeout, id: %s, original: %s", party.id, key)
-				party.Close()
-
 			}()
 			return
 		case err := <-party.Err:
@@ -110,7 +112,6 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 				delete(p.partyManager, party.id)
 				p.finishedParty.Add(party.id, 0)
 				p.logger.Errorf("error: %s, id: %s", err, party.id)
-				party.Close()
 			}()
 
 			return

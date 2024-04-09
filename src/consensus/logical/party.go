@@ -57,10 +57,13 @@ func (p *baseParty) SetId(key string) {
 }
 
 func (p *baseParty) Close() {
+	close(p.Err)
+	close(p.Done)
+	close(p.CancelChan)
+
 	if p.round() == nil {
 		return
 	}
-
 	p.round().Close()
 }
 
@@ -158,6 +161,13 @@ type SignParty struct {
 	ChangedId    chan string
 	mi           groupsig.ID
 	netServer    net.NetworkServer
+}
+
+func (p *SignParty) Close() {
+	if p.started {
+		close(p.ChangedId)
+	}
+	p.baseParty.Close()
 }
 
 func (p *SignParty) Start() *Error {
