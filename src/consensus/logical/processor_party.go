@@ -66,7 +66,9 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte, msg model.ConsensusMessa
 			p.futureMessages[key] = msgs
 		}
 		msgs = append(msgs, msg)
-		p.logger.Infof("save futuremessage for: %s", key)
+
+		msgs = p.futureMessages[key]
+		p.logger.Infof("save futuremessage for: %s, after length: %d", key, len(msgs))
 		return nil
 	}
 
@@ -151,7 +153,7 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 
 				msgs := p.futureMessages[realKey]
 				delete(p.futureMessages, realKey)
-				p.logger.Infof("changeId, get future messages, from %s to %s", key, realKey)
+				p.logger.Infof("changeId, get future messages, from %s to %s. len: %d", key, realKey, len(msgs))
 				if 0 != len(msgs) {
 					for _, msg := range msgs {
 						if nil == msg {
