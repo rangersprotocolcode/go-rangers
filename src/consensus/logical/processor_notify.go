@@ -36,6 +36,8 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
+	delete(p.futureMessages, bh.Hash.String())
+
 	worker := p.GetVrfWorker()
 	if nil != worker && worker.castHeight <= bh.Height {
 		p.setVrfWorker(nil)
