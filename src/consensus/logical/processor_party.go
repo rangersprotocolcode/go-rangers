@@ -80,9 +80,6 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte) Party {
 		go p.waitUntilDone(party)
 
 		return party
-	} else {
-		p.finishedParty.Add(key, 0)
-		party.Close()
 	}
 
 	return nil
