@@ -66,6 +66,7 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte, msg model.ConsensusMessa
 			p.futureMessages[key] = msgs
 		}
 		msgs = append(msgs, msg)
+		p.logger.Infof("save futuremessage for: %s", key)
 		return nil
 	}
 
@@ -134,9 +135,12 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 			return
 		case realKey := <-party.ChangedId:
 			func() {
+				p.logger.Infof("start to changeId, from %s to %s", key, realKey)
+
 				p.partyLock.Lock()
 				defer p.partyLock.Unlock()
 
+				p.logger.Infof("changeId,get plock, from %s to %s", key, realKey)
 				p.finishedParty.Add(key, 0)
 				delete(p.partyManager, key)
 
