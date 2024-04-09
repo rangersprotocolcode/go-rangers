@@ -111,19 +111,21 @@ func (gx *GX) Run() {
 			fmt.Errorf(err.Error())
 		}
 	case mineCmd.FullCommand():
-		pprof := *pprofPort
-		fmt.Printf("pprof: %d\n", pprof)
-		if pprof != 0 {
-			go func() {
-				//runtime.SetBlockProfileRate(1)
-				//runtime.SetMutexProfileFraction(1)
-				fmt.Println("start pprof")
-				err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", pprof), nil)
-				if err != nil {
-					fmt.Println(err)
-				}
+		if pprofPort != nil {
+			pprof := *pprofPort
+			fmt.Printf("pprof: %d\n", pprof)
+			if pprof != 0 {
+				go func() {
+					//runtime.SetBlockProfileRate(1)
+					//runtime.SetMutexProfileFraction(1)
+					fmt.Println("start pprof")
+					err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", pprof), nil)
+					if err != nil {
+						fmt.Println(err)
+					}
 
-			}()
+				}()
+			}
 		}
 
 		common.Init(*instanceIndex, *configFile, *env)
