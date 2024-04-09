@@ -143,12 +143,15 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 				p.logger.Infof("changeId,get plock, from %s to %s", key, realKey)
 				p.finishedParty.Add(key, 0)
 				delete(p.partyManager, key)
+				p.logger.Infof("changeId, deleted old id, from %s to %s", key, realKey)
 
 				party.SetId(realKey)
 				p.partyManager[realKey] = party
+				p.logger.Infof("changeId, set new id, from %s to %s", key, realKey)
 
 				msgs := p.futureMessages[realKey]
 				delete(p.futureMessages, realKey)
+				p.logger.Infof("changeId, get future messages, from %s to %s", key, realKey)
 				if 0 != len(msgs) {
 					for _, msg := range msgs {
 						if nil == msg {
