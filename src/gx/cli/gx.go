@@ -35,7 +35,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"gopkg.in/alecthomas/kingpin.v2"
+	"net/http"
+	_ "net/http/pprof"
 	"os"
+	"runtime"
 	"time"
 )
 
@@ -81,6 +84,7 @@ func (gx *GX) Run() {
 	addrRpc := mineCmd.Flag("rpcaddr", "rpc host").Short('r').Default("0.0.0.0").IP()
 	portRpc := mineCmd.Flag("rpcport", "rpc port").Short('p').Default("8088").Uint()
 	instanceIndex := mineCmd.Flag("instance", "instance index").Short('i').Default("0").Int()
+	pprofPort := app.Flag("pprof", "enable pprof").Default("0").Uint()
 
 	env := mineCmd.Flag("env", "the environment application run in").String()
 	gateAddrPoint := mineCmd.Flag("gateaddr", "the gate addr").String()
@@ -108,6 +112,15 @@ func (gx *GX) Run() {
 			fmt.Errorf(err.Error())
 		}
 	case mineCmd.FullCommand():
+		pprof := *pprofPort
+		if pprof != 0 {
+			go func() {
+				http.ListenAndServe(fmt.Sprintf(":%d", pprof), nil)
+				runtime.SetBlockProfileRate(1)
+				runtime.SetMutexProfileFraction(1)
+			}()
+		}
+
 		common.Init(*instanceIndex, *configFile, *env)
 		// using default
 		gateAddr := *gateAddrPoint
