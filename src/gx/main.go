@@ -25,7 +25,7 @@ import (
 
 func main() {
 	initSysParam()
-
+	SetupStackTrap()
 	gx := cli.NewGX()
 	gx.Run()
 
