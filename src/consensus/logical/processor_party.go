@@ -44,8 +44,8 @@ func (p *Processor) OnMessageVerify(cvm *model.ConsensusVerifyMessage) {
 }
 
 func (p *Processor) loadOrNewSignParty(keyBytes []byte, msg model.ConsensusMessage, isNew bool) Party {
-	p.partyLock.Lock()
-	defer p.partyLock.Unlock()
+	p.partyLock.Lock("loadOrNewSignParty")
+	defer p.partyLock.Unlock("loadOrNewSignParty")
 
 	key := common.ToHex(keyBytes)
 	item, ok := p.partyManager[key]
@@ -70,7 +70,7 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte, msg model.ConsensusMessa
 		msgs = append(msgs, msg)
 		p.futureMessages.Add(key, msgs)
 
-		p.logger.Infof("save futuremessage for: %s, after length: %d", key, len(msgs))
+		p.logger.Infof("save future message for: %s, after length: %d", key, len(msgs))
 		return nil
 	}
 
@@ -108,8 +108,8 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 		// timeout
 		case <-time.After(10 * time.Second):
 			func() {
-				p.partyLock.Lock()
-				defer p.partyLock.Unlock()
+				p.partyLock.Lock("timeout")
+				defer p.partyLock.Unlock("timeout")
 
 				delete(p.partyManager, party.id)
 				p.logger.Errorf("timeout, id: %s, original: %s", party.id, key)
@@ -117,8 +117,8 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 			return
 		case err := <-party.Err:
 			func() {
-				p.partyLock.Lock()
-				defer p.partyLock.Unlock()
+				p.partyLock.Lock("err")
+				defer p.partyLock.Unlock("err")
 
 				delete(p.partyManager, party.id)
 				p.finishedParty.Add(party.id, 0)
@@ -128,8 +128,8 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 			return
 		case <-party.Done:
 			func() {
-				p.partyLock.Lock()
-				defer p.partyLock.Unlock()
+				p.partyLock.Lock("done")
+				defer p.partyLock.Unlock("done")
 
 				delete(p.partyManager, party.id)
 				p.finishedParty.Add(party.id, 0)
@@ -139,19 +139,16 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 			return
 		case realKey := <-party.ChangedId:
 			func() {
+				p.partyLock.Lock("changeId")
+				defer p.partyLock.Unlock("changeId")
+
 				p.logger.Infof("start to changeId, from %s to %s", key, realKey)
 
-				p.partyLock.Lock()
-				defer p.partyLock.Unlock()
-
-				p.logger.Infof("changeId, get plock, from %s to %s", key, realKey)
 				p.finishedParty.Add(key, 0)
 				delete(p.partyManager, key)
-				p.logger.Infof("changeId, deleted old id, from %s to %s", key, realKey)
 
 				party.SetId(realKey)
 				p.partyManager[realKey] = party
-				p.logger.Infof("changeId, set new id, from %s to %s", key, realKey)
 
 				if msgsRaw, ok := p.futureMessages.Get(realKey); ok {
 					msgs := msgsRaw.([]model.ConsensusMessage)
@@ -162,13 +159,15 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 							p.logger.Infof("changeId and update future messages, from %s to %s, nil msg", key, realKey)
 							continue
 						}
-						p.logger.Infof("changeId and update future messages, from %s to %s, msg: %s", key, realKey, msg.GetMessageID())
-						go party.Update(msg)
+
+						go func(m model.ConsensusMessage) {
+							p.logger.Infof("changeId and update future messages, from %s to %s, msg: %s", key, realKey, m.GetMessageID())
+							party.Update(m)
+						}(msg)
 					}
 				}
 
 				p.logger.Infof("fin changeId, from %s to %s", key, realKey)
-
 			}()
 		}
 	}

@@ -24,6 +24,7 @@ import (
 	"com.tuntun.rangers/node/src/consensus/net"
 	"com.tuntun.rangers/node/src/consensus/ticker"
 	"com.tuntun.rangers/node/src/core"
+	"com.tuntun.rangers/node/src/middleware"
 	"com.tuntun.rangers/node/src/middleware/log"
 	"com.tuntun.rangers/node/src/middleware/notify"
 	"com.tuntun.rangers/node/src/middleware/types"
@@ -55,7 +56,7 @@ type Processor struct {
 
 	lock sync.Mutex
 
-	partyLock                     sync.Mutex
+	partyLock                     middleware.Loglock
 	partyManager                  map[string]Party
 	logger                        log.Logger
 	finishedParty, futureMessages *lru.Cache
@@ -70,7 +71,7 @@ func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joined
 	p.lock = sync.Mutex{}
 
 	p.partyManager = make(map[string]Party, 10)
-	p.partyLock = sync.Mutex{}
+	p.partyLock = middleware.NewLoglock("partyLock")
 	p.logger = log.GetLoggerByIndex(log.CLogConfig, strconv.Itoa(common.InstanceIndex))
 	p.finishedParty = common.CreateLRUCache(100)
 	p.futureMessages = common.CreateLRUCache(50)
