@@ -159,7 +159,7 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 						continue
 					}
 					p.logger.Infof("changeId and update future messages, from %s to %s, msg: %s", key, realKey, msg.GetMessageID())
-					party.Update(msg)
+					go party.Update(msg)
 				}
 
 				p.logger.Infof("fin changeId, from %s to %s", key, realKey)

@@ -112,7 +112,7 @@ func (p *baseParty) Update(msg model.ConsensusMessage) {
 		// need more message
 		// waiting
 		if !p.round().CanProceed() {
-			p.logger.Debugf("cannot proceed at round%d", p.round().RoundNumber())
+			p.logger.Debugf("cannot proceed at round%d, %s", p.round().RoundNumber(), p.id)
 			return
 		}
 

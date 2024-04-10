@@ -33,8 +33,8 @@ func (r *round2) Start() *Error {
 	r.logger.Debugf("round2 start. hash: %s, height: %d", bh.Hash.String(), bh.Height)
 
 	threshold := model.Param.GetGroupK(r.group.GetMemberCount())
-	r.gSignGenerator = model.NewGroupSignGenerator(threshold)
-	r.rSignGenerator = model.NewGroupSignGenerator(threshold)
+	r.gSignGenerator = newGroupSignGenerator(threshold)
+	r.rSignGenerator = newGroupSignGenerator(threshold)
 
 	if 0 == len(r.futureMessages) {
 		return nil
@@ -152,4 +152,63 @@ func (r *round2) NextRound() Round {
 	r.canProcessed = true
 	r.number = 2
 	return &round3{round2: r}
+}
+
+type groupSignGenerator struct {
+	threshold      int
+	witnessSignMap map[string]groupsig.Signature
+
+	groupSign groupsig.Signature
+}
+
+func newGroupSignGenerator(threshold int) *groupSignGenerator {
+	return &groupSignGenerator{
+		witnessSignMap: make(map[string]groupsig.Signature, 0),
+		threshold:      threshold,
+	}
+}
+
+func (gs *groupSignGenerator) AddWitnessSign(id groupsig.ID, signature groupsig.Signature) (add bool, generated bool) {
+	if gs.SignRecovered() {
+		return false, true
+	}
+
+	return gs.addWitnessForce(id, signature)
+}
+
+func (gs *groupSignGenerator) SignRecovered() bool {
+	return gs.groupSign.IsValid()
+}
+
+func (gs *groupSignGenerator) GetGroupSign() groupsig.Signature {
+	return gs.groupSign
+}
+
+func (gs *groupSignGenerator) addWitnessForce(id groupsig.ID, signature groupsig.Signature) (add bool, generated bool) {
+	key := id.GetHexString()
+	if _, ok := gs.witnessSignMap[key]; ok {
+		return false, false
+	}
+	gs.witnessSignMap[key] = signature
+
+	if len(gs.witnessSignMap) >= gs.threshold {
+		return true, gs.genGroupSign()
+	}
+	return true, false
+}
+
+func (gs *groupSignGenerator) genGroupSign() bool {
+	if gs.groupSign.IsValid() {
+		return true
+	}
+
+	sig := groupsig.RecoverGroupSignature(gs.witnessSignMap, gs.threshold)
+	if sig == nil {
+		return false
+	}
+	gs.groupSign = *sig
+	if len(gs.groupSign.Serialize()) == 0 {
+		//stdL("!!!!!!!!!!!!!!!!!!!!!!!!!!!1sign is empty!")
+	}
+	return true
 }

@@ -107,8 +107,7 @@ type (
 	round2 struct {
 		*round1
 
-		gSignGenerator *model.GroupSignGenerator
-		rSignGenerator *model.GroupSignGenerator
+		gSignGenerator, rSignGenerator *groupSignGenerator
 	}
 	round3 struct {
 		*round2
