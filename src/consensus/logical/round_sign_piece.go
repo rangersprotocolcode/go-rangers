@@ -32,12 +32,7 @@ func (r *round2) Start() *Error {
 	bh := r.bh
 	r.logger.Debugf("round2 start. hash: %s, height: %d", bh.Hash.String(), bh.Height)
 
-	gid := groupsig.DeserializeID(bh.GroupId)
-	group, err := r.globalGroups.GetGroupByID(gid)
-	if err != nil || nil == group {
-		return NewError(fmt.Errorf("cannot get group: %s, hash: %s, height: %d", gid.GetHexString(), bh.Hash.String(), bh.Height), "omv-start", r.RoundNumber(), "", nil)
-	}
-	threshold := model.Param.GetGroupK(group.GetMemberCount())
+	threshold := model.Param.GetGroupK(r.group.GetMemberCount())
 	r.gSignGenerator = model.NewGroupSignGenerator(threshold)
 	r.rSignGenerator = model.NewGroupSignGenerator(threshold)
 
@@ -75,8 +70,14 @@ func (r *round2) Update(msg model.ConsensusMessage) *Error {
 	}
 	r.logger.Debugf("round2 update, from: %s, hash: %s, height: %d", cvm.SignInfo.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height)
 
-	if r.blockchain.HasBlockByHash(cvm.BlockHash) {
-		return NewError(fmt.Errorf("already existed. hash: %s, height: %d", cvm.BlockHash.String(), bh.Height), "omv", r.RoundNumber(), "", nil)
+	r.checkBlockExisted()
+	if r.blockExisted {
+		if r.isSend {
+			r.canProcessed = true
+			r.logger.Warnf("block has generated. skip round2. hash: %s", r.bh.Hash.String())
+			return nil
+		}
+		return NewError(fmt.Errorf("block already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "omv", r.RoundNumber(), "", nil)
 	}
 
 	gid := groupsig.DeserializeID(bh.GroupId)

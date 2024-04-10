@@ -98,6 +98,11 @@ type (
 		lostTxs   map[common.Hashes]byte
 		preBH, bh *types.BlockHeader
 		ccm       *model.ConsensusCastMessage
+		group     *model.GroupInfo
+
+		// if send block by myself
+		isSend       bool
+		blockExisted bool
 	}
 	round2 struct {
 		*round1

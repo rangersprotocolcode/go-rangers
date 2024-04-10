@@ -44,15 +44,20 @@ func (r *round3) Start() *Error {
 	bh := r.bh
 	r.logger.Debugf("round3 start, hash: %s, height: %d", bh.Hash.String(), bh.Height)
 
-	if r.blockchain.HasBlockByHash(bh.Hash) {
-		return NewError(fmt.Errorf("blockheader already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "finalizer", r.RoundNumber(), "", nil)
+	r.checkBlockExisted()
+	if r.blockExisted {
+		if r.isSend {
+			block := r.blockchain.GenerateBlock(*bh)
+			if block == nil {
+				return NewError(fmt.Errorf("fail to generate block, height: %d, hash: %s", bh.Height, bh.Hash.String()), "finalizer", r.RoundNumber(), "", nil)
+			}
+			r.broadcastNewBlock(*block)
+			return nil
+		}
+		return NewError(fmt.Errorf("block already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "finalizer", r.RoundNumber(), "", nil)
 	}
 
-	group, err := r.globalGroups.GetGroupByID(groupsig.DeserializeID(bh.GroupId))
-	if nil != err {
-		return NewError(fmt.Errorf("fail to get group, height: %d, hash: %s, group: %s", bh.Height, bh.Hash.String(), common.ToHex(bh.GroupId)), "finalizer", r.RoundNumber(), "", nil)
-	}
-	if err := r.checkSignature(group); err != nil {
+	if err := r.checkSignature(r.group); err != nil {
 		return err
 	}
 
@@ -67,21 +72,24 @@ func (r *round3) Start() *Error {
 	} else {
 		r.logger.Infof("round3 add block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 
-		// send block if nesscessary
-		r.broadcastNewBlock(group, *block)
+		r.broadcastNewBlock(*block)
 	}
 
 	return nil
 }
 
-func (r *round3) broadcastNewBlock(group *model.GroupInfo, block types.Block) {
+// send block if necessary
+func (r *round3) broadcastNewBlock(block types.Block) {
 	bh := block.Header
-
-	cbm := &model.ConsensusBlockMessage{
-		Block: block,
+	if r.isSend {
+		cbm := &model.ConsensusBlockMessage{
+			Block: block,
+		}
+		r.netServer.BroadcastNewBlock(cbm)
+		r.logger.Infof("round3 broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
+	} else {
+		r.logger.Infof("round3 not broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 	}
-	r.netServer.BroadcastNewBlock(cbm)
-	r.logger.Infof("round3 broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 }
 
 func (r *round3) checkSignature(group *model.GroupInfo) *Error {

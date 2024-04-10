@@ -26,6 +26,7 @@ import (
 	"com.tuntun.rangers/node/src/middleware/types"
 	"com.tuntun.rangers/node/src/utility"
 	"fmt"
+	"math/big"
 	"sync"
 	"time"
 )
@@ -109,9 +110,15 @@ func (r *round1) afterPreArrived() *Error {
 
 	// check group
 	groupId := groupsig.DeserializeID(bh.GroupId)
-	if !r.belongGroups.BelongGroup(groupId) {
+	group, err := r.globalGroups.GetGroupByID(groupId)
+	if nil != err {
+		return NewError(fmt.Errorf("fail to get group, height: %d, hash: %s, group: %s", bh.Height, bh.Hash.String(), common.ToHex(bh.GroupId)), "finalizer", r.RoundNumber(), "", nil)
+	}
+	if !group.MemExist(r.mi) {
 		return NewError(fmt.Errorf("not in group: %s, height: %d, preHash: %s", groupId.GetHexString(), bh.Height, bh.PreHash.String()), "ccm", r.RoundNumber(), "", nil)
 	}
+	r.group = group
+
 	hash := CalcRandomHash(preBH, bh.CurTime)
 	selectGroup, err := r.globalGroups.SelectVerifyGroupFromCache(hash, bh.Height)
 	if err != nil {
@@ -147,12 +154,24 @@ func (r *round1) checkBlock() *Error {
 		return NewError(fmt.Errorf("blockheader error, height: %d, preHash: %s", bh.Height, bh.PreHash.String()), "ccm", r.RoundNumber(), "", nil)
 	}
 
-	if r.blockchain.HasBlockByHash(bh.Hash) {
-		return NewError(fmt.Errorf("blockheader already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "ccm", r.RoundNumber(), "", nil)
-	}
-
 	//normalPieceVerify
 	if 0 == len(lostTxs) {
+		// decide whether send block
+		seed := big.NewInt(0).SetBytes(bh.Hash.Bytes()).Uint64()
+		index := seed % uint64(r.group.GetMemberCount())
+		id := r.group.GetMemberID(int(index)).GetBigInt()
+		r.isSend = id.Cmp(r.mi.GetBigInt()) == 0
+
+		r.checkBlockExisted()
+		if r.blockExisted {
+			if r.isSend {
+				r.logger.Warnf("block has generated. skip round2. hash: %s", r.bh.Hash.String())
+				r.canProcessed = true
+				return nil
+			}
+			return NewError(fmt.Errorf("block already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "ccm", r.RoundNumber(), "", nil)
+		}
+
 		r.normalPieceVerify()
 		hashString := bh.Hash.String()
 
@@ -171,6 +190,15 @@ func (r *round1) checkBlock() *Error {
 	}
 
 	return nil
+}
+
+func (r *round1) checkBlockExisted() {
+	if r.blockExisted {
+		return
+	}
+
+	bh := r.bh
+	r.blockExisted = r.blockchain.HasBlockByHash(bh.Hash)
 }
 
 func (r *round1) normalPieceVerify() {
@@ -220,9 +248,16 @@ func (r *round1) CanAccept(msg model.ConsensusMessage) int {
 }
 
 func (r *round1) NextRound() Round {
+	r.started = false
+
+	if r.blockExisted {
+		r.canProcessed = true
+		r.number = 2
+		return &round3{}
+	}
+
 	r.canProcessed = false
 	r.number = 1
-	r.started = false
 	return &round2{round1: r}
 }
 
