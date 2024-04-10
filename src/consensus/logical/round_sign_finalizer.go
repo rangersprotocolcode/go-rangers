@@ -66,14 +66,16 @@ func (r *round3) Start() *Error {
 		return NewError(fmt.Errorf("fail to generate block, height: %d, hash: %s", bh.Height, bh.Hash.String()), "finalizer", r.RoundNumber(), "", nil)
 	}
 
-	result := r.blockchain.AddBlockOnChain(block)
-	if types.AddBlockSucc != result {
-		r.logger.Warnf("round3 not add block, height: %d, hash: %s, result: %d", bh.Height, bh.Hash.String(), result)
-	} else {
-		r.logger.Infof("round3 add block, height: %d, hash: %s", bh.Height, bh.Hash.String())
+	go func() {
+		result := r.blockchain.AddBlockOnChain(block)
+		if types.AddBlockSucc != result {
+			r.logger.Warnf("round3 not add block, height: %d, hash: %s, result: %d", bh.Height, bh.Hash.String(), result)
+		} else {
+			r.logger.Infof("round3 add block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 
-		r.broadcastNewBlock(*block)
-	}
+			r.broadcastNewBlock(*block)
+		}
+	}()
 
 	return nil
 }
