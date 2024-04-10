@@ -86,12 +86,16 @@ type (
 
 	round1 struct {
 		*baseRound
-		mi           groupsig.ID
+		mi groupsig.ID
+
+		// get sign privateKey
 		belongGroups *access.JoinedGroupStorage
+		// get group rLock
 		globalGroups *access.GroupAccessor
-		minerReader  *access.MinerPoolReader
-		blockchain   core.BlockChain
-		netServer    net.NetworkServer
+		// get miner without lock
+		minerReader *access.MinerPoolReader
+		blockchain  core.BlockChain
+		netServer   net.NetworkServer
 
 		changedId chan string
 

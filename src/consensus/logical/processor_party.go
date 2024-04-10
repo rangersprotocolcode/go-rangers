@@ -60,14 +60,17 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte, msg model.ConsensusMessa
 	}
 
 	if !isNew {
-		msgs, ok := p.futureMessages[key]
+		var msgs []model.ConsensusMessage
+		msgsRaw, ok := p.futureMessages.Get(key)
 		if !ok {
 			msgs = make([]model.ConsensusMessage, 0)
+		} else {
+			msgs = msgsRaw.([]model.ConsensusMessage)
 		}
 		msgs = append(msgs, msg)
-		p.futureMessages[key] = msgs
+		p.futureMessages.Add(key, msgs)
 
-		p.logger.Infof("save futuremessage for: %s, after length: %d", key, len(p.futureMessages[key]))
+		p.logger.Infof("save futuremessage for: %s, after length: %d", key, len(msgs))
 		return nil
 	}
 
@@ -150,16 +153,18 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 				p.partyManager[realKey] = party
 				p.logger.Infof("changeId, set new id, from %s to %s", key, realKey)
 
-				msgs := p.futureMessages[realKey]
-				delete(p.futureMessages, realKey)
-				p.logger.Infof("changeId, get future messages, from %s to %s. len: %d", key, realKey, len(msgs))
-				for _, msg := range msgs {
-					if nil == msg {
-						p.logger.Infof("changeId and update future messages, from %s to %s, nil msg", key, realKey)
-						continue
+				if msgsRaw, ok := p.futureMessages.Get(realKey); ok {
+					msgs := msgsRaw.([]model.ConsensusMessage)
+					p.futureMessages.Remove(realKey)
+					p.logger.Infof("changeId, get future messages, from %s to %s. len: %d", key, realKey, len(msgs))
+					for _, msg := range msgs {
+						if nil == msg {
+							p.logger.Infof("changeId and update future messages, from %s to %s, nil msg", key, realKey)
+							continue
+						}
+						p.logger.Infof("changeId and update future messages, from %s to %s, msg: %s", key, realKey, msg.GetMessageID())
+						go party.Update(msg)
 					}
-					p.logger.Infof("changeId and update future messages, from %s to %s, msg: %s", key, realKey, msg.GetMessageID())
-					go party.Update(msg)
 				}
 
 				p.logger.Infof("fin changeId, from %s to %s", key, realKey)
