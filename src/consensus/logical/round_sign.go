@@ -156,6 +156,8 @@ func (r *round1) checkBlock() *Error {
 
 	//normalPieceVerify
 	if 0 == len(lostTxs) {
+		notify.BUS.UnSubscribe(notify.TransactionGotAddSucc, r)
+
 		// decide whether send block
 		seed := big.NewInt(0).SetBytes(bh.Hash.Bytes()).Uint64()
 		index := seed % uint64(r.group.GetMemberCount())
@@ -282,8 +284,6 @@ func (r *round1) onBlockAddSuccess(message notify.Message) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
-	notify.BUS.UnSubscribe(notify.BlockAddSucc, r)
-
 	block := message.GetData().(types.Block)
 	bh := block.Header
 
@@ -296,6 +296,7 @@ func (r *round1) onBlockAddSuccess(message notify.Message) {
 		return
 	}
 
+	notify.BUS.UnSubscribe(notify.BlockAddSucc, r)
 	r.logger.Warnf("preHash waiting successfully, %s, height: %d", bh.Hash.String(), r.bh.Height)
 	r.preBH = bh
 	if err := r.afterPreArrived(); nil != err {
@@ -306,8 +307,6 @@ func (r *round1) onBlockAddSuccess(message notify.Message) {
 func (r *round1) onMissTxAddSucc(message notify.Message) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
-
-	notify.BUS.UnSubscribe(notify.TransactionGotAddSucc, r)
 
 	tgam, _ := message.(*notify.TransactionGotAddSuccMessage)
 
