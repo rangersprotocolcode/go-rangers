@@ -142,12 +142,11 @@ func (p *Processor) blockProposal() {
 	//proveHash, root := p.GenProveHashs(height, worker.getBaseBH().Random, gb.MemIds)
 
 	middleware.PerfLogger.Infof("start cast block, last: %v, height: %v", utility.GetTime().Sub(start), height)
-	block := p.MainChain.CastBlock(start, height, pi.Big(), common.Hash{}, qn, p.GetMinerID().Serialize(), gid.Serialize())
-	if block == nil {
+	bh, ok := p.MainChain.CastBlock(start, height, pi.Big(), common.Hash{}, qn, p.GetMinerID().Serialize(), gid.Serialize())
+	if !ok {
 		blog.log("MainChain::CastingBlock failed, height=%v", height)
 		return
 	}
-	bh := block.Header
 	middleware.PerfLogger.Infof("fin cast block, last: %v, hash: %v, height: %v", utility.GetTime().Sub(start), bh.Hash.String(), bh.Height)
 
 	tlog := newHashTraceLog("CASTBLOCK", bh.Hash, p.GetMinerID())
@@ -158,7 +157,7 @@ func (p *Processor) blockProposal() {
 		skey := p.mi.SecKey
 
 		var ccm model.ConsensusCastMessage
-		ccm.BH = *bh
+		ccm.BH = bh
 		ccm.ProveHash = []common.Hash{}
 
 		if signInfo, ok := model.NewSignInfo(p.mi.SecKey, p.mi.ID, &ccm); !ok {
@@ -168,7 +167,7 @@ func (p *Processor) blockProposal() {
 			ccm.SignInfo = signInfo
 		}
 		tlog.log("cast successfully, SendVerifiedCast, cost: %v, castor=%v, hash=%v, genHash=%v", bh.CurTime.Sub(bh.PreTime).Seconds(), ccm.SignInfo.GetSignerID().ShortS(), bh.Hash.ShortS(), ccm.SignInfo.GetDataHash().ShortS())
-		p.NetServer.SendCandidate(&ccm, gb, block.Transactions)
+		p.NetServer.SendCandidate(&ccm)
 
 		worker.markProposed()
 

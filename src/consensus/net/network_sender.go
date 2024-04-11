@@ -145,7 +145,7 @@ func (ns *NetworkServerImpl) BroadcastGroupInfo(cgm *model.GroupInitedMessage) {
 
 }
 
-func (ns *NetworkServerImpl) SendCandidate(ccm *model.ConsensusCastMessage, group *GroupBrief, body []*types.Transaction) {
+func (ns *NetworkServerImpl) SendCandidate(ccm *model.ConsensusCastMessage) {
 	var groupId groupsig.ID
 	e1 := groupId.Deserialize(ccm.BH.GroupId)
 	if e1 != nil {

@@ -145,19 +145,19 @@ func initBlockChain() error {
 	return nil
 }
 
-func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValue *big.Int, proveRoot common.Hash, qn uint64, castor []byte, groupid []byte) *types.Block {
+func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValue *big.Int, proveRoot common.Hash, qn uint64, castor []byte, groupid []byte) (types.BlockHeader, bool) {
 	middleware.RLockBlockchain("castblock")
 
 	latestBlock := chain.latestBlock
 	if latestBlock == nil {
 		logger.Errorf("Block chain lastest block is nil!")
 		middleware.RUnLockBlockchain("castblock")
-		return nil
+		return types.BlockHeader{}, false
 	}
 	if height <= latestBlock.Height {
 		logger.Errorf("Fail to cast block: height problem. height:%d, local height:%d", height, latestBlock.Height)
 		middleware.RUnLockBlockchain("castblock")
-		return nil
+		return types.BlockHeader{}, false
 	}
 
 	txs := types.Transactions(chain.transactionPool.PackForCast(height))
@@ -166,10 +166,7 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	}
 	middleware.RUnLockBlockchain("castblock")
 
-	block := new(types.Block)
-	block.Transactions = txs
-
-	block.Header = &types.BlockHeader{
+	bh := types.BlockHeader{
 		CurTime:    timestamp,
 		Height:     height,
 		ProveValue: proveValue,
@@ -180,9 +177,12 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		PreHash:    latestBlock.Hash,
 		PreTime:    latestBlock.CurTime,
 	}
-	block.Header.RequestIds = getRequestIdFromTransactions(block.Transactions, latestBlock.RequestIds)
+	bh.RequestIds = getRequestIdFromTransactions(txs, latestBlock.RequestIds)
 
 	middleware.PerfLogger.Infof("fin cast object. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
+
+	block := new(types.Block)
+	block.Transactions = txs
 
 	if common.IsProposal020() {
 		transactionHashes := make([]common.Hashes, len(txs))
@@ -191,17 +191,20 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 			hashes[0] = transaction.Hash
 			hashes[1] = transaction.SubHash
 			transactionHashes[i] = hashes
-
 		}
-		block.Header.Transactions = transactionHashes
-		block.Header.TxTree = calcTxTree(block.Transactions)
-		block.Header.Hash = block.Header.GenHash()
+		bh.Transactions = transactionHashes
+		bh.TxTree = calcTxTree(txs)
+		bh.Hash = bh.GenHash()
+
+		bh2 := *&bh
+		block.Header = &bh2
 		go chain.runTransactions(block, latestBlock, height, timestamp)
 	} else {
+		block.Header = &bh
 		chain.runTransactions(block, latestBlock, height, timestamp)
 	}
 
-	return block
+	return bh, true
 }
 
 func (chain *blockChain) runTransactions(block *types.Block, latestBlock *types.BlockHeader, height uint64, timestamp time.Time) {
