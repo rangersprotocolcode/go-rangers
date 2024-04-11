@@ -131,18 +131,18 @@ func addDevTestAsset(stateDB *account.AccountDB) {
 }
 
 func getDevGenesisOneProposer() []*types.Miner {
-	genesisProposers := make([]GenesisProposer, 1)
+	genesisProposers := make([]GenesisProposer, 2)
 	genesisProposer := GenesisProposer{}
 	genesisProposer.MinerId = "0x7f88b4f2d36a83640ce5d782a0a20cc2b233de3df2d8a358bf0e7b29e9586a12"
 	genesisProposer.MinerPubKey = "0x16d0b0a106e2de32b42ea4096c9e80c883c6ffa9e3f19f09cb45dfff2b02d09a3bcf95f2d0c33b7caf5db42d55d3459395c1b8d6a5d315a113edc39c4ce3a3d5269ab4a9514a998fdcc693d90a42505185270a184a07ddfb553b181be13e968480ef0df4c06cf657957b07118776a38fea3bcf758ea4491a4213719e2f6537b5"
 	genesisProposer.VRFPubkey = "0x009f3b76f3e49dcdd6d2ee8421f077fd4c68c176b18e1e602a3c1f09f9272250"
 	genesisProposers[0] = genesisProposer
 
-	//genesisProposer2 := GenesisProposer{}
-	//genesisProposer2.MinerId = "0xb26612d2742ab4edd016b354725d045d6627de9b1b2d7c40ae26d2c97af21abd"
-	//genesisProposer2.MinerPubKey = "0x02985100db85c1ac4ecda18701179f1055ca56fd7ca7cc77663a0f202e1ac65f754ac09f9c2a0db05074b4701f609ca97b90cf093aa16c161ec384a0ab8ee39b32dc6f91e8370fe874e83fb4eb6f7630af9640cc9142e785a66b8cb6c08902397078364d10f4bece03e5d849c8b2f171160cba9efd97d03b6e68110220b18440"
-	//genesisProposer2.VRFPubkey = "0x9ca3d8e00ba25a26d941e0aa9625ad2765c6f5a7fc7cc11c5e97a023173786ef"
-	//genesisProposers[1] = genesisProposer2
+	genesisProposer2 := GenesisProposer{}
+	genesisProposer2.MinerId = "0xb26612d2742ab4edd016b354725d045d6627de9b1b2d7c40ae26d2c97af21abd"
+	genesisProposer2.MinerPubKey = "0x02985100db85c1ac4ecda18701179f1055ca56fd7ca7cc77663a0f202e1ac65f754ac09f9c2a0db05074b4701f609ca97b90cf093aa16c161ec384a0ab8ee39b32dc6f91e8370fe874e83fb4eb6f7630af9640cc9142e785a66b8cb6c08902397078364d10f4bece03e5d849c8b2f171160cba9efd97d03b6e68110220b18440"
+	genesisProposer2.VRFPubkey = "0x9ca3d8e00ba25a26d941e0aa9625ad2765c6f5a7fc7cc11c5e97a023173786ef"
+	genesisProposers[1] = genesisProposer2
 
 	miners := make([]*types.Miner, 0)
 	for _, gp := range genesisProposers {
