@@ -30,7 +30,7 @@ const (
 
 	SSSS_THRESHOLD       int = 51
 	GROUP_MAX_MEMBERS    int = 10
-	GROUP_MIN_MEMBERS    int = 5
+	GROUP_MIN_MEMBERS    int = 3
 	CANDIDATES_MIN_RATIO     = 1
 
 	Group_Wait_Pong_Gap   = common.Group_Create_Gap + common.EPOCH*2
