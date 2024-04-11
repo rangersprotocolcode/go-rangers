@@ -170,7 +170,7 @@ func (p *Processor) blockProposal() {
 		p.NetServer.SendCandidate(&ccm)
 
 		worker.markProposed()
-
+		middleware.PerfLogger.Warnf("fin new signInfo, %s - %s", ccm.SignInfo.GetDataHash().String(), ccm.BH.Hash.String())
 		middleware.PerfLogger.Infof("fin block, last: %v, hash: %v, height: %v", utility.GetTime().Sub(start), bh.Hash.String(), bh.Height)
 	} else {
 		blog.log("bh/prehash Error or sign Error, bh=%v, real height=%v. bc.prehash=%v, bh.prehash=%v", height, bh.Height, worker.baseBH.Hash, bh.PreHash)
