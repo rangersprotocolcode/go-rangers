@@ -194,8 +194,10 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		}
 		bh.Transactions = transactionHashes
 		bh.TxTree = calcTxTree(txs)
+		bh.ReceiptTree = common.Hash{}
+		bh.StateTree = common.Hash{}
 		bh.Hash = bh.GenHash()
-
+		bh.EvictedTxs = make([]common.Hash, 0)
 		bh2 := *&bh
 		block.Header = &bh2
 		go chain.runTransactions(block, latestBlock, height, timestamp)
