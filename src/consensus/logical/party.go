@@ -91,7 +91,7 @@ func (p *baseParty) Update(msg model.ConsensusMessage) {
 	defer p.unlock()
 
 	p.logger.Debugf("update %s", msg.GetMessageID())
-	if nil == p.round() {
+	if nil == p.round() || !p.started {
 		p.logger.Warnf("finished party: %s, reject msg: %s", p.id, msg.GetMessageID())
 		return
 	}
@@ -109,6 +109,10 @@ func (p *baseParty) Update(msg model.ConsensusMessage) {
 	}
 
 	for {
+		if nil == p.round() {
+			return
+		}
+
 		// need more message
 		// waiting
 		if !p.round().CanProceed() {
@@ -117,14 +121,15 @@ func (p *baseParty) Update(msg model.ConsensusMessage) {
 		}
 
 		// go to next round
-		p.advance()
-		if p.round() != nil {
+		if p.advance(); p.round() != nil {
 			if err := p.round().Start(); err != nil {
+				p.started = false
 				p.Err <- err
 				return
 			}
 		} else {
 			// no more round, end this party
+			p.started = false
 			p.Done <- 1
 			return
 		}
@@ -170,7 +175,7 @@ func (p *SignParty) Start() *Error {
 }
 
 func (p *SignParty) FirstRound() Round {
-	return &round1{baseRound: &baseRound{partyId: p.id, futureMessages: p.futureMessages, errChan: p.Err, logger: p.logger},
+	return &round0{baseRound: &baseRound{partyId: p.id, futureMessages: p.futureMessages, errChan: p.Err, logger: p.logger},
 		belongGroups: p.belongGroups, blockchain: p.blockchain,
 		minerReader: p.minerReader, globalGroups: p.globalGroups,
 		changedId: p.ChangedId, mi: p.mi, netServer: p.netServer}

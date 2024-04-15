@@ -68,7 +68,7 @@ func (r *round1) Update(msg model.ConsensusMessage) *Error {
 	if !ok {
 		return NewError(fmt.Errorf("cannot update for wrong msg"), "omv", r.RoundNumber(), "", nil)
 	}
-	r.logger.Debugf("round1 update, from: %s, hash: %s, height: %d", cvm.SignInfo.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height)
+	r.logger.Debugf("round1 update, from: %s, hash: %s, height: %d, id: %s", cvm.SignInfo.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height, msg.GetMessageID())
 
 	r.checkBlockExisted()
 	if r.blockExisted {
