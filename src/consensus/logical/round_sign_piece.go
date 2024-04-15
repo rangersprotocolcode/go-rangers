@@ -24,13 +24,13 @@ import (
 	"fmt"
 )
 
-func (r *round2) Start() *Error {
+func (r *round1) Start() *Error {
 	if r.started {
 		return nil
 	}
 
 	bh := r.bh
-	r.logger.Debugf("round2 start. hash: %s, height: %d", bh.Hash.String(), bh.Height)
+	r.logger.Debugf("round1 start. hash: %s, height: %d", bh.Hash.String(), bh.Height)
 
 	threshold := model.Param.GetGroupK(r.group.GetMemberCount())
 	r.gSignGenerator = newGroupSignGenerator(threshold)
@@ -57,24 +57,24 @@ func (r *round2) Start() *Error {
 	return nil
 }
 
-func (r *round2) Close() {
+func (r *round1) Close() {
 
 }
 
-func (r *round2) Update(msg model.ConsensusMessage) *Error {
+func (r *round1) Update(msg model.ConsensusMessage) *Error {
 	bh := r.bh
 
 	cvm, ok := msg.(*model.ConsensusVerifyMessage)
 	if !ok {
 		return NewError(fmt.Errorf("cannot update for wrong msg"), "omv", r.RoundNumber(), "", nil)
 	}
-	r.logger.Debugf("round2 update, from: %s, hash: %s, height: %d", cvm.SignInfo.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height)
+	r.logger.Debugf("round1 update, from: %s, hash: %s, height: %d", cvm.SignInfo.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height)
 
 	r.checkBlockExisted()
 	if r.blockExisted {
 		if r.isSend {
 			r.canProcessed = true
-			r.logger.Warnf("block has generated. skip round2. hash: %s", r.bh.Hash.String())
+			r.logger.Warnf("block has generated. skip round1. hash: %s", r.bh.Hash.String())
 			return nil
 		}
 		return NewError(fmt.Errorf("block already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "omv", r.RoundNumber(), "", nil)
@@ -112,21 +112,21 @@ func (r *round2) Update(msg model.ConsensusMessage) *Error {
 		r.logger.Warnf("already had the piece, from: %s, hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height)
 		return nil
 	}
-	r.logger.Debugf("round2 add piece, from: %s, hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height)
+	r.logger.Debugf("round1 add piece, from: %s, hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height)
 
 	radd, rgen := r.rSignGenerator.AddWitnessSign(si.GetSignerID(), *sig)
 	if radd && generate && rgen {
 		bh.Signature = r.gSignGenerator.GetGroupSign().Serialize()
 		bh.Random = r.rSignGenerator.GetGroupSign().Serialize()
 		r.canProcessed = true
-		r.logger.Infof("round2 recovered group sign. hash: %s, height: %d, group sign: %s", bh.Hash.String(), bh.Height, common.ToHex(bh.Signature))
+		r.logger.Infof("round1 recovered group sign. hash: %s, height: %d, group sign: %s", bh.Hash.String(), bh.Height, common.ToHex(bh.Signature))
 	}
 
-	r.logger.Debugf("round2 add random piece, from: %s, hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height)
+	r.logger.Debugf("round1 add random piece, from: %s, hash: %s, height: %d", si.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height)
 	return nil
 }
 
-func (r *round2) CanAccept(msg model.ConsensusMessage) int {
+func (r *round1) CanAccept(msg model.ConsensusMessage) int {
 	msgId := msg.GetMessageID()
 	if _, ok := r.processed[msgId]; ok {
 		return -1
@@ -148,10 +148,10 @@ func (r *round2) CanAccept(msg model.ConsensusMessage) int {
 	return -1
 }
 
-func (r *round2) NextRound() Round {
+func (r *round1) NextRound() Round {
 	r.canProcessed = true
 	r.number = 2
-	return &round3{round2: r}
+	return &round2{round1: r}
 }
 
 type groupSignGenerator struct {

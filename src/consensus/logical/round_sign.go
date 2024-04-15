@@ -31,7 +31,7 @@ import (
 	"time"
 )
 
-func (r *round1) Start() *Error {
+func (r *round0) Start() *Error {
 	if r.started {
 		return nil
 	}
@@ -44,17 +44,17 @@ func (r *round1) Start() *Error {
 	return nil
 }
 
-func (r *round1) Close() {
+func (r *round0) Close() {
 	notify.BUS.UnSubscribe(notify.BlockAddSucc, r)
 	notify.BUS.UnSubscribe(notify.TransactionGotAddSucc, r)
 }
 
-func (r *round1) Update(msg model.ConsensusMessage) *Error {
+func (r *round0) Update(msg model.ConsensusMessage) *Error {
 	r.processed[msg.GetMessageID()] = 1
 	ccm, _ := msg.(*model.ConsensusCastMessage)
 	r.ccm = ccm
 	r.bh = &ccm.BH
-	r.logger.Infof("round1 update message, height: %d, castor: %s, hash: %s, partyId: %s", r.bh.Height, common.ToHex(r.bh.Castor), r.bh.Hash.String(), r.partyId)
+	r.logger.Infof("round0 update message, height: %d, castor: %s, hash: %s, partyId: %s", r.bh.Height, common.ToHex(r.bh.Castor), r.bh.Hash.String(), r.partyId)
 
 	// check qn
 	totalQN := r.blockchain.TotalQN()
@@ -74,7 +74,7 @@ func (r *round1) Update(msg model.ConsensusMessage) *Error {
 	return r.afterPreArrived()
 }
 
-func (r *round1) afterPreArrived() *Error {
+func (r *round0) afterPreArrived() *Error {
 	bh := r.bh
 	preBH := r.preBH
 
@@ -141,11 +141,11 @@ func (r *round1) afterPreArrived() *Error {
 		return NewError(fmt.Errorf("time error, height: %d, preHash: %s", bh.Height, bh.PreHash.String()), "ccm", r.RoundNumber(), "", nil)
 	}
 
-	r.logger.Debugf("round1 finish base check, height: %d, hash: %s, preHash: %s", bh.Height, bh.Hash.String(), bh.PreHash.String())
+	r.logger.Debugf("round0 finish base check, height: %d, hash: %s, preHash: %s", bh.Height, bh.Hash.String(), bh.PreHash.String())
 	return r.checkBlock()
 }
 
-func (r *round1) checkBlock() *Error {
+func (r *round0) checkBlock() *Error {
 	bh := r.bh
 
 	// may change blockHash due to transactions execution
@@ -179,7 +179,7 @@ func (r *round1) checkBlock() *Error {
 
 		r.changedId <- hashString
 
-		r.logger.Infof("round1 changeId, from %s to %s", r.partyId, hashString)
+		r.logger.Infof("round0 changeId, from %s to %s", r.partyId, hashString)
 		r.partyId = hashString
 		r.canProcessed = true
 	} else {
@@ -194,7 +194,7 @@ func (r *round1) checkBlock() *Error {
 	return nil
 }
 
-func (r *round1) checkBlockExisted() {
+func (r *round0) checkBlockExisted() {
 	if r.blockExisted {
 		return
 	}
@@ -203,7 +203,7 @@ func (r *round1) checkBlockExisted() {
 	r.blockExisted = r.blockchain.HasBlockByHash(bh.Hash)
 }
 
-func (r *round1) normalPieceVerify() {
+func (r *round0) normalPieceVerify() {
 	gid := groupsig.DeserializeID(r.bh.GroupId)
 	var cvm model.ConsensusVerifyMessage
 	cvm.BlockHash = r.bh.Hash
@@ -211,7 +211,7 @@ func (r *round1) normalPieceVerify() {
 
 	if signInfo, ok := model.NewSignInfo(skey, r.mi, &cvm); ok {
 		cvm.SignInfo = signInfo
-		r.logger.Debugf("round1 sendVerifiedCast, hash: %s, group: %s, sign: %s", cvm.BlockHash.String(), gid.GetHexString(), cvm.SignInfo.GetSignature().GetHexString())
+		r.logger.Debugf("round0 sendVerifiedCast, hash: %s, group: %s, sign: %s", cvm.BlockHash.String(), gid.GetHexString(), cvm.SignInfo.GetSignature().GetHexString())
 		cvm.GenRandomSign(skey, r.preBH.Random)
 		r.netServer.SendVerifiedCast(&cvm, gid)
 	} else {
@@ -220,14 +220,14 @@ func (r *round1) normalPieceVerify() {
 }
 
 // getSignKey get the signature private key of the miner in a certain group
-func (r *round1) getSignKey(gid groupsig.ID) groupsig.Seckey {
+func (r *round0) getSignKey(gid groupsig.ID) groupsig.Seckey {
 	if jg := r.belongGroups.GetJoinedGroupInfo(gid); jg != nil {
 		return jg.SignSecKey
 	}
 	return groupsig.Seckey{}
 }
 
-func (r *round1) CanAccept(msg model.ConsensusMessage) int {
+func (r *round0) CanAccept(msg model.ConsensusMessage) int {
 	msgId := msg.GetMessageID()
 	if _, ok := r.processed[msgId]; ok {
 		return -1
@@ -249,21 +249,21 @@ func (r *round1) CanAccept(msg model.ConsensusMessage) int {
 	return -1
 }
 
-func (r *round1) NextRound() Round {
+func (r *round0) NextRound() Round {
 	r.started = false
 
 	if r.blockExisted {
 		r.canProcessed = true
 		r.number = 2
-		return &round3{}
+		return &round2{}
 	}
 
 	r.canProcessed = false
 	r.number = 1
-	return &round2{round1: r}
+	return &round1{round0: r}
 }
 
-func (r *round1) getBlockHeaderByHash(hash common.Hash) *types.BlockHeader {
+func (r *round0) getBlockHeaderByHash(hash common.Hash) *types.BlockHeader {
 	b := r.blockchain.QueryBlockByHash(hash)
 	if b != nil {
 		return b.Header
@@ -271,7 +271,7 @@ func (r *round1) getBlockHeaderByHash(hash common.Hash) *types.BlockHeader {
 	return nil
 }
 
-func (r *round1) HandleNetMessage(topic string, message notify.Message) {
+func (r *round0) HandleNetMessage(topic string, message notify.Message) {
 	switch topic {
 	case notify.BlockAddSucc:
 		r.onBlockAddSuccess(message)
@@ -280,7 +280,7 @@ func (r *round1) HandleNetMessage(topic string, message notify.Message) {
 	}
 }
 
-func (r *round1) onBlockAddSuccess(message notify.Message) {
+func (r *round0) onBlockAddSuccess(message notify.Message) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -304,7 +304,7 @@ func (r *round1) onBlockAddSuccess(message notify.Message) {
 	}
 }
 
-func (r *round1) onMissTxAddSucc(message notify.Message) {
+func (r *round0) onMissTxAddSucc(message notify.Message) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 

@@ -84,7 +84,7 @@ type (
 		partyId string
 	}
 
-	round1 struct {
+	round0 struct {
 		*baseRound
 		mi groupsig.ID
 
@@ -108,13 +108,13 @@ type (
 		isSend       bool
 		blockExisted bool
 	}
-	round2 struct {
-		*round1
+	round1 struct {
+		*round0
 
 		gSignGenerator, rSignGenerator *groupSignGenerator
 	}
-	round3 struct {
-		*round2
+	round2 struct {
+		*round1
 	}
 )
 

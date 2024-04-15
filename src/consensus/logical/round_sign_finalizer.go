@@ -24,25 +24,25 @@ import (
 	"fmt"
 )
 
-func (r *round3) Close() {
+func (r *round2) Close() {
 
 }
 
-func (r *round3) Update(msg model.ConsensusMessage) *Error {
+func (r *round2) Update(msg model.ConsensusMessage) *Error {
 	return nil
 }
 
-func (r *round3) CanAccept(msg model.ConsensusMessage) int {
+func (r *round2) CanAccept(msg model.ConsensusMessage) int {
 	return -1
 }
 
-func (r *round3) NextRound() Round {
+func (r *round2) NextRound() Round {
 	return nil
 }
 
-func (r *round3) Start() *Error {
+func (r *round2) Start() *Error {
 	bh := r.bh
-	r.logger.Debugf("round3 start, hash: %s, height: %d", bh.Hash.String(), bh.Height)
+	r.logger.Debugf("round2 start, hash: %s, height: %d", bh.Hash.String(), bh.Height)
 
 	r.checkBlockExisted()
 	if r.blockExisted {
@@ -69,9 +69,9 @@ func (r *round3) Start() *Error {
 	go func() {
 		result := r.blockchain.AddBlockOnChain(block)
 		if types.AddBlockSucc != result {
-			r.logger.Warnf("round3 not add block, height: %d, hash: %s, result: %d", bh.Height, bh.Hash.String(), result)
+			r.logger.Warnf("round2 not add block, height: %d, hash: %s, result: %d", bh.Height, bh.Hash.String(), result)
 		} else {
-			r.logger.Infof("round3 add block, height: %d, hash: %s", bh.Height, bh.Hash.String())
+			r.logger.Infof("round2 add block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 
 			r.broadcastNewBlock(*block)
 		}
@@ -81,20 +81,20 @@ func (r *round3) Start() *Error {
 }
 
 // send block if necessary
-func (r *round3) broadcastNewBlock(block types.Block) {
+func (r *round2) broadcastNewBlock(block types.Block) {
 	bh := block.Header
 	if r.isSend {
 		cbm := &model.ConsensusBlockMessage{
 			Block: block,
 		}
 		r.netServer.BroadcastNewBlock(cbm)
-		r.logger.Infof("round3 broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
+		r.logger.Infof("round2 broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 	} else {
-		r.logger.Infof("round3 not broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
+		r.logger.Infof("round2 not broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 	}
 }
 
-func (r *round3) checkSignature(group *model.GroupInfo) *Error {
+func (r *round2) checkSignature(group *model.GroupInfo) *Error {
 	bh := r.bh
 	gpk := group.GetGroupPubKey()
 	if !groupsig.VerifySig(gpk, bh.Hash.Bytes(), *groupsig.DeserializeSign(bh.Signature)) {
