@@ -77,6 +77,7 @@ func (r *round2) Start() *Error {
 		}
 	}()
 
+	r.done <- 1
 	return nil
 }
 

@@ -76,6 +76,7 @@ type (
 		canProcessed bool
 
 		errChan chan error
+		done    chan byte
 		lock    sync.Mutex
 		started bool
 

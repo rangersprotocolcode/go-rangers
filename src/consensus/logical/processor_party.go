@@ -86,7 +86,7 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte, msg model.ConsensusMessa
 			id:             key,
 		},
 	}
-	if nil == party.Start() {
+	if err := party.Start(); err == nil {
 		p.partyManager[key] = party
 		p.logger.Debugf("new party: %s", key)
 
@@ -94,9 +94,11 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte, msg model.ConsensusMessa
 		go p.waitUntilDone(party)
 
 		return party
+	} else {
+		p.logger.Errorf("fail to start party, %s", err)
+		return nil
 	}
 
-	return nil
 }
 
 func (p *Processor) waitUntilDone(party *SignParty) {
