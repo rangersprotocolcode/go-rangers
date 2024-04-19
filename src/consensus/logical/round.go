@@ -115,6 +115,7 @@ type (
 		gSignGenerator, rSignGenerator *groupSignGenerator
 	}
 	round2 struct {
+		finished bool
 		*round1
 	}
 )
