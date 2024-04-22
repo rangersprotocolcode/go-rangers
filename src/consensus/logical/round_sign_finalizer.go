@@ -58,7 +58,6 @@ func (r *round2) Start() *Error {
 				return NewError(fmt.Errorf("fail to generate block, height: %d, hash: %s", bh.Height, bh.Hash.String()), "finalizer", r.RoundNumber(), "", nil)
 			}
 			r.broadcastNewBlock(*block)
-			return nil
 		}
 		return NewError(fmt.Errorf("block already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "finalizer", r.RoundNumber(), "", nil)
 	}
