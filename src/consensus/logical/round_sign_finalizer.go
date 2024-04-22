@@ -77,7 +77,9 @@ func (r *round2) Start() *Error {
 			r.logger.Warnf("round2 not add block, height: %d, hash: %s, result: %d", bh.Height, bh.Hash.String(), result)
 		} else {
 			r.logger.Infof("round2 add block, height: %d, hash: %s", bh.Height, bh.Hash.String())
+		}
 
+		if r.isSend {
 			r.broadcastNewBlock(*block)
 		}
 	}()
