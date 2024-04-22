@@ -41,6 +41,12 @@ func (r *round2) NextRound() Round {
 }
 
 func (r *round2) Start() *Error {
+	if r.finished {
+		r.logger.Warn("round2 ended")
+		return nil
+	}
+
+	r.finished = true
 	bh := r.bh
 	r.logger.Debugf("round2 start, hash: %s, height: %d", bh.Hash.String(), bh.Height)
 
@@ -76,6 +82,8 @@ func (r *round2) Start() *Error {
 			r.broadcastNewBlock(*block)
 		}
 	}()
+
+	r.done <- 1
 
 	return nil
 }

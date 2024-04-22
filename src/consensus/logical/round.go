@@ -76,6 +76,7 @@ type (
 		canProcessed bool
 
 		errChan chan error
+		done    chan byte
 		lock    sync.Mutex
 		started bool
 
@@ -114,6 +115,7 @@ type (
 		gSignGenerator, rSignGenerator *groupSignGenerator
 	}
 	round2 struct {
+		finished bool
 		*round1
 	}
 )
