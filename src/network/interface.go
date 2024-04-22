@@ -68,6 +68,7 @@ const (
 type MsgDigest []byte
 
 type Network interface {
+	// Send id is given by gateway
 	Send(id string, msg Message)
 
 	SpreadToGroup(groupId string, msg Message)
@@ -88,6 +89,7 @@ type Network interface {
 
 	QuitGroupNet(groupId string)
 
+	// SendToStranger strangerId equals to minerId
 	SendToStranger(strangerId []byte, msg Message)
 }
 
