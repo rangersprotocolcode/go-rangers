@@ -83,6 +83,8 @@ type TransactionPool interface {
 
 	TxNum() int
 
+	IsFull() bool
+
 	MarkExecuted(header *types.BlockHeader, receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash)
 
 	UnMarkExecuted(block *types.Block)
@@ -327,6 +329,10 @@ func (pool *TxPool) GetExecuted(hash common.Hash) *ExecutedTransaction {
 
 func (p *TxPool) TxNum() int {
 	return p.received.Len()
+}
+
+func (p *TxPool) IsFull() bool {
+	return p.received.isFull()
 }
 
 func (pool *TxPool) PackForCast(height uint64) []*types.Transaction {

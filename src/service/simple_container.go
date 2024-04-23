@@ -73,6 +73,10 @@ func (c *simpleContainer) Len() int {
 	return c.data.Size()
 }
 
+func (c *simpleContainer) isFull() bool {
+	return c.data.Size() >= c.limit
+}
+
 func (c *simpleContainer) contains(key common.Hash) bool {
 	return c.data.Contains(key)
 }
