@@ -106,9 +106,7 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 	defer func() {
 		party.Close()
 		if r := recover(); r != nil {
-			common.DefaultLogger.Errorf("recover error：%v\n", r)
-			s := debug.Stack()
-			common.DefaultLogger.Errorf(string(s))
+			common.DefaultLogger.Errorf("recover error：%s\n%s", r, string(debug.Stack()))
 		}
 	}()
 
