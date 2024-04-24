@@ -43,7 +43,7 @@ func (r *round2) NextRound() Round {
 func (r *round2) Start() *Error {
 	if r.finished {
 		r.logger.Warn("round2 ended")
-		return nil
+		return NewError(fmt.Errorf("fail to start, already ended"), "finalizer", r.RoundNumber(), "", nil)
 	}
 
 	r.finished = true
