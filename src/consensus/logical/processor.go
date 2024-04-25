@@ -73,7 +73,7 @@ func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joined
 	p.partyManager = make(map[string]Party, 10)
 	p.partyLock = middleware.NewLoglock("partyLock")
 	p.logger = log.GetLoggerByIndex(log.CLogConfig, strconv.Itoa(common.InstanceIndex))
-	p.finishedParty = common.CreateLRUCache(100)
+	p.finishedParty = common.CreateLRUCache(300)
 	p.futureMessages = common.CreateLRUCache(50)
 
 	p.conf = conf

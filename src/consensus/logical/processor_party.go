@@ -104,47 +104,39 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte, msg model.ConsensusMessa
 
 func (p *Processor) waitUntilDone(party *SignParty) {
 	defer func() {
-		party.Close()
 		if r := recover(); r != nil {
 			common.DefaultLogger.Errorf("recover error：%s\n%s", r, string(debug.Stack()))
 		}
 	}()
+
+	fn := func(endType string) {
+		p.partyLock.Lock(endType)
+		defer p.partyLock.Unlock(endType)
+
+		party.Close()
+		delete(p.partyManager, party.id)
+		p.finishedParty.Add(party.id, 0)
+	}
 
 	key := party.id
 	for {
 		select {
 		// timeout
 		case <-time.After(10 * time.Second):
-			func() {
-				p.partyLock.Lock("timeout")
-				defer p.partyLock.Unlock("timeout")
-
-				delete(p.partyManager, party.id)
-				p.logger.Errorf("timeout, id: %s, original: %s", party.id, key)
-			}()
+			fn("timeout")
+			p.logger.Errorf("timeout, id: %s, original: %s", party.id, key)
 			return
+		// error
 		case err := <-party.Err:
-			func() {
-				p.partyLock.Lock("err")
-				defer p.partyLock.Unlock("err")
-
-				delete(p.partyManager, party.id)
-				p.finishedParty.Add(party.id, 0)
-				p.logger.Errorf("error: %s, id: %s", err, party.id)
-			}()
-
+			fn("err")
+			p.logger.Errorf("error: %s, id: %s", err, party.id)
 			return
+		// done
 		case <-party.Done:
-			func() {
-				p.partyLock.Lock("done")
-				defer p.partyLock.Unlock("done")
-
-				delete(p.partyManager, party.id)
-				p.finishedParty.Add(party.id, 0)
-				p.logger.Infof("done, party: %s", party.id)
-			}()
-
+			fn("done")
+			p.logger.Infof("done, party: %s", party.id)
 			return
+		//
 		case realKey := <-party.ChangedId:
 			func() {
 				p.partyLock.Lock("changeId")

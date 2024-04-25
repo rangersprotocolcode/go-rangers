@@ -91,6 +91,7 @@ func (p *baseParty) Update(msg model.ConsensusMessage) {
 	defer p.unlock()
 
 	p.logger.Debugf("update %s", msg.GetMessageID())
+
 	if nil == p.round() {
 		p.logger.Warnf("finished party: %s, reject msg: %s", p.id, msg.GetMessageID())
 		return

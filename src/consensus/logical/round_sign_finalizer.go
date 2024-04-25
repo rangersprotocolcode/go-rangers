@@ -58,13 +58,13 @@ func (r *round2) Start() *Error {
 			}
 			r.broadcastNewBlock(*block)
 		}
+
 		return NewError(fmt.Errorf("block already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "finalizer", r.RoundNumber(), "", nil)
 	}
 
 	if err := r.checkSignature(r.group); err != nil {
 		return err
 	}
-
 	block := r.blockchain.GenerateBlock(*bh)
 	if block == nil {
 		return NewError(fmt.Errorf("fail to generate block, height: %d, hash: %s", bh.Height, bh.Hash.String()), "finalizer", r.RoundNumber(), "", nil)
@@ -73,33 +73,31 @@ func (r *round2) Start() *Error {
 	go func() {
 		result := r.blockchain.AddBlockOnChain(block)
 		if types.AddBlockSucc != result {
-			r.logger.Warnf("round2 not add block, height: %d, hash: %s, result: %d", bh.Height, bh.Hash.String(), result)
-		} else {
-			r.logger.Infof("round2 add block, height: %d, hash: %s", bh.Height, bh.Hash.String())
+			r.logger.Warnf("round2 not add and broadcast block, height: %d, hash: %s, result: %d", bh.Height, bh.Hash.String(), result)
+			return
 		}
 
+		r.logger.Infof("round2 add block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 		if r.isSend {
 			r.broadcastNewBlock(*block)
+		} else {
+			r.logger.Infof("round2 not broadcast block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 		}
 	}()
 
 	r.done <- 1
-
 	return nil
 }
 
-// send block if necessary
+// send block
 func (r *round2) broadcastNewBlock(block types.Block) {
 	bh := block.Header
-	if r.isSend {
-		cbm := &model.ConsensusBlockMessage{
-			Block: block,
-		}
-		r.netServer.BroadcastNewBlock(cbm)
-		r.logger.Infof("round2 broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
-	} else {
-		r.logger.Infof("round2 not broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
+	cbm := &model.ConsensusBlockMessage{
+		Block: block,
 	}
+	r.netServer.BroadcastNewBlock(cbm)
+
+	r.logger.Infof("round2 broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 }
 
 func (r *round2) checkSignature(group *model.GroupInfo) *Error {
