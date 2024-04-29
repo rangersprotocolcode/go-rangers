@@ -1,6 +1,7 @@
 package logical
 
 import (
+	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/consensus/access"
 	"com.tuntun.rangers/node/src/consensus/groupsig"
 	"com.tuntun.rangers/node/src/consensus/model"
@@ -9,6 +10,7 @@ import (
 	"com.tuntun.rangers/node/src/middleware/log"
 	"errors"
 	"fmt"
+	"runtime/debug"
 	"sync"
 )
 
@@ -88,7 +90,13 @@ func (p *baseParty) unlock() {
 
 func (p *baseParty) Update(msg model.ConsensusMessage) {
 	p.lock()
-	defer p.unlock()
+
+	defer func() {
+		p.unlock()
+		if r := recover(); r != nil {
+			common.DefaultLogger.Errorf("recover error：%s\n%s", r, string(debug.Stack()))
+		}
+	}()
 
 	p.logger.Debugf("update %s", msg.GetMessageID())
 

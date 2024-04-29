@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"runtime"
+	"runtime/debug"
 	"testing"
 	"time"
 )
@@ -55,4 +56,22 @@ func TestMap(t *testing.T) {
 	mapIns[key] = msgs
 
 	fmt.Println(mapIns[key])
+}
+
+func TestPanic(t *testing.T) {
+
+	go func() {
+		defer func() {
+			fmt.Println("end")
+			if r := recover(); r != nil {
+				fmt.Println(string(debug.Stack()))
+			}
+		}()
+		fmt.Println("start")
+
+		panic("test")
+	}()
+
+	time.Sleep(2 * time.Second)
+	fmt.Println("main end")
 }

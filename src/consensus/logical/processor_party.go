@@ -21,7 +21,6 @@ import (
 	"com.tuntun.rangers/node/src/consensus/model"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"com.tuntun.rangers/node/src/utility"
-	"runtime/debug"
 	"sync"
 	"time"
 )
@@ -103,12 +102,6 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte, msg model.ConsensusMessa
 }
 
 func (p *Processor) waitUntilDone(party *SignParty) {
-	defer func() {
-		if r := recover(); r != nil {
-			common.DefaultLogger.Errorf("recover error：%s\n%s", r, string(debug.Stack()))
-		}
-	}()
-
 	fn := func(endType string) {
 		p.partyLock.Lock(endType)
 		defer p.partyLock.Unlock(endType)
