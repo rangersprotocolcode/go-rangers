@@ -193,7 +193,7 @@ func (r *round0) checkBlockExisted() *Error {
 	bh := r.bh
 
 	if r.blockchain.HasBlockByHash(bh.Hash) {
-		r.logger.Warnf("block has generated. skip next rounds. hash: %s, id: %s", r.bh.Hash.String(), r.partyId)
+		r.logger.Warnf("block has generated. skip next rounds. hash: %s, id: %s, isSend: %v", r.bh.Hash.String(), r.partyId, r.isSend)
 
 		if r.isSend {
 			block := r.blockchain.GenerateBlock(*bh)
