@@ -187,7 +187,7 @@ func (r *round0) checkBlock() *Error {
 		for _, hash := range lostTxs {
 			r.lostTxs[hash] = 0
 		}
-		r.logger.Warnf("lostTxs waiting, height: %d, preHash: %s, len: %d", bh.Height, bh.PreHash.String(), len(lostTxs))
+		r.logger.Warnf("lostTxs waiting, height: %d, id: %s, preHash: %s, len: %d", bh.Height, r.partyId, bh.PreHash.String(), len(lostTxs))
 		notify.BUS.Subscribe(notify.TransactionGotAddSucc, r)
 	}
 
@@ -321,10 +321,10 @@ func (r *round0) onMissTxAddSucc(message notify.Message) {
 	}
 
 	if 0 != len(r.lostTxs) {
-		r.logger.Warnf("lostTxs waiting again, height: %d, preHash: %s, len: %d", r.bh.Height, r.bh.PreHash.String(), len(r.lostTxs))
+		r.logger.Warnf("lostTxs waiting again, height: %d, id: %s, preHash: %s, len: %d", r.bh.Height, r.partyId, r.bh.PreHash.String(), len(r.lostTxs))
 		return
 	} else {
-		r.logger.Warnf("lostTxs waiting successfully, height: %d, preHash: %s", r.bh.Height, r.bh.PreHash.String())
+		r.logger.Warnf("lostTxs waiting successfully, height: %d, id: %s, preHash: %s", r.bh.Height, r.partyId, r.bh.PreHash.String())
 	}
 
 	err := r.checkBlock()
