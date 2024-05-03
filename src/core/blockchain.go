@@ -292,7 +292,7 @@ func (chain *blockChain) GenerateBlock(bh types.BlockHeader) *types.Block {
 }
 
 func (chain *blockChain) VerifyBlock(bh *types.BlockHeader) ([]common.Hashes, int8) {
-	msg := "VerifyCastingBlock: " + strconv.FormatUint(bh.Height, 10)
+	msg := "VerifyCastingBlock: " + strconv.FormatUint(bh.Height, 10) + " " + bh.Hash.String()
 	middleware.LockBlockchain(msg)
 	defer middleware.UnLockBlockchain(msg)
 

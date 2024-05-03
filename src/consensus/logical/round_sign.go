@@ -147,6 +147,7 @@ func (r *round0) afterPreArrived() *Error {
 
 func (r *round0) checkBlock() *Error {
 	bh := r.bh
+	r.logger.Debugf("round0 check block, height: %d, hash: %s, preHash: %s", bh.Height, bh.Hash.String(), bh.PreHash.String())
 
 	// may change blockHash due to transactions execution
 	lostTxs, ccr := core.GetBlockChain().VerifyBlock(bh)
