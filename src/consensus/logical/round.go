@@ -106,8 +106,7 @@ type (
 		group     *model.GroupInfo
 
 		// if send block by myself
-		isSend       bool
-		blockExisted bool
+		isSend bool
 	}
 	round1 struct {
 		*round0

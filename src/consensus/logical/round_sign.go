@@ -165,14 +165,8 @@ func (r *round0) checkBlock() *Error {
 		id := r.group.GetMemberID(int(index)).GetBigInt()
 		r.isSend = id.Cmp(r.mi.GetBigInt()) == 0
 
-		r.checkBlockExisted()
-		if r.blockExisted {
-			if r.isSend {
-				r.logger.Warnf("block has generated. skip round2. hash: %s, id: %s", r.bh.Hash.String(), r.partyId)
-				r.canProcessed = true
-				return nil
-			}
-			return NewError(fmt.Errorf("block already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "ccm", r.RoundNumber(), "", nil)
+		if err := r.checkBlockExisted(); err != nil {
+			return err
 		}
 
 		r.normalPieceVerify()
@@ -195,13 +189,24 @@ func (r *round0) checkBlock() *Error {
 	return nil
 }
 
-func (r *round0) checkBlockExisted() {
-	if r.blockExisted {
-		return
+func (r *round0) checkBlockExisted() *Error {
+	bh := r.bh
+
+	if r.blockchain.HasBlockByHash(bh.Hash) {
+		r.logger.Warnf("block has generated. skip next rounds. hash: %s, id: %s", r.bh.Hash.String(), r.partyId)
+
+		if r.isSend {
+			block := r.blockchain.GenerateBlock(*bh)
+			if block == nil {
+				return NewError(fmt.Errorf("fail to generate block, height: %d, hash: %s", bh.Height, bh.Hash.String()), "finalizer", r.RoundNumber(), "", nil)
+			}
+			r.broadcastNewBlock(*block)
+		}
+
+		return NewError(fmt.Errorf("block already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "ccm", r.RoundNumber(), "", nil)
 	}
 
-	bh := r.bh
-	r.blockExisted = r.blockchain.HasBlockByHash(bh.Hash)
+	return nil
 }
 
 func (r *round0) normalPieceVerify() {
@@ -253,14 +258,6 @@ func (r *round0) CanAccept(msg model.ConsensusMessage) int {
 func (r *round0) NextRound() Round {
 	r.Close()
 	r.started = false
-
-	r.logger.Debugf("next round: %v, id: %s", r.blockExisted, r.partyId)
-
-	if r.blockExisted {
-		r.canProcessed = true
-		r.number = 2
-		return &round2{}
-	}
 
 	r.canProcessed = false
 	r.number = 1
@@ -334,4 +331,15 @@ func (r *round0) onMissTxAddSucc(message notify.Message) {
 	if nil != err {
 		r.errChan <- err
 	}
+}
+
+// send block
+func (r *round0) broadcastNewBlock(block types.Block) {
+	bh := block.Header
+	cbm := &model.ConsensusBlockMessage{
+		Block: block,
+	}
+	r.netServer.BroadcastNewBlock(cbm)
+
+	r.logger.Infof("broadcast block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 }
