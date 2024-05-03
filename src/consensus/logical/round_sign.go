@@ -250,6 +250,7 @@ func (r *round0) CanAccept(msg model.ConsensusMessage) int {
 }
 
 func (r *round0) NextRound() Round {
+	r.Close()
 	r.started = false
 
 	if r.blockExisted {

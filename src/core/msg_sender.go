@@ -43,9 +43,10 @@ func requestTransaction(m transactionRequestMessage, castorId string) {
 		logger.Errorf("Discard MarshalTransactionRequestMessage because of marshal error:%s!", e.Error())
 		return
 	}
-	logger.Debugf("send REQ_TRANSACTION_MSG to %s,height:%d,tx_len:%d,hash:%s,time at:%v", castorId, m.BlockHeight, len(m.TransactionHashes), m.CurrentBlockHash.String(), utility.GetTime())
+	logger.Debugf("send REQ_TRANSACTION_MSG to %s, height:%d,tx_len:%d,hash:%s,time at:%v", castorId, m.BlockHeight, len(m.TransactionHashes), m.CurrentBlockHash.String(), utility.GetTime())
 	message := network.Message{Code: network.ReqTransactionMsg, Body: body}
-	network.GetNetInstance().Broadcast(message)
+	//network.GetNetInstance().Broadcast(message)
+	network.GetNetInstance().SendToStranger(common.FromHex(castorId), message)
 }
 
 func sendTransactions(txs []*types.Transaction, sourceId string) {
