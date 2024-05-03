@@ -168,7 +168,7 @@ func (r *round0) checkBlock() *Error {
 		r.checkBlockExisted()
 		if r.blockExisted {
 			if r.isSend {
-				r.logger.Warnf("block has generated. skip round2. hash: %s", r.bh.Hash.String())
+				r.logger.Warnf("block has generated. skip round2. hash: %s, id: %s", r.bh.Hash.String(), r.partyId)
 				r.canProcessed = true
 				return nil
 			}
@@ -253,6 +253,8 @@ func (r *round0) CanAccept(msg model.ConsensusMessage) int {
 func (r *round0) NextRound() Round {
 	r.Close()
 	r.started = false
+
+	r.logger.Debugf("next round: %v, id: %s", r.blockExisted, r.partyId)
 
 	if r.blockExisted {
 		r.canProcessed = true
