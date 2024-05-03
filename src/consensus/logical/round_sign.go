@@ -192,21 +192,18 @@ func (r *round0) checkBlock() *Error {
 func (r *round0) checkBlockExisted() *Error {
 	bh := r.bh
 
-	if r.blockchain.HasBlockByHash(bh.Hash) {
-		r.logger.Warnf("block has generated. skip next rounds. hash: %s, id: %s, isSend: %v", r.bh.Hash.String(), r.partyId, r.isSend)
-
-		if r.isSend {
-			block := r.blockchain.GenerateBlock(*bh)
-			if block == nil {
-				return NewError(fmt.Errorf("fail to generate block, height: %d, hash: %s", bh.Height, bh.Hash.String()), "finalizer", r.RoundNumber(), "", nil)
-			}
-			r.broadcastNewBlock(*block)
-		}
-
-		return NewError(fmt.Errorf("block already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "ccm", r.RoundNumber(), "", nil)
+	block := r.blockchain.QueryBlockByHash(bh.Hash)
+	if nil == block {
+		return nil
 	}
 
-	return nil
+	r.logger.Warnf("block has generated. skip next rounds. hash: %s, id: %s, isSend: %v", r.bh.Hash.String(), r.partyId, r.isSend)
+
+	if r.isSend {
+		r.broadcastNewBlock(*block)
+	}
+
+	return NewError(fmt.Errorf("block already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "ccm", r.RoundNumber(), "", nil)
 }
 
 func (r *round0) normalPieceVerify() {
