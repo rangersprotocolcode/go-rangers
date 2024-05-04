@@ -63,7 +63,7 @@ func (r *round2) Start() *Error {
 
 	go func() {
 		result := r.blockchain.AddBlockOnChain(block)
-		if types.AddBlockSucc != result {
+		if types.AddBlockSucc != result && types.BlockExisted != result {
 			r.logger.Warnf("round2 not add and broadcast block, height: %d, hash: %s, result: %d, isSend: %v", bh.Height, bh.Hash.String(), result, r.isSend)
 			return
 		}
