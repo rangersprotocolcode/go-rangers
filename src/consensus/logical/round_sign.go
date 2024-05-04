@@ -192,12 +192,16 @@ func (r *round0) checkBlock() *Error {
 func (r *round0) checkBlockExisted() *Error {
 	bh := r.bh
 
-	block := r.blockchain.QueryBlockByHash(bh.Hash)
-	if nil == block {
+	if !r.blockchain.HasBlockByHash(bh.Hash) {
 		return nil
 	}
 
 	r.logger.Warnf("block has generated. skip next rounds. hash: %s, id: %s, isSend: %v", r.bh.Hash.String(), r.partyId, r.isSend)
+
+	block := r.blockchain.QueryBlockByHash(bh.Hash)
+	if nil == block {
+		return NewError(fmt.Errorf("block already existed but nil, height: %d, hash: %s", bh.Height, bh.Hash.String()), "ccm", r.RoundNumber(), "", nil)
+	}
 
 	if r.isSend {
 		r.broadcastNewBlock(*block)
