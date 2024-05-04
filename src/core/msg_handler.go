@@ -18,6 +18,7 @@ package core
 
 import (
 	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/common/sha3"
 	"com.tuntun.rangers/node/src/middleware"
 	"com.tuntun.rangers/node/src/middleware/notify"
 	middleware_pb "com.tuntun.rangers/node/src/middleware/pb"
@@ -94,7 +95,8 @@ func (c ChainHandler) newBlockHandler(msg notify.Message) {
 		return
 	}
 
-	middleware.PerfLogger.Infof("Rcv new block from %s,hash: %v,height: %d,totalQn: %d,tx: %d, cost: %v, size: %d", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions), utility.GetTime().Sub(block.Header.CurTime), len(m.BlockByte))
+	msgHash := sha3.Sum256(m.BlockByte)
+	middleware.PerfLogger.Infof("Rcv new block from %s, msghash: %s, hash: %v,height: %d,totalQn: %d,tx: %d, cost: %v, size: %d", source, common.ToHex(msgHash[:]), block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions), utility.GetTime().Sub(block.Header.CurTime), len(m.BlockByte))
 
 	blockChainImpl.AddBlockOnChain(block)
 }
