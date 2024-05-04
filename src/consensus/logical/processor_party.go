@@ -102,6 +102,8 @@ func (p *Processor) loadOrNewSignParty(keyBytes []byte, msg model.ConsensusMessa
 }
 
 func (p *Processor) waitUntilDone(party *SignParty) {
+	startTime := time.Now()
+
 	fn := func(endType string) {
 		p.partyLock.Lock(endType)
 		defer p.partyLock.Unlock(endType)
@@ -127,7 +129,7 @@ func (p *Processor) waitUntilDone(party *SignParty) {
 		// done
 		case <-party.Done:
 			fn("done")
-			p.logger.Infof("done, party: %s", party.id)
+			p.logger.Infof("done, party: %s, cost: %v", party.id, time.Now().Sub(startTime))
 			return
 		//
 		case realKey := <-party.ChangedId:

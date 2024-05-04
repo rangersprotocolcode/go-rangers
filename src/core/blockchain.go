@@ -146,6 +146,9 @@ func initBlockChain() error {
 }
 
 func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValue *big.Int, proveRoot common.Hash, qn uint64, castor []byte, groupid []byte) (types.BlockHeader, bool) {
+	middleware.PerfLogger.Infof("start cast block. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
+	defer middleware.PerfLogger.Infof("end cast block. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
+
 	middleware.RLockBlockchain("castblock")
 
 	latestBlock := chain.latestBlock
