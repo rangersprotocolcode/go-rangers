@@ -184,7 +184,7 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 	txHashList := make([]interface{}, 0)
 
 	if receipts != nil && len(receipts) != 0 {
-		mysql.InsertLogs(header.Height, receipts, header.Hash)
+		go mysql.InsertLogs(header.Height, receipts, header.Hash)
 
 		for i, receipt := range receipts {
 			hash := receipt.TxHash
