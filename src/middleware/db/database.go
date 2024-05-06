@@ -72,7 +72,7 @@ func getInstance() (*LDBDatabase, error) {
 	defaultConfig := &databaseConfig{
 		database: common.DefaultDatabase,
 		cache:    512,
-		handler:  512,
+		handler:  256,
 	}
 
 	if nil == common.GlobalConf {
