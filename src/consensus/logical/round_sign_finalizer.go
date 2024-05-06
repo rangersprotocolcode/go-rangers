@@ -49,17 +49,8 @@ func (r *round2) Start() *Error {
 	bh := r.bh
 	r.logger.Debugf("round2 start, hash: %s, height: %d", bh.Hash.String(), bh.Height)
 
-	r.checkBlockExisted()
-	if r.blockExisted {
-		if r.isSend {
-			block := r.blockchain.GenerateBlock(*bh)
-			if block == nil {
-				return NewError(fmt.Errorf("fail to generate block, height: %d, hash: %s", bh.Height, bh.Hash.String()), "finalizer", r.RoundNumber(), "", nil)
-			}
-			r.broadcastNewBlock(*block)
-		}
-
-		return NewError(fmt.Errorf("block already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "finalizer", r.RoundNumber(), "", nil)
+	if err := r.checkBlockExisted(); err != nil {
+		return err
 	}
 
 	if err := r.checkSignature(r.group); err != nil {
@@ -72,8 +63,8 @@ func (r *round2) Start() *Error {
 
 	go func() {
 		result := r.blockchain.AddBlockOnChain(block)
-		if types.AddBlockSucc != result {
-			r.logger.Warnf("round2 not add and broadcast block, height: %d, hash: %s, result: %d", bh.Height, bh.Hash.String(), result)
+		if types.AddBlockSucc != result && types.BlockExisted != result {
+			r.logger.Warnf("round2 not add and broadcast block, height: %d, hash: %s, result: %d, isSend: %v", bh.Height, bh.Hash.String(), result, r.isSend)
 			return
 		}
 
@@ -87,17 +78,6 @@ func (r *round2) Start() *Error {
 
 	r.done <- 1
 	return nil
-}
-
-// send block
-func (r *round2) broadcastNewBlock(block types.Block) {
-	bh := block.Header
-	cbm := &model.ConsensusBlockMessage{
-		Block: block,
-	}
-	r.netServer.BroadcastNewBlock(cbm)
-
-	r.logger.Infof("round2 broadcasted block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 }
 
 func (r *round2) checkSignature(group *model.GroupInfo) *Error {

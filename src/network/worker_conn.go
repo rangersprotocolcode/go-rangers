@@ -19,6 +19,8 @@ package network
 import (
 	"bytes"
 	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/common/sha3"
+	"com.tuntun.rangers/node/src/middleware"
 	"com.tuntun.rangers/node/src/middleware/log"
 	"com.tuntun.rangers/node/src/middleware/notify"
 	"com.tuntun.rangers/node/src/middleware/types"
@@ -85,9 +87,9 @@ func (workerConn *WorkerConn) Init(ipPort string, selfId []byte, consensusHandle
 }
 
 func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
-	message, error := unMarshalMessage(data)
-	if error != nil {
-		workerConn.logger.Errorf("Proto unmarshal node message error: %s", error.Error())
+	message, err := unMarshalMessage(data)
+	if err != nil {
+		workerConn.logger.Errorf("Proto unmarshal node message error: %s", err.Error())
 		return
 	}
 
@@ -101,6 +103,8 @@ func (workerConn *WorkerConn) handleMessage(data []byte, from string) {
 			go workerConn.consensusHandler.Handle(from, *message)
 		}
 	case NewBlockMsg:
+		msgHash := sha3.Sum256(message.Body)
+		middleware.PerfLogger.Infof("new block, msghash: %s", common.ToHex(msgHash[:]))
 		msg := notify.NewBlockMessage{BlockByte: message.Body, Peer: from}
 		notify.BUS.Publish(notify.NewBlock, &msg)
 	case ReqTransactionMsg:

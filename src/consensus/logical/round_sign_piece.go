@@ -70,14 +70,8 @@ func (r *round1) Update(msg model.ConsensusMessage) *Error {
 	}
 	r.logger.Debugf("round1 update, from: %s, hash: %s, height: %d, id: %s", cvm.SignInfo.GetSignerID().GetHexString(), cvm.BlockHash.String(), bh.Height, msg.GetMessageID())
 
-	r.checkBlockExisted()
-	if r.blockExisted {
-		if r.isSend {
-			r.canProcessed = true
-			r.logger.Warnf("block has generated. skip round1. hash: %s", r.bh.Hash.String())
-			return nil
-		}
-		return NewError(fmt.Errorf("block already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "omv", r.RoundNumber(), "", nil)
+	if err := r.checkBlockExisted(); err != nil {
+		return err
 	}
 
 	gid := groupsig.DeserializeID(bh.GroupId)

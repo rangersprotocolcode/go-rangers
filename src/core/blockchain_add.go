@@ -201,6 +201,7 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 	chain.updateVerifyHash(remoteBlock)
 
 	chain.updateTxPool(remoteBlock, receipts)
+
 	chain.topBlocks.Add(remoteBlock.Header.Height, remoteBlock.Header)
 
 	if !chain.updateLastBlock(accountDB, remoteBlock, headerByte) {
@@ -234,6 +235,8 @@ func (chain *blockChain) saveBlockByHeight(height uint64, headerByte []byte) boo
 }
 
 func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountDB, types.Receipts) {
+	defer logger.Infof("end saveBlockState, %s", b.Header.Hash.String())
+
 	var state *account.AccountDB
 	var receipts types.Receipts
 	if value, exit := chain.verifiedBlocks.Get(b.Header.Hash); exit {
@@ -279,7 +282,7 @@ func (chain *blockChain) updateLastBlock(state *account.AccountDB, block *types.
 	chain.requestIds = header.RequestIds
 
 	middleware.AccountDBManagerInstance.SetLatestStateDB(state, block.Header.RequestIds, block.Header.Height)
-	logger.Debugf("Update latestStateDB:%s height:%d", header.StateTree.Hex(), header.Height)
+	logger.Debugf("Update latestStateDB: %s, height: %d, hash: %s", header.StateTree.Hex(), header.Height, header.Hash.String())
 
 	return true
 }
@@ -296,10 +299,11 @@ func (chain *blockChain) updateTxPool(block *types.Block, receipts types.Receipt
 		go chain.notifyBlockHeader(block.Header)
 	}
 	chain.transactionPool.MarkExecuted(block.Header, receipts, block.Transactions, block.Header.EvictedTxs)
+	logger.Infof("finish update tx pool, %s", block.Header.Hash.String())
 }
 
 func (chain *blockChain) successOnChainCallBack(remoteBlock *types.Block) {
-	logger.Infof("ON chain succ! height: %d,hash: %s", remoteBlock.Header.Height, remoteBlock.Header.Hash.Hex())
+	logger.Infof("ON chain succ! height: %d, hash: %s", remoteBlock.Header.Height, remoteBlock.Header.Hash.Hex())
 	notify.BUS.Publish(notify.BlockAddSucc, &notify.BlockOnChainSuccMessage{Block: *remoteBlock})
 	if value, _ := chain.futureBlocks.Get(remoteBlock.Header.Hash); value != nil {
 		block := value.(*types.Block)

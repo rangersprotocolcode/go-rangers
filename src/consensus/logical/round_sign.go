@@ -147,6 +147,7 @@ func (r *round0) afterPreArrived() *Error {
 
 func (r *round0) checkBlock() *Error {
 	bh := r.bh
+	r.logger.Debugf("round0 check block, height: %d, hash: %s, preHash: %s", bh.Height, bh.Hash.String(), bh.PreHash.String())
 
 	// may change blockHash due to transactions execution
 	lostTxs, ccr := core.GetBlockChain().VerifyBlock(bh)
@@ -164,14 +165,8 @@ func (r *round0) checkBlock() *Error {
 		id := r.group.GetMemberID(int(index)).GetBigInt()
 		r.isSend = id.Cmp(r.mi.GetBigInt()) == 0
 
-		r.checkBlockExisted()
-		if r.blockExisted {
-			if r.isSend {
-				r.logger.Warnf("block has generated. skip round2. hash: %s", r.bh.Hash.String())
-				r.canProcessed = true
-				return nil
-			}
-			return NewError(fmt.Errorf("block already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "ccm", r.RoundNumber(), "", nil)
+		if err := r.checkBlockExisted(); err != nil {
+			return err
 		}
 
 		r.normalPieceVerify()
@@ -187,20 +182,32 @@ func (r *round0) checkBlock() *Error {
 		for _, hash := range lostTxs {
 			r.lostTxs[hash] = 0
 		}
-		r.logger.Warnf("lostTxs waiting, height: %d, preHash: %s, len: %d", bh.Height, bh.PreHash.String(), len(lostTxs))
+		r.logger.Warnf("lostTxs waiting, height: %d, id: %s, preHash: %s, len: %d", bh.Height, r.partyId, bh.PreHash.String(), len(lostTxs))
 		notify.BUS.Subscribe(notify.TransactionGotAddSucc, r)
 	}
 
 	return nil
 }
 
-func (r *round0) checkBlockExisted() {
-	if r.blockExisted {
-		return
+func (r *round0) checkBlockExisted() *Error {
+	bh := r.bh
+
+	if !r.blockchain.HasBlockByHash(bh.Hash) {
+		return nil
 	}
 
-	bh := r.bh
-	r.blockExisted = r.blockchain.HasBlockByHash(bh.Hash)
+	r.logger.Warnf("block has generated. skip next rounds. hash: %s, id: %s, isSend: %v", r.bh.Hash.String(), r.partyId, r.isSend)
+
+	block := r.blockchain.QueryBlockByHash(bh.Hash)
+	if nil == block {
+		return NewError(fmt.Errorf("block already existed but nil, height: %d, hash: %s", bh.Height, bh.Hash.String()), "ccm", r.RoundNumber(), "", nil)
+	}
+
+	if r.isSend {
+		r.broadcastNewBlock(*block)
+	}
+
+	return NewError(fmt.Errorf("block already existed, height: %d, hash: %s", bh.Height, bh.Hash.String()), "ccm", r.RoundNumber(), "", nil)
 }
 
 func (r *round0) normalPieceVerify() {
@@ -250,13 +257,8 @@ func (r *round0) CanAccept(msg model.ConsensusMessage) int {
 }
 
 func (r *round0) NextRound() Round {
+	r.Close()
 	r.started = false
-
-	if r.blockExisted {
-		r.canProcessed = true
-		r.number = 2
-		return &round2{}
-	}
 
 	r.canProcessed = false
 	r.number = 1
@@ -320,14 +322,25 @@ func (r *round0) onMissTxAddSucc(message notify.Message) {
 	}
 
 	if 0 != len(r.lostTxs) {
-		r.logger.Warnf("lostTxs waiting again, height: %d, preHash: %s, len: %d", r.bh.Height, r.bh.PreHash.String(), len(r.lostTxs))
+		r.logger.Warnf("lostTxs waiting again, height: %d, id: %s, preHash: %s, len: %d", r.bh.Height, r.partyId, r.bh.PreHash.String(), len(r.lostTxs))
 		return
 	} else {
-		r.logger.Warnf("lostTxs waiting successfully, height: %d, preHash: %s", r.bh.Height, r.bh.PreHash.String())
+		r.logger.Warnf("lostTxs waiting successfully, height: %d, id: %s, preHash: %s", r.bh.Height, r.partyId, r.bh.PreHash.String())
 	}
 
 	err := r.checkBlock()
 	if nil != err {
 		r.errChan <- err
 	}
+}
+
+// send block
+func (r *round0) broadcastNewBlock(block types.Block) {
+	bh := block.Header
+	cbm := &model.ConsensusBlockMessage{
+		Block: block,
+	}
+	r.netServer.BroadcastNewBlock(cbm)
+
+	r.logger.Infof("broadcast block, height: %d, hash: %s", bh.Height, bh.Hash.String())
 }
