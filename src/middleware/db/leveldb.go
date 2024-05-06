@@ -26,7 +26,6 @@ import (
 	"github.com/syndtr/goleveldb/leveldb/iterator"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/util"
-	"os"
 	"strconv"
 	"sync"
 )
@@ -73,8 +72,8 @@ func NewLDBDatabase(file string, cache int, handles int) (*LDBDatabase, error) {
 func newLevelDBInstance(file string, cache int, handles int) (*leveldb.DB, error) {
 	db, err := leveldb.OpenFile(file, &opt.Options{
 		OpenFilesCacheCapacity: handles,
-		BlockCacheCapacity:     20 * opt.MiB,
-		WriteBuffer:            cache * opt.MiB, // Two of these are used internally
+		BlockCacheCapacity:     cache * opt.MiB,
+		WriteBuffer:            cache * opt.MiB / 8,
 		Filter:                 filter.NewBloomFilter(20),
 	})
 
@@ -87,22 +86,6 @@ func newLevelDBInstance(file string, cache int, handles int) (*leveldb.DB, error
 	}
 
 	return db, nil
-}
-
-func (ldb *LDBDatabase) Clear() error {
-	ldb.inited = false
-	ldb.Close()
-
-	os.RemoveAll(ldb.Path())
-
-	db, err := newLevelDBInstance(ldb.Path(), ldb.cacheConfig, ldb.handlesConfig)
-	if err != nil {
-		return err
-	}
-
-	ldb.db = db
-	ldb.inited = true
-	return nil
 }
 
 // Path returns the path to the database directory.
