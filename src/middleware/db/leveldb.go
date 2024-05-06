@@ -73,7 +73,7 @@ func newLevelDBInstance(file string, cache int, handles int) (*leveldb.DB, error
 	db, err := leveldb.OpenFile(file, &opt.Options{
 		OpenFilesCacheCapacity: handles,
 		BlockCacheCapacity:     cache * opt.MiB,
-		WriteBuffer:            cache * opt.MiB / 8,
+		WriteBuffer:            20 * opt.MiB,
 		Filter:                 filter.NewBloomFilter(20),
 	})
 
