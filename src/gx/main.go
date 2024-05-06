@@ -19,6 +19,7 @@ package main
 import (
 	"com.tuntun.rangers/node/src/gx/cli"
 	"fmt"
+	_ "go.uber.org/automaxprocs"
 	"os"
 	"os/signal"
 	"runtime"
@@ -36,11 +37,10 @@ func main() {
 }
 
 func initSysParam() {
-	runtime.GOMAXPROCS(8)
 	debug.SetGCPercent(30)
 	debug.SetMaxStack(1 * 1000 * 1000 * 1000)
 
-	fmt.Printf("Setting gc %s, max memory %s, maxproc %s\n", "50", "1g", "8")
+	fmt.Printf("Setting gc %s, max memory %s, maxproc %s\n", "50", "1g", runtime.GOMAXPROCS(-1))
 }
 
 const (
