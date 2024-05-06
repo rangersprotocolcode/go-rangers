@@ -128,7 +128,7 @@ func newTransactionPool() TransactionPool {
 	pool.received = newSimpleContainer(rcvTxPoolSize)
 	pool.evictedTxs, _ = lru.New(txCacheSize)
 
-	executed, err := db.NewLDBDatabase(txDataBasePrefix, 256, 512)
+	executed, err := db.NewLDBDatabase(txDataBasePrefix, 128, 128)
 	if err != nil {
 		txPoolLogger.Errorf("Init transaction pool error! Error:%s", err.Error())
 		return nil

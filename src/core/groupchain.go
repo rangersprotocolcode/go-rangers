@@ -26,6 +26,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 )
@@ -59,7 +60,7 @@ func initGroupChain() {
 		panic("Init group chain error:" + err.Error())
 	}
 
-	chain.joinedGroups, err = db.NewLDBDatabase(common.GlobalConf.GetString(common.ConfigSec, common.DefaultJoinedGroupDatabaseKey, "jgs"), 1, 1)
+	chain.joinedGroups, err = db.NewLDBDatabase(common.GlobalConf.GetString(common.ConfigSec, common.DefaultJoinedGroupDatabaseKey, "jgs"), 16, 8)
 	if err != nil {
 		panic("newLDBDatabase fail, file=" + "" + "err=" + err.Error())
 	}
@@ -103,7 +104,7 @@ func (chain *groupChain) AddGroup(group *types.Group) error {
 
 	ok, err := consensusHelper.CheckGroup(group)
 	if !ok {
-		if err == common.ErrCreateBlockNil {
+		if errors.Is(err, common.ErrCreateBlockNil) {
 			logger.Infof("Add group failed:depend on block!")
 		} else {
 			logger.Infof("Add group failed:%v", err.Error())

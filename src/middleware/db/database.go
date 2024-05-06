@@ -57,6 +57,8 @@ func NewDatabase(prefix string) (Database, error) {
 	}, nil
 }
 
+// named "chain"
+// used by blockchain and groupChain
 func getInstance() (*LDBDatabase, error) {
 	instanceLock.Lock()
 	defer instanceLock.Unlock()
@@ -71,8 +73,8 @@ func getInstance() (*LDBDatabase, error) {
 
 	defaultConfig := &databaseConfig{
 		database: common.DefaultDatabase,
-		cache:    512,
-		handler:  2048,
+		cache:    256,
+		handler:  256,
 	}
 
 	if nil == common.GlobalConf {
