@@ -92,7 +92,7 @@ var (
 		Proposal017Block: 62997000,
 		Proposal018Block: 65795000,
 		Proposal019Block: 66114000,
-		Proposal021Block: 0, //todo
+		Proposal021Block: 74312000,
 
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 
