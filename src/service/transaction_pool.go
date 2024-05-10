@@ -31,6 +31,8 @@ import (
 	"fmt"
 	lru "github.com/hashicorp/golang-lru"
 	"sort"
+	"sync"
+	"time"
 )
 
 const (
@@ -38,7 +40,10 @@ const (
 	rcvTxPoolSize    = 50000
 	txCacheSize      = 1000
 
-	txCountPerBlock = 200
+	txCountPerBlock        = 200
+	singleAccountQueueSize = 64
+	expiredRing            = 2
+	txCycleInterval        = time.Minute * 1
 )
 
 var (
@@ -55,6 +60,16 @@ var (
 	ErrEvicted = errors.New("error transaction already exist in pool")
 
 	ErrIllegal = errors.New("illegal transaction")
+
+	ErrNonceTooLow = errors.New("nonce too low")
+
+	ErrReplaceSameNonceFailed = errors.New("replace same nonce tx failed")
+
+	ErrSameNonceExistPending = errors.New("same nonce pending tx exist")
+
+	ErrAccountQueueTxLimitExceeded = errors.New("queue tx limit exceeded")
+
+	ErrTxPoolOverflow = errors.New("txpool is full")
 )
 
 type ExecutedReceipt struct {
@@ -100,6 +115,14 @@ type TransactionPool interface {
 	GetGateNonce() uint64
 
 	Close()
+
+	GetPendingNonce(address string) uint64
+
+	Stats() (int, int)
+
+	GetPendingList(address string) []uint64
+
+	GetQueueList(address string) []uint64
 }
 
 type TxPool struct {
@@ -108,6 +131,12 @@ type TxPool struct {
 
 	executed db.Database
 	batch    db.Batch
+
+	pending         map[string]*txList
+	queue           map[string]*txList
+	lock            middleware.Loglock
+	annualRingMap   sync.Map //use to store queue tx for expire calculate
+	lifeCycleTicker *time.Ticker
 }
 
 var (
@@ -138,6 +167,13 @@ func newTransactionPool() TransactionPool {
 	pool.executed = executed
 	pool.batch = pool.executed.NewBatch()
 
+	pool.pending = make(map[string]*txList, 0)
+	pool.queue = make(map[string]*txList, 0)
+	pool.lock = middleware.NewLoglock("txPool")
+
+	pool.annualRingMap = sync.Map{}
+	pool.lifeCycleTicker = time.NewTicker(txCycleInterval)
+	go pool.loop()
 	return pool
 }
 
@@ -169,13 +205,33 @@ func (pool *TxPool) GetGateNonce() uint64 {
 	return utility.ByteToUInt64(data)
 }
 
+func (pool *TxPool) GetPendingNonce(address string) uint64 {
+	pool.lock.RLock("GetPendingNonce")
+	pendingList := pool.pending[address]
+
+	if pendingList != nil && len(*pendingList.index) > 0 {
+		pendingNonce := pendingList.GetTailNonce() + 1
+		pool.lock.RUnlock("GetPendingNonce")
+		return pendingNonce
+	}
+	pool.lock.RUnlock("GetPendingNonce")
+
+	state := middleware.AccountDBManagerInstance.GetLatestStateDB()
+	return state.GetNonce(common.HexToAddress(address))
+}
+
 func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 	//if pool.evictedTxs.Contains(tx.Hash) {
 	//	txPoolLogger.Infof("Tx is marked evicted tx,do not add pool. Hash:%s", tx.Hash.String())
 	//	return false, ErrEvicted
 	//}
-
-	b, err := pool.add(tx)
+	if tx == nil {
+		return false, ErrNil
+	}
+	if pool.IsFull() {
+		return false, ErrTxPoolOverflow
+	}
+	b, err := pool.add(tx, tx.Type == types.TransactionTypeETHTX)
 	if nil == err {
 		pool.refreshGateNonce(tx)
 	}
@@ -183,14 +239,11 @@ func (pool *TxPool) AddTransaction(tx *types.Transaction) (bool, error) {
 }
 
 func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash) {
-	txHashList := make([]interface{}, 0)
-
 	if receipts != nil && len(receipts) != 0 {
 		mysql.InsertLogs(header.Height, receipts, header.Hash)
 
 		for i, receipt := range receipts {
 			hash := receipt.TxHash
-			txHashList = append(txHashList, hash)
 			var er ExecutedReceipt
 			er.BlockHash = header.Hash
 			er.Height = receipt.Height
@@ -226,16 +279,7 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 		}
 	}
 
-	if evictedTxs != nil {
-		for _, hash := range evictedTxs {
-			pool.evictedTxs.Add(hash, 0)
-			txHashList = append(txHashList, hash)
-		}
-	}
-
-	if len(txHashList) > 0 {
-		pool.remove(txHashList)
-	}
+	pool.remove(txs, evictedTxs)
 }
 
 func (pool *TxPool) UnMarkExecuted(block *types.Block) {
@@ -255,7 +299,7 @@ func (pool *TxPool) UnMarkExecuted(block *types.Block) {
 
 	for _, tx := range txs {
 		pool.executed.Delete(tx.Hash.Bytes())
-		pool.add(tx)
+		pool.add(tx, false)
 	}
 }
 
@@ -356,7 +400,7 @@ func (pool *TxPool) PackForCast(height uint64) []*types.Transaction {
 	if 0 == len(packedTxs) {
 		txPoolLogger.Debugf("after check nonce ,packed no tx. height: %d", height)
 	} else {
-		txPoolLogger.Debugf("packed tx. height: %d. nonce from %d to %d. size: %d", height, packedTxs[0].RequestId, packedTxs[len(packedTxs)-1].RequestId, len(packedTxs))
+		txPoolLogger.Debugf("packed tx. height: %d. global nonce from %d to %d. size: %d", height, packedTxs[0].RequestId, packedTxs[len(packedTxs)-1].RequestId, len(packedTxs))
 	}
 	return packedTxs
 }
@@ -395,27 +439,150 @@ func (pool *TxPool) ProcessFee(tx types.Transaction, accountDB *account.AccountD
 	return nil
 }
 
-func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
+func (pool *TxPool) GetPendingList(address string) []uint64 {
+	pendingList := pool.pending[address]
+	if pendingList == nil {
+		return nil
+	}
+	return *pendingList.index
+}
+
+func (pool *TxPool) GetQueueList(address string) []uint64 {
+	queueList := pool.queue[address]
+	if queueList == nil {
+		return nil
+	}
+	return *queueList.index
+}
+
+// stats retrieves the current pool stats, namely the number of pending and the
+// number of queued (non-executable) transactions.
+func (pool *TxPool) Stats() (int, int) {
+	pending := 0
+	for _, list := range pool.pending {
+		pending += list.Size()
+	}
+	queued := 0
+	for _, list := range pool.queue {
+		queued += list.Size()
+	}
+	return pending, queued
+}
+
+func (pool *TxPool) add(tx *types.Transaction, checkPending bool) (bool, error) {
 	if tx == nil {
 		return false, ErrNil
 	}
-
-	hash := tx.Hash
-	if pool.isTransactionExisted(hash) {
+	if pool.isTransactionExisted(tx.Hash) {
 		return false, ErrExist
 	}
+	if !checkPending {
+		pool.received.push(tx)
+		txPoolLogger.Debugf("[pool]Add tx without check pending:%s. global nonce:%d,source:%s,nonce:%d.Received size:%d", tx.Hash.String(), tx.RequestId, tx.Source, tx.Nonce, pool.received.Len())
+		return true, nil
+	}
+
+	pendingNonce := pool.GetPendingNonce(tx.Source)
+	pool.lock.Lock("addTx")
+	defer pool.lock.Unlock("addTx")
+	if tx.Nonce < pendingNonce {
+		pendingList := pool.pending[tx.Source]
+		if pendingList != nil && pendingList.Get(tx.Nonce) != nil {
+			return false, ErrSameNonceExistPending
+		}
+		return false, ErrNonceTooLow
+	} else if tx.Nonce == pendingNonce {
+		if pool.pending[tx.Source] == nil {
+			pool.pending[tx.Source] = newTxList()
+		}
+		pool.pending[tx.Source].Put(tx)
+		pool.tryPopQueue(tx.Source)
+	} else {
+		err := pool.addQueue(tx)
+		if err != nil {
+			return false, err
+		}
+	}
 	pool.received.push(tx)
-	txPoolLogger.Debugf("[pool]Add tx:%s. nonce: %d, After add,received size:%d", tx.Hash.String(), tx.RequestId, pool.received.Len())
+	txPoolLogger.Debugf("[pool]Add tx:%s. global nonce:%d,source:%s,nonce:%d.Received size:%d", tx.Hash.String(), tx.RequestId, tx.Source, tx.Nonce, pool.received.Len())
 	return true, nil
 }
 
-func (pool *TxPool) remove(txHashList []interface{}) {
-	pool.received.remove(txHashList)
-	for _, txHash := range txHashList {
-		txPoolLogger.Debugf("[pool]removed tx:%s", txHash.(common.Hash).String())
+func (pool *TxPool) addQueue(tx *types.Transaction) error {
+	if pool.queue[tx.Source] == nil {
+		pool.queue[tx.Source] = newTxList()
 	}
-	txPoolLogger.Debugf("[pool]removed tx, %d. After remove,received size:%d", len(txHashList), pool.received.Len())
+	if pool.queue[tx.Source].Size() >= singleAccountQueueSize {
+		return ErrAccountQueueTxLimitExceeded
+	}
+	sameNonceTx := pool.queue[tx.Source].Get(tx.Nonce)
+	if sameNonceTx == nil {
+		pool.queue[tx.Source].Put(tx)
+		pool.annualRingMap.Store(tx.Source, uint64(0))
+		return nil
+	}
+	if tx.Less(sameNonceTx) {
+		return ErrReplaceSameNonceFailed
+	}
+	pool.queue[tx.Source].Put(tx)
+	pool.received.remove(sameNonceTx.Hash)
+	txPoolLogger.Debugf("[pool]removed replaced queue tx:%s,source:%s,nonce:%d", sameNonceTx.Hash.String(), sameNonceTx.Source, sameNonceTx.Nonce)
+	pool.annualRingMap.Store(tx.Source, uint64(0))
+	return nil
+}
 
+func (pool *TxPool) tryPopQueue(sourceAddress string) {
+	queue := pool.queue[sourceAddress]
+	pending := pool.pending[sourceAddress]
+	if queue == nil || pending == nil {
+		return
+	}
+	for queue.Size() > 0 {
+		pendingTail := pending.GetTailNonce()
+		queueHead := queue.GetHeadNonce()
+		if queueHead != pendingTail+1 {
+			break
+		}
+		tx := queue.Pop()
+		pending.Put(tx)
+	}
+}
+
+func (pool *TxPool) remove(txs []*types.Transaction, evictedTxs []common.Hash) {
+	txHashList := make([]interface{}, 0)
+	pool.lock.Lock("removeTx")
+	if txs != nil {
+		for _, tx := range txs {
+			if pool.pending[tx.Source] != nil {
+				pool.pending[tx.Source].Forward(tx.Nonce)
+			}
+			if pool.queue[tx.Source] != nil {
+				pool.queue[tx.Source].Forward(tx.Nonce)
+			}
+			txHashList = append(txHashList, tx.Hash)
+			txPoolLogger.Debugf("[pool]removed tx:%s", tx.Hash.String())
+		}
+	}
+
+	if evictedTxs != nil {
+		for _, hash := range evictedTxs {
+			tx := pool.received.get(hash)
+			if tx == nil {
+				continue
+			}
+			if pool.pending[tx.Source] != nil {
+				pool.pending[tx.Source].Forward(tx.Nonce)
+			}
+			if pool.queue[tx.Source] != nil {
+				pool.queue[tx.Source].Forward(tx.Nonce)
+			}
+			txHashList = append(txHashList, tx.Hash)
+			txPoolLogger.Debugf("[pool]removed tx:%s", tx.Hash.String())
+		}
+	}
+	pool.lock.Unlock("removeTx")
+	pool.received.batchRemove(txHashList)
+	txPoolLogger.Debugf("[pool]removed tx, %d. After remove,received size:%d", len(txHashList), pool.received.Len())
 }
 
 func (pool *TxPool) isTransactionExisted(hash common.Hash) bool {
@@ -537,6 +704,9 @@ func (pool *TxPool) checkNonce(txList []*types.Transaction) []*types.Transaction
 	nonceMap := make(map[string]uint64, 0)
 
 	for _, tx := range txs {
+		if tx.RequestId > 0 {
+			continue //only json rpc tx pre check nonce
+		}
 		expectedNonce, exist := nonceMap[tx.Source]
 		if !exist {
 			expectedNonce = stateDB.GetNonce(common.HexToAddress(tx.Source))
@@ -557,4 +727,36 @@ func (pool *TxPool) checkNonce(txList []*types.Transaction) []*types.Transaction
 		}
 	}
 	return packedTxs
+}
+
+func (pool *TxPool) loop() {
+	for {
+		select {
+		case <-pool.lifeCycleTicker.C:
+			go pool.growRing()
+		}
+	}
+}
+
+func (pool *TxPool) growRing() {
+	pool.annualRingMap.Range(func(key, value interface{}) bool {
+		address := key.(string)
+		txRing := value.(uint64)
+		txRing = txRing + 1
+		pool.annualRingMap.Store(address, txRing)
+		if txRing >= expiredRing {
+			pool.lock.Lock("queue expire")
+			queueList := pool.queue[address]
+			if queueList != nil && queueList.Size() > 0 {
+				txPoolLogger.Debugf("address %s expired,clear the queue list.", address)
+				for queueList.Size() > 0 {
+					tx := queueList.Pop()
+					txPoolLogger.Debugf("queue tx expired,drop it. hash:%s", tx.Hash.String())
+					pool.received.remove(tx.Hash)
+				}
+			}
+			pool.lock.Unlock("queue expire")
+		}
+		return true
+	})
 }

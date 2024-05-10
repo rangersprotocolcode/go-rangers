@@ -139,9 +139,6 @@ var (
 	// ErrAlreadyKnown is returned if the transactions is already contained
 	// within the pool.
 	ErrAlreadyKnown = errors.New("already known")
-	// ErrTxPoolOverflow is returned if the transaction pool is full and can't accept
-	// another remote transaction.
-	ErrTxPoolOverflow = errors.New("txpool is full")
 
 	// ErrMaxInitCodeSizeExceeded is returned if creation transaction provides the init code bigger
 	// than init code size limit.
@@ -378,6 +375,11 @@ func (s *EthAPIService) GetBlockTransactionCountByHash(blockHash common.Hash) *u
 
 // GetTransactionCount returns the number of transactions the given address has sent for the given block number
 func (s *EthAPIService) GetTransactionCount(address common.Address, blockNrOrHash BlockNumberOrHash) (*utility.Uint64, error) {
+	if *blockNrOrHash.BlockNumber == PendingBlockNumber {
+		pendingNonce := utility.Uint64(service.GetTransactionPool().GetPendingNonce(address.String()))
+		return &pendingNonce, nil
+	}
+
 	accountDB := getAccountDBByHashOrHeight(blockNrOrHash)
 	if accountDB == nil {
 		return nil, errors.New("param invalid")
@@ -590,13 +592,14 @@ func validateTx(tx *eth_tx.Transaction) (common.Address, error) {
 		return sender, fmt.Errorf("%w: balance %v, tx cost %v, overshot %v", executor.ErrInsufficientFunds, balance, costFee, new(big.Int).Sub(costFee, balance))
 	}
 
+	//addtx pool will check it
 	// If the transaction is already known, discard it
-	if service.GetTransactionPool().IsExisted(tx.Hash()) {
-		return sender, ErrAlreadyKnown
-	}
-	if service.GetTransactionPool().IsFull() {
-		return sender, ErrTxPoolOverflow
-	}
+	//if service.GetTransactionPool().IsExisted(tx.Hash()) {
+	//	return sender, ErrAlreadyKnown
+	//}
+	//if service.GetTransactionPool().IsFull() {
+	//	return sender, ErrTxPoolOverflow
+	//}
 	return sender, err
 }
 

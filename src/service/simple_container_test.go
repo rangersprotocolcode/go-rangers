@@ -14,7 +14,6 @@ func TestSimpleContainer(t *testing.T) {
 	txPoolLogger = log.GetLoggerByIndex(log.TxPoolLogConfig, strconv.Itoa(common.InstanceIndex))
 
 	container := newSimpleContainer(100)
-	container.txCycleTicker = time.NewTicker(time.Second * 12)
 
 	hash1 := common.HexToHash("0xfa6be88da0fd27716900859a633c9085d664b4e07053f2c1361d6a5d6f911111")
 	source1 := "11111"
@@ -45,7 +44,7 @@ func TestSimpleContainer(t *testing.T) {
 
 	txHashList := make([]interface{}, 0)
 	txHashList = append(txHashList, hash2)
-	container.remove(txHashList)
+	container.batchRemove(txHashList)
 	txPoolLogger.Debugf("after remove tx2")
 	container.dump()
 
@@ -68,12 +67,6 @@ func (c *simpleContainer) dump() {
 	}
 
 	txPoolLogger.Debugf("annual ring map:")
-	c.txAnnualRingMap.Range(func(key, value interface{}) bool {
-		txHash := key.(common.Hash)
-		txRing := value.(uint64)
-		txPoolLogger.Debugf("hash:%s,ring:%d", txHash.String(), txRing)
-		return true
-	})
 
 	dbData, _ := c.db.Get(pendingTxListKey)
 	var pendingTxList []*types.Transaction
