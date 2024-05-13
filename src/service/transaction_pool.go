@@ -537,6 +537,10 @@ func (pool *TxPool) checkNonce(txList []*types.Transaction) []*types.Transaction
 	nonceMap := make(map[string]uint64, 0)
 
 	for _, tx := range txs {
+		if tx.RequestId > 0 {
+			continue //only json rpc tx pre check nonce
+		}
+
 		expectedNonce, exist := nonceMap[tx.Source]
 		if !exist {
 			expectedNonce = stateDB.GetNonce(common.HexToAddress(tx.Source))
