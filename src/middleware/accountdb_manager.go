@@ -91,6 +91,8 @@ func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.Account
 			manager.waitingTxs.SetThreshold(nonce)
 		}
 	}
+	testNonce := manager.LatestStateDB.GetNonce(common.HexToAddress("0x2f4F09b722a6e5b77bE17c9A99c785Fa7035a09f"))
+	common.DefaultLogger.Debugf("SetLatestStateDB,height:%d,0x2f4F09b722a6e5b77bE17c9A99c785Fa7035a09f nonce:%d", height, testNonce)
 }
 
 func (manager *AccountDBManager) loop() {

@@ -536,6 +536,9 @@ func (pool *TxPool) checkNonce(txList []*types.Transaction) []*types.Transaction
 	stateDB := middleware.AccountDBManagerInstance.GetLatestStateDB()
 	nonceMap := make(map[string]uint64, 0)
 
+	testNonce := stateDB.GetNonce(common.HexToAddress("0x2f4F09b722a6e5b77bE17c9A99c785Fa7035a09f"))
+	common.DefaultLogger.Debugf("SetLatestStateDB,0x2f4F09b722a6e5b77bE17c9A99c785Fa7035a09f nonce:%d", testNonce)
+
 	for _, tx := range txs {
 		if tx.RequestId == 0 { //only json rpc tx pre check nonce
 			expectedNonce, exist := nonceMap[tx.Source]
