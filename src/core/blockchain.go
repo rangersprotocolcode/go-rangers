@@ -163,6 +163,7 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	state, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(preStateRoot)
 	if err != nil {
 		logger.Errorf("Fail to new account db while casting block!Latest block height:%d,error:%s", latestBlock.Height, err.Error())
+		middleware.RUnLockBlockchain("castblock")
 		return nil
 	}
 
