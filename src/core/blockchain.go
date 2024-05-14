@@ -158,7 +158,15 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		middleware.RUnLockBlockchain("castblock")
 		return nil
 	}
-	txs := chain.transactionPool.PackForCast(height)
+
+	preStateRoot := common.BytesToHash(latestBlock.StateTree.Bytes())
+	state, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(preStateRoot)
+	if err != nil {
+		logger.Errorf("Fail to new account db while casting block!Latest block height:%d,error:%s", latestBlock.Height, err.Error())
+		return nil
+	}
+
+	txs := chain.transactionPool.PackForCast(height, state)
 	middleware.RUnLockBlockchain("castblock")
 
 	block := new(types.Block)
@@ -177,13 +185,6 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 	block.Header.RequestIds = getRequestIdFromTransactions(block.Transactions, latestBlock.RequestIds)
 
 	middleware.PerfLogger.Infof("fin cast object. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
-
-	preStateRoot := common.BytesToHash(latestBlock.StateTree.Bytes())
-	state, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(preStateRoot)
-	if err != nil {
-		logger.Errorf("Fail to new account db while casting block!Latest block height:%d,error:%s", latestBlock.Height, err.Error())
-		return nil
-	}
 
 	executor := newVMExecutor(state, block, "casting")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()

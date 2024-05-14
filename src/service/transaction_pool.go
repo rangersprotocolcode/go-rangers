@@ -68,7 +68,7 @@ type ExecutedTransaction struct {
 }
 
 type TransactionPool interface {
-	PackForCast(height uint64) []*types.Transaction
+	PackForCast(height uint64, stateDB *account.AccountDB) []*types.Transaction
 
 	//add new transaction to the transaction pool
 	AddTransaction(tx *types.Transaction) (bool, error)
@@ -335,7 +335,7 @@ func (p *TxPool) IsFull() bool {
 	return p.received.isFull()
 }
 
-func (pool *TxPool) PackForCast(height uint64) []*types.Transaction {
+func (pool *TxPool) PackForCast(height uint64, stateDB *account.AccountDB) []*types.Transaction {
 	packedTxs := make([]*types.Transaction, 0)
 
 	txs := pool.received.asSlice()
@@ -348,7 +348,7 @@ func (pool *TxPool) PackForCast(height uint64) []*types.Transaction {
 		packedTxs = append(packedTxs, tx.(*types.Transaction))
 	}
 	if common.IsProposal018() {
-		packedTxs = pool.checkNonce(packedTxs)
+		packedTxs = pool.checkNonce(packedTxs, stateDB)
 	}
 	if len(packedTxs) > txCountPerBlock {
 		packedTxs = packedTxs[:txCountPerBlock]
@@ -528,12 +528,12 @@ func compareTx(tx *types.Transaction, expectedTx *types.Transaction) bool {
 	return true
 }
 
-func (pool *TxPool) checkNonce(txList []*types.Transaction) []*types.Transaction {
+func (pool *TxPool) checkNonce(txList []*types.Transaction, stateDB *account.AccountDB) []*types.Transaction {
 	txs := types.Transactions(txList)
 	sort.Sort(txs)
 
 	packedTxs := make([]*types.Transaction, 0)
-	stateDB := middleware.AccountDBManagerInstance.GetLatestStateDB()
+
 	nonceMap := make(map[string]uint64, 0)
 
 	for _, tx := range txs {

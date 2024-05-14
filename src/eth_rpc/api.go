@@ -578,11 +578,16 @@ func validateTx(tx *eth_tx.Transaction) (common.Address, error) {
 	}
 
 	// Ensure the transaction adheres to nonce ordering
-	stateDB := middleware.AccountDBManagerInstance.GetLatestStateDB()
+	stateDB, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(core.GetBlockChain().TopBlock().StateTree)
+	if nil == stateDB || nil != err {
+		return sender, fmt.Errorf("try again")
+	}
+
 	nextNonce := stateDB.GetNonce(sender)
 	if tx.Nonce() < nextNonce {
 		return sender, fmt.Errorf("%w: next nonce %v, tx nonce %v", vm.ErrNonceTooLow, nextNonce, tx.Nonce())
 	}
+
 	// Ensure the transactor has enough funds to cover the transaction costs
 	balance := stateDB.GetBalance(sender)
 	costFee := tx.Cost()
