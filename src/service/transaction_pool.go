@@ -536,24 +536,23 @@ func (pool *TxPool) checkNonce(txList []*types.Transaction, stateDB *account.Acc
 	nonceMap := make(map[string]uint64, 0)
 
 	for _, tx := range txs {
-		if tx.RequestId > 0 {
-			continue //only json rpc tx pre check nonce
+		if tx.RequestId == 0 { //only json rpc tx pre check nonce
+			expectedNonce, exist := nonceMap[tx.Source]
+			if !exist {
+				expectedNonce = stateDB.GetNonce(common.HexToAddress(tx.Source))
+				nonceMap[tx.Source] = expectedNonce
+			}
+
+			//nonce too low tx and repeat nonce tx will be packed into block and execute failed
+			if expectedNonce < tx.Nonce {
+				txPoolLogger.Debugf("nonce too high tx,skip pack.tx:%s,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
+				continue
+			}
+			if expectedNonce == tx.Nonce {
+				nonceMap[tx.Source] = expectedNonce + 1
+			}
 		}
 
-		expectedNonce, exist := nonceMap[tx.Source]
-		if !exist {
-			expectedNonce = stateDB.GetNonce(common.HexToAddress(tx.Source))
-			nonceMap[tx.Source] = expectedNonce
-		}
-
-		//nonce too low tx and repeat nonce tx will be packed into block and execute failed
-		if expectedNonce < tx.Nonce {
-			txPoolLogger.Debugf("nonce too high tx,skip pack.tx:%s,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
-			continue
-		}
-		if expectedNonce == tx.Nonce {
-			nonceMap[tx.Source] = expectedNonce + 1
-		}
 		packedTxs = append(packedTxs, tx)
 		if len(packedTxs) >= txCountPerBlock {
 			break
