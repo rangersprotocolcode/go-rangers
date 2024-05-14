@@ -405,7 +405,7 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 		return false, ErrExist
 	}
 	pool.received.push(tx)
-	txPoolLogger.Debugf("[pool]Add tx:%s. nonce: %d, After add,received size:%d", tx.Hash.String(), tx.RequestId, pool.received.Len())
+	txPoolLogger.Debugf("[pool]Add tx:%s. global nonce: %d,source:%s,nonce:%d, After add,received size:%d", tx.Hash.String(), tx.RequestId, tx.Source, tx.Nonce, pool.received.Len())
 	return true, nil
 }
 
@@ -536,24 +536,27 @@ func (pool *TxPool) checkNonce(txList []*types.Transaction, stateDB *account.Acc
 
 	nonceMap := make(map[string]uint64, 0)
 
+	testNonce := stateDB.GetNonce(common.HexToAddress("0x2f4F09b722a6e5b77bE17c9A99c785Fa7035a09f"))
+	txPoolLogger.Debugf("getLatestStateDB,0x2f4F09b722a6e5b77bE17c9A99c785Fa7035a09f nonce:%d", testNonce)
+
 	for _, tx := range txs {
-		if tx.RequestId > 0 {
-			continue //only json rpc tx pre check nonce
-		}
-		expectedNonce, exist := nonceMap[tx.Source]
-		if !exist {
-			expectedNonce = stateDB.GetNonce(common.HexToAddress(tx.Source))
-			nonceMap[tx.Source] = expectedNonce
+		if tx.RequestId == 0 { //only json rpc tx pre check nonce
+			expectedNonce, exist := nonceMap[tx.Source]
+			if !exist {
+				expectedNonce = stateDB.GetNonce(common.HexToAddress(tx.Source))
+				nonceMap[tx.Source] = expectedNonce
+			}
+
+			//nonce too low tx and repeat nonce tx will be packed into block and execute failed
+			if expectedNonce < tx.Nonce {
+				txPoolLogger.Debugf("nonce too high tx,skip pack.tx:%s,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
+				continue
+			}
+			if expectedNonce == tx.Nonce {
+				nonceMap[tx.Source] = expectedNonce + 1
+			}
 		}
 
-		//nonce too low tx and repeat nonce tx will be packed into block and execute failed
-		if expectedNonce < tx.Nonce {
-			txPoolLogger.Debugf("nonce too high tx,skip pack.tx:%s,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
-			continue
-		}
-		if expectedNonce == tx.Nonce {
-			nonceMap[tx.Source] = expectedNonce + 1
-		}
 		packedTxs = append(packedTxs, tx)
 		if len(packedTxs) >= txCountPerBlock {
 			break

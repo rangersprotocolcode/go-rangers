@@ -81,10 +81,14 @@ func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.Account
 	nonce := nonces[key]
 	manager.latestStateDB = latestStateDB
 
+	//testNonce := manager.LatestStateDB.GetNonce(common.HexToAddress("0x2f4F09b722a6e5b77bE17c9A99c785Fa7035a09f"))
+	//common.DefaultLogger.Debugf("before SetLatestStateDB,height:%d,0x2f4F09b722a6e5b77bE17c9A99c785Fa7035a09f nonce:%d", height, testNonce)
+	//common.DefaultLogger.Debugf("nonce:%d,Threshold:%d", nonce, manager.waitingTxs.GetThreshold)
 	//manager.SetLatestStateDBWithNonce(latestStateDB, nonce, "add block", height)
 	manager.Height = height
 	if nil == manager.LatestStateDB || nonce >= manager.waitingTxs.GetThreshold() {
 		if nil != latestStateDB {
+			//common.DefaultLogger.Debugf("latest db is not nil")
 			manager.LatestStateDB = latestStateDB
 		}
 
@@ -92,6 +96,8 @@ func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.Account
 			manager.waitingTxs.SetThreshold(nonce)
 		}
 	}
+	testNonce := manager.LatestStateDB.GetNonce(common.HexToAddress("0x2f4F09b722a6e5b77bE17c9A99c785Fa7035a09f"))
+	common.DefaultLogger.Debugf("after SetLatestStateDB,height:%d,0x2f4F09b722a6e5b77bE17c9A99c785Fa7035a09f nonce:%d", height, testNonce)
 }
 
 func (manager *AccountDBManager) loop() {
