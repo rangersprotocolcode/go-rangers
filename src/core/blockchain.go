@@ -163,7 +163,14 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 		return types.BlockHeader{}, false
 	}
 
-	txs := types.Transactions(chain.transactionPool.PackForCast(height))
+	state, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(latestBlock.StateTree)
+	if err != nil {
+		logger.Errorf("Fail to new account db while casting block!Latest block height:%d,error:%s", latestBlock.Height, err.Error())
+		middleware.RUnLockBlockchain("castblock")
+		return types.BlockHeader{}, false
+	}
+
+	txs := types.Transactions(chain.transactionPool.PackForCast(height, state))
 	if 0 != len(txs) {
 		sort.Sort(txs)
 	}
@@ -204,23 +211,16 @@ func (chain *blockChain) CastBlock(timestamp time.Time, height uint64, proveValu
 
 		bh2 := *&bh
 		block.Header = &bh2
-		go chain.runTransactions(block, latestBlock, height, timestamp)
+		go chain.runTransactions(block, state, height, timestamp)
 	} else {
 		block.Header = &bh
-		chain.runTransactions(block, latestBlock, height, timestamp)
+		chain.runTransactions(block, state, height, timestamp)
 	}
 
 	return bh, true
 }
 
-func (chain *blockChain) runTransactions(block *types.Block, latestBlock *types.BlockHeader, height uint64, timestamp time.Time) {
-	preStateRoot := common.BytesToHash(latestBlock.StateTree.Bytes())
-	state, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(preStateRoot)
-	if err != nil {
-		logger.Errorf("Fail to new account db while casting block!Latest block height:%d,error:%s", latestBlock.Height, err.Error())
-		return
-	}
-
+func (chain *blockChain) runTransactions(block *types.Block, state *account.AccountDB, height uint64, timestamp time.Time) {
 	executor := newVMExecutor(state, block, "casting")
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 	middleware.PerfLogger.Infof("fin execute txs. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
@@ -252,9 +252,9 @@ func (chain *blockChain) runTransactions(block *types.Block, latestBlock *types.
 		chain.verifiedBodyCache.Add(block.Header.Hash, block.Transactions)
 	}
 
-	logger.Debugf("Casting block %d,hash:%v,qn:%d,tx:%d,tx tree root:%v,prove value:%v,state tree root:%s,pre state tree:%s",
+	logger.Debugf("Casting block %d,hash: %v,qn: %d,tx: %d,tx tree root: %v,prove value: %v,state tree root:%s",
 		height, block.Header.Hash.String(), block.Header.TotalQN, len(block.Transactions), block.Header.TxTree.Hex(),
-		consensusHelper.VRFProve2Value(block.Header.ProveValue), block.Header.StateTree.String(), preStateRoot.String())
+		consensusHelper.VRFProve2Value(block.Header.ProveValue), block.Header.StateTree.String())
 }
 
 func getRequestIdFromTransactions(transactions []*types.Transaction, lastOne map[string]uint64) map[string]uint64 {
