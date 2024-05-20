@@ -596,10 +596,6 @@ func validateTx(tx *eth_tx.Transaction) (common.Address, error) {
 		return sender, fmt.Errorf("%w: balance %v, tx cost %v, overshot %v", executor.ErrInsufficientFunds, balance, costFee, new(big.Int).Sub(costFee, balance))
 	}
 
-	// If the transaction is already known, discard it
-	if service.GetTransactionPool().IsExisted(tx.Hash()) {
-		return sender, ErrAlreadyKnown
-	}
 	if service.GetTransactionPool().IsFull() {
 		return sender, ErrTxPoolOverflow
 	}

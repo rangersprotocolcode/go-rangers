@@ -62,8 +62,8 @@ var (
 		Proposal017Block: 54038500,
 		Proposal018Block: 55959500,
 		Proposal019Block: math.MaxUint64, //mainnet never use proporal010
-		Proposal020Block: math.MaxUint64,
-		Proposal021Block: 0, //todo
+		Proposal020Block: math.MaxUint64, //todo
+		Proposal021Block: 61202000,
 
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
@@ -95,7 +95,7 @@ var (
 		Proposal018Block: 65795000,
 		Proposal019Block: 66114000,
 		Proposal020Block: 75248100,
-		Proposal021Block: 74312000, //todo
+		Proposal021Block: 74312000,
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 
 		MysqlDSN:   "rpservice_v2:oJ2*bA0:hB3%@tcp(192.168.0.172:5555)/rpservice_v2?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
@@ -130,7 +130,7 @@ var (
 		Proposal018Block: 0,
 		Proposal019Block: 0,
 		Proposal020Block: 1000,
-		Proposal021Block: 0, //todo
+		Proposal021Block: 0,
 	}
 
 	subNetChainConfig = ChainConfig{
@@ -160,7 +160,7 @@ var (
 		Proposal018Block: 0,
 		Proposal019Block: 0,
 		Proposal020Block: 0,
-		Proposal021Block: 0, //todo
+		Proposal021Block: 0,
 	}
 
 	LocalChainConfig ChainConfig
