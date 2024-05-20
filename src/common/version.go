@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	Version           = "1.0.24"
+	Version           = "1.0.25"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -62,7 +62,7 @@ var (
 		Proposal017Block: 54038500,
 		Proposal018Block: 55959500,
 		Proposal019Block: math.MaxUint64, //mainnet never use proporal010
-		Proposal020Block: 61202000,
+		Proposal020Block: math.MaxUint64,
 		Proposal021Block: 0, //todo
 
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
@@ -94,7 +94,7 @@ var (
 		Proposal017Block: 62997000,
 		Proposal018Block: 65795000,
 		Proposal019Block: 66114000,
-		Proposal020Block: math.MaxUint64,
+		Proposal020Block: 75248100,
 		Proposal021Block: 74312000, //todo
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 
