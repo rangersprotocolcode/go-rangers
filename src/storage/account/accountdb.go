@@ -71,6 +71,9 @@ type AccountDB struct {
 
 	refund uint64
 
+	// Transient storage
+	transientStorage transientStorage
+
 	transitions    transition
 	validRevisions []revision
 	nextRevisionID int
@@ -95,6 +98,7 @@ func NewAccountDB(root common.Hash, db AccountDatabase) (*AccountDB, error) {
 		accountObjectsLock:  new(sync.Mutex),
 		accessList:          newAccessList(),
 		logs:                make(map[common.Hash][]*types.Log),
+		transientStorage:    newTransientStorage(),
 	}
 	return accountDb, nil
 }
@@ -573,6 +577,34 @@ func (adb *AccountDB) SetCode(addr common.Address, code []byte) {
 		stateObject.SetCode(crypto.Keccak256Hash(code), code)
 	}
 
+}
+
+// GetTransientState gets transient storage for a given account.
+func (adb *AccountDB) GetTransientState(addr common.Address, key common.Hash) common.Hash {
+	return adb.transientStorage.Get(addr, key)
+}
+
+// SetTransientState sets transient storage for a given account. It
+// adds the change to the journal so that it can be rolled back
+// to its previous value if there is a revert.
+func (adb *AccountDB) SetTransientState(addr common.Address, key, value common.Hash) {
+	prev := adb.GetTransientState(addr, key)
+	if prev == value {
+		return
+	}
+
+	adb.transitions = append(adb.transitions, transientStorageChange{
+		account:  &addr,
+		key:      key,
+		prevalue: prev,
+	})
+	adb.setTransientState(addr, key, value)
+}
+
+// setTransientState is a lower level setter for transient storage. It
+// is called during a revert to prevent modifications to the journal.
+func (adb *AccountDB) setTransientState(addr common.Address, key, value common.Hash) {
+	adb.transientStorage.Set(addr, key, value)
 }
 
 // SubRefund removes gas from the refund counter.

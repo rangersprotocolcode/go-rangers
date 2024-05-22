@@ -74,7 +74,17 @@ type (
 		address *common.Address
 		slot    *common.Hash
 	}
+
+	// Changes to transient storage
+	transientStorageChange struct {
+		account       *common.Address
+		key, prevalue common.Hash
+	}
 )
+
+func (ch transientStorageChange) undo(s *AccountDB) {
+	s.setTransientState(*ch.account, ch.key, ch.prevalue)
+}
 
 func (ch addLogChange) undo(s *AccountDB) {
 	logs := s.logs[ch.txhash]
