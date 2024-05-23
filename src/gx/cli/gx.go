@@ -43,9 +43,8 @@ import (
 )
 
 const (
-	GXVersion = "1.0.25"
-	// Section 默认section配置
-	Section = "gx"
+	GXVersion = "2.0.0"
+	Section   = "gx"
 )
 
 type GX struct {
