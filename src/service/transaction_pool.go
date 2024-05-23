@@ -405,7 +405,7 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 		return false, ErrExist
 	}
 	pool.received.push(tx)
-	txPoolLogger.Debugf("[pool]Add tx:%s. nonce: %d, After add,received size:%d", tx.Hash.String(), tx.RequestId, pool.received.Len())
+	txPoolLogger.Debugf("[pool]Add tx:%s. global nonce: %d,source:%s,nonce:%d, After add,received size:%d", tx.Hash.String(), tx.RequestId, tx.Source, tx.Nonce, pool.received.Len())
 	return true, nil
 }
 
@@ -534,7 +534,6 @@ func (pool *TxPool) checkNonce(txList []*types.Transaction, stateDB *account.Acc
 
 	packedTxs := make([]*types.Transaction, 0)
 	nonceMap := make(map[string]uint64, 0)
-
 	for _, tx := range txs {
 		if tx.RequestId == 0 { //only json rpc tx pre check nonce
 			expectedNonce, exist := nonceMap[tx.Source]
