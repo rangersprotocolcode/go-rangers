@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	Version           = "1.0.25"
+	Version           = "2.0.0"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -62,7 +62,7 @@ var (
 		Proposal017Block: 54038500,
 		Proposal018Block: 55959500,
 		Proposal019Block: math.MaxUint64, //mainnet never use proporal010
-		Proposal020Block: math.MaxUint64, //todo
+		Proposal020Block: 61794000,
 		Proposal021Block: 61202000,
 		Proposal022Block: 0,
 
