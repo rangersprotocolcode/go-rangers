@@ -49,6 +49,11 @@ func (this *baseFeeExecutor) BeforeExecute(tx *types.Transaction, header *types.
 }
 
 func validateNonce(tx *types.Transaction, accountDB *account.AccountDB) error {
+	if common.IsProposal021() && tx.Type != types.TransactionTypeETHTX {
+		//only jsonrpc tx validate nonce,other tx use request id keep sequence
+		return nil
+	}
+
 	if common.IsProposal018() {
 		expectedNonce := accountDB.GetNonce(common.HexToAddress(tx.Source))
 		if expectedNonce > tx.Nonce {

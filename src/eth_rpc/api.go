@@ -117,17 +117,35 @@ type RPCBlock struct {
 	Uncles           []string       `json:"uncles"`
 }
 
-var (
-	gasPrice                         = big.NewInt(1000000000)
+const (
 	gasLimit                  uint64 = 30000000
-	callLock                         = sync.Mutex{}
-	nonce                            = []byte{1, 2, 3, 4, 5, 6, 7, 8}
-	difficulty                       = utility.Big(*big.NewInt(32))
-	totalDifficulty                  = utility.Big(*big.NewInt(180))
 	confirmBlockCount         uint64 = 3
 	txGas                     uint64 = 21000 // Per transaction not creating a contract. NOTE: Not payable on data of calls between transactions.
 	estimateExpandCoefficient        = 2.5
 	generalEstimateGas        uint64 = 500000
+	MaxInitCodeSize                  = 2 * 24576 // Maximum initcode to permit in a creation transaction and create instructions
+)
+
+var (
+	gasPrice        = big.NewInt(1000000000)
+	callLock        = sync.Mutex{}
+	nonce           = []byte{1, 2, 3, 4, 5, 6, 7, 8}
+	difficulty      = utility.Big(*big.NewInt(32))
+	totalDifficulty = utility.Big(*big.NewInt(180))
+
+	// ErrNegativeValue is a sanity error to ensure no one is able to specify a
+	// transaction with a negative value.
+	ErrNegativeValue = errors.New("negative value")
+	// ErrAlreadyKnown is returned if the transactions is already contained
+	// within the pool.
+	ErrAlreadyKnown = errors.New("already known")
+	// ErrTxPoolOverflow is returned if the transaction pool is full and can't accept
+	// another remote transaction.
+	ErrTxPoolOverflow = errors.New("txpool is full")
+
+	// ErrMaxInitCodeSizeExceeded is returned if creation transaction provides the init code bigger
+	// than init code size limit.
+	ErrMaxInitCodeSizeExceeded = errors.New("max initcode size exceeded")
 )
 
 // SendRawTransaction will add the signed transaction to the transaction pool.
@@ -139,10 +157,9 @@ func (api *EthAPIService) SendRawTransaction(encodedTx utility.Bytes) (*types.Tr
 	}
 	logger.Debugf("raw tx hash:%v", tx.Hash().String())
 
-	signer := eth_tx.NewEIP155Signer(common.GetChainId(utility.MaxUint64))
-	sender, err := eth_tx.Sender(signer, tx)
+	sender, err := validateTx(tx)
 	if err != nil {
-		logger.Errorf("raw tx hash: %s, err:%v", tx.Hash().String(), err.Error())
+		logger.Errorf("tx validate err:%v", err.Error())
 		return nil, err
 	}
 
@@ -531,6 +548,58 @@ func (s *EthAPIService) Listening() bool {
 // web3_clientVersion
 func (api *EthAPIService) ClientVersion() string {
 	return "Rangers/" + common.Version + "/centos-amd64/go1.17.3"
+}
+
+func validateTx(tx *eth_tx.Transaction) (common.Address, error) {
+	var err error
+	var sender common.Address
+
+	// Make sure the transaction is signed properly
+	signer := eth_tx.NewEIP155Signer(common.GetChainId(utility.MaxUint64))
+	sender, err = eth_tx.Sender(signer, tx)
+	if err != nil {
+		return sender, err
+	}
+	// Transactions can't be negative. This may never happen using RLP decoded
+	// transactions but may occur for transactions created using the RPC.
+	if tx.Value().Sign() < 0 {
+		return sender, ErrNegativeValue
+	}
+	// Check whether the init code size has been exceeded.
+	if len(tx.Data()) > MaxInitCodeSize {
+		return sender, fmt.Errorf("%w: code size %v limit %v", ErrMaxInitCodeSizeExceeded, len(tx.Data()), MaxInitCodeSize)
+	}
+	// Ensure the transaction has more gas than the bare minimum needed to cover
+	// the transaction metadata
+	intrGas, err := executor.IntrinsicGas(tx.Data(), tx.To() == nil)
+	if err != nil {
+		return sender, err
+	}
+	if tx.Gas() < intrGas {
+		return sender, fmt.Errorf("%w: needed %v, allowed %v", executor.ErrIntrinsicGas, intrGas, tx.Gas())
+	}
+
+	// Ensure the transaction adheres to nonce ordering
+	stateDB, err := middleware.AccountDBManagerInstance.GetAccountDBByHash(core.GetBlockChain().TopBlock().StateTree)
+	if err != nil {
+		return sender, fmt.Errorf("try again")
+	}
+
+	nextNonce := stateDB.GetNonce(sender)
+	if tx.Nonce() < nextNonce {
+		return sender, fmt.Errorf("%w: next nonce %v, tx nonce %v", vm.ErrNonceTooLow, nextNonce, tx.Nonce())
+	}
+	// Ensure the transactor has enough funds to cover the transaction costs
+	balance := stateDB.GetBalance(sender)
+	costFee := tx.Cost()
+	if balance.Cmp(costFee) < 0 {
+		return sender, fmt.Errorf("%w: balance %v, tx cost %v, overshot %v", executor.ErrInsufficientFunds, balance, costFee, new(big.Int).Sub(costFee, balance))
+	}
+
+	if service.GetTransactionPool().IsFull() {
+		return sender, ErrTxPoolOverflow
+	}
+	return sender, err
 }
 
 // newRPCTransaction returns a transaction that will serialize to the RPC

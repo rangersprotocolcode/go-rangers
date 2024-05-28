@@ -17,10 +17,8 @@
 package net
 
 import (
-	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/consensus/groupsig"
 	"com.tuntun.rangers/node/src/consensus/model"
-	"com.tuntun.rangers/node/src/middleware/types"
 )
 
 type GroupCreateMessageProcessor interface {
@@ -53,8 +51,6 @@ type MiningMessageProcessor interface {
 	OnMessageCast(msg *model.ConsensusCastMessage)
 
 	OnMessageVerify(msg *model.ConsensusVerifyMessage)
-
-	OnMessageNewTransactions(txs []common.Hashes)
 }
 
 type GroupBrief struct {
@@ -79,7 +75,7 @@ type NetworkServer interface {
 
 	BroadcastGroupInfo(cgm *model.GroupInitedMessage)
 
-	SendCandidate(ccm *model.ConsensusCastMessage, group *GroupBrief, body []*types.Transaction)
+	SendCandidate(ccm *model.ConsensusCastMessage)
 
 	SendVerifiedCast(cvm *model.ConsensusVerifyMessage, receiver groupsig.ID)
 

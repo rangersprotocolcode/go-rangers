@@ -24,11 +24,14 @@ import (
 	"com.tuntun.rangers/node/src/consensus/net"
 	"com.tuntun.rangers/node/src/consensus/ticker"
 	"com.tuntun.rangers/node/src/core"
+	"com.tuntun.rangers/node/src/middleware"
+	"com.tuntun.rangers/node/src/middleware/log"
 	"com.tuntun.rangers/node/src/middleware/notify"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"encoding/hex"
 	"fmt"
 	lru "github.com/hashicorp/golang-lru"
+	"strconv"
 	"sync"
 	"sync/atomic"
 )
@@ -37,11 +40,6 @@ type Processor struct {
 	ready bool
 	conf  common.ConfManager
 	mi    *model.SelfMinerInfo
-
-	blockContexts    *CastBlockContexts
-	futureVerifyMsgs *FutureMessageHolder
-
-	verifyMsgCaches *lru.Cache
 
 	belongGroups *access.JoinedGroupStorage
 	globalGroups *access.GroupAccessor
@@ -57,24 +55,34 @@ type Processor struct {
 	NetServer  net.NetworkServer
 
 	lock sync.Mutex
+
+	partyLock                     middleware.Loglock
+	partyManager                  map[string]Party
+	logger                        log.Logger
+	finishedParty, futureMessages *lru.Cache
 }
 
-func (p Processor) getPrefix() string {
+func (p *Processor) getPrefix() string {
 	return p.GetMinerID().ShortS()
 }
 
 func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joinedGroupStorage *access.JoinedGroupStorage) bool {
 	p.ready = false
 	p.lock = sync.Mutex{}
+
+	p.partyManager = make(map[string]Party, 10)
+	p.partyLock = middleware.NewLoglock("partyLock")
+	p.logger = log.GetLoggerByIndex(log.CLogConfig, strconv.Itoa(common.InstanceIndex))
+	p.finishedParty = common.CreateLRUCache(300)
+	p.futureMessages = common.CreateLRUCache(50)
+
 	p.conf = conf
-	p.futureVerifyMsgs = NewFutureMessageHolder()
 
 	p.MainChain = core.GetBlockChain()
 	p.GroupChain = core.GetGroupChain()
 	p.mi = &mi
 	p.globalGroups = access.NewGroupAccessor(p.GroupChain)
 	p.belongGroups = joinedGroupStorage
-	p.blockContexts = NewCastBlockContexts()
 	p.NetServer = net.NewNetworkServer()
 
 	p.minerReader = access.NewMinerPoolReader()
@@ -86,25 +94,29 @@ func (p *Processor) Init(mi model.SelfMinerInfo, conf common.ConfManager, joined
 		consensusLogger.Infof("ProcessorId:%v", p.getPrefix())
 	}
 
-	cache, err := lru.New(300)
-	if err != nil {
-		panic(err)
-	}
-	p.verifyMsgCaches = cache
-
-	notify.BUS.Subscribe(notify.BlockAddSucc, p.onBlockAddSuccess)
-	notify.BUS.Subscribe(notify.GroupAddSucc, p.onGroupAddSuccess)
-	notify.BUS.Subscribe(notify.TransactionGotAddSucc, p.onMissTxAddSucc)
-	notify.BUS.Subscribe(notify.AcceptGroup, p.onGroupAccept)
+	notify.BUS.Subscribe(notify.BlockAddSucc, p)
+	notify.BUS.Subscribe(notify.GroupAddSucc, p)
+	notify.BUS.Subscribe(notify.AcceptGroup, p)
 
 	return true
 }
 
-func (p Processor) GetMinerID() groupsig.ID {
+func (p *Processor) HandleNetMessage(topic string, msg notify.Message) {
+	switch topic {
+	case notify.BlockAddSucc:
+		p.onBlockAddSuccess(msg)
+	case notify.GroupAddSucc:
+		p.onGroupAddSuccess(msg)
+	case notify.AcceptGroup:
+		p.onGroupAccept(msg)
+	}
+}
+
+func (p *Processor) GetMinerID() groupsig.ID {
 	return p.mi.GetMinerID()
 }
 
-func (p Processor) GetMinerInfo() *model.MinerInfo {
+func (p *Processor) GetMinerInfo() *model.MinerInfo {
 	return &p.mi.MinerInfo
 }
 
@@ -171,7 +183,7 @@ func (p *Processor) getMinerPos(gid groupsig.ID, uid groupsig.ID) int32 {
 	return int32(sgi.GetMemberPosition(uid))
 }
 
-func (p Processor) GetGroup(gid groupsig.ID) *model.GroupInfo {
+func (p *Processor) GetGroup(gid groupsig.ID) *model.GroupInfo {
 	if g, err := p.globalGroups.GetGroupByID(gid); err != nil {
 		panic("GetSelfGroup failed.")
 	} else {
@@ -179,7 +191,7 @@ func (p Processor) GetGroup(gid groupsig.ID) *model.GroupInfo {
 	}
 }
 
-func (p Processor) getGroupPubKey(gid groupsig.ID) groupsig.Pubkey {
+func (p *Processor) getGroupPubKey(gid groupsig.ID) groupsig.Pubkey {
 	if g, err := p.globalGroups.GetGroupByID(gid); err != nil {
 		panic("GetSelfGroup failed.")
 	} else {
@@ -189,7 +201,7 @@ func (p Processor) getGroupPubKey(gid groupsig.ID) groupsig.Pubkey {
 }
 
 // getSignKey get the signature private key of the miner in a certain group
-func (p Processor) getSignKey(gid groupsig.ID) groupsig.Seckey {
+func (p *Processor) getSignKey(gid groupsig.ID) groupsig.Seckey {
 	if jg := p.belongGroups.GetJoinedGroupInfo(gid); jg != nil {
 		return jg.SignSecKey
 	}

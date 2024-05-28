@@ -17,10 +17,17 @@
 package notify
 
 import (
+	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/middleware/log"
+	"strconv"
 	"sync"
 )
 
-var BUS *Bus
+var (
+	BUS *Bus
+
+	busLogger log.Logger
+)
 
 type Bus struct {
 	topics map[string]*Topic
@@ -28,6 +35,7 @@ type Bus struct {
 }
 
 func NewBus() *Bus {
+	busLogger = log.GetLoggerByIndex(log.BusLogConfig, strconv.Itoa(common.InstanceIndex))
 	return &Bus{
 		lock:   sync.RWMutex{},
 		topics: make(map[string]*Topic, 10),

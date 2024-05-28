@@ -318,4 +318,21 @@ const (
 							<format id="default" format="%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
 						</formats>
 					</seelog>`
+
+	CLogConfig = `<seelog minlevel="debug">
+						<outputs formatid="default">
+							<rollingfile type="size" filename="./logs/cLOG_INDEX.log" maxsize="200000000" maxrolls="1"/>
+						</outputs>
+						<formats>
+							<format id="default" format="[%LEV]%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
+						</formats>
+					</seelog>`
+	BusLogConfig = `<seelog minlevel="info">
+						<outputs formatid="default">
+							<rollingfile type="size" filename="./logs/busLOG_INDEX.log" maxsize="2000000" maxrolls="1"/>
+						</outputs>
+						<formats>
+							<format id="default" format="[%LEV]%Date(2006-01-02 15:04:05.000)[%File:%Line]%Msg%n" />
+						</formats>
+					</seelog>`
 )

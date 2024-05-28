@@ -14,53 +14,47 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the RangersProtocol library. If not, see <http://www.gnu.org/licenses/>.
 
-package notify
+package logical
 
 import (
 	"fmt"
 	"testing"
-	"time"
 )
 
-func TestBus_Publish(t *testing.T) {
-	ch := make(chan int, 1)
-	go produce(ch)
-	go consumer(ch)
-	go consumer2(ch)
-	time.Sleep(1 * time.Second)
-	bus := NewBus()
-	bus.Publish("test", &DummyMessage{})
-
+type testRound interface {
+	Pr()
 }
 
-func produce(ch chan<- int) {
-	for i := 0; i < 20; i++ {
-		ch <- i
-		fmt.Println("Send:", i)
+type (
+	testBaseRound struct {
 	}
-}
-
-func consumer(ch <-chan int) {
-	for i := 0; i < 10; i++ {
-
-		fmt.Println("Receive:", <-ch)
+	testRound1 struct {
+		*testBaseRound
 	}
-}
-
-func consumer2(ch <-chan int) {
-	for i := 0; i < 10; i++ {
-
-		fmt.Println("Receive2:", <-ch)
+	testRound2 struct {
+		*testRound1
 	}
+)
+
+func (r *testBaseRound) Pr() {
+	fmt.Println("testBaseRound")
+}
+func (r *testRound1) Pr() {
+	fmt.Println("testRound1")
+}
+func (r *testRound2) Pr() {
+	fmt.Println("testRound2")
+	r.testRound1.Pr()
 }
 
-func TestBus(t *testing.T) {
-	bus := NewBus()
-	bus.Subscribe("topic1", handlerStruct{})
-	bus.Subscribe("topic2", handlerStruct{})
-	bus.Subscribe("topic3", handlerStruct{})
+func TestBaseRound_Pr(t *testing.T) {
+	var tr testRound
+	tr = &testBaseRound{}
+	tr.Pr()
 
-	bus.Publish("topic1", &DummyMessage{})
-	bus.Publish("topic2", &DummyMessage{})
-	bus.Publish("topic3", &DummyMessage{})
+	tr = &testRound1{}
+	tr.Pr()
+
+	tr = &testRound2{}
+	tr.Pr()
 }

@@ -41,11 +41,11 @@ func GetGroupChain() GroupChain {
 }
 
 type BlockChain interface {
-	CastBlock(timestamp time.Time, height uint64, proveValue *big.Int, proveRoot common.Hash, qn uint64, castor []byte, groupId []byte) *types.Block
+	CastBlock(timestamp time.Time, height uint64, proveValue *big.Int, proveRoot common.Hash, qn uint64, castor []byte, groupId []byte) (types.BlockHeader, bool)
 
 	GenerateBlock(bh types.BlockHeader) *types.Block
 
-	VerifyBlock(bh types.BlockHeader) ([]common.Hashes, int8)
+	VerifyBlock(bh *types.BlockHeader) ([]common.Hashes, int8)
 
 	AddBlockOnChain(b *types.Block) types.AddBlockResult
 

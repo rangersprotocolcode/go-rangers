@@ -17,73 +17,46 @@
 package notify
 
 import (
+	"com.tuntun.rangers/node/src/middleware/log"
 	"fmt"
 	"testing"
+	"time"
 )
 
-// hello world2
-// hello world
-func TestTopic_Subscribe(t *testing.T) {
-	topic := &Topic{
-		Id: "test",
-	}
-
-	topic.Subscribe(handler1)
-	topic.Subscribe(handler2)
-	topic.Handle(&DummyMessage{})
+type DummyMessage struct {
 }
 
-// hello world2
-func TestTopic_UnSubscribe0(t *testing.T) {
-	topic := &Topic{
-		Id: "test",
-	}
-
-	topic.Subscribe(handler1)
-	topic.Subscribe(handler2)
-
-	topic.UnSubscribe(handler1)
-	topic.Handle(&DummyMessage{})
+func (d *DummyMessage) GetRaw() []byte {
+	return []byte{}
+}
+func (d *DummyMessage) GetData() interface{} {
+	return struct{}{}
 }
 
-// hello world3
-// hello world
-func TestTopic_UnSubscribe1(t *testing.T) {
-	topic := &Topic{
-		Id: "test",
-	}
-
-	topic.Subscribe(handler1)
-	topic.Subscribe(handler2)
-	topic.Subscribe(handler3)
-
-	topic.UnSubscribe(handler2)
-	topic.Handle(&DummyMessage{})
-}
-
-// hello world
-// hello world2
 func TestTopic_UnSubscribe2(t *testing.T) {
+	busLogger = log.GetLoggerByIndex(log.BusLogConfig, "0")
+
 	topic := &Topic{
 		Id: "test",
 	}
 
-	topic.Subscribe(handler1)
-	topic.Subscribe(handler2)
-	topic.Subscribe(handler3)
-
-	topic.UnSubscribe(handler3)
+	h := handlerStruct{id: "1"}
+	h1 := handlerStruct{id: "2"}
+	topic.Subscribe(h)
+	topic.Subscribe(h1)
 	topic.Handle(&DummyMessage{})
+
+	topic.UnSubscribe(h)
+	topic.UnSubscribe(h)
+	topic.Handle(&DummyMessage{})
+
+	time.Sleep(2 * time.Second)
 }
 
-func handler1(message Message) {
-	fmt.Println("hello world")
+type handlerStruct struct {
+	id string
 }
 
-func handler2(message Message) {
-	fmt.Println("hello world2")
-}
-
-func handler3(message Message) {
-	fmt.Println("hello world3")
+func (h handlerStruct) HandleNetMessage(topic string, message Message) {
+	fmt.Println("hello world: " + h.id + " " + topic)
 }

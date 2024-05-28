@@ -17,7 +17,6 @@
 package logical
 
 import (
-	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/consensus/groupsig"
 	"com.tuntun.rangers/node/src/consensus/logical/group_create"
 	"com.tuntun.rangers/node/src/consensus/model"
@@ -26,25 +25,6 @@ import (
 	"com.tuntun.rangers/node/src/middleware/types"
 	"com.tuntun.rangers/node/src/utility"
 )
-
-func (p *Processor) triggerFutureVerifyMsg(hash common.Hash) {
-	futures := p.getFutureVerifyMsgs(hash)
-	if futures == nil || len(futures) == 0 {
-		return
-	}
-	p.removeFutureVerifyMsgs(hash)
-	mtype := "FUTURE_VERIFY"
-	for _, msg := range futures {
-		tlog := newHashTraceLog(mtype, msg.BH.Hash, msg.SignInfo.GetSignerID())
-		tlog.logStart("size %v", len(futures))
-		slog := newSlowLog(mtype, 0.5)
-		err := p.doVerify(mtype, msg, tlog, newBizLog(mtype), slog)
-		if err != nil {
-			tlog.logEnd("result=%v", err.Error())
-		}
-	}
-
-}
 
 func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	if !p.Ready() {
@@ -56,30 +36,12 @@ func (p *Processor) onBlockAddSuccess(message notify.Message) {
 	p.lock.Lock()
 	defer p.lock.Unlock()
 
-	gid := groupsig.DeserializeID(bh.GroupId)
-	if p.belongGroups.BelongGroup(gid) {
-		bc := p.GetBlockContext(gid)
-		if bc != nil {
-			bc.AddCastedHeight(bh.Hash, bh.PreHash)
-			bc.updateSignedMaxQN(bh.TotalQN)
-			vctx := bc.GetVerifyContextByHash(bh.Hash)
-			if vctx != nil && vctx.prevBH.Hash == bh.PreHash {
-				vctx.markBroadcast()
-			}
-		}
-		p.removeVerifyMsgCache(bh.Hash)
-	}
-
 	worker := p.GetVrfWorker()
 	if nil != worker && worker.castHeight <= bh.Height {
 		p.setVrfWorker(nil)
 	}
 
-	p.triggerFutureVerifyMsg(bh.Hash)
-
 	group_create.GroupCreateProcessor.StartCreateGroupPolling()
-
-	p.cleanVerifyContext(bh.Height)
 
 	middleware.PerfLogger.Infof("OnBlockAddSuccess. cost: %v, Hash: %v, height: %v", utility.GetTime().Sub(bh.CurTime), bh.Hash.String(), bh.Height)
 	if p.isTriggerCastImmediately() {
@@ -104,27 +66,6 @@ func (p *Processor) onGroupAddSuccess(message notify.Message) {
 	group_create.GroupCreateProcessor.OnGroupAddSuccess(sgi)
 }
 
-func (p *Processor) onMissTxAddSucc(message notify.Message) {
-	if !p.Ready() {
-		return
-	}
-	tgam, ok := message.(*notify.TransactionGotAddSuccMessage)
-	if !ok {
-		stdLogger.Infof("minerTransactionHandler Message assert not ok!")
-		return
-	}
-	transactions := tgam.Transactions
-	var txHashes []common.Hashes
-	for _, tx := range transactions {
-		hashes := common.Hashes{}
-		hashes[0] = tx.Hash
-		hashes[1] = tx.SubHash
-		txHashes = append(txHashes, hashes)
-
-	}
-	p.OnMessageNewTransactions(txHashes)
-}
-
 func (p *Processor) onGroupAccept(message notify.Message) {
 	group := message.GetData().(types.Group)
 	stdLogger.Infof("groupAcceptHandler receive message, groupId=%v, workheight=%v\n", groupsig.DeserializeID(group.Id).GetHexString(), group.Header.WorkHeight)
@@ -140,6 +81,6 @@ func (p *Processor) acceptGroup(staticGroup *model.GroupInfo) {
 	blog := newBizLog("acceptGroup")
 	blog.debug("Add to Global static groups, result=%v, groups=%v.", add, p.globalGroups.GroupSize())
 	if staticGroup.MemExist(p.GetMinerID()) {
-		p.prepareForCast(staticGroup)
+		p.NetServer.JoinGroupNet(staticGroup.GroupID.GetHexString())
 	}
 }

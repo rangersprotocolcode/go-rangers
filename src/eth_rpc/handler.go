@@ -57,14 +57,14 @@ func InitEthMsgHandler() {
 	logger = log.GetLoggerByIndex(log.ETHRPCLogConfig, strconv.Itoa(common.InstanceIndex))
 	handler = ethMsgHandler{}
 	handler.registerAPI(&EthAPIService{})
-	notify.BUS.Subscribe(notify.ClientETHRPC, handler.process)
+	notify.BUS.Subscribe(notify.ClientETHRPC, handler)
 }
 
 func GetEthMsgHandler() ethMsgHandler {
 	return handler
 }
 
-func (handler ethMsgHandler) process(message notify.Message) {
+func (handler ethMsgHandler) HandleNetMessage(topic string, message notify.Message) {
 	wrong, isWrong := message.GetData().(*notify.ETHRPCWrongMessage)
 	if isWrong {
 		logger.Debugf("Rcv wrong eth prc message.requestId: %d,session id: %s", wrong.Rid, wrong.Sid)

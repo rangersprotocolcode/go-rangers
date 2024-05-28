@@ -28,14 +28,11 @@ import (
 func (p *Processor) Start() bool {
 	p.Ticker.RegisterRoutine(p.getCastCheckRoutineName(), p.checkSelfCastRoutine, common.CastingCheckInterval)
 
-	p.Ticker.RegisterRoutine(p.getBroadcastRoutineName(), p.broadcastRoutine, 300)
-	p.Ticker.StartTickerRoutine(p.getBroadcastRoutineName(), false)
+	p.Ticker.RegisterRoutine(p.getUpdateGlobalGroupsRoutineName(), p.updateGlobalGroups, 60*1000)
+	p.Ticker.StartTickerRoutine(p.getUpdateGlobalGroupsRoutineName(), false)
 
 	p.Ticker.RegisterRoutine(p.getReleaseRoutineName(), p.releaseRoutine, 600)
 	p.Ticker.StartTickerRoutine(p.getReleaseRoutineName(), false)
-
-	p.Ticker.RegisterRoutine(p.getUpdateGlobalGroupsRoutineName(), p.updateGlobalGroups, 60*1000)
-	p.Ticker.StartTickerRoutine(p.getUpdateGlobalGroupsRoutineName(), false)
 
 	p.triggerCastCheck()
 	p.prepareMiner()
@@ -48,7 +45,6 @@ func (p *Processor) Stop() {
 }
 
 func (p *Processor) prepareMiner() {
-
 	topHeight := p.MainChain.TopBlock().Height
 
 	stdLogger.Infof("prepareMiner get groups from groupchain")
@@ -59,16 +55,12 @@ func (p *Processor) prepareMiner() {
 		if coreGroup.Id == nil || len(coreGroup.Id) == 0 {
 			continue
 		}
-		needBreak := false
+
 		sgi := model.ConvertToGroupInfo(coreGroup)
-		//if sgi.Dismissed(topHeight) {
-		//	needBreak = true
-		//	genesis := p.GroupChain.GetGroupByHeight(0)
-		//	if coreGroup == nil {
-		//		panic("get genesis group nil")
-		//	}
-		//	sgi = NewSGIFromCoreGroup(genesis)
-		//}
+		if sgi.NeedDismiss(topHeight) {
+			continue
+		}
+
 		groups = append(groups, sgi)
 		stdLogger.Infof("load group=%v, beginHeight=%v, topHeight=%v\n", sgi.GroupID.ShortS(), sgi.GetGroupHeader().WorkHeight, topHeight)
 		if sgi.MemExist(p.GetMinerID()) {
@@ -79,10 +71,9 @@ func (p *Processor) prepareMiner() {
 				p.belongGroups.JoinGroup(jg, p.mi.ID)
 			}
 		}
-		if needBreak {
-			break
-		}
 	}
+
+	stdLogger.Infof("prepare %d groups", len(groups))
 	for i := len(groups) - 1; i >= 0; i-- {
 		p.acceptGroup(groups[i])
 	}

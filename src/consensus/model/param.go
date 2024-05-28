@@ -92,6 +92,10 @@ func InitParam(cc common.SectionConfManager) {
 		GroupCreateGap:      uint64(common.Group_Create_Gap),
 		GroupWaitPongGap:    uint64(Group_Wait_Pong_Gap),
 	}
+
+	if common.IsDEV() {
+		Param.GroupMemberMin = 3
+	}
 }
 
 func (p *ConsensusParam) GetGroupK(max int) int {

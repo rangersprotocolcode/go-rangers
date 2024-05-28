@@ -76,7 +76,35 @@ func initGameExecutor(blockChainImpl *blockChain) {
 	gameExecutor := GameExecutor{chain: blockChainImpl}
 	gameExecutor.logger = log.GetLoggerByIndex(log.GameExecutorLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 	middleware.AccountDBManagerInstance.SetHandler(gameExecutor.runWrite)
-	notify.BUS.Subscribe(notify.ClientTransactionRead, gameExecutor.read)
+	notify.BUS.Subscribe(notify.ClientTransactionRead, &gameExecutor)
+	notify.BUS.Subscribe(notify.ClientTransactionWrite, &gameExecutor)
+}
+
+func (executor *GameExecutor) HandleNetMessage(topic string, msg notify.Message) {
+	switch topic {
+	case notify.ClientTransactionRead:
+		executor.read(msg)
+	case notify.ClientTransactionWrite:
+		executor.write(msg)
+	}
+}
+
+func (executor *GameExecutor) write(msg notify.Message) {
+	message, ok := msg.(*notify.ClientTransactionMessage)
+	if !ok {
+		executor.logger.Errorf("write: Message assert not ok!")
+		return
+	}
+
+	txRaw := message.Tx
+	height := middleware.AccountDBManagerInstance.Height
+	if err := service.GetTransactionPool().VerifyTransaction(&txRaw, height); err != nil {
+		executor.logger.Errorf("rcv tx with nonce: %d, txhash: %s, type: %d, gateNonce: %d, verified error", txRaw.RequestId, txRaw.Hash.String(), txRaw.Type, txRaw.SubTransactions[0].Address)
+		return
+	}
+
+	executor.logger.Infof("rcv tx with nonce: %d, txhash: %s, type: %d, gateNonce: %d, send to transaction pool", txRaw.RequestId, txRaw.Hash.String(), txRaw.Type, txRaw.SubTransactions[0].Address)
+	executor.sendTransaction(&txRaw)
 }
 
 func (executor *GameExecutor) read(msg notify.Message) {

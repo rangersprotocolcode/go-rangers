@@ -20,13 +20,16 @@ import (
 	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/middleware"
 	"com.tuntun.rangers/node/src/middleware/log"
+	"com.tuntun.rangers/node/src/middleware/notify"
 	"com.tuntun.rangers/node/src/middleware/types"
+	"com.tuntun.rangers/node/src/storage/account"
 	"fmt"
 	"github.com/gogf/gf/container/gmap"
 	"github.com/stretchr/testify/assert"
 	"math/big"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestRequestId(t *testing.T) {
@@ -86,8 +89,8 @@ func TestTxPool_PackForCast(t *testing.T) {
 	}()
 
 	preTest()
-
-	txs := txpoolInstance.PackForCast(10000)
+	state, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
+	txs := txpoolInstance.PackForCast(10000, state)
 	if 0 != len(txs) {
 		t.Fatal("no txs error")
 	}
@@ -111,6 +114,7 @@ func TestTxPool_PackForCast0(t *testing.T) {
 	}()
 
 	preTest()
+	state, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 
 	tx := &types.Transaction{
 		Source: "0x0001",
@@ -119,7 +123,7 @@ func TestTxPool_PackForCast0(t *testing.T) {
 	}
 
 	txpoolInstance.AddTransaction(tx)
-	txs := txpoolInstance.PackForCast(10000)
+	txs := txpoolInstance.PackForCast(10000, state)
 	if 0 != len(txs) {
 		t.Fatal("no txs error")
 	}
@@ -142,6 +146,7 @@ func TestTxPool_PackForCast1(t *testing.T) {
 	}()
 
 	preTest()
+	state, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 
 	tx := &types.Transaction{
 		Source: "0x0001",
@@ -150,7 +155,7 @@ func TestTxPool_PackForCast1(t *testing.T) {
 	}
 
 	txpoolInstance.AddTransaction(tx)
-	txs := txpoolInstance.PackForCast(10000)
+	txs := txpoolInstance.PackForCast(10000, state)
 	if 1 != len(txs) {
 		t.Fatal("no txs error")
 	}
@@ -161,7 +166,7 @@ func TestTxPool_PackForCast1(t *testing.T) {
 		Nonce:  1,
 	}
 	txpoolInstance.AddTransaction(tx1)
-	txs1 := txpoolInstance.PackForCast(10000)
+	txs1 := txpoolInstance.PackForCast(10000, state)
 	if 2 != len(txs1) {
 		t.Fatal("no txs error")
 	}
@@ -185,6 +190,7 @@ func TestTxPool_PackForCast2(t *testing.T) {
 	}()
 
 	preTest()
+	state, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 
 	tx := &types.Transaction{
 		Source: "0x0001",
@@ -193,7 +199,7 @@ func TestTxPool_PackForCast2(t *testing.T) {
 	}
 
 	txpoolInstance.AddTransaction(tx)
-	txs := txpoolInstance.PackForCast(10000)
+	txs := txpoolInstance.PackForCast(10000, state)
 	if 1 != len(txs) {
 		t.Fatal("no txs error")
 	}
@@ -204,7 +210,7 @@ func TestTxPool_PackForCast2(t *testing.T) {
 		Nonce:  0,
 	}
 	txpoolInstance.AddTransaction(tx1)
-	txs1 := txpoolInstance.PackForCast(10000)
+	txs1 := txpoolInstance.PackForCast(10000, state)
 	if 2 != len(txs1) {
 		t.Fatal("no txs error")
 	}
@@ -229,6 +235,7 @@ func TestTxPool_PackForCast3(t *testing.T) {
 	}()
 
 	preTest()
+	state, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 
 	tx := &types.Transaction{
 		Source: "0x0001",
@@ -237,7 +244,7 @@ func TestTxPool_PackForCast3(t *testing.T) {
 	}
 
 	txpoolInstance.AddTransaction(tx)
-	txs := txpoolInstance.PackForCast(10000)
+	txs := txpoolInstance.PackForCast(10000, state)
 	if 1 != len(txs) {
 		t.Fatal("no txs error")
 	}
@@ -249,7 +256,7 @@ func TestTxPool_PackForCast3(t *testing.T) {
 		Type:   1,
 	}
 	txpoolInstance.AddTransaction(tx1)
-	txs1 := txpoolInstance.PackForCast(10000)
+	txs1 := txpoolInstance.PackForCast(10000, state)
 	if 2 != len(txs1) {
 		t.Fatal("no txs error")
 	}
@@ -275,6 +282,7 @@ func TestTxPool_PackForCast4(t *testing.T) {
 	}()
 
 	preTest()
+	state, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 
 	tx := &types.Transaction{
 		Source: "0x0001",
@@ -282,7 +290,7 @@ func TestTxPool_PackForCast4(t *testing.T) {
 		Nonce:  0,
 	}
 	txpoolInstance.AddTransaction(tx)
-	txs := txpoolInstance.PackForCast(10000)
+	txs := txpoolInstance.PackForCast(10000, state)
 	if 1 != len(txs) {
 		t.Fatal("no txs error")
 	}
@@ -293,7 +301,7 @@ func TestTxPool_PackForCast4(t *testing.T) {
 		Nonce:  0,
 	}
 	txpoolInstance.AddTransaction(tx1)
-	txs1 := txpoolInstance.PackForCast(10000)
+	txs1 := txpoolInstance.PackForCast(10000, state)
 	if 2 != len(txs1) {
 		t.Fatal("no txs error")
 	}
@@ -305,7 +313,7 @@ func TestTxPool_PackForCast4(t *testing.T) {
 		Type:   1,
 	}
 	txpoolInstance.AddTransaction(tx2)
-	txs2 := txpoolInstance.PackForCast(10000)
+	txs2 := txpoolInstance.PackForCast(10000, state)
 	if 3 != len(txs2) {
 		t.Fatal("no txs error")
 	}
@@ -328,6 +336,7 @@ func TestTxPool_PackForCast5(t *testing.T) {
 		}
 	}()
 	preTest()
+	state, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 
 	// normal add
 	i := int64(1)
@@ -343,7 +352,7 @@ func TestTxPool_PackForCast5(t *testing.T) {
 		if !flag {
 			t.Fatalf("fail to add tx, i: %s, hash: %s", str, tx.Hash.String())
 		}
-		txs := txpoolInstance.PackForCast(10000)
+		txs := txpoolInstance.PackForCast(10000, state)
 		if i != int64(len(txs)) {
 			t.Fatalf("txsize errof, i: %d", i)
 		}
@@ -361,7 +370,7 @@ func TestTxPool_PackForCast5(t *testing.T) {
 	if !flag {
 		t.Fatalf("fail to add tx, i: %s, hash: %s", str, tx.Hash.String())
 	}
-	txs := txpoolInstance.PackForCast(10000)
+	txs := txpoolInstance.PackForCast(10000, state)
 	if txCountPerBlock != int64(len(txs)) {
 		t.Fatal("oversize")
 	}
@@ -387,6 +396,7 @@ func TestTxPool_PackForCast6(t *testing.T) {
 	}()
 
 	preTest()
+	state, _ := middleware.AccountDBManagerInstance.GetAccountDBByHash(common.Hash{})
 
 	tx0 := &types.Transaction{
 		Source: "0x0001",
@@ -451,14 +461,146 @@ func TestTxPool_PackForCast6(t *testing.T) {
 	}
 	txpoolInstance.AddTransaction(tx15)
 
-	txList := txpoolInstance.PackForCast(10000)
+	txList := txpoolInstance.PackForCast(10000, state)
 	if 6 != len(txList) {
 		t.Fatal("packed tx count error")
 	}
-	assert.Equal(t, txList[0].Hash.String(), tx0.Hash.String())
-	assert.Equal(t, txList[1].Hash.String(), tx1.Hash.String())
-	assert.Equal(t, txList[2].Hash.String(), tx2.Hash.String())
-	assert.Equal(t, txList[3].Hash.String(), tx10.Hash.String())
-	assert.Equal(t, txList[4].Hash.String(), tx11.Hash.String())
-	assert.Equal(t, txList[5].Hash.String(), tx12.Hash.String())
+	assert.Equal(t, txList[0].Hash.String(), tx10.Hash.String())
+	assert.Equal(t, txList[1].Hash.String(), tx11.Hash.String())
+	assert.Equal(t, txList[2].Hash.String(), tx12.Hash.String())
+	assert.Equal(t, txList[3].Hash.String(), tx0.Hash.String())
+	assert.Equal(t, txList[4].Hash.String(), tx1.Hash.String())
+	assert.Equal(t, txList[5].Hash.String(), tx2.Hash.String())
+}
+
+func TestMockCastWithMixTxType(t *testing.T) {
+	castBlockInterval := time.Second * 2
+	addRPCInterval := time.Millisecond * 100
+	addOriginInterval := time.Millisecond * 500
+	mockCastBlock(castBlockInterval, addRPCInterval, addOriginInterval)
+}
+
+func mockCastBlock(castBlockInterval time.Duration, addRPCInterval time.Duration, addOriginInterval time.Duration) {
+	//defer func() {
+	//	Close()
+	//	middleware.Close()
+	//	log.Close()
+	//
+	//	os.RemoveAll("0.ini")
+	//	os.RemoveAll("logs")
+	//
+	//	err := os.RemoveAll("storage0")
+	//	if nil != err {
+	//		t.Fatal(err)
+	//	}
+	//}()
+
+	preTest()
+	middleware.AccountDBManagerInstance.SetHandler(mockOriginTxHandler)
+	address1 := "0x1111111111111111111111111111111111111111"
+	address2 := "0x2222222222222222222222222222222222222222"
+	//address3 := "0x3333333333333333333333333333333333333333"
+
+	go mockProposer(castBlockInterval)
+	go mockRPCClient(address1, addRPCInterval)
+	go mockOriginClient(address2, addOriginInterval)
+	for {
+
+	}
+}
+
+func mockProposer(castBlockInterval time.Duration) {
+	var height uint64 = 10001
+	for ; ; height++ {
+		state := middleware.AccountDBManagerInstance.GetLatestStateDB()
+		txs := txpoolInstance.PackForCast(height, state)
+		fmt.Printf("cast block:%d,tx length:%d\n", height, len(txs))
+		successTxs, evictedTxs, receipts := mockExecuteTxs(txs, height, state)
+		header := types.BlockHeader{}
+		nonces := make(map[string]uint64)
+		for _, tx := range txs {
+			if tx.RequestId > nonces["fixed"] {
+				nonces["fixed"] = tx.RequestId
+			}
+		}
+
+		txpoolInstance.MarkExecuted(&header, receipts, successTxs, evictedTxs)
+		middleware.AccountDBManagerInstance.SetLatestStateDB(state, nonces, height+1)
+		time.Sleep(castBlockInterval)
+	}
+}
+
+func mockExecuteTxs(txs []*types.Transaction, height uint64, state *account.AccountDB) ([]*types.Transaction, []common.Hash, []*types.Receipt) {
+	successTxs := make([]*types.Transaction, 0)
+	evictedTxs := make([]common.Hash, 0)
+	receipts := make([]*types.Receipt, 0)
+
+	for _, tx := range txs {
+		if tx.RequestId > 0 {
+			continue
+		}
+		//fmt.Printf("execute souce:%s,nonce:%d,hash:%s\n", tx.Source, tx.Nonce, tx.Hash.String())
+		expectedNonce := state.GetNonce(common.HexToAddress(tx.Source))
+		if expectedNonce > tx.Nonce {
+			evictedTxs = append(evictedTxs, tx.Hash)
+			fmt.Printf("[%s]Tx nonce too low.tx:%s,source:%s,expected:%d,but:%d\n", time.Now().String(), tx.Hash.String(), tx.Source, expectedNonce, tx.Nonce)
+		} else if expectedNonce < tx.Nonce {
+			evictedTxs = append(evictedTxs, tx.Hash)
+			fmt.Printf("Tx nonce too high.tx:%s,source:%s,expected:%d,but:%d\n", tx.Hash.String(), tx.Source, expectedNonce, tx.Nonce)
+		} else {
+			state.SetNonce(common.HexToAddress(tx.Source), tx.Nonce+1)
+			receipt := types.Receipt{}
+			receipt.TxHash = tx.Hash
+			receipt.Height = height
+			receipt.Status = 0
+			receipts = append(receipts, &receipt)
+			successTxs = append(successTxs, tx)
+		}
+	}
+	return successTxs, evictedTxs, receipts
+}
+
+func mockRPCClient(address string, addTxInterval time.Duration) {
+	var nonce uint64 = 0
+	for {
+		tx := types.Transaction{Type: 188, Source: address, Nonce: nonce}
+		tx.Hash = tx.GenHash()
+		_, err := txpoolInstance.AddTransaction(&tx)
+		if err != nil {
+			fmt.Printf("add normal tx error.Error:%s, nonce:%d,hash:%s\n", err.Error(), tx.Nonce, tx.Hash.String())
+		}
+		nonce++
+		time.Sleep(addTxInterval)
+	}
+}
+
+func mockOriginClient(address string, addTxInterval time.Duration) {
+	var requestId uint64 = 1
+	for {
+		tx := types.Transaction{Type: 200, Source: address, Nonce: 100, RequestId: requestId, Time: time.Now().String()}
+		tx.Hash = tx.GenHash()
+
+		var msg notify.ClientTransactionMessage
+		msg.Tx = tx
+		msg.UserId = ""
+		msg.GateNonce = 0
+		msg.Nonce = requestId
+		middleware.DataChannel.GetRcvedTx() <- &msg
+		requestId++
+		time.Sleep(addTxInterval)
+	}
+}
+
+func mockOriginTxHandler(item *middleware.Item) {
+	message := item.Value
+	txRaw := message.Tx
+	txRaw.RequestId = message.Nonce
+	txRaw.SubTransactions = make([]types.UserData, 1)
+	data := types.UserData{Address: message.GateNonce}
+	txRaw.SubTransactions[0] = data
+
+	_, err := GetTransactionPool().AddTransaction(&txRaw)
+	if err != nil {
+		fmt.Printf("handler origin tx err:%s\n", err.Error())
+	}
 }

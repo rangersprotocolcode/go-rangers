@@ -35,7 +35,6 @@ var (
 	groupChainImplLocal dummyGroupChain
 	leveldb             *db.LDBDatabase
 	triedb              account.AccountDatabase
-	logger              log.Logger
 )
 
 func getTestAccountDB() *account.AccountDB {

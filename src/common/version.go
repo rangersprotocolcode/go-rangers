@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	Version           = "1.0.23"
+	Version           = "2.0.0"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -62,6 +62,9 @@ var (
 		Proposal017Block: 54038500,
 		Proposal018Block: 55959500,
 		Proposal019Block: math.MaxUint64, //mainnet never use proporal010
+		Proposal020Block: 61794000,
+		Proposal021Block: 61202000,
+
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
 		JsonRPCUrl:       "https://mainnet.rangersprotocol.com/api/jsonrpc",
@@ -91,7 +94,8 @@ var (
 		Proposal017Block: 62997000,
 		Proposal018Block: 65795000,
 		Proposal019Block: 66114000,
-
+		Proposal020Block: 75248100,
+		Proposal021Block: 74312000,
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 
 		MysqlDSN:   "rpservice_v2:oJ2*bA0:hB3%@tcp(192.168.0.172:5555)/rpservice_v2?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
@@ -125,6 +129,8 @@ var (
 		Proposal017Block: 0,
 		Proposal018Block: 0,
 		Proposal019Block: 0,
+		Proposal020Block: 1000,
+		Proposal021Block: 0,
 	}
 
 	subNetChainConfig = ChainConfig{
@@ -153,6 +159,8 @@ var (
 		Proposal017Block: 0,
 		Proposal018Block: 0,
 		Proposal019Block: 0,
+		Proposal020Block: 0,
+		Proposal021Block: 0,
 	}
 
 	LocalChainConfig ChainConfig
@@ -188,6 +196,8 @@ type ChainConfig struct {
 	Proposal017Block uint64
 	Proposal018Block uint64
 	Proposal019Block uint64
+	Proposal020Block uint64
+	Proposal021Block uint64
 
 	mainNodeContract Address
 
@@ -348,6 +358,14 @@ func IsProposal017() bool {
 
 func IsProposal018() bool {
 	return isForked(LocalChainConfig.Proposal018Block, GetBlockHeight())
+}
+
+func IsProposal020() bool {
+	return isForked(LocalChainConfig.Proposal020Block, GetBlockHeight())
+}
+
+func IsProposal021() bool {
+	return isForked(LocalChainConfig.Proposal021Block, GetBlockHeight())
 }
 
 func isForked(base uint64, height uint64) bool {

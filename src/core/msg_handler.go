@@ -18,6 +18,7 @@ package core
 
 import (
 	"com.tuntun.rangers/node/src/common"
+	"com.tuntun.rangers/node/src/common/sha3"
 	"com.tuntun.rangers/node/src/middleware"
 	"com.tuntun.rangers/node/src/middleware/notify"
 	middleware_pb "com.tuntun.rangers/node/src/middleware/pb"
@@ -34,15 +35,24 @@ type ChainHandler struct{}
 func initChainHandler() {
 	handler := ChainHandler{}
 
-	notify.BUS.Subscribe(notify.NewBlock, handler.newBlockHandler)
-	notify.BUS.Subscribe(notify.TransactionReq, handler.transactionReqHandler)
+	notify.BUS.Subscribe(notify.NewBlock, handler)
+	notify.BUS.Subscribe(notify.TransactionReq, handler)
 }
 
-func (c *ChainHandler) Handle(sourceId string, msg network.Message) error {
+func (c ChainHandler) HandleNetMessage(topic string, msg notify.Message) {
+	switch topic {
+	case notify.NewBlock:
+		c.newBlockHandler(msg)
+	case notify.TransactionReq:
+		c.transactionReqHandler(msg)
+	}
+}
+
+func (c ChainHandler) Handle(sourceId string, msg network.Message) error {
 	return nil
 }
 
-func (ch ChainHandler) transactionReqHandler(msg notify.Message) {
+func (c ChainHandler) transactionReqHandler(msg notify.Message) {
 	trm, ok := msg.(*notify.TransactionReqMessage)
 	if !ok {
 		logger.Debugf("transactionReqHandler:Message assert not ok!")
@@ -73,7 +83,7 @@ func (ch ChainHandler) transactionReqHandler(msg notify.Message) {
 	}
 }
 
-func (ch ChainHandler) newBlockHandler(msg notify.Message) {
+func (c ChainHandler) newBlockHandler(msg notify.Message) {
 	m, ok := msg.(*notify.NewBlockMessage)
 	if !ok {
 		return
@@ -85,7 +95,8 @@ func (ch ChainHandler) newBlockHandler(msg notify.Message) {
 		return
 	}
 
-	middleware.PerfLogger.Infof("Rcv new block from %s,hash: %v,height: %d,totalQn: %d,tx: %d, cost: %v, size: %d", source, block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions), utility.GetTime().Sub(block.Header.CurTime), len(m.BlockByte))
+	msgHash := sha3.Sum256(m.BlockByte)
+	middleware.PerfLogger.Infof("Rcv new block from %s, msghash: %s, hash: %v,height: %d,totalQn: %d,tx: %d, cost: %v, size: %d", source, common.ToHex(msgHash[:]), block.Header.Hash.Hex(), block.Header.Height, block.Header.TotalQN, len(block.Transactions), utility.GetTime().Sub(block.Header.CurTime), len(m.BlockByte))
 
 	blockChainImpl.AddBlockOnChain(block)
 }

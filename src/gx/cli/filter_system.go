@@ -161,9 +161,18 @@ func newEventSystem() *EventSystem {
 	m.logger = log.GetLoggerByIndex(log.EventSubLogConfig, common.GlobalConf.GetString("instance", "index", ""))
 
 	go m.eventLoop()
-	notify.BUS.Subscribe(notify.VMEventNotify, m.vmEventHandler)
-	notify.BUS.Subscribe(notify.BlockHeaderNotify, m.newBlockHeaderHandler)
+	notify.BUS.Subscribe(notify.VMEventNotify, m)
+	notify.BUS.Subscribe(notify.BlockHeaderNotify, m)
 	return m
+}
+
+func (es *EventSystem) HandleNetMessage(topic string, msg notify.Message) {
+	switch topic {
+	case notify.VMEventNotify:
+		es.vmEventHandler(msg)
+	case notify.BlockHeaderNotify:
+		es.newBlockHeaderHandler(msg)
+	}
 }
 
 // SubscribeLogs creates a subscription that will write all logs matching the

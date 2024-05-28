@@ -93,14 +93,35 @@ func InitSyncProcessor(privateKey common.PrivateKey, id string) {
 	SyncProcessor.lock = middleware.NewLoglock("sync")
 	SyncProcessor.logger = syncLogger
 
-	notify.BUS.Subscribe(notify.TopBlockInfo, SyncProcessor.chainInfoNotifyHandler)
-	notify.BUS.Subscribe(notify.BlockChainPieceReq, SyncProcessor.blockChainPieceReqHandler)
-	notify.BUS.Subscribe(notify.BlockChainPiece, SyncProcessor.blockChainPieceHandler)
-	notify.BUS.Subscribe(notify.BlockReq, SyncProcessor.syncBlockReqHandler)
-	notify.BUS.Subscribe(notify.BlockResponse, SyncProcessor.blockResponseMsgHandler)
-	notify.BUS.Subscribe(notify.GroupReq, SyncProcessor.syncGroupReqHandler)
-	notify.BUS.Subscribe(notify.GroupResponse, SyncProcessor.groupResponseMsgHandler)
+	notify.BUS.Subscribe(notify.TopBlockInfo, SyncProcessor)
+	notify.BUS.Subscribe(notify.BlockChainPieceReq, SyncProcessor)
+	notify.BUS.Subscribe(notify.BlockChainPiece, SyncProcessor)
+	notify.BUS.Subscribe(notify.BlockReq, SyncProcessor)
+	notify.BUS.Subscribe(notify.BlockResponse, SyncProcessor)
+	notify.BUS.Subscribe(notify.GroupReq, SyncProcessor)
+	notify.BUS.Subscribe(notify.GroupResponse, SyncProcessor)
 	go SyncProcessor.loop()
+}
+
+func (p *syncProcessor) HandleNetMessage(topic string, msg notify.Message) {
+	switch topic {
+	case notify.TopBlockInfo:
+		p.chainInfoNotifyHandler(msg)
+	case notify.BlockChainPieceReq:
+		p.blockChainPieceReqHandler(msg)
+	case notify.BlockChainPiece:
+		p.blockChainPieceHandler(msg)
+	case notify.BlockReq:
+		p.syncBlockReqHandler(msg)
+	case notify.BlockResponse:
+		p.blockResponseMsgHandler(msg)
+	case notify.GroupReq:
+		p.syncGroupReqHandler(msg)
+	case notify.GroupResponse:
+		p.groupResponseMsgHandler(msg)
+
+	}
+
 }
 
 func (p *syncProcessor) GetCandidateInfo() CandidateInfo {
@@ -387,4 +408,11 @@ func (p *syncProcessor) finishCurrentSync(syncResult bool) {
 	p.candidateInfo = CandidateInfo{}
 	p.syncing = false
 	p.logger.Debugf("finish current sync:%v", syncResult)
+}
+
+func GetCandidateHeight() uint64 {
+	if SyncProcessor != nil {
+		return SyncProcessor.candidateInfo.Height
+	}
+	return 0
 }

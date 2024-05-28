@@ -85,6 +85,11 @@ func (si SignInfo) GetVersion() int32 {
 	return si.version
 }
 
+type ConsensusMessage interface {
+	GenHash() common.Hash
+	GetMessageID() string
+}
+
 type CreateGroupPingMessage struct {
 	FromGroupID groupsig.ID
 	PingID      string
@@ -259,11 +264,17 @@ func (msg *ConsensusCurrentMessage) GenHash() common.Hash {
 	return base.Data2CommonHash([]byte(buf))
 }
 
+// ConsensusCastMessage OnMessageCast
 type ConsensusCastMessage struct {
 	BH        types.BlockHeader
 	ProveHash []common.Hash
+	Id        string
 
 	SignInfo
+}
+
+func (msg *ConsensusCastMessage) GetMessageID() string {
+	return msg.Id
 }
 
 func (msg *ConsensusCastMessage) GenHash() common.Hash {
@@ -287,7 +298,7 @@ func (msg *ConsensusCastMessage) VerifyRandomSign(pkey groupsig.Pubkey, preRando
 type ConsensusVerifyMessage struct {
 	BlockHash  common.Hash
 	RandomSign groupsig.Signature
-
+	Id         string
 	SignInfo
 }
 
@@ -304,6 +315,10 @@ func (msg *ConsensusVerifyMessage) GenHash() common.Hash {
 func (msg *ConsensusVerifyMessage) GenRandomSign(skey groupsig.Seckey, preRandom []byte) {
 	sig := groupsig.Sign(skey, preRandom)
 	msg.RandomSign = sig
+}
+
+func (msg *ConsensusVerifyMessage) GetMessageID() string {
+	return msg.Id
 }
 
 type ConsensusBlockMessage struct {

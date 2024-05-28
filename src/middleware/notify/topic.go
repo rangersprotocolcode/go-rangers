@@ -17,7 +17,6 @@
 package notify
 
 import (
-	"reflect"
 	"sync"
 )
 
@@ -26,17 +25,9 @@ type Message interface {
 	GetData() interface{}
 }
 
-type DummyMessage struct {
+type Handler interface {
+	HandleNetMessage(topic string, message Message)
 }
-
-func (d *DummyMessage) GetRaw() []byte {
-	return []byte{}
-}
-func (d *DummyMessage) GetData() interface{} {
-	return struct{}{}
-}
-
-type Handler func(message Message)
 
 type Topic struct {
 	Id       string
@@ -48,29 +39,43 @@ func (topic *Topic) Subscribe(h Handler) {
 	topic.lock.Lock()
 	defer topic.lock.Unlock()
 
+	// check duplicated
+	for _, handler := range topic.handlers {
+		if h == handler {
+			busLogger.Errorf("fail to subscribe, id: %s", topic.Id)
+			return
+		}
+	}
+
 	topic.handlers = append(topic.handlers, h)
+	busLogger.Infof("subscribe, id: %s, len: %d", topic.Id, len(topic.handlers))
 }
 
 func (topic *Topic) UnSubscribe(h Handler) {
 	topic.lock.Lock()
 	defer topic.lock.Unlock()
 
+	length := len(topic.handlers)
 	for i, handler := range topic.handlers {
-		if reflect.ValueOf(handler) == reflect.ValueOf(h) {
+		if h == handler {
 			topic.handlers = append(topic.handlers[:i], topic.handlers[i+1:]...)
+			busLogger.Infof("unsubscribe, id: %s, len: %d-> %d", topic.Id, length, len(topic.handlers))
 			return
 		}
 	}
+
+	busLogger.Infof("unsubscribe, id: %s, len: %d-> %d", topic.Id, length, len(topic.handlers))
 }
 
 func (topic *Topic) Handle(message Message) {
+	topic.lock.RLock()
+	defer topic.lock.RUnlock()
+
 	if 0 == len(topic.handlers) {
 		return
 	}
-
-	topic.lock.RLock()
-	defer topic.lock.RUnlock()
 	for _, h := range topic.handlers {
-		go h(message)
+		go h.HandleNetMessage(topic.Id, message)
 	}
+	busLogger.Debugf("handle, id: %s, len: %d", topic.Id, len(topic.handlers))
 }

@@ -167,7 +167,7 @@ func unMarshalConsensusCurrentMessage(b []byte) (*model.ConsensusCurrentMessage,
 	return &message, nil
 }
 
-func unMarshalConsensusCastMessage(b []byte) (*model.ConsensusCastMessage, error) {
+func UnMarshalConsensusCastMessage(b []byte) (*model.ConsensusCastMessage, error) {
 	m := new(middleware_pb.ConsensusCastMessage)
 	e := proto.Unmarshal(b, m)
 	if e != nil {
@@ -186,10 +186,11 @@ func unMarshalConsensusCastMessage(b []byte) (*model.ConsensusCastMessage, error
 		BH:        *bh,
 		ProveHash: hashs,
 		SignInfo:  *baseMessage(m.Sign),
+		Id:        common.ToHex(common.Sha256(b)),
 	}, nil
 }
 
-func unMarshalConsensusVerifyMessage(b []byte) (*model.ConsensusVerifyMessage, error) {
+func UnMarshalConsensusVerifyMessage(b []byte) (*model.ConsensusVerifyMessage, error) {
 	m := new(middleware_pb.ConsensusVerifyMessage)
 	e := proto.Unmarshal(b, m)
 	if e != nil {
@@ -200,6 +201,7 @@ func unMarshalConsensusVerifyMessage(b []byte) (*model.ConsensusVerifyMessage, e
 		BlockHash:  common.BytesToHash(m.BlockHash),
 		RandomSign: *groupsig.DeserializeSign(m.RandomSign),
 		SignInfo:   *baseMessage(m.Sign),
+		Id:         common.ToHex(common.Sha256(b)),
 	}, nil
 }
 

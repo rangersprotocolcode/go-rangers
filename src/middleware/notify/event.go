@@ -53,6 +53,8 @@ const (
 	// ClientTransactionRead reader ws
 	ClientTransactionRead = "client_transaction_read"
 
+	ClientTransactionWrite = "client_transaction_write"
+
 	//vm event notify
 	VMEventNotify = "vmEventNotify"
 	//block header notify

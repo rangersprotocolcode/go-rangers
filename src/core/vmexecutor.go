@@ -66,7 +66,7 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 
 	this.prepare()
 	txs := types.Transactions(this.block.Transactions)
-	if 0 != len(txs) && this.situation == "casting" {
+	if 0 != len(txs) && this.situation != "casting" {
 		sort.Sort(txs)
 	}
 

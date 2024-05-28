@@ -26,6 +26,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sync"
 )
@@ -59,7 +60,7 @@ func initGroupChain() {
 		panic("Init group chain error:" + err.Error())
 	}
 
-	chain.joinedGroups, err = db.NewLDBDatabase(common.GlobalConf.GetString(common.ConfigSec, common.DefaultJoinedGroupDatabaseKey, "jgs"), 1, 1)
+	chain.joinedGroups, err = db.NewLDBDatabase(common.GlobalConf.GetString(common.ConfigSec, common.DefaultJoinedGroupDatabaseKey, "jgs"), 16, 8)
 	if err != nil {
 		panic("newLDBDatabase fail, file=" + "" + "err=" + err.Error())
 	}
@@ -103,7 +104,7 @@ func (chain *groupChain) AddGroup(group *types.Group) error {
 
 	ok, err := consensusHelper.CheckGroup(group)
 	if !ok {
-		if err == common.ErrCreateBlockNil {
+		if errors.Is(err, common.ErrCreateBlockNil) {
 			logger.Infof("Add group failed:depend on block!")
 		} else {
 			logger.Infof("Add group failed:%v", err.Error())
@@ -324,21 +325,4 @@ func (chain *groupChain) GetJoinedGroup(id []byte) ([]byte, error) {
 func (chain *groupChain) DeleteJoinedGroup(id []byte) bool {
 	err := chain.joinedGroups.Delete(id)
 	return err == nil
-}
-
-func dumpGroup(group *types.Group) {
-	fmt.Printf("dump group:\n")
-	fmt.Printf("group id:%s\n", common.ToHex(group.Id))
-	fmt.Printf("group pubkey:%s\n", common.ToHex(group.PubKey))
-	fmt.Printf("group sig:%s\n", common.ToHex(group.Signature))
-
-	fmt.Printf("group members:\n")
-	for index, member := range group.Members {
-		fmt.Printf("index:%v,member:%s\n", index, common.ToHex(member))
-	}
-
-	fmt.Printf("group hash:%s:\n", group.Header.Hash.String())
-	fmt.Printf("group parent:%s:\n", common.ToHex(group.Header.Parent))
-	fmt.Printf("group pre:%s:\n", common.ToHex(group.Header.PreGroup))
-
 }

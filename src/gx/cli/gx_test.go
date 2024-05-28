@@ -190,13 +190,32 @@ func initTestingEnv() {
 
 func TestNewGX(t *testing.T) {
 	os.RemoveAll("logs")
-	os.RemoveAll("logs-0.db")
-	os.RemoveAll("logs-0.db-shm")
-	os.RemoveAll("logs-0.db-wal")
+	os.RemoveAll("storage0")
+	os.RemoveAll("1.ini")
 	gx := NewGX()
 
-	common.Init(0, "1.ini", "robin")
-	gx.initMiner("robin", "ws://49.0.249.103:1017", "", "")
+	common.Init(0, "1.ini", "dev")
+	gx.initMiner("dev", "ws://192.168.2.15:1017", "ws://192.168.2.19/pubhub", "ws://192.168.2.14:8888")
 
 	time.Sleep(10 * time.Hour)
+}
+
+func TestMiner(t *testing.T) {
+	privateKey := common.GenerateKey("")
+	mi := model.NewSelfMinerInfo(privateKey)
+
+	fmt.Println(privateKey.GetHexString())
+
+	//0x7f88b4f2d36a83640ce5d782a0a20cc2b233de3df2d8a358bf0e7b29e9586a12
+	//0xc97985713ef6ef7f59a39a50e1e8a089c2619b7a280d024f45663ece8fe4b30e
+	fmt.Println(mi.ID.GetHexString())
+
+	//0x16d0b0a106e2de32b42ea4096c9e80c883c6ffa9e3f19f09cb45dfff2b02d09a3bcf95f2d0c33b7caf5db42d55d3459395c1b8d6a5d315a113edc39c4ce3a3d5269ab4a9514a998fdcc693d90a42505185270a184a07ddfb553b181be13e968480ef0df4c06cf657957b07118776a38fea3bcf758ea4491a4213719e2f6537b5
+	//0x8e06b4ed3068274d276567dfddc7700a753d0fe407857e7720246ab0970e216273d3b4f66fe427b319ee62a9500e0507d6dd22c36e765448150a972d4ac049da77adbc919c2f73ea582fc49eba0d69b7cc5a215ebc1d94903e96d0ec356f1eda365cedf7275dabb1bf573b200a52e9b0e5d97861c25ea4cb4c8c6ada16e9f73b
+	fmt.Println(mi.PubKey.GetHexString())
+
+	//0x009f3b76f3e49dcdd6d2ee8421f077fd4c68c176b18e1e602a3c1f09f9272250
+	//0x53ca357d46854058fe87fdcab0ba8e1b936521d60fd1c2ab1a6956d62fedd808
+	fmt.Println(mi.VrfPK.GetHexString())
+
 }

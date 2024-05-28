@@ -43,9 +43,8 @@ import (
 )
 
 const (
-	GXVersion = "1.0.23"
-	// Section 默认section配置
-	Section = "gx"
+	GXVersion = "2.0.0"
+	Section   = "gx"
 )
 
 type GX struct {
@@ -69,7 +68,6 @@ func (gx *GX) Run() {
 
 	_ = app.Flag("metrics", "enable metrics").Bool()
 	_ = app.Flag("dashboard", "enable metrics dashboard").Bool()
-	pprofPort := app.Flag("pprof", "enable pprof").Default("23333").Uint()
 
 	consoleCmd := app.Command("console", "start RangersProtocol console")
 	showRequest := consoleCmd.Flag("show", "show the request json").Short('v').Bool()
@@ -85,6 +83,7 @@ func (gx *GX) Run() {
 	addrRpc := mineCmd.Flag("rpcaddr", "rpc host").Short('r').Default("0.0.0.0").IP()
 	portRpc := mineCmd.Flag("rpcport", "rpc port").Short('p').Default("8088").Uint()
 	instanceIndex := mineCmd.Flag("instance", "instance index").Short('i').Default("0").Int()
+	pprofPort := mineCmd.Flag("pprof", "enable pprof").Default("0").Uint()
 
 	env := mineCmd.Flag("env", "the environment application run in").String()
 	gateAddrPoint := mineCmd.Flag("gateaddr", "the gate addr").String()
@@ -112,6 +111,23 @@ func (gx *GX) Run() {
 			fmt.Errorf(err.Error())
 		}
 	case mineCmd.FullCommand():
+		if pprofPort != nil {
+			pprof := *pprofPort
+			fmt.Printf("pprof: %d\n", pprof)
+			if pprof != 0 {
+				go func() {
+					runtime.SetBlockProfileRate(1)
+					runtime.SetMutexProfileFraction(1)
+					fmt.Println("start pprof")
+					err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", pprof), nil)
+					if err != nil {
+						fmt.Println(err)
+					}
+
+				}()
+			}
+		}
+
 		common.Init(*instanceIndex, *configFile, *env)
 		// using default
 		gateAddr := *gateAddrPoint
@@ -124,11 +140,6 @@ func (gx *GX) Run() {
 		walletManager = newWallets()
 		fmt.Println("Use config file: " + *configFile)
 		fmt.Printf("Env:%s, Chain ID:%s, Network ID:%s, Tx: %s\n", *env, common.ChainId(utility.MaxUint64), common.NetworkId(), txAddr)
-		go func() {
-			http.ListenAndServe(fmt.Sprintf(":%d", *pprofPort), nil)
-			runtime.SetBlockProfileRate(1)
-			runtime.SetMutexProfileFraction(1)
-		}()
 		gx.initMiner(*env, gateAddr, outerGateAddr, txAddr)
 
 		if *rpc {
@@ -238,11 +249,7 @@ func syncChainInfo() {
 		for {
 			<-timer.C
 
-			var candidateHeight uint64
-			if core.SyncProcessor != nil {
-				candidate := core.SyncProcessor.GetCandidateInfo()
-				candidateHeight = candidate.Height
-			}
+			var candidateHeight = core.GetCandidateHeight()
 			topBlock := core.GetBlockChain().TopBlock()
 			jsonObject := types.NewJSONObject()
 			jsonObject.Put("chainId", common.ChainId(utility.MaxUint64))

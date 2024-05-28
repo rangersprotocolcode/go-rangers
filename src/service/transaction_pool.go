@@ -68,7 +68,7 @@ type ExecutedTransaction struct {
 }
 
 type TransactionPool interface {
-	PackForCast(height uint64) []*types.Transaction
+	PackForCast(height uint64, stateDB *account.AccountDB) []*types.Transaction
 
 	//add new transaction to the transaction pool
 	AddTransaction(tx *types.Transaction) (bool, error)
@@ -82,6 +82,8 @@ type TransactionPool interface {
 	GetReceived() []*types.Transaction
 
 	TxNum() int
+
+	IsFull() bool
 
 	MarkExecuted(header *types.BlockHeader, receipts types.Receipts, txs []*types.Transaction, evictedTxs []common.Hash)
 
@@ -128,7 +130,7 @@ func newTransactionPool() TransactionPool {
 	pool.received = newSimpleContainer(rcvTxPoolSize)
 	pool.evictedTxs, _ = lru.New(txCacheSize)
 
-	executed, err := db.NewLDBDatabase(txDataBasePrefix, 16, 128)
+	executed, err := db.NewLDBDatabase(txDataBasePrefix, 128, 128)
 	if err != nil {
 		txPoolLogger.Errorf("Init transaction pool error! Error:%s", err.Error())
 		return nil
@@ -184,7 +186,7 @@ func (pool *TxPool) MarkExecuted(header *types.BlockHeader, receipts types.Recei
 	txHashList := make([]interface{}, 0)
 
 	if receipts != nil && len(receipts) != 0 {
-		mysql.InsertLogs(header.Height, receipts, header.Hash)
+		go mysql.InsertLogs(header.Height, receipts, header.Hash)
 
 		for i, receipt := range receipts {
 			hash := receipt.TxHash
@@ -329,7 +331,11 @@ func (p *TxPool) TxNum() int {
 	return p.received.Len()
 }
 
-func (pool *TxPool) PackForCast(height uint64) []*types.Transaction {
+func (p *TxPool) IsFull() bool {
+	return p.received.isFull()
+}
+
+func (pool *TxPool) PackForCast(height uint64, stateDB *account.AccountDB) []*types.Transaction {
 	packedTxs := make([]*types.Transaction, 0)
 
 	txs := pool.received.asSlice()
@@ -342,7 +348,7 @@ func (pool *TxPool) PackForCast(height uint64) []*types.Transaction {
 		packedTxs = append(packedTxs, tx.(*types.Transaction))
 	}
 	if common.IsProposal018() {
-		packedTxs = pool.checkNonce(packedTxs)
+		packedTxs = pool.checkNonce(packedTxs, stateDB)
 	}
 	if len(packedTxs) > txCountPerBlock {
 		packedTxs = packedTxs[:txCountPerBlock]
@@ -399,7 +405,7 @@ func (pool *TxPool) add(tx *types.Transaction) (bool, error) {
 		return false, ErrExist
 	}
 	pool.received.push(tx)
-	txPoolLogger.Debugf("[pool]Add tx:%s. nonce: %d, After add,received size:%d", tx.Hash.String(), tx.RequestId, pool.received.Len())
+	txPoolLogger.Debugf("[pool]Add tx:%s. global nonce: %d,source:%s,nonce:%d, After add,received size:%d", tx.Hash.String(), tx.RequestId, tx.Source, tx.Nonce, pool.received.Len())
 	return true, nil
 }
 
@@ -522,29 +528,30 @@ func compareTx(tx *types.Transaction, expectedTx *types.Transaction) bool {
 	return true
 }
 
-func (pool *TxPool) checkNonce(txList []*types.Transaction) []*types.Transaction {
+func (pool *TxPool) checkNonce(txList []*types.Transaction, stateDB *account.AccountDB) []*types.Transaction {
 	txs := types.Transactions(txList)
 	sort.Sort(txs)
 
 	packedTxs := make([]*types.Transaction, 0)
-	stateDB := middleware.AccountDBManagerInstance.GetLatestStateDB()
 	nonceMap := make(map[string]uint64, 0)
-
 	for _, tx := range txs {
-		expectedNonce, exist := nonceMap[tx.Source]
-		if !exist {
-			expectedNonce = stateDB.GetNonce(common.HexToAddress(tx.Source))
-			nonceMap[tx.Source] = expectedNonce
+		if tx.RequestId == 0 { //only json rpc tx pre check nonce
+			expectedNonce, exist := nonceMap[tx.Source]
+			if !exist {
+				expectedNonce = stateDB.GetNonce(common.HexToAddress(tx.Source))
+				nonceMap[tx.Source] = expectedNonce
+			}
+
+			//nonce too low tx and repeat nonce tx will be packed into block and execute failed
+			if expectedNonce < tx.Nonce {
+				txPoolLogger.Debugf("nonce too high tx,skip pack.tx:%s,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
+				continue
+			}
+			if expectedNonce == tx.Nonce {
+				nonceMap[tx.Source] = expectedNonce + 1
+			}
 		}
 
-		//nonce too low tx and repeat nonce tx will be packed into block and execute failed
-		if expectedNonce < tx.Nonce {
-			txPoolLogger.Debugf("nonce too high tx,skip pack.tx:%s,expected:%d,but:%d", tx.Hash.String(), expectedNonce, tx.Nonce)
-			continue
-		}
-		if expectedNonce == tx.Nonce {
-			nonceMap[tx.Source] = expectedNonce + 1
-		}
 		packedTxs = append(packedTxs, tx)
 		if len(packedTxs) >= txCountPerBlock {
 			break

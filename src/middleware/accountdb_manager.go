@@ -28,9 +28,9 @@ import (
 const stateDBPrefix = "state"
 
 type AccountDBManager struct {
-	stateDB       account.AccountDatabase
-	LatestStateDB *account.AccountDB
-	db            *db.LDBDatabase
+	stateDB                      account.AccountDatabase
+	LatestStateDB, latestStateDB *account.AccountDB
+	db                           *db.LDBDatabase
 
 	Height uint64
 	logger log.Logger
@@ -45,7 +45,7 @@ func initAccountDBManager() {
 
 	AccountDBManagerInstance.logger = log.GetLoggerByIndex(log.AccountDBLogConfig, strconv.Itoa(common.InstanceIndex))
 
-	db, err := db.NewLDBDatabase(stateDBPrefix, 128, 2048)
+	db, err := db.NewLDBDatabase(stateDBPrefix, 256, 256)
 	if err != nil {
 		AccountDBManagerInstance.logger.Errorf("Init accountDB error! Error:%s", err.Error())
 		panic(err)
@@ -69,7 +69,7 @@ func (manager *AccountDBManager) GetAccountDBByHash(hash common.Hash) (*account.
 }
 
 func (manager *AccountDBManager) GetLatestStateDB() *account.AccountDB {
-	return manager.LatestStateDB
+	return manager.latestStateDB
 }
 
 func (manager *AccountDBManager) GetTrieDB() *trie.NodeDatabase {
@@ -79,6 +79,7 @@ func (manager *AccountDBManager) GetTrieDB() *trie.NodeDatabase {
 func (manager *AccountDBManager) SetLatestStateDB(latestStateDB *account.AccountDB, nonces map[string]uint64, height uint64) {
 	key := "fixed"
 	nonce := nonces[key]
+	manager.latestStateDB = latestStateDB
 
 	//manager.SetLatestStateDBWithNonce(latestStateDB, nonce, "add block", height)
 	manager.Height = height
@@ -100,6 +101,16 @@ func (manager *AccountDBManager) loop() {
 			case message := <-DataChannel.GetRcvedTx():
 				manager.logger.Debugf("write rcv message. hash: %s, nonce: %d", message.Tx.Hash.String(), message.Nonce)
 				manager.waitingTxs.heapPush(message)
+
+				//txRaw := message.Tx
+				//txRaw.RequestId = message.Nonce
+				//if txRaw.Type == 0 || 0 == txRaw.RequestId {
+				//	msg := notify.ClientTransactionMessage{Tx: txRaw}
+				//	notify.BUS.Publish(notify.ClientTransactionWrite, &msg)
+				//} else {
+				//	manager.waitingTxs.heapPush(message)
+				//}
+
 			}
 		}
 	}()

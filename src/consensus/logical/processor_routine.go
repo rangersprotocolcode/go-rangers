@@ -29,10 +29,6 @@ func (p *Processor) getCastCheckRoutineName() string {
 	return "self_cast_check_" + p.getPrefix()
 }
 
-func (p *Processor) getBroadcastRoutineName() string {
-	return "broadcast_" + p.getPrefix()
-}
-
 func (p *Processor) getReleaseRoutineName() string {
 	return "release_routine_" + p.getPrefix()
 }
@@ -84,52 +80,6 @@ func (p *Processor) checkSelfCastRoutine() bool {
 	return true
 }
 
-func (p *Processor) broadcastRoutine() bool {
-	p.blockContexts.forEachReservedVctx(func(vctx *VerifyContext) bool {
-		p.tryBroadcastBlock(vctx)
-		return true
-	})
-	return true
-}
-
-func (p *Processor) releaseRoutine() bool {
-	topHeight := p.MainChain.TopBlock().Height
-	if topHeight <= model.Param.CreateGroupInterval {
-		return true
-	}
-
-	p.cleanVerifyContext(topHeight)
-	blog := newBizLog("releaseRoutine")
-
-	ids := group_create.GroupCreateProcessor.ReleaseGroups(topHeight)
-	if len(ids) > 0 {
-		p.blockContexts.removeBlockContexts(ids)
-	}
-
-	p.futureVerifyMsgs.forEach(func(key common.Hash, arr []interface{}) bool {
-		for _, msg := range arr {
-			b := msg.(*model.ConsensusCastMessage)
-			if b.BH.Height+200 < topHeight {
-				blog.debug("remove future verify msg, hash=%v", key.String())
-				p.removeFutureVerifyMsgs(key)
-				break
-			}
-		}
-		return true
-	})
-
-	for _, h := range p.verifyMsgCaches.Keys() {
-		hash := h.(common.Hash)
-		cache := p.getVerifyMsgCache(hash)
-		if cache != nil && cache.expired() {
-			blog.debug("remove verify cache msg, hash=%v", hash.ShortS())
-			p.removeVerifyMsgCache(hash)
-		}
-	}
-
-	return true
-}
-
 func (p *Processor) getUpdateGlobalGroupsRoutineName() string {
 	return "update_global_groups_routine_" + p.getPrefix()
 }
@@ -146,5 +96,16 @@ func (p *Processor) updateGlobalGroups() bool {
 		stdLogger.Debugf("updateGlobalGroups:gid=%v, workHeight=%v, topHeight=%v", gid.ShortS(), g.Header.WorkHeight, top)
 		p.acceptGroup(sgi)
 	}
+	return true
+}
+
+func (p *Processor) releaseRoutine() bool {
+	topHeight := p.MainChain.TopBlock().Height
+	if topHeight <= model.Param.CreateGroupInterval {
+		return true
+	}
+
+	group_create.GroupCreateProcessor.ReleaseGroups(topHeight)
+
 	return true
 }
