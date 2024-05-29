@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	Version           = "2.0.1"
+	Version           = "2.0.2"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -97,7 +97,7 @@ var (
 		Proposal019Block: 66114000,
 		Proposal020Block: 75248100,
 		Proposal021Block: 74312000,
-		Proposal022Block: 0,
+		Proposal022Block: 76005000,
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 
 		MysqlDSN:   "rpservice_v2:oJ2*bA0:hB3%@tcp(192.168.0.172:5555)/rpservice_v2?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
