@@ -1083,49 +1083,5 @@ func newInstructionSet() JumpTable {
 	//instructionSet[SELFDESTRUCT].constantGas = SelfdestructGasEIP150
 	//instructionSet[SELFDESTRUCT].dynamicGas = gasSelfdestructEIP2929
 
-	//rangers protocol defined InstructionSet----------------------------------------------------------------------------------------------
-
-	instructionSet[PRINTF] = &operation{
-		execute:     opPrintF,
-		constantGas: 0,
-		minStack:    minStack(0, 0),
-		maxStack:    maxStack(0, 0),
-	}
-
-	instructionSet[STAKE] = &operation{
-		execute:     opStake,
-		constantGas: 0,
-		minStack:    minStack(2, 2),
-		maxStack:    maxStack(2, 2),
-	}
-
-	instructionSet[UNSTAKE] = &operation{
-		execute:     opUnStake,
-		constantGas: 0,
-		minStack:    minStack(2, 2),
-		maxStack:    maxStack(2, 2),
-	}
-
-	instructionSet[GETSTAKE] = &operation{
-		execute:     opGetStake,
-		constantGas: 0,
-		minStack:    minStack(1, 1),
-		maxStack:    maxStack(1, 1),
-	}
-
-	instructionSet[UNSTAKEALL] = &operation{
-		execute:     opUnStakeAll,
-		constantGas: 0,
-		minStack:    minStack(1, 1),
-		maxStack:    maxStack(1, 1),
-	}
-
-	instructionSet[STAKENUM] = &operation{
-		execute:     opStakeNum,
-		constantGas: 0,
-		minStack:    minStack(1, 1),
-		maxStack:    maxStack(1, 1),
-	}
-
 	return instructionSet
 }
