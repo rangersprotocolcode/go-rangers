@@ -19,11 +19,11 @@ package eth_rpc
 import (
 	"bytes"
 	"com.tuntun.rangers/node/src/common"
-	"com.tuntun.rangers/node/src/middleware"
 	"com.tuntun.rangers/node/src/middleware/log"
 	"com.tuntun.rangers/node/src/middleware/notify"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"com.tuntun.rangers/node/src/network"
+	"com.tuntun.rangers/node/src/service"
 	"encoding/json"
 	"fmt"
 	"reflect"
@@ -127,15 +127,21 @@ func (handler ethMsgHandler) ProcessSingleRequest(ethRpcMessage notify.ETHRPCPie
 			} else {
 				rocketTx := returnValue.(*types.Transaction)
 				// save tx
-				var msg notify.ClientTransactionMessage
-				msg.Tx = *rocketTx
-				msg.UserId = ""
-				msg.GateNonce = gateNonce
-				msg.Nonce = 0
-				middleware.DataChannel.GetRcvedTx() <- &msg
-				logger.Debugf("put tx to channel, %v", rocketTx)
-
-				response = makeResponse(rocketTx.Hash, err, ethRpcMessage.Id)
+				//var msg notify.ClientTransactionMessage
+				//msg.Tx = *rocketTx
+				//msg.UserId = ""
+				//msg.GateNonce = gateNonce
+				//msg.Nonce = 0
+				//middleware.DataChannel.GetRcvedTx() <- &msg
+				//logger.Debugf("put tx to channel, %v", rocketTx)
+				//
+				//response = makeResponse(rocketTx.Hash, err, ethRpcMessage.Id)
+				_, err := service.GetTransactionPool().AddTransaction(rocketTx)
+				if err == nil {
+					response = makeResponse(rocketTx.Hash, err, ethRpcMessage.Id)
+				} else {
+					response = makeResponse(nil, err, ethRpcMessage.Id)
+				}
 			}
 
 		} else {

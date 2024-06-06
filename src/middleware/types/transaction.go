@@ -94,6 +94,15 @@ func (tx *Transaction) GenHash() common.Hash {
 	return common.BytesToHash(common.Sha256(buffer.Bytes()))
 }
 
+func (t1 *Transaction) Less(t2 *Transaction) bool {
+	if t2 == nil {
+		return false
+	}
+	num1 := new(big.Int).SetBytes(t1.Hash.Bytes())
+	num2 := new(big.Int).SetBytes(t2.Hash.Bytes())
+	return num1.Cmp(num2) > 0
+}
+
 func (tx *Transaction) GenHashes() common.Hashes {
 	if nil == tx {
 		return common.Hashes{}

@@ -390,6 +390,11 @@ func (s *EthAPIService) GetBlockTransactionCountByHash(blockHash common.Hash) *u
 
 // GetTransactionCount returns the number of transactions the given address has sent for the given block number
 func (s *EthAPIService) GetTransactionCount(address common.Address, blockNrOrHash BlockNumberOrHash) (*utility.Uint64, error) {
+	if *blockNrOrHash.BlockNumber == PendingBlockNumber {
+		pendingNonce := utility.Uint64(service.GetTransactionPool().GetPendingNonce(address.String()))
+		return &pendingNonce, nil
+	}
+
 	accountDB := getAccountDBByHashOrHeight(blockNrOrHash)
 	if accountDB == nil {
 		return nil, errors.New("param invalid")
