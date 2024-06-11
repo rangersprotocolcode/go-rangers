@@ -162,6 +162,7 @@ func (api *EthAPIService) SendRawTransaction(encodedTx utility.Bytes) (*types.Tr
 		logger.Errorf("tx validate err:%v", err.Error())
 		return nil, err
 	}
+	logger.Debugf("after validate tx:%s", tx.Hash().String())
 
 	rocketTx := eth_tx.ConvertTx(tx, sender, encodedTx)
 	if common.IsFullNode() {
@@ -169,6 +170,7 @@ func (api *EthAPIService) SendRawTransaction(encodedTx utility.Bytes) (*types.Tr
 		return rocketTx, err
 	}
 
+	logger.Debugf("before return tx:%s", tx.Hash().String())
 	return rocketTx, nil
 }
 

@@ -136,6 +136,7 @@ func (handler ethMsgHandler) ProcessSingleRequest(ethRpcMessage notify.ETHRPCPie
 				//logger.Debugf("put tx to channel, %v", rocketTx)
 				//
 				//response = makeResponse(rocketTx.Hash, err, ethRpcMessage.Id)
+				logger.Debugf("add tx to pool:%s", rocketTx.Hash.String())
 				_, err := service.GetTransactionPool().AddTransaction(rocketTx)
 				if err == nil {
 					response = makeResponse(rocketTx.Hash, err, ethRpcMessage.Id)
