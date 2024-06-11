@@ -19,7 +19,7 @@ package main
 import (
 	"com.tuntun.rangers/node/src/gx/cli"
 	"fmt"
-	_ "go.uber.org/automaxprocs"
+	//_ "go.uber.org/automaxprocs"
 	"runtime"
 	"runtime/debug"
 )
@@ -37,7 +37,7 @@ func initSysParam() {
 	//maxprocs.Set(maxprocs.Logger(common.DefaultLogger.Infof))
 	debug.SetGCPercent(gc)
 
-	fmt.Printf("Setting gc %d, maxproc %d\n", gc, runtime.GOMAXPROCS(-1))
+	fmt.Printf("Setting gc %d, maxproc %d\n", gc, runtime.GOMAXPROCS(4))
 }
 
 // const stdFile = "./stack.log"
