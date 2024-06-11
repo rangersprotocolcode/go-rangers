@@ -475,6 +475,7 @@ func (pool *TxPool) add(tx *types.Transaction, checkPending bool) (bool, error) 
 	}
 
 	if pool.isTransactionExisted(tx.Hash) {
+		txPoolLogger.Debugf("[pool]tx exist in pool,do not add:%s", tx.Hash.String())
 		return false, ErrExist
 	}
 	if !checkPending {
@@ -483,9 +484,10 @@ func (pool *TxPool) add(tx *types.Transaction, checkPending bool) (bool, error) 
 		return true, nil
 	}
 
+	txPoolLogger.Debugf("[pool]before add tx:%s", tx.Hash.String())
 	pendingNonce := pool.GetPendingNonce(tx.Source)
-	pool.lock.Lock("addTx")
-	defer pool.lock.Unlock("addTx")
+	pool.lock.Lock("addTx " + tx.Hash.String())
+	defer pool.lock.Unlock("addTx " + tx.Hash.String())
 	if tx.Nonce < pendingNonce {
 		pendingList := pool.pending[tx.Source]
 		if pendingList != nil && pendingList.Get(tx.Nonce) != nil {
