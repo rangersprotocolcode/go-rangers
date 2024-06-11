@@ -26,6 +26,8 @@ import (
 )
 
 func (p *Processor) Start() bool {
+	p.prepareMiner()
+
 	p.Ticker.RegisterRoutine(p.getCastCheckRoutineName(), p.checkSelfCastRoutine, common.CastingCheckInterval)
 
 	p.Ticker.RegisterRoutine(p.getUpdateGlobalGroupsRoutineName(), p.updateGlobalGroups, 60*1000)
@@ -35,7 +37,7 @@ func (p *Processor) Start() bool {
 	p.Ticker.StartTickerRoutine(p.getReleaseRoutineName(), false)
 
 	p.triggerCastCheck()
-	p.prepareMiner()
+
 	p.ready = true
 	return true
 }
