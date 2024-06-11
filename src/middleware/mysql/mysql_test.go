@@ -17,6 +17,7 @@
 package mysql
 
 import (
+	"com.tuntun.rangers/node/src/middleware/types"
 	"fmt"
 	"os"
 	"testing"
@@ -69,4 +70,38 @@ func TestSelectLogs(t *testing.T) {
 	for _, log := range logs {
 		fmt.Printf("%d %s %s\n", log.BlockNumber, log.BlockHash.String(), log.TxHash.Hex())
 	}
+}
+
+func TestGroupIndex(t *testing.T) {
+	defer func() {
+		os.RemoveAll("logs")
+		os.RemoveAll("logs-0.db")
+		os.RemoveAll("logs-0.db-shm")
+		os.RemoveAll("logs-0.db-wal")
+		os.RemoveAll("1.ini")
+		os.RemoveAll("storage0")
+	}()
+
+	InitMySql()
+	group := types.Group{}
+	group.GroupHeight = 1
+	group.Id = []byte{1, 2, 3, 4, 5, 6}
+	group.Header = &types.GroupHeader{}
+	group.Header.WorkHeight = 100
+	group.Header.DismissHeight = 1000
+	InsertGroup(&group)
+
+	group1 := types.Group{}
+	group1.GroupHeight = 2
+	group1.Id = []byte{10, 20, 30, 40}
+	group1.Header = &types.GroupHeader{}
+	group1.Header.WorkHeight = 400
+	group1.Header.DismissHeight = 20000
+	InsertGroup(&group1)
+
+	fmt.Println(CountGroups())
+	fmt.Println(SelectGroups(100))
+	fmt.Println(SelectGroups(500))
+	fmt.Println(SelectGroups(10))
+	fmt.Println(SelectGroups(10001))
 }

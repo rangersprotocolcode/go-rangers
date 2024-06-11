@@ -55,6 +55,23 @@ func InitMySql() {
 		panic(err)
 	}
 
+	_, err = db.Exec("CREATE TABLE if NOT EXISTS `groupIndex`( id INTEGER PRIMARY KEY AUTOINCREMENT,`workheight` INTEGER NOT NULL, `dismissheight` INTEGER NOT NULL, `groupheight` INTEGER NOT NULL,`hash` varchar(100) UNIQUE NOT NULL);")
+	if err != nil {
+		panic(err)
+	}
+	_, err = db.Exec("CREATE INDEX if NOT EXISTS workheight ON groupIndex (workheight);")
+	if err != nil {
+		panic(err)
+	}
+	_, err = db.Exec("CREATE INDEX if NOT EXISTS dismissheight ON groupIndex (dismissheight);")
+	if err != nil {
+		panic(err)
+	}
+	_, err = db.Exec("CREATE INDEX if NOT EXISTS groupHeight ON groupIndex (groupheight);")
+	if err != nil {
+		panic(err)
+	}
+
 	mysqlDBLog = db
 	logger.Infof("connected sqlite")
 
