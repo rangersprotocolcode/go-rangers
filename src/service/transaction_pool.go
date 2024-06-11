@@ -486,6 +486,7 @@ func (pool *TxPool) add(tx *types.Transaction, checkPending bool) (bool, error) 
 
 	txPoolLogger.Debugf("[pool]before add tx:%s", tx.Hash.String())
 	pendingNonce := pool.GetPendingNonce(tx.Source)
+	txPoolLogger.Debugf("[pool]after get pending:%s,%d", tx.Hash.String(), pendingNonce)
 	pool.lock.Lock("addTx " + tx.Hash.String())
 	defer pool.lock.Unlock("addTx " + tx.Hash.String())
 	if tx.Nonce < pendingNonce {
