@@ -64,7 +64,7 @@ var (
 		Proposal019Block: math.MaxUint64, //mainnet never use proporal010
 		Proposal020Block: 61794000,
 		Proposal021Block: 61202000,
-		Proposal022Block: 0,
+		Proposal022Block: 62606000,
 
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
