@@ -69,7 +69,7 @@ type keccakState interface {
 type EVMInterpreter struct {
 	evm       *EVM
 	tracer    Tracer
-	jumpTable [256]*operation
+	jumpTable JumpTable
 
 	hasher    keccakState // Keccak256 hasher instance shared across opcodes
 	hasherBuf common.Hash // Keccak256 hasher result array shared aross opcodes
@@ -80,10 +80,18 @@ type EVMInterpreter struct {
 
 // NewEVMInterpreter returns a new instance of the Interpreter.
 func NewEVMInterpreter(evm *EVM) *EVMInterpreter {
-
 	interpreter := &EVMInterpreter{
 		evm:       evm,
 		jumpTable: newInstructionSet(),
+	}
+
+	height := evm.BlockNumber.Uint64()
+	jt := &interpreter.jumpTable
+	if height >= common.LocalChainConfig.Proposal014Block {
+		doProposal014(jt)
+	}
+	if height >= common.LocalChainConfig.Proposal022Block {
+		doProposal022(jt)
 	}
 
 	config := LogConfig{false, false, false, false}
@@ -190,7 +198,7 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		}
 		// If the operation is valid, enforce and write restrictions
 		/*
-		origin:if in.readOnly && in.evm.chainRules.IsByzantium
+			origin:if in.readOnly && in.evm.chainRules.IsByzantium
 		*/
 		if in.readOnly {
 			// If the interpreter is operating in readonly mode, make sure no

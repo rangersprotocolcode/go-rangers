@@ -363,7 +363,12 @@ func (s *EthAPIService) GetBlockTransactionCountByNumber(blockNr BlockNumber) *u
 		zero := utility.Uint(0)
 		return &zero
 	}
-	txNum := utility.Uint(len(block.Transactions))
+	var txNum utility.Uint = 0
+	for _, tx := range block.Transactions {
+		if hasReceipt(tx.Hash) {
+			txNum++
+		}
+	}
 	return &txNum
 }
 
@@ -374,7 +379,12 @@ func (s *EthAPIService) GetBlockTransactionCountByHash(blockHash common.Hash) *u
 		zero := utility.Uint(0)
 		return &zero
 	}
-	txNum := utility.Uint(len(block.Transactions))
+	var txNum utility.Uint = 0
+	for _, tx := range block.Transactions {
+		if hasReceipt(tx.Hash) {
+			txNum++
+		}
+	}
 	return &txNum
 }
 
@@ -517,10 +527,20 @@ func (s *EthAPIService) GetTransactionByBlockNumberAndIndex(blockNr BlockNumber,
 		block = core.GetBlockChain().QueryBlock(uint64(blockNr))
 	}
 
-	if block == nil || uint64(index) >= uint64(len(block.Transactions)) {
+	if block == nil {
 		return nil
 	}
-	return newRPCTransaction(block.Transactions[index], block.Header.Hash, block.Header.Height, uint64(index))
+
+	txsHasReceipt := make(types.Transactions, 0)
+	for _, tx := range block.Transactions {
+		if hasReceipt(tx.Hash) {
+			txsHasReceipt = append(txsHasReceipt, tx)
+		}
+	}
+	if uint64(index) >= uint64(len(txsHasReceipt)) {
+		return nil
+	}
+	return newRPCTransaction(txsHasReceipt[index], block.Header.Hash, block.Header.Height, uint64(index))
 }
 
 // GetTransactionByBlockHashAndIndex returns the transaction for the given block hash and index.
@@ -529,7 +549,17 @@ func (s *EthAPIService) GetTransactionByBlockHashAndIndex(blockHash common.Hash,
 	if block == nil || uint64(index) >= uint64(len(block.Transactions)) {
 		return nil
 	}
-	return newRPCTransaction(block.Transactions[index], block.Header.Hash, block.Header.Height, uint64(index))
+
+	txsHasReceipt := make(types.Transactions, 0)
+	for _, tx := range block.Transactions {
+		if hasReceipt(tx.Hash) {
+			txsHasReceipt = append(txsHasReceipt, tx)
+		}
+	}
+	if uint64(index) >= uint64(len(txsHasReceipt)) {
+		return nil
+	}
+	return newRPCTransaction(txsHasReceipt[index], block.Header.Hash, block.Header.Height, uint64(index))
 }
 
 // Version returns the current ethereum protocol version.
@@ -741,6 +771,10 @@ func adaptRPCBlock(block *types.Block, fullTx bool) *RPCBlock {
 	}
 	transactions := make([]interface{}, 0)
 	for index, tx := range block.Transactions {
+		if !hasReceipt(tx.Hash) {
+			continue
+		}
+
 		if fullTx {
 			rpcTx := newRPCTransaction(tx, header.Hash, header.Height, uint64(index))
 			if rpcTx != nil {
@@ -800,4 +834,8 @@ func getRevertReason(result []byte) string {
 		return ""
 	}
 	return decoded.(string)
+}
+
+func hasReceipt(txHash common.Hash) bool {
+	return service.GetTransactionPool().GetExecuted(txHash) != nil
 }
