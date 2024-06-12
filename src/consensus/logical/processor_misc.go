@@ -68,7 +68,7 @@ func (p *Processor) prepareMiner() {
 		if sgi.MemExist(p.GetMinerID()) {
 			jg := p.belongGroups.GetJoinedGroupInfo(sgi.GroupID)
 			if jg == nil {
-				stdLogger.Infof("prepareMiner get join group fail, gid=%v\n", sgi.GroupID.ShortS())
+				stdLogger.Infof("prepareMiner get join group fail, gid=%v\n", sgi.GroupID.GetHexString())
 			} else {
 				p.belongGroups.JoinGroup(jg, p.mi.ID)
 			}
