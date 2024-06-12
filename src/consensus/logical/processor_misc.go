@@ -53,7 +53,7 @@ func (p *Processor) prepareMiner() {
 	iterator := p.GroupChain.Iterator()
 	groups := make([]*model.GroupInfo, 0)
 	for coreGroup := iterator.Current(); coreGroup != nil; coreGroup = iterator.MovePre() {
-		stdLogger.Infof("get group from core, id=%+v", coreGroup.Header)
+		stdLogger.Infof("get group from core, id: %s, dismiss: %d, groupHeight: %d", common.ToHex(coreGroup.Id), coreGroup.Header.DismissHeight, coreGroup.GroupHeight)
 		if coreGroup.Id == nil || len(coreGroup.Id) == 0 {
 			continue
 		}
@@ -64,7 +64,7 @@ func (p *Processor) prepareMiner() {
 		}
 
 		groups = append(groups, sgi)
-		stdLogger.Infof("load group=%v, beginHeight=%v, topHeight=%v\n", sgi.GroupID.ShortS(), sgi.GetGroupHeader().WorkHeight, topHeight)
+		stdLogger.Infof("load group=%v, beginHeight=%v, topHeight=%v\n", sgi.GroupID.GetHexString(), sgi.GetGroupHeader().WorkHeight, topHeight)
 		if sgi.MemExist(p.GetMinerID()) {
 			jg := p.belongGroups.GetJoinedGroupInfo(sgi.GroupID)
 			if jg == nil {
