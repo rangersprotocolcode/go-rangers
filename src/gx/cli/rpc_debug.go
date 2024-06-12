@@ -17,15 +17,9 @@
 package cli
 
 import (
-	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/consensus"
-	"com.tuntun.rangers/node/src/consensus/base"
 	"com.tuntun.rangers/node/src/consensus/groupsig"
-	"com.tuntun.rangers/node/src/consensus/logical"
-	"com.tuntun.rangers/node/src/core"
 	"com.tuntun.rangers/node/src/middleware/types"
-	"fmt"
-	"math/big"
 	"sort"
 )
 
@@ -63,20 +57,6 @@ func (s *SysWorkSummary) sort() {
 	}
 	s.GroupSummary = tmp
 	sort.Sort(s)
-}
-
-type groupArray []*types.Group
-
-func (g groupArray) Len() int {
-	return len(g)
-}
-
-func (g groupArray) Less(i, j int) bool {
-	return g[i].Header.WorkHeight < g[j].Header.WorkHeight
-}
-
-func (g groupArray) Swap(i, j int) {
-	g[i], g[j] = g[j], g[i]
 }
 
 func (s *SysWorkSummary) getGroupSummary(gid groupsig.ID, top uint64, nextSelected bool) *GroupVerifySummary {
@@ -136,119 +116,6 @@ func (s *GroupVerifySummary) fillGroupInfo(g *types.Group, top uint64) {
 	}
 	s.DissmissHeight = g.Header.DismissHeight
 	s.Dissmissed = s.DissmissHeight <= top
-}
-
-func getAllGroup() map[string]*types.Group {
-	iterator := consensus.Proc.GroupChain.Iterator()
-	gs := make(map[string]*types.Group)
-	for coreGroup := iterator.Current(); coreGroup != nil; coreGroup = iterator.MovePre() {
-		id := groupsig.DeserializeID(coreGroup.Id)
-		gs[id.GetHexString()] = coreGroup
-	}
-
-	return gs
-}
-
-func selectNextVerifyGroup(gs map[string]*types.Group, preBH *types.BlockHeader, deltaHeight uint64) (groupsig.ID, []*types.Group) {
-	qualifiedGs := make(groupArray, 0)
-	h := preBH.Height + deltaHeight
-	for _, g := range gs {
-		if logical.IsGroupWorkQualifiedAt(g.Header, h) {
-			qualifiedGs = append(qualifiedGs, g)
-		}
-	}
-	sort.Sort(qualifiedGs)
-
-	var hash common.Hash
-	data := preBH.Random
-	for ; deltaHeight > 0; deltaHeight-- {
-		hash = base.Data2CommonHash(data)
-		data = hash.Bytes()
-	}
-	value := hash.Big()
-	index := value.Mod(value, big.NewInt(int64(len(qualifiedGs))))
-	gid := qualifiedGs[index.Int64()].Id
-	return groupsig.DeserializeID(gid), qualifiedGs
-}
-
-func (api *GtasAPI) DebugVerifySummary(from, to uint64) (*Result, error) {
-	if from == 0 {
-		from = 1
-	}
-	chain := core.GetBlockChain()
-	top := chain.TopBlock()
-	topHeight := top.Height
-	if to > topHeight {
-		to = topHeight
-	}
-
-	allGroup := getAllGroup()
-
-	summary := &SysWorkSummary{
-		BeginHeight: from,
-		ToHeight:    to,
-		summaryMap:  make(map[string]*GroupVerifySummary, 0),
-		allGroup:    allGroup,
-	}
-	nextGroupId, _ := selectNextVerifyGroup(allGroup, top, 1)
-	preBH := chain.QueryBlockHeaderByHeight(from-1, true)
-
-	t := float64(0)
-	b := 0
-	max := float64(0)
-	maxHeight := uint64(0)
-	jump := 0
-	for h := uint64(from); h <= to; h++ {
-		block := chain.QueryBlock(h)
-		if block == nil {
-			expectGid, _ := selectNextVerifyGroup(allGroup, preBH, h-preBH.Height)
-			gvs := summary.getGroupSummary(expectGid, topHeight, expectGid.IsEqual(nextGroupId))
-			gvs.addJumpHeight(h)
-			jump++
-		} else {
-			bh := block.Header
-			if preBH == nil {
-				preBH = chain.QueryBlockByHash(bh.PreHash).Header
-			}
-			if bh.PreHash != preBH.Hash {
-				e := fmt.Sprintf("not chain! pre %+v, curr %+v\n", preBH, bh)
-				fmt.Printf(e)
-				return failResult(e)
-			}
-			if h != 1 {
-				b++
-				cost := bh.CurTime.Sub(preBH.CurTime).Seconds()
-				t += cost
-				if cost > max {
-					max = cost
-					maxHeight = bh.Height
-				}
-			}
-			//expectGid, gs := selectNextVerifyGroup(allGroup, preBH, h-preBH.Height)
-			gid := groupsig.DeserializeID(bh.GroupId)
-			//if !expectGid.IsEqual(gid) {
-			//	fmt.Printf("bh %+v\n", bh)
-			//	fmt.Printf("pre %+v\n", preBH)
-			//	for _, g := range gs {
-			//		fmt.Printf("g workheight=%v, id=%v, pre=%v\n", g.Header.WorkHeight, groupsig.DeserializeId(g.Id).ShortS(), groupsig.DeserializeId(g.Header.PreGroup))
-			//	}
-			//	return failResult(fmt.Sprintf("expect gid not equal, height=%v, expect %v, real %v", bh.Height, expectGid.GetHexString(), gid.GetHexString()))
-			//}
-			preBH = bh
-			gvs := summary.getGroupSummary(gid, topHeight, gid.IsEqual(nextGroupId))
-			gvs.NumVerify += 1
-		}
-
-	}
-	summary.AverCastTime = t / float64(b)
-	summary.MaxCastTime = max
-	summary.HeightOfMaxCastTime = maxHeight
-	summary.sort()
-	summary.JumpRate = float64(jump) / float64(to-from+1)
-	for _, v := range summary.GroupSummary {
-		v.calJumpRate()
-	}
-	return successResult(summary)
 }
 
 func (api *GtasAPI) DebugJoinGroupInfo(gid string) (*Result, error) {
