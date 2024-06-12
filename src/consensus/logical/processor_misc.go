@@ -21,6 +21,7 @@ import (
 	"com.tuntun.rangers/node/src/consensus/base"
 	"com.tuntun.rangers/node/src/consensus/groupsig"
 	"com.tuntun.rangers/node/src/consensus/model"
+	"com.tuntun.rangers/node/src/middleware/mysql"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"fmt"
 )
@@ -49,12 +50,13 @@ func (p *Processor) Stop() {
 func (p *Processor) prepareMiner() {
 	topHeight := p.MainChain.TopBlock().Height
 
-	stdLogger.Infof("prepareMiner get groups from groupchain")
-	iterator := p.GroupChain.Iterator()
 	groups := make([]*model.GroupInfo, 0)
-	for coreGroup := iterator.Current(); coreGroup != nil; coreGroup = iterator.MovePre() {
-		stdLogger.Infof("get group from core, id: %s, dismiss: %d, groupHeight: %d", common.ToHex(coreGroup.Id), coreGroup.Header.DismissHeight, coreGroup.GroupHeight)
-		if coreGroup.Id == nil || len(coreGroup.Id) == 0 {
+
+	validGroups := mysql.SelectGroups(topHeight)
+	for i, gid := range validGroups {
+		coreGroup := p.GroupChain.GetGroupById(common.FromHex(gid))
+		if nil == coreGroup {
+			stdLogger.Errorf("fail to get group: %s, %d", gid, i)
 			continue
 		}
 
