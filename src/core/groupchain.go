@@ -99,13 +99,13 @@ func (chain *groupChain) refreshCache() {
 		return
 	}
 
-	iterator := chain.Iterator()
-	for coreGroup := iterator.Current(); coreGroup != nil; coreGroup = iterator.MovePre() {
-		if coreGroup.Id == nil || len(coreGroup.Id) == 0 {
-			continue
+	group := chain.lastGroup
+	for {
+		mysql.InsertGroup(group)
+		group = chain.getGroupById(group.Header.PreGroup)
+		if nil == group {
+			return
 		}
-
-		mysql.InsertGroup(coreGroup)
 	}
 }
 
