@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/middleware/db"
+	"com.tuntun.rangers/node/src/middleware/mysql"
 	"com.tuntun.rangers/node/src/middleware/notify"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"com.tuntun.rangers/node/src/utility"
@@ -240,6 +241,7 @@ func (chain *groupChain) remove(group *types.Group) bool {
 	chain.count--
 	chain.groups.Put([]byte(groupCountKey), utility.UInt64ToByte(chain.count))
 	chain.lastGroup = preGroup
+	mysql.DeleteGroup(group.Id)
 	return true
 }
 
@@ -259,6 +261,7 @@ func (chain *groupChain) save(group *types.Group) error {
 	chain.lastGroup = group
 	logger.Debugf("Add group on chain success! Group id:%s,group pubkey:%s", hex.EncodeToString(group.Id), hex.EncodeToString(group.PubKey))
 
+	mysql.InsertGroup(group)
 	if nil != notify.BUS {
 		notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group})
 	}

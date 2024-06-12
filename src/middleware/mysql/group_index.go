@@ -91,17 +91,10 @@ func InsertGroup(group *types.Group) {
 	dismissheight := group.Header.DismissHeight
 	groupheight := group.GroupHeight
 
-	logger.Infof("start insert group: %s, workHeight: %d, dismissheight: %d, groupheight: %d", id, workHeight, dismissheight, groupheight)
-
-	tx, err := mysqlDBLog.Begin()
-	if err != nil {
-		logger.Errorf("fail to begin. group: %s, workHeight: %d, dismissheight: %d, groupheight: %d", id, workHeight, dismissheight, groupheight)
-		return
-	}
-	defer tx.Commit()
+	logger.Infof("insert group: %s, workHeight: %d, dismissheight: %d, groupheight: %d", id, workHeight, dismissheight, groupheight)
 
 	sqlStr := "replace INTO groupIndex(hash,workheight,dismissheight, groupheight) values (?, ?, ?, ?)"
-	stmt, err := tx.Prepare(sqlStr)
+	stmt, err := mysqlDBLog.Prepare(sqlStr)
 	if err != nil {
 		logger.Errorf("fail to prepare. group: %s, workHeight: %d, dismissheight: %d, groupheight: %d", id, workHeight, dismissheight, groupheight)
 		return
@@ -110,8 +103,9 @@ func InsertGroup(group *types.Group) {
 
 	_, err = stmt.Exec(id, workHeight, dismissheight, groupheight)
 	if err != nil {
-		logger.Errorf("fail to insert exec, err: %s. sql: %s", err, sqlStr)
+		logger.Errorf("fail to insert group, err: %s. sql: %s", err, sqlStr)
 		return
 	}
-	logger.Infof("inserted group: %s, workHeight: %d, dismissheight: %d, groupheight: %d", id, workHeight, dismissheight, groupheight)
+
+	logger.Infof("insert group: %s, workHeight: %d, dismissheight: %d, groupheight: %d", id, workHeight, dismissheight, groupheight)
 }
