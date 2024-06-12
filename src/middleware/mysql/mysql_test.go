@@ -19,6 +19,7 @@ package mysql
 import (
 	"com.tuntun.rangers/node/src/middleware/types"
 	"fmt"
+	"math"
 	"os"
 	"testing"
 )
@@ -88,7 +89,7 @@ func TestGroupIndex(t *testing.T) {
 	group.Id = []byte{1, 2, 3, 4, 5, 6}
 	group.Header = &types.GroupHeader{}
 	group.Header.WorkHeight = 100
-	group.Header.DismissHeight = 1000
+	group.Header.DismissHeight = math.MaxUint64
 	InsertGroup(&group)
 
 	group1 := types.Group{}

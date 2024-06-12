@@ -19,6 +19,7 @@ package mysql
 import (
 	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/middleware/types"
+	"math"
 )
 
 func DeleteGroup(id []byte) {
@@ -89,6 +90,9 @@ func InsertGroup(group *types.Group) {
 	id := common.ToHex(group.Id)
 	workHeight := group.Header.WorkHeight
 	dismissheight := group.Header.DismissHeight
+	if dismissheight == math.MaxUint64 {
+		dismissheight = math.MaxInt64
+	}
 	groupheight := group.GroupHeight
 
 	logger.Infof("insert group: %s, workHeight: %d, dismissheight: %d, groupheight: %d", id, workHeight, dismissheight, groupheight)
