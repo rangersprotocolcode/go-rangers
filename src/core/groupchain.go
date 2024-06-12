@@ -95,9 +95,14 @@ func initGroupChain() {
 }
 
 func (chain *groupChain) refreshCache() {
-	if mysql.CountGroups() >= chain.count {
+	num := mysql.CountGroups()
+	if num == chain.count {
+		logger.Warnf("no need to refresh group cache, mysql: %d, chain: %d", num, chain.count)
 		return
 	}
+
+	logger.Warnf("start to refresh group cache, mysql: %d, chain: %d", num, chain.count)
+	defer logger.Warnf("end to refresh group cache, mysql: %d, chain: %d", num, chain.count)
 
 	group := chain.lastGroup
 	for {
