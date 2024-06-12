@@ -67,14 +67,15 @@ func initGroupChain() {
 	}
 
 	lastGroupId, _ := chain.groups.Get([]byte(lastGroupKey))
-	count, _ := chain.groups.Get([]byte(groupCountKey))
 	var lastGroup *types.Group
 	if lastGroupId != nil {
 		data, _ := chain.groups.Get(lastGroupId)
-		err := json.Unmarshal(data, &lastGroup)
+		err = json.Unmarshal(data, &lastGroup)
 		if err != nil {
 			panic("Unmarshal last group failed:" + err.Error())
 		}
+
+		count, _ := chain.groups.Get([]byte(groupCountKey))
 		chain.count = utility.ByteToUInt64(count)
 	} else {
 		genesisGroups := consensusHelper.GenerateGenesisInfo()
@@ -87,7 +88,25 @@ func initGroupChain() {
 		lastGroup = &genesisGroups[len(genesisGroups)-1].Group
 	}
 	chain.lastGroup = lastGroup
+
+	chain.refreshCache()
+
 	groupChainImpl = chain
+}
+
+func (chain *groupChain) refreshCache() {
+	if mysql.CountGroups() >= chain.count {
+		return
+	}
+
+	iterator := chain.Iterator()
+	for coreGroup := iterator.Current(); coreGroup != nil; coreGroup = iterator.MovePre() {
+		if coreGroup.Id == nil || len(coreGroup.Id) == 0 {
+			continue
+		}
+
+		mysql.InsertGroup(coreGroup)
+	}
 }
 
 func (chain *groupChain) AddGroup(group *types.Group) error {

@@ -40,31 +40,31 @@ func DeleteGroup(id []byte) {
 	logger.Debugf("deleted group: %s, rowsAffected %d", gid, rowsAffected)
 }
 
-func CountGroups() int {
+func CountGroups() uint64 {
 	sql := "select count(*) as num FROM groupIndex "
 	rows, err := mysqlDBLog.Query(sql)
 	if err != nil {
-		return -1
+		return 0
 	}
 	defer rows.Close()
 
-	var result int
+	var result uint64
 	for rows.Next() {
 		err = rows.Scan(&result)
 		if err != nil {
 			logger.Errorf("scan groups failed, err: %v", err)
-			return -1
+			return 0
 		}
 
 		return result
 	}
 
-	return -1
+	return 0
 }
 
 func SelectGroups(height uint64) []string {
-	sql := "select hash FROM groupIndex where workheight<=? and dismissheight>= ? order by groupheight"
-	rows, err := mysqlDBLog.Query(sql, height, height)
+	sql := "select hash FROM groupIndex where dismissheight> ? order by groupheight"
+	rows, err := mysqlDBLog.Query(sql, height)
 	if err != nil {
 		return nil
 	}

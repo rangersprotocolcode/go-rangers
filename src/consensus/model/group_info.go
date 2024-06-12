@@ -117,7 +117,7 @@ func (groupInfo *GroupInfo) MemExist(minerId groupsig.ID) bool {
 	return ok
 }
 
-// CastQualified
+// IsEffective
 // CastQualified check if the group is cast qualified at the specified height
 func (groupInfo *GroupInfo) IsEffective(height uint64) bool {
 	gh := groupInfo.GetGroupHeader()
@@ -125,7 +125,7 @@ func (groupInfo *GroupInfo) IsEffective(height uint64) bool {
 	return gh.WorkHeight <= height && height < gh.DismissHeight
 }
 
-// Dismissed
+// NeedDismiss
 // Dismissed means whether the group has been dismissed
 func (groupInfo *GroupInfo) NeedDismiss(height uint64) bool {
 	//return isGroupDissmisedAt(sgi.getGroupHeader(), height)
