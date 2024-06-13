@@ -65,7 +65,7 @@ func CountGroups() uint64 {
 }
 
 func SelectValidGroups(height uint64) []string {
-	sql := "select hash FROM groupIndex where dismissheight> ? order by groupheight"
+	sql := "select hash FROM groupIndex where dismissheight> ? order by groupheight desc"
 	rows, err := mysqlDBLog.Query(sql, height)
 	if err != nil {
 		return nil
