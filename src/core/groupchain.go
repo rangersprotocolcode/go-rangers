@@ -108,7 +108,9 @@ func (chain *groupChain) refreshCache(lastGroup *types.Group) {
 	group := lastGroup
 	for {
 		i++
-		mysql.InsertGroup(group)
+		if err := mysql.InsertGroup(group); nil != err {
+			panic(err)
+		}
 		group = chain.getGroupById(group.Header.PreGroup)
 		if nil == group {
 			return
@@ -287,7 +289,9 @@ func (chain *groupChain) save(group *types.Group) error {
 	chain.lastGroup = group
 	logger.Debugf("Add group on chain success! Group id:%s,group pubkey:%s", hex.EncodeToString(group.Id), hex.EncodeToString(group.PubKey))
 
-	mysql.InsertGroup(group)
+	if err = mysql.InsertGroup(group); nil != err {
+		panic(err)
+	}
 	if nil != notify.BUS {
 		notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group})
 	}

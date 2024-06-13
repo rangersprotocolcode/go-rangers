@@ -86,7 +86,7 @@ func SelectGroups(height uint64) []string {
 	return result
 }
 
-func InsertGroup(group *types.Group) {
+func InsertGroup(group *types.Group) error {
 	id := common.ToHex(group.Id)
 	workHeight := group.Header.WorkHeight
 	dismissheight := group.Header.DismissHeight
@@ -101,15 +101,16 @@ func InsertGroup(group *types.Group) {
 	stmt, err := mysqlDBLog.Prepare(sqlStr)
 	if err != nil {
 		logger.Errorf("fail to prepare. group: %s, workHeight: %d, dismissheight: %d, groupheight: %d", id, workHeight, dismissheight, groupheight)
-		return
+		return err
 	}
 	defer stmt.Close()
 
 	_, err = stmt.Exec(id, workHeight, dismissheight, groupheight)
 	if err != nil {
 		logger.Errorf("fail to insert group, err: %s. sql: %s", err, sqlStr)
-		return
+		return err
 	}
 
 	logger.Infof("inserted group: %s, workHeight: %d, dismissheight: %d, groupheight: %d", id, workHeight, dismissheight, groupheight)
+	return nil
 }
