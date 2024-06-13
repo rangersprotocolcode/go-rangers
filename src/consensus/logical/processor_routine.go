@@ -45,7 +45,6 @@ func (p *Processor) checkSelfCastRoutine() bool {
 	if delta.Seconds() < float64(common.GetCastingInterval()/1000) {
 		return false
 	}
-	blog.log("time cost %vs from chain casting last block, proposal.last block cast time:%v ", delta.Seconds(), top.CurTime)
 
 	castHeight := top.Height + 1
 	if !p.canProposalAt(top) {
