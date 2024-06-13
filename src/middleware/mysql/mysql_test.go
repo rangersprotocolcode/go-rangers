@@ -101,8 +101,8 @@ func TestGroupIndex(t *testing.T) {
 	InsertGroup(&group1)
 
 	fmt.Println(CountGroups())
-	fmt.Println(SelectGroups(100))
-	fmt.Println(SelectGroups(500))
-	fmt.Println(SelectGroups(10))
-	fmt.Println(SelectGroups(10001))
+	fmt.Println(SelectValidGroups(100))
+	fmt.Println(SelectValidGroups(500))
+	fmt.Println(SelectValidGroups(10))
+	fmt.Println(SelectValidGroups(10001))
 }

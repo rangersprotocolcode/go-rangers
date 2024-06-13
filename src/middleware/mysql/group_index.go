@@ -22,11 +22,11 @@ import (
 	"math"
 )
 
-func DeleteGroup(id []byte) {
+func DeleteGroup(id []byte) error {
 	psmt, err := mysqlDBLog.Prepare("DELETE FROM groupIndex WHERE hash = ?")
 	if err != nil {
 		logger.Error(err)
-		return
+		return err
 	}
 	defer psmt.Close()
 
@@ -34,11 +34,12 @@ func DeleteGroup(id []byte) {
 	result, err := psmt.Exec(gid)
 	if err != nil {
 		logger.Error(err)
-		return
+		return err
 	}
 
 	rowsAffected, _ := result.RowsAffected()
 	logger.Debugf("deleted group: %s, rowsAffected %d", gid, rowsAffected)
+	return nil
 }
 
 func CountGroups() uint64 {
@@ -63,7 +64,7 @@ func CountGroups() uint64 {
 	return 0
 }
 
-func SelectGroups(height uint64) []string {
+func SelectValidGroups(height uint64) []string {
 	sql := "select hash FROM groupIndex where dismissheight> ? order by groupheight"
 	rows, err := mysqlDBLog.Query(sql, height)
 	if err != nil {
@@ -84,6 +85,26 @@ func SelectGroups(height uint64) []string {
 	}
 
 	return result
+}
+
+func SelectGroup(id []byte) (uint64, uint64, uint64) {
+	sql := "select workheight, dismissheight, groupheight FROM groupIndex where hash= ?"
+	rows, err := mysqlDBLog.Query(sql, common.ToHex(id))
+	if err != nil {
+		return 0, 0, 0
+	}
+	defer rows.Close()
+
+	var workHeight, dismissHeight, groupHeight uint64
+	for rows.Next() {
+		err = rows.Scan(&workHeight, &dismissHeight, &groupHeight)
+		if err != nil {
+			logger.Errorf("select groups failed, err: %v", err)
+			return 0, 0, 0
+		}
+	}
+
+	return workHeight, dismissHeight, groupHeight
 }
 
 func InsertGroup(group *types.Group) error {

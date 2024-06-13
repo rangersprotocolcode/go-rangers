@@ -91,7 +91,33 @@ func initGroupChain() {
 	}
 	chain.lastGroup = lastGroup
 
+	if common.IsDEV() {
+		chain.checkCache()
+	}
 	groupChainImpl = chain
+}
+
+func (chain *groupChain) checkCache() {
+	num := mysql.CountGroups()
+
+	i := 0
+	logger.Warnf("start to check group cache, mysql: %d, chain: %d", num, chain.count)
+	defer logger.Warnf("end to check group cache, mysql: %d, chain: %d, group checked: %d", num, chain.count, i)
+
+	group := chain.lastGroup
+	for {
+		i++
+		workHeight, dismissHeight, groupHeight := mysql.SelectGroup(group.Id)
+		if workHeight != group.Header.WorkHeight || dismissHeight != group.Header.DismissHeight || groupHeight != group.GroupHeight {
+			logger.Errorf("fail to check group, id: %s", common.ToHex(group.Id))
+		} else {
+			logger.Infof("check group, id: %s", common.ToHex(group.Id))
+		}
+		group = chain.getGroupById(group.Header.PreGroup)
+		if nil == group {
+			return
+		}
+	}
 }
 
 func (chain *groupChain) refreshCache(lastGroup *types.Group) {
@@ -269,7 +295,9 @@ func (chain *groupChain) remove(group *types.Group) bool {
 	chain.count--
 	chain.groups.Put([]byte(groupCountKey), utility.UInt64ToByte(chain.count))
 	chain.lastGroup = preGroup
-	mysql.DeleteGroup(group.Id)
+	if err := mysql.DeleteGroup(group.Id); err != nil {
+		panic(err)
+	}
 	return true
 }
 

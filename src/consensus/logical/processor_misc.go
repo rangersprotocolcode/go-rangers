@@ -52,7 +52,7 @@ func (p *Processor) prepareMiner() {
 
 	groups := make([]*model.GroupInfo, 0)
 
-	validGroups := mysql.SelectGroups(topHeight)
+	validGroups := mysql.SelectValidGroups(topHeight)
 	for i, gid := range validGroups {
 		coreGroup := p.GroupChain.GetGroupById(common.FromHex(gid))
 		if nil == coreGroup {
