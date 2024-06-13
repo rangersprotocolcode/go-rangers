@@ -113,28 +113,28 @@ func SelectGroup(id []byte) (uint64, uint64, uint64) {
 func InsertGroup(group *types.Group) error {
 	id := common.ToHex(group.Id)
 	workHeight := group.Header.WorkHeight
-	dismissheight := group.Header.DismissHeight
-	if dismissheight == math.MaxUint64 {
-		dismissheight = math.MaxInt64
+	dismissHeight := group.Header.DismissHeight
+	if dismissHeight == math.MaxUint64 {
+		dismissHeight = math.MaxInt64
 	}
-	groupheight := group.GroupHeight
+	groupHeight := group.GroupHeight
 
-	logger.Infof("insert group: %s, workHeight: %d, dismissheight: %d, groupheight: %d", id, workHeight, dismissheight, groupheight)
+	logger.Infof("insert group: %s, workHeight: %d, dismissheight: %d, groupheight: %d", id, workHeight, dismissHeight, groupHeight)
 
 	sqlStr := "replace INTO groupIndex(hash,workheight,dismissheight, groupheight) values (?, ?, ?, ?)"
 	stmt, err := mysqlDBLog.Prepare(sqlStr)
 	if err != nil {
-		logger.Errorf("fail to prepare. group: %s, workHeight: %d, dismissheight: %d, groupheight: %d", id, workHeight, dismissheight, groupheight)
+		logger.Errorf("fail to prepare. group: %s, workHeight: %d, dismissheight: %d, groupheight: %d", id, workHeight, dismissHeight, groupHeight)
 		return err
 	}
 	defer stmt.Close()
 
-	_, err = stmt.Exec(id, workHeight, dismissheight, groupheight)
+	_, err = stmt.Exec(id, workHeight, dismissHeight, groupHeight)
 	if err != nil {
 		logger.Errorf("fail to insert group, err: %s. sql: %s", err, sqlStr)
 		return err
 	}
 
-	logger.Infof("inserted group: %s, workHeight: %d, dismissheight: %d, groupheight: %d", id, workHeight, dismissheight, groupheight)
+	logger.Infof("inserted group: %s, workHeight: %d, dismissheight: %d, groupheight: %d", id, workHeight, dismissHeight, groupHeight)
 	return nil
 }
