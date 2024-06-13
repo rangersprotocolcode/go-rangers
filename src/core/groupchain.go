@@ -102,7 +102,6 @@ func (chain *groupChain) checkCache() {
 
 	i := 0
 	logger.Warnf("start to check group cache, mysql: %d, chain: %d", num, chain.count)
-	defer logger.Warnf("end to check group cache, mysql: %d, chain: %d, group checked: %d", num, chain.count, i)
 
 	group := chain.lastGroup
 	for {
@@ -115,6 +114,7 @@ func (chain *groupChain) checkCache() {
 		}
 		group = chain.getGroupById(group.Header.PreGroup)
 		if nil == group {
+			logger.Warnf("end to check group cache, mysql: %d, chain: %d, group checked: %d", num, chain.count, i)
 			return
 		}
 	}
