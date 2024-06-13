@@ -104,6 +104,9 @@ func SelectGroup(id []byte) (uint64, uint64, uint64) {
 		}
 	}
 
+	if dismissHeight == math.MaxInt64 {
+		dismissHeight = math.MaxUint64
+	}
 	return workHeight, dismissHeight, groupHeight
 }
 
