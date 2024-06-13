@@ -78,7 +78,7 @@ func initGroupChain() {
 		count, _ := chain.groups.Get([]byte(groupCountKey))
 		chain.count = utility.ByteToUInt64(count)
 
-		chain.refreshCache()
+		chain.refreshCache(lastGroup)
 	} else {
 		genesisGroups := consensusHelper.GenerateGenesisInfo()
 		for _, genesis := range genesisGroups {
@@ -94,7 +94,7 @@ func initGroupChain() {
 	groupChainImpl = chain
 }
 
-func (chain *groupChain) refreshCache() {
+func (chain *groupChain) refreshCache(lastGroup *types.Group) {
 	num := mysql.CountGroups()
 	if num == chain.count {
 		logger.Warnf("no need to refresh group cache, mysql: %d, chain: %d", num, chain.count)
@@ -105,7 +105,7 @@ func (chain *groupChain) refreshCache() {
 	logger.Warnf("start to refresh group cache, mysql: %d, chain: %d", num, chain.count)
 	defer logger.Warnf("end to refresh group cache, mysql: %d, chain: %d, group inserted: %d", num, chain.count, i)
 
-	group := chain.lastGroup
+	group := lastGroup
 	for {
 		i++
 		mysql.InsertGroup(group)
