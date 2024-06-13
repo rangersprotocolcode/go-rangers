@@ -67,11 +67,16 @@ func (p *Processor) checkSelfCastRoutine() bool {
 	}
 
 	var expireTime time.Time
-	if worker == nil {
-		expireTime = utility.GetTime().Add(time.Second * time.Duration(uint64(model.Param.MaxGroupCastTime)))
+	if castHeight == 1 {
+		expireTime = utility.GetTime().Add(24 * time.Hour)
 	} else {
-		expireTime = worker.expire.Add(time.Second * time.Duration(uint64(model.Param.MaxGroupCastTime)))
+		if worker == nil {
+			expireTime = utility.GetTime().Add(time.Second * time.Duration(uint64(model.Param.MaxGroupCastTime)))
+		} else {
+			expireTime = worker.expire.Add(time.Second * time.Duration(uint64(model.Param.MaxGroupCastTime)))
+		}
 	}
+
 	blog.log("topHeight=%v, topHash=%v, topCurTime=%v, castHeight=%v, expireTime=%v,current time:%v", top.Height, top.Hash.ShortS(), top.CurTime, castHeight, expireTime, utility.GetTime())
 	worker = newVRFWorker(p.GetSelfMinerDO(top), top, castHeight, expireTime)
 	p.setVrfWorker(worker)
