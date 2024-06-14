@@ -142,12 +142,14 @@ func calcTxTree(txs []*types.Transaction) common.Hash {
 		return emptyHash
 	}
 
+	syncLogger.Debugf("[calcTxTree]%d", len(txs))
 	buf := new(bytes.Buffer)
 	for _, tx := range txs {
 		if 0 == tx.Type {
 			continue
 		}
 		buf.Write(tx.Hash.Bytes())
+		syncLogger.Debugf("%s", tx.Hash.String())
 	}
 	return common.BytesToHash(common.Sha256(buf.Bytes()))
 }

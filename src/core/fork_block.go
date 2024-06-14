@@ -270,9 +270,10 @@ func (fork *blockChainFork) verifyHash(coming *types.Block) bool {
 }
 
 func (fork *blockChainFork) verifyTxRoot(coming *types.Block) bool {
+	syncLogger.Debugf("[verifyTxRoot]%d-%s,%d", coming.Header.Height, coming.Header.Hash.String(), len(coming.Transactions))
 	txTree := calcTxTree(coming.Transactions)
 	if !bytes.Equal(txTree.Bytes(), coming.Header.TxTree.Bytes()) {
-		fork.logger.Errorf("Tx root error! coming:%s gen:%s", coming.Header.TxTree.Bytes(), txTree.Hex())
+		fork.logger.Errorf("Tx root error! coming:%s gen:%s", coming.Header.TxTree.String(), txTree.Hex())
 		return false
 	}
 	return true
