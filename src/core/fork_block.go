@@ -161,7 +161,7 @@ func (fork *blockChainFork) getBlockByHash(hash common.Hash) *types.Block {
 }
 
 func (fork *blockChainFork) addBlockOnFork(coming *types.Block, groupFork *groupChainFork) error {
-	_, result := blockChainImpl.verifyBlock(coming.Header, nil, false)
+	_, result := blockChainImpl.verifyBlock(coming.Header, coming.Transactions, false)
 	fork.logger.Debugf("addBlockOnFork verify:%d", result)
 
 	if coming == nil || !fork.verifyOrder(coming) || !fork.verifyHash(coming) || !fork.verifyTxRoot(coming) {
