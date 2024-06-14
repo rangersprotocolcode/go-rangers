@@ -500,13 +500,13 @@ func (pool *TxPool) add(tx *types.Transaction, checkPending bool) (bool, error) 
 			pool.pending[tx.Source] = newTxList()
 		}
 		pool.pending[tx.Source].Put(tx)
-		pool.tryPopQueue(tx.Source)
 	} else {
 		err := pool.addQueue(tx)
 		if err != nil {
 			return false, err
 		}
 	}
+	pool.tryPopQueue(tx.Source)
 	pool.received.push(tx)
 	txPoolLogger.Debugf("[pool]Add tx:%s. global nonce:%d,source:%s,nonce:%d.Received size:%d", tx.Hash.String(), tx.RequestId, tx.Source, tx.Nonce, pool.received.Len())
 	return true, nil
