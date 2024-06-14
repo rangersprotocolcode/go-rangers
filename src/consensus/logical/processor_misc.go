@@ -24,7 +24,6 @@ import (
 	"com.tuntun.rangers/node/src/middleware/mysql"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"fmt"
-	"strings"
 )
 
 func (p *Processor) Start() bool {
@@ -82,42 +81,6 @@ func (p *Processor) prepareMiner() {
 		p.acceptGroup(groups[i])
 	}
 	stdLogger.Infof("prepare finished")
-
-	go p.checkGroups(groups, topHeight)
-}
-
-func (p *Processor) checkGroups(groups []*model.GroupInfo, topHeight uint64) {
-	iterator := p.GroupChain.Iterator()
-	i := 0
-	for coreGroup := iterator.Current(); coreGroup != nil; coreGroup = iterator.MovePre() {
-		if coreGroup.Id == nil || len(coreGroup.Id) == 0 {
-			continue
-		}
-
-		sgi := model.ConvertToGroupInfo(coreGroup)
-		if sgi.NeedDismiss(topHeight) {
-			continue
-		}
-
-		if i > len(groups) {
-			common.DefaultLogger.Warnf("end to check group, %d, %d, 1 ", i, len(groups))
-			return
-		}
-
-		target := groups[i].GroupID.GetHexString()
-		source := sgi.GroupID.GetHexString()
-		isEqual := 0 == strings.Compare(target, source)
-		if isEqual {
-			common.DefaultLogger.Infof("check group: %d, id: %s", i, target)
-		} else {
-			common.DefaultLogger.Infof("fail to check group: %d, target: %s, source: %s", i, target, source)
-		}
-
-		i++
-	}
-
-	common.DefaultLogger.Warnf("end to check group, %d, %d, 2", i, len(groups))
-
 }
 
 func (p *Processor) Ready() bool {
