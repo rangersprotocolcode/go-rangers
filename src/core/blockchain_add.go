@@ -132,24 +132,16 @@ func (chain *blockChain) executeTransaction(block *types.Block, setHash bool) (b
 
 	vmExecutor := newVMExecutor(state, block, "fullverify")
 	stateRoot, evictedTxs, transactions, receipts := vmExecutor.Execute()
+	receiptsTree := calcReceiptsTree(receipts)
+
+	// when validator checks the block, it has to set these values to proposal's block
+	// and re-generate the block hash
 	if setHash {
 		block.Header.StateTree = stateRoot
-	} else if common.ToHex(stateRoot.Bytes()) != common.ToHex(block.Header.StateTree.Bytes()) {
-		logger.Errorf("Fail to verify state tree, hash1:%x hash2:%x", stateRoot.Bytes(), block.Header.StateTree.Bytes())
-		return false, state, receipts
-	}
-
-	receiptsTree := calcReceiptsTree(receipts)
-	if setHash {
 		block.Header.ReceiptTree = receiptsTree
-	} else if 0 != bytes.Compare(receiptsTree.Bytes(), block.Header.ReceiptTree.Bytes()) {
-		logger.Errorf("fail to verify receipt, hash1:%s hash2:%s", receiptsTree.String(), block.Header.ReceiptTree.String())
-		return false, state, receipts
-	}
-
-	if setHash {
 		block.Header.EvictedTxs = evictedTxs
-		if !common.IsProposal020() {
+
+		if !common.IsProposal020() || common.IsProposal023() {
 			transactionHashes := make([]common.Hashes, len(transactions))
 			block.Transactions = transactions
 			for i, transaction := range transactions {
@@ -157,13 +149,30 @@ func (chain *blockChain) executeTransaction(block *types.Block, setHash bool) (b
 				hashes[0] = transaction.Hash
 				hashes[1] = transaction.SubHash
 				transactionHashes[i] = hashes
-
 			}
+
 			block.Header.Transactions = transactionHashes
 			block.Header.TxTree = calcTxTree(block.Transactions)
 		}
 
 		block.Header.Hash = block.Header.GenHash()
+	} else {
+		if 0 != bytes.Compare(stateRoot.Bytes(), block.Header.StateTree.Bytes()) {
+			logger.Errorf("Fail to verify state tree, hash1:%x hash2:%x", stateRoot.Bytes(), block.Header.StateTree.Bytes())
+			return false, state, receipts
+		}
+
+		if 0 != bytes.Compare(receiptsTree.Bytes(), block.Header.ReceiptTree.Bytes()) {
+			logger.Errorf("fail to verify receipt, hash1:%s hash2:%s", receiptsTree.String(), block.Header.ReceiptTree.String())
+			return false, state, receipts
+		}
+
+		txTree := calcTxTree(block.Transactions)
+		if 0 != bytes.Compare(txTree.Bytes(), block.Header.TxTree.Bytes()) {
+			logger.Errorf("fail to verify txTree, hash1:%s hash2:%s", txTree.String(), block.Header.TxTree.String())
+			return false, state, receipts
+		}
+
 	}
 
 	chain.verifiedBlocks.Add(block.Header.Hash, &castingBlock{state: state, receipts: receipts})

@@ -225,7 +225,7 @@ func (chain *blockChain) runTransactions(block *types.Block, state *account.Acco
 	stateRoot, evictedTxs, transactions, receipts := executor.Execute()
 	middleware.PerfLogger.Infof("fin execute txs. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
 
-	if !common.IsProposal020() {
+	if !common.IsProposal020() || common.IsProposal023() {
 		transactionHashes := make([]common.Hashes, len(transactions))
 		block.Transactions = transactions
 		for i, transaction := range transactions {
@@ -242,7 +242,7 @@ func (chain *blockChain) runTransactions(block *types.Block, state *account.Acco
 	block.Header.EvictedTxs = evictedTxs
 	middleware.PerfLogger.Infof("fin calcTxTree. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
 
-	block.Header.StateTree = common.BytesToHash(stateRoot.Bytes())
+	block.Header.StateTree = stateRoot
 	block.Header.ReceiptTree = calcReceiptsTree(receipts)
 	block.Header.Hash = block.Header.GenHash()
 	middleware.PerfLogger.Infof("fin calcReceiptsTree. last: %v height: %v", utility.GetTime().Sub(timestamp), height)
