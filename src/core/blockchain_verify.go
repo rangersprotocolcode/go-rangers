@@ -74,7 +74,7 @@ func (chain *blockChain) verifyBlock(bh *types.BlockHeader, txs []*types.Transac
 	}
 
 	block := types.Block{Header: bh, Transactions: transactions}
-	executeTxResult, _, _ := chain.executeTransaction(&block, setHash)
+	executeTxResult, _, _ := chain.checkStates(&block, setHash)
 	if !executeTxResult {
 		return nil, -1
 	}

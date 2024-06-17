@@ -115,7 +115,7 @@ func (chain *blockChain) addBlockOnChain(coming *types.Block) types.AddBlockResu
 	return chain.addBlockOnChain(coming)
 }
 
-func (chain *blockChain) executeTransaction(block *types.Block, setHash bool) (bool, *account.AccountDB, types.Receipts) {
+func (chain *blockChain) checkStates(block *types.Block, setHash bool) (bool, *account.AccountDB, types.Receipts) {
 	preBlock := chain.queryBlockHeaderByHash(block.Header.PreHash)
 	if preBlock == nil {
 		panic("Pre block nil !!")
@@ -172,7 +172,6 @@ func (chain *blockChain) executeTransaction(block *types.Block, setHash bool) (b
 			logger.Errorf("fail to verify txTree, hash1:%s hash2:%s", txTree.String(), block.Header.TxTree.String())
 			return false, state, receipts
 		}
-
 	}
 
 	chain.verifiedBlocks.Add(block.Header.Hash, &castingBlock{state: state, receipts: receipts})
@@ -201,7 +200,7 @@ func (chain *blockChain) insertBlock(remoteBlock *types.Block) (types.AddBlockRe
 		return types.AddBlockFailed, nil
 	}
 
-	saveStateResult, accountDB, receipts := chain.saveBlockState(remoteBlock)
+	saveStateResult, accountDB, receipts := chain.saveStates(remoteBlock)
 
 	if !saveStateResult {
 		return types.AddBlockFailed, nil
@@ -243,7 +242,7 @@ func (chain *blockChain) saveBlockByHeight(height uint64, headerByte []byte) boo
 	return true
 }
 
-func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountDB, types.Receipts) {
+func (chain *blockChain) saveStates(b *types.Block) (bool, *account.AccountDB, types.Receipts) {
 	defer logger.Infof("end saveBlockState, %s", b.Header.Hash.String())
 
 	var state *account.AccountDB
@@ -255,9 +254,9 @@ func (chain *blockChain) saveBlockState(b *types.Block) (bool, *account.AccountD
 		logger.Errorf("get verifiedBlock from cache, %s", b.Header.Hash.String())
 	} else {
 		var executeTxResult bool
-		logger.Errorf("fail to get verifiedBlock from cache, %s", b.Header.Hash.String())
+		logger.Infof("fail to get verifiedBlock from cache, %s", b.Header.Hash.String())
 
-		executeTxResult, state, receipts = chain.executeTransaction(b, false)
+		executeTxResult, state, receipts = chain.checkStates(b, false)
 		if !executeTxResult {
 			logger.Errorf("fail to execute txs!")
 			return false, state, receipts
@@ -368,8 +367,4 @@ func dumpTxs(txs []*types.Transaction, blockHeight uint64) {
 	for _, tx := range txs {
 		txLogger.Tracef("Tx info;%s", tx.ToTxJson().ToString())
 	}
-}
-
-func (chain *blockChain) ExecuteTransaction(block *types.Block) (bool, *account.AccountDB, types.Receipts) {
-	return chain.executeTransaction(block, false)
 }
