@@ -58,7 +58,7 @@ func (vrfWorker *vrfWorker) genProve(castTime time.Time, totalStake uint64) (vrf
 		return nil, 0, err
 	}
 
-	if ok, qn := validateProve(prove, vrfWorker.miner.Stake, totalStake); ok {
+	if ok, qn := validateProve(prove, vrfWorker.miner.Difficulty, totalStake); ok {
 		return prove, qn, nil
 	}
 	return nil, 0, errors.New("proof fail")

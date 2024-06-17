@@ -52,6 +52,8 @@ type Miner struct {
 	Stake uint64 `json:"stake,omitempty"`
 
 	Account HexBytes `json:"account,omitempty"`
+
+	Difficulty uint64 `json:"difficulty,omitempty"`
 }
 
 func (miner *Miner) GetMinerInfo() []byte {

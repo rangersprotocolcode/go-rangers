@@ -138,6 +138,11 @@ func (mm *MinerManager) GetMinerById(id []byte, kind byte, accountdb *account.Ac
 		if nil != status && 1 == len(status) {
 			miner.Status = status[0]
 		}
+
+		// get difficulty
+		if miner.Difficulty == 0 {
+			miner.Difficulty = 1
+		}
 		return &miner
 	}
 

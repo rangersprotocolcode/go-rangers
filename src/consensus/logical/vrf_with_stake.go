@@ -48,7 +48,7 @@ func verifyBlockVRF(bh *types.BlockHeader, preBH *types.BlockHeader, castor *mod
 	if !ok {
 		return ok, err
 	}
-	if ok, qn := validateProve(prove, castor.Stake, totalStake); ok {
+	if ok, qn := validateProve(prove, castor.Difficulty, totalStake); ok {
 		if bh.TotalQN != qn+preBH.TotalQN {
 			return false, errors.New(fmt.Sprintf("qn error.bh hash=%v, height=%v, qn=%v,totalQN=%v, preBH totalQN=%v", bh.Hash.ShortS(), bh.Height, qn, bh.TotalQN, preBH.TotalQN))
 		}
@@ -66,6 +66,7 @@ func genVrfMsg(random []byte, delta int) []byte {
 	return msg
 }
 
+// stake -> miner related index
 func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool, qn uint64) {
 	if totalStake == 0 {
 		stdLogger.Errorf("total stake is 0!")
@@ -74,7 +75,7 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 	blog := newBizLog("vrfSatisfy")
 	prove = tryZeroPadding(prove)
 	vrfValueRatio := vrfValueRatio(prove)
-	stakeRatio := stakeRatio(1, totalStake)
+	stakeRatio := stakeRatio(stake, totalStake)
 	ok = vrfValueRatio.Cmp(stakeRatio) < 0
 
 	qn = calQn(vrfValueRatio, stakeRatio)
