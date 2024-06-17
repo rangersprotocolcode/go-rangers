@@ -160,7 +160,7 @@ func (groupAccessor *GroupAccessor) GetDismissGroups(height uint64) []*model.Gro
 	return ids
 }
 
-// GetEffective
+// SelectVerifyGroupFromCache
 // SelectNextGroupFromCache determines the next verification group through the cached work-group slices according to the previous random number.
 // The result is random and certain
 func (groupAccessor *GroupAccessor) SelectVerifyGroupFromCache(hash common.Hash, height uint64) (groupsig.ID, error) {

@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/middleware/db"
+	"com.tuntun.rangers/node/src/middleware/mysql"
 	"com.tuntun.rangers/node/src/middleware/notify"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"com.tuntun.rangers/node/src/utility"
@@ -66,15 +67,18 @@ func initGroupChain() {
 	}
 
 	lastGroupId, _ := chain.groups.Get([]byte(lastGroupKey))
-	count, _ := chain.groups.Get([]byte(groupCountKey))
 	var lastGroup *types.Group
 	if lastGroupId != nil {
 		data, _ := chain.groups.Get(lastGroupId)
-		err := json.Unmarshal(data, &lastGroup)
+		err = json.Unmarshal(data, &lastGroup)
 		if err != nil {
 			panic("Unmarshal last group failed:" + err.Error())
 		}
+
+		count, _ := chain.groups.Get([]byte(groupCountKey))
 		chain.count = utility.ByteToUInt64(count)
+
+		chain.refreshCache(lastGroup)
 	} else {
 		genesisGroups := consensusHelper.GenerateGenesisInfo()
 		for _, genesis := range genesisGroups {
@@ -86,7 +90,32 @@ func initGroupChain() {
 		lastGroup = &genesisGroups[len(genesisGroups)-1].Group
 	}
 	chain.lastGroup = lastGroup
+
 	groupChainImpl = chain
+}
+
+func (chain *groupChain) refreshCache(lastGroup *types.Group) {
+	num := mysql.CountGroups()
+	if num == chain.count {
+		logger.Warnf("no need to refresh group cache, mysql: %d, chain: %d", num, chain.count)
+		return
+	}
+
+	i := 0
+	logger.Warnf("start to refresh group cache, mysql: %d, chain: %d", num, chain.count)
+
+	group := lastGroup
+	for {
+		i++
+		if err := mysql.InsertGroup(group); nil != err {
+			panic(err)
+		}
+		group = chain.getGroupById(group.Header.PreGroup)
+		if nil == group {
+			logger.Warnf("end to refresh group cache, mysql: %d, chain: %d, group inserted: %d", num, chain.count, i)
+			return
+		}
+	}
 }
 
 func (chain *groupChain) AddGroup(group *types.Group) error {
@@ -240,6 +269,9 @@ func (chain *groupChain) remove(group *types.Group) bool {
 	chain.count--
 	chain.groups.Put([]byte(groupCountKey), utility.UInt64ToByte(chain.count))
 	chain.lastGroup = preGroup
+	if err := mysql.DeleteGroup(group.Id); err != nil {
+		panic(err)
+	}
 	return true
 }
 
@@ -259,6 +291,9 @@ func (chain *groupChain) save(group *types.Group) error {
 	chain.lastGroup = group
 	logger.Debugf("Add group on chain success! Group id:%s,group pubkey:%s", hex.EncodeToString(group.Id), hex.EncodeToString(group.PubKey))
 
+	if err = mysql.InsertGroup(group); nil != err {
+		panic(err)
+	}
 	if nil != notify.BUS {
 		notify.BUS.Publish(notify.GroupAddSucc, &notify.GroupMessage{Group: *group})
 	}

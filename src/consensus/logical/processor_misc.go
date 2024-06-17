@@ -21,11 +21,14 @@ import (
 	"com.tuntun.rangers/node/src/consensus/base"
 	"com.tuntun.rangers/node/src/consensus/groupsig"
 	"com.tuntun.rangers/node/src/consensus/model"
+	"com.tuntun.rangers/node/src/middleware/mysql"
 	"com.tuntun.rangers/node/src/middleware/types"
 	"fmt"
 )
 
 func (p *Processor) Start() bool {
+	p.prepareMiner()
+
 	p.Ticker.RegisterRoutine(p.getCastCheckRoutineName(), p.checkSelfCastRoutine, common.CastingCheckInterval)
 
 	p.Ticker.RegisterRoutine(p.getUpdateGlobalGroupsRoutineName(), p.updateGlobalGroups, 60*1000)
@@ -35,7 +38,7 @@ func (p *Processor) Start() bool {
 	p.Ticker.StartTickerRoutine(p.getReleaseRoutineName(), false)
 
 	p.triggerCastCheck()
-	p.prepareMiner()
+
 	p.ready = true
 	return true
 }
@@ -46,13 +49,13 @@ func (p *Processor) Stop() {
 
 func (p *Processor) prepareMiner() {
 	topHeight := p.MainChain.TopBlock().Height
-
-	stdLogger.Infof("prepareMiner get groups from groupchain")
-	iterator := p.GroupChain.Iterator()
 	groups := make([]*model.GroupInfo, 0)
-	for coreGroup := iterator.Current(); coreGroup != nil; coreGroup = iterator.MovePre() {
-		stdLogger.Infof("get group from core, id=%+v", coreGroup.Header)
-		if coreGroup.Id == nil || len(coreGroup.Id) == 0 {
+
+	validGroups := mysql.SelectValidGroups(topHeight)
+	for i, gid := range validGroups {
+		coreGroup := p.GroupChain.GetGroupById(common.FromHex(gid))
+		if nil == coreGroup {
+			stdLogger.Errorf("fail to get group: %s, %d", gid, i)
 			continue
 		}
 
@@ -62,11 +65,11 @@ func (p *Processor) prepareMiner() {
 		}
 
 		groups = append(groups, sgi)
-		stdLogger.Infof("load group=%v, beginHeight=%v, topHeight=%v\n", sgi.GroupID.ShortS(), sgi.GetGroupHeader().WorkHeight, topHeight)
+		stdLogger.Infof("load group=%v, beginHeight=%v, topHeight=%v\n", sgi.GroupID.GetHexString(), sgi.GetGroupHeader().WorkHeight, topHeight)
 		if sgi.MemExist(p.GetMinerID()) {
 			jg := p.belongGroups.GetJoinedGroupInfo(sgi.GroupID)
 			if jg == nil {
-				stdLogger.Infof("prepareMiner get join group fail, gid=%v\n", sgi.GroupID.ShortS())
+				stdLogger.Infof("prepareMiner get join group fail, gid=%v\n", sgi.GroupID.GetHexString())
 			} else {
 				p.belongGroups.JoinGroup(jg, p.mi.ID)
 			}
