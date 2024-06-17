@@ -66,6 +66,7 @@ var (
 		Proposal021Block: 61202000,
 		Proposal022Block: 62606000,
 		Proposal023Block: math.MaxUint64,
+		Proposal024Block: 62575384,
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
 		JsonRPCUrl:       "https://mainnet.rangersprotocol.com/api/jsonrpc",
@@ -99,6 +100,7 @@ var (
 		Proposal021Block: 74312000,
 		Proposal022Block: 76005000,
 		Proposal023Block: math.MaxUint64,
+		Proposal024Block: 0,
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 
 		MysqlDSN:   "rpservice_v2:oJ2*bA0:hB3%@tcp(192.168.0.172:5555)/rpservice_v2?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
@@ -136,6 +138,7 @@ var (
 		Proposal021Block: 0,
 		Proposal022Block: 0,
 		Proposal023Block: 12,
+		Proposal024Block: 0,
 	}
 
 	subNetChainConfig = ChainConfig{
@@ -168,6 +171,7 @@ var (
 		Proposal021Block: 0,
 		Proposal022Block: 0,
 		Proposal023Block: 0,
+		Proposal024Block: 0,
 	}
 
 	LocalChainConfig ChainConfig
@@ -207,6 +211,7 @@ type ChainConfig struct {
 	Proposal021Block uint64
 	Proposal022Block uint64
 	Proposal023Block uint64
+	Proposal024Block uint64
 
 	mainNodeContract Address
 
