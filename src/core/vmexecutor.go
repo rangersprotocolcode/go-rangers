@@ -218,15 +218,15 @@ func (executor *VMExecutor) calcDifficulty() {
 		value = utility.ByteToUInt64(data) + 1
 	} else {
 		// new proposal found
-		totalMinersBytes := executor.accountdb.GetData(common.DifficultyAddress, []byte{0})
+		totalMinersBytes := executor.accountdb.GetData(common.DifficultyAddress, common.TotalWorkingMiners)
 		totalMiners := utility.ByteToUInt64(totalMinersBytes) + 1
-		executor.accountdb.SetData(common.DifficultyAddress, []byte{0}, utility.UInt64ToByte(totalMiners))
+		executor.accountdb.SetData(common.DifficultyAddress, common.TotalWorkingMiners, utility.UInt64ToByte(totalMiners))
 		logger.Infof("height: %d, add difficulty, new proporal %s, %d", height, common.ToHex(executor.block.Header.Castor), totalMiners)
 	}
 	executor.accountdb.SetData(common.DifficultyAddress, executor.block.Header.Castor, utility.UInt64ToByte(value))
 	logger.Infof("height: %d, add difficulty, %s, %d", height, common.ToHex(executor.block.Header.Castor), value)
 
-	if height < common.LocalChainConfig.Proposal025Block+common.BlocksPerEpoch {
+	if height < common.LocalChainConfig.Proposal025Block+100 {
 		return
 	}
 
@@ -243,9 +243,9 @@ func (executor *VMExecutor) calcDifficulty() {
 
 	// lost proposal
 	if value == 0 {
-		totalMinersBytes := executor.accountdb.GetData(common.DifficultyAddress, []byte{0})
+		totalMinersBytes := executor.accountdb.GetData(common.DifficultyAddress, common.TotalWorkingMiners)
 		totalMiners := utility.ByteToUInt64(totalMinersBytes) - 1
-		executor.accountdb.SetData(common.DifficultyAddress, []byte{0}, utility.UInt64ToByte(totalMiners))
+		executor.accountdb.SetData(common.DifficultyAddress, common.TotalWorkingMiners, utility.UInt64ToByte(totalMiners))
 		logger.Infof("height: %d, minus difficulty, lost proporal %s, %d", height, common.ToHex(executor.block.Header.Castor), totalMiners)
 	}
 

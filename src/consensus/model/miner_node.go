@@ -38,7 +38,7 @@ type MinerInfo struct {
 	ApplyHeight uint64
 	AbortHeight uint64
 
-	Difficulty uint64
+	WorkingMiners uint64
 }
 
 type SelfMinerInfo struct {

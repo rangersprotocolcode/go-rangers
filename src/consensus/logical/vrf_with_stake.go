@@ -17,6 +17,7 @@
 package logical
 
 import (
+	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/common/ed25519"
 	"errors"
 	"fmt"
@@ -48,7 +49,7 @@ func verifyBlockVRF(bh *types.BlockHeader, preBH *types.BlockHeader, castor *mod
 	if !ok {
 		return ok, err
 	}
-	if ok, qn := validateProve(prove, castor.Difficulty, totalStake); ok {
+	if ok, qn := validateProve(prove, preBH.Height, castor.WorkingMiners, totalStake); ok {
 		if bh.TotalQN != qn+preBH.TotalQN {
 			return false, errors.New(fmt.Sprintf("qn error.bh hash=%v, height=%v, qn=%v,totalQN=%v, preBH totalQN=%v", bh.Hash.ShortS(), bh.Height, qn, bh.TotalQN, preBH.TotalQN))
 		}
@@ -67,7 +68,7 @@ func genVrfMsg(random []byte, delta int) []byte {
 }
 
 // stake -> miner related index
-func validateProve(prove vrf.VRFProve, difficulty, totalStake uint64) (ok bool, qn uint64) {
+func validateProve(prove vrf.VRFProve, height, workingMiners, totalStake uint64) (ok bool, qn uint64) {
 	if totalStake == 0 {
 		stdLogger.Errorf("total stake is 0!")
 		return false, 0
@@ -76,6 +77,13 @@ func validateProve(prove vrf.VRFProve, difficulty, totalStake uint64) (ok bool, 
 	blog := newBizLog("vrfSatisfy")
 	prove = tryZeroPadding(prove)
 	vrfValueRatio := vrfValueRatio(prove)
+
+	difficulty := uint64(1)
+	if height > common.LocalChainConfig.Proposal025Block+100 {
+		difficulty = totalStake / workingMiners
+		stdLogger.Info("change difficulty, %d, %d, %d", totalStake, workingMiners, difficulty)
+	}
+
 	stakeRatio := stakeRatio(difficulty, totalStake)
 	ok = vrfValueRatio.Cmp(stakeRatio) < 0
 

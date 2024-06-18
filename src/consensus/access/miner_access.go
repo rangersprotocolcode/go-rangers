@@ -107,13 +107,13 @@ func (reader *MinerPoolReader) convert2MinerDO(miner *types.Miner) *model.MinerI
 		return nil
 	}
 	md := &model.MinerInfo{
-		ID:          groupsig.DeserializeID(miner.Id),
-		PubKey:      groupsig.ByteToPublicKey(miner.PublicKey),
-		VrfPK:       vrf.VRFPublicKey(miner.VrfPublicKey),
-		Stake:       miner.Stake,
-		MinerType:   miner.Type,
-		ApplyHeight: miner.ApplyHeight,
-		Difficulty:  miner.Difficulty,
+		ID:            groupsig.DeserializeID(miner.Id),
+		PubKey:        groupsig.ByteToPublicKey(miner.PublicKey),
+		VrfPK:         vrf.VRFPublicKey(miner.VrfPublicKey),
+		Stake:         miner.Stake,
+		MinerType:     miner.Type,
+		ApplyHeight:   miner.ApplyHeight,
+		WorkingMiners: miner.WorkingMiners,
 	}
 	if !md.ID.IsValid() || !md.PubKey.IsValid() {
 		logger.Warnf("Invalid miner! id %v, %v,miner public key:%v,%v", miner.Id, md.ID.GetHexString(), md.PubKey, md.PubKey.GetHexString())

@@ -139,10 +139,13 @@ func (mm *MinerManager) GetMinerById(id []byte, kind byte, accountdb *account.Ac
 			miner.Status = status[0]
 		}
 
-		// get difficulty
-		if miner.Difficulty == 0 {
-			miner.Difficulty = 1
+		totalWorkingMiners := accountdb.GetData(common.DifficultyAddress, common.TotalWorkingMiners)
+		if 0 != len(totalWorkingMiners) {
+			miner.WorkingMiners = utility.ByteToUInt64(totalWorkingMiners)
+		} else {
+			miner.WorkingMiners = 0
 		}
+
 		return &miner
 	}
 
