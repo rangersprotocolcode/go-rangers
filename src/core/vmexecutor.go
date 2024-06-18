@@ -226,11 +226,11 @@ func (executor *VMExecutor) calcDifficulty() {
 	executor.accountdb.SetData(common.DifficultyAddress, executor.block.Header.Castor, utility.UInt64ToByte(value))
 	logger.Infof("height: %d, add difficulty, %s, %d", height, common.ToHex(executor.block.Header.Castor), value)
 
-	if height < common.LocalChainConfig.Proposal025Block+100 {
+	if height < common.LocalChainConfig.Proposal025Block+common.BlocksPerEpoch {
 		return
 	}
 
-	targetHeight := height - 100
+	targetHeight := height - common.BlocksPerEpoch
 	header := blockChainImpl.QueryBlockHeaderByHeight(targetHeight, true)
 	if nil == header {
 		// never occur
