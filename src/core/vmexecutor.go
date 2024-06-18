@@ -187,6 +187,31 @@ func (executor *VMExecutor) after() {
 
 	height := executor.block.Header.Height
 
+	// calculate difficulty
+	if height > common.LocalChainConfig.Proposal025Block {
+		data := executor.accountdb.GetData(common.DifficultyAddress, executor.block.Header.Castor)
+		value := uint64(1)
+		if 0 != len(data) {
+			value = utility.ByteToUInt64(data) + 1
+		}
+		executor.accountdb.SetData(common.DifficultyAddress, executor.block.Header.Castor, utility.UInt64ToByte(value))
+		logger.Infof("height: %d, add difficulty, %s, %d", height, common.ToHex(executor.block.Header.Castor), value)
+
+		if height > common.LocalChainConfig.Proposal025Block+common.BlocksPerEpoch {
+			targetHeight := height - common.BlocksPerEpoch
+			header := blockChainImpl.QueryBlockHeaderByHeight(targetHeight, true)
+			if nil == header {
+				logger.Errorf("fail to get header, %d", targetHeight)
+			} else {
+				data = executor.accountdb.GetData(common.DifficultyAddress, header.Castor)
+				value = utility.ByteToUInt64(data) - 1
+				executor.accountdb.SetData(common.DifficultyAddress, header.Castor, utility.UInt64ToByte(value))
+				logger.Infof("height: %d, minus difficulty, %s, %d", height, common.ToHex(header.Castor), value)
+			}
+
+		}
+	}
+
 	service.RefundManagerImpl.Add(types.GetRefundInfo(executor.context), executor.accountdb)
 
 	if common.IsSub() {

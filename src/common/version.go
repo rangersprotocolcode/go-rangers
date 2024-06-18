@@ -139,6 +139,7 @@ var (
 		Proposal022Block: 0,
 		Proposal023Block: 12,
 		Proposal024Block: 0,
+		Proposal025Block: 100,
 	}
 
 	subNetChainConfig = ChainConfig{
@@ -212,6 +213,7 @@ type ChainConfig struct {
 	Proposal022Block uint64
 	Proposal023Block uint64
 	Proposal024Block uint64
+	Proposal025Block uint64
 
 	mainNodeContract Address
 
