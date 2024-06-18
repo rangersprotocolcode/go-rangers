@@ -27,6 +27,7 @@ import (
 	"com.tuntun.rangers/node/src/utility"
 	"errors"
 	"github.com/oleiade/lane"
+	"sort"
 )
 
 var (
@@ -270,6 +271,7 @@ func (fork *blockChainFork) verifyHash(coming *types.Block) bool {
 }
 
 func (fork *blockChainFork) verifyTxRoot(coming *types.Block) bool {
+	coming = adaptSort(coming)
 	txTree := calcTxTree(coming.Transactions)
 	if !bytes.Equal(txTree.Bytes(), coming.Header.TxTree.Bytes()) {
 		fork.logger.Errorf("Tx root error! coming:%s gen:%s", coming.Header.TxTree.Bytes(), txTree.Hex())
@@ -402,4 +404,11 @@ func (p *syncProcessor) GetBlockHash(height uint64) common.Hash {
 		return header.Hash
 	}
 	return common.Hash{}
+}
+
+func adaptSort(block *types.Block) *types.Block {
+	if common.IsMainnet() && block.Header.Height >= common.LocalChainConfig.Proposal024Block && block.Header.Height < common.LocalChainConfig.Proposal023Block {
+		sort.Sort(types.Transactions(block.Transactions))
+	}
+	return block
 }
