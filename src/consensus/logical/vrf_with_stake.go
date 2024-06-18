@@ -81,7 +81,7 @@ func validateProve(prove vrf.VRFProve, height, workingMiners, totalStake uint64)
 	difficulty := uint64(1)
 	if height > common.LocalChainConfig.Proposal025Block+100 {
 		difficulty = totalStake / workingMiners
-		stdLogger.Info("change difficulty, %d, %d, %d", totalStake, workingMiners, difficulty)
+		stdLogger.Infof("change difficulty, %d, %d, %d", totalStake, workingMiners, difficulty)
 	}
 
 	stakeRatio := stakeRatio(difficulty, totalStake)

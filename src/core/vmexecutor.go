@@ -230,7 +230,7 @@ func (executor *VMExecutor) calcDifficulty() {
 		return
 	}
 
-	targetHeight := height - common.BlocksPerEpoch
+	targetHeight := height - 100
 	header := blockChainImpl.QueryBlockHeaderByHeight(targetHeight, true)
 	if nil == header {
 		// never occur
@@ -246,7 +246,7 @@ func (executor *VMExecutor) calcDifficulty() {
 		totalMinersBytes := executor.accountdb.GetData(common.DifficultyAddress, common.TotalWorkingMiners)
 		totalMiners := utility.ByteToUInt64(totalMinersBytes) - 1
 		executor.accountdb.SetData(common.DifficultyAddress, common.TotalWorkingMiners, utility.UInt64ToByte(totalMiners))
-		logger.Infof("height: %d, minus difficulty, lost proporal %s, %d", height, common.ToHex(executor.block.Header.Castor), totalMiners)
+		logger.Infof("height: %d, minus difficulty, lost proporal %s, %d", height, common.ToHex(header.Castor), totalMiners)
 	}
 
 	executor.accountdb.SetData(common.DifficultyAddress, header.Castor, utility.UInt64ToByte(value))
