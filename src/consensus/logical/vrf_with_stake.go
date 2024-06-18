@@ -67,15 +67,16 @@ func genVrfMsg(random []byte, delta int) []byte {
 }
 
 // stake -> miner related index
-func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool, qn uint64) {
+func validateProve(prove vrf.VRFProve, difficulty, totalStake uint64) (ok bool, qn uint64) {
 	if totalStake == 0 {
 		stdLogger.Errorf("total stake is 0!")
 		return false, 0
 	}
+
 	blog := newBizLog("vrfSatisfy")
 	prove = tryZeroPadding(prove)
 	vrfValueRatio := vrfValueRatio(prove)
-	stakeRatio := stakeRatio(stake, totalStake)
+	stakeRatio := stakeRatio(difficulty, totalStake)
 	ok = vrfValueRatio.Cmp(stakeRatio) < 0
 
 	qn = calQn(vrfValueRatio, stakeRatio)
@@ -85,8 +86,8 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 	return
 }
 
-func stakeRatio(stake, totalStake uint64) *big.Rat {
-	stakeRat := new(big.Rat).SetInt64(int64(stake * calcPotentialProposal(totalStake, model.Param)))
+func stakeRatio(difficulty, totalStake uint64) *big.Rat {
+	stakeRat := new(big.Rat).SetInt64(int64(difficulty * calcPotentialProposal(totalStake, model.Param)))
 	totalStakeRat := new(big.Rat).SetFloat64(float64(totalStake))
 	return new(big.Rat).Quo(stakeRat, totalStakeRat)
 }

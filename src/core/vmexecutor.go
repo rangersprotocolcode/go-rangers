@@ -193,6 +193,12 @@ func (executor *VMExecutor) after() {
 		value := uint64(1)
 		if 0 != len(data) {
 			value = utility.ByteToUInt64(data) + 1
+
+			// new proposal found
+			totalMinersBytes := executor.accountdb.GetData(common.DifficultyAddress, []byte{0})
+			totalMiners := utility.ByteToUInt64(totalMinersBytes) + 1
+			executor.accountdb.SetData(common.DifficultyAddress, []byte{0}, utility.UInt64ToByte(totalMiners))
+			logger.Infof("height: %d, add difficulty, new proporal %s, %d", height, common.ToHex(executor.block.Header.Castor), totalMiners)
 		}
 		executor.accountdb.SetData(common.DifficultyAddress, executor.block.Header.Castor, utility.UInt64ToByte(value))
 		logger.Infof("height: %d, add difficulty, %s, %d", height, common.ToHex(executor.block.Header.Castor), value)
@@ -205,6 +211,15 @@ func (executor *VMExecutor) after() {
 			} else {
 				data = executor.accountdb.GetData(common.DifficultyAddress, header.Castor)
 				value = utility.ByteToUInt64(data) - 1
+
+				// lost proposal
+				if value == 0 {
+					totalMinersBytes := executor.accountdb.GetData(common.DifficultyAddress, []byte{0})
+					totalMiners := utility.ByteToUInt64(totalMinersBytes) - 1
+					executor.accountdb.SetData(common.DifficultyAddress, []byte{0}, utility.UInt64ToByte(totalMiners))
+					logger.Infof("height: %d, minus difficulty, lost proporal %s, %d", height, common.ToHex(executor.block.Header.Castor), totalMiners)
+				}
+
 				executor.accountdb.SetData(common.DifficultyAddress, header.Castor, utility.UInt64ToByte(value))
 				logger.Infof("height: %d, minus difficulty, %s, %d", height, common.ToHex(header.Castor), value)
 			}
