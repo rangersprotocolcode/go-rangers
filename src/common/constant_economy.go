@@ -30,12 +30,6 @@ const (
 	epoch = 180 * oneDay
 )
 
-var (
-	RefundBlocks = RefundTime / GetCastingInterval()
-
-	BlocksPerEpoch = epoch / GetCastingInterval()
-)
-
 const (
 	TotalRPGSupply = 2100 * 10000 * 0.35
 
@@ -71,4 +65,12 @@ func GetCastingInterval() uint64 {
 
 func GetRewardBlocks() uint64 {
 	return rewardTime / GetCastingInterval()
+}
+
+func GetRefundBlocks() uint64 {
+	return RefundTime / GetCastingInterval()
+}
+
+func GetBlocksPerEpoch() uint64 {
+	return epoch / GetCastingInterval()
 }
