@@ -23,7 +23,7 @@ const (
 
 	rewardTime = 10 * 60 * 60 * 1000
 
-	RefundTime = 50 * 1000
+	refundTime = 50 * 1000
 
 	oneDay = 24 * 3600 * 1000
 
@@ -53,7 +53,11 @@ const (
 	BLANCE_NAME = "SYSTEM-RPG"
 )
 
-var FeeAccount = HexToAddress("0x3966eafd38c5f10cc91eaacaeff1b6682b83ced4")
+var (
+	FeeAccount = HexToAddress("0x3966eafd38c5f10cc91eaacaeff1b6682b83ced4")
+
+	rewardBlocks, refundBlocks, epochBlocks uint64
+)
 
 func GetCastingInterval() uint64 {
 	if IsSub() {
@@ -64,13 +68,22 @@ func GetCastingInterval() uint64 {
 }
 
 func GetRewardBlocks() uint64 {
-	return rewardTime / GetCastingInterval()
+	if rewardBlocks == 0 {
+		rewardBlocks = rewardTime / GetCastingInterval()
+	}
+	return rewardBlocks
 }
 
 func GetRefundBlocks() uint64 {
-	return RefundTime / GetCastingInterval()
+	if refundBlocks == 0 {
+		refundBlocks = refundTime / GetCastingInterval()
+	}
+	return refundBlocks
 }
 
 func GetBlocksPerEpoch() uint64 {
-	return epoch / GetCastingInterval()
+	if epochBlocks == 0 {
+		epochBlocks = epoch / GetCastingInterval()
+	}
+	return epochBlocks
 }
