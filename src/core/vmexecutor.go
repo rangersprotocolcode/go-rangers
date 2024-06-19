@@ -240,6 +240,8 @@ func (executor *VMExecutor) calcDifficulty() {
 
 	data = executor.accountdb.GetData(common.DifficultyAddress, header.Castor)
 	value = utility.ByteToUInt64(data) - 1
+	executor.accountdb.SetData(common.DifficultyAddress, header.Castor, utility.UInt64ToByte(value))
+	logger.Infof("height: %d, minus difficulty, %s, %d", height, common.ToHex(header.Castor), value)
 
 	// lost proposal
 	if value == 0 {
@@ -248,9 +250,6 @@ func (executor *VMExecutor) calcDifficulty() {
 		executor.accountdb.SetData(common.DifficultyAddress, common.TotalWorkingMiners, utility.UInt64ToByte(totalMiners))
 		logger.Infof("height: %d, minus difficulty, lost proporal %s, %d", height, common.ToHex(header.Castor), totalMiners)
 	}
-
-	executor.accountdb.SetData(common.DifficultyAddress, header.Castor, utility.UInt64ToByte(value))
-	logger.Infof("height: %d, minus difficulty, %s, %d", height, common.ToHex(header.Castor), value)
 }
 
 func removeUnusedValidator(accountdb *account.AccountDB) {

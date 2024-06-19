@@ -87,6 +87,17 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, a
 	if totalProposerStake != 0 {
 		for addr, stake := range proposersStake {
 			delta := utility.Float64ToBigInt(float64(stake) / float64(totalProposerStake) * otherRewardProposer)
+
+			// todo : check minBlocks for reward
+			//proposalNum := len(proposersStake)
+			//minBlocks := common.BlocksPerEpoch / uint64(proposalNum) / 2
+			//blockProposals := utility.ByteToUInt64(accountDB.GetData(common.DifficultyAddress, common.FromHex(addr)))
+			//if blockProposals > minBlocks {
+			//
+			//} else {
+			//
+			//}
+
 			account := common.BytesToAddress(MinerManagerImpl.getMinerAccount(common.FromHex(addr), common.MinerTypeProposer, accountDB))
 			addReward(result, account, delta)
 			reward.logger.Debugf("calculating, height: %d, hash: %s, proposerAddr: %s, account: %s, stake: %d, reward: %d, result: %s", height, hashString, addr, account.String(), stake, delta, result[account].String())
