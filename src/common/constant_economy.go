@@ -31,8 +31,6 @@ const (
 )
 
 var (
-	RewardBlocks = rewardTime / GetCastingInterval()
-
 	RefundBlocks = RefundTime / GetCastingInterval()
 
 	BlocksPerEpoch = epoch / GetCastingInterval()
@@ -69,4 +67,8 @@ func GetCastingInterval() uint64 {
 	}
 
 	return castingInterval
+}
+
+func GetRewardBlocks() uint64 {
+	return rewardTime / GetCastingInterval()
 }

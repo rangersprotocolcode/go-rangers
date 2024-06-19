@@ -107,13 +107,14 @@ func TestProposerReward(t *testing.T) {
 }
 
 func TestRewardCalculator_NextRewardHeight(t *testing.T) {
+	common.Init(0, "1.ini", "dev")
 	height := uint64(11)
-	fmt.Println(height / common.RewardBlocks)
-	next := math.Ceil(float64(height) / float64(common.RewardBlocks))
+	fmt.Println(height / common.GetRewardBlocks())
+	next := math.Ceil(float64(height) / float64(common.GetRewardBlocks()))
 	fmt.Println(next)
 
 	nextblock := uint64(0)
-	nextblock = uint64(next) * common.RewardBlocks
+	nextblock = uint64(next) * common.GetRewardBlocks()
 	fmt.Println(nextblock)
 
 }

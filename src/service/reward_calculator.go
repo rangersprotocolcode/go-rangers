@@ -131,8 +131,8 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, a
 }
 
 func (reward *RewardCalculator) NextRewardHeight(height uint64) uint64 {
-	next := math.Ceil(float64(height) / float64(common.RewardBlocks))
-	return uint64(next) * common.RewardBlocks
+	next := math.Ceil(float64(height) / float64(common.GetRewardBlocks()))
+	return uint64(next) * common.GetRewardBlocks()
 }
 
 func getEpoch(height uint64) uint64 {
