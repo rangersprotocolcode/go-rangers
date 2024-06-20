@@ -74,7 +74,7 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 	blog := newBizLog("vrfSatisfy")
 	prove = tryZeroPadding(prove)
 	vrfValueRatio := vrfValueRatio(prove)
-	stakeRatio := calcStakeRatio(1, totalStake)
+	stakeRatio := stakeRatio(1, totalStake)
 	ok = vrfValueRatio.Cmp(stakeRatio) < 0
 
 	qn = calQn(vrfValueRatio, stakeRatio)
@@ -82,16 +82,10 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 	stakeRatioFloat, _ := stakeRatio.Float64()
 	blog.log("Vrf validate result:%v! miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v, qn %v,prove:%v", ok, 1, totalStake, vrfValueRatioFloat, stakeRatioFloat, qn, prove)
 
-	if !ok {
-		s := calcStakeRatio(3, totalStake)
-		if vrfValueRatio.Cmp(s) < 0 {
-			stdLogger.Warnf("checked working miner")
-		}
-	}
 	return
 }
 
-func calcStakeRatio(stake, totalStake uint64) *big.Rat {
+func stakeRatio(stake, totalStake uint64) *big.Rat {
 	stakeRat := new(big.Rat).SetInt64(int64(stake * calcPotentialProposal(totalStake, model.Param)))
 	totalStakeRat := new(big.Rat).SetFloat64(float64(totalStake))
 	return new(big.Rat).Quo(stakeRat, totalStakeRat)
