@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	Version           = "2.0.3"
+	Version           = "2.0.4"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -65,7 +65,7 @@ var (
 		Proposal020Block: 61794000,
 		Proposal021Block: 61202000,
 		Proposal022Block: 62606000,
-		Proposal023Block: math.MaxUint64,
+		Proposal023Block: 63100000,
 		Proposal024Block: 62575384,
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
@@ -99,7 +99,7 @@ var (
 		Proposal020Block: 75248100,
 		Proposal021Block: 74312000,
 		Proposal022Block: 76005000,
-		Proposal023Block: math.MaxUint64,
+		Proposal023Block: 77826000,
 		Proposal024Block: 0,
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 

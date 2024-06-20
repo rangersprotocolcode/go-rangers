@@ -43,7 +43,7 @@ import (
 )
 
 const (
-	GXVersion = "2.0.3"
+	GXVersion = "2.0.4"
 	Section   = "gx"
 )
 
