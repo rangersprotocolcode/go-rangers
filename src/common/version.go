@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	Version           = "2.0.3"
+	Version           = "2.0.4"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -65,7 +65,8 @@ var (
 		Proposal020Block: 61794000,
 		Proposal021Block: 61202000,
 		Proposal022Block: 62606000,
-
+		Proposal023Block: 63100000,
+		Proposal024Block: 62575384,
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
 		JsonRPCUrl:       "https://mainnet.rangersprotocol.com/api/jsonrpc",
@@ -98,6 +99,8 @@ var (
 		Proposal020Block: 75248100,
 		Proposal021Block: 74312000,
 		Proposal022Block: 76005000,
+		Proposal023Block: 77826000,
+		Proposal024Block: 0,
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 
 		MysqlDSN:   "rpservice_v2:oJ2*bA0:hB3%@tcp(192.168.0.172:5555)/rpservice_v2?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
@@ -131,9 +134,11 @@ var (
 		Proposal017Block: 0,
 		Proposal018Block: 0,
 		Proposal019Block: 0,
-		Proposal020Block: 1000,
+		Proposal020Block: 10,
 		Proposal021Block: 0,
 		Proposal022Block: 0,
+		Proposal023Block: 12,
+		Proposal024Block: 0,
 	}
 
 	subNetChainConfig = ChainConfig{
@@ -165,6 +170,8 @@ var (
 		Proposal020Block: 0,
 		Proposal021Block: 0,
 		Proposal022Block: 0,
+		Proposal023Block: 0,
+		Proposal024Block: 0,
 	}
 
 	LocalChainConfig ChainConfig
@@ -203,6 +210,8 @@ type ChainConfig struct {
 	Proposal020Block uint64
 	Proposal021Block uint64
 	Proposal022Block uint64
+	Proposal023Block uint64
+	Proposal024Block uint64
 
 	mainNodeContract Address
 
@@ -367,6 +376,11 @@ func IsProposal020() bool {
 
 func IsProposal021() bool {
 	return isForked(LocalChainConfig.Proposal021Block, GetBlockHeight())
+}
+
+// sort for transactions
+func IsProposal023() bool {
+	return isForked(LocalChainConfig.Proposal023Block, GetBlockHeight())
 }
 
 func isForked(base uint64, height uint64) bool {

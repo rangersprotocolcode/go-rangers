@@ -40,3 +40,15 @@ func TestPbToBlockHeader(t *testing.T) {
 	fmt.Println(header2.RequestIds["2"] < 2)
 
 }
+
+func TestMarshalTransactions(t *testing.T) {
+	txs := make([]*Transaction, 2)
+	//txs[0] = &Transaction{Source: "1234"}
+	txs[1] = &Transaction{Source: "1234"}
+	data, err := MarshalTransactions(txs)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	fmt.Println(data)
+}

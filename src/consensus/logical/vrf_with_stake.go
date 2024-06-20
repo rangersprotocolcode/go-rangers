@@ -81,6 +81,7 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 	vrfValueRatioFloat, _ := vrfValueRatio.Float64()
 	stakeRatioFloat, _ := stakeRatio.Float64()
 	blog.log("Vrf validate result:%v! miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v, qn %v,prove:%v", ok, 1, totalStake, vrfValueRatioFloat, stakeRatioFloat, qn, prove)
+
 	return
 }
 

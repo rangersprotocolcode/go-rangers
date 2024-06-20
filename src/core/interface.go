@@ -19,7 +19,6 @@ package core
 import (
 	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/middleware/types"
-	"com.tuntun.rangers/node/src/storage/account"
 	"math/big"
 	"time"
 )
@@ -72,8 +71,6 @@ type BlockChain interface {
 	HasBlockByHash(hash common.Hash) bool
 
 	GetBlockHash(height uint64) common.Hash
-
-	ExecuteTransaction(block *types.Block) (bool, *account.AccountDB, types.Receipts)
 }
 
 type GroupChain interface {

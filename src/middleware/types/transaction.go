@@ -116,10 +116,32 @@ func (c Transactions) Swap(i, j int) {
 }
 func (c Transactions) Less(i, j int) bool {
 	if c[i].RequestId == 0 && c[j].RequestId == 0 {
+		if common.IsProposal023() {
+			if c[i].Source == c[j].Source {
+				if c[i].Nonce != c[j].Nonce {
+					return c[i].Nonce < c[j].Nonce
+				}
+
+				c1 := c[i].Hash.Bytes()
+				c2 := c[j].Hash.Bytes()
+				if 0 == bytes.Compare(c1, c2) {
+					panic("equal hash: " + common.ToHex(c1))
+				}
+				num1 := new(big.Int).SetBytes(c1)
+				num2 := new(big.Int).SetBytes(c2)
+				return num1.Cmp(num2) > 0
+			}
+
+			num1 := new(big.Int).SetBytes(common.FromHex(c[i].Source))
+			num2 := new(big.Int).SetBytes(common.FromHex(c[j].Source))
+			return num1.Cmp(num2) > 0
+		}
+
 		if common.IsProposal021() {
 			if c[i].Source == c[j].Source {
 				return c[i].Nonce < c[j].Nonce
 			}
+
 			num1 := new(big.Int).SetBytes(common.FromHex(c[i].Source))
 			num2 := new(big.Int).SetBytes(common.FromHex(c[j].Source))
 			return num1.Cmp(num2) > 0
@@ -133,6 +155,7 @@ func (c Transactions) Less(i, j int) bool {
 		num2 := new(big.Int).SetBytes(c[j].Hash.Bytes())
 		return num1.Cmp(num2) > 0
 	}
+
 	return c[i].RequestId < c[j].RequestId
 }
 
