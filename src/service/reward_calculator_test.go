@@ -49,18 +49,19 @@ func TestGetEpoch(t *testing.T) {
 		t.Fatalf("year error for 100000")
 	}
 
-	year = getEpoch(common.BlocksPerEpoch)
+	year = getEpoch(common.GetBlocksPerEpoch())
 	if 1 != year {
 		t.Fatalf("year error for BlocksPerYear")
 	}
 
-	year = getEpoch(common.BlocksPerEpoch + 1)
+	year = getEpoch(common.GetBlocksPerEpoch() + 1)
 	if 1 != year {
 		t.Fatalf("year error for BlocksPerYear+1")
 	}
 }
 
 func TestGetTotalReward(t *testing.T) {
+	common.Init(0, "1.ini", "dev")
 	reward := getTotalReward(1)
 	if 0.03780864197530864 != reward {
 		t.Fatalf("reward error for 1")
@@ -69,15 +70,15 @@ func TestGetTotalReward(t *testing.T) {
 	if 0.03780864197530864 != reward {
 		t.Fatalf("reward error for 1000000")
 	}
-	reward = getTotalReward(common.BlocksPerEpoch)
+	reward = getTotalReward(common.GetBlocksPerEpoch())
 	if 0.03478395061728395 != reward {
 		t.Fatalf("reward error for BlocksPerYear, %v", reward)
 	}
-	reward = getTotalReward(common.BlocksPerEpoch + 1)
+	reward = getTotalReward(common.GetBlocksPerEpoch() + 1)
 	if 0.03478395061728395 != reward {
 		t.Fatalf("reward error for BlocksPerYear+1")
 	}
-	reward = getTotalReward(common.BlocksPerEpoch * 2)
+	reward = getTotalReward(common.GetBlocksPerEpoch() * 2)
 	if 0.032001234567901236 != reward {
 		t.Fatalf("reward error for BlocksPerYear*2, %v", reward)
 	}
@@ -85,10 +86,11 @@ func TestGetTotalReward(t *testing.T) {
 }
 
 func TestGetTotalReward2(t *testing.T) {
-	fmt.Println(getTotalReward(1) * float64(common.BlocksPerEpoch) * 0.14 / 0.35)
-	fmt.Println(getTotalReward(common.BlocksPerEpoch) * float64(common.BlocksPerEpoch) * 0.14 / 0.35)
-	fmt.Println(getTotalReward(common.BlocksPerEpoch*2) * float64(common.BlocksPerEpoch) * 0.14 / 0.35)
-	fmt.Println(getTotalReward(common.BlocksPerEpoch*3) * float64(common.BlocksPerEpoch) * 0.14 / 0.35)
+	common.Init(0, "1.ini", "dev")
+	fmt.Println(getTotalReward(1) * float64(common.GetBlocksPerEpoch()) * 0.14 / 0.35)
+	fmt.Println(getTotalReward(common.GetBlocksPerEpoch()) * float64(common.GetBlocksPerEpoch()) * 0.14 / 0.35)
+	fmt.Println(getTotalReward(common.GetBlocksPerEpoch()*2) * float64(common.GetBlocksPerEpoch()) * 0.14 / 0.35)
+	fmt.Println(getTotalReward(common.GetBlocksPerEpoch()*3) * float64(common.GetBlocksPerEpoch()) * 0.14 / 0.35)
 
 }
 
@@ -107,13 +109,14 @@ func TestProposerReward(t *testing.T) {
 }
 
 func TestRewardCalculator_NextRewardHeight(t *testing.T) {
+	common.Init(0, "1.ini", "dev")
 	height := uint64(11)
-	fmt.Println(height / common.RewardBlocks)
-	next := math.Ceil(float64(height) / float64(common.RewardBlocks))
+	fmt.Println(height / common.GetRewardBlocks())
+	next := math.Ceil(float64(height) / float64(common.GetRewardBlocks()))
 	fmt.Println(next)
 
 	nextblock := uint64(0)
-	nextblock = uint64(next) * common.RewardBlocks
+	nextblock = uint64(next) * common.GetRewardBlocks()
 	fmt.Println(nextblock)
 
 }

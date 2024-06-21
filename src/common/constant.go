@@ -50,6 +50,8 @@ var (
 var (
 	ValidatorDBAddress = BigToAddress(big.NewInt(1))
 	ProposerDBAddress  = BigToAddress(big.NewInt(2))
+	DifficultyAddress  = BigToAddress(big.NewInt(3))
+	TotalWorkingMiners = []byte{0}
 )
 
 var (

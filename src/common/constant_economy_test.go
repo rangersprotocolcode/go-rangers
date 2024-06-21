@@ -25,7 +25,7 @@ import (
 func TestRewardBlocks(test *testing.T) {
 	i := uint64(10)
 
-	j := i + RewardBlocks
+	j := i + GetRewardBlocks()
 
 	fmt.Println(j)
 

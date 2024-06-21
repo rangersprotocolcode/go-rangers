@@ -185,9 +185,11 @@ func (executor *VMExecutor) after() {
 		return
 	}
 
-	height := executor.block.Header.Height
+	executor.calcDifficulty()
 
 	service.RefundManagerImpl.Add(types.GetRefundInfo(executor.context), executor.accountdb)
+
+	height := executor.block.Header.Height
 
 	if common.IsSub() {
 		executor.calcSubReward()
@@ -201,6 +203,53 @@ func (executor *VMExecutor) after() {
 		service.RefundManagerImpl.CheckAndMove(0, executor.accountdb)
 	}
 
+}
+
+func (executor *VMExecutor) calcDifficulty() {
+	height := executor.block.Header.Height
+	if height < common.LocalChainConfig.Proposal025Block {
+		return
+	}
+
+	// calculate difficulty
+	data := executor.accountdb.GetData(common.DifficultyAddress, executor.block.Header.Castor)
+	value := uint64(1)
+	if 0 != len(data) {
+		value = utility.ByteToUInt64(data) + 1
+	} else {
+		// new proposal found
+		totalMinersBytes := executor.accountdb.GetData(common.DifficultyAddress, common.TotalWorkingMiners)
+		totalMiners := utility.ByteToUInt64(totalMinersBytes) + 1
+		executor.accountdb.SetData(common.DifficultyAddress, common.TotalWorkingMiners, utility.UInt64ToByte(totalMiners))
+		logger.Infof("height: %d, add difficulty, new proporal %s, %d", height, common.ToHex(executor.block.Header.Castor), totalMiners)
+	}
+	executor.accountdb.SetData(common.DifficultyAddress, executor.block.Header.Castor, utility.UInt64ToByte(value))
+	logger.Infof("height: %d, add difficulty, %s, %d", height, common.ToHex(executor.block.Header.Castor), value)
+
+	if height < common.LocalChainConfig.Proposal025Block+common.GetRewardBlocks() {
+		return
+	}
+
+	targetHeight := height - common.GetRewardBlocks()
+	header := blockChainImpl.QueryBlockHeaderByHeight(targetHeight, true)
+	if nil == header {
+		// never occur
+		logger.Errorf("fail to get header, %d", targetHeight)
+		return
+	}
+
+	data = executor.accountdb.GetData(common.DifficultyAddress, header.Castor)
+	value = utility.ByteToUInt64(data) - 1
+	executor.accountdb.SetData(common.DifficultyAddress, header.Castor, utility.UInt64ToByte(value))
+	logger.Infof("height: %d, minus difficulty, %s, %d", height, common.ToHex(header.Castor), value)
+
+	// lost proposal
+	if value == 0 {
+		totalMinersBytes := executor.accountdb.GetData(common.DifficultyAddress, common.TotalWorkingMiners)
+		totalMiners := utility.ByteToUInt64(totalMinersBytes) - 1
+		executor.accountdb.SetData(common.DifficultyAddress, common.TotalWorkingMiners, utility.UInt64ToByte(totalMiners))
+		logger.Infof("height: %d, minus difficulty, lost proporal %s, %d", height, common.ToHex(header.Castor), totalMiners)
+	}
 }
 
 func removeUnusedValidator(accountdb *account.AccountDB) {

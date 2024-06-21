@@ -17,6 +17,7 @@
 package logical
 
 import (
+	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/common/ed25519"
 	"errors"
 	"fmt"
@@ -48,7 +49,7 @@ func verifyBlockVRF(bh *types.BlockHeader, preBH *types.BlockHeader, castor *mod
 	if !ok {
 		return ok, err
 	}
-	if ok, qn := validateProve(prove, castor.Stake, totalStake); ok {
+	if ok, qn := validateProve(prove, bh.Height, castor.WorkingMiners, totalStake); ok {
 		if bh.TotalQN != qn+preBH.TotalQN {
 			return false, errors.New(fmt.Sprintf("qn error.bh hash=%v, height=%v, qn=%v,totalQN=%v, preBH totalQN=%v", bh.Hash.ShortS(), bh.Height, qn, bh.TotalQN, preBH.TotalQN))
 		}
@@ -66,18 +67,29 @@ func genVrfMsg(random []byte, delta int) []byte {
 	return msg
 }
 
-func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool, qn uint64) {
+// stake -> miner related index
+func validateProve(prove vrf.VRFProve, height, workingMiners, totalStake uint64) (ok bool, qn uint64) {
 	if totalStake == 0 {
 		stdLogger.Errorf("total stake is 0!")
 		return false, 0
 	}
+
 	blog := newBizLog("vrfSatisfy")
 	prove = tryZeroPadding(prove)
-	vrfValueRatio := vrfValueRatio(prove)
-	stakeRatio := stakeRatio(1, totalStake)
-	ok = vrfValueRatio.Cmp(stakeRatio) < 0
+	vrfValueRatio := calcVrfValueRatio(prove)
 
+	difficulty := uint64(1)
+	if 0 != workingMiners && height > common.LocalChainConfig.Proposal025Block+common.GetRewardBlocks() {
+		difficulty = totalStake / workingMiners
+		stdLogger.Infof("change difficulty, %d, %d, %d", totalStake, workingMiners, difficulty)
+	} else {
+		stdLogger.Infof("no need to change difficulty, %d, %d, %d", totalStake, workingMiners, difficulty)
+	}
+
+	stakeRatio := calcStakeRatio(difficulty, totalStake)
+	ok = vrfValueRatio.Cmp(stakeRatio) < 0
 	qn = calQn(vrfValueRatio, stakeRatio)
+
 	vrfValueRatioFloat, _ := vrfValueRatio.Float64()
 	stakeRatioFloat, _ := stakeRatio.Float64()
 	blog.log("Vrf validate result:%v! miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v, qn %v,prove:%v", ok, 1, totalStake, vrfValueRatioFloat, stakeRatioFloat, qn, prove)
@@ -85,8 +97,8 @@ func validateProve(prove vrf.VRFProve, stake uint64, totalStake uint64) (ok bool
 	return
 }
 
-func stakeRatio(stake, totalStake uint64) *big.Rat {
-	stakeRat := new(big.Rat).SetInt64(int64(stake * calcPotentialProposal(totalStake, model.Param)))
+func calcStakeRatio(difficulty, totalStake uint64) *big.Rat {
+	stakeRat := new(big.Rat).SetInt64(int64(difficulty * calcPotentialProposal(totalStake, model.Param)))
 	totalStakeRat := new(big.Rat).SetFloat64(float64(totalStake))
 	return new(big.Rat).Quo(stakeRat, totalStakeRat)
 }
@@ -103,7 +115,7 @@ func calcPotentialProposal(totalStake uint64, param model.ConsensusParam) uint64
 	return potentialProposal
 }
 
-func vrfValueRatio(prove vrf.VRFProve) *big.Rat {
+func calcVrfValueRatio(prove vrf.VRFProve) *big.Rat {
 	vrfValue := vrf.VRFProof2Hash(prove)
 	vrfRat := new(big.Rat).SetInt(new(big.Int).SetBytes(vrfValue))
 	return new(big.Rat).Quo(vrfRat, max256)
