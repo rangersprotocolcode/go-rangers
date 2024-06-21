@@ -43,8 +43,7 @@ import (
 )
 
 const (
-	GXVersion = "2.0.4"
-	Section   = "gx"
+	Section = "gx"
 )
 
 type GX struct {
@@ -103,7 +102,7 @@ func (gx *GX) Run() {
 
 	switch command {
 	case versionCmd.FullCommand():
-		fmt.Println("Version:", GXVersion)
+		fmt.Println("Version:", common.Version)
 		os.Exit(0)
 	case consoleCmd.FullCommand():
 		err := ConsoleInit(*remoteHost, *remotePort, *showRequest, *rpcPort)

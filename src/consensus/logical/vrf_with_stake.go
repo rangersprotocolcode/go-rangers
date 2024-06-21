@@ -76,7 +76,7 @@ func validateProve(prove vrf.VRFProve, height, workingMiners, totalStake uint64)
 
 	blog := newBizLog("vrfSatisfy")
 	prove = tryZeroPadding(prove)
-	vrfValueRatio := vrfValueRatio(prove)
+	vrfValueRatio := calcVrfValueRatio(prove)
 
 	difficulty := uint64(1)
 	if height > common.LocalChainConfig.Proposal025Block+common.GetRewardBlocks() {
@@ -84,17 +84,17 @@ func validateProve(prove vrf.VRFProve, height, workingMiners, totalStake uint64)
 		stdLogger.Infof("change difficulty, %d, %d, %d", totalStake, workingMiners, difficulty)
 	}
 
-	stakeRatio := stakeRatio(difficulty, totalStake)
+	stakeRatio := calcStakeRatio(difficulty, totalStake)
 	ok = vrfValueRatio.Cmp(stakeRatio) < 0
-
 	qn = calQn(vrfValueRatio, stakeRatio)
+
 	vrfValueRatioFloat, _ := vrfValueRatio.Float64()
 	stakeRatioFloat, _ := stakeRatio.Float64()
 	blog.log("Vrf validate result:%v! miner stake %v, total stake %v, vrf value ratio %v, stake ratio %v, qn %v,prove:%v", ok, 1, totalStake, vrfValueRatioFloat, stakeRatioFloat, qn, prove)
 	return
 }
 
-func stakeRatio(difficulty, totalStake uint64) *big.Rat {
+func calcStakeRatio(difficulty, totalStake uint64) *big.Rat {
 	stakeRat := new(big.Rat).SetInt64(int64(difficulty * calcPotentialProposal(totalStake, model.Param)))
 	totalStakeRat := new(big.Rat).SetFloat64(float64(totalStake))
 	return new(big.Rat).Quo(stakeRat, totalStakeRat)
@@ -112,7 +112,7 @@ func calcPotentialProposal(totalStake uint64, param model.ConsensusParam) uint64
 	return potentialProposal
 }
 
-func vrfValueRatio(prove vrf.VRFProve) *big.Rat {
+func calcVrfValueRatio(prove vrf.VRFProve) *big.Rat {
 	vrfValue := vrf.VRFProof2Hash(prove)
 	vrfRat := new(big.Rat).SetInt(new(big.Int).SetBytes(vrfValue))
 	return new(big.Rat).Quo(vrfRat, max256)

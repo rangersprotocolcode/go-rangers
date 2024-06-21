@@ -90,9 +90,9 @@ func (reward *RewardCalculator) calculateRewardPerBlock(bh *types.BlockHeader, a
 
 			// todo : check minBlocks for reward
 			//proposalNum := len(proposersStake)
-			//minBlocks := common.BlocksPerEpoch / uint64(proposalNum) / 2
-			//blockProposals := utility.ByteToUInt64(accountDB.GetData(common.DifficultyAddress, common.FromHex(addr)))
-			//if blockProposals > minBlocks {
+			//minBlocks := common.GetRewardBlocks() / uint64(proposalNum) / 2
+			//blockProposed := utility.ByteToUInt64(accountDB.GetData(common.DifficultyAddress, common.FromHex(addr)))
+			//if blockProposed > minBlocks {
 			//
 			//} else {
 			//

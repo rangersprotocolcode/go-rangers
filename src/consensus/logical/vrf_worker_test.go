@@ -20,6 +20,7 @@ import (
 	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/consensus/model"
 	"com.tuntun.rangers/node/src/consensus/vrf"
+	"com.tuntun.rangers/node/src/utility"
 	cryptorand "crypto/rand"
 	"fmt"
 	"io"
@@ -85,7 +86,7 @@ func TestVrfValueRatio(t *testing.T) {
 	io.ReadFull(cryptorand.Reader, b[:])
 	fmt.Printf("%v\n", b)
 
-	rat := vrfValueRatio(vrf.VRFProve(b))
+	rat := calcVrfValueRatio(b)
 	f, e := rat.Float64()
 	fmt.Printf("%v,%v\n", f, e)
 }
@@ -140,4 +141,42 @@ func TestProve1(t *testing.T) {
 	}
 	fmt.Println(prove.Big())
 	fmt.Println(vrf.VRFProof2Hash(vrf.VRFProve(prove.Big().Bytes())).Big())
+}
+
+func TestQn(t *testing.T) {
+	common.Init(0, "0.ini", "dev")
+	InitConsensus()
+
+	stakeRatio := calcStakeRatio(4, 20)
+	stakeRatioValue, _ := stakeRatio.Float32()
+	fmt.Println(stakeRatioValue)
+
+	trueNum := 0
+	falseNum := 0
+
+	for delta := 0; delta < 100; delta++ {
+		random := utility.UInt64ToByte(uint64(time.Now().UnixNano()))
+		vrfMsg := genVrfMsg(random, delta)
+		vrfPK := vrf.Hex2VRFPublicKey("0x009f3b76f3e49dcdd6d2ee8421f077fd4c68c176b18e1e602a3c1f09f9272250")
+		vrfSK := vrf.Hex2VRFPrivateKey("0xcf11281bb181c0f44191e415555767ba9b66f6f97195b54405b82688e4bffc24009f3b76f3e49dcdd6d2ee8421f077fd4c68c176b18e1e602a3c1f09f9272250")
+		prove, err := vrf.VRFGenProve(vrfPK, vrfSK, vrfMsg)
+		if err != nil {
+			panic(err)
+		}
+
+		prove = tryZeroPadding(prove)
+		vrfValueRatio := calcVrfValueRatio(prove)
+		//value, _ := vrfValueRatio.Float32()
+		//fmt.Println(value)
+
+		ok := vrfValueRatio.Cmp(stakeRatio) < 0
+		if ok {
+			trueNum++
+		} else {
+			falseNum++
+		}
+	}
+
+	fmt.Println(trueNum)
+	fmt.Println(falseNum)
 }
