@@ -49,7 +49,7 @@ func verifyBlockVRF(bh *types.BlockHeader, preBH *types.BlockHeader, castor *mod
 	if !ok {
 		return ok, err
 	}
-	if ok, qn := validateProve(prove, preBH.Height, castor.WorkingMiners, totalStake); ok {
+	if ok, qn := validateProve(prove, bh.Height, castor.WorkingMiners, totalStake); ok {
 		if bh.TotalQN != qn+preBH.TotalQN {
 			return false, errors.New(fmt.Sprintf("qn error.bh hash=%v, height=%v, qn=%v,totalQN=%v, preBH totalQN=%v", bh.Hash.ShortS(), bh.Height, qn, bh.TotalQN, preBH.TotalQN))
 		}
@@ -79,7 +79,7 @@ func validateProve(prove vrf.VRFProve, height, workingMiners, totalStake uint64)
 	vrfValueRatio := calcVrfValueRatio(prove)
 
 	difficulty := uint64(1)
-	if height > common.LocalChainConfig.Proposal025Block+common.GetRewardBlocks() {
+	if 0 != workingMiners && height > common.LocalChainConfig.Proposal025Block+common.GetRewardBlocks() {
 		difficulty = totalStake / workingMiners
 		stdLogger.Infof("change difficulty, %d, %d, %d", totalStake, workingMiners, difficulty)
 	}
