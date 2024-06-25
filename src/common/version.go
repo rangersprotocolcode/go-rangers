@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	Version           = "2.0.5"
+	Version           = "2.0.6"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -67,7 +67,7 @@ var (
 		Proposal022Block: 62606000,
 		Proposal023Block: 63100000,
 		Proposal024Block: 62575384,
-		Proposal025Block: 63355000,
+		Proposal025Block: 63311000,
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
 		JsonRPCUrl:       "https://mainnet.rangersprotocol.com/api/jsonrpc",
