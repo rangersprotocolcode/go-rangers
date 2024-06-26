@@ -40,6 +40,7 @@ type contractExecutor struct {
 const (
 	defaultGasLimit     uint64 = 6000000
 	p017defaultGasLimit uint64 = 30000000
+	p026defaultGasLimit uint64 = 3000000000
 )
 
 var (
@@ -146,6 +147,9 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 	if common.IsProposal015() {
 		if common.IsProposal017() && gasLimit > p017defaultGasLimit {
 			gasLimit = p017defaultGasLimit
+		}
+		if common.IsProposal026() && gasLimit > p026defaultGasLimit {
+			gasLimit = p026defaultGasLimit
 		}
 		vmCtx.GasLimit = gasLimit - intrinsicGas
 	}

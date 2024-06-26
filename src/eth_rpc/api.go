@@ -118,7 +118,7 @@ type RPCBlock struct {
 }
 
 const (
-	gasLimit                  uint64 = 30000000
+	gasLimit                  uint64 = 3000000000
 	confirmBlockCount         uint64 = 3
 	txGas                     uint64 = 21000 // Per transaction not creating a contract. NOTE: Not payable on data of calls between transactions.
 	estimateExpandCoefficient        = 2.5
