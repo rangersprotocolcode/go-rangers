@@ -195,3 +195,11 @@ func opPush0(pc *uint64, interpreter *EVMInterpreter, scope *callCtx) ([]byte, e
 	scope.stack.push(new(uint256.Int))
 	return nil, nil
 }
+
+func doProposal026(jt *JumpTable) {
+	if common.IsProposal026() {
+		for _, operator := range jt {
+			operator.constantGas = operator.constantGas * gasMagnification
+		}
+	}
+}

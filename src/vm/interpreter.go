@@ -95,6 +95,9 @@ func NewEVMInterpreter(evm *EVM) *EVMInterpreter {
 	if height >= common.LocalChainConfig.Proposal022Block {
 		doProposal022(jt)
 	}
+	if height >= common.LocalChainConfig.Proposal026Block {
+		doProposal026(jt)
+	}
 
 	config := LogConfig{false, false, false, false}
 	interpreter.tracer = NewStructLogger(&config, logger)
@@ -214,10 +217,6 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		}
 		// Static portion of gas
 		cost = operation.constantGas // For tracing
-		if common.IsProposal026() {
-			operation.constantGas = operation.constantGas * gasMagnification // For tracing
-			cost = operation.constantGas                                     // For tracing
-		}
 		if !contract.UseGas(operation.constantGas) {
 			return nil, nil, ErrOutOfGas
 		}
@@ -244,9 +243,6 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		if operation.dynamicGas != nil {
 			var dynamicCost uint64
 			dynamicCost, err = operation.dynamicGas(in.evm, contract, stack, mem, memorySize)
-			if common.IsProposal026() {
-				dynamicCost = dynamicCost * gasMagnification
-			}
 			cost += dynamicCost // total cost, for debug tracing
 			if err != nil || !contract.UseGas(dynamicCost) {
 				return nil, nil, ErrOutOfGas

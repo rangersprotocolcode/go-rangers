@@ -46,7 +46,9 @@ func memoryGasCost(mem *Memory, newMemSize uint64) (uint64, error) {
 
 		fee := newTotalFee - mem.lastGasCost
 		mem.lastGasCost = newTotalFee
-
+		if common.IsProposal026() {
+			return fee * gasMagnification, nil
+		}
 		return fee, nil
 	}
 	return 0, nil
@@ -92,6 +94,9 @@ var (
 )
 
 func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
+	if common.IsProposal026() {
+		return SstoreSetGas * gasMagnification, nil
+	}
 	if common.IsProposal015() {
 		return SstoreSetGas, nil
 	}
@@ -99,6 +104,9 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 }
 
 func gasSStoreEIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
+	if common.IsProposal015() {
+		return SstoreSetGasEIP2200 * gasMagnification, nil // dirty update (2.2)
+	}
 	if common.IsProposal015() {
 		return SstoreSetGasEIP2200, nil // dirty update (2.2)
 	}
