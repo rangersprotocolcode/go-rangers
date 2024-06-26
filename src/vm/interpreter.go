@@ -24,6 +24,8 @@ import (
 	"sync/atomic"
 )
 
+const gasMagnification = 100
+
 // Interpreter is used to run Ethereum based contracts and will utilise the
 // passed environment to query external sources for state information.
 // The Interpreter will run the byte code VM based on the passed
@@ -212,6 +214,10 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		}
 		// Static portion of gas
 		cost = operation.constantGas // For tracing
+		if common.IsProposal026() {
+			operation.constantGas = operation.constantGas * gasMagnification // For tracing
+			cost = operation.constantGas                                     // For tracing
+		}
 		if !contract.UseGas(operation.constantGas) {
 			return nil, nil, ErrOutOfGas
 		}
@@ -238,6 +244,9 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 		if operation.dynamicGas != nil {
 			var dynamicCost uint64
 			dynamicCost, err = operation.dynamicGas(in.evm, contract, stack, mem, memorySize)
+			if common.IsProposal026() {
+				dynamicCost = dynamicCost * gasMagnification
+			}
 			cost += dynamicCost // total cost, for debug tracing
 			if err != nil || !contract.UseGas(dynamicCost) {
 				return nil, nil, ErrOutOfGas
