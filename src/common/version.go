@@ -143,8 +143,8 @@ var (
 		Proposal022Block: 0,
 		Proposal023Block: 12,
 		Proposal024Block: 0,
-		Proposal025Block: 50,
-		Proposal026Block: 155600, //todo
+		Proposal025Block: math.MaxUint64,
+		Proposal026Block: 155600,
 	}
 
 	subNetChainConfig = ChainConfig{
