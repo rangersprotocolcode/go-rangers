@@ -199,7 +199,9 @@ func opPush0(pc *uint64, interpreter *EVMInterpreter, scope *callCtx) ([]byte, e
 func doProposal026(jt *JumpTable) {
 	if common.IsProposal026() {
 		for _, operator := range jt {
-			operator.constantGas = operator.constantGas * gasMagnification
+			if operator != nil {
+				operator.constantGas = operator.constantGas * gasMagnification
+			}
 		}
 	}
 }
