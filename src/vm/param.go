@@ -143,6 +143,9 @@ const (
 	UnStakeAllGas uint64 = 100000
 	GetStake      uint64 = 1000
 	StakeNumGas   uint64 = 5000
+
+	p26CreateGas  uint64 = 400000000 // Once per CREATE operation & contract-creation transaction.
+	p26Create2Gas uint64 = 400000000 // Once per CREATE2 operation
 )
 
 // Gas discount table for BLS12-381 G1 and G2 multi exponentiation operations

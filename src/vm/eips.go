@@ -203,5 +203,7 @@ func doProposal026(jt *JumpTable) {
 				operator.constantGas = operator.constantGas * gasMagnification
 			}
 		}
+		jt[CREATE].constantGas = p26CreateGas
+		jt[CREATE2].constantGas = p26Create2Gas
 	}
 }
