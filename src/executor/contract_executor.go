@@ -144,12 +144,16 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 	vmCtx.Difficulty = new(big.Int).SetUint64(123)
 	vmCtx.GasPrice = defaultGasPrice
 	vmCtx.GasLimit = defaultGasLimit
+	gasLimitTemp := gasLimit
 	if common.IsProposal015() {
 		if common.IsProposal017() && gasLimit > p017defaultGasLimit {
 			gasLimit = p017defaultGasLimit
 		}
-		if common.IsProposal026() && gasLimit > p026defaultGasLimit {
-			gasLimit = p026defaultGasLimit
+		if common.IsProposal026() {
+			gasLimit = gasLimitTemp
+			if gasLimit > p026defaultGasLimit {
+				gasLimit = p026defaultGasLimit
+			}
 		}
 		vmCtx.GasLimit = gasLimit - intrinsicGas
 	}

@@ -90,7 +90,7 @@ func setDefaults(cfg *testConfig) {
 }
 
 func mockInit() {
-	common.Init(0, "1.ini", "mainnet")
+	common.Init(0, "1.ini", "dev")
 	InitVM()
 }
 
