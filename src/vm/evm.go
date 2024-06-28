@@ -429,7 +429,9 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	// The contract is a scoped environment for this execution context only.
 	contract := NewContract(caller, AccountRef(address), value, gas)
 	contract.SetCodeOptionalHash(&address, codeAndHash)
-
+	if common.IsProposal026() && !contract.UseGas(p26CreateGas) {
+		return nil, common.Address{}, 0, nil, ErrOutOfGas
+	}
 	ret, logs, err := run(evm, contract, nil, false)
 
 	// check whether the max code size has been exceeded
