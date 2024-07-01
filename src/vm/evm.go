@@ -129,7 +129,8 @@ type EVM struct {
 	// applied in opCall*.
 	callGasTemp uint64
 
-	accountDB *account.AccountDB
+	accountDB   *account.AccountDB
+	createCount uint64
 }
 
 // NewEVM returns a new EVM. The returned EVM is not thread safe and should
@@ -139,6 +140,7 @@ func NewEVM(ctx Context, statedb StateDB) *EVM {
 		Context:      ctx,
 		StateDB:      statedb,
 		interpreters: make([]Interpreter, 0, 1),
+		createCount:  0,
 	}
 	if ctx.BlockNumber != nil {
 		evm.chainID = common.GetChainId(ctx.BlockNumber.Uint64())
@@ -178,6 +180,15 @@ func (evm *EVM) Cancelled() bool {
 // Interpreter returns the current interpreter
 func (evm *EVM) Interpreter() Interpreter {
 	return evm.interpreter
+}
+
+func (evm *EVM) EstimateCall(caller ContractRef, addr common.Address, input []byte, gas uint64, value *big.Int) (ret []byte, leftOverGas uint64, logs []*types.Log, err error, createCount uint64) {
+	ret, leftOverGas, logs, err = evm.Call(caller, addr, input, gas, value)
+	return ret, leftOverGas, logs, err, evm.createCount
+}
+func (evm *EVM) EstimateCreate(caller ContractRef, code []byte, gas uint64, value *big.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, logs []*types.Log, err error, createCount uint64) {
+	ret, contractAddr, leftOverGas, logs, err = evm.create(caller, &codeAndHash{code: code}, gas, value, contractAddr)
+	return ret, contractAddr, leftOverGas, logs, err, evm.createCount
 }
 
 // Call executes the contract associated with the addr with the given input as
@@ -429,7 +440,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	// The contract is a scoped environment for this execution context only.
 	contract := NewContract(caller, AccountRef(address), value, gas)
 	contract.SetCodeOptionalHash(&address, codeAndHash)
-	if common.IsProposal026() && !contract.UseGas(p26CreateGas) {
+	if common.IsProposal026() && !contract.UseCreateGas() {
 		return nil, common.Address{}, 0, nil, ErrOutOfGas
 	}
 	ret, logs, err := run(evm, contract, nil, false)
@@ -444,6 +455,7 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 		createDataGas := uint64(len(ret)) * CreateDataGas
 		if contract.UseGas(createDataGas) {
 			evm.StateDB.SetCode(address, ret)
+			evm.createCount++
 			logger.Debugf("Create data gas:%d", createDataGas)
 		} else {
 			err = ErrCodeStoreOutOfGas

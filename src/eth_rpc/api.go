@@ -118,7 +118,8 @@ type RPCBlock struct {
 }
 
 const (
-	gasLimit                  uint64 = 3000000000
+	gasLimit                  uint64 = 13000000000
+	createContractGas         uint64 = 1000000000
 	confirmBlockCount         uint64 = 3
 	txGas                     uint64 = 21000 // Per transaction not creating a contract. NOTE: Not payable on data of calls between transactions.
 	estimateExpandCoefficient        = 2.5
@@ -183,7 +184,7 @@ func (s *EthAPIService) Call(args CallArgs, blockNrOrHash BlockNumberOrHash) (ut
 		defaultGasLimit := utility.Uint64(gasLimit)
 		args.Gas = &defaultGasLimit
 	}
-	data, err, _ := doCall(args, blockNrOrHash)
+	data, err, _, _ := doCall(args, blockNrOrHash)
 	return data, err
 }
 
@@ -197,9 +198,14 @@ func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash *BlockNumberOrH
 		defaultGasLimit := utility.Uint64(gasLimit)
 		args.Gas = &defaultGasLimit
 	}
-	_, err, gasUsed := doCall(args, bNrOrHash)
-
-	estimateGas := uint64(float64(gasUsed) * estimateExpandCoefficient)
+	_, err, gasUsed, createCount := doCall(args, bNrOrHash)
+	createFixGas := createCount * createContractGas
+	var estimateGas uint64
+	if createCount > 0 && gasUsed > createFixGas {
+		estimateGas = createFixGas + uint64(float64(gasUsed-createFixGas)*estimateExpandCoefficient)
+	} else {
+		estimateGas = uint64(float64(gasUsed) * estimateExpandCoefficient)
+	}
 	if gasUsed != txGas && estimateGas < generalEstimateGas {
 		estimateGas = generalEstimateGas
 	}
@@ -209,13 +215,13 @@ func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash *BlockNumberOrH
 	return utility.Uint64(estimateGas), err
 }
 
-func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error, uint64) {
+func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, error, uint64, uint64) {
 	number, _ := blockNrOrHash.Number()
 	logger.Debugf("doCall:%v,%v", args, number)
 	accountdb := getAccountDBByHashOrHeight(blockNrOrHash)
 	block := getBlockByHashOrHeight(blockNrOrHash)
 	if accountdb == nil || block == nil {
-		return nil, errors.New("param invalid"), 0
+		return nil, errors.New("param invalid"), 0, 0
 	}
 
 	initialGas := uint64(*args.Gas)
@@ -230,11 +236,11 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 	intrinsicGas, gasErr = executor.IntrinsicGas(data, contractCreation)
 	if gasErr != nil {
 		logger.Errorf("IntrinsicGas error:%s", gasErr.Error())
-		return nil, gasErr, 0
+		return nil, gasErr, 0, 0
 	}
 	if initialGas < intrinsicGas {
 		logger.Errorf("gas limit too low,gas limit:%d,intrinsic gas:%d", initialGas, intrinsicGas)
-		return nil, errors.New("intrinsic gas too low"), 0
+		return nil, errors.New("intrinsic gas too low"), 0, 0
 	}
 
 	vmCtx := vm.Context{}
@@ -266,13 +272,14 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 		leftOverGas     uint64
 		contractAddress common.Address
 		err             error
+		createCount     uint64
 	)
 	logger.Debugf("before vm instance,intrinsicGas:%d,gasLimit:%d", intrinsicGas, vmCtx.GasLimit)
 	if contractCreation {
-		result, contractAddress, leftOverGas, _, err = vmInstance.Create(caller, data, vmCtx.GasLimit, transferValue)
+		result, contractAddress, leftOverGas, _, err, createCount = vmInstance.EstimateCreate(caller, data, vmCtx.GasLimit, transferValue)
 		logger.Debugf("[eth_call]After execute contract create!Contract address:%s, leftOverGas: %d,error:%v", contractAddress.GetHexString(), leftOverGas, err)
 	} else {
-		result, leftOverGas, _, err = vmInstance.Call(caller, *args.To, data, vmCtx.GasLimit, transferValue)
+		result, leftOverGas, _, err, createCount = vmInstance.EstimateCall(caller, *args.To, data, vmCtx.GasLimit, transferValue)
 		logger.Debugf("[eth_call]After execute contract call! result:%v,leftOverGas: %d,error:%v", result, leftOverGas, err)
 	}
 
@@ -283,12 +290,12 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 	// If the result contains a revert reason, try to unpack and return it.
 	if err == vm.ErrExecutionReverted && len(result) > 0 {
 		err := adaptErrorOutput(err, result)
-		return nil, &revertError{err, common.ToHex(result)}, gasUsed
+		return nil, &revertError{err, common.ToHex(result)}, gasUsed, createCount
 	}
 	if err != nil {
-		return nil, err, gasUsed
+		return nil, err, gasUsed, createCount
 	}
-	return result, nil, gasUsed
+	return result, nil, gasUsed, createCount
 }
 
 // ChainId returns the chainID value for transaction replay protection.

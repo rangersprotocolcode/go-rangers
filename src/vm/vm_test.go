@@ -830,6 +830,38 @@ func TestVM11(t *testing.T) {
 	fmt.Printf("target balance:%v\n", balance)
 }
 
+func TestVM12(t *testing.T) {
+	mockInit()
+	common.DefaultLogger = log.GetLoggerByIndex(log.VMLogConfig, "0")
+	config := new(testConfig)
+	setDefaults(config)
+	defer log.Close()
+	common.SetBlockHeight(100000000)
+	source := "0x826f575031a074fd914a869b5dc1c4eae620fef5"
+	target := "0x826f575031a074fd914a869b5dc1c4eae6206666"
+	config.State.SetBalance(common.HexToAddress(source), big.NewInt(100))
+
+	config.CanTransfer = CanTransfer
+	config.Transfer = Transfer
+	config.GetHashFn = func(uint64) common.Hash { return common.Hash{} }
+
+	config.Origin = common.HexToAddress(source)
+	config.Coinbase = common.HexToAddress(source)
+	config.BlockNumber = new(big.Int).SetUint64(1000000000)
+	config.Time = new(big.Int).SetUint64(uint64(time.Now().Unix()))
+
+	config.GasPrice = big.NewInt(1)
+	config.GasLimit = 3000000000
+	config.Value = big.NewInt(100)
+
+	_, gasLeft, err := mockCall(common.HexToAddress(target), []byte{}, config)
+	if err != nil {
+		panic("Genesis contract create error:" + err.Error())
+	}
+	gasUsed := config.GasLimit - gasLeft
+	fmt.Printf("After execute transfer,gas used:%d\n", gasUsed)
+}
+
 func TestReceiveAndFallback(t *testing.T) {
 	//IsProposal002 need to be true
 	mockInit()

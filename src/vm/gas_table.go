@@ -81,6 +81,9 @@ func memoryCopierGas(stackpos int) gasFunc {
 		if gas, overflow = utility.SafeAdd(gas, words); overflow {
 			return 0, ErrGasUintOverflow
 		}
+		if common.IsProposal026() {
+			return gas * gasMagnification, nil
+		}
 		return gas, nil
 	}
 }
@@ -104,7 +107,7 @@ func gasSStore(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySi
 }
 
 func gasSStoreEIP2200(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize uint64) (uint64, error) {
-	if common.IsProposal015() {
+	if common.IsProposal026() {
 		return SstoreSetGasEIP2200 * gasMagnification, nil // dirty update (2.2)
 	}
 	if common.IsProposal015() {
@@ -139,6 +142,9 @@ func makeGasLog(n uint64) gasFunc {
 		if gas, overflow = utility.SafeAdd(gas, memorySizeGas); overflow {
 			return 0, ErrGasUintOverflow
 		}
+		if common.IsProposal026() {
+			return gas * gasMagnification, nil
+		}
 		return gas, nil
 	}
 }
@@ -157,6 +163,9 @@ func gasSha3(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize
 	}
 	if gas, overflow = utility.SafeAdd(gas, wordGas); overflow {
 		return 0, ErrGasUintOverflow
+	}
+	if common.IsProposal026() {
+		return gas * gasMagnification, nil
 	}
 	return gas, nil
 }
@@ -193,6 +202,9 @@ func gasCreate2(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memoryS
 	if gas, overflow = utility.SafeAdd(gas, wordGas); overflow {
 		return 0, ErrGasUintOverflow
 	}
+	if common.IsProposal026() {
+		return gas * gasMagnification, nil
+	}
 	return gas, nil
 }
 
@@ -206,6 +218,9 @@ func gasExpFrontier(evm *EVM, contract *Contract, stack *Stack, mem *Memory, mem
 	if gas, overflow = utility.SafeAdd(gas, ExpGas); overflow {
 		return 0, ErrGasUintOverflow
 	}
+	if common.IsProposal026() {
+		return gas * gasMagnification, nil
+	}
 	return gas, nil
 }
 
@@ -218,6 +233,9 @@ func gasExpEIP158(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memor
 	)
 	if gas, overflow = utility.SafeAdd(gas, ExpGas); overflow {
 		return 0, ErrGasUintOverflow
+	}
+	if common.IsProposal026() {
+		return gas * gasMagnification, nil
 	}
 	return gas, nil
 }
@@ -251,6 +269,9 @@ func gasCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize
 	if gas, overflow = utility.SafeAdd(gas, evm.callGasTemp); overflow {
 		return 0, ErrGasUintOverflow
 	}
+	if common.IsProposal026() {
+		return gas * gasMagnification, nil
+	}
 	return gas, nil
 }
 
@@ -276,6 +297,9 @@ func gasCallCode(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memory
 	if gas, overflow = utility.SafeAdd(gas, evm.callGasTemp); overflow {
 		return 0, ErrGasUintOverflow
 	}
+	if common.IsProposal026() {
+		return gas * gasMagnification, nil
+	}
 	return gas, nil
 }
 
@@ -292,6 +316,9 @@ func gasDelegateCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, me
 	if gas, overflow = utility.SafeAdd(gas, evm.callGasTemp); overflow {
 		return 0, ErrGasUintOverflow
 	}
+	if common.IsProposal026() {
+		return gas * gasMagnification, nil
+	}
 	return gas, nil
 }
 
@@ -307,6 +334,9 @@ func gasStaticCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memo
 	var overflow bool
 	if gas, overflow = utility.SafeAdd(gas, evm.callGasTemp); overflow {
 		return 0, ErrGasUintOverflow
+	}
+	if common.IsProposal026() {
+		return gas * gasMagnification, nil
 	}
 	return gas, nil
 }
@@ -368,6 +398,9 @@ func gasAuthCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memory
 	}
 	if dynamicGas, overflow = utility.SafeAdd(dynamicGas, evm.callGasTemp); overflow {
 		return 0, ErrGasUintOverflow
+	}
+	if common.IsProposal026() {
+		return dynamicGas * gasMagnification, nil
 	}
 	return dynamicGas, nil
 }

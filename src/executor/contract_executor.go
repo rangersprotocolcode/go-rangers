@@ -40,7 +40,7 @@ type contractExecutor struct {
 const (
 	defaultGasLimit     uint64 = 6000000
 	p017defaultGasLimit uint64 = 30000000
-	p026defaultGasLimit uint64 = 3000000000
+	p026defaultGasLimit uint64 = 13000000000
 )
 
 var (
