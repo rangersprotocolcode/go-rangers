@@ -74,7 +74,7 @@ func TestCall(t *testing.T) {
 		byte(RETURN),
 	})
 
-	ret, _, err := mockCall(address, nil, &testConfig{State: state})
+	ret, _, _, err := mockCall(address, nil, &testConfig{State: state})
 	if err != nil {
 		t.Fatal("didn't expect error", err)
 	}

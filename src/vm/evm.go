@@ -129,18 +129,20 @@ type EVM struct {
 	// applied in opCall*.
 	callGasTemp uint64
 
-	accountDB   *account.AccountDB
-	createCount uint64
+	accountDB          *account.AccountDB
+	createCount        uint64
+	instructionUsedGas uint64
 }
 
 // NewEVM returns a new EVM. The returned EVM is not thread safe and should
 // only ever be used *once*.
 func NewEVM(ctx Context, statedb StateDB) *EVM {
 	evm := &EVM{
-		Context:      ctx,
-		StateDB:      statedb,
-		interpreters: make([]Interpreter, 0, 1),
-		createCount:  0,
+		Context:            ctx,
+		StateDB:            statedb,
+		interpreters:       make([]Interpreter, 0, 1),
+		createCount:        0,
+		instructionUsedGas: 0,
 	}
 	if ctx.BlockNumber != nil {
 		evm.chainID = common.GetChainId(ctx.BlockNumber.Uint64())
@@ -222,7 +224,7 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 	evm.Transfer(evm.StateDB, caller.Address(), addr, value)
 
 	if isPrecompile {
-		ret, gas, err = RunPrecompiledContract(p, input, gas)
+		ret, gas, err = evm.RunPrecompiledContract(p, input, gas)
 	} else {
 		// Initialise a new contract and set the code that is to be used by the EVM.
 		// The contract is a scoped environment for this execution context only.
@@ -278,7 +280,7 @@ func (evm *EVM) CallCode(caller ContractRef, addr common.Address, input []byte, 
 
 	// It is allowed to call precompiles, even via delegatecall
 	if p, isPrecompile := evm.precompile(addr); isPrecompile {
-		ret, gas, err = RunPrecompiledContract(p, input, gas)
+		ret, gas, err = evm.RunPrecompiledContract(p, input, gas)
 	} else {
 		addrCopy := addr
 		// Initialise a new contract and set the code that is to be used by the EVM.
@@ -312,7 +314,7 @@ func (evm *EVM) DelegateCall(caller ContractRef, addr common.Address, input []by
 
 	// It is allowed to call precompiles, even via delegatecall
 	if p, isPrecompile := evm.precompile(addr); isPrecompile {
-		ret, gas, err = RunPrecompiledContract(p, input, gas)
+		ret, gas, err = evm.RunPrecompiledContract(p, input, gas)
 	} else {
 		addrCopy := addr
 		// Initialise a new contract and make initialise the delegate values
@@ -353,7 +355,7 @@ func (evm *EVM) StaticCall(caller ContractRef, addr common.Address, input []byte
 	evm.StateDB.AddBalance(addr, big0)
 
 	if p, isPrecompile := evm.precompile(addr); isPrecompile {
-		ret, gas, err = RunPrecompiledContract(p, input, gas)
+		ret, gas, err = evm.RunPrecompiledContract(p, input, gas)
 	} else {
 		// At this point, we use a copy of address. If we don't, the go compiler will
 		// leak the 'contract' to the outer scope, and make allocation for 'contract'
@@ -456,6 +458,9 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 		if contract.UseGas(createDataGas) {
 			evm.StateDB.SetCode(address, ret)
 			evm.createCount++
+			if !evm.calInstructionGas(createDataGas) {
+				err = ErrOutOfInstructionGas
+			}
 			logger.Debugf("Create data gas:%d", createDataGas)
 		} else {
 			err = ErrCodeStoreOutOfGas
@@ -526,7 +531,7 @@ func (evm *EVM) AuthCall(sponsor common.Address, caller ContractRef, addr common
 	evm.Transfer(evm.StateDB, sponsor, addr, value)
 
 	if isPrecompile {
-		ret, gas, err = RunPrecompiledContract(p, input, gas)
+		ret, gas, err = evm.RunPrecompiledContract(p, input, gas)
 	} else {
 		// Initialise a new contract and set the code that is to be used by the EVM.
 		// The contract is a scoped environment for this execution context only.
@@ -553,4 +558,19 @@ func (evm *EVM) AuthCall(sponsor common.Address, caller ContractRef, addr common
 		}
 	}
 	return ret, gas, logs, err
+}
+
+func (evm *EVM) calInstructionDynamicGas(gas uint64, opCode OpCode) bool {
+	if opCode == CALL || opCode == CALLCODE || opCode == DELEGATECALL || opCode == STATICCALL || opCode == AUTHCALL {
+		return true
+	}
+	return evm.calInstructionGas(gas)
+}
+
+func (evm *EVM) calInstructionGas(gas uint64) bool {
+	evm.instructionUsedGas += gas
+	if common.IsProposal026() && evm.instructionUsedGas > p26CreateGas {
+		return false
+	}
+	return true
 }

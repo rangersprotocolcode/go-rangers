@@ -269,9 +269,6 @@ func gasCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memorySize
 	if gas, overflow = utility.SafeAdd(gas, evm.callGasTemp); overflow {
 		return 0, ErrGasUintOverflow
 	}
-	if common.IsProposal026() {
-		return gas * gasMagnification, nil
-	}
 	return gas, nil
 }
 
@@ -297,9 +294,6 @@ func gasCallCode(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memory
 	if gas, overflow = utility.SafeAdd(gas, evm.callGasTemp); overflow {
 		return 0, ErrGasUintOverflow
 	}
-	if common.IsProposal026() {
-		return gas * gasMagnification, nil
-	}
 	return gas, nil
 }
 
@@ -316,9 +310,6 @@ func gasDelegateCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, me
 	if gas, overflow = utility.SafeAdd(gas, evm.callGasTemp); overflow {
 		return 0, ErrGasUintOverflow
 	}
-	if common.IsProposal026() {
-		return gas * gasMagnification, nil
-	}
 	return gas, nil
 }
 
@@ -334,9 +325,6 @@ func gasStaticCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memo
 	var overflow bool
 	if gas, overflow = utility.SafeAdd(gas, evm.callGasTemp); overflow {
 		return 0, ErrGasUintOverflow
-	}
-	if common.IsProposal026() {
-		return gas * gasMagnification, nil
 	}
 	return gas, nil
 }
@@ -398,9 +386,6 @@ func gasAuthCall(evm *EVM, contract *Contract, stack *Stack, mem *Memory, memory
 	}
 	if dynamicGas, overflow = utility.SafeAdd(dynamicGas, evm.callGasTemp); overflow {
 		return 0, ErrGasUintOverflow
-	}
-	if common.IsProposal026() {
-		return dynamicGas * gasMagnification, nil
 	}
 	return dynamicGas, nil
 }

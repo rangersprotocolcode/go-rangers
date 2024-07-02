@@ -28,6 +28,9 @@ import (
 )
 
 //vm test functions
+const defaultGasLimit uint64 = 13000000000
+
+var defaultGasPrice = big.NewInt(1000000000)
 
 // Config is a basic type specifying certain configuration flags for running the VM
 type testConfig struct {
@@ -137,7 +140,7 @@ func mockExecute(code, input []byte, cfg *testConfig) ([]byte, *account.AccountD
 }
 
 // Create executes the code using the EVM create method
-func mockCreate(input []byte, cfg *testConfig) ([]byte, common.Address, uint64, error) {
+func mockCreate(input []byte, cfg *testConfig) ([]byte, common.Address, uint64, uint64, error) {
 	if cfg == nil {
 		cfg = new(testConfig)
 	}
@@ -163,7 +166,7 @@ func mockCreate(input []byte, cfg *testConfig) ([]byte, common.Address, uint64, 
 		cfg.GasLimit,
 		cfg.Value,
 	)
-	return code, address, leftOverGas, err
+	return code, address, leftOverGas, vmenv.instructionUsedGas, err
 }
 
 // Call executes the code given by the contract's address. It will return the
@@ -171,7 +174,7 @@ func mockCreate(input []byte, cfg *testConfig) ([]byte, common.Address, uint64, 
 //
 // Call, unlike Execute, requires a config and also requires the State field to
 // be set.
-func mockCall(address common.Address, input []byte, cfg *testConfig) ([]byte, uint64, error) {
+func mockCall(address common.Address, input []byte, cfg *testConfig) ([]byte, uint64, uint64, error) {
 	setDefaults(cfg)
 	vmenv := mockEVM(cfg)
 
@@ -190,7 +193,7 @@ func mockCall(address common.Address, input []byte, cfg *testConfig) ([]byte, ui
 		cfg.GasLimit,
 		cfg.Value,
 	)
-	return ret, leftOverGas, err
+	return ret, leftOverGas, vmenv.instructionUsedGas, err
 }
 
 // Call executes the code given by the contract's address. It will return the
@@ -198,7 +201,7 @@ func mockCall(address common.Address, input []byte, cfg *testConfig) ([]byte, ui
 //
 // Call, unlike Execute, requires a config and also requires the State field to
 // be set.
-func mockCallWithLogs(address common.Address, input []byte, cfg *testConfig) ([]byte, uint64, []*types.Log, error) {
+func mockCallWithLogs(address common.Address, input []byte, cfg *testConfig) ([]byte, uint64, []*types.Log, uint64, error) {
 	setDefaults(cfg)
 	vmenv := mockEVM(cfg)
 
@@ -210,13 +213,8 @@ func mockCallWithLogs(address common.Address, input []byte, cfg *testConfig) ([]
 	//}
 
 	// Call the code with the given configuration.
-	return vmenv.Call(
-		sender,
-		address,
-		input,
-		cfg.GasLimit,
-		cfg.Value,
-	)
+	callResult, callLeftGas, logs, callErr := vmenv.Call(sender, address, input, cfg.GasLimit, cfg.Value)
+	return callResult, callLeftGas, logs, vmenv.instructionUsedGas, callErr
 }
 
 func mockEVM(cfg *testConfig) *EVM {

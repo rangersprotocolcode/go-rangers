@@ -221,6 +221,10 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 			return nil, nil, ErrOutOfGas
 		}
 
+		if !in.evm.calInstructionGas(operation.constantGas) {
+			return nil, nil, ErrOutOfInstructionGas
+		}
+
 		var memorySize uint64
 		// calculate the new memory size and expand the memory to fit
 		// the operation
@@ -246,6 +250,9 @@ func (in *EVMInterpreter) Run(contract *Contract, input []byte, readOnly bool) (
 			cost += dynamicCost // total cost, for debug tracing
 			if err != nil || !contract.UseGas(dynamicCost) {
 				return nil, nil, ErrOutOfGas
+			}
+			if !in.evm.calInstructionDynamicGas(dynamicCost, op) {
+				return nil, nil, ErrOutOfInstructionGas
 			}
 		}
 		if memorySize > 0 {

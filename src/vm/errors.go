@@ -27,6 +27,7 @@ var (
 	// as opposed to from a JUMPSUB instruction
 	ErrInvalidSubroutineEntry   = errors.New("invalid subroutine entry")
 	ErrOutOfGas                 = errors.New("out of gas")
+	ErrOutOfInstructionGas      = errors.New("out of instruction gas(3000000000)")
 	ErrCodeStoreOutOfGas        = errors.New("contract creation code storage out of gas")
 	ErrDepth                    = errors.New("max call depth exceeded")
 	ErrInsufficientBalance      = errors.New("insufficient balance for transfer")
