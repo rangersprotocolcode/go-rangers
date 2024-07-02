@@ -104,7 +104,7 @@ var (
 		Proposal023Block: 77826000,
 		Proposal024Block: 0,
 		Proposal025Block: 77920000,
-		Proposal026Block: math.MaxUint64, //todo
+		Proposal026Block: 78842000,
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 
 		MysqlDSN:   "rpservice_v2:oJ2*bA0:hB3%@tcp(192.168.0.172:5555)/rpservice_v2?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
