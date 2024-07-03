@@ -199,6 +199,11 @@ func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash *BlockNumberOrH
 		args.Gas = &defaultGasLimit
 	}
 	_, err, gasUsed, createCount := doCall(args, bNrOrHash)
+	//transfer tx
+	if args.data() == nil && gasUsed == txGas {
+		return utility.Uint64(gasUsed), err
+	}
+
 	createFixGas := createCount * createContractGas
 	var estimateGas uint64
 	if createCount > 0 && gasUsed > createFixGas {
@@ -206,7 +211,8 @@ func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash *BlockNumberOrH
 	} else {
 		estimateGas = uint64(float64(gasUsed) * estimateExpandCoefficient)
 	}
-	if gasUsed != txGas && estimateGas < generalEstimateGas {
+
+	if estimateGas < generalEstimateGas {
 		estimateGas = generalEstimateGas
 	}
 	if estimateGas > gasLimit {
