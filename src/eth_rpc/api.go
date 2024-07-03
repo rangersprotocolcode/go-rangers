@@ -200,9 +200,9 @@ func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash *BlockNumberOrH
 	}
 	_, err, gasUsed, createCount := doCall(args, bNrOrHash)
 	//transfer tx
-	//if args.data() == nil && gasUsed == txGas {
-	//	return utility.Uint64(gasUsed), err
-	//}
+	if args.data() == nil && gasUsed == txGas {
+		return utility.Uint64(gasUsed), err
+	}
 
 	createFixGas := createCount * createContractGas
 	var estimateGas uint64
