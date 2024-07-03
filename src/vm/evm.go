@@ -569,7 +569,7 @@ func (evm *EVM) calInstructionDynamicGas(gas uint64, opCode OpCode) bool {
 
 func (evm *EVM) calInstructionGas(gas uint64) bool {
 	evm.instructionUsedGas += gas
-	if common.IsProposal026() && evm.instructionUsedGas > p26CreateGas {
+	if common.IsProposal026() && evm.instructionUsedGas > p026defaultInstructionGasLimit {
 		return false
 	}
 	return true
