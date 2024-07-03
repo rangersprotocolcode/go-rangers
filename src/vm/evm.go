@@ -189,7 +189,7 @@ func (evm *EVM) EstimateCall(caller ContractRef, addr common.Address, input []by
 	return ret, leftOverGas, logs, err, evm.createCount
 }
 func (evm *EVM) EstimateCreate(caller ContractRef, code []byte, gas uint64, value *big.Int) (ret []byte, contractAddr common.Address, leftOverGas uint64, logs []*types.Log, err error, createCount uint64) {
-	ret, contractAddr, leftOverGas, logs, err = evm.create(caller, &codeAndHash{code: code}, gas, value, contractAddr)
+	ret, contractAddr, leftOverGas, logs, err = evm.Create(caller, code, gas, value)
 	return ret, contractAddr, leftOverGas, logs, err, evm.createCount
 }
 
