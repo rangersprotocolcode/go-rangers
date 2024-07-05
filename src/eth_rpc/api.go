@@ -122,7 +122,7 @@ const (
 	createContractGas         uint64 = 1000000000
 	confirmBlockCount         uint64 = 3
 	txGas                     uint64 = 21000 // Per transaction not creating a contract. NOTE: Not payable on data of calls between transactions.
-	estimateExpandCoefficient        = 1.25
+	estimateExpandCoefficient        = 2.5
 	generalEstimateGas        uint64 = 500000
 	MaxInitCodeSize                  = 2 * 24576 // Maximum initcode to permit in a creation transaction and create instructions
 )
