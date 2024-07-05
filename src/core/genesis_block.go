@@ -181,7 +181,7 @@ func createGenesisContract(header *types.BlockHeader, statedb *account.AccountDB
 	vmCtx.Time = new(big.Int).SetUint64(uint64(header.CurTime.Unix()))
 
 	vmCtx.GasPrice = big.NewInt(1)
-	vmCtx.GasLimit = 30000000
+	vmCtx.GasLimit = 3000000000
 	vmInstance := vm.NewEVM(vmCtx, statedb)
 	caller := vm.AccountRef(vmCtx.Origin)
 
