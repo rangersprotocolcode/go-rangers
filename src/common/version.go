@@ -144,7 +144,7 @@ var (
 		Proposal023Block: 12,
 		Proposal024Block: 0,
 		Proposal025Block: 1000000000,
-		Proposal026Block: 158300,
+		Proposal026Block: 0,
 	}
 
 	subNetChainConfig = ChainConfig{
