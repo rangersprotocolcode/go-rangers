@@ -200,7 +200,7 @@ func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash *BlockNumberOrH
 	_, err, gasUsed := doCall(args, bNrOrHash)
 
 	//transfer tx
-	if args.data() == nil && gasUsed == txGas*common.GasMagnification {
+	if (args.data() == nil || len(args.data()) == 0) && gasUsed == txGas*common.GasMagnification {
 		return utility.Uint64(gasUsed), err
 	}
 
