@@ -143,7 +143,7 @@ var (
 		Proposal022Block: 0,
 		Proposal023Block: 12,
 		Proposal024Block: 0,
-		Proposal025Block: 50,
+		Proposal025Block: 1000000000,
 		Proposal026Block: 0,
 	}
 
