@@ -113,6 +113,7 @@ type TxPool struct {
 var (
 	txpoolInstance TransactionPool
 	delta, _       = utility.StrToBigInt("0.0001")
+	delta026, _    = utility.StrToBigInt("0.001")
 )
 
 func initTransactionPool() {
@@ -386,6 +387,9 @@ func (pool *TxPool) ProcessFee(tx types.Transaction, accountDB *account.AccountD
 	addr := common.HexStringToAddress(tx.Source)
 	balance := accountDB.GetBalance(addr)
 
+	if common.IsProposal026() {
+		delta = delta026
+	}
 	if balance.Cmp(delta) < 0 {
 		msg := fmt.Sprintf("not enough max, addr: %s, balance: %s", tx.Source, balance)
 		return fmt.Errorf(msg)

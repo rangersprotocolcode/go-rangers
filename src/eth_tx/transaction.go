@@ -37,7 +37,8 @@ var (
 	ErrInvalidSig = errors.New("invalid transaction v, r, s values")
 
 	defaultGasPrice = big.NewInt(1000000000)
-	protocolFee     = big.NewInt(100000000000000) //0.0001
+	protocolFee     = big.NewInt(100000000000000)  //0.0001
+	protocolFee026  = big.NewInt(1000000000000000) //0.001
 )
 
 type Transaction struct {
@@ -190,7 +191,11 @@ func (tx *Transaction) WithSignature(signer Signer, sig []byte) (*Transaction, e
 func (tx *Transaction) Cost() *big.Int {
 	total := new(big.Int).Mul(defaultGasPrice, new(big.Int).SetUint64(tx.data.GasLimit))
 	total.Add(total, tx.data.Amount)
-	total.Add(total, protocolFee)
+	if common.IsProposal026() {
+		total.Add(total, protocolFee026)
+	} else {
+		total.Add(total, protocolFee)
+	}
 	return total
 }
 

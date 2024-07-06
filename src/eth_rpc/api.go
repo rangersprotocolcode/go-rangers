@@ -118,7 +118,7 @@ type RPCBlock struct {
 }
 
 const (
-	gasLimit                  uint64 = 30000000
+	gasLimit                  uint64 = 900000000
 	confirmBlockCount         uint64 = 3
 	txGas                     uint64 = 21000 // Per transaction not creating a contract. NOTE: Not payable on data of calls between transactions.
 	estimateExpandCoefficient        = 2.5
@@ -199,6 +199,11 @@ func (s *EthAPIService) EstimateGas(args CallArgs, blockNrOrHash *BlockNumberOrH
 	}
 	_, err, gasUsed := doCall(args, bNrOrHash)
 
+	//transfer tx
+	if args.data() == nil && gasUsed == txGas*common.GasMagnification {
+		return utility.Uint64(gasUsed), err
+	}
+
 	estimateGas := uint64(float64(gasUsed) * estimateExpandCoefficient)
 	if gasUsed != txGas && estimateGas < generalEstimateGas {
 		estimateGas = generalEstimateGas
@@ -227,6 +232,7 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 
 	var gasErr error
 	var intrinsicGas uint64
+	intrinsicGas, gasErr = executor.IntrinsicGas(data, contractCreation)
 	intrinsicGas, gasErr = executor.IntrinsicGas(data, contractCreation)
 	if gasErr != nil {
 		logger.Errorf("IntrinsicGas error:%s", gasErr.Error())

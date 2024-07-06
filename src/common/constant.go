@@ -42,6 +42,8 @@ const (
 	MinerStatusAbort  = 1
 )
 
+const GasMagnification = 30
+
 var (
 	hashT    = reflect.TypeOf(Hash{})
 	addressT = reflect.TypeOf(Address{})
