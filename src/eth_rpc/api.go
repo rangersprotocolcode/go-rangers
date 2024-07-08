@@ -233,7 +233,6 @@ func doCall(args CallArgs, blockNrOrHash BlockNumberOrHash) (utility.Bytes, erro
 	var gasErr error
 	var intrinsicGas uint64
 	intrinsicGas, gasErr = executor.IntrinsicGas(data, contractCreation)
-	intrinsicGas, gasErr = executor.IntrinsicGas(data, contractCreation)
 	if gasErr != nil {
 		logger.Errorf("IntrinsicGas error:%s", gasErr.Error())
 		return nil, gasErr, 0
