@@ -387,15 +387,17 @@ func (pool *TxPool) ProcessFee(tx types.Transaction, accountDB *account.AccountD
 	addr := common.HexStringToAddress(tx.Source)
 	balance := accountDB.GetBalance(addr)
 
+	fee := delta
 	if common.IsProposal026() {
-		delta = delta026
+		fee = delta026
 	}
-	if balance.Cmp(delta) < 0 {
+
+	if balance.Cmp(fee) < 0 {
 		msg := fmt.Sprintf("not enough max, addr: %s, balance: %s", tx.Source, balance)
 		return fmt.Errorf(msg)
 	}
-	accountDB.SubBalance(addr, delta)
-	accountDB.AddBalance(common.FeeAccount, delta)
+	accountDB.SubBalance(addr, fee)
+	accountDB.AddBalance(common.FeeAccount, fee)
 	return nil
 }
 
