@@ -186,9 +186,7 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 	context["logs"] = logs
 	if common.IsProposal015() {
 		gasUsed := gasLimit - leftOverGas
-		gasFeeUsed := new(big.Int).Mul(new(big.Int).SetUint64(gasUsed), defaultGasPrice)
-		accountdb.SubBalance(common.HexToAddress(transaction.Source), gasFeeUsed)
-		accountdb.AddBalance(common.FeeAccount, gasFeeUsed)
+		DeductGasFee(gasUsed, transaction.Source, accountdb)
 		context["gasUsed"] = gasUsed
 	}
 	if err != nil {
@@ -288,4 +286,13 @@ func preCheckContractFee(tx *types.Transaction, accountDB *account.AccountDB, ra
 		logger.Tracef("[ContractExecutor]pre check passed:%s,balance:%s,gasFess:%s,transferValue:%s,", tx.Hash.String(), balance.String(), gasFee.String(), raw.TransferValue.String())
 	}
 	return nil
+}
+
+func DeductGasFee(gasUsed uint64, source string, accountdb *account.AccountDB) {
+	if accountdb == nil {
+		return
+	}
+	gasFeeUsed := new(big.Int).Mul(new(big.Int).SetUint64(gasUsed), defaultGasPrice)
+	accountdb.SubBalance(common.HexToAddress(source), gasFeeUsed)
+	accountdb.AddBalance(common.FeeAccount, gasFeeUsed)
 }

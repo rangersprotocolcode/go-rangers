@@ -113,6 +113,11 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 						evictedTxs = append(evictedTxs, transaction.Hash)
 					}
 					this.accountdb.RevertToSnapshot(snapshot)
+					if common.IsProposal027() && types.IsContractTx(transaction.Type) {
+						if gasUsed := this.context["gasUsed"]; gasUsed != nil {
+							executor.DeductGasFee(gasUsed.(uint64), transaction.Source, this.accountdb)
+						}
+					}
 				} else {
 					if transaction.Source != "" {
 						if !common.IsProposal006() {
