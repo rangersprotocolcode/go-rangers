@@ -697,3 +697,17 @@ func (adb *AccountDB) AddLog(log *types.Log) {
 func (s *AccountDB) GetLogs(hash common.Hash) []*types.Log {
 	return s.logs[hash]
 }
+
+// SetStorage replaces the entire storage for the specified account with given
+// storage. This function should only be used for debugging.
+func (s *AccountDB) SetStorage(addr common.Address, storage map[common.Hash]common.Hash) {
+	// SetStorage needs to wipe existing storage. We achieve this by pretending
+	// that the account self-destructed earlier in this block, by flagging
+	// it in stateObjectsDestruct. The effect of doing so is that storage lookups
+	// will not hit disk, since it is assumed that the disk-data is belonging
+	// to a previous incarnation of the object.
+	stateObject := s.getOrNewAccountObject(addr)
+	for k, v := range storage {
+		stateObject.SetData(s.db, k.Bytes(), v.Bytes())
+	}
+}
