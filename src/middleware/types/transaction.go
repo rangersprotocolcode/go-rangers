@@ -54,6 +54,8 @@ const (
 	TransactionTypeCallVM      = 612
 )
 
+var DefaultGasPrice = big.NewInt(1000000000)
+
 type Transaction struct {
 	Source string
 	Target string
