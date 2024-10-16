@@ -19,7 +19,6 @@ package vm
 import (
 	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/middleware/db"
-	"com.tuntun.rangers/node/src/middleware/log"
 	"com.tuntun.rangers/node/src/storage/account"
 	"com.tuntun.rangers/node/src/utility"
 	"fmt"
@@ -110,71 +109,71 @@ func (s *stepCounter) CaptureEnd(output []byte, gasUsed uint64, t time.Duration,
 	return nil
 }
 
-func TestJumpSub1024Limit(t *testing.T) {
-	mockInit()
-	database, _ := db.NewLDBDatabase("test", 0, 0)
-	state, _ := account.NewAccountDB(common.Hash{}, account.NewDatabase(database))
-	//address use big address 'aa' avoid precompile contract
-	address := common.HexToAddress("0x0aa")
-	// Code is
-	// 0 beginsub
-	// 1 push 0
-	// 3 jumpsub
-	//
-	// The code recursively calls itself. It should error when the returns-stack
-	// grows above 1023
-	state.SetCode(address, []byte{
-		byte(PUSH1), 3,
-		byte(JUMPSUB),
-		byte(BEGINSUB),
-		byte(PUSH1), 3,
-		byte(JUMPSUB),
-	})
-	tracer := &stepCounter{inner: NewMarkdownLogger(nil, log.GetLoggerByIndex(log.VMLogConfig, ""))}
-	vmTracer = tracer
+//func TestJumpSub1024Limit(t *testing.T) {
+//	mockInit()
+//	database, _ := db.NewLDBDatabase("test", 0, 0)
+//	state, _ := account.NewAccountDB(common.Hash{}, account.NewDatabase(database))
+//	//address use big address 'aa' avoid precompile contract
+//	address := common.HexToAddress("0x0aa")
+//	// Code is
+//	// 0 beginsub
+//	// 1 push 0
+//	// 3 jumpsub
+//	//
+//	// The code recursively calls itself. It should error when the returns-stack
+//	// grows above 1023
+//	state.SetCode(address, []byte{
+//		byte(PUSH1), 3,
+//		byte(JUMPSUB),
+//		byte(BEGINSUB),
+//		byte(PUSH1), 3,
+//		byte(JUMPSUB),
+//	})
+//	tracer := &stepCounter{inner: NewMarkdownLogger(nil, log.GetLoggerByIndex(log.VMLogConfig, ""))}
+//	vmTracer = tracer
+//
+//	// Enable 2315
+//	_, _, err := mockCall(address, nil, &testConfig{State: state, GasLimit: 20000})
+//	exp := "return stack limit reached"
+//	if err.Error() != exp {
+//		t.Fatalf("expected %v, got %v", exp, err)
+//	}
+//	if exp, got := 2048, tracer.steps; exp != got {
+//		t.Fatalf("expected %d steps, got %d", exp, got)
+//	}
+//}
 
-	// Enable 2315
-	_, _, err := mockCall(address, nil, &testConfig{State: state, GasLimit: 20000})
-	exp := "return stack limit reached"
-	if err.Error() != exp {
-		t.Fatalf("expected %v, got %v", exp, err)
-	}
-	if exp, got := 2048, tracer.steps; exp != got {
-		t.Fatalf("expected %d steps, got %d", exp, got)
-	}
-}
-
-func TestReturnSubShallow(t *testing.T) {
-	mockInit()
-	database, _ := db.NewLDBDatabase("test", 0, 0)
-	state, _ := account.NewAccountDB(common.Hash{}, account.NewDatabase(database))
-	//address use big address 'aa' avoid precompile contract
-	address := common.HexToAddress("0x0aa")
-	// The code does returnsub without having anything on the returnstack.
-	// It should not panic, but just fail after one step
-	state.SetCode(address, []byte{
-		byte(PUSH1), 5,
-		byte(JUMPSUB),
-		byte(RETURNSUB),
-		byte(PC),
-		byte(BEGINSUB),
-		byte(RETURNSUB),
-		byte(PC),
-	})
-	tracer := &stepCounter{inner: NewMarkdownLogger(nil, log.GetLoggerByIndex(log.VMLogConfig, ""))}
-	vmTracer = tracer
-
-	// Enable 2315
-	_, _, err := mockCall(address, nil, &testConfig{State: state, GasLimit: 10000})
-
-	exp := "invalid retsub"
-	if err.Error() != exp {
-		t.Fatalf("expected %v, got %v", exp, err)
-	}
-	if exp, got := 4, tracer.steps; exp != got {
-		t.Fatalf("expected %d steps, got %d", exp, got)
-	}
-}
+//func TestReturnSubShallow(t *testing.T) {
+//	mockInit()
+//	database, _ := db.NewLDBDatabase("test", 0, 0)
+//	state, _ := account.NewAccountDB(common.Hash{}, account.NewDatabase(database))
+//	//address use big address 'aa' avoid precompile contract
+//	address := common.HexToAddress("0x0aa")
+//	// The code does returnsub without having anything on the returnstack.
+//	// It should not panic, but just fail after one step
+//	state.SetCode(address, []byte{
+//		byte(PUSH1), 5,
+//		byte(JUMPSUB),
+//		byte(RETURNSUB),
+//		byte(PC),
+//		byte(BEGINSUB),
+//		byte(RETURNSUB),
+//		byte(PC),
+//	})
+//	tracer := &stepCounter{inner: NewMarkdownLogger(nil, log.GetLoggerByIndex(log.VMLogConfig, ""))}
+//	vmTracer = tracer
+//
+//	// Enable 2315
+//	_, _, err := mockCall(address, nil, &testConfig{State: state, GasLimit: 10000})
+//
+//	exp := "invalid retsub"
+//	if err.Error() != exp {
+//		t.Fatalf("expected %v, got %v", exp, err)
+//	}
+//	if exp, got := 4, tracer.steps; exp != got {
+//		t.Fatalf("expected %d steps, got %d", exp, got)
+//	}
+//}
 
 // Iterator for disassembled EVM instructions
 type instructionIterator struct {

@@ -40,6 +40,7 @@ type contractExecutor struct {
 const (
 	defaultGasLimit     uint64 = 6000000
 	p017defaultGasLimit uint64 = 30000000
+	p026defaultGasLimit uint64 = 900000000
 )
 
 var (
@@ -143,9 +144,16 @@ func (this *contractExecutor) Execute(transaction *types.Transaction, header *ty
 	vmCtx.Difficulty = new(big.Int).SetUint64(123)
 	vmCtx.GasPrice = defaultGasPrice
 	vmCtx.GasLimit = defaultGasLimit
+	gasLimitTemp := gasLimit
 	if common.IsProposal015() {
 		if common.IsProposal017() && gasLimit > p017defaultGasLimit {
 			gasLimit = p017defaultGasLimit
+		}
+		if common.IsProposal026() {
+			gasLimit = gasLimitTemp
+			if gasLimit > p026defaultGasLimit {
+				gasLimit = p026defaultGasLimit
+			}
 		}
 		vmCtx.GasLimit = gasLimit - intrinsicGas
 	}
@@ -223,6 +231,9 @@ func IntrinsicGas(data []byte, contractCreation bool) (uint64, error) {
 			return 0, vm.ErrGasUintOverflow
 		}
 		gas += z * vm.TxDataZeroGas
+	}
+	if common.IsProposal026() {
+		return gas * common.GasMagnification, nil
 	}
 	return gas, nil
 }

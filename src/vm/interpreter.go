@@ -93,7 +93,9 @@ func NewEVMInterpreter(evm *EVM) *EVMInterpreter {
 	if height >= common.LocalChainConfig.Proposal022Block {
 		doProposal022(jt)
 	}
-
+	if height >= common.LocalChainConfig.Proposal026Block {
+		doProposal026(jt)
+	}
 	config := LogConfig{false, false, false, false}
 	interpreter.tracer = NewStructLogger(&config, logger)
 	return interpreter

@@ -440,6 +440,9 @@ func (evm *EVM) create(caller ContractRef, codeAndHash *codeAndHash, gas uint64,
 	// by the error checking condition below.
 	if err == nil && !maxCodeSizeExceeded {
 		createDataGas := uint64(len(ret)) * CreateDataGas
+		if common.IsProposal026() {
+			createDataGas = createDataGas * common.GasMagnification
+		}
 		if contract.UseGas(createDataGas) {
 			evm.StateDB.SetCode(address, ret)
 			logger.Debugf("Create data gas:%d", createDataGas)
