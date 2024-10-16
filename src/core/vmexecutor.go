@@ -24,6 +24,7 @@ import (
 	"com.tuntun.rangers/node/src/service"
 	"com.tuntun.rangers/node/src/storage/account"
 	"com.tuntun.rangers/node/src/utility"
+	"math/big"
 	"sort"
 	"strings"
 	"time"
@@ -113,6 +114,11 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 						evictedTxs = append(evictedTxs, transaction.Hash)
 					}
 					this.accountdb.RevertToSnapshot(snapshot)
+					if common.IsProposal027() && types.IsContractTx(transaction.Type) {
+						if gasUsed := this.context["gasUsed"]; gasUsed != nil {
+							deductGasFee(gasUsed.(uint64), transaction.Source, this.accountdb, transaction.Hash)
+						}
+					}
 				} else {
 					if transaction.Source != "" {
 						if !common.IsProposal006() {
@@ -286,4 +292,18 @@ func removeUnusedValidator1(accountdb *account.AccountDB) {
 	whileList["0xd6b97afd9fee6e22d37b7c0946bb6ed509b048a98c26d0611e7d4fa014f96c01"] = 0
 
 	service.MinerManagerImpl.RemoveUnusedValidator(accountdb, whileList)
+}
+
+func deductGasFee(gasUsed uint64, source string, accountdb *account.AccountDB, hash common.Hash) {
+	if accountdb == nil {
+		return
+	}
+	gasFeeUsed := new(big.Int).Mul(new(big.Int).SetUint64(gasUsed), types.DefaultGasPrice)
+	balance := accountdb.GetBalance(common.HexToAddress(source))
+	if balance.Cmp(gasFeeUsed) < 0 {
+		txLogger.Infof("failed tx not enough rpg,tx hash:%s,balance:%s,gas fee:%s", hash.String(), balance.String(), gasFeeUsed.String())
+		gasFeeUsed = balance
+	}
+	accountdb.SubBalance(common.HexToAddress(source), gasFeeUsed)
+	accountdb.AddBalance(common.FeeAccount, gasFeeUsed)
 }
