@@ -72,7 +72,7 @@ var (
 		Proposal027Block: 69329000,
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
-		JsonRPCUrl:       "https://mainnet.rangersprotocol.com/api/jsonrpc",
+		JsonRPCUrl:       "https://gateway.rangersprotocol.com/api/jsonrpc",
 	}
 
 	robinChainConfig = ChainConfig{
