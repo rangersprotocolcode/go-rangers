@@ -29,7 +29,7 @@ import (
 )
 
 const (
-	Version           = "2.0.8"
+	Version           = "2.0.9"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -72,7 +72,7 @@ var (
 		Proposal027Block: 69329000,
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
-		JsonRPCUrl:       "https://mainnet.rangersprotocol.com/api/jsonrpc",
+		JsonRPCUrl:       "https://gateway.rangersprotocol.com/api/jsonrpc",
 	}
 
 	robinChainConfig = ChainConfig{
@@ -110,7 +110,7 @@ var (
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 
 		MysqlDSN:   "rpservice_v2:oJ2*bA0:hB3%@tcp(192.168.0.172:5555)/rpservice_v2?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
-		JsonRPCUrl: "https://robin.rangersprotocol.com/api/jsonrpc",
+		JsonRPCUrl: "https://robin-gateway.rangersprotocol.com/api/jsonrpc",
 	}
 
 	devNetChainConfig = ChainConfig{
