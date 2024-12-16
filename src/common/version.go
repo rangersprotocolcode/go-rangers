@@ -17,7 +17,6 @@
 package common
 
 import (
-	"com.tuntun.rangers/node/src/middleware/log"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -25,7 +24,10 @@ import (
 	"math/big"
 	"os"
 	"strconv"
+	"strings"
 	"sync/atomic"
+
+	"com.tuntun.rangers/node/src/middleware/log"
 )
 
 const (
@@ -70,6 +72,7 @@ var (
 		Proposal025Block: 63311000,
 		Proposal026Block: 64666400,
 		Proposal027Block: 69329000,
+		blackList:        make(map[string]byte),
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
 		JsonRPCUrl:       "https://gateway.rangersprotocol.com/api/jsonrpc",
@@ -107,6 +110,9 @@ var (
 		Proposal025Block: 77920000,
 		Proposal026Block: 79365500,
 		Proposal027Block: 84150000,
+		Proposal028Block: 92753000,
+
+		blackList:        make(map[string]byte),
 		mainNodeContract: HexToAddress("0x3a8467bEcb0B702c5c6343c8A3Ccb11acE0e8816"),
 
 		MysqlDSN:   "rpservice_v2:oJ2*bA0:hB3%@tcp(192.168.0.172:5555)/rpservice_v2?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
@@ -148,6 +154,8 @@ var (
 		Proposal025Block: 1000000000,
 		Proposal026Block: 0,
 		Proposal027Block: 0,
+		Proposal028Block: 0,
+		blackList:        make(map[string]byte),
 	}
 
 	subNetChainConfig = ChainConfig{
@@ -183,6 +191,8 @@ var (
 		Proposal024Block: 0,
 		Proposal026Block: 0,
 		Proposal027Block: 0,
+		Proposal028Block: 0,
+		blackList:        make(map[string]byte),
 	}
 
 	LocalChainConfig ChainConfig
@@ -226,6 +236,9 @@ type ChainConfig struct {
 	Proposal025Block uint64
 	Proposal026Block uint64
 	Proposal027Block uint64
+	Proposal028Block uint64
+
+	blackList map[string]byte
 
 	mainNodeContract Address
 
@@ -237,8 +250,12 @@ func initChainConfig(env string) {
 	if env == ENV_DEV {
 		LocalChainConfig = devNetChainConfig
 	} else if env == ENV_MAINNET {
+		mainNetChainConfig.blackList["0x7438823d44dd5485ddbbcb72950e7530cde07e85"] = 0
+		mainNetChainConfig.blackList["0x448f52f14a7af4176757794d72e381cdb038155c"] = 0
+		mainNetChainConfig.blackList["0x3a1f409f3ce8fc5e3e79315402462ea74c75bfbf"] = 0
 		LocalChainConfig = mainNetChainConfig
 	} else if env == ENV_TESTNET_ROBIN {
+		robinChainConfig.blackList["0x38780174572fb5b4735df1b7c69aee77ff6e9f49"] = 0
 		LocalChainConfig = robinChainConfig
 	} else {
 		LocalChainConfig = subNetChainConfig
@@ -403,6 +420,15 @@ func IsProposal026() bool {
 
 func IsProposal027() bool {
 	return isForked(LocalChainConfig.Proposal027Block, GetBlockHeight())
+}
+
+func IsProposal028(height uint64, source string) bool {
+	if isForked(LocalChainConfig.Proposal028Block, height) {
+		_, ok := LocalChainConfig.blackList[strings.ToLower(strings.TrimSpace(source))]
+		return ok
+	}
+
+	return false
 }
 
 func isForked(base uint64, height uint64) bool {

@@ -17,6 +17,11 @@
 package core
 
 import (
+	"math/big"
+	"sort"
+	"strings"
+	"time"
+
 	"com.tuntun.rangers/node/src/common"
 	"com.tuntun.rangers/node/src/executor"
 	"com.tuntun.rangers/node/src/middleware"
@@ -24,10 +29,6 @@ import (
 	"com.tuntun.rangers/node/src/service"
 	"com.tuntun.rangers/node/src/storage/account"
 	"com.tuntun.rangers/node/src/utility"
-	"math/big"
-	"sort"
-	"strings"
-	"time"
 )
 
 const MaxCastBlockTime = time.Second * 3
@@ -97,6 +98,12 @@ func (this *VMExecutor) Execute() (common.Hash, []common.Hash, []*types.Transact
 		msg := ""
 
 		if txExecutor != nil {
+			if common.IsProposal028(this.block.Header.Height, transaction.Source) {
+				evictedTxs = append(evictedTxs, transaction.Hash)
+				logger.Errorf("execute: %s, source: %s, black source", transaction.Hash.String(), transaction.Source)
+				continue
+			}
+
 			success, addAble, msg = txExecutor.BeforeExecute(transaction, this.block.Header, this.accountdb, this.context)
 			if common.IsProposal018() && !addAble {
 				evictedTxs = append(evictedTxs, transaction.Hash)
