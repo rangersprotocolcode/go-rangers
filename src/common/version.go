@@ -31,7 +31,7 @@ import (
 )
 
 const (
-	Version           = "2.0.9"
+	Version           = "2.0.10"
 	ProtocolVersion   = 1
 	ConsensusVersion  = 1
 	ENV_DEV           = "dev"
@@ -72,6 +72,8 @@ var (
 		Proposal025Block: 63311000,
 		Proposal026Block: 64666400,
 		Proposal027Block: 69329000,
+		Proposal028Block: 76650000,
+
 		blackList:        make(map[string]byte),
 		mainNodeContract: HexToAddress("0x74448149F549CD819b7173b6D67DbBEAFd2909a7"),
 		MysqlDSN:         "rpservice:!890rpService@#$@tcp(172.16.0.60:6666)/service?charset=utf8&parseTime=true&loc=Asia%2FShanghai",
@@ -256,6 +258,7 @@ func initChainConfig(env string) {
 		LocalChainConfig = mainNetChainConfig
 	} else if env == ENV_TESTNET_ROBIN {
 		robinChainConfig.blackList["0x38780174572fb5b4735df1b7c69aee77ff6e9f49"] = 0
+
 		LocalChainConfig = robinChainConfig
 	} else {
 		LocalChainConfig = subNetChainConfig
